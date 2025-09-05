@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { FaEdit, FaTrash, FaPlus, FaSearch, FaTimes } from "react-icons/fa";
+import axios from "axios";
+
+// API base URL
+const API_URL = "http://localhost:5002/api";
 
 // Define Student Type
 interface Student {
-  id: number;
+  _id?: string; // MongoDB ID
+  id?: number; // Legacy ID for local storage
   studentId: number; // 6-digit unique student ID starting from 100000
   firstName: string;
   fatherName: string;
@@ -26,6 +31,8 @@ const Managment: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedGroup, setSelectedGroup] = useState("all"); // New state for selected group
   const [currentPage, setCurrentPage] = useState(1);
+  const [groups, setGroups] = useState<string[]>(['ازهار الحمد"المهاجرين ب']);
+  const [isLoading, setIsLoading] = useState(false);
   const studentsPerPage = 10;
 
   // Form state
@@ -44,60 +51,86 @@ const Managment: React.FC = () => {
     group: 'ازهار الحمد"المهاجرين ب',
   });
 
-  const [currentStudentId, setCurrentStudentId] = useState<number | null>(null);
+  const [currentStudentId, setCurrentStudentId] = useState<
+    string | number | null
+  >(null);
 
-  // Load example students on mount
+  // Load students from the API
   useEffect(() => {
-    // Example data
-    const exampleStudents: Student[] = [
-      {
-        id: 1,
-        studentId: 100001,
-        firstName: "أحمد",
-        fatherName: "محمد",
-        grandFatherName: "علي",
-        motherName: "سمر",
-        lastName: "عثمان",
-        birthDate: "2015-05-12",
-        age: 10,
-        gender: "ذكر",
-        residence: "نابلس",
-        teacher: "محمد حجاج",
-        group: 'ازهار الحمد"المهاجرين ب',
-      },
-      {
-        id: 2,
-        studentId: 100002,
-        firstName: "سارة",
-        fatherName: "خالد",
-        grandFatherName: "محمود",
-        motherName: "ريم",
-        lastName: "السعدي",
-        birthDate: "2016-08-23",
-        age: 9,
-        gender: "انثى",
-        residence: "نابلس",
-        teacher: "محمد حجاج",
-        group: 'ازهار الحمد"المهاجرين ب',
-      },
-      {
-        id: 3,
-        studentId: 100003,
-        firstName: "عمر",
-        fatherName: "أحمد",
-        grandFatherName: "فؤاد",
-        motherName: "هدى",
-        lastName: "شاهين",
-        birthDate: "2014-03-15",
-        age: 11,
-        gender: "ذكر",
-        residence: "نابلس",
-        teacher: "محمد حجاج",
-        group: 'ازهار الحمد"المهاجرين ب',
-      },
-    ];
+    const fetchStudents = async () => {
+      setIsLoading(true);
+      try {
+        const response = await axios.get(`${API_URL}/students`);
+        setStudents(response.data);
 
-    setStudents(exampleStudents);
+        // Extract unique groups from students
+        const uniqueGroups = [
+          ...new Set(response.data.map((student: Student) => student.group)),
+        ] as string[];
+        setGroups(uniqueGroups);
+      } catch (error) {
+        console.error("Error fetching students:", error);
+        // Fallback to example data if API fails
+        const exampleStudents: Student[] = [
+          {
+            id: 1,
+            studentId: 100001,
+            firstName: "أحمد",
+            fatherName: "محمد",
+            grandFatherName: "علي",
+            motherName: "سمر",
+            lastName: "عثمان",
+            birthDate: "2015-05-12",
+            age: 10,
+            gender: "ذكر",
+            residence: "نابلس",
+            teacher: "محمد حجاج",
+            group: 'ازهار الحمد"المهاجرين ب',
+          },
+          {
+            id: 2,
+            studentId: 100002,
+            firstName: "سارة",
+            fatherName: "خالد",
+            grandFatherName: "محمود",
+            motherName: "ريم",
+            lastName: "السعدي",
+            birthDate: "2016-08-23",
+            age: 9,
+            gender: "انثى",
+            residence: "نابلس",
+            teacher: "محمد حجاج",
+            group: 'ازهار الحمد"المهاجرين ب',
+          },
+          {
+            id: 3,
+            studentId: 100003,
+            firstName: "عمر",
+            fatherName: "أحمد",
+            grandFatherName: "فؤاد",
+            motherName: "هدى",
+            lastName: "شاهين",
+            birthDate: "2014-03-15",
+            age: 11,
+            gender: "ذكر",
+            residence: "نابلس",
+            teacher: "محمد حجاج",
+            group: 'ازهار الحمد"المهاجرين ب',
+          },
+        ];
+        setStudents(exampleStudents);
+
+        // Extract unique groups from example students
+        const uniqueGroups = [
+          ...new Set(exampleStudents.map((student) => student.group)),
+        ];
+        setGroups(uniqueGroups);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStudents();
   }, []);
 
   // Calculate age from birth date
@@ -145,52 +178,153 @@ const Managment: React.FC = () => {
   };
 
   // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (isEditMode && currentStudentId) {
-      // Edit existing student
-      const updatedStudents = students.map((student) =>
-        student.id === currentStudentId
-          ? {
-              ...formData,
-              id: currentStudentId,
-              age: isNaN(formData.age) ? 0 : formData.age, // Ensure age is a number
-            }
-          : student
-      );
-      setStudents(updatedStudents);
-    } else {
-      // Add new student
-      const newId =
-        students.length > 0
-          ? Math.max(...students.map((student) => student.id)) + 1
-          : 1;
+    // Validate all required fields
+    const requiredFields: Array<{
+      field: keyof typeof formData;
+      label: string;
+    }> = [
+      { field: "firstName", label: "الاسم" },
+      { field: "fatherName", label: "اسم الأب" },
+      { field: "grandFatherName", label: "اسم الجد" },
+      { field: "lastName", label: "اسم العائلة" },
+      { field: "motherName", label: "اسم الأم" },
+      { field: "birthDate", label: "تاريخ الميلاد" },
+      { field: "group", label: "اسم الحلقة" },
+    ];
 
-      // Generate a new student ID starting from 100000
-      const newStudentId =
-        students.length > 0
-          ? Math.max(...students.map((student) => student.studentId)) + 1
-          : 100001;
-
-      const newStudent = {
-        ...formData,
-        id: newId,
-        studentId: newStudentId,
-        age: isNaN(formData.age) ? 0 : formData.age, // Ensure age is a number
-      };
-      setStudents([...students, newStudent]);
+    for (const { field, label } of requiredFields) {
+      if (!formData[field]) {
+        alert(`الرجاء إدخال ${label}`);
+        return;
+      }
     }
 
-    // Reset form
-    resetForm();
+    try {
+      // Validate age is a number
+      if (isNaN(formData.age) || formData.age <= 0) {
+        alert("العمر يجب أن يكون رقماً موجباً");
+        return;
+      }
+
+      const studentData = {
+        ...formData,
+        age: isNaN(formData.age) ? 0 : formData.age,
+      };
+
+      console.log("Sending student data:", studentData);
+
+      if (isEditMode && currentStudentId !== null) {
+        // Find the student with the current ID
+        const studentToUpdate = students.find(
+          (student) =>
+            (typeof currentStudentId === "string" &&
+              student._id === currentStudentId) ||
+            (typeof currentStudentId === "number" &&
+              student.id === currentStudentId)
+        );
+
+        if (studentToUpdate?._id) {
+          // Update student in the database
+          const response = await axios.put(
+            `${API_URL}/students/${studentToUpdate._id}`,
+            studentData
+          );
+
+          // Update the students list
+          setStudents(
+            students.map((student) =>
+              student._id === studentToUpdate._id ? response.data : student
+            )
+          );
+        } else {
+          // Fallback to local update if no MongoDB ID is available
+          setStudents(
+            students.map((student) =>
+              student.id === currentStudentId
+                ? {
+                    ...studentData,
+                    id: currentStudentId,
+                  }
+                : student
+            )
+          );
+        }
+      } else {
+        // Add new student to the database
+        console.log(
+          `Posting to ${API_URL}/students with data:`,
+          JSON.stringify(studentData, null, 2)
+        );
+
+        try {
+          const response = await axios.post(
+            `${API_URL}/students`,
+            studentData,
+            {
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          console.log("Server response:", response.data);
+
+          // Add the new student to the local state
+          setStudents([...students, response.data]);
+        } catch (apiError: any) {
+          console.error("API Error details:", apiError);
+
+          if (apiError.response) {
+            console.error("Response data:", apiError.response.data);
+            console.error("Response status:", apiError.response.status);
+            throw apiError;
+          } else if (apiError.request) {
+            console.error("No response received:", apiError.request);
+            throw new Error(
+              "لم يتم تلقي استجابة من الخادم. تحقق من اتصالك بالإنترنت."
+            );
+          } else {
+            console.error("Error setting up request:", apiError.message);
+            throw apiError;
+          }
+        }
+      }
+
+      // Reset form
+      resetForm();
+    } catch (error: any) {
+      console.error("Error saving student:", error);
+
+      // Show more detailed error
+      if (error.response && error.response.data) {
+        console.error("Server error details:", error.response.data);
+
+        // Handle different types of error messages
+        let errorMessage;
+        if (error.response.data.message) {
+          errorMessage = error.response.data.message;
+        } else if (typeof error.response.data === "string") {
+          errorMessage = error.response.data;
+        } else {
+          errorMessage =
+            "حدث خطأ أثناء حفظ بيانات الطالب. يرجى المحاولة مرة أخرى.";
+        }
+
+        alert(`خطأ: ${errorMessage}`);
+      } else {
+        alert("حدث خطأ أثناء حفظ بيانات الطالب. يرجى المحاولة مرة أخرى.");
+      }
+    }
   };
 
   // Handle edit button click
   const handleEdit = (student: Student) => {
     setIsFormVisible(true);
     setIsEditMode(true);
-    setCurrentStudentId(student.id);
+    setCurrentStudentId(student._id || student.id || null);
     setFormData({
       studentId: student.studentId,
       firstName: student.firstName,
@@ -208,9 +342,32 @@ const Managment: React.FC = () => {
   };
 
   // Handle delete button click
-  const handleDelete = (id: number) => {
+  const handleDelete = async (studentId: string | number | undefined) => {
+    if (!studentId) return;
+
     if (window.confirm("هل أنت متأكد من رغبتك في حذف هذا الطالب؟")) {
-      setStudents(students.filter((student) => student.id !== id));
+      try {
+        // Find the student with the given ID
+        const studentToDelete = students.find(
+          (student) => student._id === studentId || student.id === studentId
+        );
+
+        if (studentToDelete?._id) {
+          // Delete from database if MongoDB ID exists
+          await axios.delete(`${API_URL}/students/${studentToDelete._id}`);
+        }
+
+        // Remove from local state
+        setStudents(
+          students.filter(
+            (student) =>
+              !(student._id === studentId || student.id === studentId)
+          )
+        );
+      } catch (error) {
+        console.error("Error deleting student:", error);
+        alert("حدث خطأ أثناء حذف الطالب. يرجى المحاولة مرة أخرى.");
+      }
     }
   };
 
@@ -316,9 +473,11 @@ const Managment: React.FC = () => {
                 value={selectedGroup}
                 onChange={(e) => setSelectedGroup(e.target.value)}>
                 <option value="all">جميع الطلاب</option>
-                <option value='ازهار الحمد"المهاجرين ب'>
-                  ازهار الحمد"المهاجرين ب
-                </option>
+                {groups.map((group) => (
+                  <option key={group} value={group}>
+                    {group}
+                  </option>
+                ))}
               </select>
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center px-2 text-gray-700">
                 <svg
@@ -549,174 +708,189 @@ const Managment: React.FC = () => {
       )}
 
       {/* Students Table */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  #
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  رقم الطالب
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  الاسم الكامل
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  العمر
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  الجنس
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  مكان السكن
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  المعلم
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  الحلقة
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  الإجراءات
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {currentStudents.length > 0 ? (
-                currentStudents.map((student, index) => (
-                  <tr key={student.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {indexOfFirstStudent + index + 1}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {student.studentId}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {`${student.firstName} ${student.fatherName} ${student.grandFatherName} ${student.lastName}`}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        الأم: {student.motherName}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {student.age}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          student.gender === "ذكر"
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-pink-100 text-pink-800"
-                        }`}>
-                        {student.gender}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {student.residence}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {student.teacher}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {student.group}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
-                      <div className="flex justify-center space-x-3 space-x-reverse">
-                        <button
-                          onClick={() => handleEdit(student)}
-                          className="text-emerald-600 hover:text-emerald-800"
-                          title="تعديل">
-                          <FaEdit size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(student.id)}
-                          className="text-red-600 hover:text-red-800"
-                          title="حذف">
-                          <FaTrash size={18} />
-                        </button>
-                      </div>
+      {isLoading ? (
+        <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
+          <div className="flex items-center justify-center p-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-700"></div>
+            <p className="mr-3 text-lg text-gray-600">جاري تحميل البيانات...</p>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    #
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    رقم الطالب
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    الاسم الكامل
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    العمر
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    الجنس
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    مكان السكن
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    المعلم
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    الحلقة
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    الإجراءات
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {currentStudents.length > 0 ? (
+                  currentStudents.map((student, index) => (
+                    <tr key={student.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {indexOfFirstStudent + index + 1}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {student.studentId}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {`${student.firstName} ${student.fatherName} ${student.grandFatherName} ${student.lastName}`}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          الأم: {student.motherName}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {student.age}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            student.gender === "ذكر"
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-pink-100 text-pink-800"
+                          }`}>
+                          {student.gender}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {student.residence}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {student.teacher}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {student.group}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
+                        <div className="flex justify-center space-x-3 space-x-reverse">
+                          <button
+                            onClick={() => handleEdit(student)}
+                            className="text-emerald-600 hover:text-emerald-800"
+                            title="تعديل">
+                            <FaEdit size={18} />
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleDelete(student._id || student.id)
+                            }
+                            className="text-red-600 hover:text-red-800"
+                            title="حذف">
+                            <FaTrash size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={9}
+                      className="px-6 py-4 text-center text-gray-500">
+                      {searchTerm
+                        ? "لا توجد نتائج مطابقة للبحث"
+                        : "لا يوجد طلاب حاليًا"}
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan={9}
-                    className="px-6 py-4 text-center text-gray-500">
-                    {searchTerm
-                      ? "لا توجد نتائج مطابقة للبحث"
-                      : "لا يوجد طلاب حاليًا"}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                )}
+              </tbody>
+            </table>
+          </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-gray-700">
-                  عرض{" "}
-                  <span className="font-medium">{indexOfFirstStudent + 1}</span>{" "}
-                  إلى{" "}
-                  <span className="font-medium">
-                    {Math.min(indexOfLastStudent, filteredStudents.length)}
-                  </span>{" "}
-                  من أصل{" "}
-                  <span className="font-medium">{filteredStudents.length}</span>{" "}
-                  طالب
-                </p>
-              </div>
-              <div>
-                <nav
-                  className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
-                  aria-label="Pagination">
-                  <button
-                    onClick={() => paginate(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
-                      currentPage === 1
-                        ? "text-gray-300"
-                        : "text-gray-500 hover:bg-gray-50"
-                    }`}>
-                    التالي
-                  </button>
-
-                  {[...Array(totalPages)].map((_, index) => (
+          {/* Pagination */}
+          {!isLoading && totalPages > 1 && (
+            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm text-gray-700">
+                    عرض{" "}
+                    <span className="font-medium">
+                      {indexOfFirstStudent + 1}
+                    </span>{" "}
+                    إلى{" "}
+                    <span className="font-medium">
+                      {Math.min(indexOfLastStudent, filteredStudents.length)}
+                    </span>{" "}
+                    من أصل{" "}
+                    <span className="font-medium">
+                      {filteredStudents.length}
+                    </span>{" "}
+                    طالب
+                  </p>
+                </div>
+                <div>
+                  <nav
+                    className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                    aria-label="Pagination">
                     <button
-                      key={index}
-                      onClick={() => paginate(index + 1)}
-                      className={`relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium ${
-                        currentPage === index + 1
-                          ? "z-10 bg-emerald-50 border-emerald-500 text-emerald-600"
+                      onClick={() => paginate(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
+                        currentPage === 1
+                          ? "text-gray-300"
                           : "text-gray-500 hover:bg-gray-50"
                       }`}>
-                      {index + 1}
+                      التالي
                     </button>
-                  ))}
 
-                  <button
-                    onClick={() => paginate(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
-                      currentPage === totalPages
-                        ? "text-gray-300"
-                        : "text-gray-500 hover:bg-gray-50"
-                    }`}>
-                    السابق
-                  </button>
-                </nav>
+                    {[...Array(totalPages)].map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => paginate(index + 1)}
+                        className={`relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium ${
+                          currentPage === index + 1
+                            ? "z-10 bg-emerald-50 border-emerald-500 text-emerald-600"
+                            : "text-gray-500 hover:bg-gray-50"
+                        }`}>
+                        {index + 1}
+                      </button>
+                    ))}
+
+                    <button
+                      onClick={() => paginate(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
+                        currentPage === totalPages
+                          ? "text-gray-300"
+                          : "text-gray-500 hover:bg-gray-50"
+                      }`}>
+                      السابق
+                    </button>
+                  </nav>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* Total Count */}
       <div className="mt-4 text-gray-700">
