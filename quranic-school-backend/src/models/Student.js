@@ -7,6 +7,11 @@ const studentSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    idNumber: {
+      type: String,
+      required: [true, "رقم الهوية مطلوب"],
+      unique: true,
+    },
     firstName: {
       type: String,
       required: [true, "الاسم الأول مطلوب"],

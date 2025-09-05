@@ -3,13 +3,14 @@ import { FaEdit, FaTrash, FaPlus, FaSearch, FaTimes } from "react-icons/fa";
 import axios from "axios";
 
 // API base URL
-const API_URL = "http://localhost:5002/api";
+const API_URL = "http://localhost:5004/api";
 
 // Define Student Type
 interface Student {
   _id?: string; // MongoDB ID
   id?: number; // Legacy ID for local storage
   studentId: number; // 6-digit unique student ID starting from 100000
+  idNumber: string; // رقم الهوية (سيستخدم ككلمة مرور)
   firstName: string;
   fatherName: string;
   grandFatherName: string;
@@ -38,6 +39,7 @@ const Managment: React.FC = () => {
   // Form state
   const [formData, setFormData] = useState<Omit<Student, "id">>({
     studentId: 0, // Will be set automatically when adding a new student
+    idNumber: "", // رقم الهوية (سيستخدم ككلمة مرور)
     firstName: "",
     fatherName: "",
     grandFatherName: "",
@@ -75,6 +77,7 @@ const Managment: React.FC = () => {
           {
             id: 1,
             studentId: 100001,
+            idNumber: "123456789",
             firstName: "أحمد",
             fatherName: "محمد",
             grandFatherName: "علي",
@@ -90,6 +93,7 @@ const Managment: React.FC = () => {
           {
             id: 2,
             studentId: 100002,
+            idNumber: "987654321",
             firstName: "سارة",
             fatherName: "خالد",
             grandFatherName: "محمود",
@@ -105,6 +109,7 @@ const Managment: React.FC = () => {
           {
             id: 3,
             studentId: 100003,
+            idNumber: "456123789",
             firstName: "عمر",
             fatherName: "أحمد",
             grandFatherName: "فؤاد",
@@ -327,6 +332,7 @@ const Managment: React.FC = () => {
     setCurrentStudentId(student._id || student.id || null);
     setFormData({
       studentId: student.studentId,
+      idNumber: student.idNumber,
       firstName: student.firstName,
       fatherName: student.fatherName,
       grandFatherName: student.grandFatherName,
@@ -375,6 +381,7 @@ const Managment: React.FC = () => {
   const resetForm = () => {
     setFormData({
       studentId: 0,
+      idNumber: "",
       firstName: "",
       fatherName: "",
       grandFatherName: "",
@@ -577,6 +584,24 @@ const Managment: React.FC = () => {
                   value={formData.motherName}
                   onChange={handleInputChange}
                 />
+              </div>
+
+              {/* ID Number (used for login) */}
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">
+                  رقم الهوية (كلمة المرور)
+                </label>
+                <input
+                  type="text"
+                  name="idNumber"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  value={formData.idNumber}
+                  onChange={handleInputChange}
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  سيتم استخدام رقم الهوية ككلمة مرور لتسجيل الدخول
+                </p>
               </div>
 
               {/* Last Name */}
