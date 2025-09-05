@@ -2,7 +2,6 @@ import "./App.css";
 import Header from "./components/Header";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
-import SignUp from "./pages/SignUp";
 import Goals from "./pages/Goals";
 import News from "./pages/news";
 import Footer from "./components/Footer";
@@ -18,15 +17,13 @@ import Managment from "./pages/managment";
 function AppContent() {
   const location = useLocation();
   const isLoginPage = location.pathname === "/login";
-  const isSignupPage = location.pathname === "/signup";
   const isChatPage = location.pathname === "/chat";
   return (
     <>
-      {!isLoginPage && !isSignupPage && <Header />}
+      {!isLoginPage && <Header />}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<SignUp />} />
         <Route path="/goals" element={<Goals />} />
         <Route path="/daily-marks" element={<DailyMarks />} />
         <Route path="/arrangement" element={<Arrangement />} />
@@ -38,7 +35,7 @@ function AppContent() {
         {/* Add more routes as needed */}
         <Route path="*" element={<NotFound />} />
       </Routes>
-      {!isLoginPage && !isSignupPage && !isChatPage && <Footer />}
+      {!isLoginPage && !isChatPage && <Footer />}
     </>
   );
 }

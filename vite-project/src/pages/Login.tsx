@@ -166,15 +166,7 @@ const Login = () => {
             )}
           </button>
         </form>
-
-        <div className="mt-6 text-center">
-          <p className="text-gray-600 mb-2">ليس لديك حساب؟</p>
-          <button
-            onClick={() => navigate("/signup")}
-            className="w-full border-2 border-emerald-500 text-emerald-600 py-3 rounded-lg hover:bg-emerald-50 transition duration-300 font-medium">
-            إنشاء حساب جديد
-          </button>
-        </div>
+        
       </div>
     </div>
   );
