@@ -87,6 +87,7 @@ const Home = () => {
                 className="w-full h-full object-cover brightness-110 contrast-105"
               />
               <div className="absolute inset-0 bg-indigo-900/10"></div>
+              {/* Edit button */}
               <button
                 className="absolute top-4 right-4 bg-white/80 hover:bg-white text-emerald-700 p-2 rounded-full shadow-md transition duration-300"
                 title="تعديل الصورة"
@@ -104,7 +105,7 @@ const Home = () => {
                     d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
                   />
                 </svg>
-              </button>
+              </button>{" "}
               {/* Hidden file input */}
               <input
                 type="file"

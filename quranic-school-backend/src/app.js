@@ -19,6 +19,7 @@ app.use((req, res, next) => {
 
 // Middleware
 app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
     origin: "*", // Allow all origins

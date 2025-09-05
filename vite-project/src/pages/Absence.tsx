@@ -1,46 +1,78 @@
 import { useState, useEffect } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
+import axios from "axios";
 
-interface Student {
-  id: number;
+// API base URL
+const API_URL = "http://localhost:5005/api";
+
+interface DbStudent {
+  _id: string;
+  studentId: number;
+  firstName: string;
+  fatherName: string;
+  lastName: string;
+  group: string;
+  // يمكن إضافة المزيد من الحقول حسب الحاجة
+}
+
+interface AttendanceStudent {
+  _id: string;
+  studentId: number;
   name: string;
+  group: string;
   isPresent: boolean;
 }
 
 const Absence = () => {
-  const [students, setStudents] = useState<Student[]>([
-    { id: 1, name: "أحمد محمد", isPresent: true },
-    { id: 2, name: "عبدالله خالد", isPresent: false },
-    { id: 3, name: "يوسف علي", isPresent: true },
-    { id: 4, name: "عمر إبراهيم", isPresent: true },
-    { id: 5, name: "محمد سعيد", isPresent: false },
-    { id: 6, name: "خالد وليد", isPresent: true },
-    { id: 7, name: "إبراهيم عادل", isPresent: true },
-    { id: 8, name: "طارق زياد", isPresent: false },
-    { id: 9, name: "سعد ياسر", isPresent: true },
-    { id: 10, name: "علي حسن", isPresent: true },
-    { id: 11, name: "إياد سامي", isPresent: false },
-    { id: 12, name: "زياد مصطفى", isPresent: true },
-  ]);
+  const [students, setStudents] = useState<AttendanceStudent[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedAll, setSelectedAll] = useState(false);
 
+  // جلب بيانات الطلاب من قاعدة البيانات
   useEffect(() => {
     AOS.init({
       duration: 1000,
       once: true,
     });
+
+    const fetchStudents = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(`${API_URL}/students`);
+
+        // تحويل بيانات الطلاب إلى الشكل المطلوب في واجهة المستخدم
+        const formattedStudents = response.data.map((student: DbStudent) => ({
+          _id: student._id,
+          studentId: student.studentId,
+          name: `${student.firstName} ${student.fatherName} ${student.lastName}`,
+          group: student.group,
+          isPresent: true, // افتراضياً الطلاب حاضرين
+        }));
+
+        setStudents(formattedStudents);
+        setError(null);
+      } catch (err) {
+        console.error("فشل في جلب بيانات الطلاب:", err);
+        setError("حدث خطأ أثناء جلب بيانات الطلاب");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStudents();
   }, []);
 
-  const toggleStudentPresence = (id: number) => {
+  const toggleStudentPresence = (studentId: string) => {
     if (!isEditing) return;
 
     setStudents(
       students.map((student) =>
-        student.id === id
+        student._id === studentId
           ? { ...student, isPresent: !student.isPresent }
           : student
       )
@@ -57,10 +89,25 @@ const Absence = () => {
     );
   };
 
-  const handleSave = () => {
-    // Here you would implement API call to save attendance data
-    alert("تم حفظ سجل الحضور بنجاح");
-    setIsEditing(false);
+  const handleSave = async () => {
+    try {
+      // هنا يمكن إضافة استدعاء API لحفظ بيانات الحضور والغياب
+      // مثال:
+      // await axios.post(`${API_URL}/attendance`, {
+      //   date,
+      //   records: students.map(student => ({
+      //     studentId: student.studentId,
+      //     isPresent: student.isPresent
+      //   }))
+      // });
+
+      // في الوقت الحالي سنكتفي بعرض رسالة نجاح
+      alert("تم حفظ سجل الحضور بنجاح");
+      setIsEditing(false);
+    } catch (err) {
+      console.error("فشل في حفظ سجل الحضور:", err);
+      alert("حدث خطأ أثناء حفظ سجل الحضور");
+    }
   };
 
   const toggleEdit = () => {
@@ -143,10 +190,13 @@ const Absence = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="py-3 px-4 text-right text-sm font-medium text-gray-500">
-                    رقم
+                    رقم الطالب
                   </th>
                   <th className="py-3 px-4 text-right text-sm font-medium text-gray-500">
                     اسم الطالب
+                  </th>
+                  <th className="py-3 px-4 text-right text-sm font-medium text-gray-500">
+                    الحلقة
                   </th>
                   <th className="py-3 px-6 text-center text-sm font-medium text-gray-500">
                     <div className="flex items-center justify-center">
@@ -165,32 +215,55 @@ const Absence = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {students.map((student) => (
-                  <tr
-                    key={student.id}
-                    className={`hover:bg-gray-50 ${
-                      isEditing ? "cursor-pointer" : ""
-                    }`}
-                    onClick={() => toggleStudentPresence(student.id)}>
-                    <td className="px-4 py-3 text-sm text-gray-500">
-                      {student.id}
-                    </td>
-                    <td className="px-4 py-3 font-medium text-gray-900">
-                      {student.name}
-                    </td>
-                    <td className="px-6 py-3 text-center">
-                      <input
-                        type="checkbox"
-                        checked={student.isPresent}
-                        onChange={() => toggleStudentPresence(student.id)}
-                        className={`w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500 ${
-                          !isEditing && "opacity-60 cursor-not-allowed"
-                        }`}
-                        disabled={!isEditing}
-                      />
+                {loading ? (
+                  <tr>
+                    <td colSpan={3} className="text-center py-4 text-gray-500">
+                      جاري تحميل بيانات الطلاب...
                     </td>
                   </tr>
-                ))}
+                ) : error ? (
+                  <tr>
+                    <td colSpan={3} className="text-center py-4 text-red-500">
+                      {error}
+                    </td>
+                  </tr>
+                ) : students.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="text-center py-4 text-gray-500">
+                      لا يوجد طلاب مسجلين
+                    </td>
+                  </tr>
+                ) : (
+                  students.map((student) => (
+                    <tr
+                      key={student._id}
+                      className={`hover:bg-gray-50 ${
+                        isEditing ? "cursor-pointer" : ""
+                      }`}
+                      onClick={() => toggleStudentPresence(student._id)}>
+                      <td className="px-4 py-3 text-sm text-gray-500">
+                        {student.studentId}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-gray-900">
+                        {student.name}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-500">
+                        {student.group}
+                      </td>
+                      <td className="px-6 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={student.isPresent}
+                          onChange={() => toggleStudentPresence(student._id)}
+                          className={`w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500 ${
+                            !isEditing && "opacity-60 cursor-not-allowed"
+                          }`}
+                          disabled={!isEditing}
+                        />
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

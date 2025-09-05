@@ -3,7 +3,7 @@ import { FaEdit, FaTrash, FaPlus, FaSearch, FaTimes } from "react-icons/fa";
 import axios from "axios";
 
 // API base URL
-const API_URL = "http://localhost:5004/api";
+const API_URL = "http://localhost:5005/api";
 
 // Define Student Type
 interface Student {

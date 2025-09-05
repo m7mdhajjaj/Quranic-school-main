@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 // API base URL
-const API_URL = "http://localhost:5004/api";
+const API_URL = "http://localhost:5005/api";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -166,7 +166,6 @@ const Login = () => {
             )}
           </button>
         </form>
-        
       </div>
     </div>
   );
