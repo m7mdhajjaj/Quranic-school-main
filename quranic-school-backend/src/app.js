@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 const connectDB = require("./config/db");
 require("dotenv").config();
 
@@ -28,9 +29,27 @@ app.use(
   })
 );
 
+// Add request logging for uploaded files
+app.use((req, res, next) => {
+  if (req.url.includes('/uploads/')) {
+    console.log('Static file request:', req.url);
+  }
+  next();
+});
+
+// Serve static files from public folder
+app.use("/uploads", express.static(path.join(__dirname, "../public/uploads")));
+console.log("Serving static files from:", path.join(__dirname, "../public/uploads"));
+
+// Serve test upload page
+app.get('/test-upload', (req, res) => {
+  res.sendFile(path.join(__dirname, 'test-upload.html'));
+});
+
 // Routes
 app.use("/api/students", require("./routes/studentRoutes"));
 app.use("/api/auth", require("./routes/authRoutes"));
+app.use("/api/news", require("./routes/newsRoutes"));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
