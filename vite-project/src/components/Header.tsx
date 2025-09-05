@@ -127,6 +127,17 @@ const Header = () => {
             </li>
             <li>
               <NavLink
+                to="/managment"
+                className={({ isActive }) =>
+                  isActive
+                    ? "px-2 py-1 bg-white/20 rounded transition duration-300"
+                    : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
+                }>
+                الادارة
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
                 to="/login"
                 className={({ isActive }) =>
                   isActive
@@ -261,6 +272,18 @@ const Header = () => {
                   }
                   onClick={toggleMenu}>
                   تواصل مع المعلم
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/managment"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
+                      : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
+                  }
+                  onClick={toggleMenu}>
+                  الادارة
                 </NavLink>
               </li>
               <li>

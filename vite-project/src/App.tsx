@@ -14,6 +14,7 @@ import DailyMarks from "./pages/DailyMarks";
 import Absence from "./pages/Absence";
 import NotFound from "./pages/NotFound";
 import Chat from "./pages/Chat";
+import Managment from "./pages/managment";
 function AppContent() {
   const location = useLocation();
   const isLoginPage = location.pathname === "/login";
@@ -33,6 +34,7 @@ function AppContent() {
         <Route path="/news" element={<News />} />
         <Route path="/absence" element={<Absence />} />
         <Route path="/chat" element={<Chat />} />
+        <Route path="/managment" element={<Managment />} />
         {/* Add more routes as needed */}
         <Route path="*" element={<NotFound />} />
       </Routes>
