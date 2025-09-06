@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
+import axios from "axios";
 
 interface Activity {
-  id: number;
+  _id: string;
   title: string;
   description: string;
   date: string;
@@ -11,46 +12,52 @@ interface Activity {
   category: string;
 }
 
+interface ActivityFormData {
+  _id?: string;
+  title: string;
+  description: string;
+  date: string;
+  image: string; // URL for the image preview
+  category: string;
+}
+
+const API_URL = "http://localhost:5005/api/activities";
+
 const Activities = () => {
-  const [activities, setActivities] = useState<Activity[]>([
-    {
-      id: 1,
-      title: "مسابقة حفظ القرآن الكريم",
-      description: "مسابقة لحفظ وتجويد القرآن الكريم للطلاب المتميزين",
-      date: "2025-07-15",
-      image: "https://placehold.co/600x400/e9f5f2/1f6357?text=مسابقة+القرآن",
-      category: "مسابقة",
-    },
-    {
-      id: 2,
-      title: "رحلة علمية",
-      description: "رحلة ترفيهية وتعليمية للطلاب المتميزين في الحفظ",
-      date: "2025-08-10",
-      image: "https://placehold.co/600x400/e9f5f2/1f6357?text=رحلة+علمية",
-      category: "رحلة",
-    },
-    {
-      id: 3,
-      title: "درس تجويد متقدم",
-      description: "دروس متقدمة في علم التجويد يقدمها الشيخ أحمد محمد",
-      date: "2025-06-25",
-      image: "https://placehold.co/600x400/e9f5f2/1f6357?text=درس+التجويد",
-      category: "درس",
-    },
-  ]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [currentActivity, setCurrentActivity] = useState<Activity>({
-    id: 0,
+  const [currentActivity, setCurrentActivity] = useState<ActivityFormData>({
     title: "",
     description: "",
     date: "",
     image: "",
     category: "درس",
   });
+
+  // Fetch activities from API
+  useEffect(() => {
+    const fetchActivities = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(API_URL);
+        setActivities(response.data);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching activities:", err);
+        setError("حدث خطأ أثناء جلب الأنشطة");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchActivities();
+  }, []);
 
   // Handle file selection for image upload
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -95,7 +102,6 @@ const Activities = () => {
   const openAddModal = () => {
     setModalMode("add");
     setCurrentActivity({
-      id: 0,
       title: "",
       description: "",
       date: "",
@@ -109,7 +115,14 @@ const Activities = () => {
 
   const openEditModal = (activity: Activity) => {
     setModalMode("edit");
-    setCurrentActivity({ ...activity });
+    setCurrentActivity({
+      _id: activity._id,
+      title: activity.title,
+      description: activity.description,
+      date: activity.date,
+      image: activity.image,
+      category: activity.category,
+    });
     setSelectedImage(null);
     setImagePreview(activity.image);
     setIsModalOpen(true);
@@ -119,49 +132,61 @@ const Activities = () => {
     setIsModalOpen(false);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (
       !currentActivity.title ||
       !currentActivity.description ||
-      !currentActivity.date ||
-      (!imagePreview && !currentActivity.image)
+      !currentActivity.date
     )
       return;
 
-    // Use the image preview if available, otherwise use the existing image
-    const finalImage = imagePreview || currentActivity.image;
+    try {
+      const formData = new FormData();
+      formData.append("title", currentActivity.title);
+      formData.append("description", currentActivity.description);
+      formData.append("date", currentActivity.date);
+      formData.append("category", currentActivity.category);
 
-    if (modalMode === "add") {
-      const newId =
-        activities.length > 0
-          ? Math.max(...activities.map((a) => a.id)) + 1
-          : 1;
+      if (selectedImage) {
+        formData.append("image", selectedImage);
+      }
 
-      setActivities([
-        ...activities,
-        {
-          ...currentActivity,
-          id: newId,
-          image: finalImage,
-        },
-      ]);
-    } else {
-      // Edit mode
-      setActivities(
-        activities.map((activity) =>
-          activity.id === currentActivity.id
-            ? { ...currentActivity, image: finalImage }
-            : activity
-        )
-      );
+      let response: any;
+
+      if (modalMode === "add") {
+        response = await axios.post(API_URL, formData);
+        setActivities([...activities, response.data.activity]);
+      } else {
+        // Edit mode
+        response = await axios.put(
+          `${API_URL}/${currentActivity._id}`,
+          formData
+        );
+        setActivities(
+          activities.map((activity) =>
+            activity._id === currentActivity._id
+              ? response.data.activity
+              : activity
+          )
+        );
+      }
+
+      closeModal();
+    } catch (err) {
+      console.error("Error saving activity:", err);
+      setError("حدث خطأ أثناء حفظ النشاط");
     }
-
-    closeModal();
   };
 
-  const deleteActivity = (id: number) => {
+  const deleteActivity = async (_id: string) => {
     if (window.confirm("هل أنت متأكد من حذف هذا النشاط؟")) {
-      setActivities(activities.filter((activity) => activity.id !== id));
+      try {
+        await axios.delete(`${API_URL}/${_id}`);
+        setActivities(activities.filter((activity) => activity._id !== _id));
+      } catch (err) {
+        console.error("Error deleting activity:", err);
+        setError("حدث خطأ أثناء حذف النشاط");
+      }
     }
   };
 
@@ -170,7 +195,10 @@ const Activities = () => {
       ? activities
       : activities.filter((activity) => activity.category === filter);
 
-  const categories = ["الكل", ...new Set(activities.map((a) => a.category))];
+  const categories = [
+    "الكل",
+    ...Array.from(new Set(activities.map((a) => a.category))),
+  ];
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -230,94 +258,104 @@ const Activities = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredActivities.map((activity) => (
-            <div
-              key={activity.id}
-              className="bg-white rounded-xl shadow-md overflow-hidden transition-transform hover:-translate-y-1 hover:shadow-lg"
-              data-aos="fade-up">
-              <div className="h-80 relative overflow-hidden">
-                <img
-                  src={activity.image}
-                  alt={activity.title}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute top-4 right-4">
-                  <span className="bg-emerald-100 text-emerald-800 text-xs font-semibold px-3 py-1 rounded-full">
-                    {activity.category}
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-xl font-bold text-slate-800">
-                    {activity.title}
-                  </h3>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => openEditModal(activity)}
-                      className="text-blue-500 hover:text-blue-700">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                        />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => deleteActivity(activity.id)}
-                      className="text-red-500 hover:text-red-700">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                    </button>
+        {loading ? (
+          <div className="flex justify-center items-center py-16">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-600"></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredActivities.map((activity) => (
+              <div
+                key={activity._id}
+                className="bg-white rounded-xl shadow-md overflow-hidden transition-transform hover:-translate-y-1 hover:shadow-lg"
+                data-aos="fade-up">
+                <div className="h-80 relative overflow-hidden">
+                  <img
+                    src={
+                      activity.image.startsWith("http")
+                        ? activity.image
+                        : `http://localhost:5005/${activity.image}`
+                    }
+                    alt={activity.title}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-4 right-4">
+                    <span className="bg-emerald-100 text-emerald-800 text-xs font-semibold px-3 py-1 rounded-full">
+                      {activity.category}
+                    </span>
                   </div>
                 </div>
 
-                <p className="text-slate-600 mb-4 line-clamp-3">
-                  {activity.description}
-                </p>
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <h3 className="text-xl font-bold text-slate-800">
+                      {activity.title}
+                    </h3>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => openEditModal(activity)}
+                        className="text-blue-500 hover:text-blue-700">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-5 w-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                          />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => deleteActivity(activity._id)}
+                        className="text-red-500 hover:text-red-700">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-5 w-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
 
-                <div className="flex items-center text-slate-500 text-sm">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 ml-1"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
-                  {formatDate(activity.date)}
+                  <p className="text-slate-600 mb-4 line-clamp-3">
+                    {activity.description}
+                  </p>
+
+                  <div className="flex items-center text-slate-500 text-sm">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 ml-1"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
+                    </svg>
+                    {formatDate(activity.date)}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
-        {filteredActivities.length === 0 && (
+        {!loading && filteredActivities.length === 0 && (
           <div className="text-center py-16">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -338,6 +376,15 @@ const Activities = () => {
             <p className="text-slate-500 mt-2">
               يمكنك إضافة نشاط جديد من خلال الزر أعلاه
             </p>
+          </div>
+        )}
+
+        {error && (
+          <div
+            className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mt-4"
+            role="alert">
+            <strong className="font-bold">خطأ! </strong>
+            <span className="block sm:inline">{error}</span>
           </div>
         )}
 
@@ -461,7 +508,12 @@ const Activities = () => {
                   <div className="mt-2 h-48 overflow-hidden rounded-lg bg-gray-100 flex items-center justify-center">
                     {imagePreview || currentActivity.image ? (
                       <img
-                        src={imagePreview || currentActivity.image}
+                        src={
+                          imagePreview ||
+                          (currentActivity.image.startsWith("http")
+                            ? currentActivity.image
+                            : `http://localhost:5005/${currentActivity.image}`)
+                        }
                         alt="معاينة الصورة"
                         className="w-full h-full object-cover"
                       />
