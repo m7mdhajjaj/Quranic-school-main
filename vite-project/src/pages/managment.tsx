@@ -884,6 +884,32 @@ const Managment: React.FC = () => {
                                 title="حذف">
                                 <FaTrash size={18} />
                               </button>
+                              <button
+                                onClick={() =>
+                                  navigate("/تواصل-مع-المعلم", {
+                                    state: {
+                                      studentId: student._id || student.id,
+                                      studentName: `${student.firstName} ${student.lastName}`,
+                                      studentGroup: student.group,
+                                    },
+                                  })
+                                }
+                                className="text-blue-600 hover:text-blue-800"
+                                title="محادثة الطالب">
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-5 w-5"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor">
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                                  />
+                                </svg>
+                              </button>
                             </div>
                           </td>
                         </tr>
