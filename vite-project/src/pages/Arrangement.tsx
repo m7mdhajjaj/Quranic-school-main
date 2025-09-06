@@ -1,102 +1,186 @@
 import { useEffect, useState } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
+import axios from "axios";
 
-interface Student {
-  id: number;
-  name: string;
-  grade?: string; // Made optional
+// Backend API URL
+const API_URL = "http://localhost:5005/api";
+
+// Interface for students from the database
+interface DbStudent {
+  _id: string;
+  firstName: string;
+  fatherName: string;
+  lastName: string;
+  group: string;
+  // Other student fields can be added as needed
+}
+
+// Interface for period selector
+interface Period {
+  month: number;
+  year: number;
+  label?: string;
+}
+
+// Interface for ranking student
+interface RankingStudent {
+  studentId: {
+    _id: string;
+    firstName: string;
+    fatherName: string;
+    lastName: string;
+    group: string;
+  };
   score: number;
-  image: string;
-  quranParts?: number; // Made optional
+  rank?: number;
+}
+
+// Interface for rankings
+interface Ranking {
+  _id: string;
+  month: number;
+  year: number;
+  topThree: RankingStudent[];
+  topTen: RankingStudent[];
+}
+
+// Interface for new ranking entry
+interface NewRankingEntry {
+  _id: string;
+  name: string;
+  score: number;
 }
 
 const Arrangement = () => {
+  // State for all students from database
+  const [allDbStudents, setAllDbStudents] = useState<DbStudent[]>([]);
+
+  // State for current ranking
+  const [currentRanking, setCurrentRanking] = useState<Ranking | null>(null);
+
+  // State for available periods
+  const [availablePeriods, setAvailablePeriods] = useState<Period[]>([]);
+
+  // State for selected period
+  const [selectedPeriod, setSelectedPeriod] = useState<Period | null>(null);
+
+  // State for loading
+  const [loading, setLoading] = useState<boolean>(true);
+
+  // State for error messages
+  const [error, setError] = useState<string | null>(null);
+
   // State for modal
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+
   // State for modal type (top3 or general)
   const [modalType, setModalType] = useState<"top3" | "general">("general");
-  
-  // State for new student form
-  const [newStudent, setNewStudent] = useState<Omit<Student, "id">>({
+
+  // State for student selection
+  const [selectedStudent, setSelectedStudent] = useState<string>("");
+
+  // State for new ranking entry
+  const [newRankingEntry, setNewRankingEntry] = useState<NewRankingEntry>({
+    _id: "",
     name: "",
     score: 0,
-    image: "https://placehold.co/200x200/e9f5f2/1f6357?text=طالب",
   });
-  
-  // بيانات وهمية للطلاب المتفوقين
-  const [topStudents, setTopStudents] = useState<Student[]>([
-    {
-      id: 2,
-      name: "أحمد محمد",
-      grade: "المستوى المتوسط",
-      score: 96,
-      image: "https://placehold.co/200x200/e9f5f2/1f6357?text=أحمد",
-      quranParts: 25,
-    },
-    {
-      id: 1,
-      name: "عبدالله خالد",
-      grade: "المستوى المتقدم",
-      score: 98,
-      image: "https://placehold.co/200x200/e9f5f2/1f6357?text=عبدالله",
-      quranParts: 30,
-    },
-    {
-      id: 3,
-      name: "محمد عمر",
-      grade: "المستوى المبتدئ",
-      score: 94,
-      image: "https://placehold.co/200x200/e9f5f2/1f6357?text=محمد",
-      quranParts: 20,
-    },
-  ]);
-  
-  // All students list (includes top students plus others)
-  const [allStudents, setAllStudents] = useState<Student[]>([
-    ...topStudents,
-    {
-      id: 4,
-      name: "يوسف سامي",
-      grade: "المستوى المتوسط",
-      score: 91,
-      image: "https://placehold.co/200x200/e9f5f2/1f6357?text=يوسف",
-      quranParts: 18,
-    },
-    {
-      id: 5,
-      name: "إبراهيم علي",
-      grade: "المستوى المبتدئ",
-      score: 89,
-      image: "https://placehold.co/200x200/e9f5f2/1f6357?text=إبراهيم",
-      quranParts: 15,
-    },
-    {
-      id: 6,
-      name: "عمر أحمد",
-      grade: "المستوى المتقدم",
-      score: 88,
-      image: "https://placehold.co/200x200/e9f5f2/1f6357?text=عمر",
-      quranParts: 22,
-    },
-    {
-      id: 7,
-      name: "زياد محمود",
-      grade: "المستوى المتوسط",
-      score: 86,
-      image: "https://placehold.co/200x200/e9f5f2/1f6357?text=زياد",
-      quranParts: 17,
-    },
-    {
-      id: 8,
-      name: "خالد سعيد",
-      grade: "المستوى المبتدئ",
-      score: 85,
-      image: "https://placehold.co/200x200/e9f5f2/1f6357?text=خالد",
-      quranParts: 14,
-    }
-  ].sort((a, b) => b.score - a.score));
 
+  // Fetch all students, available periods, and current ranking
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Fetch all students
+        const studentsResponse = await axios.get(`${API_URL}/students`);
+        setAllDbStudents(studentsResponse.data);
+
+        // Fetch available periods
+        const periodsResponse = await axios.get(`${API_URL}/rankings/periods`);
+
+        if (
+          periodsResponse.data.success &&
+          periodsResponse.data.data.length > 0
+        ) {
+          setAvailablePeriods(periodsResponse.data.data);
+
+          // Set current date as default selected period
+          const today = new Date();
+          const currentMonth = today.getMonth() + 1;
+          const currentYear = today.getFullYear();
+
+          // Find current month/year in available periods
+          const currentPeriod = periodsResponse.data.data.find(
+            (p: Period) => p.month === currentMonth && p.year === currentYear
+          );
+
+          // If current month not found, use the most recent one
+          setSelectedPeriod(currentPeriod || periodsResponse.data.data[0]);
+
+          // Fetch current ranking
+          const rankingResponse = await axios.get(
+            `${API_URL}/rankings/current`
+          );
+          if (rankingResponse.data.success) {
+            setCurrentRanking(rankingResponse.data.data);
+          }
+        } else {
+          // No periods available, use current date
+          const today = new Date();
+          const currentMonth = today.getMonth() + 1;
+          const currentYear = today.getFullYear();
+
+          setSelectedPeriod({
+            month: currentMonth,
+            year: currentYear,
+            label: `${currentMonth}/${currentYear}`,
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setError("حدث خطأ أثناء جلب البيانات");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Fetch ranking when selected period changes
+  useEffect(() => {
+    const fetchRanking = async () => {
+      if (!selectedPeriod) return;
+
+      setLoading(true);
+      try {
+        const response = await axios.get(
+          `${API_URL}/rankings/${selectedPeriod.month}/${selectedPeriod.year}`
+        );
+
+        if (response.data.success) {
+          setCurrentRanking(response.data.data);
+          setError(null);
+        } else {
+          setCurrentRanking(null);
+        }
+      } catch (error) {
+        console.error("Error fetching ranking:", error);
+        setCurrentRanking(null);
+        // Don't show error if 404 (no ranking for this period)
+        if (axios.isAxiosError(error) && error.response?.status !== 404) {
+          setError("حدث خطأ أثناء جلب التصنيف");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRanking();
+  }, [selectedPeriod]);
+
+  // Initialize AOS
   useEffect(() => {
     AOS.init({
       duration: 1000,
@@ -105,64 +189,264 @@ const Arrangement = () => {
       easing: "ease-in-out",
     });
   }, []);
-    // Function to open the modal for adding a student
+
+  // Function to handle period change
+  const handlePeriodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    if (!value) return;
+
+    const [month, year] = value.split("/");
+    setSelectedPeriod({
+      month: parseInt(month),
+      year: parseInt(year),
+      label: value,
+    });
+  };
+
+  // Function to open the modal for adding a student
   const openAddModal = (type: "top3" | "general" = "general") => {
     setModalType(type);
+    setSelectedStudent("");
+    setNewRankingEntry({
+      _id: "",
+      name: "",
+      score: 0,
+    });
     setIsModalOpen(true);
   };
-  
+
   // Function to close the modal
   const closeModal = () => {
     setIsModalOpen(false);
-    setNewStudent({
+    setSelectedStudent("");
+    setNewRankingEntry({
+      _id: "",
       name: "",
       score: 0,
-      image: "https://placehold.co/200x200/e9f5f2/1f6357?text=طالب"
     });
   };
-  
-  // Function to handle input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setNewStudent(prev => ({
+
+  // Function to handle student selection
+  const handleStudentSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const studentId = e.target.value;
+    setSelectedStudent(studentId);
+
+    if (studentId) {
+      const student = allDbStudents.find((s) => s._id === studentId);
+      if (student) {
+        setNewRankingEntry({
+          _id: student._id,
+          name: `${student.firstName} ${student.fatherName} ${student.lastName}`,
+          score: 0,
+        });
+      }
+    } else {
+      setNewRankingEntry({
+        _id: "",
+        name: "",
+        score: 0,
+      });
+    }
+  };
+
+  // Function to handle score input change
+  const handleScoreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const score = parseInt(e.target.value) || 0;
+    setNewRankingEntry((prev) => ({
       ...prev,
-      [name]: name === "score" ? Number(value) : value
+      score: score,
     }));
   };
-    // Function to add a new student
-  const addNewStudent = () => {
-    if (!newStudent.name) return; // Only name is required now
-    
-    // Get next ID
-    const nextId = Math.max(...[...topStudents, ...allStudents].map(s => s.id)) + 1;
-    const studentToAdd = { id: nextId, ...newStudent };
-    
-    if (modalType === "top3") {
-      // For top3, replace the lowest score in top3 and resort
-      const updatedTopStudents = [...topStudents];
-      const lowestScoreIndex = updatedTopStudents
-        .map((s, index) => ({ score: s.score, index }))
-        .sort((a, b) => a.score - b.score)[0].index;
-        
-      updatedTopStudents[lowestScoreIndex] = studentToAdd;
-      setTopStudents(updatedTopStudents.sort((a, b) => b.score - a.score));
-      
-      // Also add to allStudents array for top10 table
-      setAllStudents(prev => [...prev, studentToAdd].sort((a, b) => b.score - a.score));
-    } else {
-      // For general case, just add to allStudents array
-      setAllStudents(prev => [...prev, studentToAdd].sort((a, b) => b.score - a.score));
+
+  // Function to add/update ranking
+  const saveRanking = async () => {
+    if (!selectedPeriod || !newRankingEntry._id || newRankingEntry.score <= 0) {
+      alert("يرجى اختيار طالب وتحديد درجة له");
+      return;
     }
-    
-    closeModal();
+
+    setLoading(true);
+    try {
+      // Get current ranking or create a new one
+      let ranking = currentRanking;
+      let topThree: any[] =
+        ranking?.topThree.map((item) => ({
+          studentId: item.studentId._id,
+          score: item.score,
+        })) || [];
+
+      let topTen: any[] =
+        ranking?.topTen.map((item) => ({
+          studentId: item.studentId._id,
+          score: item.score,
+        })) || [];
+
+      // Add new entry to appropriate list
+      if (modalType === "top3") {
+        // If we already have 3 entries, replace the lowest score
+        if (topThree.length >= 3) {
+          // Sort by score ascending and remove the lowest
+          topThree.sort((a, b) => a.score - b.score);
+          if (topThree[0].score < newRankingEntry.score) {
+            topThree[0] = {
+              studentId: newRankingEntry._id,
+              score: newRankingEntry.score,
+            };
+          }
+        } else {
+          // Add to topThree
+          topThree.push({
+            studentId: newRankingEntry._id,
+            score: newRankingEntry.score,
+          });
+        }
+
+        // Also add to topTen if not already there
+        if (!topTen.some((item) => item.studentId === newRankingEntry._id)) {
+          topTen.push({
+            studentId: newRankingEntry._id,
+            score: newRankingEntry.score,
+          });
+        }
+
+        // Sort both arrays by score descending
+        topThree.sort((a, b) => b.score - a.score);
+        topTen.sort((a, b) => b.score - a.score);
+
+        // Keep only top 10 in topTen
+        topTen = topTen.slice(0, 10);
+      } else {
+        // Add to topTen
+        if (topTen.some((item) => item.studentId === newRankingEntry._id)) {
+          // Update existing entry
+          topTen = topTen.map((item) =>
+            item.studentId === newRankingEntry._id
+              ? { ...item, score: newRankingEntry.score }
+              : item
+          );
+        } else {
+          // Add new entry
+          topTen.push({
+            studentId: newRankingEntry._id,
+            score: newRankingEntry.score,
+          });
+        }
+
+        // Sort by score descending
+        topTen.sort((a, b) => b.score - a.score);
+
+        // Keep only top 10
+        topTen = topTen.slice(0, 10);
+
+        // Check if this student should be in top3
+        if (
+          topThree.length < 3 ||
+          topThree.some((item) => item.studentId === newRankingEntry._id) ||
+          (topThree.length > 0 &&
+            topThree[topThree.length - 1].score < newRankingEntry.score)
+        ) {
+          // Remove this student from top3 if already exists
+          topThree = topThree.filter(
+            (item) => item.studentId !== newRankingEntry._id
+          );
+
+          // Add to top3
+          topThree.push({
+            studentId: newRankingEntry._id,
+            score: newRankingEntry.score,
+          });
+
+          // Sort by score descending
+          topThree.sort((a, b) => b.score - a.score);
+
+          // Keep only top 3
+          topThree = topThree.slice(0, 3);
+        }
+      }
+
+      // Save ranking
+      const response = await axios.post(`${API_URL}/rankings`, {
+        month: selectedPeriod.month,
+        year: selectedPeriod.year,
+        topThree,
+        topTen,
+      });
+
+      if (response.data.success) {
+        // Refresh ranking data
+        const refreshResponse = await axios.get(
+          `${API_URL}/rankings/${selectedPeriod.month}/${selectedPeriod.year}`
+        );
+
+        if (refreshResponse.data.success) {
+          setCurrentRanking(refreshResponse.data.data);
+          setError(null);
+
+          // Refresh available periods
+          const periodsResponse = await axios.get(
+            `${API_URL}/rankings/periods`
+          );
+          if (periodsResponse.data.success) {
+            setAvailablePeriods(periodsResponse.data.data);
+          }
+        }
+
+        // Close modal
+        closeModal();
+      }
+    } catch (error) {
+      console.error("Error saving ranking:", error);
+      setError("حدث خطأ أثناء حفظ التصنيف");
+    } finally {
+      setLoading(false);
+    }
   };
-  
-  // Order top three students for podium display
+
+  // Get top three students for the podium
+  const topThreeStudents = currentRanking?.topThree || [];
+
+  // Order the top three students for display
   const orderedTopThree = [
-    topStudents.find(s => s.id === 2), 
-    topStudents.find(s => s.id === 1), 
-    topStudents.find(s => s.id === 3)
-  ];  
+    topThreeStudents[1], // Second place (left)
+    topThreeStudents[0], // First place (center)
+    topThreeStudents[2], // Third place (right)
+  ];
+
+  // Get top ten students for the table
+  const topTenStudents = currentRanking?.topTen || [];
+
+  // Helper function to get student full name
+  const getFullName = (student: RankingStudent | undefined) => {
+    if (!student || !student.studentId) return "طالب";
+    return `${student.studentId.firstName} ${student.studentId.fatherName} ${student.studentId.lastName}`;
+  };
+
+  // Helper function to get placeholder image with name
+  const getPlaceholderImage = (name: string) => {
+    return `https://placehold.co/200x200/e9f5f2/1f6357?text=${
+      name.split(" ")[0] || "طالب"
+    }`;
+  };
+
+  // Convert month number to Arabic name
+  const getMonthName = (month: number) => {
+    const months = [
+      "يناير",
+      "فبراير",
+      "مارس",
+      "إبريل",
+      "مايو",
+      "يونيو",
+      "يوليو",
+      "أغسطس",
+      "سبتمبر",
+      "أكتوبر",
+      "نوفمبر",
+      "ديسمبر",
+    ];
+    return months[month - 1] || "";
+  };
+
   return (
     <div
       className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 py-12 px-4"
@@ -176,208 +460,323 @@ const Arrangement = () => {
           <p className="text-slate-600 text-lg max-w-3xl mx-auto">
             يعرض هذا الترتيب الطلاب المتفوقين في حفظ القرآن الكريم وتجويده، حيث
             نكرم المتميزين في الحفظ والتلاوة والأداء
-          </p>          <div className="flex justify-center gap-4 mt-8">
+          </p>
+
+          <div className="flex flex-wrap justify-center items-center gap-4 mt-8">
+            {/* Month/Year selector */}
+            <div className="relative">
+              <select
+                value={
+                  selectedPeriod
+                    ? `${selectedPeriod.month}/${selectedPeriod.year}`
+                    : ""
+                }
+                onChange={handlePeriodChange}
+                className="w-40 px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <option value="">اختر الشهر/السنة</option>
+                {availablePeriods.map((period) => (
+                  <option
+                    key={`${period.month}-${period.year}`}
+                    value={`${period.month}/${period.year}`}>
+                    {getMonthName(period.month)} {period.year}
+                  </option>
+                ))}
+                {/* Add current month if not already in list */}
+                {selectedPeriod &&
+                  !availablePeriods.some(
+                    (p) =>
+                      p.month === selectedPeriod.month &&
+                      p.year === selectedPeriod.year
+                  ) && (
+                    <option
+                      value={`${selectedPeriod.month}/${selectedPeriod.year}`}>
+                      {getMonthName(selectedPeriod.month)} {selectedPeriod.year}
+                    </option>
+                  )}
+              </select>
+            </div>
+
             <button
               onClick={() => openAddModal("top3")}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition shadow-md flex items-center"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition shadow-md flex items-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 mr-2"
+                viewBox="0 0 20 20"
+                fill="currentColor">
+                <path
+                  fillRule="evenodd"
+                  d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                  clipRule="evenodd"
+                />
               </svg>
               إضافة متميز للمراكز الأولى
             </button>
             <button
               onClick={() => openAddModal("general")}
-              className="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition shadow-md flex items-center"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+              className="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition shadow-md flex items-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 mr-2"
+                viewBox="0 0 20 20"
+                fill="currentColor">
+                <path
+                  fillRule="evenodd"
+                  d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                  clipRule="evenodd"
+                />
               </svg>
               إضافة طالب للقائمة
             </button>
           </div>
           <br />
-        </div>
-        
-        {/* Olympic-style podium for top 3 */}
-        <div className="mb-20 relative" data-aos="fade-up">
-          <div className="flex justify-center items-end h-96 mb-8">
-            <div
-              className="w-1/4 flex flex-col items-center mx-2"
-              data-aos="fade-up"
-              data-aos-delay="200">
-              <div className="relative">
-                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-[#a0a0a0] mb-4">
-                  <img
-                    src={orderedTopThree[0]?.image}
-                    alt={orderedTopThree[0]?.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="absolute -top-3 -right-3 w-10 h-10 bg-[#a0a0a0] rounded-full flex items-center justify-center text-white font-bold shadow-lg">
-                  2
-                </div>
-              </div>
-              <div className="text-center">
-                <h3 className="font-bold text-lg">
-                  {orderedTopThree[0]?.name}
-                </h3>
-                <p className="text-emerald-700">
-                  {orderedTopThree[0]?.score} درجة
-                </p>
-              </div>
-              <div className="w-full bg-[#a0a0a0] h-40 rounded-t-lg mt-4 flex items-center justify-center">
-                <span className="text-3xl font-bold text-white">2</span>
-              </div>
-            </div>
 
-            <div
-              className="w-1/3 flex flex-col items-center mx-2 -mt-10"
-              data-aos="fade-up"
-              data-aos-delay="100">
-              <div className="relative">
-                <div className="w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-4 border-[#FFD700] mb-4">
-                  <img
-                    src={orderedTopThree[1]?.image}
-                    alt={orderedTopThree[1]?.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="absolute -top-5 -right-3 w-12 h-12 bg-[#FFD700] rounded-full flex items-center justify-center text-white font-bold shadow-lg text-xl">
-                  1
-                </div>
-                <div className="absolute top-0 left-0 right-0 -mt-8 flex justify-center">
-                  <svg
-                    className="w-10 h-10 text-[#FFD700]"
-                    fill="currentColor"
-                    viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                </div>
-              </div>
-              <div className="text-center">
-                <h3 className="font-bold text-xl">
-                  {orderedTopThree[1]?.name}
-                </h3>
-                <p className="text-emerald-700 font-bold">
-                  {orderedTopThree[1]?.score} درجة
-                </p>
-              </div>
-              <div className="w-full bg-[#FFD700] h-52 rounded-t-lg mt-4 flex items-center justify-center">
-                <span className="text-4xl font-bold text-white">1</span>
-              </div>
-            </div>
-
-            <div
-              className="w-1/4 flex flex-col items-center mx-2"
-              data-aos="fade-up"
-              data-aos-delay="300">
-              <div className="relative">
-                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-[#CD7F32] mb-4">
-                  <img
-                    src={orderedTopThree[2]?.image}
-                    alt={orderedTopThree[2]?.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="absolute -top-3 -right-3 w-10 h-10 bg-[#CD7F32] rounded-full flex items-center justify-center text-white font-bold shadow-lg">
-                  3
-                </div>
-              </div>
-              <div className="text-center">
-                <h3 className="font-bold text-lg">
-                  {orderedTopThree[2]?.name}
-                </h3>
-                <p className="text-emerald-700">
-                  {orderedTopThree[2]?.score} درجة
-                </p>
-              </div>
-              <div className="w-full bg-[#CD7F32] h-32 rounded-t-lg mt-4 flex items-center justify-center">
-                <span className="text-3xl font-bold text-white">3</span>
-              </div>
-            </div>
-          </div>
-          <div className="h-6 bg-gradient-to-r from-emerald-600 to-teal-500 rounded-lg shadow-lg"></div>
-        </div>
-        
-        {/* Top 10 students table */}
-        <div
-          className="bg-white rounded-xl shadow-lg overflow-hidden mb-8"
-          data-aos="fade-up"
-          data-aos-delay="400">
-          <div className="bg-gradient-to-r from-emerald-600 to-teal-500 py-4 px-6">
-            <h2 className="text-xl font-bold text-white">
-              أفضل 10 طلاب
+          {/* Show current month/year title */}
+          {selectedPeriod && (
+            <h2 className="text-xl font-semibold mt-4">
+              تصنيف {getMonthName(selectedPeriod.month)} {selectedPeriod.year}
             </h2>
-          </div><div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-100">
-                  <tr className="text-right">
-                    <th className="py-3 px-6 text-sm font-medium text-gray-600">
-                      الترتيب
-                    </th>
-                    <th className="py-3 px-6 text-sm font-medium text-gray-600">
-                      الطالب
-                    </th>
-                    <th className="py-3 px-6 text-sm font-medium text-gray-600">
-                      الدرجة
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {allStudents.slice(0, 10).map((student, index) => (
-                    <tr
-                      key={student.id}
-                      className={`hover:bg-gray-50 ${
-                        index < 3 ? "bg-emerald-50/50" : ""
-                      }`}>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center">
-                          {index === 0 && (
-                            <span className="font-bold flex items-center justify-center w-8 h-8 rounded-full bg-[#FFD700] text-white mr-2">
-                              1
-                            </span>
-                          )}
-                          {index === 1 && (
-                            <span className="font-bold flex items-center justify-center w-8 h-8 rounded-full bg-[#a0a0a0] text-white mr-2">
-                              2
-                            </span>
-                          )}
-                          {index === 2 && (
-                            <span className="font-bold flex items-center justify-center w-8 h-8 rounded-full bg-[#CD7F32] text-white mr-2">
-                              3
-                            </span>
-                          )}
-                          {index > 2 && (
-                            <span className="font-bold flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 text-gray-700 mr-2">
-                              {index + 1}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center">
-                          <img
-                            src={student.image}
-                            alt={student.name}
-                            className="w-10 h-10 rounded-full object-cover mr-3"
-                          />
-                          <span className="font-medium">{student.name}</span>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6 font-semibold">
-                        <span
-                          className={`${index < 3 ? "text-emerald-700" : ""}`}>
-                          {student.score} درجة
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>        {/* Removed the "Your Rank" section as requested */}
+          )}
+        </div>
 
+        {/* Loading indicator */}
+        {loading && (
+          <div className="flex justify-center items-center py-16">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-emerald-600"></div>
+          </div>
+        )}
+
+        {/* Error message */}
+        {!loading && error && (
+          <div
+            className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-8"
+            role="alert">
+            <span className="block sm:inline">{error}</span>
+          </div>
+        )}
+
+        {/* Main content when data is loaded */}
+        {!loading && !error && (
+          <>
+            {/* Olympic-style podium for top 3 */}
+            <div className="mb-20 relative" data-aos="fade-up">
+              <div className="flex justify-center items-end h-96 mb-8">
+                {/* Second place - left */}
+                <div
+                  className="w-1/4 flex flex-col items-center mx-2"
+                  data-aos="fade-up"
+                  data-aos-delay="200">
+                  <div className="relative">
+                    <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-[#a0a0a0] mb-4">
+                      <img
+                        src={getPlaceholderImage(
+                          getFullName(orderedTopThree[0])
+                        )}
+                        alt={getFullName(orderedTopThree[0])}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="absolute -top-3 -right-3 w-10 h-10 bg-[#a0a0a0] rounded-full flex items-center justify-center text-white font-bold shadow-lg">
+                      2
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <h3 className="font-bold text-lg">
+                      {getFullName(orderedTopThree[0])}
+                    </h3>
+                    <p className="text-emerald-700">
+                      {orderedTopThree[0]?.score || 0} درجة
+                    </p>
+                  </div>
+                  <div className="w-full bg-[#a0a0a0] h-40 rounded-t-lg mt-4 flex items-center justify-center">
+                    <span className="text-3xl font-bold text-white">2</span>
+                  </div>
+                </div>
+
+                {/* First place - center */}
+                <div
+                  className="w-1/3 flex flex-col items-center mx-2 -mt-10"
+                  data-aos="fade-up"
+                  data-aos-delay="100">
+                  <div className="relative">
+                    <div className="w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-4 border-[#FFD700] mb-4">
+                      <img
+                        src={getPlaceholderImage(
+                          getFullName(orderedTopThree[1])
+                        )}
+                        alt={getFullName(orderedTopThree[1])}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="absolute -top-5 -right-3 w-12 h-12 bg-[#FFD700] rounded-full flex items-center justify-center text-white font-bold shadow-lg text-xl">
+                      1
+                    </div>
+                    <div className="absolute top-0 left-0 right-0 -mt-8 flex justify-center">
+                      <svg
+                        className="w-10 h-10 text-[#FFD700]"
+                        fill="currentColor"
+                        viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <h3 className="font-bold text-xl">
+                      {getFullName(orderedTopThree[1])}
+                    </h3>
+                    <p className="text-emerald-700 font-bold">
+                      {orderedTopThree[1]?.score || 0} درجة
+                    </p>
+                  </div>
+                  <div className="w-full bg-[#FFD700] h-52 rounded-t-lg mt-4 flex items-center justify-center">
+                    <span className="text-4xl font-bold text-white">1</span>
+                  </div>
+                </div>
+
+                {/* Third place - right */}
+                <div
+                  className="w-1/4 flex flex-col items-center mx-2"
+                  data-aos="fade-up"
+                  data-aos-delay="300">
+                  <div className="relative">
+                    <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-[#CD7F32] mb-4">
+                      <img
+                        src={getPlaceholderImage(
+                          getFullName(orderedTopThree[2])
+                        )}
+                        alt={getFullName(orderedTopThree[2])}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="absolute -top-3 -right-3 w-10 h-10 bg-[#CD7F32] rounded-full flex items-center justify-center text-white font-bold shadow-lg">
+                      3
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <h3 className="font-bold text-lg">
+                      {getFullName(orderedTopThree[2])}
+                    </h3>
+                    <p className="text-emerald-700">
+                      {orderedTopThree[2]?.score || 0} درجة
+                    </p>
+                  </div>
+                  <div className="w-full bg-[#CD7F32] h-32 rounded-t-lg mt-4 flex items-center justify-center">
+                    <span className="text-3xl font-bold text-white">3</span>
+                  </div>
+                </div>
+              </div>
+              <div className="h-6 bg-gradient-to-r from-emerald-600 to-teal-500 rounded-lg shadow-lg"></div>
+            </div>
+
+            {/* Top 10 students table */}
+            <div
+              className="bg-white rounded-xl shadow-lg overflow-hidden mb-8"
+              data-aos="fade-up"
+              data-aos-delay="400">
+              <div className="bg-gradient-to-r from-emerald-600 to-teal-500 py-4 px-6">
+                <h2 className="text-xl font-bold text-white">أفضل 10 طلاب</h2>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-100">
+                    <tr className="text-right">
+                      <th className="py-3 px-6 text-sm font-medium text-gray-600">
+                        الترتيب
+                      </th>
+                      <th className="py-3 px-6 text-sm font-medium text-gray-600">
+                        الطالب
+                      </th>
+                      <th className="py-3 px-6 text-sm font-medium text-gray-600">
+                        المجموعة
+                      </th>
+                      <th className="py-3 px-6 text-sm font-medium text-gray-600">
+                        الدرجة
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {topTenStudents.map((student, index) => (
+                      <tr
+                        key={student.studentId._id}
+                        className={`hover:bg-gray-50 ${
+                          index < 3 ? "bg-emerald-50/50" : ""
+                        }`}>
+                        <td className="py-4 px-6">
+                          <div className="flex items-center">
+                            {index === 0 && (
+                              <span className="font-bold flex items-center justify-center w-8 h-8 rounded-full bg-[#FFD700] text-white mr-2">
+                                1
+                              </span>
+                            )}
+                            {index === 1 && (
+                              <span className="font-bold flex items-center justify-center w-8 h-8 rounded-full bg-[#a0a0a0] text-white mr-2">
+                                2
+                              </span>
+                            )}
+                            {index === 2 && (
+                              <span className="font-bold flex items-center justify-center w-8 h-8 rounded-full bg-[#CD7F32] text-white mr-2">
+                                3
+                              </span>
+                            )}
+                            {index > 2 && (
+                              <span className="font-bold flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 text-gray-700 mr-2">
+                                {index + 1}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-4 px-6">
+                          <div className="flex items-center">
+                            <img
+                              src={getPlaceholderImage(getFullName(student))}
+                              alt={getFullName(student)}
+                              className="w-10 h-10 rounded-full object-cover mr-3"
+                            />
+                            <span className="font-medium">
+                              {getFullName(student)}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-4 px-6 text-gray-700">
+                          {student.studentId.group}
+                        </td>
+                        <td className="py-4 px-6 font-semibold">
+                          <span
+                            className={`${
+                              index < 3 ? "text-emerald-700" : ""
+                            }`}>
+                            {student.score} درجة
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+
+                    {/* Show empty rows if less than 10 students */}
+                    {topTenStudents.length < 10 &&
+                      Array(10 - topTenStudents.length)
+                        .fill(0)
+                        .map((_, index) => (
+                          <tr key={`empty-${index}`}>
+                            <td className="py-4 px-6">
+                              <div className="flex items-center">
+                                <span className="font-bold flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 text-gray-500 mr-2">
+                                  {topTenStudents.length + index + 1}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="py-4 px-6 text-gray-400">-</td>
+                            <td className="py-4 px-6 text-gray-400">-</td>
+                            <td className="py-4 px-6 text-gray-400">-</td>
+                          </tr>
+                        ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Criteria Cards */}
         <div
           className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12"
           data-aos="fade-up"
@@ -454,78 +853,101 @@ const Arrangement = () => {
           <div className="fixed inset-0 flex items-center justify-center z-50">
             <div className="bg-black opacity-50 absolute inset-0"></div>
             <div className="bg-white rounded-lg shadow-lg p-6 max-w-md mx-auto relative">
-              <button 
-                onClick={() => setIsModalOpen(false)}
-                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <button
+                onClick={closeModal}
+                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
-              </button>                <h2 className="text-xl font-bold mb-4 text-center">
-                إضافة طالب جديد إلى {modalType === "top3" ? "أفضل 3 طلاب" : "أفضل 10 طلاب"}
+              </button>
+              <h2 className="text-xl font-bold mb-4 text-center">
+                {modalType === "top3"
+                  ? "إضافة طالب للمراكز الثلاثة الأولى"
+                  : "إضافة طالب للقائمة"}
               </h2>
-              
+
               <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="name">
-                  الاسم
+                <label
+                  className="block text-gray-700 text-sm font-bold mb-2"
+                  htmlFor="student">
+                  اختر الطالب
                 </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={newStudent.name}
-                  onChange={handleInputChange}
+                <select
+                  id="student"
+                  value={selectedStudent}
+                  onChange={handleStudentSelect}
                   className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  placeholder="اسم الطالب"
-                />
+                  required>
+                  <option value="">-- اختر الطالب --</option>
+                  {allDbStudents.map((student) => (
+                    <option key={student._id} value={student._id}>
+                      {`${student.firstName} ${student.fatherName} ${student.lastName}`}
+                    </option>
+                  ))}
+                </select>
               </div>
-                {/* Grade field removed as requested */}
-              
-              <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="score">
+
+              <div className="mb-6">
+                <label
+                  className="block text-gray-700 text-sm font-bold mb-2"
+                  htmlFor="score">
                   الدرجة
                 </label>
                 <input
                   type="number"
                   id="score"
                   name="score"
-                  value={newStudent.score}
-                  onChange={handleInputChange}
+                  min="0"
+                  max="100"
+                  value={newRankingEntry.score}
+                  onChange={handleScoreChange}
                   className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  placeholder="درجة الطالب"
                 />
               </div>
-              
-              <div className="mb-6">
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="image">
-                  رابط الصورة
-                </label>
-                <input
-                  type="text"
-                  id="image"
-                  name="image"
-                  value={newStudent.image}
-                  onChange={handleInputChange}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  placeholder="رابط صورة الطالب"
-                />
-              </div>
-              
+
               <div className="flex gap-4">
                 <button
-                  onClick={addNewStudent}
+                  onClick={saveRanking}
                   className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 2a1 1 0 011 1v6h6a1 1 0 110 2h-6v6a1 1 0 11-2 0v-6H3a1 1 0 110-2h6V3a1 1 0 011-1z" clipRule="evenodd" />
+                  disabled={!selectedStudent || newRankingEntry.score <= 0}>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 mr-2"
+                    viewBox="0 0 20 20"
+                    fill="currentColor">
+                    <path
+                      fillRule="evenodd"
+                      d="M10 2a1 1 0 011 1v6h6a1 1 0 110 2h-6v6a1 1 0 11-2 0v-6H3a1 1 0 110-2h5V3a1 1 0 011-1z"
+                      clipRule="evenodd"
+                    />
                   </svg>
-                  إضافة الطالب
-                </button>                <button
+                  حفظ
+                </button>
+                <button
                   onClick={closeModal}
-                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 mr-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                   إلغاء
                 </button>
@@ -533,7 +955,8 @@ const Arrangement = () => {
             </div>
           </div>
         )}
-      </div>    </div>
+      </div>
+    </div>
   );
 };
 
