@@ -113,8 +113,8 @@ const Chat: React.FC = () => {
               // Final fallback to admin
               const admin = {
                 _id: "teacher-1001",
-                firstName: "Admin",
-                lastName: "User",
+                firstName: "محمد",
+                lastName: "حجاج",
                 group: "",
                 unread: 0,
               };
@@ -146,8 +146,8 @@ const Chat: React.FC = () => {
           } else {
             const admin = {
               _id: "teacher-1001",
-              firstName: "Admin",
-              lastName: "User",
+              firstName: "محمد",
+              lastName: "حجاج",
               group: "",
               unread: 0,
             };
