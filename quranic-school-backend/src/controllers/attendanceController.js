@@ -5,16 +5,19 @@ const Student = require("../models/Student");
 // Create or update attendance records for a specific date
 exports.createAttendance = async (req, res) => {
   try {
-    console.log('Received request to create attendance records:', JSON.stringify(req.body, null, 2));
+    console.log(
+      "Received request to create attendance records:",
+      JSON.stringify(req.body, null, 2)
+    );
     const { date, records } = req.body;
 
     if (!date) {
-      console.log('No date provided in request');
+      console.log("No date provided in request");
       return res.status(400).json({ message: "التاريخ مطلوب" });
     }
 
     if (!records || !Array.isArray(records) || records.length === 0) {
-      console.log('No valid records provided in request');
+      console.log("No valid records provided in request");
       return res.status(400).json({ message: "سجلات الحضور مطلوبة" });
     }
 
@@ -41,10 +44,12 @@ exports.createAttendance = async (req, res) => {
           $lt: new Date(formattedDate.getTime() + 24 * 60 * 60 * 1000),
         },
       });
-      
-      console.log(`Deleted ${deleteResult.deletedCount} existing records for this date`);
+
+      console.log(
+        `Deleted ${deleteResult.deletedCount} existing records for this date`
+      );
     } catch (deleteError) {
-      console.error('Error deleting existing records:', deleteError);
+      console.error("Error deleting existing records:", deleteError);
       // Continue with the process even if delete fails
     }
 
@@ -54,44 +59,53 @@ exports.createAttendance = async (req, res) => {
       date: formattedDate,
       isPresent: record.isPresent,
     }));
-    
-    console.log(`Prepared ${attendanceRecords.length} attendance records for insertion`);
-    console.log("First few records:", JSON.stringify(attendanceRecords.slice(0, 3)));
+
+    console.log(
+      `Prepared ${attendanceRecords.length} attendance records for insertion`
+    );
+    console.log(
+      "First few records:",
+      JSON.stringify(attendanceRecords.slice(0, 3))
+    );
 
     try {
       // Validate that the studentIds are valid ObjectIds
       for (const record of attendanceRecords) {
         if (!mongoose.Types.ObjectId.isValid(record.studentId)) {
           console.error(`Invalid studentId: ${record.studentId}`);
-          return res.status(400).json({ 
-            message: "معرف طالب غير صالح", 
-            details: `Invalid studentId format: ${record.studentId}` 
+          return res.status(400).json({
+            message: "معرف طالب غير صالح",
+            details: `Invalid studentId format: ${record.studentId}`,
           });
         }
       }
 
-      const insertResult = await Attendance.insertMany(attendanceRecords, { ordered: false });
-      console.log(`Successfully inserted ${insertResult.length} attendance records`);
+      const insertResult = await Attendance.insertMany(attendanceRecords, {
+        ordered: false,
+      });
+      console.log(
+        `Successfully inserted ${insertResult.length} attendance records`
+      );
       return res.status(201).json({ message: "تم حفظ سجل الحضور بنجاح" });
     } catch (insertError) {
-      console.error('Error inserting attendance records:', insertError);
+      console.error("Error inserting attendance records:", insertError);
       // If error is due to duplicate keys, consider it partially successful
       if (insertError.code === 11000) {
-        return res.status(201).json({ 
+        return res.status(201).json({
           message: "تم حفظ سجل الحضور بنجاح (مع وجود بعض السجلات المكررة)",
-          warning: "بعض السجلات كانت مكررة ولم يتم إضافتها" 
+          warning: "بعض السجلات كانت مكررة ولم يتم إضافتها",
         });
       }
-      return res.status(500).json({ 
-        message: "حدث خطأ أثناء حفظ سجل الحضور", 
-        error: insertError.message 
+      return res.status(500).json({
+        message: "حدث خطأ أثناء حفظ سجل الحضور",
+        error: insertError.message,
       });
     }
   } catch (error) {
     console.error("Error creating attendance records:", error);
-    res.status(500).json({ 
-      message: "حدث خطأ أثناء حفظ سجل الحضور", 
-      error: error.message 
+    res.status(500).json({
+      message: "حدث خطأ أثناء حفظ سجل الحضور",
+      error: error.message,
     });
   }
 };
@@ -101,18 +115,18 @@ exports.getAttendanceByDate = async (req, res) => {
   try {
     const dateParam = req.params.date;
     console.log(`Getting attendance records for date: ${dateParam}`);
-    
+
     if (!dateParam) {
-      console.log('No date parameter provided');
+      console.log("No date parameter provided");
       return res.json([]);
     }
-    
+
     // Make sure the date is valid
     let date;
     try {
       date = new Date(dateParam);
       if (isNaN(date.getTime())) {
-        console.log('Invalid date parameter');
+        console.log("Invalid date parameter");
         return res.json([]);
       }
       date.setHours(0, 0, 0, 0);
@@ -131,8 +145,10 @@ exports.getAttendanceByDate = async (req, res) => {
           $lt: nextDay,
         },
       });
-      
-      console.log(`Found ${records.length} attendance records for date: ${dateParam}`);
+
+      console.log(
+        `Found ${records.length} attendance records for date: ${dateParam}`
+      );
       return res.json(records);
     } catch (findError) {
       console.log(`Error finding attendance records: ${findError.message}`);
@@ -155,7 +171,9 @@ exports.getStudentAttendance = async (req, res) => {
     try {
       const student = await Student.findById(studentId);
       if (!student) {
-        console.log(`Student with ID ${studentId} not found, returning empty records`);
+        console.log(
+          `Student with ID ${studentId} not found, returning empty records`
+        );
         // Instead of failing, just return empty records
         return res.json([]);
       }
@@ -167,7 +185,9 @@ exports.getStudentAttendance = async (req, res) => {
     // Try to find attendance records for the student
     try {
       const records = await Attendance.find({ studentId }).sort({ date: -1 });
-      console.log(`Found ${records.length} attendance records for student ID: ${studentId}`);
+      console.log(
+        `Found ${records.length} attendance records for student ID: ${studentId}`
+      );
       return res.json(records);
     } catch (recordError) {
       console.log(`Error finding attendance records: ${recordError.message}`);

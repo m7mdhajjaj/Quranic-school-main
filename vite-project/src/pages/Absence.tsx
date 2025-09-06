@@ -75,8 +75,18 @@ const Absence = () => {
 
   // Arabic month names for display
   const arabicMonths = [
-    "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
-    "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
+    "يناير",
+    "فبراير",
+    "مارس",
+    "أبريل",
+    "مايو",
+    "يونيو",
+    "يوليو",
+    "أغسطس",
+    "سبتمبر",
+    "أكتوبر",
+    "نوفمبر",
+    "ديسمبر",
   ];
 
   // Fetch user data and determine whether to show teacher or student view
@@ -139,7 +149,7 @@ const Absence = () => {
         setError("لم يتم العثور على بيانات الطلاب");
         return;
       }
-      
+
       console.log(`Got ${studentsResponse.data.length} students from API`);
 
       // Format students for attendance UI
@@ -197,14 +207,20 @@ const Absence = () => {
   const fetchStudentAbsenceStats = async (studentId: string) => {
     try {
       console.log(`Fetching absence statistics for student ID: ${studentId}`);
-      
+
       // Fetch attendance records for the student
-      const response = await axios.get(`${API_URL}/attendance/student/${studentId}`);
-      
+      const response = await axios.get(
+        `${API_URL}/attendance/student/${studentId}`
+      );
+
       console.log(`Got response for student ${studentId}:`, response.data);
 
       // Process the data for display
-      if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+      if (
+        response.data &&
+        Array.isArray(response.data) &&
+        response.data.length > 0
+      ) {
         // Group and summarize attendance by month
         const groupedByMonth: {
           [key: string]: { absences: number; total: number };
@@ -218,7 +234,7 @@ const Absence = () => {
               console.log(`Invalid date in record: ${record.date}`);
               return; // Skip this record
             }
-            
+
             const recordMonth = recordDate.getMonth();
             const recordYear = recordDate.getFullYear();
 
@@ -273,13 +289,15 @@ const Absence = () => {
         });
 
         if (processedStats.length > 0) {
-          console.log(`Processed ${processedStats.length} months of attendance data`);
+          console.log(
+            `Processed ${processedStats.length} months of attendance data`
+          );
           setMonthlyStats(processedStats);
           setError(null);
           return;
         }
       }
-      
+
       // No data or empty data, generate sample data
       generateSampleData();
     } catch (err) {
@@ -311,7 +329,7 @@ const Absence = () => {
         rate,
       });
     }
-    
+
     setMonthlyStats(tempData);
     setError(null);
   };
@@ -344,10 +362,12 @@ const Absence = () => {
   const handleSave = async () => {
     try {
       console.log("Starting to save attendance records...");
-      
+
       // Create attendance records for each student
       const attendanceRecords = students.map((student) => {
-        console.log(`Creating attendance record for student: ${student.name}, ID: ${student._id}`);
+        console.log(
+          `Creating attendance record for student: ${student.name}, ID: ${student._id}`
+        );
         return {
           studentId: student._id,
           date: date,
@@ -355,7 +375,9 @@ const Absence = () => {
         };
       });
 
-      console.log(`Prepared ${attendanceRecords.length} attendance records to save`);
+      console.log(
+        `Prepared ${attendanceRecords.length} attendance records to save`
+      );
 
       // Send the attendance records to the backend
       const response = await axios.post(`${API_URL}/attendance`, {
@@ -372,7 +394,9 @@ const Absence = () => {
       // Show a more specific error message based on the error type
       if (axios.isAxiosError(err)) {
         if (err.response?.status === 404) {
-          alert("واجهة برمجة التطبيق للغياب غير متوفرة حاليًا. سيتم دعمها قريبًا.");
+          alert(
+            "واجهة برمجة التطبيق للغياب غير متوفرة حاليًا. سيتم دعمها قريبًا."
+          );
         } else if (err.response?.data?.message) {
           alert(`خطأ: ${err.response.data.message}`);
         } else if (err.message === "Network Error") {

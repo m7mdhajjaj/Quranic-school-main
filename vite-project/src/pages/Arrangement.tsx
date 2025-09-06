@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 // Backend API URL
 const API_URL = "http://localhost:5005/api";
@@ -52,7 +53,23 @@ interface NewRankingEntry {
   score: number;
 }
 
+// Interface for User
+interface User {
+  _id: string;
+  firstName: string;
+  lastName?: string;
+  email?: string;
+  role: string;
+  groups?: string[];
+}
+
 const Arrangement = () => {
+  const navigate = useNavigate();
+
+  // State for user role
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isTeacherOrAdmin, setIsTeacherOrAdmin] = useState<boolean>(false);
+
   // State for all students from database
   const [allDbStudents, setAllDbStudents] = useState<DbStudent[]>([]);
 
@@ -89,6 +106,27 @@ const Arrangement = () => {
     score: 0,
   }); // Fetch all students, available periods, and current ranking
   useEffect(() => {
+    // Check user authentication status
+    const userJson = localStorage.getItem("user");
+    if (userJson) {
+      try {
+        const userData = JSON.parse(userJson) as User;
+        setCurrentUser(userData);
+
+        // Check if the user is a teacher or admin
+        if (userData.role === "teacher" || userData.role === "admin") {
+          setIsTeacherOrAdmin(true);
+        } else {
+          setIsTeacherOrAdmin(false);
+        }
+      } catch (err) {
+        console.error("Error parsing user data:", err);
+      }
+    } else {
+      // Uncomment if you want to redirect unauthenticated users
+      // navigate("/login");
+    }
+
     const fetchData = async () => {
       setLoading(true);
       try {
@@ -505,38 +543,42 @@ const Arrangement = () => {
               </select>
             </div>
 
-            <button
-              onClick={() => openAddModal("top3")}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition shadow-md flex items-center">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 mr-2"
-                viewBox="0 0 20 20"
-                fill="currentColor">
-                <path
-                  fillRule="evenodd"
-                  d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              إضافة متميز للمراكز الأولى
-            </button>
-            <button
-              onClick={() => openAddModal("general")}
-              className="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition shadow-md flex items-center">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 mr-2"
-                viewBox="0 0 20 20"
-                fill="currentColor">
-                <path
-                  fillRule="evenodd"
-                  d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              إضافة طالب للقائمة
-            </button>
+            {isTeacherOrAdmin && (
+              <>
+                <button
+                  onClick={() => openAddModal("top3")}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition shadow-md flex items-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 mr-2"
+                    viewBox="0 0 20 20"
+                    fill="currentColor">
+                    <path
+                      fillRule="evenodd"
+                      d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  إضافة متميز للمراكز الأولى
+                </button>
+                <button
+                  onClick={() => openAddModal("general")}
+                  className="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition shadow-md flex items-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 mr-2"
+                    viewBox="0 0 20 20"
+                    fill="currentColor">
+                    <path
+                      fillRule="evenodd"
+                      d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  إضافة طالب للقائمة
+                </button>
+              </>
+            )}
           </div>
           <br />
 
@@ -683,9 +725,11 @@ const Arrangement = () => {
                       <th className="py-3 px-6 text-sm font-medium text-gray-600">
                         الدرجة
                       </th>
-                      <th className="py-3 px-6 text-sm font-medium text-gray-600">
-                        إجراءات
-                      </th>
+                      {isTeacherOrAdmin && (
+                        <th className="py-3 px-6 text-sm font-medium text-gray-600">
+                          إجراءات
+                        </th>
+                      )}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -743,24 +787,28 @@ const Arrangement = () => {
                           </span>
                         </td>
                         <td className="py-4 px-6">
-                          <button
-                            onClick={() => openAddModal("update", student)}
-                            className="bg-amber-500 hover:bg-amber-600 text-white font-medium py-1 px-3 rounded transition-colors duration-200 flex items-center text-sm">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className="h-4 w-4 mr-1"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor">
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                              />
-                            </svg>
-                            تعديل
-                          </button>
+                          {isTeacherOrAdmin ? (
+                            <button
+                              onClick={() => openAddModal("update", student)}
+                              className="bg-amber-500 hover:bg-amber-600 text-white font-medium py-1 px-3 rounded transition-colors duration-200 flex items-center text-sm">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4 mr-1"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                                />
+                              </svg>
+                              تعديل
+                            </button>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -781,7 +829,9 @@ const Arrangement = () => {
                             <td className="py-4 px-6 text-gray-400">-</td>
                             <td className="py-4 px-6 text-gray-400">-</td>
                             <td className="py-4 px-6 text-gray-400">-</td>
-                            <td className="py-4 px-6 text-gray-400">-</td>
+                            {isTeacherOrAdmin && (
+                              <td className="py-4 px-6 text-gray-400">-</td>
+                            )}
                           </tr>
                         ))}
                   </tbody>
@@ -857,8 +907,7 @@ const Arrangement = () => {
             </div>
             <h3 className="text-lg font-bold text-center mb-2">الأداء</h3>
             <p className="text-gray-600 text-center">
-              يتم تقييم الأداء الصوتي وجودة التلاوة ومراعاة المقامات الصوتية
-              المناسبة
+              يتم تقييم الأداء الصوتي وجودة التلاوة 
             </p>
           </div>
         </div>

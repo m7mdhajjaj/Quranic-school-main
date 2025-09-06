@@ -11,10 +11,7 @@ router.post("/", attendanceController.createAttendance); // No auth for debuggin
 router.get("/date/:date", attendanceController.getAttendanceByDate);
 
 // Get all attendance records for a specific student
-router.get(
-  "/student/:studentId",
-  attendanceController.getStudentAttendance
-);
+router.get("/student/:studentId", attendanceController.getStudentAttendance);
 
 // Get attendance statistics for a specific student
 router.get(
