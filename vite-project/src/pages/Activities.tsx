@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 interface Activity {
   _id: string;
@@ -21,12 +22,26 @@ interface ActivityFormData {
   category: string;
 }
 
+interface User {
+  _id: string;
+  firstName: string;
+  lastName?: string;
+  email?: string;
+  role: string;
+  groups?: string[];
+}
+
 const API_URL = "http://localhost:5005/api/activities";
 
 const Activities = () => {
+  const navigate = useNavigate();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // User role management
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isTeacherOrAdmin, setIsTeacherOrAdmin] = useState<boolean>(false);
 
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
@@ -40,8 +55,29 @@ const Activities = () => {
     category: "درس",
   });
 
-  // Fetch activities from API
+  // Fetch activities from API and check user role
   useEffect(() => {
+    // Check user authentication status
+    const userJson = localStorage.getItem("user");
+    if (userJson) {
+      try {
+        const userData = JSON.parse(userJson) as User;
+        setCurrentUser(userData);
+
+        // Check if the user is a teacher or admin
+        if (userData.role === "teacher" || userData.role === "admin") {
+          setIsTeacherOrAdmin(true);
+        } else {
+          setIsTeacherOrAdmin(false);
+        }
+      } catch (err) {
+        console.error("Error parsing user data:", err);
+      }
+    } else {
+      // Uncomment if you want to redirect unauthenticated users
+      // navigate("/login");
+    }
+
     const fetchActivities = async () => {
       try {
         setLoading(true);
@@ -223,24 +259,26 @@ const Activities = () => {
             أنشطة وفعاليات متنوعة للطلاب لتعزيز مهارات الحفظ والتجويد والتلاوة
           </p>
 
-          <div className="flex flex-wrap justify-center gap-4 mt-8">
-            <button
-              onClick={openAddModal}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition shadow-md flex items-center">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 mr-2"
-                viewBox="0 0 20 20"
-                fill="currentColor">
-                <path
-                  fillRule="evenodd"
-                  d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              إضافة نشاط جديد
-            </button>
-          </div>
+          {isTeacherOrAdmin && (
+            <div className="flex flex-wrap justify-center gap-4 mt-8">
+              <button
+                onClick={openAddModal}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition shadow-md flex items-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 mr-2"
+                  viewBox="0 0 20 20"
+                  fill="currentColor">
+                  <path
+                    fillRule="evenodd"
+                    d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                إضافة نشاط جديد
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="mb-8 flex flex-wrap justify-center gap-4">
@@ -291,42 +329,44 @@ const Activities = () => {
                     <h3 className="text-xl font-bold text-slate-800">
                       {activity.title}
                     </h3>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => openEditModal(activity)}
-                        className="text-blue-500 hover:text-blue-700">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                          />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => deleteActivity(activity._id)}
-                        className="text-red-500 hover:text-red-700">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                          />
-                        </svg>
-                      </button>
-                    </div>
+                    {isTeacherOrAdmin && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => openEditModal(activity)}
+                          className="text-blue-500 hover:text-blue-700">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                            />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => deleteActivity(activity._id)}
+                          className="text-red-500 hover:text-red-700">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <p className="text-slate-600 mb-4 line-clamp-3">
@@ -373,9 +413,11 @@ const Activities = () => {
             <h3 className="text-xl font-medium text-slate-600 mt-4">
               لا توجد أنشطة بهذا التصنيف
             </h3>
-            <p className="text-slate-500 mt-2">
-              يمكنك إضافة نشاط جديد من خلال الزر أعلاه
-            </p>
+            {isTeacherOrAdmin && (
+              <p className="text-slate-500 mt-2">
+                يمكنك إضافة نشاط جديد من خلال الزر أعلاه
+              </p>
+            )}
           </div>
         )}
 
