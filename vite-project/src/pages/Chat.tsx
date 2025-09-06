@@ -34,6 +34,13 @@ const Chat: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const socketRef = useRef<Socket | null>(null);
 
+  // Auto scroll to bottom when messages change
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
+
   useEffect(() => {
     const userJson = localStorage.getItem("user");
     if (!userJson) return;
@@ -447,14 +454,16 @@ const Chat: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6" dir="rtl">
-      <div className="max-w-5xl mx-auto bg-white rounded-lg shadow overflow-hidden">
-        <div className="flex">
-          <div className="w-1/3 border-l">
-            <div className="bg-emerald-600 p-4 text-white font-bold">
+    <div
+      className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-slate-100 p-2 md:p-6"
+      dir="rtl">
+      <div className="max-w-6xl mx-auto bg-white rounded-xl md:rounded-2xl shadow-2xl overflow-hidden backdrop-blur-sm border border-white/20">
+        <div className="flex flex-col md:flex-row min-h-[80vh]">
+          <div className="w-full md:w-1/3 border-l border-gray-100">
+            <div className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-600 p-4 text-white font-bold shadow-lg">
               قائمة المحادثات
             </div>
-            <div className="p-4">
+            <div className="p-3 md:p-4 max-h-[50vh] md:max-h-none overflow-y-auto chat-scroll">
               {loading ? (
                 <div>جارٍ التحميل...</div>
               ) : contacts.length === 0 ? (
@@ -464,8 +473,10 @@ const Chat: React.FC = () => {
                   {contacts.map((c) => (
                     <li
                       key={c._id}
-                      className={`flex items-center justify-between p-3 rounded hover:bg-gray-50 cursor-pointer ${
-                        selectedContact?._id === c._id ? "bg-emerald-50" : ""
+                      className={`flex items-center justify-between p-3 md:p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition-all duration-200 ${
+                        selectedContact?._id === c._id
+                          ? "bg-gradient-to-r from-emerald-50 to-teal-50 shadow-md border-2 border-emerald-200"
+                          : "hover:shadow-sm"
                       }`}
                       onClick={() => setSelectedContact(c)}>
                       <div className="flex items-center gap-3">
@@ -500,8 +511,8 @@ const Chat: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex-1">
-            <div className="bg-emerald-600 p-4 text-white flex items-center gap-3">
+          <div className="flex-1 flex flex-col">
+            <div className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-600 p-4 md:p-4 text-white flex items-center gap-3 shadow-lg">
               <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
                 {(selectedContact?.firstName || " ").charAt(0)}
               </div>
@@ -526,13 +537,13 @@ const Chat: React.FC = () => {
               )}
             </div>
 
-            <div className="p-4 h-[500px] overflow-auto">
+            <div className="h-[400px] md:h-[500px] p-3 md:p-4 overflow-y-auto bg-gradient-to-b from-gray-50 to-white chat-scroll">
               {selectedContact ? (
-                <div>
-                  <div className="space-y-4">
+                <div className="h-full">
+                  <div className="space-y-4 min-h-full flex flex-col justify-end">
                     {messages.length === 0 ? (
                       <>
-                        <div className="max-w-xs bg-gray-200 p-3 rounded">
+                        <div className="max-w-xs md:max-w-md bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 p-3 md:p-4 rounded-2xl shadow-lg">
                           مرحباً، يمكنك الآن مراسلة المعلم.
                         </div>
                       </>
@@ -546,10 +557,10 @@ const Chat: React.FC = () => {
                               : "justify-start"
                           }`}>
                           <div
-                            className={`max-w-xs p-3 rounded-lg ${
+                            className={`max-w-xs md:max-w-md lg:max-w-lg p-3 md:p-4 rounded-2xl shadow-lg ${
                               m.sender === (currentUser?._id || "me")
-                                ? "bg-emerald-600 text-white"
-                                : "bg-gray-200 text-gray-800"
+                                ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white"
+                                : "bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800"
                             }`}>
                             <p>{m.text}</p>
                             <div className="text-xs mt-1 text-gray-500">
@@ -563,28 +574,47 @@ const Chat: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <div className="text-center text-gray-400 mt-24">
-                  اختر محادثة لبدء التواصل
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-r from-emerald-100 to-teal-100 rounded-full flex items-center justify-center">
+                      <svg
+                        className="w-10 h-10 text-emerald-500"
+                        fill="currentColor"
+                        viewBox="0 0 20 20">
+                        <path
+                          fillRule="evenodd"
+                          d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                      اختر محادثة لبدء التواصل
+                    </h3>
+                    <p className="text-gray-500">
+                      قم بتحديد شخص من قائمة المحادثات لبدء التراسل
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
 
-            <div className="p-4 border-t bg-white">
+            <div className="p-3 md:p-4 border-t border-gray-200 bg-white shadow-lg">
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
                   sendMessage();
                 }}
-                className="flex gap-2">
+                className="flex gap-3 md:gap-4 items-end">
                 <input
                   value={messageInput}
                   onChange={(e) => setMessageInput(e.target.value)}
-                  className="flex-1 p-2 border rounded"
+                  className="flex-1 p-3 md:p-4 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all duration-200 text-base placeholder-gray-400 bg-gray-50 focus:bg-white shadow-sm"
                   placeholder="اكتب رسالتك هنا..."
                 />
                 <button
                   type="submit"
-                  className="bg-emerald-600 text-white px-4 py-2 rounded">
+                  className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 md:px-6 py-3 md:py-4 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 text-sm md:text-base">
                   إرسال
                 </button>
               </form>
