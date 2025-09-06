@@ -2,6 +2,7 @@ import "./App.css";
 import Header from "./components/Header";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
+import TeacherLogin from "./pages/TeacherLogin";
 import Goals from "./pages/Goals";
 import News from "./pages/news";
 import Footer from "./components/Footer";
@@ -16,7 +17,8 @@ import Chat from "./pages/Chat";
 import Managment from "./pages/managment";
 function AppContent() {
   const location = useLocation();
-  const isLoginPage = location.pathname === "/login";
+  const isLoginPage =
+    location.pathname === "/login" || location.pathname === "/teacher-login";
   const isChatPage = location.pathname === "/chat";
   return (
     <>
@@ -24,6 +26,7 @@ function AppContent() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/teacher-login" element={<TeacherLogin />} />
         <Route path="/goals" element={<Goals />} />
         <Route path="/daily-marks" element={<DailyMarks />} />
         <Route path="/arrangement" element={<Arrangement />} />

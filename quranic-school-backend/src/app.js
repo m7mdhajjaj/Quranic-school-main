@@ -55,6 +55,9 @@ app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/news", require("./routes/newsRoutes"));
 app.use("/api/activities", require("./routes/activityRoutes"));
 app.use("/api/rankings", require("./routes/rankingRoutes"));
+app.use("/api/sections", require("./routes/sectionRoutes"));
+app.use("/api/marks", require("./routes/markRoutes"));
+app.use("/api/attendance", require("./routes/attendanceRoutes"));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

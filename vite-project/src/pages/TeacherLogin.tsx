@@ -3,11 +3,11 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API_URL } from "../config";
 
-const Login = () => {
+const TeacherLogin = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    studentId: "",
-    idNumber: "",
+    teacherId: "",
+    password: "",
   });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -28,10 +28,11 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      // Attempt to login with studentId and idNumber
+      // Attempt to login with teacherId and password
       const response = await axios.post(`${API_URL}/auth/login`, {
-        studentId: formData.studentId,
-        idNumber: formData.idNumber,
+        teacherId: formData.teacherId,
+        password: formData.password,
+        userType: "teacher",
       });
 
       // If successful, store the token and redirect
@@ -45,7 +46,7 @@ const Login = () => {
       if (error.response?.data?.message) {
         setError(error.response.data.message);
       } else {
-        setError("فشل تسجيل الدخول. رجاءً تأكد من رقم الطالب ورقم الهوية.");
+        setError("فشل تسجيل الدخول. رجاءً تأكد من رقم المعلم وكلمة المرور.");
       }
     } finally {
       setIsLoading(false);
@@ -66,7 +67,7 @@ const Login = () => {
         </div>
 
         <h1 className="text-2xl md:text-3xl font-bold text-center mb-6 text-slate-800">
-          تسجيل الدخول
+          تسجيل دخول المعلم
         </h1>
 
         {error && (
@@ -79,14 +80,14 @@ const Login = () => {
           <div>
             <label
               className="block text-sm font-medium text-gray-700 mb-2"
-              htmlFor="studentId">
-              رقم الطالب
+              htmlFor="teacherId">
+              رقم المعلم
             </label>
             <input
               type="text"
-              id="studentId"
-              name="studentId"
-              value={formData.studentId}
+              id="teacherId"
+              name="teacherId"
+              value={formData.teacherId}
               onChange={handleChange}
               className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-200"
               required
@@ -96,14 +97,14 @@ const Login = () => {
           <div>
             <label
               className="block text-sm font-medium text-gray-700 mb-2"
-              htmlFor="idNumber">
-              رقم الهوية (كلمة المرور)
+              htmlFor="password">
+              كلمة المرور
             </label>
             <input
               type="password"
-              id="idNumber"
-              name="idNumber"
-              value={formData.idNumber}
+              id="password"
+              name="password"
+              value={formData.password}
               onChange={handleChange}
               className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-200"
               required
@@ -167,9 +168,9 @@ const Login = () => {
 
         <div className="mt-6 text-center">
           <a
-            href="/teacher-login"
+            href="/login"
             className="text-sm text-emerald-600 hover:text-emerald-800">
-            تسجيل الدخول كمعلم
+            تسجيل الدخول كطالب
           </a>
         </div>
       </div>
@@ -177,4 +178,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default TeacherLogin;

@@ -437,13 +437,6 @@ const Arrangement = () => {
     return `${student.studentId.firstName} ${student.studentId.fatherName} ${student.studentId.lastName}`;
   };
 
-  // Helper function to get placeholder image with name
-  const getPlaceholderImage = (name: string) => {
-    return `https://placehold.co/200x200/e9f5f2/1f6357?text=${
-      name.split(" ")[0] || "طالب"
-    }`;
-  };
-
   // Convert month number to Arabic name
   const getMonthName = (month: number) => {
     const months = [
@@ -583,14 +576,8 @@ const Arrangement = () => {
                   data-aos="fade-up"
                   data-aos-delay="200">
                   <div className="relative">
-                    <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-[#a0a0a0] mb-4">
-                      <img
-                        src={getPlaceholderImage(
-                          getFullName(orderedTopThree[0])
-                        )}
-                        alt={getFullName(orderedTopThree[0])}
-                        className="w-full h-full object-cover"
-                      />
+                    <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-[#e9f5f2] border-4 border-[#a0a0a0] mb-4 flex items-center justify-center">
+                      <div className="text-[#1f6357] font-bold text-4xl">2</div>
                     </div>
                     <div className="absolute -top-3 -right-3 w-10 h-10 bg-[#a0a0a0] rounded-full flex items-center justify-center text-white font-bold shadow-lg">
                       2
@@ -615,14 +602,8 @@ const Arrangement = () => {
                   data-aos="fade-up"
                   data-aos-delay="100">
                   <div className="relative">
-                    <div className="w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-4 border-[#FFD700] mb-4">
-                      <img
-                        src={getPlaceholderImage(
-                          getFullName(orderedTopThree[1])
-                        )}
-                        alt={getFullName(orderedTopThree[1])}
-                        className="w-full h-full object-cover"
-                      />
+                    <div className="w-28 h-28 md:w-36 md:h-36 rounded-full bg-[#e9f5f2] border-4 border-[#FFD700] mb-4 flex items-center justify-center">
+                      <div className="text-[#1f6357] font-bold text-5xl">1</div>
                     </div>
                     <div className="absolute -top-5 -right-3 w-12 h-12 bg-[#FFD700] rounded-full flex items-center justify-center text-white font-bold shadow-lg text-xl">
                       1
@@ -655,14 +636,8 @@ const Arrangement = () => {
                   data-aos="fade-up"
                   data-aos-delay="300">
                   <div className="relative">
-                    <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-[#CD7F32] mb-4">
-                      <img
-                        src={getPlaceholderImage(
-                          getFullName(orderedTopThree[2])
-                        )}
-                        alt={getFullName(orderedTopThree[2])}
-                        className="w-full h-full object-cover"
-                      />
+                    <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-[#e9f5f2] border-4 border-[#CD7F32] mb-4 flex items-center justify-center">
+                      <div className="text-[#1f6357] font-bold text-4xl">3</div>
                     </div>
                     <div className="absolute -top-3 -right-3 w-10 h-10 bg-[#CD7F32] rounded-full flex items-center justify-center text-white font-bold shadow-lg">
                       3
@@ -746,11 +721,11 @@ const Arrangement = () => {
                         </td>
                         <td className="py-4 px-6">
                           <div className="flex items-center">
-                            <img
-                              src={getPlaceholderImage(getFullName(student))}
-                              alt={getFullName(student)}
-                              className="w-10 h-10 rounded-full object-cover mr-3"
-                            />
+                            <div className="w-10 h-10 rounded-full bg-[#e9f5f2] flex items-center justify-center mr-3">
+                              <span className="text-[#1f6357] font-bold">
+                                {index + 1}
+                              </span>
+                            </div>
                             <span className="font-medium">
                               {getFullName(student)}
                             </span>
