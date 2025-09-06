@@ -277,7 +277,7 @@ const Activities = () => {
                         : `http://localhost:5005/${activity.image}`
                     }
                     alt={activity.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain bg-gray-50"
                   />
                   <div className="absolute top-4 right-4">
                     <span className="bg-emerald-100 text-emerald-800 text-xs font-semibold px-3 py-1 rounded-full">
@@ -515,7 +515,7 @@ const Activities = () => {
                             : `http://localhost:5005/${currentActivity.image}`)
                         }
                         alt="معاينة الصورة"
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
                       />
                     ) : (
                       <div className="text-gray-400 text-center p-4">

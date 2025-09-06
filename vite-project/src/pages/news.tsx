@@ -60,17 +60,17 @@ const News = () => {
     try {
       const response = await axios.get(`${API_URL}/news`);
       console.log("Fetched news data:", response.data);
-      
+
       if (response.data) {
         // Format dates and ensure proper image paths
         const formattedNews = response.data.map((item: INews) => {
           // Fix the image URL
           let imageUrl = item.image;
-          if (item.image && !item.image.startsWith('http')) {
+          if (item.image && !item.image.startsWith("http")) {
             imageUrl = `http://localhost:5005/${item.image}`;
           }
           console.log("Processing image:", item.image, "->", imageUrl);
-          
+
           return {
             ...item,
             date: formatDate(item.date || item.createdAt || new Date()),
@@ -156,7 +156,7 @@ const News = () => {
   const handleAddNews = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     console.log("Adding/updating news with image:", selectedFile);
 
     try {
@@ -169,9 +169,14 @@ const News = () => {
       );
 
       if (selectedFile) {
-        console.log("Appending file to form data:", selectedFile.name, selectedFile.type, selectedFile.size);
+        console.log(
+          "Appending file to form data:",
+          selectedFile.name,
+          selectedFile.type,
+          selectedFile.size
+        );
         formData.append("image", selectedFile);
-        
+
         // Log all entries in the FormData
         for (const [key, value] of formData.entries()) {
           console.log(`FormData Entry: ${key}:`, value);
@@ -320,27 +325,30 @@ const News = () => {
                 <img
                   src={item.image}
                   alt={item.title}
-                  className="w-full h-64 object-cover"
+                  className="w-full h-64 object-contain bg-gray-50"
                   onError={(e) => {
                     console.log("Error loading image:", item.image);
                     // Try to modify the URL if there's an issue
                     const imgElement = e.target as HTMLImageElement;
                     const originalSrc = item.image;
-                    
+
                     // If we're already using a placeholder, don't try again
                     if (originalSrc.includes("placehold.co")) {
                       return;
                     }
-                    
+
                     // Try different URL patterns
                     if (originalSrc.includes("uploads/news/")) {
                       // Try removing /api/ if present
                       if (originalSrc.includes("/api/uploads/")) {
-                        imgElement.src = originalSrc.replace("/api/uploads/", "/uploads/");
+                        imgElement.src = originalSrc.replace(
+                          "/api/uploads/",
+                          "/uploads/"
+                        );
                         console.log("Trying fallback 1:", imgElement.src);
                         return;
                       }
-                      
+
                       // Try adding the full domain if it's a relative URL
                       if (originalSrc.startsWith("uploads/")) {
                         imgElement.src = `http://localhost:5005/${originalSrc}`;
@@ -348,9 +356,10 @@ const News = () => {
                         return;
                       }
                     }
-                    
+
                     // If all else fails, use a placeholder
-                    imgElement.src = "https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+الخبر";
+                    imgElement.src =
+                      "https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+الخبر";
                     console.log("Using placeholder");
                   }}
                 />
