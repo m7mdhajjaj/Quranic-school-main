@@ -74,8 +74,10 @@ const Arrangement = () => {
   // State for modal
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-  // State for modal type (top3 or general)
-  const [modalType, setModalType] = useState<"top3" | "general">("general");
+  // State for modal type (top3 or general or update)
+  const [modalType, setModalType] = useState<"top3" | "general" | "update">(
+    "general"
+  );
 
   // State for student selection
   const [selectedStudent, setSelectedStudent] = useState<string>("");
@@ -85,9 +87,7 @@ const Arrangement = () => {
     _id: "",
     name: "",
     score: 0,
-  });
-
-  // Fetch all students, available periods, and current ranking
+  }); // Fetch all students, available periods, and current ranking
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -204,14 +204,30 @@ const Arrangement = () => {
   };
 
   // Function to open the modal for adding a student
-  const openAddModal = (type: "top3" | "general" = "general") => {
+  const openAddModal = (
+    type: "top3" | "general" | "update" = "general",
+    student?: RankingStudent
+  ) => {
     setModalType(type);
-    setSelectedStudent("");
-    setNewRankingEntry({
-      _id: "",
-      name: "",
-      score: 0,
-    });
+
+    if (type === "update" && student) {
+      // For updating, pre-fill with the selected student's data
+      setSelectedStudent(student.studentId._id);
+      setNewRankingEntry({
+        _id: student.studentId._id,
+        name: getFullName(student),
+        score: student.score,
+      });
+    } else {
+      // For adding new, reset the form
+      setSelectedStudent("");
+      setNewRankingEntry({
+        _id: "",
+        name: "",
+        score: 0,
+      });
+    }
+
     setIsModalOpen(true);
   };
 
@@ -533,7 +549,7 @@ const Arrangement = () => {
 
           {/* Show current month/year title */}
           {selectedPeriod && (
-            <h2 className="text-xl font-semibold mt-4">
+            <h2 className="text-xl font-semibold mt-4 my-20">
               تصنيف {getMonthName(selectedPeriod.month)} {selectedPeriod.year}
             </h2>
           )}
@@ -692,6 +708,9 @@ const Arrangement = () => {
                       <th className="py-3 px-6 text-sm font-medium text-gray-600">
                         الدرجة
                       </th>
+                      <th className="py-3 px-6 text-sm font-medium text-gray-600">
+                        إجراءات
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -748,6 +767,26 @@ const Arrangement = () => {
                             {student.score} درجة
                           </span>
                         </td>
+                        <td className="py-4 px-6">
+                          <button
+                            onClick={() => openAddModal("update", student)}
+                            className="bg-amber-500 hover:bg-amber-600 text-white font-medium py-1 px-3 rounded transition-colors duration-200 flex items-center text-sm">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4 mr-1"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor">
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                              />
+                            </svg>
+                            تعديل
+                          </button>
+                        </td>
                       </tr>
                     ))}
 
@@ -764,6 +803,7 @@ const Arrangement = () => {
                                 </span>
                               </div>
                             </td>
+                            <td className="py-4 px-6 text-gray-400">-</td>
                             <td className="py-4 px-6 text-gray-400">-</td>
                             <td className="py-4 px-6 text-gray-400">-</td>
                             <td className="py-4 px-6 text-gray-400">-</td>
@@ -873,6 +913,8 @@ const Arrangement = () => {
               <h2 className="text-xl font-bold mb-4 text-center">
                 {modalType === "top3"
                   ? "إضافة طالب للمراكز الثلاثة الأولى"
+                  : modalType === "update"
+                  ? "تعديل درجة الطالب"
                   : "إضافة طالب للقائمة"}
               </h2>
 
@@ -880,21 +922,30 @@ const Arrangement = () => {
                 <label
                   className="block text-gray-700 text-sm font-bold mb-2"
                   htmlFor="student">
-                  اختر الطالب
+                  {modalType === "update" ? "الطالب" : "اختر الطالب"}
                 </label>
-                <select
-                  id="student"
-                  value={selectedStudent}
-                  onChange={handleStudentSelect}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  required>
-                  <option value="">-- اختر الطالب --</option>
-                  {allDbStudents.map((student) => (
-                    <option key={student._id} value={student._id}>
-                      {`${student.firstName} ${student.fatherName} ${student.lastName}`}
-                    </option>
-                  ))}
-                </select>
+                {modalType === "update" ? (
+                  <input
+                    type="text"
+                    value={newRankingEntry.name}
+                    readOnly
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline bg-gray-100"
+                  />
+                ) : (
+                  <select
+                    id="student"
+                    value={selectedStudent}
+                    onChange={handleStudentSelect}
+                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    required>
+                    <option value="">-- اختر الطالب --</option>
+                    {allDbStudents.map((student) => (
+                      <option key={student._id} value={student._id}>
+                        {`${student.firstName} ${student.fatherName} ${student.lastName}`}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div className="mb-6">
@@ -931,7 +982,7 @@ const Arrangement = () => {
                       clipRule="evenodd"
                     />
                   </svg>
-                  حفظ
+                  {modalType === "update" ? "تحديث" : "حفظ"}
                 </button>
                 <button
                   onClick={closeModal}
