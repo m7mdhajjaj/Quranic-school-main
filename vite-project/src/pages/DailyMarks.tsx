@@ -527,6 +527,80 @@ const DailyMarks = () => {
     setSelectedYear(Number(e.target.value));
   };
 
+  // Calculate averages for the selected month and year
+  const calculateAverages = () => {
+    const filteredSections = getFilteredSections();
+
+    if (filteredSections.length === 0) {
+      return {
+        reviewAverage: 0,
+        memorizationAverage: 0,
+        overallAverage: 0,
+        totalMarks: 0,
+      };
+    }
+
+    // For students, use currentUser._id; for teachers, use selectedStudentId
+    const targetStudentId =
+      currentUser?.role === "student" ? currentUser._id : selectedStudentId;
+
+    if (!targetStudentId) {
+      return {
+        reviewAverage: 0,
+        memorizationAverage: 0,
+        overallAverage: 0,
+        totalMarks: 0,
+      };
+    }
+
+    const relevantMarks = marks.filter((mark) => {
+      const markSectionId =
+        typeof mark.sectionId === "string"
+          ? mark.sectionId
+          : mark.sectionId._id;
+      return (
+        mark.studentId === targetStudentId &&
+        filteredSections.some((section) => section._id === markSectionId)
+      );
+    });
+
+    if (relevantMarks.length === 0) {
+      return {
+        reviewAverage: 0,
+        memorizationAverage: 0,
+        overallAverage: 0,
+        totalMarks: 0,
+      };
+    }
+
+    const reviewMarks = relevantMarks
+      .filter((mark) => mark.reviewMark !== null)
+      .map((mark) => mark.reviewMark || 0);
+    const memorizationMarks = relevantMarks
+      .filter((mark) => mark.memorizationMark !== null)
+      .map((mark) => mark.memorizationMark || 0);
+
+    const reviewAverage =
+      reviewMarks.length > 0
+        ? reviewMarks.reduce((sum, mark) => sum + mark, 0) / reviewMarks.length
+        : 0;
+    const memorizationAverage =
+      memorizationMarks.length > 0
+        ? memorizationMarks.reduce((sum, mark) => sum + mark, 0) /
+          memorizationMarks.length
+        : 0;
+
+    // Overall average out of 100 (combining both review and memorization)
+    const overallAverage = ((reviewAverage + memorizationAverage) / 2) * 10; // Convert to percentage
+
+    return {
+      reviewAverage: Number(reviewAverage.toFixed(2)),
+      memorizationAverage: Number(memorizationAverage.toFixed(2)),
+      overallAverage: Number(overallAverage.toFixed(2)),
+      totalMarks: relevantMarks.length,
+    };
+  };
+
   return (
     <div
       className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 py-12 px-4"
@@ -905,6 +979,56 @@ const DailyMarks = () => {
                           </tbody>
                         </table>
                       </div>
+
+                      {/* Averages Section for Teacher View */}
+                      {selectedStudentId &&
+                        getFilteredSections().length > 0 && (
+                          <div className="p-6 bg-gradient-to-r from-gray-50 to-gray-100 border-t">
+                            <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">
+                              معدلات الشهر المحدد
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              {/* Review Average */}
+                              <div className="bg-white rounded-lg p-4 shadow-sm border-r-4 border-emerald-500">
+                                <h4 className="text-sm font-semibold text-gray-600 mb-1">
+                                  معدل المراجعة
+                                </h4>
+                                <div className="text-2xl font-bold text-emerald-600">
+                                  {calculateAverages().reviewAverage}/10
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  من {calculateAverages().totalMarks} علامة
+                                </div>
+                              </div>
+
+                              {/* Memorization Average */}
+                              <div className="bg-white rounded-lg p-4 shadow-sm border-r-4 border-amber-500">
+                                <h4 className="text-sm font-semibold text-gray-600 mb-1">
+                                  معدل الحفظ
+                                </h4>
+                                <div className="text-2xl font-bold text-amber-600">
+                                  {calculateAverages().memorizationAverage}/10
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  من {calculateAverages().totalMarks} علامة
+                                </div>
+                              </div>
+
+                              {/* Overall Average */}
+                              <div className="bg-white rounded-lg p-4 shadow-sm border-r-4 border-blue-500">
+                                <h4 className="text-sm font-semibold text-gray-600 mb-1">
+                                  المعدل الإجمالي
+                                </h4>
+                                <div className="text-2xl font-bold text-blue-600">
+                                  {calculateAverages().overallAverage}/100
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  الحفظ + المراجعة
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                     </div>
                   ) : (
                     <div className="bg-white rounded-xl shadow-md p-8 text-center flex flex-col items-center justify-center h-full">
@@ -1092,6 +1216,55 @@ const DailyMarks = () => {
                       </tbody>
                     </table>
                   </div>
+
+                  {/* Averages Section for Student View */}
+                  {getFilteredSections().length > 0 && (
+                    <div className="p-6 bg-gradient-to-r from-gray-50 to-gray-100 border-t">
+                      <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">
+                        معدلاتي للشهر المحدد
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* Review Average */}
+                        <div className="bg-white rounded-lg p-4 shadow-sm border-r-4 border-emerald-500">
+                          <h4 className="text-sm font-semibold text-gray-600 mb-1">
+                            معدل المراجعة
+                          </h4>
+                          <div className="text-2xl font-bold text-emerald-600">
+                            {calculateAverages().reviewAverage}/10
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            من {calculateAverages().totalMarks} علامة
+                          </div>
+                        </div>
+
+                        {/* Memorization Average */}
+                        <div className="bg-white rounded-lg p-4 shadow-sm border-r-4 border-amber-500">
+                          <h4 className="text-sm font-semibold text-gray-600 mb-1">
+                            معدل الحفظ
+                          </h4>
+                          <div className="text-2xl font-bold text-amber-600">
+                            {calculateAverages().memorizationAverage}/10
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            من {calculateAverages().totalMarks} علامة
+                          </div>
+                        </div>
+
+                        {/* Overall Average */}
+                        <div className="bg-white rounded-lg p-4 shadow-sm border-r-4 border-blue-500">
+                          <h4 className="text-sm font-semibold text-gray-600 mb-1">
+                            المعدل الإجمالي
+                          </h4>
+                          <div className="text-2xl font-bold text-blue-600">
+                            {calculateAverages().overallAverage}/100
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            الحفظ + المراجعة
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
