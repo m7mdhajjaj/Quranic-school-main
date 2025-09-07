@@ -85,8 +85,17 @@ const DailyMarks = () => {
     null
   );
   const [isAddSectionModalOpen, setIsAddSectionModalOpen] = useState(false);
+  const [isEditSectionModalOpen, setIsEditSectionModalOpen] = useState(false);
+  const [isBulkUpdateModalOpen, setIsBulkUpdateModalOpen] = useState(false);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
   const [isAddMarkModalOpen, setIsAddMarkModalOpen] = useState(false);
+  const [isUpdateMarkModalOpen, setIsUpdateMarkModalOpen] = useState(false);
   const [selectedSection, setSelectedSection] = useState<Section | null>(null);
+  const [editingMark, setEditingMark] = useState<Mark | null>(null);
+  const [editingSection, setEditingSection] = useState<Section | null>(null);
+  const [selectedSectionsForBulk, setSelectedSectionsForBulk] = useState<
+    string[]
+  >([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [loadingMarks, setLoadingMarks] = useState<boolean>(false);
 
@@ -185,6 +194,17 @@ const DailyMarks = () => {
     setIsAddMarkModalOpen(true);
   };
 
+  // Open the update mark modal
+  const openUpdateMarkModal = (mark: Mark, section: Section) => {
+    setEditingMark(mark);
+    setSelectedSection(section);
+    setNewMark({
+      reviewMark: mark.reviewMark || 7,
+      memorizationMark: mark.memorizationMark || 7,
+    });
+    setIsUpdateMarkModalOpen(true);
+  };
+
   // Handle adding new section
   const handleAddSection = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -231,6 +251,37 @@ const DailyMarks = () => {
     }
   };
 
+  // Handle updating existing mark
+  const handleUpdateMark = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!editingMark) return;
+
+    try {
+      const markData = {
+        reviewMark: newMark.reviewMark,
+        memorizationMark: newMark.memorizationMark,
+      };
+
+      const response = await axios.put(
+        `${API_URL}/marks/${editingMark._id}`,
+        markData
+      );
+
+      // Update marks array with updated mark
+      setMarks((prev) =>
+        prev.map((mark) =>
+          mark._id === editingMark._id ? response.data : mark
+        )
+      );
+      setIsUpdateMarkModalOpen(false);
+      setEditingMark(null);
+    } catch (err) {
+      console.error("Error updating mark:", err);
+      alert("حدث خطأ أثناء تحديث العلامة");
+    }
+  };
+
   // Handle input changes for new section
   const handleSectionInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -240,6 +291,205 @@ const DailyMarks = () => {
       ...prev,
       [name]: value,
     }));
+  };
+
+  // Handle editing section
+  const handleEditSection = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!editingSection) return;
+
+    try {
+      const response = await axios.put(
+        `${API_URL}/sections/${editingSection._id}`,
+        {
+          date: editingSection.date,
+          memorizationSection: editingSection.memorizationSection,
+          reviewSection: editingSection.reviewSection,
+        }
+      );
+
+      // Update sections array with edited section
+      setSections((prev) =>
+        prev.map((section) =>
+          section._id === editingSection._id ? response.data : section
+        )
+      );
+      setIsEditSectionModalOpen(false);
+      setEditingSection(null);
+    } catch (err) {
+      console.error("Error updating section:", err);
+      alert("حدث خطأ أثناء تحديث المقطع");
+    }
+  };
+
+  // Handle deleting section
+  const handleDeleteSection = async (sectionId: string) => {
+    if (
+      !confirm(
+        "هل أنت متأكد من حذف هذا المقطع؟ سيتم حذف جميع العلامات المرتبطة به."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API_URL}/sections/${sectionId}`);
+
+      // Remove section from sections array
+      setSections((prev) =>
+        prev.filter((section) => section._id !== sectionId)
+      );
+
+      // Remove related marks
+      setMarks((prev) =>
+        prev.filter((mark) => {
+          if (typeof mark.sectionId === "string") {
+            return mark.sectionId !== sectionId;
+          } else {
+            return mark.sectionId._id !== sectionId;
+          }
+        })
+      );
+    } catch (err) {
+      console.error("Error deleting section:", err);
+      alert("حدث خطأ أثناء حذف المقطع");
+    }
+  };
+
+  // Open edit section modal
+  const openEditSectionModal = (section: Section) => {
+    setEditingSection({ ...section });
+    setIsEditSectionModalOpen(true);
+  };
+
+  // Handle bulk update sections - opens modal to select sections
+  const handleBulkUpdateSections = () => {
+    setIsBulkUpdateModalOpen(true);
+  };
+
+  // Handle bulk delete sections - opens modal to select sections
+  const handleBulkDeleteSections = () => {
+    setIsBulkDeleteModalOpen(true);
+  };
+
+  // Handle bulk delete execution
+  const executeBulkDelete = async () => {
+    if (selectedSectionsForBulk.length === 0) {
+      alert("الرجاء اختيار مقطع واحد على الأقل للحذف");
+      return;
+    }
+
+    if (
+      !confirm(
+        `هل أنت متأكد من حذف ${selectedSectionsForBulk.length} مقطع؟ سيتم حذف جميع العلامات المرتبطة بهم.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      // Delete each selected section
+      await Promise.all(
+        selectedSectionsForBulk.map((sectionId) =>
+          axios.delete(`${API_URL}/sections/${sectionId}`)
+        )
+      );
+
+      // Remove sections from state
+      setSections((prev) =>
+        prev.filter((section) => !selectedSectionsForBulk.includes(section._id))
+      );
+
+      // Remove related marks
+      setMarks((prev) =>
+        prev.filter((mark) => {
+          if (typeof mark.sectionId === "string") {
+            return !selectedSectionsForBulk.includes(mark.sectionId);
+          } else {
+            return !selectedSectionsForBulk.includes(mark.sectionId._id);
+          }
+        })
+      );
+
+      setIsBulkDeleteModalOpen(false);
+      setSelectedSectionsForBulk([]);
+      alert("تم حذف المقاطع بنجاح");
+    } catch (err) {
+      console.error("Error bulk deleting sections:", err);
+      alert("حدث خطأ أثناء حذف المقاطع");
+    }
+  };
+
+  // Handle bulk update execution
+  const executeBulkUpdate = async (updateData: {
+    reviewSection?: string;
+    memorizationSection?: string;
+  }) => {
+    if (selectedSectionsForBulk.length === 0) {
+      alert("الرجاء اختيار مقطع واحد على الأقل للتحديث");
+      return;
+    }
+
+    try {
+      // Update each selected section
+      const updatePromises = selectedSectionsForBulk.map(async (sectionId) => {
+        const sectionToUpdate = sections.find((s) => s._id === sectionId);
+        if (!sectionToUpdate) return null;
+
+        const updatedData = {
+          date: sectionToUpdate.date,
+          reviewSection:
+            updateData.reviewSection || sectionToUpdate.reviewSection,
+          memorizationSection:
+            updateData.memorizationSection ||
+            sectionToUpdate.memorizationSection,
+        };
+
+        return axios.put(`${API_URL}/sections/${sectionId}`, updatedData);
+      });
+
+      const results = await Promise.all(updatePromises);
+
+      // Update sections in state
+      setSections((prev) =>
+        prev.map((section) => {
+          const result = results.find((r) => r?.data._id === section._id);
+          return result ? result.data : section;
+        })
+      );
+
+      setIsBulkUpdateModalOpen(false);
+      setSelectedSectionsForBulk([]);
+      alert("تم تحديث المقاطع بنجاح");
+    } catch (err) {
+      console.error("Error bulk updating sections:", err);
+      alert("حدث خطأ أثناء تحديث المقاطع");
+    }
+  };
+
+  // Toggle section selection for bulk operations
+  const toggleSectionSelection = (sectionId: string) => {
+    setSelectedSectionsForBulk((prev) =>
+      prev.includes(sectionId)
+        ? prev.filter((id) => id !== sectionId)
+        : [...prev, sectionId]
+    );
+  };
+
+  // Handle input changes for editing section
+  const handleEditSectionInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setEditingSection((prev) =>
+      prev
+        ? {
+            ...prev,
+            [name]: value,
+          }
+        : null
+    );
   };
 
   // Handle input changes for new mark
@@ -314,7 +564,7 @@ const DailyMarks = () => {
                         ))}
                     </ul>
                   </div>
-                  <div className="p-4 bg-gray-50">
+                  <div className="p-4 bg-gray-50 space-y-3">
                     <button
                       onClick={() => setIsAddSectionModalOpen(true)}
                       className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 px-4 rounded-lg transition shadow-md flex items-center justify-center">
@@ -330,6 +580,44 @@ const DailyMarks = () => {
                         />
                       </svg>
                       إضافة مقطع جديد لجميع الطلاب
+                    </button>
+
+                    <button
+                      onClick={() => handleBulkUpdateSections()}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition shadow-md flex items-center justify-center">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5 ml-2"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                        />
+                      </svg>
+                      تحديث المقطع لجميع الطلاب
+                    </button>
+
+                    <button
+                      onClick={() => handleBulkDeleteSections()}
+                      className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-4 rounded-lg transition shadow-md flex items-center justify-center">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5 ml-2"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                      حذف المقطع لجميع الطلاب
                     </button>
                   </div>
                 </div>
@@ -377,6 +665,9 @@ const DailyMarks = () => {
                               <th className="py-3 px-4 text-sm font-medium text-gray-600">
                                 علامة الحفظ
                               </th>
+                              <th className="py-3 px-4 text-sm font-medium text-gray-600">
+                                الإجراءات
+                              </th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-200">
@@ -393,7 +684,7 @@ const DailyMarks = () => {
                             ) : sections.length === 0 ? (
                               <tr>
                                 <td
-                                  colSpan={5}
+                                  colSpan={6}
                                   className="py-8 text-center text-gray-500">
                                   لا توجد مقاطع مضافة بعد
                                 </td>
@@ -428,29 +719,7 @@ const DailyMarks = () => {
                                       })}
                                     </td>
                                     <td className="py-4 px-4 text-sm text-gray-700">
-                                      <div className="flex items-center">
-                                        <span>{section.reviewSection}</span>
-                                        {!mark && (
-                                          <button
-                                            onClick={() =>
-                                              openAddMarkModal(section)
-                                            }
-                                            className="mr-2 text-emerald-600 hover:text-emerald-800"
-                                            title="إضافة علامة">
-                                            <svg
-                                              xmlns="http://www.w3.org/2000/svg"
-                                              className="h-5 w-5"
-                                              viewBox="0 0 20 20"
-                                              fill="currentColor">
-                                              <path
-                                                fillRule="evenodd"
-                                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
-                                                clipRule="evenodd"
-                                              />
-                                            </svg>
-                                          </button>
-                                        )}
-                                      </div>
+                                      <span>{section.reviewSection}</span>
                                     </td>
                                     <td className="py-4 px-4">
                                       {mark ? (
@@ -486,31 +755,7 @@ const DailyMarks = () => {
                                       )}
                                     </td>
                                     <td className="py-4 px-4 text-sm text-gray-700">
-                                      <div className="flex items-center">
-                                        <span>
-                                          {section.memorizationSection}
-                                        </span>
-                                        {!mark && (
-                                          <button
-                                            onClick={() =>
-                                              openAddMarkModal(section)
-                                            }
-                                            className="mr-2 text-emerald-600 hover:text-emerald-800"
-                                            title="إضافة علامة">
-                                            <svg
-                                              xmlns="http://www.w3.org/2000/svg"
-                                              className="h-5 w-5"
-                                              viewBox="0 0 20 20"
-                                              fill="currentColor">
-                                              <path
-                                                fillRule="evenodd"
-                                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
-                                                clipRule="evenodd"
-                                              />
-                                            </svg>
-                                          </button>
-                                        )}
-                                      </div>
+                                      <span>{section.memorizationSection}</span>
                                     </td>
                                     <td className="py-4 px-4">
                                       {mark ? (
@@ -547,6 +792,29 @@ const DailyMarks = () => {
                                       ) : (
                                         <span className="text-gray-400">-</span>
                                       )}
+                                    </td>
+                                    <td className="py-4 px-4">
+                                      <div className="flex items-center space-x-2">
+                                        {mark ? (
+                                          <button
+                                            onClick={() =>
+                                              openUpdateMarkModal(mark, section)
+                                            }
+                                            className="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-lg text-sm font-medium transition"
+                                            title="تحديث العلامة">
+                                            تحديث العلامة
+                                          </button>
+                                        ) : (
+                                          <button
+                                            onClick={() =>
+                                              openAddMarkModal(section)
+                                            }
+                                            className="text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1 rounded-lg text-sm font-medium transition"
+                                            title="إضافة علامة">
+                                            إضافة علامة
+                                          </button>
+                                        )}
+                                      </div>
                                     </td>
                                   </tr>
                                 );
@@ -854,6 +1122,127 @@ const DailyMarks = () => {
         </div>
       )}
 
+      {/* Edit Section Modal - Only for teachers */}
+      {isEditSectionModalOpen &&
+        editingSection &&
+        currentUser?.role !== "student" && (
+          <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
+            <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-gray-800">
+                  تعديل المقطع
+                </h3>
+                <button
+                  onClick={() => {
+                    setIsEditSectionModalOpen(false);
+                    setEditingSection(null);
+                  }}
+                  className="text-gray-500 hover:text-gray-700">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <form onSubmit={handleEditSection}>
+                {/* Date Field */}
+                <div className="mb-4">
+                  <label
+                    className="block text-gray-700 text-sm font-bold mb-2"
+                    htmlFor="edit-date">
+                    التاريخ
+                  </label>
+                  <input
+                    type="date"
+                    id="edit-date"
+                    name="date"
+                    value={editingSection.date}
+                    onChange={handleEditSectionInputChange}
+                    className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    required
+                  />
+                </div>
+
+                {/* Review Section */}
+                <div className="mb-4 mt-6">
+                  <h4 className="text-md font-bold text-emerald-700 mb-3 border-r-4 border-emerald-500 pr-2">
+                    معلومات المراجعة
+                  </h4>
+                  <div className="mb-4">
+                    <label
+                      className="block text-gray-700 text-sm font-bold mb-2"
+                      htmlFor="edit-reviewSection">
+                      مقطع المراجعة
+                    </label>
+                    <input
+                      type="text"
+                      id="edit-reviewSection"
+                      name="reviewSection"
+                      placeholder="مثال: البقرة (1-10)"
+                      value={editingSection.reviewSection}
+                      onChange={handleEditSectionInputChange}
+                      className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Memorization Section */}
+                <div className="mb-4 mt-6">
+                  <h4 className="text-md font-bold text-amber-600 mb-3 border-r-4 border-amber-500 pr-2">
+                    معلومات الحفظ
+                  </h4>
+                  <div className="mb-4">
+                    <label
+                      className="block text-gray-700 text-sm font-bold mb-2"
+                      htmlFor="edit-memorizationSection">
+                      مقطع الحفظ
+                    </label>
+                    <input
+                      type="text"
+                      id="edit-memorizationSection"
+                      name="memorizationSection"
+                      placeholder="مثال: البقرة (11-15)"
+                      value={editingSection.memorizationSection}
+                      onChange={handleEditSectionInputChange}
+                      className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex justify-between mt-8">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditSectionModalOpen(false);
+                      setEditingSection(null);
+                    }}
+                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-lg transition">
+                    إلغاء
+                  </button>
+                  <button
+                    type="submit"
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-8 rounded-lg transition shadow-md">
+                    حفظ التعديل
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
       {/* Add Mark Modal - Only for teachers */}
       {isAddMarkModalOpen &&
         selectedSection &&
@@ -1002,6 +1391,363 @@ const DailyMarks = () => {
             </div>
           </div>
         )}
+
+      {/* Update Mark Modal - Only for teachers */}
+      {isUpdateMarkModalOpen &&
+        selectedSection &&
+        editingMark &&
+        currentUser?.role !== "student" && (
+          <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
+            <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-gray-800">
+                  تحديث علامة الطالب:{" "}
+                  {students.find((s) => s._id === selectedStudentId)
+                    ? `${
+                        students.find((s) => s._id === selectedStudentId)
+                          ?.firstName
+                      } ${
+                        students.find((s) => s._id === selectedStudentId)
+                          ?.lastName
+                      }`
+                    : "غير معروف"}
+                </h3>
+                <button
+                  onClick={() => {
+                    setIsUpdateMarkModalOpen(false);
+                    setEditingMark(null);
+                  }}
+                  className="text-gray-500 hover:text-gray-700">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <form onSubmit={handleUpdateMark}>
+                <div className="bg-gray-50 p-4 rounded-lg mb-6">
+                  <h4 className="font-bold text-gray-700 mb-2">
+                    معلومات المقطع:
+                  </h4>
+                  <p className="text-sm text-gray-600 mb-1">
+                    <span className="font-semibold">التاريخ:</span>{" "}
+                    {new Date(selectedSection.date).toLocaleDateString(
+                      "en-GB",
+                      {
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit",
+                      }
+                    )}
+                  </p>
+                  <p className="text-sm text-gray-600 mb-1">
+                    <span className="font-semibold">مقطع المراجعة:</span>{" "}
+                    {selectedSection.reviewSection}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    <span className="font-semibold">مقطع الحفظ:</span>{" "}
+                    {selectedSection.memorizationSection}
+                  </p>
+                </div>
+
+                {/* Review Mark Input */}
+                <div className="mb-6">
+                  <label
+                    className="block text-gray-700 text-sm font-bold mb-2"
+                    htmlFor="updateReviewMark">
+                    علامة المراجعة (1-10)
+                  </label>
+                  <div className="flex items-center mb-2">
+                    <input
+                      type="range"
+                      id="updateReviewMark"
+                      name="reviewMark"
+                      min="1"
+                      max="10"
+                      value={newMark.reviewMark}
+                      onChange={handleMarkInputChange}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                    />
+                    <span className="mr-2 font-bold text-blue-700 min-w-[30px] text-center">
+                      {newMark.reviewMark}/10
+                    </span>
+                  </div>
+
+                  <div
+                    className={`h-1.5 w-full rounded-full mt-2 ${
+                      newMark.reviewMark > 8
+                        ? "bg-emerald-500"
+                        : newMark.reviewMark > 6
+                        ? "bg-amber-500"
+                        : "bg-red-500"
+                    }`}></div>
+                </div>
+
+                {/* Memorization Mark Input */}
+                <div className="mb-6">
+                  <label
+                    className="block text-gray-700 text-sm font-bold mb-2"
+                    htmlFor="updateMemorizationMark">
+                    علامة الحفظ (1-10)
+                  </label>
+                  <div className="flex items-center mb-2">
+                    <input
+                      type="range"
+                      id="updateMemorizationMark"
+                      name="memorizationMark"
+                      min="1"
+                      max="10"
+                      value={newMark.memorizationMark}
+                      onChange={handleMarkInputChange}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                    />
+                    <span className="mr-2 font-bold text-blue-700 min-w-[30px] text-center">
+                      {newMark.memorizationMark}/10
+                    </span>
+                  </div>
+
+                  <div
+                    className={`h-1.5 w-full rounded-full mt-2 ${
+                      newMark.memorizationMark > 8
+                        ? "bg-emerald-500"
+                        : newMark.memorizationMark > 6
+                        ? "bg-amber-500"
+                        : "bg-red-500"
+                    }`}></div>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex justify-between mt-8">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsUpdateMarkModalOpen(false);
+                      setEditingMark(null);
+                    }}
+                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-lg transition">
+                    إلغاء
+                  </button>
+                  <button
+                    type="submit"
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-8 rounded-lg transition shadow-md">
+                    تحديث العلامات
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+      {/* Bulk Update Modal */}
+      {isBulkUpdateModalOpen && currentUser?.role !== "student" && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
+          <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-800">
+                تحديث المقاطع لجميع الطلاب
+              </h3>
+              <button
+                onClick={() => {
+                  setIsBulkUpdateModalOpen(false);
+                  setSelectedSectionsForBulk([]);
+                }}
+                className="text-gray-500 hover:text-gray-700">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const updateData = {
+                  reviewSection:
+                    (formData.get("reviewSection") as string) || undefined,
+                  memorizationSection:
+                    (formData.get("memorizationSection") as string) ||
+                    undefined,
+                };
+                executeBulkUpdate(updateData);
+              }}>
+              {/* Section Selection */}
+              <div className="mb-6">
+                <h4 className="text-md font-bold text-gray-700 mb-3">
+                  اختر المقاطع المراد تحديثها:
+                </h4>
+                <div className="max-h-60 overflow-y-auto border rounded-lg p-3">
+                  {sections.map((section) => (
+                    <label
+                      key={section._id}
+                      className="flex items-center mb-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedSectionsForBulk.includes(section._id)}
+                        onChange={() => toggleSectionSelection(section._id)}
+                        className="ml-2"
+                      />
+                      <span className="text-sm">
+                        {new Date(section.date).toLocaleDateString("en-GB")} -
+                        مراجعة: {section.reviewSection} - حفظ:{" "}
+                        {section.memorizationSection}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Update Fields */}
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                  مقطع المراجعة الجديد (اتركه فارغاً للاحتفاظ بالقيمة الحالية)
+                </label>
+                <input
+                  type="text"
+                  name="reviewSection"
+                  placeholder="مثال: البقرة (1-10)"
+                  className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                  مقطع الحفظ الجديد (اتركه فارغاً للاحتفاظ بالقيمة الحالية)
+                </label>
+                <input
+                  type="text"
+                  name="memorizationSection"
+                  placeholder="مثال: البقرة (11-15)"
+                  className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex justify-between mt-8">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsBulkUpdateModalOpen(false);
+                    setSelectedSectionsForBulk([]);
+                  }}
+                  className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-lg transition">
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-8 rounded-lg transition shadow-md">
+                  تحديث المقاطع المحددة
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Delete Modal */}
+      {isBulkDeleteModalOpen && currentUser?.role !== "student" && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
+          <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-2xl">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-800">
+                حذف المقاطع لجميع الطلاب
+              </h3>
+              <button
+                onClick={() => {
+                  setIsBulkDeleteModalOpen(false);
+                  setSelectedSectionsForBulk([]);
+                }}
+                className="text-gray-500 hover:text-gray-700">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Section Selection */}
+            <div className="mb-6">
+              <h4 className="text-md font-bold text-gray-700 mb-3">
+                اختر المقاطع المراد حذفها:
+              </h4>
+              <div className="max-h-60 overflow-y-auto border rounded-lg p-3">
+                {sections.map((section) => (
+                  <label
+                    key={section._id}
+                    className="flex items-center mb-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedSectionsForBulk.includes(section._id)}
+                      onChange={() => toggleSectionSelection(section._id)}
+                      className="ml-2"
+                    />
+                    <span className="text-sm">
+                      {new Date(section.date).toLocaleDateString("en-GB")} -
+                      مراجعة: {section.reviewSection} - حفظ:{" "}
+                      {section.memorizationSection}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <p className="text-red-800 text-sm">
+                <strong>تحذير:</strong> سيتم حذف جميع العلامات المرتبطة بالمقاطع
+                المحددة نهائياً. هذا الإجراء لا يمكن التراجع عنه.
+              </p>
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex justify-between mt-8">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsBulkDeleteModalOpen(false);
+                  setSelectedSectionsForBulk([]);
+                }}
+                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-lg transition">
+                إلغاء
+              </button>
+              <button
+                type="button"
+                onClick={executeBulkDelete}
+                className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-8 rounded-lg transition shadow-md">
+                حذف المقاطع المحددة
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
