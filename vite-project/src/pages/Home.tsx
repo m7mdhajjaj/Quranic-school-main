@@ -2,6 +2,7 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 import { useEffect, useState, useRef } from "react";
 import type { ChangeEvent } from "react";
+import { API_URL } from "../config";
 
 interface User {
   _id: string;
@@ -15,6 +16,7 @@ const Home = () => {
     "/src/images/officialPhoto.jpg"
   );
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Initialize AOS
@@ -39,15 +41,73 @@ const Home = () => {
     }
   }, []);
 
+  // Load hero image from database
+  useEffect(() => {
+    const fetchHeroImage = async () => {
+      try {
+        const response = await fetch(`${API_URL}/settings/hero-image`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.heroImage) {
+            // If it's a relative path starting with /uploads/, prepend the base URL
+            if (data.heroImage.startsWith('/uploads/')) {
+              setHeroImage(`http://localhost:5005${data.heroImage}`);
+            } else {
+              setHeroImage(data.heroImage);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching hero image:", error);
+        // Keep default image on error
+      }
+    };
+
+    fetchHeroImage();
+  }, []);
+
   const isTeacherOrAdmin =
     currentUser?.role === "teacher" || currentUser?.role === "admin";
 
   // Function to handle image change
-  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setHeroImage(imageUrl);
+    if (!file) return;
+
+    setUploading(true);
+    
+    try {
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('heroImage', file);
+
+      // Upload to server
+      const response = await fetch(`${API_URL}/settings/hero-image`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.heroImage) {
+          // Update the image with the server URL
+          const imageUrl = `http://localhost:5005${data.heroImage}`;
+          setHeroImage(imageUrl);
+          console.log('Hero image updated successfully:', imageUrl);
+        }
+      } else {
+        console.error('Failed to upload hero image');
+        alert('فشل في رفع الصورة. يرجى المحاولة مرة أخرى.');
+      }
+    } catch (error) {
+      console.error('Error uploading hero image:', error);
+      alert('حدث خطأ أثناء رفع الصورة. يرجى المحاولة مرة أخرى.');
+    } finally {
+      setUploading(false);
+      // Reset the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -112,22 +172,43 @@ const Home = () => {
               {/* Edit button */}
               {isTeacherOrAdmin && (
                 <button
-                  className="absolute top-4 right-4 bg-white/80 hover:bg-white text-emerald-700 p-2 rounded-full shadow-md transition duration-300"
-                  title="تعديل الصورة"
-                  onClick={handleEditButtonClick}>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                    />
-                  </svg>
+                  className="absolute top-4 right-4 bg-white/80 hover:bg-white text-emerald-700 p-2 rounded-full shadow-md transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={uploading ? "جاري الرفع..." : "تعديل الصورة"}
+                  onClick={handleEditButtonClick}
+                  disabled={uploading}>
+                  {uploading ? (
+                    <svg
+                      className="h-5 w-5 animate-spin"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24">
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                      />
+                    </svg>
+                  )}
                 </button>
               )}
               {/* Hidden file input */}

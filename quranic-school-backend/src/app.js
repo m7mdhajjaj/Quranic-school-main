@@ -64,6 +64,7 @@ app.use("/api/sections", require("./routes/sectionRoutes"));
 app.use("/api/marks", require("./routes/markRoutes"));
 app.use("/api/attendance", require("./routes/attendanceRoutes"));
 app.use("/api/chat", require("./routes/chatRoutes"));
+app.use("/api/settings", require("./routes/settingsRoutes"));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
