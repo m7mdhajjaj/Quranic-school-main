@@ -3,11 +3,18 @@ import "aos/dist/aos.css";
 import { useEffect, useState, useRef } from "react";
 import type { ChangeEvent } from "react";
 
+interface User {
+  _id: string;
+  name: string;
+  role?: string;
+}
+
 const Home = () => {
   // State for the hero image
   const [heroImage, setHeroImage] = useState<string>(
     "/src/images/officialPhoto.jpg"
   );
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Initialize AOS
@@ -19,6 +26,21 @@ const Home = () => {
       easing: "ease-in-out",
     });
   }, []);
+
+  // Load user data
+  useEffect(() => {
+    const userJson = localStorage.getItem("user");
+    if (!userJson) return;
+    try {
+      const parsed = JSON.parse(userJson) as User;
+      setCurrentUser(parsed);
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
+  const isTeacherOrAdmin =
+    currentUser?.role === "teacher" || currentUser?.role === "admin";
 
   // Function to handle image change
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -88,24 +110,26 @@ const Home = () => {
               />
               <div className="absolute inset-0 bg-indigo-900/10"></div>
               {/* Edit button */}
-              <button
-                className="absolute top-4 right-4 bg-white/80 hover:bg-white text-emerald-700 p-2 rounded-full shadow-md transition duration-300"
-                title="تعديل الصورة"
-                onClick={handleEditButtonClick}>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                  />
-                </svg>
-              </button>{" "}
+              {isTeacherOrAdmin && (
+                <button
+                  className="absolute top-4 right-4 bg-white/80 hover:bg-white text-emerald-700 p-2 rounded-full shadow-md transition duration-300"
+                  title="تعديل الصورة"
+                  onClick={handleEditButtonClick}>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                    />
+                  </svg>
+                </button>
+              )}
               {/* Hidden file input */}
               <input
                 type="file"

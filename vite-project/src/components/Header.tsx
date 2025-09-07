@@ -1,8 +1,29 @@
 import { NavLink } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+interface User {
+  _id: string;
+  name: string;
+  role?: string;
+}
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const userJson = localStorage.getItem("user");
+    if (!userJson) return;
+    try {
+      const parsed = JSON.parse(userJson) as User;
+      setCurrentUser(parsed);
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
+  const isTeacherOrAdmin =
+    currentUser?.role === "teacher" || currentUser?.role === "admin";
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -125,17 +146,19 @@ const Header = () => {
                 تواصل مع المعلم
               </NavLink>
             </li>
-            <li>
-              <NavLink
-                to="/managment"
-                className={({ isActive }) =>
-                  isActive
-                    ? "px-2 py-1 bg-white/20 rounded transition duration-300"
-                    : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
-                }>
-                الادارة
-              </NavLink>
-            </li>
+            {isTeacherOrAdmin && (
+              <li>
+                <NavLink
+                  to="/managment"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "px-2 py-1 bg-white/20 rounded transition duration-300"
+                      : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
+                  }>
+                  الادارة
+                </NavLink>
+              </li>
+            )}
             <li>
               <NavLink
                 to="/login"
@@ -274,18 +297,20 @@ const Header = () => {
                   تواصل مع المعلم
                 </NavLink>
               </li>
-              <li>
-                <NavLink
-                  to="/managment"
-                  className={({ isActive }) =>
-                    isActive
-                      ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
-                      : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
-                  }
-                  onClick={toggleMenu}>
-                  الادارة
-                </NavLink>
-              </li>
+              {isTeacherOrAdmin && (
+                <li>
+                  <NavLink
+                    to="/managment"
+                    className={({ isActive }) =>
+                      isActive
+                        ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
+                        : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
+                    }
+                    onClick={toggleMenu}>
+                    الادارة
+                  </NavLink>
+                </li>
+              )}
               <li>
                 <NavLink
                   to="/login"
