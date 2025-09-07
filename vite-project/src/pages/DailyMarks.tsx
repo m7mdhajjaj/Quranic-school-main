@@ -261,18 +261,17 @@ const DailyMarks = () => {
   const handleUpdateMark = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!editingMark) return;
+    if (!editingMark || !selectedStudentId || !selectedSection) return;
 
     try {
       const markData = {
+        studentId: selectedStudentId,
+        sectionId: selectedSection._id,
         reviewMark: newMark.reviewMark,
         memorizationMark: newMark.memorizationMark,
       };
 
-      const response = await axios.put(
-        `${API_URL}/marks/${editingMark._id}`,
-        markData
-      );
+      const response = await axios.post(`${API_URL}/marks`, markData);
 
       // Update marks array with updated mark
       setMarks((prev) =>
@@ -558,8 +557,14 @@ const DailyMarks = () => {
         typeof mark.sectionId === "string"
           ? mark.sectionId
           : mark.sectionId._id;
+
+      const markStudentId =
+        typeof mark.studentId === "string"
+          ? mark.studentId
+          : mark.studentId._id;
+
       return (
-        mark.studentId === targetStudentId &&
+        markStudentId === targetStudentId &&
         filteredSections.some((section) => section._id === markSectionId)
       );
     });
@@ -848,14 +853,19 @@ const DailyMarks = () => {
                             ) : (
                               getFilteredSections().map((section) => {
                                 const mark = marks.find((m) => {
+                                  const markStudentId =
+                                    typeof m.studentId === "string"
+                                      ? m.studentId
+                                      : m.studentId._id;
+
                                   if (typeof m.sectionId === "string") {
                                     return (
-                                      m.studentId === selectedStudentId &&
+                                      markStudentId === selectedStudentId &&
                                       m.sectionId === section._id
                                     );
                                   } else {
                                     return (
-                                      m.studentId === selectedStudentId &&
+                                      markStudentId === selectedStudentId &&
                                       m.sectionId._id === section._id
                                     );
                                   }
