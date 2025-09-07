@@ -98,6 +98,12 @@ const DailyMarks = () => {
   >([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [loadingMarks, setLoadingMarks] = useState<boolean>(false);
+  const [selectedMonth, setSelectedMonth] = useState<number>(
+    new Date().getMonth() + 1
+  ); // Current month (1-12)
+  const [selectedYear, setSelectedYear] = useState<number>(
+    new Date().getFullYear()
+  ); // Current year
 
   // Current logged-in user state
   const [currentUser, setCurrentUser] = useState<LoggedInUser | null>(null);
@@ -501,6 +507,26 @@ const DailyMarks = () => {
     }));
   };
 
+  // Filter sections by selected month and year
+  const getFilteredSections = () => {
+    return sections.filter((section) => {
+      const sectionDate = new Date(section.date);
+      const sectionMonth = sectionDate.getMonth() + 1; // getMonth() returns 0-11, so add 1
+      const sectionYear = sectionDate.getFullYear();
+      return sectionMonth === selectedMonth && sectionYear === selectedYear;
+    });
+  };
+
+  // Handle month change
+  const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedMonth(Number(e.target.value));
+  };
+
+  // Handle year change
+  const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedYear(Number(e.target.value));
+  };
+
   return (
     <div
       className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 py-12 px-4"
@@ -523,6 +549,54 @@ const DailyMarks = () => {
               )}
             </h2>
           )}
+        </div>
+
+        {/* Month and Year Filter */}
+        <div className="mb-6 flex justify-center">
+          <div className="bg-white rounded-xl shadow-md p-4">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">
+              فلترة العلامات حسب الشهر والسنة
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                  اختر الشهر:
+                </label>
+                <select
+                  value={selectedMonth}
+                  onChange={handleMonthChange}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                  <option value={1}>يناير (1)</option>
+                  <option value={2}>فبراير (2)</option>
+                  <option value={3}>مارس (3)</option>
+                  <option value={4}>أبريل (4)</option>
+                  <option value={5}>مايو (5)</option>
+                  <option value={6}>يونيو (6)</option>
+                  <option value={7}>يوليو (7)</option>
+                  <option value={8}>أغسطس (8)</option>
+                  <option value={9}>سبتمبر (9)</option>
+                  <option value={10}>أكتوبر (10)</option>
+                  <option value={11}>نوفمبر (11)</option>
+                  <option value={12}>ديسمبر (12)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-gray-700 text-sm font-bold mb-2">
+                  اختر السنة:
+                </label>
+                <select
+                  value={selectedYear}
+                  onChange={handleYearChange}
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                  <option value={2023}>2023</option>
+                  <option value={2024}>2024</option>
+                  <option value={2025}>2025</option>
+                  <option value={2026}>2026</option>
+                  <option value={2027}>2027</option>
+                </select>
+              </div>
+            </div>
+          </div>
         </div>
 
         {loading ? (
@@ -689,8 +763,16 @@ const DailyMarks = () => {
                                   لا توجد مقاطع مضافة بعد
                                 </td>
                               </tr>
+                            ) : getFilteredSections().length === 0 ? (
+                              <tr>
+                                <td
+                                  colSpan={6}
+                                  className="py-8 text-center text-gray-500">
+                                  لا توجد مقاطع في الشهر والسنة المحددة
+                                </td>
+                              </tr>
                             ) : (
-                              sections.map((section) => {
+                              getFilteredSections().map((section) => {
                                 const mark = marks.find((m) => {
                                   if (typeof m.sectionId === "string") {
                                     return (
@@ -895,8 +977,16 @@ const DailyMarks = () => {
                               لا توجد مقاطع مضافة بعد
                             </td>
                           </tr>
+                        ) : getFilteredSections().length === 0 ? (
+                          <tr>
+                            <td
+                              colSpan={5}
+                              className="py-8 text-center text-gray-500">
+                              لا توجد مقاطع في الشهر والسنة المحددة
+                            </td>
+                          </tr>
                         ) : (
-                          sections.map((section) => {
+                          getFilteredSections().map((section) => {
                             const mark = marks.find((m) => {
                               if (typeof m.sectionId === "string") {
                                 return m.sectionId === section._id;
@@ -1597,7 +1687,7 @@ const DailyMarks = () => {
                   اختر المقاطع المراد تحديثها:
                 </h4>
                 <div className="max-h-60 overflow-y-auto border rounded-lg p-3">
-                  {sections.map((section) => (
+                  {getFilteredSections().map((section) => (
                     <label
                       key={section._id}
                       className="flex items-center mb-2 cursor-pointer">
@@ -1700,7 +1790,7 @@ const DailyMarks = () => {
                 اختر المقاطع المراد حذفها:
               </h4>
               <div className="max-h-60 overflow-y-auto border rounded-lg p-3">
-                {sections.map((section) => (
+                {getFilteredSections().map((section) => (
                   <label
                     key={section._id}
                     className="flex items-center mb-2 cursor-pointer">
