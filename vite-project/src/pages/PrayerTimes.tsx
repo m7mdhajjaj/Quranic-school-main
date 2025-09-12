@@ -455,12 +455,41 @@ const PrayerTimes = () => {
                 <span>استقبل القبلة عند الصلاة</span>
               </li>
               <li className="flex items-center">
-                <span className="text-green-500 ml-3">✓</span>
+                <span className="text-blue-500 ml-3">📿</span>
                 <span>اقرأ الأذكار بعد الصلاة</span>
               </li>
               <li className="flex items-center">
-                <span className="text-green-500 ml-3">✓</span>
+                <span className="text-purple-500 ml-3">⏰</span>
                 <span>حافظ على الصلاة في أوقاتها</span>
+              </li>
+              <li className="flex items-center">
+                <span className="text-orange-500 ml-3">🤲</span>
+                <span>ادع الله واستغفر بعد كل صلاة</span>
+              </li>
+              <li className="flex items-center">
+                <span className="text-red-500 ml-3">🚫</span>
+                <span>تجنب الانشغال أثناء الصلاة</span>
+              </li>
+            
+              <li className="flex items-center">
+                <span className="text-yellow-500 ml-3">🌟</span>
+                <span>صل النوافل والسنن المؤكدة</span>
+              </li>
+              <li className="flex items-center">
+                <span className="text-pink-500 ml-3">👥</span>
+                <span>صل في جماعة إن أمكن</span>
+              </li>
+              <li className="flex items-center">
+                <span className="text-teal-500 ml-3">💧</span>
+                <span>تأكد من طهارة المكان والثوب</span>
+              </li>
+              <li className="flex items-center">
+                <span className="text-indigo-500 ml-3">🧘</span>
+                <span>اخفض صوتك واخشع في الصلاة</span>
+              </li>
+              <li className="flex items-center">
+                <span className="text-amber-500 ml-3">💭</span>
+                <span>تدبر في معاني ما تقرأ</span>
               </li>
             </ul>
           </div>
