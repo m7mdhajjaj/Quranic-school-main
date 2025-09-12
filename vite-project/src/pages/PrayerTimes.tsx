@@ -41,6 +41,14 @@ const PrayerTimes = () => {
   const [error, setError] = useState("");
   const [nextPrayer, setNextPrayer] = useState<PrayerTime | null>(null);
 
+  // Compass states
+  const [deviceHeading, setDeviceHeading] = useState(0);
+  const [isCompassSupported, setIsCompassSupported] = useState(false);
+  const [compassPermission, setCompassPermission] = useState<string>("unknown");
+
+  // Qibla direction from Nablus (157 degrees)
+  const qiblaDirection = 157;
+
   const prayerNames = [
     { key: "Fajr", arabicName: "الفجر", icon: "🌅" },
     { key: "Sunrise", arabicName: "الشروق", icon: "☀️" },
@@ -159,6 +167,63 @@ const PrayerTimes = () => {
     return `${hoursLeft} ساعة و ${minutesLeft} دقيقة`;
   };
 
+  // Compass functions
+  const requestCompassPermission = async () => {
+    if ("DeviceOrientationEvent" in window) {
+      try {
+        // For iOS 13+ devices, we need to request permission
+        if (
+          typeof (DeviceOrientationEvent as any).requestPermission ===
+          "function"
+        ) {
+          const permission = await (
+            DeviceOrientationEvent as any
+          ).requestPermission();
+          setCompassPermission(permission);
+          if (permission === "granted") {
+            setIsCompassSupported(true);
+            startCompass();
+          }
+        } else {
+          // For other devices, compass is available without permission
+          setIsCompassSupported(true);
+          setCompassPermission("granted");
+          startCompass();
+        }
+      } catch (error) {
+        console.error("Error requesting compass permission:", error);
+        setCompassPermission("denied");
+      }
+    } else {
+      setIsCompassSupported(false);
+      setCompassPermission("not-supported");
+    }
+  };
+
+  const startCompass = () => {
+    const handleOrientation = (event: DeviceOrientationEvent) => {
+      if (event.alpha !== null) {
+        // Convert alpha to 0-360 degrees
+        let heading = 360 - event.alpha;
+        if (heading < 0) heading += 360;
+        if (heading >= 360) heading -= 360;
+        setDeviceHeading(heading);
+      }
+    };
+
+    window.addEventListener("deviceorientation", handleOrientation);
+
+    return () => {
+      window.removeEventListener("deviceorientation", handleOrientation);
+    };
+  };
+
+  const getQiblaArrowRotation = (): number => {
+    // Calculate the rotation needed to point to Qibla
+    const qiblaFromNorth = qiblaDirection - deviceHeading;
+    return qiblaFromNorth;
+  };
+
   useEffect(() => {
     fetchPrayerTimes();
 
@@ -170,6 +235,11 @@ const PrayerTimes = () => {
     }, 60000);
 
     return () => clearInterval(interval);
+  }, []);
+
+  // Initialize compass
+  useEffect(() => {
+    requestCompassPermission();
   }, []);
 
   if (loading) {
@@ -281,16 +351,92 @@ const PrayerTimes = () => {
           {/* Qibla Direction */}
           <div className="bg-white rounded-2xl shadow-lg p-6">
             <h3 className="text-2xl font-bold text-gray-800 mb-4 text-center">
-              🧭 اتجاه القبلة
+              🧭 بوصلة القبلة
             </h3>
             <div className="text-center">
-              <div className="w-32 h-32 mx-auto mb-4 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center">
-                <div className="text-4xl text-white">🕋</div>
+              {/* Interactive Compass */}
+              <div className="relative w-48 h-48 mx-auto mb-4">
+                {/* Compass Circle */}
+                <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 rounded-full border-4 border-gray-300 relative shadow-inner">
+                  {/* North indicator */}
+                  <div className="absolute top-2 left-1/2 transform -translate-x-1/2 text-red-600 font-bold text-sm">
+                    N
+                  </div>
+
+                  {/* Compass directions */}
+                  <div className="absolute top-1/2 right-2 transform -translate-y-1/2 text-gray-600 font-bold text-sm">
+                    E
+                  </div>
+                  <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-gray-600 font-bold text-sm">
+                    S
+                  </div>
+                  <div className="absolute top-1/2 left-2 transform -translate-y-1/2 text-gray-600 font-bold text-sm">
+                    W
+                  </div>
+
+                  {/* Qibla Arrow */}
+                  <div
+                    className="absolute top-1/2 left-1/2 w-1 h-16 bg-green-500 transform -translate-x-1/2 -translate-y-full origin-bottom transition-transform duration-300"
+                    style={{
+                      transform: `translate(-50%, -100%) rotate(${getQiblaArrowRotation()}deg)`,
+                      transformOrigin: "bottom center",
+                    }}>
+                    {/* Arrow head */}
+                    <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-2 border-r-2 border-b-4 border-l-transparent border-r-transparent border-b-green-500"></div>
+                  </div>
+
+                  {/* Kaaba icon in center */}
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center text-white text-xl shadow-lg">
+                    🕋
+                  </div>
+                </div>
               </div>
-              <p className="text-xl font-semibold text-gray-700">
-                157° جنوب شرق
-              </p>
-              <p className="text-gray-600 mt-2">من نابلس إلى مكة المكرمة</p>
+
+              <div className="space-y-2">
+                <p className="text-xl font-semibold text-gray-700">
+                  {qiblaDirection}° جنوب شرق
+                </p>
+                <p className="text-gray-600">من نابلس إلى مكة المكرمة</p>
+
+                {isCompassSupported ? (
+                  <div className="mt-4 p-3 bg-green-50 rounded-lg">
+                    <p className="text-green-700 text-sm">
+                      🎯 البوصلة نشطة - حرك هاتفك لرؤية الاتجاه
+                    </p>
+                    <p className="text-green-600 text-xs mt-1">
+                      اتجاه الجهاز: {Math.round(deviceHeading)}°
+                    </p>
+                  </div>
+                ) : compassPermission === "not-supported" ? (
+                  <div className="mt-4 p-3 bg-yellow-50 rounded-lg">
+                    <p className="text-yellow-700 text-sm">
+                      ⚠️ البوصلة غير متاحة على هذا الجهاز
+                    </p>
+                  </div>
+                ) : compassPermission === "denied" ? (
+                  <div className="mt-4 p-3 bg-red-50 rounded-lg">
+                    <p className="text-red-700 text-sm">
+                      ❌ تم رفض إذن البوصلة
+                    </p>
+                    <button
+                      onClick={requestCompassPermission}
+                      className="mt-2 bg-green-600 text-white px-4 py-2 rounded-full text-xs hover:bg-green-700 transition-colors">
+                      إعادة المحاولة
+                    </button>
+                  </div>
+                ) : (
+                  <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                    <p className="text-blue-700 text-sm">
+                      🔄 جاري تحميل البوصلة...
+                    </p>
+                    <button
+                      onClick={requestCompassPermission}
+                      className="mt-2 bg-green-600 text-white px-4 py-2 rounded-full text-xs hover:bg-green-700 transition-colors">
+                      تفعيل البوصلة
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
