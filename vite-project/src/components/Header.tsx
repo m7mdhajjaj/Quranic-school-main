@@ -126,6 +126,28 @@ const Header = () => {
             </li>
             <li>
               <NavLink
+                to="/quran"
+                className={({ isActive }) =>
+                  isActive
+                    ? "px-2 py-1 bg-white/20 rounded transition duration-300"
+                    : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
+                }>
+                القرآن الكريم
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/quran-audio"
+                className={({ isActive }) =>
+                  isActive
+                    ? "px-2 py-1 bg-white/20 rounded transition duration-300"
+                    : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
+                }>
+                القرآن الصوتي
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
                 to="/arrangement"
                 className={({ isActive }) =>
                   isActive
@@ -293,6 +315,30 @@ const Header = () => {
                   }
                   onClick={toggleMenu}>
                   مواقيت الصلاة
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/quran"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
+                      : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
+                  }
+                  onClick={toggleMenu}>
+                  القرآن الكريم
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/quran-audio"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
+                      : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
+                  }
+                  onClick={toggleMenu}>
+                  القرآن الصوتي
                 </NavLink>
               </li>
               <li>

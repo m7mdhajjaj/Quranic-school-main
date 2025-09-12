@@ -245,7 +245,7 @@ const PrayerTimes = () => {
   if (loading) {
     return (
       <div
-        className="min-h-screen bg-gradient-to-br from-green-50 to-teal-50 flex items-center justify-center"
+        className="min-h-screen bg-gray-50 flex items-center justify-center"
         dir="rtl">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-500 mx-auto mb-4"></div>
@@ -258,7 +258,7 @@ const PrayerTimes = () => {
   if (error) {
     return (
       <div
-        className="min-h-screen bg-gradient-to-br from-green-50 to-teal-50 flex items-center justify-center"
+        className="min-h-screen bg-gray-50 flex items-center justify-center"
         dir="rtl">
         <div className="text-center bg-white rounded-2xl shadow-xl p-8 max-w-md mx-4">
           <div className="text-6xl mb-4">❌</div>
@@ -276,7 +276,7 @@ const PrayerTimes = () => {
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-br from-green-50 to-teal-50 p-4"
+      className="min-h-screen bg-gray-50 p-4"
       dir="rtl">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
