@@ -15,6 +15,7 @@ import Absence from "./pages/Absence";
 import NotFound from "./pages/NotFound";
 import Chat from "./pages/Chat";
 import Managment from "./pages/managment";
+import Test from "./pages/Test";
 function AppContent() {
   const location = useLocation();
   const isLoginPage =
@@ -36,6 +37,7 @@ function AppContent() {
         <Route path="/chat" element={<Chat />} />
         <Route path="/managment" element={<Managment />} />
         {/* Add more routes as needed */}
+        <Route path="/test" element={<Test />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {!isLoginPage && !isChatPage && <Footer />}

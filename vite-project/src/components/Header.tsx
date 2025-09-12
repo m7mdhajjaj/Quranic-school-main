@@ -104,6 +104,17 @@ const Header = () => {
             </li>
             <li>
               <NavLink
+                to="/test"
+                className={({ isActive }) =>
+                  isActive
+                    ? "px-2 py-1 bg-white/20 rounded transition duration-300"
+                    : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
+                }>
+                الاختبارات
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
                 to="/arrangement"
                 className={({ isActive }) =>
                   isActive
@@ -247,6 +258,18 @@ const Header = () => {
                   }
                   onClick={toggleMenu}>
                   العلامات اليوميه
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/test"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
+                      : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
+                  }
+                  onClick={toggleMenu}>
+                  الاختبارات
                 </NavLink>
               </li>
               <li>
