@@ -498,7 +498,9 @@ const DailyMarks = () => {
   };
 
   // Handle input changes for new mark
-  const handleMarkInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMarkInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setNewMark((prev) => ({
       ...prev,
@@ -892,9 +894,9 @@ const DailyMarks = () => {
                                         <div className="flex items-center">
                                           <span
                                             className={`font-semibold ${
-                                              (mark.reviewMark || 0) > 8
+                                              (mark.reviewMark || 0) >= 9
                                                 ? "text-emerald-600"
-                                                : (mark.reviewMark || 0) > 6
+                                                : (mark.reviewMark || 0) >= 7
                                                 ? "text-amber-600"
                                                 : "text-red-600"
                                             }`}>
@@ -903,9 +905,9 @@ const DailyMarks = () => {
                                           <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden mr-2">
                                             <div
                                               className={`h-full ${
-                                                (mark.reviewMark || 0) > 8
+                                                (mark.reviewMark || 0) >= 9
                                                   ? "bg-emerald-500"
-                                                  : (mark.reviewMark || 0) > 6
+                                                  : (mark.reviewMark || 0) >= 7
                                                   ? "bg-amber-500"
                                                   : "bg-red-500"
                                               }`}
@@ -928,10 +930,10 @@ const DailyMarks = () => {
                                         <div className="flex items-center">
                                           <span
                                             className={`font-semibold ${
-                                              (mark.memorizationMark || 0) > 8
+                                              (mark.memorizationMark || 0) >= 9
                                                 ? "text-emerald-600"
-                                                : (mark.memorizationMark || 0) >
-                                                  6
+                                                : (mark.memorizationMark || 0) >=
+                                                  7
                                                 ? "text-amber-600"
                                                 : "text-red-600"
                                             }`}>
@@ -940,10 +942,10 @@ const DailyMarks = () => {
                                           <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden mr-2">
                                             <div
                                               className={`h-full ${
-                                                (mark.memorizationMark || 0) > 8
+                                                (mark.memorizationMark || 0) >= 9
                                                   ? "bg-emerald-500"
                                                   : (mark.memorizationMark ||
-                                                      0) > 6
+                                                      0) >= 7
                                                   ? "bg-amber-500"
                                                   : "bg-red-500"
                                               }`}
@@ -1153,9 +1155,9 @@ const DailyMarks = () => {
                                     <div className="flex items-center">
                                       <span
                                         className={`font-semibold ${
-                                          (mark.reviewMark || 0) > 8
+                                          (mark.reviewMark || 0) >= 9
                                             ? "text-emerald-600"
-                                            : (mark.reviewMark || 0) > 6
+                                            : (mark.reviewMark || 0) >= 7
                                             ? "text-amber-600"
                                             : "text-red-600"
                                         }`}>
@@ -1164,9 +1166,9 @@ const DailyMarks = () => {
                                       <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden mr-2">
                                         <div
                                           className={`h-full ${
-                                            (mark.reviewMark || 0) > 8
+                                            (mark.reviewMark || 0) >= 9
                                               ? "bg-emerald-500"
-                                              : (mark.reviewMark || 0) > 6
+                                              : (mark.reviewMark || 0) >= 7
                                               ? "bg-amber-500"
                                               : "bg-red-500"
                                           }`}
@@ -1191,9 +1193,9 @@ const DailyMarks = () => {
                                     <div className="flex items-center">
                                       <span
                                         className={`font-semibold ${
-                                          (mark.memorizationMark || 0) > 8
+                                          (mark.memorizationMark || 0) >= 9
                                             ? "text-emerald-600"
-                                            : (mark.memorizationMark || 0) > 6
+                                            : (mark.memorizationMark || 0) >= 7
                                             ? "text-amber-600"
                                             : "text-red-600"
                                         }`}>
@@ -1202,9 +1204,9 @@ const DailyMarks = () => {
                                       <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden mr-2">
                                         <div
                                           className={`h-full ${
-                                            (mark.memorizationMark || 0) > 8
+                                            (mark.memorizationMark || 0) >= 9
                                               ? "bg-emerald-500"
-                                              : (mark.memorizationMark || 0) > 6
+                                              : (mark.memorizationMark || 0) >= 7
                                               ? "bg-amber-500"
                                               : "bg-red-500"
                                           }`}
@@ -1585,29 +1587,30 @@ const DailyMarks = () => {
                   <label
                     className="block text-gray-700 text-sm font-bold mb-2"
                     htmlFor="reviewMark">
-                    علامة المراجعة (1-10)
+                    علامة المراجعة (6-10)
                   </label>
                   <div className="flex items-center mb-2">
                     <input
                       type="range"
                       id="reviewMark"
                       name="reviewMark"
-                      min="1"
+                      min="6"
                       max="10"
+                      step="0.5"
                       value={newMark.reviewMark}
                       onChange={handleMarkInputChange}
                       className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
                     />
-                    <span className="mr-2 font-bold text-emerald-700 min-w-[30px] text-center">
+                    <span className="mr-2 font-bold text-emerald-700 min-w-[50px] text-center">
                       {newMark.reviewMark}/10
                     </span>
                   </div>
 
                   <div
                     className={`h-1.5 w-full rounded-full mt-2 ${
-                      newMark.reviewMark > 8
+                      newMark.reviewMark >= 9
                         ? "bg-emerald-500"
-                        : newMark.reviewMark > 6
+                        : newMark.reviewMark >= 7
                         ? "bg-amber-500"
                         : "bg-red-500"
                     }`}></div>
@@ -1618,29 +1621,30 @@ const DailyMarks = () => {
                   <label
                     className="block text-gray-700 text-sm font-bold mb-2"
                     htmlFor="memorizationMark">
-                    علامة الحفظ (1-10)
+                    علامة الحفظ (6-10)
                   </label>
                   <div className="flex items-center mb-2">
                     <input
                       type="range"
                       id="memorizationMark"
                       name="memorizationMark"
-                      min="1"
+                      min="6"
                       max="10"
+                      step="0.5"
                       value={newMark.memorizationMark}
                       onChange={handleMarkInputChange}
                       className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
                     />
-                    <span className="mr-2 font-bold text-emerald-700 min-w-[30px] text-center">
+                    <span className="mr-2 font-bold text-emerald-700 min-w-[50px] text-center">
                       {newMark.memorizationMark}/10
                     </span>
                   </div>
 
                   <div
                     className={`h-1.5 w-full rounded-full mt-2 ${
-                      newMark.memorizationMark > 8
+                      newMark.memorizationMark >= 9
                         ? "bg-emerald-500"
-                        : newMark.memorizationMark > 6
+                        : newMark.memorizationMark >= 7
                         ? "bg-amber-500"
                         : "bg-red-500"
                     }`}></div>
@@ -1738,29 +1742,30 @@ const DailyMarks = () => {
                   <label
                     className="block text-gray-700 text-sm font-bold mb-2"
                     htmlFor="updateReviewMark">
-                    علامة المراجعة (1-10)
+                    علامة المراجعة (6-10)
                   </label>
                   <div className="flex items-center mb-2">
                     <input
                       type="range"
                       id="updateReviewMark"
                       name="reviewMark"
-                      min="1"
+                      min="6"
                       max="10"
+                      step="0.5"
                       value={newMark.reviewMark}
                       onChange={handleMarkInputChange}
                       className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                     />
-                    <span className="mr-2 font-bold text-blue-700 min-w-[30px] text-center">
+                    <span className="mr-2 font-bold text-blue-700 min-w-[50px] text-center">
                       {newMark.reviewMark}/10
                     </span>
                   </div>
 
                   <div
                     className={`h-1.5 w-full rounded-full mt-2 ${
-                      newMark.reviewMark > 8
+                      newMark.reviewMark >= 9
                         ? "bg-emerald-500"
-                        : newMark.reviewMark > 6
+                        : newMark.reviewMark >= 7
                         ? "bg-amber-500"
                         : "bg-red-500"
                     }`}></div>
@@ -1771,29 +1776,30 @@ const DailyMarks = () => {
                   <label
                     className="block text-gray-700 text-sm font-bold mb-2"
                     htmlFor="updateMemorizationMark">
-                    علامة الحفظ (1-10)
+                    علامة الحفظ (6-10)
                   </label>
                   <div className="flex items-center mb-2">
                     <input
                       type="range"
                       id="updateMemorizationMark"
                       name="memorizationMark"
-                      min="1"
+                      min="6"
                       max="10"
+                      step="0.5"
                       value={newMark.memorizationMark}
                       onChange={handleMarkInputChange}
                       className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                     />
-                    <span className="mr-2 font-bold text-blue-700 min-w-[30px] text-center">
+                    <span className="mr-2 font-bold text-blue-700 min-w-[50px] text-center">
                       {newMark.memorizationMark}/10
                     </span>
                   </div>
 
                   <div
                     className={`h-1.5 w-full rounded-full mt-2 ${
-                      newMark.memorizationMark > 8
+                      newMark.memorizationMark >= 9
                         ? "bg-emerald-500"
-                        : newMark.memorizationMark > 6
+                        : newMark.memorizationMark >= 7
                         ? "bg-amber-500"
                         : "bg-red-500"
                     }`}></div>

@@ -80,13 +80,10 @@ const Login = () => {
           return;
         }
 
-        const response = await axios.post(
-          `${API_URL}/auth/reset-password`,
-          {
-            ...forgotPasswordData,
-            newPassword: newPasswordData.password,
-          }
-        );
+        const response = await axios.post(`${API_URL}/auth/reset-password`, {
+          ...forgotPasswordData,
+          newPassword: newPasswordData.password,
+        });
 
         if (response.data.success) {
           alert("تم تغيير كلمة المرور بنجاح!");

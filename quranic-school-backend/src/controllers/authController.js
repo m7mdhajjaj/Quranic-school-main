@@ -11,9 +11,9 @@ exports.login = async (req, res) => {
   try {
     console.log("=== Login called ===");
     console.log("Request body:", req.body);
-    
+
     const { studentId, idNumber, userType } = req.body;
-    
+
     console.log("Parsed values:", { studentId, idNumber, userType });
 
     // Check if it's a teacher login
@@ -484,7 +484,8 @@ exports.verifyIdentity = async (req, res) => {
       if (
         student.firstName.toLowerCase() === firstName.toLowerCase() &&
         student.fatherName.toLowerCase() === fatherName.toLowerCase() &&
-        student.grandFatherName.toLowerCase() === grandFatherName.toLowerCase() &&
+        student.grandFatherName.toLowerCase() ===
+          grandFatherName.toLowerCase() &&
         student.lastName.toLowerCase() === lastName.toLowerCase() &&
         student.motherName &&
         student.motherName.toLowerCase() === motherName.toLowerCase() &&
@@ -516,7 +517,8 @@ exports.verifyIdentity = async (req, res) => {
         teacher.fatherName &&
         teacher.fatherName.toLowerCase() === fatherName.toLowerCase() &&
         teacher.grandFatherName &&
-        teacher.grandFatherName.toLowerCase() === grandFatherName.toLowerCase() &&
+        teacher.grandFatherName.toLowerCase() ===
+          grandFatherName.toLowerCase() &&
         teacher.lastName.toLowerCase() === lastName.toLowerCase() &&
         teacher.motherName &&
         teacher.motherName.toLowerCase() === motherName.toLowerCase() &&
@@ -576,7 +578,8 @@ exports.resetPassword = async (req, res) => {
       if (
         student.firstName.toLowerCase() === firstName.toLowerCase() &&
         student.fatherName.toLowerCase() === fatherName.toLowerCase() &&
-        student.grandFatherName.toLowerCase() === grandFatherName.toLowerCase() &&
+        student.grandFatherName.toLowerCase() ===
+          grandFatherName.toLowerCase() &&
         student.lastName.toLowerCase() === lastName.toLowerCase() &&
         student.motherName &&
         student.motherName.toLowerCase() === motherName.toLowerCase() &&
@@ -596,7 +599,8 @@ exports.resetPassword = async (req, res) => {
 
       if (teacher) {
         const birthDateMatch = teacher.birthDate
-          ? new Date(teacher.birthDate).toISOString().split("T")[0] === birthDate
+          ? new Date(teacher.birthDate).toISOString().split("T")[0] ===
+            birthDate
           : false;
 
         if (
@@ -604,7 +608,8 @@ exports.resetPassword = async (req, res) => {
           teacher.fatherName &&
           teacher.fatherName.toLowerCase() === fatherName.toLowerCase() &&
           teacher.grandFatherName &&
-          teacher.grandFatherName.toLowerCase() === grandFatherName.toLowerCase() &&
+          teacher.grandFatherName.toLowerCase() ===
+            grandFatherName.toLowerCase() &&
           teacher.lastName.toLowerCase() === lastName.toLowerCase() &&
           teacher.motherName &&
           teacher.motherName.toLowerCase() === motherName.toLowerCase() &&
