@@ -4,6 +4,8 @@ const {
   getMe,
   registerTeacher,
   changePassword,
+  verifyIdentity,
+  resetPassword,
 } = require("../controllers/authController");
 const { protect } = require("../middleware/authMiddleware");
 
@@ -20,5 +22,11 @@ router.post("/register-teacher", protect, registerTeacher);
 
 // مسار تغيير كلمة المرور
 router.post("/change-password", protect, changePassword);
+
+// مسار للتحقق من الهوية عند نسيان كلمة المرور
+router.post("/verify-identity", verifyIdentity);
+
+// مسار لإعادة تعيين كلمة المرور
+router.post("/reset-password", resetPassword);
 
 module.exports = router;
