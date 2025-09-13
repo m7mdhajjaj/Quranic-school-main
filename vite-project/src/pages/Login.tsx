@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API_URL } from "../config";
@@ -26,6 +26,28 @@ const Login = () => {
     password: "",
     confirmPassword: "",
   });
+
+  // التحقق من حالة تسجيل الدخول عند تحميل الصفحة
+  useEffect(() => {
+    const user = localStorage.getItem("user");
+    if (user) {
+      // إذا كان المستخدم مسجل دخول بالفعل، أعد توجيهه للصفحة الرئيسية
+      navigate("/", { replace: true });
+    }
+    
+    // منع استخدام زر الرجوع للعودة بعد تسجيل الخروج
+    const preventBack = () => {
+      window.history.pushState(null, '', window.location.href);
+    };
+    
+    // إضافة entry جديد للتاريخ عند دخول صفحة تسجيل الدخول
+    window.history.pushState(null, '', window.location.href);
+    window.addEventListener('popstate', preventBack);
+    
+    return () => {
+      window.removeEventListener('popstate', preventBack);
+    };
+  }, [navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

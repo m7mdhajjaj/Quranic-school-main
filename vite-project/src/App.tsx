@@ -7,6 +7,7 @@ import News from "./pages/news";
 import Footer from "./components/Footer";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useLocation } from "react-router-dom";
+import useAuthGuard from "./hooks/useAuthGuard";
 import Arrangement from "./pages/Arrangement";
 import Activities from "./pages/Activities";
 import DailyMarks from "./pages/DailyMarks";
@@ -25,6 +26,10 @@ function AppContent() {
   const isChatPage = location.pathname === "/chat";
   const isQuranPage =
     location.pathname === "/quran" || location.pathname === "/quran-audio";
+
+  // استخدام hook الحماية
+  useAuthGuard();
+
   return (
     <>
       {!isLoginPage && <Header />}

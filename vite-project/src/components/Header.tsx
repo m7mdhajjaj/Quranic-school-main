@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import NotificationHeader from "./NotificationHeader";
 import io from "socket.io-client";
@@ -13,6 +13,7 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [socket, setSocket] = useState<any>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const userJson = localStorage.getItem("user");
@@ -34,6 +35,8 @@ const Header = () => {
 
       return () => {
         socketInstance.disconnect();
+        // إزالة event listener عند إلغاء تحميل المكون
+        window.removeEventListener('popstate', preventBackAfterLogout);
       };
     } catch (e) {
       // ignore
@@ -45,6 +48,45 @@ const Header = () => {
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+  };
+
+  const handleLogout = () => {
+    // إزالة بيانات المستخدم من localStorage
+    localStorage.removeItem("user");
+    
+    // قطع اتصال Socket إذا كان موجوداً
+    if (socket) {
+      socket.disconnect();
+    }
+    
+    // تحديث الحالة
+    setCurrentUser(null);
+    setSocket(null);
+    
+    // إغلاق القائمة المنسدلة في الموبايل
+    setIsMenuOpen(false);
+    
+    // تنظيف تاريخ المتصفح ومنع العودة
+    window.history.pushState(null, '', window.location.href);
+    window.history.replaceState(null, '', '/login');
+    
+    // إعادة التوجيه إلى صفحة تسجيل الدخول
+    navigate("/login", { replace: true });
+    
+    // منع استخدام زر الرجوع بعد تسجيل الخروج
+    setTimeout(() => {
+      window.history.pushState(null, '', '/login');
+      window.addEventListener('popstate', preventBackAfterLogout);
+    }, 100);
+  };
+
+  const preventBackAfterLogout = () => {
+    // التحقق من عدم وجود مستخدم مسجل
+    const userInStorage = localStorage.getItem("user");
+    if (!userInStorage) {
+      window.history.pushState(null, '', '/login');
+      navigate("/login", { replace: true });
+    }
   };
 
   return (
@@ -222,27 +264,37 @@ const Header = () => {
               </li>
             )}
             <li>
-              <NavLink
-                to="/login"
-                className={({ isActive }) =>
-                  isActive
-                    ? "bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full shadow transition duration-300 mx-2"
-                    : "bg-white text-emerald-700 px-3 py-1 rounded-full shadow hover:bg-emerald-50 transition duration-300 mx-2"
-                }>
-                التسجيل
-              </NavLink>
+              {currentUser ? (
+                <button
+                  onClick={handleLogout}
+                  className="bg-red-500 text-white px-3 py-1 rounded-full shadow hover:bg-red-600 transition duration-300 mx-2">
+                  تسجيل الخروج
+                </button>
+              ) : (
+                <NavLink
+                  to="/login"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full shadow transition duration-300 mx-2"
+                      : "bg-white text-emerald-700 px-3 py-1 rounded-full shadow hover:bg-emerald-50 transition duration-300 mx-2"
+                  }>
+                  التسجيل
+                </NavLink>
+              )}
             </li>
-            <li>
-              <NavLink
-                to="/change-password"
-                className={({ isActive }) =>
-                  isActive
-                    ? "bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full shadow transition duration-300 mx-2"
-                    : "bg-yellow-200 text-yellow-700 px-3 py-1 rounded-full shadow hover:bg-yellow-50 transition duration-300 mx-2"
-                }>
-                تغيير كلمة المرور
-              </NavLink>
-            </li>{" "}
+            {currentUser && (
+              <li>
+                <NavLink
+                  to="/change-password"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full shadow transition duration-300 mx-2"
+                      : "bg-yellow-200 text-yellow-700 px-3 py-1 rounded-full shadow hover:bg-yellow-50 transition duration-300 mx-2"
+                  }>
+                  تغيير كلمة المرور
+                </NavLink>
+              </li>
+            )}{" "}
           </ul>
         </nav>
 
@@ -433,21 +485,31 @@ const Header = () => {
                 </li>
               )}
               <li>
-                <NavLink
-                  to="/login"
-                  className="bg-white text-emerald-700 px-4 py-2 rounded-full shadow block w-full"
-                  onClick={toggleMenu}>
-                  التسجيل
-                </NavLink>
+                {currentUser ? (
+                  <button
+                    onClick={handleLogout}
+                    className="bg-red-500 text-white px-4 py-2 rounded-full shadow hover:bg-red-600 block w-full">
+                    تسجيل الخروج
+                  </button>
+                ) : (
+                  <NavLink
+                    to="/login"
+                    className="bg-white text-emerald-700 px-4 py-2 rounded-full shadow block w-full"
+                    onClick={toggleMenu}>
+                    التسجيل
+                  </NavLink>
+                )}
               </li>
-              <li>
-                <NavLink
-                  to="/change-password"
-                  className="bg-yellow-200 text-yellow-700 px-4 py-2 rounded-full shadow block w-full"
-                  onClick={toggleMenu}>
-                  تغيير كلمة المرور
-                </NavLink>
-              </li>
+              {currentUser && (
+                <li>
+                  <NavLink
+                    to="/change-password"
+                    className="bg-yellow-200 text-yellow-700 px-4 py-2 rounded-full shadow block w-full"
+                    onClick={toggleMenu}>
+                    تغيير كلمة المرور
+                  </NavLink>
+                </li>
+              )}
             </ul>
           </div>
         </div>
