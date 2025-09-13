@@ -275,9 +275,7 @@ const PrayerTimes = () => {
   }
 
   return (
-    <div
-      className="min-h-screen bg-gray-50 p-4"
-      dir="rtl">
+    <div className="min-h-screen bg-gray-50 p-4" dir="rtl">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
@@ -470,7 +468,7 @@ const PrayerTimes = () => {
                 <span className="text-red-500 ml-3">🚫</span>
                 <span>تجنب الانشغال أثناء الصلاة</span>
               </li>
-            
+
               <li className="flex items-center">
                 <span className="text-yellow-500 ml-3">🌟</span>
                 <span>صل النوافل والسنن المؤكدة</span>

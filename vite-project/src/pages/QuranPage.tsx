@@ -256,7 +256,9 @@ const QuranPage = () => {
             </div>
 
             {/* Surahs Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+              dir="rtl">
               {filteredSurahs.map((surah) => (
                 <div
                   key={surah.number}
@@ -342,17 +344,19 @@ const QuranPage = () => {
                         key={ayah.number}
                         className="border-b border-green-100 pb-4 last:border-b-0">
                         <div className="text-right mb-2">
-                          <p
-                            className="text-green-900 font-medium leading-relaxed"
-                            style={{ fontSize: fontSize, lineHeight: "2.2" }}>
-                            {removeBismillah(
-                              ayah.text,
-                              ayah.numberInSurah === 1
-                            )}
-                            <span className="inline-flex items-center justify-center w-6 h-6 bg-green-100 text-green-700 rounded-full text-sm font-bold ml-2">
+                          <div className="flex items-end justify-between">
+                            <span className="inline-flex items-center justify-center w-6 h-6 bg-green-100 text-green-700 rounded-full text-sm font-bold flex-shrink-0">
                               {ayah.numberInSurah}
                             </span>
-                          </p>
+                            <p
+                              className="text-green-900 font-medium leading-relaxed flex-1 mr-2"
+                              style={{ fontSize: fontSize, lineHeight: "2.2" }}>
+                              {removeBismillah(
+                                ayah.text,
+                                ayah.numberInSurah === 1
+                              )}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     ))}
