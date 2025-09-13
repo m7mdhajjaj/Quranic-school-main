@@ -46,8 +46,11 @@ exports.createOrUpdateMark = async (req, res) => {
       sectionId: req.body.sectionId,
     });
 
+    let isNewMark = !mark;
+    
     if (mark) {
       // Update existing mark
+      const oldTotalMark = (mark.reviewMark || 0) + (mark.memorizationMark || 0);
       mark.reviewMark = req.body.reviewMark;
       mark.memorizationMark = req.body.memorizationMark;
       await mark.save();
@@ -56,6 +59,17 @@ exports.createOrUpdateMark = async (req, res) => {
       mark = await Mark.findById(mark._id)
         .populate("studentId", "firstName fatherName lastName group")
         .populate("sectionId");
+      
+      // إرسال إشعار التحديث
+      const newTotalMark = (mark.reviewMark || 0) + (mark.memorizationMark || 0);
+      if (global.notificationService) {
+        await global.notificationService.notifyNewGrade(
+          mark.studentId._id,
+          `${mark.sectionId.subject || 'المادة'} - محدث`,
+          newTotalMark,
+          req.user?.name || 'المعلم'
+        );
+      }
 
       res.json(mark);
     } else {
@@ -74,9 +88,22 @@ exports.createOrUpdateMark = async (req, res) => {
         .populate("studentId", "firstName fatherName lastName group")
         .populate("sectionId");
 
+      // إرسال إشعار العلامة الجديدة
+      const totalMark = (populatedMark.reviewMark || 0) + (populatedMark.memorizationMark || 0);
+      if (global.notificationService) {
+        await global.notificationService.notifyNewGrade(
+          populatedMark.studentId._id,
+          populatedMark.sectionId.subject || 'المادة',
+          totalMark,
+          req.user?.name || 'المعلم'
+        );
+      }
+
       res.status(201).json(populatedMark);
     }
   } catch (error) {
+    console.error("Error in createOrUpdateMark:", error);
+    
     // Handle validation errors
     if (error.name === "ValidationError") {
       const validationErrors = Object.keys(error.errors)

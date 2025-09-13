@@ -103,6 +103,38 @@ exports.createActivity = async (req, res) => {
       image: imageUrl,
     });
 
+    // إرسال إشعار النشاط الجديد لجميع الطلاب
+    if (global.notificationService) {
+      try {
+        // الحصول على جميع الطلاب النشطين
+        const Student = require("../models/Student");
+        const activeStudents = await Student.find({ isActive: true });
+        
+        // إرسال إشعار لكل طالب
+        for (const student of activeStudents) {
+          await global.notificationService.createNotification({
+            recipient: student._id,
+            recipientModel: 'Student',
+            type: 'activity',
+            title: '📅 نشاط جديد',
+            message: `تم إضافة نشاط جديد: ${title}`,
+            priority: 'medium',
+            data: {
+              activityId: activity._id,
+              activityTitle: title,
+              activityDate: date,
+              category: category
+            }
+          });
+        }
+        
+        console.log(`Sent new activity notifications to ${activeStudents.length} students`);
+      } catch (notificationError) {
+        console.error('Error sending activity notifications:', notificationError);
+        // لا نريد أن يفشل إنشاء النشاط بسبب مشكلة في الإشعارات
+      }
+    }
+
     res.status(201).json({
       message: "تم إضافة النشاط بنجاح",
       activity,

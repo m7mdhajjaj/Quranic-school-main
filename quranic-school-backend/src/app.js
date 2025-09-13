@@ -6,6 +6,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 const Chat = require("./models/Chat");
 const Student = require("./models/Student");
+const NotificationService = require("./services/NotificationService");
 require("dotenv").config();
 
 // Connect to MongoDB
@@ -65,6 +66,7 @@ app.use("/api/marks", require("./routes/markRoutes"));
 app.use("/api/attendance", require("./routes/attendanceRoutes"));
 app.use("/api/chat", require("./routes/chatRoutes"));
 app.use("/api/settings", require("./routes/settingsRoutes"));
+app.use("/api/notifications", require("./routes/notificationRoutes"));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -98,15 +100,26 @@ const io = new Server(server, {
 // Store online users
 const onlineUsers = new Map();
 
+// Initialize Notification Service
+let notificationService;
+
 // Socket.IO connection
 io.on("connection", (socket) => {
   console.log(`User connected: ${socket.id}`);
+
+  // Initialize notification service after io is ready
+  if (!notificationService) {
+    notificationService = new NotificationService(io);
+    global.notificationService = notificationService; // Make it globally accessible
+    global.onlineUsers = onlineUsers; // Make onlineUsers globally accessible
+  }
 
   // User login - store their user ID and socket ID
   socket.on("login", (userData) => {
     onlineUsers.set(userData.userId, {
       socketId: socket.id,
       role: userData.role,
+      firstName: userData.firstName || "مستخدم",
     });
     console.log(`User logged in: ${userData.userId} as ${userData.role}`);
     console.log("Online users:", [...onlineUsers.entries()]);
@@ -153,6 +166,16 @@ io.on("connection", (socket) => {
       });
 
       const savedMessage = await newMessage.save();
+
+      // إرسال إشعار للمستلم عبر خدمة الإشعارات
+      if (notificationService) {
+        await notificationService.notifyNewMessage(
+          recipient,
+          recipientModel,
+          senderName,
+          text
+        );
+      }
 
       // Check if recipient is online
       const recipientData = onlineUsers.get(recipient);

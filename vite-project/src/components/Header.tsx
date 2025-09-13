@@ -1,5 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { useState, useEffect } from "react";
+import NotificationHeader from "./NotificationHeader";
+import io from "socket.io-client";
 
 interface User {
   _id: string;
@@ -10,6 +12,7 @@ interface User {
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [socket, setSocket] = useState<any>(null);
 
   useEffect(() => {
     const userJson = localStorage.getItem("user");
@@ -17,6 +20,21 @@ const Header = () => {
     try {
       const parsed = JSON.parse(userJson) as User;
       setCurrentUser(parsed);
+
+      // إنشاء اتصال Socket.IO للإشعارات
+      const socketInstance = io("http://localhost:5005");
+      setSocket(socketInstance);
+
+      // تسجيل دخول المستخدم في Socket
+      socketInstance.emit("login", {
+        userId: parsed._id,
+        role: parsed.role || "student",
+        firstName: parsed.name,
+      });
+
+      return () => {
+        socketInstance.disconnect();
+      };
     } catch (e) {
       // ignore
     }
@@ -415,7 +433,16 @@ const Header = () => {
           </div>
         </div>
 
-        <div className="flex items-center">
+        <div className="flex items-center gap-4">
+          {/* إضافة مكون الإشعارات للمستخدمين المسجلين */}
+          {currentUser && (
+            <NotificationHeader
+              userId={currentUser._id}
+              socket={socket}
+              apiUrl="http://localhost:5005"
+            />
+          )}
+
           <h1 className="text-xl font-bold hidden md:block">
             مدرسة المهاجرين لتعليم القرآن الكريم
           </h1>

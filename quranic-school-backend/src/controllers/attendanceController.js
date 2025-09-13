@@ -86,6 +86,28 @@ exports.createAttendance = async (req, res) => {
       console.log(
         `Successfully inserted ${insertResult.length} attendance records`
       );
+      
+      // إرسال إشعارات للطلاب الغائبين
+      if (global.notificationService) {
+        const absentRecords = attendanceRecords.filter(record => !record.isPresent);
+        const dateStr = formattedDate.toLocaleDateString('ar-SA');
+        
+        for (const record of absentRecords) {
+          try {
+            await global.notificationService.notifyAbsence(
+              record.studentId,
+              dateStr,
+              req.user?.name || 'المعلم'
+            );
+          } catch (notificationError) {
+            console.error('Error sending absence notification:', notificationError);
+            // لا نريد أن يفشل حفظ الحضور بسبب مشكلة في الإشعارات
+          }
+        }
+        
+        console.log(`Sent absence notifications to ${absentRecords.length} students`);
+      }
+      
       return res.status(201).json({ message: "تم حفظ سجل الحضور بنجاح" });
     } catch (insertError) {
       console.error("Error inserting attendance records:", insertError);
