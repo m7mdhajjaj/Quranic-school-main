@@ -213,13 +213,29 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
 
   // تحديد إشعار واحد كمقروء
   const markAsRead = async (notificationId: string) => {
+    if (!notificationId) {
+      console.error("Notification ID is not provided");
+      return;
+    }
+
     try {
+      console.log("Marking notification as read:", notificationId);
       const response = await fetch(
         `${apiUrl}/api/notifications/${notificationId}/read`,
-        { method: "PATCH" }
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
       );
 
+      console.log("Mark as read response status:", response.status);
+
       if (response.ok) {
+        const data = await response.json();
+        console.log("Mark as read response data:", data);
+
         setNotifications((prev) =>
           prev.map((n) =>
             n._id === notificationId ? { ...n, isRead: true, isNew: false } : n
@@ -230,35 +246,14 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
           unreadCount: Math.max(0, prev.unreadCount - 1),
           newCount: Math.max(0, prev.newCount - 1),
         }));
+      } else {
+        const errorData = await response.json();
+        console.error("Server error in mark as read:", errorData);
+        toast.error("حدث خطأ في تحديث الإشعار");
       }
     } catch (error) {
       console.error("Error marking notification as read:", error);
-    }
-  };
-
-  // تحديد جميع الإشعارات كمقروءة
-  const markAllAsRead = async () => {
-    try {
-      const response = await fetch(
-        `${apiUrl}/api/notifications/${userId}/read-all`,
-        { method: "PATCH" }
-      );
-
-      if (response.ok) {
-        setNotifications((prev) =>
-          prev.map((n) => ({ ...n, isRead: true, isNew: false }))
-        );
-        setStats((prev) => ({
-          ...prev,
-          unreadCount: 0,
-          newCount: 0,
-        }));
-
-        toast.success("تم تحديد جميع الإشعارات كمقروءة");
-      }
-    } catch (error) {
-      console.error("Error marking all notifications as read:", error);
-      toast.error("خطأ في تحديث الإشعارات");
+      toast.error("حدث خطأ في تحديث الإشعار");
     }
   };
 
@@ -379,7 +374,9 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
   };
 
   return (
-    <div className="notification-container" ref={dropdownRef}>
+    <div
+      className={`notification-container ${showDropdown ? "mobile-open" : ""}`}
+      ref={dropdownRef}>
       <button
         className="notification-button"
         onClick={() => setShowDropdown(!showDropdown)}
@@ -396,11 +393,12 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
         <div className="notification-dropdown">
           <div className="notification-header">
             <h3>الإشعارات</h3>
-            {stats.unreadCount > 0 && (
-              <button onClick={markAllAsRead} className="mark-all-read">
-                تحديد الكل كمقروء
-              </button>
-            )}
+            <button
+              className="close-notifications-btn"
+              onClick={() => setShowDropdown(false)}
+              title="إغلاق">
+              ✕
+            </button>
           </div>
 
           <div className="notification-list">

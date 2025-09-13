@@ -145,14 +145,6 @@ const Login = () => {
                 تذكرني
               </label>
             </div>
-
-            <div className="text-sm">
-              <a
-                href="#"
-                className="font-medium text-emerald-700 hover:text-emerald-500">
-                نسيت كلمة المرور؟
-              </a>
-            </div>
           </div>
 
           <button

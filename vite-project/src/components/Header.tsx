@@ -231,6 +231,17 @@ const Header = () => {
                 }>
                 التسجيل
               </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/change-password"
+                className={({ isActive }) =>
+                  isActive
+                    ? "bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full shadow transition duration-300 mx-2"
+                    : "bg-yellow-200 text-yellow-700 px-3 py-1 rounded-full shadow hover:bg-yellow-50 transition duration-300 mx-2"
+                }>
+                تغيير كلمة المرور
+              </NavLink>
             </li>{" "}
           </ul>
         </nav>
@@ -427,6 +438,14 @@ const Header = () => {
                   className="bg-white text-emerald-700 px-4 py-2 rounded-full shadow block w-full"
                   onClick={toggleMenu}>
                   التسجيل
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/change-password"
+                  className="bg-yellow-200 text-yellow-700 px-4 py-2 rounded-full shadow block w-full"
+                  onClick={toggleMenu}>
+                  تغيير كلمة المرور
                 </NavLink>
               </li>
             </ul>

@@ -18,6 +18,7 @@ import Test from "./pages/Test";
 import PrayerTimes from "./pages/PrayerTimes";
 import QuranPage from "./pages/QuranPage";
 import QuranAudio from "./pages/QuranAudio";
+import ChangePass from "./pages/ChangePass";
 function AppContent() {
   const location = useLocation();
   const isLoginPage = location.pathname === "/login";
@@ -43,6 +44,7 @@ function AppContent() {
         <Route path="/prayer-times" element={<PrayerTimes />} />
         <Route path="/quran" element={<QuranPage />} />
         <Route path="/quran-audio" element={<QuranAudio />} />
+        <Route path="/change-password" element={<ChangePass />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {!isLoginPage && !isChatPage && !isQuranPage && <Footer />}
