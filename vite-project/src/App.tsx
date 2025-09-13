@@ -2,7 +2,6 @@ import "./App.css";
 import Header from "./components/Header";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
-import TeacherLogin from "./pages/TeacherLogin";
 import Goals from "./pages/Goals";
 import News from "./pages/news";
 import Footer from "./components/Footer";
@@ -21,8 +20,7 @@ import QuranPage from "./pages/QuranPage";
 import QuranAudio from "./pages/QuranAudio";
 function AppContent() {
   const location = useLocation();
-  const isLoginPage =
-    location.pathname === "/login" || location.pathname === "/teacher-login";
+  const isLoginPage = location.pathname === "/login";
   const isChatPage = location.pathname === "/chat";
   const isQuranPage =
     location.pathname === "/quran" || location.pathname === "/quran-audio";
@@ -32,7 +30,6 @@ function AppContent() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/teacher-login" element={<TeacherLogin />} />
         <Route path="/goals" element={<Goals />} />
         <Route path="/daily-marks" element={<DailyMarks />} />
         <Route path="/arrangement" element={<Arrangement />} />

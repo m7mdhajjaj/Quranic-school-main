@@ -6,8 +6,8 @@ import { API_URL } from "../config";
 const Login = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    studentId: "",
-    idNumber: "",
+    userId: "",
+    password: "",
   });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -28,11 +28,30 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      // Attempt to login with studentId and idNumber
-      const response = await axios.post(`${API_URL}/auth/login`, {
-        studentId: formData.studentId,
-        idNumber: formData.idNumber,
-      });
+      // Try both student and teacher login methods
+      let response;
+
+      // First try as student login
+      try {
+        response = await axios.post(`${API_URL}/auth/login`, {
+          studentId: formData.userId,
+          idNumber: formData.password,
+        });
+      } catch (studentError: any) {
+        // If student login fails, try teacher login
+        try {
+          response = await axios.post(`${API_URL}/auth/login`, {
+            teacherId: formData.userId,
+            password: formData.password,
+            userType: "teacher",
+          });
+        } catch (teacherError: any) {
+          // If both fail, show generic error
+          throw new Error(
+            "فشل تسجيل الدخول. رجاءً تأكد من الرقم وكلمة المرور."
+          );
+        }
+      }
 
       // If successful, store the token and redirect
       localStorage.setItem("token", response.data.token);
@@ -44,8 +63,10 @@ const Login = () => {
       console.error("Login error:", error);
       if (error.response?.data?.message) {
         setError(error.response.data.message);
+      } else if (error.message) {
+        setError(error.message);
       } else {
-        setError("فشل تسجيل الدخول. رجاءً تأكد من رقم الطالب ورقم الهوية.");
+        setError("فشل تسجيل الدخول. رجاءً تأكد من الرقم وكلمة المرور.");
       }
     } finally {
       setIsLoading(false);
@@ -79,14 +100,14 @@ const Login = () => {
           <div>
             <label
               className="block text-sm font-medium text-gray-700 mb-2"
-              htmlFor="studentId">
-              رقم الطالب
+              htmlFor="userId">
+              رقم الطالب / رقم المعلم
             </label>
             <input
               type="text"
-              id="studentId"
-              name="studentId"
-              value={formData.studentId}
+              id="userId"
+              name="userId"
+              value={formData.userId}
               onChange={handleChange}
               className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-200"
               required
@@ -96,14 +117,14 @@ const Login = () => {
           <div>
             <label
               className="block text-sm font-medium text-gray-700 mb-2"
-              htmlFor="idNumber">
-              رقم الهوية (كلمة المرور)
+              htmlFor="password">
+              كلمة المرور
             </label>
             <input
               type="password"
-              id="idNumber"
-              name="idNumber"
-              value={formData.idNumber}
+              id="password"
+              name="password"
+              value={formData.password}
               onChange={handleChange}
               className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-200"
               required
@@ -164,14 +185,6 @@ const Login = () => {
             )}
           </button>
         </form>
-
-        <div className="mt-6 text-center">
-          <a
-            href="/teacher-login"
-            className="text-sm text-emerald-600 hover:text-emerald-800">
-            تسجيل الدخول كمعلم
-          </a>
-        </div>
       </div>
     </div>
   );
