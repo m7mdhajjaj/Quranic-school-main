@@ -12,6 +12,13 @@ const studentSchema = new mongoose.Schema(
       required: [true, "رقم الهوية مطلوب"],
       unique: true,
     },
+    password: {
+      type: String,
+      required: [true, "كلمة المرور مطلوبة"],
+      default: function () {
+        return this.idNumber; // استخدام رقم الهوية كـ password افتراضي
+      },
+    },
     firstName: {
       type: String,
       required: [true, "الاسم الأول مطلوب"],

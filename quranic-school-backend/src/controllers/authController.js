@@ -9,7 +9,12 @@ const JWT_SECRET = "quranic-school-secret-key";
 // تسجيل الدخول بواسطة رقم الطالب ورقم الهوية
 exports.login = async (req, res) => {
   try {
+    console.log("=== Login called ===");
+    console.log("Request body:", req.body);
+    
     const { studentId, idNumber, userType } = req.body;
+    
+    console.log("Parsed values:", { studentId, idNumber, userType });
 
     // Check if it's a teacher login
     if (userType === "teacher") {
@@ -21,7 +26,7 @@ exports.login = async (req, res) => {
     if (!studentId || !idNumber) {
       return res.status(400).json({
         success: false,
-        message: "الرجاء إدخال رقم الطالب ورقم الهوية",
+        message: "الرجاء إدخال رقم الطالب وكلمة المرور",
       });
     }
 
@@ -35,11 +40,30 @@ exports.login = async (req, res) => {
       });
     }
 
-    // التحقق من صحة رقم الهوية
-    if (student.idNumber !== idNumber) {
+    // التحقق من صحة رقم الهوية أو كلمة المرور
+    let isPasswordValid = false;
+
+    console.log("Student password field:", student.password);
+    console.log("Entered idNumber:", idNumber);
+
+    if (student.password && student.password.length > 20) {
+      // كلمة المرور مشفرة - استخدام bcrypt للتحقق
+      console.log("Checking encrypted password");
+      isPasswordValid = await bcrypt.compare(idNumber, student.password);
+    } else if (student.password) {
+      // كلمة المرور غير مشفرة (نص عادي) - مقارنة مباشرة
+      console.log("Checking plain text password");
+      isPasswordValid = student.password === idNumber;
+    } else {
+      // لا يوجد حقل password - استخدام رقم الهوية
+      console.log("No password field, using idNumber");
+      isPasswordValid = student.idNumber === idNumber;
+    }
+
+    if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
-        message: "رقم الهوية غير صحيح",
+        message: "كلمة المرور غير صحيحة",
       });
     }
 
@@ -292,6 +316,118 @@ exports.getMe = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "حدث خطأ أثناء التحقق من المصادقة",
+    });
+  }
+};
+
+// تغيير كلمة المرور
+exports.changePassword = async (req, res) => {
+  try {
+    console.log("=== changePassword called ===");
+    console.log("Request body:", req.body);
+
+    const { currentPassword, newPassword, userId, userType } = req.body;
+
+    // التحقق من المدخلات
+    if (!currentPassword || !newPassword || !userId) {
+      console.log("Missing required fields");
+      return res.status(400).json({
+        success: false,
+        message: "جميع الحقول مطلوبة",
+      });
+    }
+
+    // التحقق من طول كلمة المرور الجديدة
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل",
+      });
+    }
+
+    let user = null;
+
+    console.log("Searching for user with ID:", userId, "Type:", userType);
+    // البحث عن المستخدم حسب النوع
+    if (userType === "teacher" || userType === "admin") {
+      user = await Teacher.findById(userId);
+    } else {
+      user = await Student.findById(userId);
+    }
+
+    console.log("User found:", user ? "Yes" : "No");
+    if (!user) {
+      console.log("User not found in database");
+      return res.status(404).json({
+        success: false,
+        message: "المستخدم غير موجود",
+      });
+    }
+
+    // التحقق من كلمة المرور الحالية
+    let isCurrentPasswordValid = false;
+
+    if (userType === "teacher" || userType === "admin") {
+      // للمعلمين، التحقق من كلمة المرور المشفرة
+      isCurrentPasswordValid = await bcrypt.compare(
+        currentPassword,
+        user.password
+      );
+    } else {
+      // للطلاب، التحقق إذا كانت كلمة المرور مشفرة أم لا
+      console.log("Student password field:", user.password);
+      console.log("Student idNumber:", user.idNumber);
+      console.log("Current password entered:", currentPassword);
+
+      if (user.password && user.password.length > 20) {
+        // كلمة المرور مشفرة
+        console.log("Checking encrypted password");
+        isCurrentPasswordValid = await bcrypt.compare(
+          currentPassword,
+          user.password
+        );
+      } else if (user.password) {
+        // كلمة المرور غير مشفرة (نص عادي)
+        console.log("Checking plain text password");
+        isCurrentPasswordValid = currentPassword === user.password;
+      } else {
+        // لا يوجد حقل password، استخدام رقم الهوية
+        console.log("No password field, using idNumber");
+        isCurrentPasswordValid = currentPassword === user.idNumber;
+      }
+    }
+
+    if (!isCurrentPasswordValid) {
+      return res.status(400).json({
+        success: false,
+        message: "كلمة المرور الحالية غير صحيحة",
+      });
+    }
+
+    // تشفير كلمة المرور الجديدة
+    const salt = await bcrypt.genSalt(10);
+    const hashedNewPassword = await bcrypt.hash(newPassword, salt);
+
+    // تحديث كلمة المرور في قاعدة البيانات
+    if (userType === "teacher" || userType === "admin") {
+      await Teacher.findByIdAndUpdate(userId, {
+        password: hashedNewPassword,
+      });
+    } else {
+      await Student.findByIdAndUpdate(userId, {
+        password: hashedNewPassword,
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "تم تغيير كلمة المرور بنجاح",
+    });
+  } catch (error) {
+    console.error("Error in changePassword:", error);
+    res.status(500).json({
+      success: false,
+      message: "حدث خطأ أثناء تغيير كلمة المرور",
     });
   }
 };
