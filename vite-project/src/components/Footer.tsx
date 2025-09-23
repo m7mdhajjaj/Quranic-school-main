@@ -80,7 +80,7 @@ const Footer = () => {
           <div className="mt-8 pt-4 border-t border-teal-500/30 text-sm text-teal-100">
             <div className="flex flex-col md:flex-row justify-between items-center gap-3 md:gap-0">
               {/* الحقوق - يمين */}
-              <p className="text-right w-full md:w-auto">
+              <p className="text-center w-full md:w-auto">
                 جميع الحقوق محفوظة © {new Date().getFullYear()} لدى محمد حجاج
               </p>
 

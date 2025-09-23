@@ -20,6 +20,7 @@ import PrayerTimes from "./pages/PrayerTimes";
 import QuranPage from "./pages/QuranPage";
 import QuranAudio from "./pages/QuranAudio";
 import ChangePass from "./pages/ChangePass";
+import Soon from "./components/Soon";
 function AppContent() {
   const location = useLocation();
   const isLoginPage = location.pathname === "/login";
@@ -46,6 +47,7 @@ function AppContent() {
         <Route path="/managment" element={<Managment />} />
         {/* Add more routes as needed */}
         <Route path="/test" element={<Test />} />
+        <Route path="/soon" element={<Soon />} />
         <Route path="/prayer-times" element={<PrayerTimes />} />
         <Route path="/quran" element={<QuranPage />} />
         <Route path="/quran-audio" element={<QuranAudio />} />

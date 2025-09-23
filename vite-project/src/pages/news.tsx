@@ -480,7 +480,7 @@ const News = () => {
           )}
         </div>
       </section>
-
+{/* 
       <section
         className="bg-emerald-50 p-6 rounded-lg my-12"
         data-aos="fade-up">
@@ -503,7 +503,7 @@ const News = () => {
             اشتراك
           </button>
         </form>{" "}
-      </section>
+      </section> */}
 
       {/* Modal for adding new news */}
       {isModalOpen && (

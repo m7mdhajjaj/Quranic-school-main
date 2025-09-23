@@ -469,44 +469,88 @@ const Chat: React.FC = () => {
               ) : contacts.length === 0 ? (
                 <div className="text-gray-500">لا يوجد محادثات</div>
               ) : (
-                <ul>
-                  {contacts.map((c) => (
-                    <li
-                      key={c._id}
-                      className={`flex items-center justify-between p-3 md:p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition-all duration-200 ${
-                        selectedContact?._id === c._id
-                          ? "bg-gradient-to-r from-emerald-50 to-teal-50 shadow-md border-2 border-emerald-200"
-                          : "hover:shadow-sm"
-                      }`}
-                      onClick={() => setSelectedContact(c)}>
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold"
-                          style={{
-                            background:
-                              "linear-gradient(135deg,#10B981,#059669)",
-                          }}>
-                          {(c.firstName || "").charAt(0)}
-                        </div>
-                        <div>
-                          <div className="font-medium">
-                            {c.firstName} {c.lastName}
+                <>
+                  <ul className="hidden md:block h-[500px] overflow-y-auto">
+                    {contacts.map((c) => (
+                      <li
+                        key={c._id}
+                        className={`flex items-center justify-between p-3 md:p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition-all duration-200 ${
+                          selectedContact?._id === c._id
+                            ? "bg-gradient-to-r from-emerald-50 to-teal-50 shadow-md border-2 border-emerald-200"
+                            : "hover:shadow-sm"
+                        }`}
+                        onClick={() => setSelectedContact(c)}>
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold"
+                            style={{
+                              background:
+                                "linear-gradient(135deg,#10B981,#059669)",
+                            }}>
+                            {(c.firstName || "").charAt(0)}
                           </div>
-                          <div className="text-xs text-gray-500">{c.group}</div>
+                          <div>
+                            <div className="font-medium">
+                              {c.firstName} {c.lastName}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {c.group}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {c.unread ? (
-                          <span className="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">
-                            {c.unread}
-                          </span>
-                        ) : (
-                          <span className="w-2 h-2 bg-green-400 rounded-full" />
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                        <div className="flex items-center gap-2">
+                          {c.unread ? (
+                            <span className="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">
+                              {c.unread}
+                            </span>
+                          ) : (
+                            <span className="w-2 h-2 bg-green-400 rounded-full" />
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                  <ul className="block md:hidden">
+                    {contacts.map((c) => (
+                      <li
+                        key={c._id}
+                        className={`flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition-all duration-200 ${
+                          selectedContact?._id === c._id
+                            ? "bg-gradient-to-r from-emerald-50 to-teal-50 shadow-md border-2 border-emerald-200"
+                            : "hover:shadow-sm"
+                        }`}
+                        onClick={() => setSelectedContact(c)}>
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold"
+                            style={{
+                              background:
+                                "linear-gradient(135deg,#10B981,#059669)",
+                            }}>
+                            {(c.firstName || "").charAt(0)}
+                          </div>
+                          <div>
+                            <div className="font-medium">
+                              {c.firstName} {c.lastName}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {c.group}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {c.unread ? (
+                            <span className="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">
+                              {c.unread}
+                            </span>
+                          ) : (
+                            <span className="w-2 h-2 bg-green-400 rounded-full" />
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </>
               )}
             </div>
           </div>
@@ -528,13 +572,13 @@ const Chat: React.FC = () => {
                   {selectedContact ? "متصل الآن" : "اختر محادثة لبدء التواصل"}
                 </div>
               </div>
-              {selectedContact && (
+              {/* {selectedContact && (
                 <button
                   onClick={() => setSelectedUserInfo(selectedContact)}
                   className="bg-white/20 text-white px-3 py-1 rounded">
                   Info
                 </button>
-              )}
+              )} */}
             </div>
 
             <div className="h-[400px] md:h-[500px] p-3 md:p-4 overflow-y-auto bg-gradient-to-b from-gray-50 to-white chat-scroll">

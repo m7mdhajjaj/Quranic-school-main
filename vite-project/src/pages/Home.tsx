@@ -3,14 +3,17 @@ import "aos/dist/aos.css";
 import { useEffect, useState, useRef } from "react";
 import type { ChangeEvent } from "react";
 import { API_URL } from "../config";
-
+import { useNavigate } from "react-router-dom";
 interface User {
   _id: string;
   name: string;
   role?: string;
 }
 
+
+
 const Home = () => {
+  const navigate = useNavigate();
   // State for the hero image
   const [heroImage, setHeroImage] = useState<string>(
     "/src/images/officialPhoto.jpg"
@@ -152,7 +155,11 @@ const Home = () => {
               حيث التميّز في تعليم القرآن الكريم بمنهجية متقنة وأساليب حديثة
             </p>
 
-            <button
+            <button onClick={
+              () => {
+                navigate("/soon");
+              }
+            }
               className="bg-emerald-600 text-white px-8 py-3 rounded-full hover:bg-emerald-700 transition duration-300 shadow-md"
               data-aos="zoom-in"
               data-aos-delay="1100">
