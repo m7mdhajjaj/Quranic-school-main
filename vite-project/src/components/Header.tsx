@@ -263,38 +263,35 @@ const Header = () => {
                 </NavLink>
               </li>
             )}
-            <li>
-              {currentUser ? (
-                <button
-                  onClick={handleLogout}
-                  className="bg-red-500 text-white px-3 py-1 rounded-full shadow hover:bg-red-600 transition duration-300 mx-2">
-                  تسجيل الخروج
-                </button>
-              ) : (
-                <NavLink
-                  to="/login"
-                  className={({ isActive }) =>
-                    isActive
-                      ? "bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full shadow transition duration-300 mx-2"
-                      : "bg-white text-emerald-700 px-3 py-1 rounded-full shadow hover:bg-emerald-50 transition duration-300 mx-2"
-                  }>
-                  التسجيل
-                </NavLink>
-              )}
-            </li>
-            {currentUser && (
-              <li>
+            {currentUser ? (
+              <div className="flex items-center gap-2">
                 <NavLink
                   to="/change-password"
                   className={({ isActive }) =>
                     isActive
-                      ? "bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full shadow transition duration-300 mx-2"
-                      : "bg-yellow-200 text-yellow-700 px-3 py-1 rounded-full shadow hover:bg-yellow-50 transition duration-300 mx-2"
+                      ? "bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full shadow transition duration-300 "
+                      : "bg-yellow-200 text-yellow-700 px-3 py-1 rounded-full shadow hover:bg-yellow-50 transition duration-300 mx-3"
                   }>
                   تغيير كلمة المرور
                 </NavLink>
-              </li>
-            )}{" "}
+
+                <button
+                  onClick={handleLogout}
+                  className="bg-red-500 text-white px-3 py-1 rounded-full shadow hover:bg-red-600 transition duration-300">
+                  تسجيل الخروج
+                </button>
+              </div>
+            ) : (
+              <NavLink
+                to="/login"
+                className={({ isActive }) =>
+                  isActive
+                    ? "bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full shadow transition duration-300"
+                    : "bg-white text-emerald-700 px-3 py-1 rounded-full shadow hover:bg-emerald-50 transition duration-300"
+                }>
+                التسجيل
+              </NavLink>
+            )}
           </ul>
         </nav>
 
@@ -324,7 +321,7 @@ const Header = () => {
           </button>
 
           <div className="flex flex-col items-center justify-center min-h-screen p-4">
-            <ul className="space-y-6 text-center text-xl">
+            <ul className="grid grid-cols-2 gap-6 text-center text-xl w-full">
               <li>
                 <NavLink
                   to="/"
@@ -350,6 +347,7 @@ const Header = () => {
                   الاخبار
                 </NavLink>
               </li>
+
               <li>
                 <NavLink
                   to="/goals"
@@ -362,6 +360,7 @@ const Header = () => {
                   الاهداف
                 </NavLink>
               </li>
+
               <li>
                 <NavLink
                   to="/daily-marks"
@@ -374,6 +373,7 @@ const Header = () => {
                   العلامات اليوميه
                 </NavLink>
               </li>
+
               <li>
                 <NavLink
                   to="/test"
@@ -386,6 +386,7 @@ const Header = () => {
                   الاختبارات
                 </NavLink>
               </li>
+
               <li>
                 <NavLink
                   to="/prayer-times"
@@ -398,6 +399,7 @@ const Header = () => {
                   مواقيت الصلاة
                 </NavLink>
               </li>
+
               <li>
                 <NavLink
                   to="/quran"
@@ -410,6 +412,7 @@ const Header = () => {
                   القرآن الكريم
                 </NavLink>
               </li>
+
               <li>
                 <NavLink
                   to="/quran-audio"
@@ -422,6 +425,7 @@ const Header = () => {
                   القرآن الصوتي
                 </NavLink>
               </li>
+
               <li>
                 <NavLink
                   to="/arrangement"
@@ -434,6 +438,7 @@ const Header = () => {
                   الترتيب
                 </NavLink>
               </li>
+
               <li>
                 <NavLink
                   to="/activities"
@@ -446,6 +451,7 @@ const Header = () => {
                   الانشطه
                 </NavLink>
               </li>
+
               <li>
                 <NavLink
                   to="/absence"
@@ -458,6 +464,7 @@ const Header = () => {
                   الحضور والغياب
                 </NavLink>
               </li>
+
               <li>
                 <NavLink
                   to="/chat"
@@ -470,6 +477,7 @@ const Header = () => {
                   تواصل مع المعلم
                 </NavLink>
               </li>
+
               {isTeacherOrAdmin && (
                 <li>
                   <NavLink
@@ -484,7 +492,18 @@ const Header = () => {
                   </NavLink>
                 </li>
               )}
-              <li>
+
+              {currentUser && (
+                <li className="col-span-2">
+                  <NavLink
+                    to="/change-password"
+                    className="bg-yellow-200 text-yellow-700 px-4 py-2 rounded-full shadow block w-full"
+                    onClick={toggleMenu}>
+                    تغيير كلمة المرور
+                  </NavLink>
+                </li>
+              )}
+              <li className="col-span-2">
                 {currentUser ? (
                   <button
                     onClick={handleLogout}
@@ -500,39 +519,31 @@ const Header = () => {
                   </NavLink>
                 )}
               </li>
-              {currentUser && (
-                <li>
-                  <NavLink
-                    to="/change-password"
-                    className="bg-yellow-200 text-yellow-700 px-4 py-2 rounded-full shadow block w-full"
-                    onClick={toggleMenu}>
-                    تغيير كلمة المرور
-                  </NavLink>
-                </li>
-              )}
             </ul>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          {/* إضافة مكون الإشعارات للمستخدمين المسجلين */}
-          {currentUser && (
-            <NotificationHeader
-              userId={currentUser._id}
-              socket={socket}
-              apiUrl="http://localhost:5005"
-            />
-          )}
+        {!isMenuOpen && (
+          <div className="flex items-center gap-4">
+            {/* إضافة مكون الإشعارات للمستخدمين المسجلين */}
+            {currentUser && (
+              <NotificationHeader
+                userId={currentUser._id}
+                socket={socket}
+                apiUrl="http://localhost:5005"
+              />
+            )}
 
-          <h1 className="text-xl font-bold hidden md:block">
-            مدرسة المهاجرين لتعليم القرآن الكريم
-          </h1>
-          <img
-            src="/src/images/logo.jpg"
-            alt="مدرسة القرآن"
-            className="h-14 w-auto ml-3 rounded-full border-2 border-white shadow-lg mx-3"
-          />
-        </div>
+            <h1 className="text-xl font-bold hidden md:block">
+              مدرسة المهاجرين لتعليم القرآن الكريم
+            </h1>
+            <img
+              src="/src/images/logo.jpg"
+              alt="مدرسة القرآن"
+              className="h-14 w-auto ml-3 rounded-full border-2 border-white shadow-lg mx-3"
+            />
+          </div>
+        )}
       </div>
     </header>
   );
