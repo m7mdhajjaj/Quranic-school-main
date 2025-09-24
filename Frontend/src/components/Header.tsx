@@ -585,9 +585,10 @@ const Header = () => {
               مدرسة المهاجرين لتعليم القرآن الكريم
             </h1>
             <img
+              onClick={() => navigate("/")}
               src="/src/images/logo.jpg"
               alt="مدرسة القرآن"
-              className="h-14 w-auto ml-3 rounded-full border-2 border-white shadow-lg mx-3"
+              className="cursor-pointer h-14 w-auto ml-3 rounded-full border-2 border-white shadow-lg mx-3"
             />
           </div>
         )}

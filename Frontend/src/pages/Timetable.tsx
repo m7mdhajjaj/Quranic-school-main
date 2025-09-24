@@ -2,13 +2,13 @@ import React, { useState } from "react";
 
 const Timetable = () => {
   const days = [
+    "السبت",
     "الأحد",
     "الاثنين",
     "الثلاثاء",
     "الأربعاء",
     "الخميس",
     "الجمعة",
-    "السبت",
   ];
 
   // ساعات اليوم من 12 ظهراً حتى 7 مساءً (نصف ساعة لكل خانة)
@@ -141,6 +141,10 @@ const Timetable = () => {
               ))}
             </tbody>
           </table>
+          <div className="mt-4 text-center text-sm text-gray-700">
+            <p className="text-gray-600">كل خانة تمثل نصف ساعة.</p>
+            <p className="text-gray-600">الدوام يظهر في المربعات الملونة.</p>
+          </div>
         </div>
       </div>
     </div>
