@@ -22,6 +22,7 @@ import QuranAudio from "./pages/QuranAudio";
 import ChangePass from "./pages/ChangePass";
 import Soon from "./components/Soon";
 import Reports from "./pages/Reports";
+import Timetable from "./pages/Timetable";
 function AppContent() {
   const location = useLocation();
   const isLoginPage = location.pathname === "/login";
@@ -47,6 +48,7 @@ function AppContent() {
         <Route path="/chat" element={<Chat />} />
         <Route path="/managment" element={<Managment />} />
         <Route path="/reports" element={<Reports />} />
+        <Route path="/timetable" element={<Timetable />} />
         {/* Add more routes as needed */}
         <Route path="/test" element={<Test />} />
         <Route path="/soon" element={<Soon />} />

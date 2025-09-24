@@ -274,6 +274,18 @@ const Header = () => {
                 </NavLink>
               </li>
             )}
+            <li>
+              <NavLink
+                to="/timetable"
+                className={({ isActive }) =>
+                  isActive
+                    ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
+                    : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
+                }
+                onClick={toggleMenu}>
+                جدول الحصص
+              </NavLink>
+            </li>
             {currentUser ? (
               <div className="flex items-center gap-2">
                 <NavLink
@@ -515,6 +527,18 @@ const Header = () => {
                   </NavLink>
                 </li>
               )}
+              <li>
+                <NavLink
+                  to="/timetable"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
+                      : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
+                  }
+                  onClick={toggleMenu}>
+                  جدول الحصص
+                </NavLink>
+              </li>
 
               {currentUser && (
                 <li className="col-span-2">
