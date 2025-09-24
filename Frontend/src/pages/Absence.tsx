@@ -70,7 +70,7 @@ const Absence = () => {
   // Student view state - monthly absence statistics
   const [monthlyStats, setMonthlyStats] = useState<MonthlyAbsence[]>([]);
   const [yearMonth, setYearMonth] = useState(
-    new Date().toISOString().substring(0, 7), // "YYYY-MM" format
+    new Date().toISOString().substring(0, 7) // "YYYY-MM" format
   );
 
   // Arabic month names for display
@@ -164,7 +164,7 @@ const Absence = () => {
       // Now try to fetch attendance data for the selected date
       try {
         const attendanceResponse = await axios.get(
-          `${API_URL}/attendance/date/${date}`,
+          `${API_URL}/attendance/date/${date}`
         );
 
         // If we have attendance data for this date, update the student presence
@@ -189,7 +189,7 @@ const Absence = () => {
         }
       } catch (attendanceErr) {
         console.log(
-          "No attendance records found for this date, showing default values",
+          "No attendance records found for this date, showing default values"
         );
         // It's okay if there's no attendance data for this date
         // We'll just use the default values (all present)
@@ -210,7 +210,7 @@ const Absence = () => {
 
       // Fetch attendance records for the student
       const response = await axios.get(
-        `${API_URL}/attendance/student/${studentId}`,
+        `${API_URL}/attendance/student/${studentId}`
       );
 
       console.log(`Got response for student ${studentId}:`, response.data);
@@ -258,7 +258,7 @@ const Absence = () => {
 
         // Convert the grouped data to our MonthlyAbsence interface format
         const processedStats: MonthlyAbsence[] = Object.entries(
-          groupedByMonth,
+          groupedByMonth
         ).map(([key, stats]) => {
           const [recordYear, recordMonth] = key.split("-").map(Number);
           const month = arabicMonths[recordMonth];
@@ -290,7 +290,7 @@ const Absence = () => {
 
         if (processedStats.length > 0) {
           console.log(
-            `Processed ${processedStats.length} months of attendance data`,
+            `Processed ${processedStats.length} months of attendance data`
           );
           setMonthlyStats(processedStats);
           setError(null);
@@ -342,8 +342,8 @@ const Absence = () => {
       students.map((student) =>
         student._id === studentId
           ? { ...student, isPresent: !student.isPresent }
-          : student,
-      ),
+          : student
+      )
     );
   };
 
@@ -354,7 +354,7 @@ const Absence = () => {
     const newState = !selectedAll;
     setSelectedAll(newState);
     setStudents(
-      students.map((student) => ({ ...student, isPresent: newState })),
+      students.map((student) => ({ ...student, isPresent: newState }))
     );
   };
 
@@ -366,7 +366,7 @@ const Absence = () => {
       // Create attendance records for each student
       const attendanceRecords = students.map((student) => {
         console.log(
-          `Creating attendance record for student: ${student.name}, ID: ${student._id}`,
+          `Creating attendance record for student: ${student.name}, ID: ${student._id}`
         );
         return {
           studentId: student._id,
@@ -376,7 +376,7 @@ const Absence = () => {
       });
 
       console.log(
-        `Prepared ${attendanceRecords.length} attendance records to save`,
+        `Prepared ${attendanceRecords.length} attendance records to save`
       );
 
       // Send the attendance records to the backend
@@ -395,7 +395,7 @@ const Absence = () => {
       if (axios.isAxiosError(err)) {
         if (err.response?.status === 404) {
           alert(
-            "واجهة برمجة التطبيق للغياب غير متوفرة حاليًا. سيتم دعمها قريبًا.",
+            "واجهة برمجة التطبيق للغياب غير متوفرة حاليًا. سيتم دعمها قريبًا."
           );
         } else if (err.response?.data?.message) {
           alert(`خطأ: ${err.response.data.message}`);
@@ -426,8 +426,7 @@ const Absence = () => {
   return (
     <div
       className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 py-8 px-4"
-      dir="rtl"
-    >
+      dir="rtl">
       <div className="container mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-slate-800 mb-2">
@@ -510,7 +509,7 @@ const StudentAbsenceView = ({
             <p className="font-bold text-red-600 text-xl">
               {monthlyStats.reduce(
                 (total, month) => total + month.absenceCount,
-                0,
+                0
               )}
             </p>
           </div>
@@ -560,10 +559,9 @@ const StudentAbsenceView = ({
                           month.absenceCount === 0
                             ? "bg-green-100 text-green-800"
                             : month.absenceCount <= 2
-                              ? "bg-amber-100 text-amber-800"
-                              : "bg-red-100 text-red-800"
-                        }`}
-                      >
+                            ? "bg-amber-100 text-amber-800"
+                            : "bg-red-100 text-red-800"
+                        }`}>
                         {month.absenceCount}
                       </span>
                     </td>
@@ -577,13 +575,12 @@ const StudentAbsenceView = ({
                             month.rate === 0
                               ? "bg-green-500"
                               : month.rate <= 10
-                                ? "bg-amber-500"
-                                : "bg-red-500"
+                              ? "bg-amber-500"
+                              : "bg-red-500"
                           }`}
                           style={{
                             width: `${Math.min(month.rate * 3, 100)}%`,
-                          }}
-                        ></div>
+                          }}></div>
                       </div>
                       <span className="text-xs text-gray-500">
                         {month.rate}%
@@ -603,8 +600,7 @@ const StudentAbsenceView = ({
               xmlns="http://www.w3.org/2000/svg"
               className="h-5 w-5 ml-2 text-blue-500 mt-0.5 flex-shrink-0"
               viewBox="0 0 20 20"
-              fill="currentColor"
-            >
+              fill="currentColor">
               <path
                 fillRule="evenodd"
                 d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
@@ -700,8 +696,7 @@ const TeacherAttendanceView = ({
             onClick={toggleEdit}
             className={`px-4 py-1 rounded-full text-sm ${
               isEditing ? "bg-red-100 text-red-700" : "bg-white/20 text-white"
-            }`}
-          >
+            }`}>
             {isEditing ? "إلغاء التعديل" : "تعديل السجل"}
           </button>
         </div>
@@ -743,36 +738,37 @@ const TeacherAttendanceView = ({
                   </td>
                 </tr>
               ) : (
-                students.map((student) => (
-                  <tr
-                    key={student._id}
-                    className={`hover:bg-gray-50 ${
-                      isEditing ? "cursor-pointer" : ""
-                    }`}
-                    onClick={() => toggleStudentPresence(student._id)}
-                  >
-                    <td className="px-4 py-3 text-sm text-gray-500">
-                      {student.studentId}
-                    </td>
-                    <td className="px-4 py-3 font-medium text-gray-900">
-                      {student.name}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-500">
-                      {student.group}
-                    </td>
-                    <td className="px-6 py-3 text-center">
-                      <input
-                        type="checkbox"
-                        checked={student.isPresent}
-                        onChange={() => toggleStudentPresence(student._id)}
-                        className={`w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500 ${
-                          !isEditing && "opacity-60 cursor-not-allowed"
-                        }`}
-                        disabled={!isEditing}
-                      />
-                    </td>
-                  </tr>
-                ))
+                [...students]
+                  .sort((a, b) => a.name.localeCompare(b.name, "ar"))
+                  .map((student) => (
+                    <tr
+                      key={student._id}
+                      className={`hover:bg-gray-50 ${
+                        isEditing ? "cursor-pointer" : ""
+                      }`}
+                      onClick={() => toggleStudentPresence(student._id)}>
+                      <td className="px-4 py-3 text-sm text-gray-500">
+                        {student.studentId}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-gray-900">
+                        {student.name}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-500">
+                        {student.group}
+                      </td>
+                      <td className="px-6 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={student.isPresent}
+                          onChange={() => toggleStudentPresence(student._id)}
+                          className={`w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500 ${
+                            !isEditing && "opacity-60 cursor-not-allowed"
+                          }`}
+                          disabled={!isEditing}
+                        />
+                      </td>
+                    </tr>
+                  ))
               )}
             </tbody>
           </table>
@@ -787,14 +783,12 @@ const TeacherAttendanceView = ({
               !isEditing
                 ? "opacity-60 cursor-not-allowed"
                 : "hover:bg-emerald-700"
-            }`}
-          >
+            }`}>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-5 w-5 ml-2"
               viewBox="0 0 20 20"
-              fill="currentColor"
-            >
+              fill="currentColor">
               <path
                 fillRule="evenodd"
                 d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
@@ -813,8 +807,7 @@ const TeacherAttendanceView = ({
             xmlns="http://www.w3.org/2000/svg"
             className="h-5 w-5 ml-1 text-amber-500"
             viewBox="0 0 20 20"
-            fill="currentColor"
-          >
+            fill="currentColor">
             <path
               fillRule="evenodd"
               d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
