@@ -175,6 +175,17 @@ const Header = () => {
             </li>
             <li>
               <NavLink
+                to="/exam-schedule"
+                className={({ isActive }) =>
+                  isActive
+                    ? "px-2 py-1 bg-white/20 rounded transition duration-300"
+                    : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
+                }>
+                جدول الامتحانات
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
                 to="/prayer-times"
                 className={({ isActive }) =>
                   isActive
@@ -570,28 +581,26 @@ const Header = () => {
           </div>
         </div>
 
-        {!isMenuOpen && (
-          <div className="flex items-center gap-4">
-            {/* إضافة مكون الإشعارات للمستخدمين المسجلين */}
-            {currentUser && (
-              <NotificationHeader
-                userId={currentUser._id}
-                socket={socket}
-                apiUrl="http://localhost:5005"
-              />
-            )}
-
-            <h1 className="text-xl font-bold hidden md:block">
-              مدرسة المهاجرين لتعليم القرآن الكريم
-            </h1>
-            <img
-              onClick={() => navigate("/")}
-              src="/src/images/logo.jpg"
-              alt="مدرسة القرآن"
-              className="cursor-pointer h-14 w-auto ml-3 rounded-full border-2 border-white shadow-lg mx-3"
+        <div className="flex items-center gap-4">
+          {/* إضافة مكون الإشعارات للمستخدمين المسجلين */}
+          {currentUser && (
+            <NotificationHeader
+              userId={currentUser._id}
+              socket={socket}
+              apiUrl="http://localhost:5005"
             />
-          </div>
-        )}
+          )}
+
+          <h1 className="text-xl font-bold hidden md:block">
+            مدرسة المهاجرين لتعليم القرآن الكريم
+          </h1>
+          <img
+            onClick={() => navigate("/")}
+            src="/src/images/logo.jpg"
+            alt="مدرسة القرآن"
+            className="cursor-pointer h-14 w-auto ml-3 rounded-full border-2 border-white shadow-lg mx-3"
+          />
+        </div>
       </div>
     </header>
   );

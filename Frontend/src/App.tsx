@@ -23,6 +23,7 @@ import ChangePass from "./pages/ChangePass";
 import Soon from "./components/Soon";
 import Reports from "./pages/Reports";
 import Timetable from "./pages/Timetable";
+import ExamSchedule from "./pages/ExamSchedule";
 function AppContent() {
   const location = useLocation();
   const isLoginPage = location.pathname === "/login";
@@ -51,6 +52,7 @@ function AppContent() {
         <Route path="/timetable" element={<Timetable />} />
         {/* Add more routes as needed */}
         <Route path="/test" element={<Test />} />
+        <Route path="/exam-schedule" element={<ExamSchedule />} />
         <Route path="/soon" element={<Soon />} />
         <Route path="/prayer-times" element={<PrayerTimes />} />
         <Route path="/quran" element={<QuranPage />} />
