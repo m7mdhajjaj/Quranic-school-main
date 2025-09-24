@@ -91,7 +91,7 @@ const Header = () => {
 
   return (
     <header
-      className="bg-gradient-to-r from-emerald-600 to-teal-500 text-white shadow-md p-4 rounded-b-lg"
+      className="sticky top-0 z-50 bg-gradient-to-r from-emerald-600 to-teal-500 text-white shadow-md p-4 rounded-b-lg"
       dir="rtl">
       <div className="container mx-auto flex items-center justify-between">
         {/* Mobile Menu Button */}
