@@ -690,7 +690,6 @@ const DailyMarks = () => {
             {currentUser?.role !== "student" ? (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Student List Card */}
-                {/* Student List Card */}
                 <div className="bg-white rounded-xl shadow-md overflow-hidden lg:col-span-1">
                   <div className="bg-gradient-to-r from-emerald-600 to-teal-500 py-4 px-6">
                     <h2 className="text-xl font-bold text-white">
@@ -698,16 +697,13 @@ const DailyMarks = () => {
                     </h2>
                   </div>
                   <div className="p-4">
-                    <ul
-                      className="divide-y divide-gray-200 max-h-80 overflow-y-auto"
-                      style={{ direction: "rtl" }}>
+                    <ul className="divide-y divide-gray-200">
                       {students
                         .sort((a, b) =>
                           `${a.firstName} ${a.lastName}`.localeCompare(
                             `${b.firstName} ${b.lastName}`
                           )
                         )
-                        .slice(0, 5)
                         .map((student) => (
                           <li key={student._id} className="py-3">
                             <button
@@ -721,33 +717,64 @@ const DailyMarks = () => {
                             </button>
                           </li>
                         ))}
-                      {/* Show scrollbar for remaining students */}
-                      {students.length > 5 &&
-                        students
-                          .sort((a, b) =>
-                            `${a.firstName} ${a.lastName}`.localeCompare(
-                              `${b.firstName} ${b.lastName}`
-                            )
-                          )
-                          .slice(5)
-                          .map((student) => (
-                            <li key={student._id} className="py-3">
-                              <button
-                                onClick={() =>
-                                  setSelectedStudentId(student._id)
-                                }
-                                className={`w-full text-right py-2 px-4 rounded-lg transition ${
-                                  selectedStudentId === student._id
-                                    ? "bg-emerald-100 text-emerald-800 font-bold"
-                                    : "hover:bg-gray-100"
-                                }`}>
-                                {`${student.firstName} ${student.fatherName} ${student.lastName}`}
-                              </button>
-                            </li>
-                          ))}
                     </ul>
                   </div>
-                  {/* ...rest of the card... */}
+                  <div className="p-4 bg-gray-50 space-y-3">
+                    <button
+                      onClick={() => setIsAddSectionModalOpen(true)}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 px-4 rounded-lg transition shadow-md flex items-center justify-center">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5 ml-2"
+                        viewBox="0 0 20 20"
+                        fill="currentColor">
+                        <path
+                          fillRule="evenodd"
+                          d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      إضافة مقطع جديد لجميع الطلاب
+                    </button>
+
+                    <button
+                      onClick={() => handleBulkUpdateSections()}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition shadow-md flex items-center justify-center">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5 ml-2"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                        />
+                      </svg>
+                      تحديث المقطع لجميع الطلاب
+                    </button>
+
+                    <button
+                      onClick={() => handleBulkDeleteSections()}
+                      className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-4 rounded-lg transition shadow-md flex items-center justify-center">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5 ml-2"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                      حذف المقطع لجميع الطلاب
+                    </button>
+                  </div>
                 </div>
 
                 {/* Student Details and Marks */}
@@ -905,8 +932,8 @@ const DailyMarks = () => {
                                             className={`font-semibold ${
                                               (mark.memorizationMark || 0) >= 9
                                                 ? "text-emerald-600"
-                                                : (mark.memorizationMark ||
-                                                    0) >= 7
+                                                : (mark.memorizationMark || 0) >=
+                                                  7
                                                 ? "text-amber-600"
                                                 : "text-red-600"
                                             }`}>
@@ -915,8 +942,7 @@ const DailyMarks = () => {
                                           <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden mr-2">
                                             <div
                                               className={`h-full ${
-                                                (mark.memorizationMark || 0) >=
-                                                9
+                                                (mark.memorizationMark || 0) >= 9
                                                   ? "bg-emerald-500"
                                                   : (mark.memorizationMark ||
                                                       0) >= 7
@@ -1180,8 +1206,7 @@ const DailyMarks = () => {
                                           className={`h-full ${
                                             (mark.memorizationMark || 0) >= 9
                                               ? "bg-emerald-500"
-                                              : (mark.memorizationMark || 0) >=
-                                                7
+                                              : (mark.memorizationMark || 0) >= 7
                                               ? "bg-amber-500"
                                               : "bg-red-500"
                                           }`}
