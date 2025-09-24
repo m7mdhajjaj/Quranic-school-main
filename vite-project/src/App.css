@@ -1,8 +1,0 @@
-@import "tailwindcss";
-
-/* Arabic font for Quran */
-.font-arabic {
-  font-family: 'Amiri', 'Times New Roman', serif;
-  font-size: 1.2em;
-  line-height: 2.2;
-}

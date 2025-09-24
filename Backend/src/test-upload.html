@@ -1,0 +1,142 @@
+<!doctype html>
+<html>
+  <head>
+    <title>اختبار تحميل الصور</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        direction: rtl;
+      }
+      h1 {
+        color: #1a6357;
+      }
+      form {
+        border: 1px solid #ddd;
+        padding: 20px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+      }
+      input,
+      button {
+        margin: 10px 0;
+        padding: 8px;
+      }
+      button {
+        background-color: #1a6357;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      img {
+        max-width: 300px;
+        max-height: 300px;
+        display: block;
+        margin-top: 10px;
+      }
+      .result {
+        margin-top: 20px;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>اختبار تحميل الصور</h1>
+
+    <form id="uploadForm">
+      <div>
+        <label for="title">عنوان الخبر:</label>
+        <input
+          type="text"
+          id="title"
+          name="title"
+          value="خبر تجريبي"
+          required
+        />
+      </div>
+
+      <div>
+        <label for="content">محتوى الخبر:</label>
+        <textarea id="content" name="content" required>
+هذا محتوى تجريبي للخبر</textarea
+        >
+      </div>
+
+      <div>
+        <label for="date">تاريخ الخبر:</label>
+        <input type="text" id="date" name="date" value="2024-09-06" />
+      </div>
+
+      <div>
+        <label for="image">صورة الخبر:</label>
+        <input type="file" id="image" name="image" accept="image/*" />
+        <div id="preview"></div>
+      </div>
+
+      <button type="submit">إرسال</button>
+    </form>
+
+    <div class="result" id="result">النتيجة ستظهر هنا...</div>
+
+    <script>
+      document.getElementById("image").addEventListener("change", function (e) {
+        const preview = document.getElementById("preview");
+        preview.innerHTML = "";
+
+        if (this.files && this.files[0]) {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            const img = document.createElement("img");
+            img.src = e.target.result;
+            preview.appendChild(img);
+          };
+          reader.readAsDataURL(this.files[0]);
+        }
+      });
+
+      document
+        .getElementById("uploadForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          const resultDiv = document.getElementById("result");
+          resultDiv.textContent = "جاري التحميل...";
+
+          const formData = new FormData(this);
+
+          try {
+            const response = await fetch("http://localhost:5005/api/news", {
+              method: "POST",
+              body: formData,
+            });
+
+            const data = await response.json();
+
+            resultDiv.textContent = JSON.stringify(data, null, 2);
+
+            if (data.news && data.news.image) {
+              const img = document.createElement("img");
+              img.src = `http://localhost:5005/${data.news.image}`;
+              img.alt = "الصورة المحملة";
+              img.style.marginTop = "10px";
+              img.onerror = () => {
+                img.src =
+                  "https://placehold.co/600x400/e9f5f2/1f6357?text=فشل+تحميل+الصورة";
+                img.alt = "فشل تحميل الصورة";
+              };
+              resultDiv.appendChild(img);
+            }
+          } catch (error) {
+            resultDiv.textContent = "حدث خطأ أثناء التحميل: " + error.message;
+          }
+        });
+    </script>
+  </body>
+</html>
