@@ -92,38 +92,32 @@ const Header = () => {
   return (
     <header
       className="bg-gradient-to-r from-emerald-600 to-teal-500 text-white shadow-md p-4 rounded-b-lg"
-      dir="rtl"
-    >
+      dir="rtl">
       <div className="container mx-auto flex items-center justify-between">
         {/* Mobile Menu Button */}
         <button
           className="md:hidden z-10 relative"
           onClick={toggleMenu}
-          aria-label="Toggle Menu"
-        >
+          aria-label="Toggle Menu">
           <div
             className={`w-6 h-0.5 bg-white mb-1.5 transition-all duration-300 ${
               isMenuOpen ? "transform rotate-45 translate-y-2" : ""
-            }`}
-          ></div>
+            }`}></div>
           <div
             className={`w-6 h-0.5 bg-white mb-1.5 transition-all duration-300 ${
               isMenuOpen ? "opacity-0" : "opacity-100"
-            }`}
-          ></div>
+            }`}></div>
           <div
             className={`w-6 h-0.5 bg-white transition-all duration-300 ${
               isMenuOpen ? "transform -rotate-45 -translate-y-2" : ""
-            }`}
-          ></div>
+            }`}></div>
         </button>
 
         {/* Desktop Navigation */}
         <nav className="hidden md:block mt-0">
           <ul
             className="flex flex-wrap space-x-reverse space-x-6 text-base font-medium"
-            dir="rtl"
-          >
+            dir="rtl">
             <li>
               <NavLink
                 to="/"
@@ -131,8 +125,7 @@ const Header = () => {
                   isActive
                     ? "px-2 py-1 bg-white/20 rounded transition duration-300 flex items-center"
                     : "px-2 py-1 hover:bg-white/20 rounded transition duration-300 flex items-center"
-                }
-              >
+                }>
                 الرئيسيه
               </NavLink>
             </li>
@@ -143,8 +136,7 @@ const Header = () => {
                   isActive
                     ? "px-2 py-1 bg-white/20 rounded transition duration-300"
                     : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
-                }
-              >
+                }>
                 الاخبار
               </NavLink>
             </li>
@@ -155,8 +147,7 @@ const Header = () => {
                   isActive
                     ? "px-2 py-1 bg-white/20 rounded transition duration-300"
                     : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
-                }
-              >
+                }>
                 الاهداف
               </NavLink>
             </li>
@@ -167,8 +158,7 @@ const Header = () => {
                   isActive
                     ? "px-2 py-1 bg-white/20 rounded transition duration-300"
                     : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
-                }
-              >
+                }>
                 العلامات اليوميه
               </NavLink>
             </li>
@@ -179,8 +169,7 @@ const Header = () => {
                   isActive
                     ? "px-2 py-1 bg-white/20 rounded transition duration-300"
                     : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
-                }
-              >
+                }>
                 الاختبارات
               </NavLink>
             </li>
@@ -191,8 +180,7 @@ const Header = () => {
                   isActive
                     ? "px-2 py-1 bg-white/20 rounded transition duration-300"
                     : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
-                }
-              >
+                }>
                 مواقيت الصلاة
               </NavLink>
             </li>
@@ -203,8 +191,7 @@ const Header = () => {
                   isActive
                     ? "px-2 py-1 bg-white/20 rounded transition duration-300"
                     : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
-                }
-              >
+                }>
                 القرآن الكريم
               </NavLink>
             </li>
@@ -215,8 +202,7 @@ const Header = () => {
                   isActive
                     ? "px-2 py-1 bg-white/20 rounded transition duration-300"
                     : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
-                }
-              >
+                }>
                 القرآن الصوتي
               </NavLink>
             </li>
@@ -227,8 +213,7 @@ const Header = () => {
                   isActive
                     ? "px-2 py-1 bg-white/20 rounded transition duration-300"
                     : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
-                }
-              >
+                }>
                 الترتيب
               </NavLink>
             </li>
@@ -239,8 +224,7 @@ const Header = () => {
                   isActive
                     ? "px-2 py-1 bg-white/20 rounded transition duration-300"
                     : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
-                }
-              >
+                }>
                 الانشطه
               </NavLink>
             </li>
@@ -251,9 +235,19 @@ const Header = () => {
                   isActive
                     ? "px-2 py-1 bg-white/20 rounded transition duration-300"
                     : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
-                }
-              >
+                }>
                 الحضور والغياب
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/reports"
+                className={({ isActive }) =>
+                  isActive
+                    ? "px-2 py-1 bg-white/20 rounded transition duration-300"
+                    : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
+                }>
+                التقارير
               </NavLink>
             </li>
             <li>
@@ -263,8 +257,7 @@ const Header = () => {
                   isActive
                     ? "px-2 py-1 bg-white/20 rounded transition duration-300"
                     : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
-                }
-              >
+                }>
                 تواصل مع المعلم
               </NavLink>
             </li>
@@ -276,8 +269,7 @@ const Header = () => {
                     isActive
                       ? "px-2 py-1 bg-white/20 rounded transition duration-300"
                       : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
-                  }
-                >
+                  }>
                   الادارة
                 </NavLink>
               </li>
@@ -290,15 +282,13 @@ const Header = () => {
                     isActive
                       ? "bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full shadow transition duration-300 "
                       : "bg-yellow-200 text-yellow-700 px-3 py-1 rounded-full shadow hover:bg-yellow-50 transition duration-300 mx-3"
-                  }
-                >
+                  }>
                   تغيير كلمة المرور
                 </NavLink>
 
                 <button
                   onClick={handleLogout}
-                  className="bg-red-500 text-white px-3 py-1 rounded-full shadow hover:bg-red-600 transition duration-300"
-                >
+                  className="bg-red-500 text-white px-3 py-1 rounded-full shadow hover:bg-red-600 transition duration-300">
                   تسجيل الخروج
                 </button>
               </div>
@@ -309,8 +299,7 @@ const Header = () => {
                   isActive
                     ? "bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full shadow transition duration-300"
                     : "bg-white text-emerald-700 px-3 py-1 rounded-full shadow hover:bg-emerald-50 transition duration-300"
-                }
-              >
+                }>
                 التسجيل
               </NavLink>
             )}
@@ -321,21 +310,18 @@ const Header = () => {
         <div
           className={`fixed inset-0 bg-emerald-900/95 z-40 transform transition-transform duration-300 ease-in-out ${
             isMenuOpen ? "translate-x-0" : "translate-x-full"
-          } md:hidden`}
-        >
+          } md:hidden`}>
           {/* Close Button (X) */}
           <button
             onClick={toggleMenu}
             className="absolute left-4 top-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-            aria-label="Close Menu"
-          >
+            aria-label="Close Menu">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-6 w-6 text-white"
               fill="none"
               viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
+              stroke="currentColor">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -355,8 +341,7 @@ const Header = () => {
                       ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
                       : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
                   }
-                  onClick={toggleMenu}
-                >
+                  onClick={toggleMenu}>
                   الرئيسيه
                 </NavLink>
               </li>
@@ -369,8 +354,7 @@ const Header = () => {
                       ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
                       : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
                   }
-                  onClick={toggleMenu}
-                >
+                  onClick={toggleMenu}>
                   الاخبار
                 </NavLink>
               </li>
@@ -383,8 +367,7 @@ const Header = () => {
                       ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
                       : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
                   }
-                  onClick={toggleMenu}
-                >
+                  onClick={toggleMenu}>
                   الاهداف
                 </NavLink>
               </li>
@@ -397,8 +380,7 @@ const Header = () => {
                       ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
                       : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
                   }
-                  onClick={toggleMenu}
-                >
+                  onClick={toggleMenu}>
                   العلامات اليوميه
                 </NavLink>
               </li>
@@ -411,8 +393,7 @@ const Header = () => {
                       ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
                       : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
                   }
-                  onClick={toggleMenu}
-                >
+                  onClick={toggleMenu}>
                   الاختبارات
                 </NavLink>
               </li>
@@ -425,8 +406,7 @@ const Header = () => {
                       ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
                       : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
                   }
-                  onClick={toggleMenu}
-                >
+                  onClick={toggleMenu}>
                   مواقيت الصلاة
                 </NavLink>
               </li>
@@ -439,8 +419,7 @@ const Header = () => {
                       ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
                       : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
                   }
-                  onClick={toggleMenu}
-                >
+                  onClick={toggleMenu}>
                   القرآن الكريم
                 </NavLink>
               </li>
@@ -453,8 +432,7 @@ const Header = () => {
                       ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
                       : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
                   }
-                  onClick={toggleMenu}
-                >
+                  onClick={toggleMenu}>
                   القرآن الصوتي
                 </NavLink>
               </li>
@@ -467,8 +445,7 @@ const Header = () => {
                       ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
                       : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
                   }
-                  onClick={toggleMenu}
-                >
+                  onClick={toggleMenu}>
                   الترتيب
                 </NavLink>
               </li>
@@ -481,8 +458,7 @@ const Header = () => {
                       ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
                       : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
                   }
-                  onClick={toggleMenu}
-                >
+                  onClick={toggleMenu}>
                   الانشطه
                 </NavLink>
               </li>
@@ -495,9 +471,20 @@ const Header = () => {
                       ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
                       : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
                   }
-                  onClick={toggleMenu}
-                >
+                  onClick={toggleMenu}>
                   الحضور والغياب
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/reports"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
+                      : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
+                  }
+                  onClick={toggleMenu}>
+                  التقارير
                 </NavLink>
               </li>
 
@@ -509,8 +496,7 @@ const Header = () => {
                       ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
                       : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
                   }
-                  onClick={toggleMenu}
-                >
+                  onClick={toggleMenu}>
                   تواصل مع المعلم
                 </NavLink>
               </li>
@@ -524,8 +510,7 @@ const Header = () => {
                         ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
                         : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
                     }
-                    onClick={toggleMenu}
-                  >
+                    onClick={toggleMenu}>
                     الادارة
                   </NavLink>
                 </li>
@@ -536,8 +521,7 @@ const Header = () => {
                   <NavLink
                     to="/change-password"
                     className="bg-yellow-200 text-yellow-700 px-4 py-2 rounded-full shadow block w-full"
-                    onClick={toggleMenu}
-                  >
+                    onClick={toggleMenu}>
                     تغيير كلمة المرور
                   </NavLink>
                 </li>
@@ -546,16 +530,14 @@ const Header = () => {
                 {currentUser ? (
                   <button
                     onClick={handleLogout}
-                    className="bg-red-500 text-white px-4 py-2 rounded-full shadow hover:bg-red-600 block w-full"
-                  >
+                    className="bg-red-500 text-white px-4 py-2 rounded-full shadow hover:bg-red-600 block w-full">
                     تسجيل الخروج
                   </button>
                 ) : (
                   <NavLink
                     to="/login"
                     className="bg-white text-emerald-700 px-4 py-2 rounded-full shadow block w-full"
-                    onClick={toggleMenu}
-                  >
+                    onClick={toggleMenu}>
                     التسجيل
                   </NavLink>
                 )}
