@@ -82,7 +82,7 @@ const DailyMarks = () => {
 
   // State for UI
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(
-    null,
+    null
   );
   const [isAddSectionModalOpen, setIsAddSectionModalOpen] = useState(false);
   const [isEditSectionModalOpen, setIsEditSectionModalOpen] = useState(false);
@@ -99,10 +99,10 @@ const DailyMarks = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [loadingMarks, setLoadingMarks] = useState<boolean>(false);
   const [selectedMonth, setSelectedMonth] = useState<number>(
-    new Date().getMonth() + 1,
+    new Date().getMonth() + 1
   ); // Current month (1-12)
   const [selectedYear, setSelectedYear] = useState<number>(
-    new Date().getFullYear(),
+    new Date().getFullYear()
   ); // Current year
 
   // Current logged-in user state
@@ -167,13 +167,13 @@ const DailyMarks = () => {
         if (currentUser.role === "student") {
           // For students, fetch only their marks
           const response = await axios.get(
-            `${API_URL}/marks/student/${currentUser._id}`,
+            `${API_URL}/marks/student/${currentUser._id}`
           );
           setMarks(response.data);
         } else if (selectedStudentId) {
           // For teachers with selected student
           const response = await axios.get(
-            `${API_URL}/marks/student/${selectedStudentId}`,
+            `${API_URL}/marks/student/${selectedStudentId}`
           );
           setMarks(response.data);
         } else {
@@ -276,8 +276,8 @@ const DailyMarks = () => {
       // Update marks array with updated mark
       setMarks((prev) =>
         prev.map((mark) =>
-          mark._id === editingMark._id ? response.data : mark,
-        ),
+          mark._id === editingMark._id ? response.data : mark
+        )
       );
       setIsUpdateMarkModalOpen(false);
       setEditingMark(null);
@@ -289,7 +289,7 @@ const DailyMarks = () => {
 
   // Handle input changes for new section
   const handleSectionInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setNewSection((prev) => ({
@@ -311,14 +311,14 @@ const DailyMarks = () => {
           date: editingSection.date,
           memorizationSection: editingSection.memorizationSection,
           reviewSection: editingSection.reviewSection,
-        },
+        }
       );
 
       // Update sections array with edited section
       setSections((prev) =>
         prev.map((section) =>
-          section._id === editingSection._id ? response.data : section,
-        ),
+          section._id === editingSection._id ? response.data : section
+        )
       );
       setIsEditSectionModalOpen(false);
       setEditingSection(null);
@@ -332,7 +332,7 @@ const DailyMarks = () => {
   const handleDeleteSection = async (sectionId: string) => {
     if (
       !confirm(
-        "هل أنت متأكد من حذف هذا المقطع؟ سيتم حذف جميع العلامات المرتبطة به.",
+        "هل أنت متأكد من حذف هذا المقطع؟ سيتم حذف جميع العلامات المرتبطة به."
       )
     ) {
       return;
@@ -343,7 +343,7 @@ const DailyMarks = () => {
 
       // Remove section from sections array
       setSections((prev) =>
-        prev.filter((section) => section._id !== sectionId),
+        prev.filter((section) => section._id !== sectionId)
       );
 
       // Remove related marks
@@ -354,7 +354,7 @@ const DailyMarks = () => {
           } else {
             return mark.sectionId._id !== sectionId;
           }
-        }),
+        })
       );
     } catch (err) {
       console.error("Error deleting section:", err);
@@ -387,7 +387,7 @@ const DailyMarks = () => {
 
     if (
       !confirm(
-        `هل أنت متأكد من حذف ${selectedSectionsForBulk.length} مقطع؟ سيتم حذف جميع العلامات المرتبطة بهم.`,
+        `هل أنت متأكد من حذف ${selectedSectionsForBulk.length} مقطع؟ سيتم حذف جميع العلامات المرتبطة بهم.`
       )
     ) {
       return;
@@ -397,15 +397,13 @@ const DailyMarks = () => {
       // Delete each selected section
       await Promise.all(
         selectedSectionsForBulk.map((sectionId) =>
-          axios.delete(`${API_URL}/sections/${sectionId}`),
-        ),
+          axios.delete(`${API_URL}/sections/${sectionId}`)
+        )
       );
 
       // Remove sections from state
       setSections((prev) =>
-        prev.filter(
-          (section) => !selectedSectionsForBulk.includes(section._id),
-        ),
+        prev.filter((section) => !selectedSectionsForBulk.includes(section._id))
       );
 
       // Remove related marks
@@ -416,7 +414,7 @@ const DailyMarks = () => {
           } else {
             return !selectedSectionsForBulk.includes(mark.sectionId._id);
           }
-        }),
+        })
       );
 
       setIsBulkDeleteModalOpen(false);
@@ -463,7 +461,7 @@ const DailyMarks = () => {
         prev.map((section) => {
           const result = results.find((r) => r?.data._id === section._id);
           return result ? result.data : section;
-        }),
+        })
       );
 
       setIsBulkUpdateModalOpen(false);
@@ -480,13 +478,13 @@ const DailyMarks = () => {
     setSelectedSectionsForBulk((prev) =>
       prev.includes(sectionId)
         ? prev.filter((id) => id !== sectionId)
-        : [...prev, sectionId],
+        : [...prev, sectionId]
     );
   };
 
   // Handle input changes for editing section
   const handleEditSectionInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setEditingSection((prev) =>
@@ -495,13 +493,13 @@ const DailyMarks = () => {
             ...prev,
             [name]: value,
           }
-        : null,
+        : null
     );
   };
 
   // Handle input changes for new mark
   const handleMarkInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setNewMark((prev) => ({
@@ -613,8 +611,7 @@ const DailyMarks = () => {
   return (
     <div
       className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 py-12 px-4"
-      dir="rtl"
-    >
+      dir="rtl">
       <div className="container mx-auto">
         <div className="text-center mb-10">
           <h1 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
@@ -649,8 +646,7 @@ const DailyMarks = () => {
                 <select
                   value={selectedMonth}
                   onChange={handleMonthChange}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                >
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500">
                   <option value={1}>يناير (1)</option>
                   <option value={2}>فبراير (2)</option>
                   <option value={3}>مارس (3)</option>
@@ -672,8 +668,7 @@ const DailyMarks = () => {
                 <select
                   value={selectedYear}
                   onChange={handleYearChange}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                >
+                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500">
                   <option value={2023}>2023</option>
                   <option value={2024}>2024</option>
                   <option value={2025}>2025</option>
@@ -701,13 +696,13 @@ const DailyMarks = () => {
                       قائمة الطلاب
                     </h2>
                   </div>
-                  <div className="p-4">
+                  <div className="p-4 max-h-80 overflow-y-auto">
                     <ul className="divide-y divide-gray-200">
                       {students
                         .sort((a, b) =>
                           `${a.firstName} ${a.lastName}`.localeCompare(
-                            `${b.firstName} ${b.lastName}`,
-                          ),
+                            `${b.firstName} ${b.lastName}`
+                          )
                         )
                         .map((student) => (
                           <li key={student._id} className="py-3">
@@ -717,8 +712,7 @@ const DailyMarks = () => {
                                 selectedStudentId === student._id
                                   ? "bg-emerald-100 text-emerald-800 font-bold"
                                   : "hover:bg-gray-100"
-                              }`}
-                            >
+                              }`}>
                               {`${student.firstName} ${student.fatherName} ${student.lastName}`}
                             </button>
                           </li>
@@ -728,14 +722,12 @@ const DailyMarks = () => {
                   <div className="p-4 bg-gray-50 space-y-3">
                     <button
                       onClick={() => setIsAddSectionModalOpen(true)}
-                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 px-4 rounded-lg transition shadow-md flex items-center justify-center"
-                    >
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 px-4 rounded-lg transition shadow-md flex items-center justify-center">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="h-5 w-5 ml-2"
                         viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
+                        fill="currentColor">
                         <path
                           fillRule="evenodd"
                           d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
@@ -747,15 +739,13 @@ const DailyMarks = () => {
 
                     <button
                       onClick={() => handleBulkUpdateSections()}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition shadow-md flex items-center justify-center"
-                    >
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition shadow-md flex items-center justify-center">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="h-5 w-5 ml-2"
                         fill="none"
                         viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
+                        stroke="currentColor">
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -768,15 +758,13 @@ const DailyMarks = () => {
 
                     <button
                       onClick={() => handleBulkDeleteSections()}
-                      className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-4 rounded-lg transition shadow-md flex items-center justify-center"
-                    >
+                      className="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-4 rounded-lg transition shadow-md flex items-center justify-center">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="h-5 w-5 ml-2"
                         fill="none"
                         viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
+                        stroke="currentColor">
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -799,15 +787,15 @@ const DailyMarks = () => {
                           {students.find((s) => s._id === selectedStudentId)
                             ? `${
                                 students.find(
-                                  (s) => s._id === selectedStudentId,
+                                  (s) => s._id === selectedStudentId
                                 )?.firstName
                               } ${
                                 students.find(
-                                  (s) => s._id === selectedStudentId,
+                                  (s) => s._id === selectedStudentId
                                 )?.fatherName
                               } ${
                                 students.find(
-                                  (s) => s._id === selectedStudentId,
+                                  (s) => s._id === selectedStudentId
                                 )?.lastName
                               }`
                             : "غير معروف"}
@@ -842,8 +830,7 @@ const DailyMarks = () => {
                               <tr>
                                 <td
                                   colSpan={5}
-                                  className="py-4 px-4 text-center"
-                                >
+                                  className="py-4 px-4 text-center">
                                   <p className="text-sm text-gray-500">
                                     جاري تحميل العلامات...
                                   </p>
@@ -853,8 +840,7 @@ const DailyMarks = () => {
                               <tr>
                                 <td
                                   colSpan={6}
-                                  className="py-8 text-center text-gray-500"
-                                >
+                                  className="py-8 text-center text-gray-500">
                                   لا توجد مقاطع مضافة بعد
                                 </td>
                               </tr>
@@ -862,8 +848,7 @@ const DailyMarks = () => {
                               <tr>
                                 <td
                                   colSpan={6}
-                                  className="py-8 text-center text-gray-500"
-                                >
+                                  className="py-8 text-center text-gray-500">
                                   لا توجد مقاطع في الشهر والسنة المحددة
                                 </td>
                               </tr>
@@ -891,11 +876,10 @@ const DailyMarks = () => {
                                 return (
                                   <tr
                                     key={section._id}
-                                    className="hover:bg-gray-50"
-                                  >
+                                    className="hover:bg-gray-50">
                                     <td className="py-4 px-4 text-sm text-gray-700">
                                       {new Date(
-                                        section.date,
+                                        section.date
                                       ).toLocaleDateString("en-GB", {
                                         year: "numeric",
                                         month: "2-digit",
@@ -913,10 +897,9 @@ const DailyMarks = () => {
                                               (mark.reviewMark || 0) >= 9
                                                 ? "text-emerald-600"
                                                 : (mark.reviewMark || 0) >= 7
-                                                  ? "text-amber-600"
-                                                  : "text-red-600"
-                                            }`}
-                                          >
+                                                ? "text-amber-600"
+                                                : "text-red-600"
+                                            }`}>
                                             {mark.reviewMark}/10
                                           </span>
                                           <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden mr-2">
@@ -925,15 +908,14 @@ const DailyMarks = () => {
                                                 (mark.reviewMark || 0) >= 9
                                                   ? "bg-emerald-500"
                                                   : (mark.reviewMark || 0) >= 7
-                                                    ? "bg-amber-500"
-                                                    : "bg-red-500"
+                                                  ? "bg-amber-500"
+                                                  : "bg-red-500"
                                               }`}
                                               style={{
                                                 width: `${
                                                   (mark.reviewMark || 0) * 10
                                                 }%`,
-                                              }}
-                                            ></div>
+                                              }}></div>
                                           </div>
                                         </div>
                                       ) : (
@@ -951,11 +933,10 @@ const DailyMarks = () => {
                                               (mark.memorizationMark || 0) >= 9
                                                 ? "text-emerald-600"
                                                 : (mark.memorizationMark ||
-                                                      0) >= 7
-                                                  ? "text-amber-600"
-                                                  : "text-red-600"
-                                            }`}
-                                          >
+                                                    0) >= 7
+                                                ? "text-amber-600"
+                                                : "text-red-600"
+                                            }`}>
                                             {mark.memorizationMark}/10
                                           </span>
                                           <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden mr-2">
@@ -965,17 +946,16 @@ const DailyMarks = () => {
                                                 9
                                                   ? "bg-emerald-500"
                                                   : (mark.memorizationMark ||
-                                                        0) >= 7
-                                                    ? "bg-amber-500"
-                                                    : "bg-red-500"
+                                                      0) >= 7
+                                                  ? "bg-amber-500"
+                                                  : "bg-red-500"
                                               }`}
                                               style={{
                                                 width: `${
                                                   (mark.memorizationMark || 0) *
                                                   10
                                                 }%`,
-                                              }}
-                                            ></div>
+                                              }}></div>
                                           </div>
                                         </div>
                                       ) : (
@@ -990,8 +970,7 @@ const DailyMarks = () => {
                                               openUpdateMarkModal(mark, section)
                                             }
                                             className="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-lg text-sm font-medium transition"
-                                            title="تحديث العلامة"
-                                          >
+                                            title="تحديث العلامة">
                                             تحديث العلامة
                                           </button>
                                         ) : (
@@ -1000,8 +979,7 @@ const DailyMarks = () => {
                                               openAddMarkModal(section)
                                             }
                                             className="text-emerald-600 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1 rounded-lg text-sm font-medium transition"
-                                            title="إضافة علامة"
-                                          >
+                                            title="إضافة علامة">
                                             إضافة علامة
                                           </button>
                                         )}
@@ -1072,8 +1050,7 @@ const DailyMarks = () => {
                         className="h-16 w-16 text-gray-300 mb-4"
                         fill="none"
                         viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
+                        stroke="currentColor">
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -1133,8 +1110,7 @@ const DailyMarks = () => {
                           <tr>
                             <td
                               colSpan={5}
-                              className="py-8 text-center text-gray-500"
-                            >
+                              className="py-8 text-center text-gray-500">
                               لا توجد مقاطع مضافة بعد
                             </td>
                           </tr>
@@ -1142,8 +1118,7 @@ const DailyMarks = () => {
                           <tr>
                             <td
                               colSpan={5}
-                              className="py-8 text-center text-gray-500"
-                            >
+                              className="py-8 text-center text-gray-500">
                               لا توجد مقاطع في الشهر والسنة المحددة
                             </td>
                           </tr>
@@ -1160,8 +1135,7 @@ const DailyMarks = () => {
                             return (
                               <tr
                                 key={section._id}
-                                className="hover:bg-gray-50"
-                              >
+                                className="hover:bg-gray-50">
                                 <td className="py-4 px-4 text-sm text-gray-700">
                                   {new Date(section.date).toLocaleDateString(
                                     "en-GB",
@@ -1169,7 +1143,7 @@ const DailyMarks = () => {
                                       year: "numeric",
                                       month: "2-digit",
                                       day: "2-digit",
-                                    },
+                                    }
                                   )}
                                 </td>
                                 <td className="py-4 px-4 text-sm text-gray-700">
@@ -1185,10 +1159,9 @@ const DailyMarks = () => {
                                           (mark.reviewMark || 0) >= 9
                                             ? "text-emerald-600"
                                             : (mark.reviewMark || 0) >= 7
-                                              ? "text-amber-600"
-                                              : "text-red-600"
-                                        }`}
-                                      >
+                                            ? "text-amber-600"
+                                            : "text-red-600"
+                                        }`}>
                                         {mark.reviewMark}/10
                                       </span>
                                       <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden mr-2">
@@ -1197,15 +1170,14 @@ const DailyMarks = () => {
                                             (mark.reviewMark || 0) >= 9
                                               ? "bg-emerald-500"
                                               : (mark.reviewMark || 0) >= 7
-                                                ? "bg-amber-500"
-                                                : "bg-red-500"
+                                              ? "bg-amber-500"
+                                              : "bg-red-500"
                                           }`}
                                           style={{
                                             width: `${
                                               (mark.reviewMark || 0) * 10
                                             }%`,
-                                          }}
-                                        ></div>
+                                          }}></div>
                                       </div>
                                     </div>
                                   ) : (
@@ -1225,10 +1197,9 @@ const DailyMarks = () => {
                                           (mark.memorizationMark || 0) >= 9
                                             ? "text-emerald-600"
                                             : (mark.memorizationMark || 0) >= 7
-                                              ? "text-amber-600"
-                                              : "text-red-600"
-                                        }`}
-                                      >
+                                            ? "text-amber-600"
+                                            : "text-red-600"
+                                        }`}>
                                         {mark.memorizationMark}/10
                                       </span>
                                       <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden mr-2">
@@ -1237,16 +1208,15 @@ const DailyMarks = () => {
                                             (mark.memorizationMark || 0) >= 9
                                               ? "bg-emerald-500"
                                               : (mark.memorizationMark || 0) >=
-                                                  7
-                                                ? "bg-amber-500"
-                                                : "bg-red-500"
+                                                7
+                                              ? "bg-amber-500"
+                                              : "bg-red-500"
                                           }`}
                                           style={{
                                             width: `${
                                               (mark.memorizationMark || 0) * 10
                                             }%`,
-                                          }}
-                                        ></div>
+                                          }}></div>
                                       </div>
                                     </div>
                                   ) : (
@@ -1326,15 +1296,13 @@ const DailyMarks = () => {
               </h3>
               <button
                 onClick={() => setIsAddSectionModalOpen(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
+                className="text-gray-500 hover:text-gray-700">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-6 w-6"
                   fill="none"
                   viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
+                  stroke="currentColor">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -1350,8 +1318,7 @@ const DailyMarks = () => {
               <div className="mb-4">
                 <label
                   className="block text-gray-700 text-sm font-bold mb-2"
-                  htmlFor="date"
-                >
+                  htmlFor="date">
                   التاريخ
                 </label>
                 <input
@@ -1373,8 +1340,7 @@ const DailyMarks = () => {
                 <div className="mb-4">
                   <label
                     className="block text-gray-700 text-sm font-bold mb-2"
-                    htmlFor="reviewSection"
-                  >
+                    htmlFor="reviewSection">
                     مقطع المراجعة
                   </label>
                   <input
@@ -1398,8 +1364,7 @@ const DailyMarks = () => {
                 <div className="mb-4">
                   <label
                     className="block text-gray-700 text-sm font-bold mb-2"
-                    htmlFor="memorizationSection"
-                  >
+                    htmlFor="memorizationSection">
                     مقطع الحفظ
                   </label>
                   <input
@@ -1420,14 +1385,12 @@ const DailyMarks = () => {
                 <button
                   type="button"
                   onClick={() => setIsAddSectionModalOpen(false)}
-                  className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-lg transition"
-                >
+                  className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-lg transition">
                   إلغاء
                 </button>
                 <button
                   type="submit"
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-8 rounded-lg transition shadow-md"
-                >
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-8 rounded-lg transition shadow-md">
                   إضافة المقطع
                 </button>
               </div>
@@ -1451,15 +1414,13 @@ const DailyMarks = () => {
                     setIsEditSectionModalOpen(false);
                     setEditingSection(null);
                   }}
-                  className="text-gray-500 hover:text-gray-700"
-                >
+                  className="text-gray-500 hover:text-gray-700">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-6 w-6"
                     fill="none"
                     viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
+                    stroke="currentColor">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -1475,8 +1436,7 @@ const DailyMarks = () => {
                 <div className="mb-4">
                   <label
                     className="block text-gray-700 text-sm font-bold mb-2"
-                    htmlFor="edit-date"
-                  >
+                    htmlFor="edit-date">
                     التاريخ
                   </label>
                   <input
@@ -1498,8 +1458,7 @@ const DailyMarks = () => {
                   <div className="mb-4">
                     <label
                       className="block text-gray-700 text-sm font-bold mb-2"
-                      htmlFor="edit-reviewSection"
-                    >
+                      htmlFor="edit-reviewSection">
                       مقطع المراجعة
                     </label>
                     <input
@@ -1523,8 +1482,7 @@ const DailyMarks = () => {
                   <div className="mb-4">
                     <label
                       className="block text-gray-700 text-sm font-bold mb-2"
-                      htmlFor="edit-memorizationSection"
-                    >
+                      htmlFor="edit-memorizationSection">
                       مقطع الحفظ
                     </label>
                     <input
@@ -1548,14 +1506,12 @@ const DailyMarks = () => {
                       setIsEditSectionModalOpen(false);
                       setEditingSection(null);
                     }}
-                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-lg transition"
-                  >
+                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-lg transition">
                     إلغاء
                   </button>
                   <button
                     type="submit"
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-8 rounded-lg transition shadow-md"
-                  >
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-8 rounded-lg transition shadow-md">
                     حفظ التعديل
                   </button>
                 </div>
@@ -1585,15 +1541,13 @@ const DailyMarks = () => {
                 </h3>
                 <button
                   onClick={() => setIsAddMarkModalOpen(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
+                  className="text-gray-500 hover:text-gray-700">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-6 w-6"
                     fill="none"
                     viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
+                    stroke="currentColor">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -1617,7 +1571,7 @@ const DailyMarks = () => {
                         year: "numeric",
                         month: "2-digit",
                         day: "2-digit",
-                      },
+                      }
                     )}
                   </p>
                   <p className="text-sm text-gray-600 mb-1">
@@ -1634,8 +1588,7 @@ const DailyMarks = () => {
                 <div className="mb-6">
                   <label
                     className="block text-gray-700 text-sm font-bold mb-2"
-                    htmlFor="reviewMark"
-                  >
+                    htmlFor="reviewMark">
                     علامة المراجعة (6-10)
                   </label>
                   <div className="flex items-center mb-2">
@@ -1660,18 +1613,16 @@ const DailyMarks = () => {
                       newMark.reviewMark >= 9
                         ? "bg-emerald-500"
                         : newMark.reviewMark >= 7
-                          ? "bg-amber-500"
-                          : "bg-red-500"
-                    }`}
-                  ></div>
+                        ? "bg-amber-500"
+                        : "bg-red-500"
+                    }`}></div>
                 </div>
 
                 {/* Memorization Mark Input */}
                 <div className="mb-6">
                   <label
                     className="block text-gray-700 text-sm font-bold mb-2"
-                    htmlFor="memorizationMark"
-                  >
+                    htmlFor="memorizationMark">
                     علامة الحفظ (6-10)
                   </label>
                   <div className="flex items-center mb-2">
@@ -1696,10 +1647,9 @@ const DailyMarks = () => {
                       newMark.memorizationMark >= 9
                         ? "bg-emerald-500"
                         : newMark.memorizationMark >= 7
-                          ? "bg-amber-500"
-                          : "bg-red-500"
-                    }`}
-                  ></div>
+                        ? "bg-amber-500"
+                        : "bg-red-500"
+                    }`}></div>
                 </div>
 
                 {/* Action buttons */}
@@ -1707,14 +1657,12 @@ const DailyMarks = () => {
                   <button
                     type="button"
                     onClick={() => setIsAddMarkModalOpen(false)}
-                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-lg transition"
-                  >
+                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-lg transition">
                     إلغاء
                   </button>
                   <button
                     type="submit"
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-8 rounded-lg transition shadow-md"
-                  >
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-8 rounded-lg transition shadow-md">
                     إضافة العلامات
                   </button>
                 </div>
@@ -1748,15 +1696,13 @@ const DailyMarks = () => {
                     setIsUpdateMarkModalOpen(false);
                     setEditingMark(null);
                   }}
-                  className="text-gray-500 hover:text-gray-700"
-                >
+                  className="text-gray-500 hover:text-gray-700">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-6 w-6"
                     fill="none"
                     viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
+                    stroke="currentColor">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -1780,7 +1726,7 @@ const DailyMarks = () => {
                         year: "numeric",
                         month: "2-digit",
                         day: "2-digit",
-                      },
+                      }
                     )}
                   </p>
                   <p className="text-sm text-gray-600 mb-1">
@@ -1797,8 +1743,7 @@ const DailyMarks = () => {
                 <div className="mb-6">
                   <label
                     className="block text-gray-700 text-sm font-bold mb-2"
-                    htmlFor="updateReviewMark"
-                  >
+                    htmlFor="updateReviewMark">
                     علامة المراجعة (6-10)
                   </label>
                   <div className="flex items-center mb-2">
@@ -1823,18 +1768,16 @@ const DailyMarks = () => {
                       newMark.reviewMark >= 9
                         ? "bg-emerald-500"
                         : newMark.reviewMark >= 7
-                          ? "bg-amber-500"
-                          : "bg-red-500"
-                    }`}
-                  ></div>
+                        ? "bg-amber-500"
+                        : "bg-red-500"
+                    }`}></div>
                 </div>
 
                 {/* Memorization Mark Input */}
                 <div className="mb-6">
                   <label
                     className="block text-gray-700 text-sm font-bold mb-2"
-                    htmlFor="updateMemorizationMark"
-                  >
+                    htmlFor="updateMemorizationMark">
                     علامة الحفظ (6-10)
                   </label>
                   <div className="flex items-center mb-2">
@@ -1859,10 +1802,9 @@ const DailyMarks = () => {
                       newMark.memorizationMark >= 9
                         ? "bg-emerald-500"
                         : newMark.memorizationMark >= 7
-                          ? "bg-amber-500"
-                          : "bg-red-500"
-                    }`}
-                  ></div>
+                        ? "bg-amber-500"
+                        : "bg-red-500"
+                    }`}></div>
                 </div>
 
                 {/* Action buttons */}
@@ -1873,14 +1815,12 @@ const DailyMarks = () => {
                       setIsUpdateMarkModalOpen(false);
                       setEditingMark(null);
                     }}
-                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-lg transition"
-                  >
+                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-lg transition">
                     إلغاء
                   </button>
                   <button
                     type="submit"
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-8 rounded-lg transition shadow-md"
-                  >
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-8 rounded-lg transition shadow-md">
                     تحديث العلامات
                   </button>
                 </div>
@@ -1902,15 +1842,13 @@ const DailyMarks = () => {
                   setIsBulkUpdateModalOpen(false);
                   setSelectedSectionsForBulk([]);
                 }}
-                className="text-gray-500 hover:text-gray-700"
-              >
+                className="text-gray-500 hover:text-gray-700">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-6 w-6"
                   fill="none"
                   viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
+                  stroke="currentColor">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -1933,8 +1871,7 @@ const DailyMarks = () => {
                     undefined,
                 };
                 executeBulkUpdate(updateData);
-              }}
-            >
+              }}>
               {/* Section Selection */}
               <div className="mb-6">
                 <h4 className="text-md font-bold text-gray-700 mb-3">
@@ -1944,8 +1881,7 @@ const DailyMarks = () => {
                   {getFilteredSections().map((section) => (
                     <label
                       key={section._id}
-                      className="flex items-center mb-2 cursor-pointer"
-                    >
+                      className="flex items-center mb-2 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={selectedSectionsForBulk.includes(section._id)}
@@ -1995,14 +1931,12 @@ const DailyMarks = () => {
                     setIsBulkUpdateModalOpen(false);
                     setSelectedSectionsForBulk([]);
                   }}
-                  className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-lg transition"
-                >
+                  className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-lg transition">
                   إلغاء
                 </button>
                 <button
                   type="submit"
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-8 rounded-lg transition shadow-md"
-                >
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-8 rounded-lg transition shadow-md">
                   تحديث المقاطع المحددة
                 </button>
               </div>
@@ -2024,15 +1958,13 @@ const DailyMarks = () => {
                   setIsBulkDeleteModalOpen(false);
                   setSelectedSectionsForBulk([]);
                 }}
-                className="text-gray-500 hover:text-gray-700"
-              >
+                className="text-gray-500 hover:text-gray-700">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-6 w-6"
                   fill="none"
                   viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
+                  stroke="currentColor">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -2052,8 +1984,7 @@ const DailyMarks = () => {
                 {getFilteredSections().map((section) => (
                   <label
                     key={section._id}
-                    className="flex items-center mb-2 cursor-pointer"
-                  >
+                    className="flex items-center mb-2 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={selectedSectionsForBulk.includes(section._id)}
@@ -2085,15 +2016,13 @@ const DailyMarks = () => {
                   setIsBulkDeleteModalOpen(false);
                   setSelectedSectionsForBulk([]);
                 }}
-                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-lg transition"
-              >
+                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-lg transition">
                 إلغاء
               </button>
               <button
                 type="button"
                 onClick={executeBulkDelete}
-                className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-8 rounded-lg transition shadow-md"
-              >
+                className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-8 rounded-lg transition shadow-md">
                 حذف المقاطع المحددة
               </button>
             </div>
