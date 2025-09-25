@@ -25,23 +25,39 @@ const Timetable = () => {
   const [selectedHour, setSelectedHour] = useState(hours[0]);
   const [note, setNote] = useState("");
 
+  // Detect user role from localStorage
+  const user = localStorage.getItem("user");
+  let role = "student";
+  if (user) {
+    try {
+      role = JSON.parse(user).role || "student";
+    } catch {}
+  }
+
   return (
     <div className="overflow-auto p-4" dir="rtl">
       <h2 className="text-2xl font-bold mb-4 text-center">
         جدول الحصص الأسبوعي
       </h2>
-      <div className="flex justify-center gap-4 mb-4">
-        <button
-          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded shadow"
-          onClick={() => setShowForm(true)}>
-          إضافة موعد
-        </button>
-        <button
-          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow"
-          onClick={() => setShowForm(true)}>
-          تعديل موعد
-        </button>
-      </div>
+      {(role === "teacher" || role === "admin") && (
+        <div className="flex justify-center gap-4 mb-4">
+          <button
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded shadow"
+            onClick={() => setShowForm(true)}>
+            إضافة موعد
+          </button>
+          <button
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow"
+            onClick={() => setShowForm(true)}>
+            تعديل موعد
+          </button>
+          <button
+            className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded shadow"
+            onClick={() => alert("حذف موعد (يرجى ربطه بمنطق الحذف لاحقاً)")}>
+            حذف موعد
+          </button>
+        </div>
+      )}
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
           <div className="bg-white rounded shadow-lg p-6 w-full max-w-md">
