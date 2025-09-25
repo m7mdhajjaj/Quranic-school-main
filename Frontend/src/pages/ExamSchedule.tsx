@@ -34,6 +34,14 @@ const ExamSchedule: React.FC = () => {
   const [markDetail, setMarkDetail] = useState("");
   const [showAddExamModal, setShowAddExamModal] = useState(false);
   const [newExam, setNewExam] = useState({ name: "", date: "", time: "" });
+  // Detect user role from localStorage
+  const user = localStorage.getItem("user");
+  let role = "student";
+  if (user) {
+    try {
+      role = JSON.parse(user).role || "student";
+    } catch {}
+  }
 
   // Add exam for all students (demo: just adds to list)
   const handleAddExam = (e: React.FormEvent) => {
@@ -73,13 +81,15 @@ const ExamSchedule: React.FC = () => {
       <h2 className="text-3xl font-bold mb-6 text-center text-emerald-700 drop-shadow">
         جدول الامتحانات
       </h2>
-      <div className="flex flex-wrap gap-4 justify-center mb-6">
-        <button
-          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded shadow"
-          onClick={() => setShowAddExamModal(true)}>
-          إضافة امتحان لكل الطلاب
-        </button>
-      </div>
+      {role === "teacher" || role === "admin" ? (
+        <div className="flex flex-wrap gap-4 justify-center mb-6">
+          <button
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded shadow"
+            onClick={() => setShowAddExamModal(true)}>
+            إضافة امتحان لكل الطلاب
+          </button>
+        </div>
+      ) : null}
       <table className="w-full border rounded-xl shadow-lg text-center overflow-hidden">
         <thead>
           <tr className="bg-emerald-100 text-emerald-800">
@@ -87,7 +97,9 @@ const ExamSchedule: React.FC = () => {
             <th className="border px-3 py-3">التاريخ</th>
             <th className="border px-3 py-3">الوقت</th>
             <th className="border px-3 py-3">النتيجة</th>
-            <th className="border px-3 py-3">إجراءات</th>
+            {role === "teacher" || role === "admin" ? (
+              <th className="border px-3 py-3">إجراءات</th>
+            ) : null}
           </tr>
         </thead>
         <tbody>
@@ -103,16 +115,18 @@ const ExamSchedule: React.FC = () => {
               <td className="border px-3 py-2 text-emerald-700">
                 {exam.result ? exam.result : "-"}
               </td>
-              <td className="border px-3 py-2">
-                <button
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded shadow text-sm"
-                  onClick={() => {
-                    setSelectedExam(exam);
-                    setShowMarkModal(true);
-                  }}>
-                  إضافة علامة/تفاصيل
-                </button>
-              </td>
+              {role === "teacher" || role === "admin" ? (
+                <td className="border px-3 py-2">
+                  <button
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded shadow text-sm"
+                    onClick={() => {
+                      setSelectedExam(exam);
+                      setShowMarkModal(true);
+                    }}>
+                    إضافة علامة/تفاصيل
+                  </button>
+                </td>
+              ) : null}
             </tr>
           ))}
         </tbody>
