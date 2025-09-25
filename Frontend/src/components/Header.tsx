@@ -1,18 +1,21 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import NotificationHeader from "./NotificationHeader";
 import io from "socket.io-client";
-
 interface User {
   _id: string;
   name: string;
   role?: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [socket, setSocket] = useState<any>(null);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -91,9 +94,9 @@ const Header = () => {
 
   return (
     <header
-      className="sticky top-0 z-50 bg-gradient-to-r from-emerald-600 to-teal-500 text-white shadow-md p-4 rounded-b-lg"
+      className=" sticky top-0 z-50 bg-gradient-to-r from-emerald-600 to-teal-500 text-white shadow-md p-4 rounded-b-lg"
       dir="rtl">
-      <div className="container mx-auto flex items-center justify-between">
+      <div className="container flex justify-evenly items-center mx-auto">
         {/* Mobile Menu Button */}
         <button
           className="md:hidden z-10 relative"
@@ -114,230 +117,271 @@ const Header = () => {
         </button>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:block mt-0">
-          <ul
-            className="flex flex-wrap space-x-reverse space-x-6 text-base font-medium"
-            dir="rtl">
-            <li>
-              <NavLink
-                to="/"
-                className={({ isActive }) =>
-                  isActive
-                    ? "px-2 py-1 bg-white/20 rounded transition duration-300 flex items-center"
-                    : "px-2 py-1 hover:bg-white/20 rounded transition duration-300 flex items-center"
-                }>
-                الرئيسيه
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/news"
-                className={({ isActive }) =>
-                  isActive
-                    ? "px-2 py-1 bg-white/20 rounded transition duration-300"
-                    : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
-                }>
-                الاخبار
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/goals"
-                className={({ isActive }) =>
-                  isActive
-                    ? "px-2 py-1 bg-white/20 rounded transition duration-300"
-                    : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
-                }>
-                الاهداف
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/daily-marks"
-                className={({ isActive }) =>
-                  isActive
-                    ? "px-2 py-1 bg-white/20 rounded transition duration-300"
-                    : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
-                }>
-                العلامات اليوميه
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/test"
-                className={({ isActive }) =>
-                  isActive
-                    ? "px-2 py-1 bg-white/20 rounded transition duration-300"
-                    : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
-                }>
-                الاختبارات
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/exam-schedule"
-                className={({ isActive }) =>
-                  isActive
-                    ? "px-2 py-1 bg-white/20 rounded transition duration-300"
-                    : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
-                }>
-                جدول الامتحانات
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/prayer-times"
-                className={({ isActive }) =>
-                  isActive
-                    ? "px-2 py-1 bg-white/20 rounded transition duration-300"
-                    : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
-                }>
-                مواقيت الصلاة
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/quran"
-                className={({ isActive }) =>
-                  isActive
-                    ? "px-2 py-1 bg-white/20 rounded transition duration-300"
-                    : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
-                }>
-                القرآن الكريم
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/quran-audio"
-                className={({ isActive }) =>
-                  isActive
-                    ? "px-2 py-1 bg-white/20 rounded transition duration-300"
-                    : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
-                }>
-                القرآن الصوتي
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/arrangement"
-                className={({ isActive }) =>
-                  isActive
-                    ? "px-2 py-1 bg-white/20 rounded transition duration-300"
-                    : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
-                }>
-                الترتيب
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/activities"
-                className={({ isActive }) =>
-                  isActive
-                    ? "px-2 py-1 bg-white/20 rounded transition duration-300"
-                    : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
-                }>
-                الانشطه
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/absence"
-                className={({ isActive }) =>
-                  isActive
-                    ? "px-2 py-1 bg-white/20 rounded transition duration-300"
-                    : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
-                }>
-                الحضور والغياب
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/reports"
-                className={({ isActive }) =>
-                  isActive
-                    ? "px-2 py-1 bg-white/20 rounded transition duration-300"
-                    : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
-                }>
-                التقارير
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/chat"
-                className={({ isActive }) =>
-                  isActive
-                    ? "px-2 py-1 bg-white/20 rounded transition duration-300"
-                    : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
-                }>
-                تواصل مع المعلم
-              </NavLink>
-            </li>
-            {isTeacherOrAdmin && (
-              <li>
-                <NavLink
-                  to="/managment"
-                  className={({ isActive }) =>
-                    isActive
-                      ? "px-2 py-1 bg-white/20 rounded transition duration-300"
-                      : "px-2 py-1 hover:bg-white/20 rounded transition duration-300"
-                  }>
-                  الادارة
-                </NavLink>
-              </li>
-            )}
-            <li>
-              <NavLink
-                to="/timetable"
-                className={({ isActive }) =>
-                  isActive
-                    ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
-                    : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
-                }
-                onClick={toggleMenu}>
-                جدول الحصص
-              </NavLink>
-            </li>
-            {currentUser ? (
-              <div className="flex items-center gap-2">
-                <NavLink
-                  to="/change-password"
-                  className={({ isActive }) =>
-                    isActive
-                      ? "bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full shadow transition duration-300 "
-                      : "bg-yellow-200 text-yellow-700 px-3 py-1 rounded-full shadow hover:bg-yellow-50 transition duration-300 mx-3"
-                  }>
-                  تغيير كلمة المرور
-                </NavLink>
 
+        <div className="flex items-center ">
+          <div
+            className="flex items-center relative"
+            ref={profileMenuRef}
+            onMouseEnter={() => setProfileMenuOpen(true)}
+            onMouseLeave={(e) => {
+              // Only close if mouse leaves both icon and menu
+              if (!profileMenuRef.current?.contains(e.relatedTarget as Node)) {
+                setProfileMenuOpen(false);
+              }
+            }}>
+            <button
+              title="الملف الشخصي"
+              className="h-12 w-12 rounded-full border-2 border-white shadow-md bg-white flex items-center justify-center mx-5 hidden md:flex">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6 text-emerald-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
+              </svg>
+            </button>
+            <div className="flex items-center mx-3">
+              {currentUser && (
+                <span className="text-lg font-bold text-white mr-2 whitespace-nowrap">
+                  {currentUser.firstName || currentUser.name || ""}{" "}
+                  {currentUser.lastName || ""}
+                </span>
+              )}
+            </div>
+            {/* Dropdown menu stays open on hover, no gap */}
+            {profileMenuOpen && (
+              <div
+                className="absolute right-0 top-full min-w-[180px] bg-white rounded-xl shadow-lg border border-gray-100 py-2 px-3 z-50"
+                style={{ marginTop: "0px" }}>
+                <div className="text-right mb-2">
+                  <span className="block text-emerald-700 font-bold text-base">
+                    {currentUser?.name}
+                  </span>
+                </div>
                 <button
-                  onClick={handleLogout}
-                  className="bg-red-500 text-white px-3 py-1 rounded-full shadow hover:bg-red-600 transition duration-300">
+                  onClick={() => {
+                    setProfileMenuOpen(false);
+                    navigate("/change-password");
+                  }}
+                  className="w-full text-right py-2 px-2 text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 rounded transition-colors text-sm">
+                  تغيير كلمة المرور
+                </button>
+                <button
+                  onClick={() => {
+                    setProfileMenuOpen(false);
+                    handleLogout();
+                  }}
+                  className="w-full text-right py-2 px-2 text-red-600 hover:bg-red-50 rounded transition-colors text-sm">
                   تسجيل الخروج
                 </button>
               </div>
-            ) : (
-              <NavLink
-                to="/login"
-                className={({ isActive }) =>
-                  isActive
-                    ? "bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full shadow transition duration-300"
-                    : "bg-white text-emerald-700 px-3 py-1 rounded-full shadow hover:bg-emerald-50 transition duration-300"
-                }>
-                التسجيل
-              </NavLink>
             )}
-          </ul>
+          </div>
+        </div>
+
+        <nav className="hidden md:block mt-0  ">
+          <div className="rounded-xl bg-white/10 backdrop-blur-sm py-2 px-4 shadow-lg border border-white/20">
+            <ul
+              className="flex flex-wrap gap-2 text-base font-medium items-center"
+              dir="rtl">
+              <li>
+                <NavLink
+                  to="/"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "px-3 py-2 bg-white/20 text-white rounded-lg transition duration-300 shadow-sm"
+                      : "px-3 py-2 text-white/90 hover:bg-white/15 hover:text-white rounded-lg transition duration-300"
+                  }>
+                  الرئيسيه
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/news"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "px-3 py-2 bg-white/20 text-white rounded-lg transition duration-300 shadow-sm"
+                      : "px-3 py-2 text-white/90 hover:bg-white/15 hover:text-white rounded-lg transition duration-300"
+                  }>
+                  الاخبار
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/goals"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "px-3 py-2 bg-white/20 text-white rounded-lg transition duration-300 shadow-sm"
+                      : "px-3 py-2 text-white/90 hover:bg-white/15 hover:text-white rounded-lg transition duration-300"
+                  }>
+                  الاهداف
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/daily-marks"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "px-3 py-2 bg-white/20 text-white rounded-lg transition duration-300 shadow-sm"
+                      : "px-3 py-2 text-white/90 hover:bg-white/15 hover:text-white rounded-lg transition duration-300"
+                  }>
+                  العلامات اليوميه
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/test"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "px-3 py-2 bg-white/20 text-white rounded-lg transition duration-300 shadow-sm"
+                      : "px-3 py-2 text-white/90 hover:bg-white/15 hover:text-white rounded-lg transition duration-300"
+                  }>
+                  الاختبارات
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/exam-schedule"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "px-3 py-2 bg-white/20 text-white rounded-lg transition duration-300 shadow-sm"
+                      : "px-3 py-2 text-white/90 hover:bg-white/15 hover:text-white rounded-lg transition duration-300"
+                  }>
+                  جدول الامتحانات
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/prayer-times"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "px-3 py-2 bg-white/20 text-white rounded-lg transition duration-300 shadow-sm"
+                      : "px-3 py-2 text-white/90 hover:bg-white/15 hover:text-white rounded-lg transition duration-300"
+                  }>
+                  مواقيت الصلاة
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/quran"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "px-3 py-2 bg-white/20 text-white rounded-lg transition duration-300 shadow-sm"
+                      : "px-3 py-2 text-white/90 hover:bg-white/15 hover:text-white rounded-lg transition duration-300"
+                  }>
+                  القرآن الكريم
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/quran-audio"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "px-3 py-2 bg-white/20 text-white rounded-lg transition duration-300 shadow-sm"
+                      : "px-3 py-2 text-white/90 hover:bg-white/15 hover:text-white rounded-lg transition duration-300"
+                  }>
+                  القرآن الصوتي
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/arrangement"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "px-3 py-2 bg-white/20 text-white rounded-lg transition duration-300 shadow-sm"
+                      : "px-3 py-2 text-white/90 hover:bg-white/15 hover:text-white rounded-lg transition duration-300"
+                  }>
+                  الترتيب
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/activities"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "px-3 py-2 bg-white/20 text-white rounded-lg transition duration-300 shadow-sm"
+                      : "px-3 py-2 text-white/90 hover:bg-white/15 hover:text-white rounded-lg transition duration-300"
+                  }>
+                  الانشطه
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/absence"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "px-3 py-2 bg-white/20 text-white rounded-lg transition duration-300 shadow-sm"
+                      : "px-3 py-2 text-white/90 hover:bg-white/15 hover:text-white rounded-lg transition duration-300"
+                  }>
+                  الحضور والغياب
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/reports"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "px-3 py-2 bg-white/20 text-white rounded-lg transition duration-300 shadow-sm"
+                      : "px-3 py-2 text-white/90 hover:bg-white/15 hover:text-white rounded-lg transition duration-300"
+                  }>
+                  التقارير
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/chat"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "px-3 py-2 bg-white/20 text-white rounded-lg transition duration-300 shadow-sm"
+                      : "px-3 py-2 text-white/90 hover:bg-white/15 hover:text-white rounded-lg transition duration-300"
+                  }>
+                  تواصل مع المعلم
+                </NavLink>
+              </li>
+              {isTeacherOrAdmin && (
+                <li>
+                  <NavLink
+                    to="/managment"
+                    className={({ isActive }) =>
+                      isActive
+                        ? "px-3 py-2 bg-white/20 text-white rounded-lg transition duration-300 shadow-sm"
+                        : "px-3 py-2 text-white/90 hover:bg-white/15 hover:text-white rounded-lg transition duration-300"
+                    }>
+                    الادارة
+                  </NavLink>
+                </li>
+              )}
+              <li>
+                <NavLink
+                  to="/timetable"
+                  className={({ isActive }) =>
+                    isActive
+                      ? "px-3 py-2 bg-white/20 text-white rounded-lg transition duration-300 shadow-sm"
+                      : "px-3 py-2 text-white/90 hover:bg-white/15 hover:text-white rounded-lg transition duration-300"
+                  }>
+                  جدول الحصص
+                </NavLink>
+              </li>
+            </ul>
+          </div>
         </nav>
 
         {/* Mobile Navigation */}
+
         <div
-          className={`fixed inset-0 bg-emerald-900/95 z-40 transform transition-transform duration-300 ease-in-out ${
+          className={`fixed inset-0 bg-gradient-to-br from-emerald-900/95 to-teal-800/95 backdrop-blur-sm z-40 transform transition-transform duration-300 ease-in-out ${
             isMenuOpen ? "translate-x-0" : "translate-x-full"
           } md:hidden`}>
           {/* Close Button (X) */}
           <button
             onClick={toggleMenu}
-            className="absolute left-4 top-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+            className="absolute left-4 top-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors backdrop-blur-sm"
             aria-label="Close Menu">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -355,14 +399,14 @@ const Header = () => {
           </button>
 
           <div className="flex flex-col items-center justify-center min-h-screen p-4">
-            <ul className="grid grid-cols-2 gap-6 text-center text-xl w-full">
+            <ul className="grid grid-cols-2 gap-4 text-center text-lg w-full max-w-md">
               <li>
                 <NavLink
                   to="/"
                   className={({ isActive }) =>
                     isActive
-                      ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
-                      : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
+                      ? "px-4 py-3 bg-white/20 text-white rounded-lg block w-full backdrop-blur-sm border border-white/30"
+                      : "px-4 py-3 hover:bg-white/10 text-white/90 hover:text-white rounded-lg block w-full backdrop-blur-sm transition-all duration-300"
                   }
                   onClick={toggleMenu}>
                   الرئيسيه
@@ -374,8 +418,8 @@ const Header = () => {
                   to="/news"
                   className={({ isActive }) =>
                     isActive
-                      ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
-                      : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
+                      ? "px-4 py-3 bg-white/20 text-white rounded-lg block w-full backdrop-blur-sm border border-white/30"
+                      : "px-4 py-3 hover:bg-white/10 text-white/90 hover:text-white rounded-lg block w-full backdrop-blur-sm transition-all duration-300"
                   }
                   onClick={toggleMenu}>
                   الاخبار
@@ -387,8 +431,8 @@ const Header = () => {
                   to="/goals"
                   className={({ isActive }) =>
                     isActive
-                      ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
-                      : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
+                      ? "px-4 py-3 bg-white/20 text-white rounded-lg block w-full backdrop-blur-sm border border-white/30"
+                      : "px-4 py-3 hover:bg-white/10 text-white/90 hover:text-white rounded-lg block w-full backdrop-blur-sm transition-all duration-300"
                   }
                   onClick={toggleMenu}>
                   الاهداف
@@ -400,8 +444,8 @@ const Header = () => {
                   to="/daily-marks"
                   className={({ isActive }) =>
                     isActive
-                      ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
-                      : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
+                      ? "px-4 py-3 bg-white/20 text-white rounded-lg block w-full backdrop-blur-sm border border-white/30"
+                      : "px-4 py-3 hover:bg-white/10 text-white/90 hover:text-white rounded-lg block w-full backdrop-blur-sm transition-all duration-300"
                   }
                   onClick={toggleMenu}>
                   العلامات اليوميه
@@ -413,8 +457,8 @@ const Header = () => {
                   to="/test"
                   className={({ isActive }) =>
                     isActive
-                      ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
-                      : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
+                      ? "px-4 py-3 bg-white/20 text-white rounded-lg block w-full backdrop-blur-sm border border-white/30"
+                      : "px-4 py-3 hover:bg-white/10 text-white/90 hover:text-white rounded-lg block w-full backdrop-blur-sm transition-all duration-300"
                   }
                   onClick={toggleMenu}>
                   الاختبارات
@@ -426,8 +470,8 @@ const Header = () => {
                   to="/prayer-times"
                   className={({ isActive }) =>
                     isActive
-                      ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
-                      : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
+                      ? "px-4 py-3 bg-white/20 text-white rounded-lg block w-full backdrop-blur-sm border border-white/30"
+                      : "px-4 py-3 hover:bg-white/10 text-white/90 hover:text-white rounded-lg block w-full backdrop-blur-sm transition-all duration-300"
                   }
                   onClick={toggleMenu}>
                   مواقيت الصلاة
@@ -439,8 +483,8 @@ const Header = () => {
                   to="/quran"
                   className={({ isActive }) =>
                     isActive
-                      ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
-                      : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
+                      ? "px-4 py-3 bg-white/20 text-white rounded-lg block w-full backdrop-blur-sm border border-white/30"
+                      : "px-4 py-3 hover:bg-white/10 text-white/90 hover:text-white rounded-lg block w-full backdrop-blur-sm transition-all duration-300"
                   }
                   onClick={toggleMenu}>
                   القرآن الكريم
@@ -452,8 +496,8 @@ const Header = () => {
                   to="/quran-audio"
                   className={({ isActive }) =>
                     isActive
-                      ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
-                      : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
+                      ? "px-4 py-3 bg-white/20 text-white rounded-lg block w-full backdrop-blur-sm border border-white/30"
+                      : "px-4 py-3 hover:bg-white/10 text-white/90 hover:text-white rounded-lg block w-full backdrop-blur-sm transition-all duration-300"
                   }
                   onClick={toggleMenu}>
                   القرآن الصوتي
@@ -465,8 +509,8 @@ const Header = () => {
                   to="/arrangement"
                   className={({ isActive }) =>
                     isActive
-                      ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
-                      : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
+                      ? "px-4 py-3 bg-white/20 text-white rounded-lg block w-full backdrop-blur-sm border border-white/30"
+                      : "px-4 py-3 hover:bg-white/10 text-white/90 hover:text-white rounded-lg block w-full backdrop-blur-sm transition-all duration-300"
                   }
                   onClick={toggleMenu}>
                   الترتيب
@@ -478,8 +522,8 @@ const Header = () => {
                   to="/activities"
                   className={({ isActive }) =>
                     isActive
-                      ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
-                      : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
+                      ? "px-4 py-3 bg-white/20 text-white rounded-lg block w-full backdrop-blur-sm border border-white/30"
+                      : "px-4 py-3 hover:bg-white/10 text-white/90 hover:text-white rounded-lg block w-full backdrop-blur-sm transition-all duration-300"
                   }
                   onClick={toggleMenu}>
                   الانشطه
@@ -491,8 +535,8 @@ const Header = () => {
                   to="/absence"
                   className={({ isActive }) =>
                     isActive
-                      ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
-                      : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
+                      ? "px-4 py-3 bg-white/20 text-white rounded-lg block w-full backdrop-blur-sm border border-white/30"
+                      : "px-4 py-3 hover:bg-white/10 text-white/90 hover:text-white rounded-lg block w-full backdrop-blur-sm transition-all duration-300"
                   }
                   onClick={toggleMenu}>
                   الحضور والغياب
@@ -503,8 +547,8 @@ const Header = () => {
                   to="/reports"
                   className={({ isActive }) =>
                     isActive
-                      ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
-                      : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
+                      ? "px-4 py-3 bg-white/20 text-white rounded-lg block w-full backdrop-blur-sm border border-white/30"
+                      : "px-4 py-3 hover:bg-white/10 text-white/90 hover:text-white rounded-lg block w-full backdrop-blur-sm transition-all duration-300"
                   }
                   onClick={toggleMenu}>
                   التقارير
@@ -516,8 +560,8 @@ const Header = () => {
                   to="/chat"
                   className={({ isActive }) =>
                     isActive
-                      ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
-                      : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
+                      ? "px-4 py-3 bg-white/20 text-white rounded-lg block w-full backdrop-blur-sm border border-white/30"
+                      : "px-4 py-3 hover:bg-white/10 text-white/90 hover:text-white rounded-lg block w-full backdrop-blur-sm transition-all duration-300"
                   }
                   onClick={toggleMenu}>
                   تواصل مع المعلم
@@ -530,8 +574,8 @@ const Header = () => {
                     to="/managment"
                     className={({ isActive }) =>
                       isActive
-                        ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
-                        : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
+                        ? "px-4 py-3 bg-white/20 text-white rounded-lg block w-full backdrop-blur-sm border border-white/30"
+                        : "px-4 py-3 hover:bg-white/10 text-white/90 hover:text-white rounded-lg block w-full backdrop-blur-sm transition-all duration-300"
                     }
                     onClick={toggleMenu}>
                     الادارة
@@ -543,8 +587,8 @@ const Header = () => {
                   to="/timetable"
                   className={({ isActive }) =>
                     isActive
-                      ? "px-4 py-2 bg-white/20 rounded-lg block w-full"
-                      : "px-4 py-2 hover:bg-white/10 rounded-lg block w-full"
+                      ? "px-4 py-3 bg-white/20 text-white rounded-lg block w-full backdrop-blur-sm border border-white/30"
+                      : "px-4 py-3 hover:bg-white/10 text-white/90 hover:text-white rounded-lg block w-full backdrop-blur-sm transition-all duration-300"
                   }
                   onClick={toggleMenu}>
                   جدول الحصص
@@ -555,7 +599,7 @@ const Header = () => {
                 <li className="col-span-2">
                   <NavLink
                     to="/change-password"
-                    className="bg-yellow-200 text-yellow-700 px-4 py-2 rounded-full shadow block w-full"
+                    className="bg-amber-500 text-white px-4 py-3 rounded-lg shadow block w-full hover:bg-amber-600 transition duration-300 backdrop-blur-sm"
                     onClick={toggleMenu}>
                     تغيير كلمة المرور
                   </NavLink>
@@ -565,13 +609,13 @@ const Header = () => {
                 {currentUser ? (
                   <button
                     onClick={handleLogout}
-                    className="bg-red-500 text-white px-4 py-2 rounded-full shadow hover:bg-red-600 block w-full">
+                    className="bg-red-500 text-white px-4 py-3 rounded-lg shadow hover:bg-red-600 block w-full transition duration-300 backdrop-blur-sm">
                     تسجيل الخروج
                   </button>
                 ) : (
                   <NavLink
                     to="/login"
-                    className="bg-white text-emerald-700 px-4 py-2 rounded-full shadow block w-full"
+                    className="bg-emerald-600 text-white px-4 py-3 rounded-lg shadow block w-full hover:bg-emerald-700 transition duration-300 backdrop-blur-sm"
                     onClick={toggleMenu}>
                     التسجيل
                   </NavLink>
@@ -591,9 +635,8 @@ const Header = () => {
             />
           )}
 
-          <h1 className="text-xl font-bold hidden md:block">
-            مدرسة المهاجرين لتعليم القرآن الكريم
-          </h1>
+          {/* Profile Icon for Teachers */}
+
           <img
             onClick={() => navigate("/")}
             src="/src/images/logo.jpg"
@@ -607,4 +650,3 @@ const Header = () => {
 };
 
 export default Header;
-// hello world
