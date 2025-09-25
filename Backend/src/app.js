@@ -69,6 +69,7 @@ app.use("/api/settings", require("./routes/settingsRoutes"));
 app.use("/api/notifications", require("./routes/notificationRoutes"));
 app.use("/api/exams", require("./routes/examRoutes"));
 app.use("/api/exam-marks", require("./routes/examMarkRoutes"));
+app.use("/api/sessions", require("./routes/sessionRoutes"));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
