@@ -262,86 +262,85 @@ const ExamSchedule: React.FC = () => {
                       تعديل الامتحان
                     </button>
                     {/* Modal for editing exam (teacher/admin only) */}
-                    {role === "teacher" || role === "admin"
-                      ? showEditExamModal &&
-                        editExam && (
-                          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-                            <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md border border-yellow-200">
-                              <h3 className="text-2xl font-bold mb-6 text-center text-yellow-700 border-b pb-3">
-                                تعديل الامتحان
-                              </h3>
-                              <form
-                                onSubmit={handleEditExam}
-                                className="space-y-5">
-                                <div>
-                                  <label className="block mb-2 font-bold text-yellow-700">
-                                    اسم الامتحان
-                                  </label>
-                                  <input
-                                    className="w-full border border-yellow-300 rounded-lg px-3 py-2"
-                                    type="text"
-                                    value={editExam.name}
-                                    onChange={(e) =>
-                                      setEditExam({
-                                        ...editExam,
-                                        name: e.target.value,
-                                      })
-                                    }
-                                    required
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block mb-2 font-bold text-yellow-700">
-                                    التاريخ
-                                  </label>
-                                  <input
-                                    className="w-full border border-yellow-300 rounded-lg px-3 py-2"
-                                    type="date"
-                                    value={editExam.date}
-                                    onChange={(e) =>
-                                      setEditExam({
-                                        ...editExam,
-                                        date: e.target.value,
-                                      })
-                                    }
-                                    required
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block mb-2 font-bold text-yellow-700">
-                                    الوقت
-                                  </label>
-                                  <input
-                                    className="w-full border border-yellow-300 rounded-lg px-3 py-2"
-                                    type="time"
-                                    value={editExam.time}
-                                    onChange={(e) =>
-                                      setEditExam({
-                                        ...editExam,
-                                        time: e.target.value,
-                                      })
-                                    }
-                                    required
-                                  />
-                                </div>
-                                <div className="flex justify-between mt-6">
-                                  <button
-                                    type="submit"
-                                    className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-6 rounded-lg shadow text-lg">
-                                    حفظ التعديل
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-6 rounded-lg shadow text-lg"
-                                    onClick={() => setShowEditExamModal(false)}>
-                                    إلغاء
-                                  </button>
-                                </div>
-                              </form>
-                            </div>
+                    {role === "teacher" || role === "admin" ? (
+                      showEditExamModal && editExam ? (
+                        <div className="fixed inset-0 bg-yellow-100 bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50">
+                          <div className="bg-white/90 rounded-2xl shadow-2xl p-10 w-full max-w-lg border border-yellow-200">
+                            <h3 className="text-3xl font-extrabold mb-8 text-center text-yellow-700 border-b pb-4 tracking-wide">
+                              تعديل الامتحان
+                            </h3>
+                            <form
+                              onSubmit={handleEditExam}
+                              className="space-y-7">
+                              <div>
+                                <label className="block mb-2 font-bold text-yellow-700 text-lg">
+                                  اسم الامتحان
+                                </label>
+                                <input
+                                  className="w-full border border-yellow-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-lg bg-yellow-50 placeholder:text-yellow-400"
+                                  type="text"
+                                  value={editExam.name}
+                                  onChange={(e) =>
+                                    setEditExam({
+                                      ...editExam,
+                                      name: e.target.value,
+                                    })
+                                  }
+                                  required
+                                />
+                              </div>
+                              <div>
+                                <label className="block mb-2 font-bold text-yellow-700 text-lg">
+                                  التاريخ
+                                </label>
+                                <input
+                                  className="w-full border border-yellow-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-lg bg-yellow-50"
+                                  type="date"
+                                  value={editExam.date}
+                                  onChange={(e) =>
+                                    setEditExam({
+                                      ...editExam,
+                                      date: e.target.value,
+                                    })
+                                  }
+                                  required
+                                />
+                              </div>
+                              <div>
+                                <label className="block mb-2 font-bold text-yellow-700 text-lg">
+                                  الوقت
+                                </label>
+                                <input
+                                  className="w-full border border-yellow-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-lg bg-yellow-50"
+                                  type="time"
+                                  value={editExam.time}
+                                  onChange={(e) =>
+                                    setEditExam({
+                                      ...editExam,
+                                      time: e.target.value,
+                                    })
+                                  }
+                                  required
+                                />
+                              </div>
+                              <div className="flex justify-between mt-8">
+                                <button
+                                  type="submit"
+                                  className="bg-yellow-500 hover:bg-yellow-600 text-white font-extrabold py-3 px-8 rounded-xl shadow-lg text-xl transition">
+                                  حفظ التعديل
+                                </button>
+                                <button
+                                  type="button"
+                                  className="bg-gray-300 hover:bg-gray-400 text-yellow-700 font-bold py-3 px-8 rounded-xl shadow text-xl transition"
+                                  onClick={() => setShowEditExamModal(false)}>
+                                  إلغاء
+                                </button>
+                              </div>
+                            </form>
                           </div>
-                        )
-                      : null}
+                        </div>
+                      ) : null
+                    ) : null}
                     <button
                       className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded shadow text-sm"
                       onClick={() => handleDeleteExam(examId)}>
@@ -360,18 +359,18 @@ const ExamSchedule: React.FC = () => {
 
       {/* Modal for adding exam */}
       {showAddExamModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md border border-emerald-200">
-            <h3 className="text-2xl font-bold mb-6 text-center text-emerald-700 border-b pb-3">
+        <div className="fixed inset-0 bg-emerald-100 bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white/90 rounded-2xl shadow-2xl p-10 w-full max-w-lg border border-emerald-200">
+            <h3 className="text-3xl font-extrabold mb-8 text-center text-emerald-700 border-b pb-4 tracking-wide">
               إضافة امتحان جديد
             </h3>
-            <form onSubmit={handleAddExam} className="space-y-5">
+            <form onSubmit={handleAddExam} className="space-y-7">
               <div>
-                <label className="block mb-2 font-bold text-emerald-700">
+                <label className="block mb-2 font-bold text-emerald-700 text-lg">
                   اسم الامتحان
                 </label>
                 <input
-                  className="w-full border border-emerald-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-lg"
+                  className="w-full border border-emerald-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-lg bg-emerald-50 placeholder:text-emerald-400"
                   type="text"
                   value={newExam.name}
                   onChange={(e) =>
@@ -382,11 +381,11 @@ const ExamSchedule: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block mb-2 font-bold text-emerald-700">
+                <label className="block mb-2 font-bold text-emerald-700 text-lg">
                   التاريخ
                 </label>
                 <input
-                  className="w-full border border-emerald-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-lg"
+                  className="w-full border border-emerald-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-lg bg-emerald-50"
                   type="date"
                   value={newExam.date}
                   onChange={(e) =>
@@ -396,11 +395,11 @@ const ExamSchedule: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block mb-2 font-bold text-emerald-700">
+                <label className="block mb-2 font-bold text-emerald-700 text-lg">
                   الوقت
                 </label>
                 <input
-                  className="w-full border border-emerald-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-lg"
+                  className="w-full border border-emerald-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-lg bg-emerald-50"
                   type="time"
                   value={newExam.time}
                   onChange={(e) =>
@@ -409,15 +408,15 @@ const ExamSchedule: React.FC = () => {
                   required
                 />
               </div>
-              <div className="flex justify-between mt-6">
+              <div className="flex justify-between mt-8">
                 <button
                   type="submit"
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-lg shadow text-lg">
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3 px-8 rounded-xl shadow-lg text-xl transition">
                   حفظ
                 </button>
                 <button
                   type="button"
-                  className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-6 rounded-lg shadow text-lg"
+                  className="bg-gray-300 hover:bg-gray-400 text-emerald-700 font-bold py-3 px-8 rounded-xl shadow text-xl transition"
                   onClick={() => setShowAddExamModal(false)}>
                   إلغاء
                 </button>
@@ -429,20 +428,22 @@ const ExamSchedule: React.FC = () => {
 
       {/* Modal for adding marks for all students */}
       {showMarkModal && selectedExam && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-2xl overflow-y-auto max-h-[90vh]">
-            <h3 className="text-lg font-bold mb-4 text-center text-blue-700">
+        <div className="fixed inset-0 bg-emerald-100 bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white/90 rounded-2xl shadow-2xl p-8 w-full max-w-2xl overflow-y-auto max-h-[90vh] border border-emerald-200">
+            <h3 className="text-xl font-bold mb-6 text-center text-blue-700 border-b pb-3">
               إضافة علامات الطلاب للامتحان
             </h3>
             <form onSubmit={handleAddMark}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {students.map((student) => (
-                  <div key={student._id} className="border rounded p-3 mb-2">
-                    <div className="font-bold mb-1">
+                  <div
+                    key={student._id}
+                    className="border rounded-xl p-4 mb-2 bg-emerald-50 shadow">
+                    <div className="font-bold mb-2 text-emerald-700 text-lg">
                       {student.firstName} {student.lastName}
                     </div>
                     <input
-                      className="w-full border rounded px-2 py-1 mb-1"
+                      className="w-full border border-emerald-300 rounded-lg px-3 py-2 mb-2 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-lg bg-white placeholder:text-emerald-400"
                       type="text"
                       value={marks[student._id]?.mark || ""}
                       onChange={(e) =>
@@ -457,7 +458,7 @@ const ExamSchedule: React.FC = () => {
                       placeholder="العلامة (اختياري)"
                     />
                     <input
-                      className="w-full border rounded px-2 py-1 mb-2"
+                      className="w-full border border-emerald-300 rounded-lg px-3 py-2 mb-2 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-lg bg-white placeholder:text-emerald-400"
                       type="text"
                       value={marks[student._id]?.detail || ""}
                       onChange={(e) =>
@@ -494,11 +495,10 @@ const ExamSchedule: React.FC = () => {
                         }>
                         حذف العلامة
                       </button>
-
                       {/* Modal for editing mark */}
                       {showEditMarkModal && editMarkStudent && (
-                        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-                          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md border border-yellow-200">
+                        <div className="fixed inset-0 bg-yellow-100 bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-50">
+                          <div className="bg-white/90 rounded-2xl shadow-2xl p-8 w-full max-w-md border border-yellow-200">
                             <h3 className="text-2xl font-bold mb-6 text-center text-yellow-700 border-b pb-3">
                               تعديل علامة الطالب
                             </h3>
@@ -511,7 +511,7 @@ const ExamSchedule: React.FC = () => {
                                 العلامة
                               </label>
                               <input
-                                className="w-full border border-yellow-300 rounded-lg px-3 py-2"
+                                className="w-full border border-yellow-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-yellow-400 text-lg"
                                 type="text"
                                 value={editMarkValue}
                                 onChange={(e) =>
@@ -524,7 +524,7 @@ const ExamSchedule: React.FC = () => {
                                 تفاصيل أو ملاحظة
                               </label>
                               <input
-                                className="w-full border border-yellow-300 rounded-lg px-3 py-2"
+                                className="w-full border border-yellow-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-yellow-400 text-lg"
                                 type="text"
                                 value={editMarkDetail}
                                 onChange={(e) =>
@@ -541,7 +541,7 @@ const ExamSchedule: React.FC = () => {
                               </button>
                               <button
                                 type="button"
-                                className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-6 rounded-lg shadow text-lg"
+                                className="bg-gray-300 hover:bg-gray-400 text-yellow-700 font-bold py-2 px-6 rounded-lg shadow text-lg"
                                 onClick={() => setShowEditMarkModal(false)}>
                                 إلغاء
                               </button>
@@ -561,7 +561,7 @@ const ExamSchedule: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded shadow"
+                  className="bg-gray-300 hover:bg-gray-400 text-emerald-700 font-bold py-2 px-4 rounded shadow"
                   onClick={() => setShowMarkModal(false)}>
                   إلغاء
                 </button>
