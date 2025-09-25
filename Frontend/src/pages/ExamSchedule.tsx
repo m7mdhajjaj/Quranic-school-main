@@ -1,39 +1,53 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 interface Exam {
-  id: number;
+  _id?: string;
+  id?: number;
   name: string;
   date: string;
   time: string;
   result?: string;
 }
 
-const initialExams: Exam[] = [
-  {
-    id: 1,
-    name: "اختبار القرآن",
-    date: "2025-10-01",
-    time: "15:00",
-    result: "ممتاز",
-  },
-  { id: 2, name: "اختبار الفقه", date: "2025-10-05", time: "16:30" },
-  {
-    id: 3,
-    name: "اختبار الحديث",
-    date: "2025-10-10",
-    time: "14:00",
-    result: "جيد جداً",
-  },
-];
+const API_URL = "http://localhost:5005/api/exams";
+const STUDENTS_URL = "http://localhost:5005/api/students";
+const EXAM_MARKS_URL = "http://localhost:5005/api/exam-marks";
 
 const ExamSchedule: React.FC = () => {
-  const [exams, setExams] = useState<Exam[]>(initialExams);
+  // State for edit exam modal
+  const [showEditExamModal, setShowEditExamModal] = useState(false);
+  const [editExam, setEditExam] = useState<Exam | null>(null);
+
+  // Handler for saving exam edits
+  const handleEditExam = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editExam) return;
+    const examId = String(editExam._id || editExam.id);
+    await fetch(`${API_URL}/${examId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(editExam),
+    });
+    setExams((prev: Exam[]) =>
+      prev.map((ex: Exam) =>
+        String(ex._id || ex.id) === examId ? editExam : ex
+      )
+    );
+    setShowEditExamModal(false);
+    setEditExam(null);
+  };
+  const [exams, setExams] = useState<Exam[]>([]);
   const [showMarkModal, setShowMarkModal] = useState(false);
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
-  const [mark, setMark] = useState("");
-  const [markDetail, setMarkDetail] = useState("");
+  const [students, setStudents] = useState<any[]>([]);
+  const [marks, setMarks] = useState<{
+    [studentId: string]: { mark: string; detail: string };
+  }>({});
   const [showAddExamModal, setShowAddExamModal] = useState(false);
   const [newExam, setNewExam] = useState({ name: "", date: "", time: "" });
+  const [studentMarks, setStudentMarks] = useState<{
+    [examId: string]: string;
+  }>({});
   // Detect user role from localStorage
   const user = localStorage.getItem("user");
   let role = "student";
@@ -43,38 +57,145 @@ const ExamSchedule: React.FC = () => {
     } catch {}
   }
 
-  // Add exam for all students (demo: just adds to list)
-  const handleAddExam = (e: React.FormEvent) => {
-    e.preventDefault();
-    setExams([
-      ...exams,
-      {
-        id: exams.length + 1,
-        name: newExam.name,
-        date: newExam.date,
-        time: newExam.time,
-      },
-    ]);
-    setShowAddExamModal(false);
-    setNewExam({ name: "", date: "", time: "" });
+  // حذف الامتحان
+  const handleDeleteExam = async (examIdRaw: string | number) => {
+    const examId = String(examIdRaw);
+    if (!window.confirm("هل أنت متأكد من حذف الامتحان؟")) return;
+    await fetch(`${API_URL}/${examId}`, { method: "DELETE" });
+    setExams((prev: Exam[]) =>
+      prev.filter((e: Exam) => String(e._id || e.id) !== examId)
+    );
   };
 
-  // Add mark to exam (demo: just updates result)
-  const handleAddMark = (e: React.FormEvent) => {
+  // حذف العلامة لطالب
+  const handleDeleteMark = async (
+    examIdRaw: string | number,
+    studentIdRaw: string | number
+  ) => {
+    const examId = String(examIdRaw);
+    const studentId = String(studentIdRaw);
+    if (!window.confirm("هل أنت متأكد من حذف العلامة؟")) return;
+    await fetch(`${EXAM_MARKS_URL}/${examId}/${studentId}`, {
+      method: "DELETE",
+    });
+    setMarks((prev: any) => ({
+      ...prev,
+      [studentId]: { mark: "", detail: "" },
+    }));
+  };
+
+  // تعديل العلامة لطالب
+  const [showEditMarkModal, setShowEditMarkModal] = useState(false);
+  const [editMarkStudent, setEditMarkStudent] = useState<any>(null);
+  const [editMarkValue, setEditMarkValue] = useState("");
+  const [editMarkDetail, setEditMarkDetail] = useState("");
+  const handleEditMark = (examIdRaw: string | number, student: any) => {
+    setEditMarkStudent(student);
+    setEditMarkValue(marks[student._id]?.mark || "");
+    setEditMarkDetail(marks[student._id]?.detail || "");
+    setShowEditMarkModal(true);
+  };
+  const handleSaveEditMark = async () => {
+    if (!selectedExam || !editMarkStudent) return;
+    const examId = String(selectedExam._id || selectedExam.id);
+    const studentId = String(editMarkStudent._id);
+    await fetch(`${EXAM_MARKS_URL}/${examId}/${studentId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mark: editMarkValue, detail: editMarkDetail }),
+    });
+    setMarks((prev: any) => ({
+      ...prev,
+      [editMarkStudent._id]: { mark: editMarkValue, detail: editMarkDetail },
+    }));
+    setShowEditMarkModal(false);
+    setEditMarkStudent(null);
+  };
+  useEffect(() => {
+    fetch(API_URL)
+      .then((res) => res.json())
+      .then((data) => setExams(data))
+      .catch(() => setExams([]));
+  }, []);
+
+  // Add exam for all students (send to backend)
+  const handleAddExam = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newExam),
+      });
+      if (res.ok) {
+        const added = await res.json();
+        setExams((prev) => [...prev, added]);
+        setShowAddExamModal(false);
+        setNewExam({ name: "", date: "", time: "" });
+      }
+    } catch {}
+  };
+
+  // When opening mark modal, fetch students
+  useEffect(() => {
+    if (showMarkModal && selectedExam) {
+      fetch(STUDENTS_URL)
+        .then((res) => res.json())
+        .then((data) => setStudents(data))
+        .catch(() => setStudents([]));
+    }
+  }, [showMarkModal, selectedExam]);
+
+  // Add marks for all students to backend
+  const handleAddMark = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedExam) return;
-    setExams(
-      exams.map((ex) =>
-        ex.id === selectedExam.id
-          ? { ...ex, result: mark + (markDetail ? ` (${markDetail})` : "") }
-          : ex
-      )
-    );
-    setShowMarkModal(false);
-    setMark("");
-    setMarkDetail("");
-    setSelectedExam(null);
+    // Prepare marks array
+    const marksArr = students.map((student) => ({
+      student: student._id,
+      mark: marks[student._id]?.mark || "",
+      detail: marks[student._id]?.detail || "",
+    }));
+    try {
+      const examId = selectedExam._id || selectedExam.id;
+      await fetch(`${EXAM_MARKS_URL}/${examId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ marks: marksArr }),
+      });
+      setShowMarkModal(false);
+      setMarks({});
+      setSelectedExam(null);
+    } catch {}
   };
+
+  // Fetch student marks if role is student
+  useEffect(() => {
+    if (role === "student" && user) {
+      try {
+        const studentId = JSON.parse(user)._id;
+        fetch(`${EXAM_MARKS_URL}/student/${studentId}`)
+          .then((res) => res.json())
+          .then((data) => {
+            // Map examId to mark
+            const marksMap: { [examId: string]: string } = {};
+            data.forEach((markObj: any) => {
+              // markObj.exam may be object or id
+              const examId =
+                (markObj.exam && (markObj.exam._id || markObj.exam.id)) ||
+                markObj.exam ||
+                markObj.examId ||
+                markObj.exam_id ||
+                markObj.examId ||
+                markObj.exam;
+              marksMap[examId] = markObj.mark;
+            });
+            setStudentMarks(marksMap);
+          })
+          .catch(() => setStudentMarks({}));
+      } catch {}
+    }
+  }, [role, user]);
 
   return (
     <div className="max-w-3xl mx-auto p-4">
@@ -103,32 +224,134 @@ const ExamSchedule: React.FC = () => {
           </tr>
         </thead>
         <tbody>
-          {exams.map((exam) => (
-            <tr
-              key={exam.id}
-              className="bg-white hover:bg-emerald-50 transition">
-              <td className="border px-3 py-2 font-bold text-emerald-900">
-                {exam.name}
-              </td>
-              <td className="border px-3 py-2">{exam.date}</td>
-              <td className="border px-3 py-2">{exam.time}</td>
-              <td className="border px-3 py-2 text-emerald-700">
-                {exam.result ? exam.result : "-"}
-              </td>
-              {role === "teacher" || role === "admin" ? (
-                <td className="border px-3 py-2">
-                  <button
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded shadow text-sm"
-                    onClick={() => {
-                      setSelectedExam(exam);
-                      setShowMarkModal(true);
-                    }}>
-                    إضافة علامة/تفاصيل
-                  </button>
+          {exams.map((exam) => {
+            const examId =
+              exam._id || exam.id ? String(exam._id || exam.id) : "";
+            return (
+              <tr
+                key={examId}
+                className="bg-white hover:bg-emerald-50 transition">
+                <td className="border px-3 py-2 font-bold text-emerald-900">
+                  {exam.name}
                 </td>
-              ) : null}
-            </tr>
-          ))}
+                <td className="border px-3 py-2">{exam.date}</td>
+                <td className="border px-3 py-2">{exam.time}</td>
+                <td className="border px-3 py-2 text-emerald-700">
+                  {role === "student"
+                    ? studentMarks[examId] || "-"
+                    : exam.result
+                    ? exam.result
+                    : "-"}
+                </td>
+                {role === "teacher" || role === "admin" ? (
+                  <td className="border px-3 py-2 flex gap-2 justify-center">
+                    <button
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded shadow text-sm"
+                      onClick={() => {
+                        setSelectedExam(exam);
+                        setShowMarkModal(true);
+                      }}>
+                      إضافة العلامات
+                    </button>
+                    <button
+                      className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded shadow text-sm"
+                      onClick={() => {
+                        setEditExam({ ...exam });
+                        setShowEditExamModal(true);
+                      }}>
+                      تعديل الامتحان
+                    </button>
+                    {/* Modal for editing exam (teacher/admin only) */}
+                    {role === "teacher" || role === "admin"
+                      ? showEditExamModal &&
+                        editExam && (
+                          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                            <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md border border-yellow-200">
+                              <h3 className="text-2xl font-bold mb-6 text-center text-yellow-700 border-b pb-3">
+                                تعديل الامتحان
+                              </h3>
+                              <form
+                                onSubmit={handleEditExam}
+                                className="space-y-5">
+                                <div>
+                                  <label className="block mb-2 font-bold text-yellow-700">
+                                    اسم الامتحان
+                                  </label>
+                                  <input
+                                    className="w-full border border-yellow-300 rounded-lg px-3 py-2"
+                                    type="text"
+                                    value={editExam.name}
+                                    onChange={(e) =>
+                                      setEditExam({
+                                        ...editExam,
+                                        name: e.target.value,
+                                      })
+                                    }
+                                    required
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block mb-2 font-bold text-yellow-700">
+                                    التاريخ
+                                  </label>
+                                  <input
+                                    className="w-full border border-yellow-300 rounded-lg px-3 py-2"
+                                    type="date"
+                                    value={editExam.date}
+                                    onChange={(e) =>
+                                      setEditExam({
+                                        ...editExam,
+                                        date: e.target.value,
+                                      })
+                                    }
+                                    required
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block mb-2 font-bold text-yellow-700">
+                                    الوقت
+                                  </label>
+                                  <input
+                                    className="w-full border border-yellow-300 rounded-lg px-3 py-2"
+                                    type="time"
+                                    value={editExam.time}
+                                    onChange={(e) =>
+                                      setEditExam({
+                                        ...editExam,
+                                        time: e.target.value,
+                                      })
+                                    }
+                                    required
+                                  />
+                                </div>
+                                <div className="flex justify-between mt-6">
+                                  <button
+                                    type="submit"
+                                    className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-6 rounded-lg shadow text-lg">
+                                    حفظ التعديل
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-6 rounded-lg shadow text-lg"
+                                    onClick={() => setShowEditExamModal(false)}>
+                                    إلغاء
+                                  </button>
+                                </div>
+                              </form>
+                            </div>
+                          </div>
+                        )
+                      : null}
+                    <button
+                      className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded shadow text-sm"
+                      onClick={() => handleDeleteExam(examId)}>
+                      حذف الامتحان
+                    </button>
+                  </td>
+                ) : null}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
       <div className="mt-6 text-right text-sm text-gray-700">
@@ -204,40 +427,137 @@ const ExamSchedule: React.FC = () => {
         </div>
       )}
 
-      {/* Modal for adding mark/details */}
+      {/* Modal for adding marks for all students */}
       {showMarkModal && selectedExam && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
+          <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-2xl overflow-y-auto max-h-[90vh]">
             <h3 className="text-lg font-bold mb-4 text-center text-blue-700">
-              إضافة علامة أو تفاصيل للامتحان
+              إضافة علامات الطلاب للامتحان
             </h3>
             <form onSubmit={handleAddMark}>
-              <div className="mb-3">
-                <label className="block mb-1 font-bold">العلامة</label>
-                <input
-                  className="w-full border rounded px-2 py-1"
-                  type="text"
-                  value={mark}
-                  onChange={(e) => setMark(e.target.value)}
-                  placeholder="مثلاً ممتاز، جيد جداً، أو رقم العلامة"
-                  required
-                />
-              </div>
-              <div className="mb-3">
-                <label className="block mb-1 font-bold">تفاصيل إضافية</label>
-                <input
-                  className="w-full border rounded px-2 py-1"
-                  type="text"
-                  value={markDetail}
-                  onChange={(e) => setMarkDetail(e.target.value)}
-                  placeholder="ملاحظات أو تفاصيل أخرى (اختياري)"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {students.map((student) => (
+                  <div key={student._id} className="border rounded p-3 mb-2">
+                    <div className="font-bold mb-1">
+                      {student.firstName} {student.lastName}
+                    </div>
+                    <input
+                      className="w-full border rounded px-2 py-1 mb-1"
+                      type="text"
+                      value={marks[student._id]?.mark || ""}
+                      onChange={(e) =>
+                        setMarks((m) => ({
+                          ...m,
+                          [student._id]: {
+                            ...m[student._id],
+                            mark: e.target.value,
+                          },
+                        }))
+                      }
+                      placeholder="العلامة (اختياري)"
+                    />
+                    <input
+                      className="w-full border rounded px-2 py-1 mb-2"
+                      type="text"
+                      value={marks[student._id]?.detail || ""}
+                      onChange={(e) =>
+                        setMarks((m) => ({
+                          ...m,
+                          [student._id]: {
+                            ...m[student._id],
+                            detail: e.target.value,
+                          },
+                        }))
+                      }
+                      placeholder="تفاصيل أو ملاحظة (اختياري)"
+                    />
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        type="button"
+                        className="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded text-xs"
+                        onClick={() =>
+                          handleEditMark(
+                            String(selectedExam?._id || selectedExam?.id || ""),
+                            student
+                          )
+                        }>
+                        تعديل العلامة
+                      </button>
+                      <button
+                        type="button"
+                        className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs"
+                        onClick={() =>
+                          handleDeleteMark(
+                            String(selectedExam?._id || selectedExam?.id || ""),
+                            String(student._id)
+                          )
+                        }>
+                        حذف العلامة
+                      </button>
+
+                      {/* Modal for editing mark */}
+                      {showEditMarkModal && editMarkStudent && (
+                        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+                          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md border border-yellow-200">
+                            <h3 className="text-2xl font-bold mb-6 text-center text-yellow-700 border-b pb-3">
+                              تعديل علامة الطالب
+                            </h3>
+                            <div className="mb-4 font-bold text-lg text-yellow-700 text-center">
+                              {editMarkStudent.firstName}{" "}
+                              {editMarkStudent.lastName}
+                            </div>
+                            <div className="mb-4">
+                              <label className="block mb-2 font-bold text-yellow-700">
+                                العلامة
+                              </label>
+                              <input
+                                className="w-full border border-yellow-300 rounded-lg px-3 py-2"
+                                type="text"
+                                value={editMarkValue}
+                                onChange={(e) =>
+                                  setEditMarkValue(e.target.value)
+                                }
+                              />
+                            </div>
+                            <div className="mb-4">
+                              <label className="block mb-2 font-bold text-yellow-700">
+                                تفاصيل أو ملاحظة
+                              </label>
+                              <input
+                                className="w-full border border-yellow-300 rounded-lg px-3 py-2"
+                                type="text"
+                                value={editMarkDetail}
+                                onChange={(e) =>
+                                  setEditMarkDetail(e.target.value)
+                                }
+                              />
+                            </div>
+                            <div className="flex justify-between mt-6">
+                              <button
+                                type="button"
+                                className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-6 rounded-lg shadow text-lg"
+                                onClick={handleSaveEditMark}>
+                                حفظ التعديل
+                              </button>
+                              <button
+                                type="button"
+                                className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-6 rounded-lg shadow text-lg"
+                                onClick={() => setShowEditMarkModal(false)}>
+                                إلغاء
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
               <div className="flex justify-between mt-4">
                 <button
                   type="submit"
                   className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow">
-                  حفظ
+                  حفظ جميع العلامات
                 </button>
                 <button
                   type="button"

@@ -31,7 +31,7 @@ app.use(
     origin: "*", // Allow all origins
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
-  }),
+  })
 );
 
 // Add request logging for uploaded files
@@ -46,7 +46,7 @@ app.use((req, res, next) => {
 app.use("/uploads", express.static(path.join(__dirname, "../public/uploads")));
 console.log(
   "Serving static files from:",
-  path.join(__dirname, "../public/uploads"),
+  path.join(__dirname, "../public/uploads")
 );
 
 // Serve test upload page
@@ -67,6 +67,8 @@ app.use("/api/attendance", require("./routes/attendanceRoutes"));
 app.use("/api/chat", require("./routes/chatRoutes"));
 app.use("/api/settings", require("./routes/settingsRoutes"));
 app.use("/api/notifications", require("./routes/notificationRoutes"));
+app.use("/api/exams", require("./routes/examRoutes"));
+app.use("/api/exam-marks", require("./routes/examMarkRoutes"));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -150,8 +152,8 @@ io.on("connection", (socket) => {
             text,
           },
           null,
-          2,
-        ),
+          2
+        )
       );
       console.log("Recipient online status:", onlineUsers.has(recipient));
 
@@ -173,7 +175,7 @@ io.on("connection", (socket) => {
           recipient,
           recipientModel,
           senderName,
-          text,
+          text
         );
       }
 
@@ -185,7 +187,7 @@ io.on("connection", (socket) => {
       if (recipientData) {
         console.log(
           "Sending message to recipient socket:",
-          recipientData.socketId,
+          recipientData.socketId
         );
         // Send the message to the recipient
         io.to(recipientData.socketId).emit("receiveMessage", {
@@ -194,7 +196,7 @@ io.on("connection", (socket) => {
         });
       } else {
         console.log(
-          "Recipient is not online, message not delivered in real-time",
+          "Recipient is not online, message not delivered in real-time"
         );
       }
 
