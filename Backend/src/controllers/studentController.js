@@ -1,3 +1,22 @@
+// Get single student by ID (for profile)
+exports.getStudentById = async (req, res) => {
+  try {
+    // Always return email and phoneNumber if present
+    const student = await Student.findById(req.params.id);
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+    // Explicitly include email and phoneNumber in response (for clarity)
+    const studentObj = student.toObject();
+    res.status(200).json({ success: true, data: {
+      ...studentObj,
+      email: studentObj.email || '',
+      phoneNumber: studentObj.phoneNumber || ''
+    }});
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 const Student = require("../models/Student");
 
 // Get all students
