@@ -59,7 +59,7 @@ const Profile: React.FC = () => {
       <div className="bg-white/95 rounded-3xl shadow-2xl p-10 max-w-2xl w-full mx-auto border border-emerald-200 animate-fade-in">
         <h2 className="text-4xl font-extrabold text-emerald-700 mb-8 text-center tracking-tight drop-shadow-lg">صفحة شخصية</h2>
         <div className="flex flex-col md:flex-row items-center gap-8">
-          <div className="relative flex flex-col items-center" style={{ minWidth: '320px', minHeight: '320px' }}>
+          <div className="relative flex flex-col items-center profile-avatar-container">
             <img
               src={avatarPreview || '/src/images/officialPhoto.jpg'}
               alt="User Avatar"
@@ -67,7 +67,14 @@ const Profile: React.FC = () => {
             />
             <label htmlFor="avatar-upload" className="absolute bottom-4 right-4 bg-emerald-500 text-white rounded-full p-3 cursor-pointer shadow-lg hover:bg-emerald-600 transition-colors" title="تغيير الصورة الشخصية">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13l6-6m2 2a2.828 2.828 0 11-4-4 2.828 2.828 0 014 4z" /></svg>
-              <input id="avatar-upload" type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+              <input
+                id="avatar-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                className="hidden"
+                title="تغيير الصورة الشخصية"
+              />
             </label>
             {avatarFile && (
               <button
