@@ -470,6 +470,7 @@ const Chat: React.FC = () => {
                 <div className="text-gray-500">لا يوجد محادثات</div>
               ) : (
                 <>
+<<<<<<< Updated upstream
                   <ul className="hidden md:block h-[500px] overflow-y-auto">
                     {[...contacts]
                       .sort((a, b) =>
@@ -479,6 +480,51 @@ const Chat: React.FC = () => {
                         )
                       )
                       .map((c) => (
+=======
+                  {listTab === "direct" ? (
+                    <ul className="h-[500px] overflow-y-auto">
+                      {[...contacts]
+                        .sort((a, b) => `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`, "ar"))
+                        .map((c) => (
+                          <li
+                            key={c._id}
+                            className={`flex items-center justify-between p-3 rounded-xl cursor-pointer ${
+                              selectedContact?._id === c._id && !selectedContact?.isGroup
+                                ? "bg-white border-2 border-emerald-200"
+                                : "hover:bg-gray-50"
+                            }`}
+                            onClick={() => {
+                              setSelectedContact({ ...c, isGroup: false });
+                              setListTab("direct");
+                            }}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="relative w-10 h-10">
+                                <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold bg-gradient-to-br from-emerald-500 to-teal-600">
+                                  {(c.firstName || "").charAt(0)}
+                                </div>
+                                <span className="absolute bottom-1 left-1 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></span>
+                              </div>
+                              <div>
+                                <div className="font-medium">{c.firstName} {c.lastName}</div>
+                                <div className="text-xs text-gray-500">{c.group}</div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {c.unread ? (
+                                <span className="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">{c.unread}</span>
+                              ) : (
+                                <span className="w-2 h-2 bg-green-400 rounded-full" />
+                              )}
+                            </div>
+                          </li>
+                          //sadad
+                        ))}
+                    </ul>
+                  ) : (
+                    <ul className="h-[500px] overflow-y-auto">
+                      {groups.map((g) => (
+>>>>>>> Stashed changes
                         <li
                           key={c._id}
                           className={`flex items-center justify-between p-3 md:p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition-all duration-200 ${
