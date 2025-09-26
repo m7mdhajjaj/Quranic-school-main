@@ -240,21 +240,15 @@ const Timetable = () => {
               </tbody>
             </table>
           </div>
-
-          {/* أسفل الجدول */}
-          {/* <div className="px-4 py-3 flex items-center justify-between text-[12px] text-emerald-900/70 border-t border-emerald-100">
-            <div className="flex items-center gap-2">
-              <span> </span>
-            </div>
-            <span className="hidden sm:block">
-            </span>
-          </div> */}
         </div>
       </div>
 
       {/* نموذج الإضافة / التعديل */}
       {showForm && (
-        <div className="fixed inset-0 bg-emerald-100/50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div
+          className="fixed inset-0 bg-transparent flex items-center justify-center z-50"
+          aria-modal="true"
+          role="dialog">
           <div className="bg-white/95 rounded-2xl shadow-2xl p-6 w-full max-w-md border border-emerald-200">
             <h3 className="text-xl font-bold mb-4 text-center text-emerald-700">
               {editIdx !== null ? "تعديل موعد حلقة" : "إضافة موعد حلقة"}

@@ -1,134 +1,287 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
-interface Exam {
-  _id?: string;
-  id?: number;
-  name: string;
-  date: string;
-  time: string;
-  result?: string;
-}
+/**
+ * ExamSchedule.tsx — نسخة كاملة
+ *
+ * الميزات:
+ * - جدول امتحانات مع تصميم لطيف (سطور متناوبة + ترويسة ثابتة)
+ * - بطاقات للموبايل
+ * - مودالات شفافة (الخلفية تبقى ظاهرة) لإضافة/تعديل الامتحان وإدارة العلامات
+ * - جلب الطلاب عند فتح مودال العلامات + تعبئة العلامات الحالية تلقائياً
+ * - حفظ علامات كل الطلاب دفعة واحدة (متوافق مع bulkWrite بالباكند)
+ * - تعديل/حذف علامة طالب واحد
+ * - إظهار متوسط علامات جميع الطلاب لكل امتحان (للمعلم/المشرف) عبر مسار /average
+ * - إظهار نتيجة الطالب الفردية (للطلاب) عبر مسار /student/:id
+ * - حالات تحميل (Skeleton) + حالات عدم وجود بيانات
+ * - تحسينات صغيرة: بحث/فرز/تصفية بسيطة
+ *
+ * ملاحظات:
+ * - يعتمد على Tailwind CSS.
+ * - يعتمد على API endpoints التالية:
+ *   GET  /api/exams
+ *   POST /api/exams
+ *   PUT  /api/exams/:examId
+ *   DELETE /api/exams/:examId
+ *
+ *   GET  /api/students
+ *
+ *   GET  /api/exam-marks/:examId               -> كل العلامات لامتحان
+ *   GET  /api/exam-marks/:examId/average       -> { average, count }
+ *   POST /api/exam-marks/:examId               -> { marks: [{ student, mark, detail }] }
+ *   PUT  /api/exam-marks/:examId/:studentId
+ *   DELETE /api/exam-marks/:examId/:studentId
+ */
 
+// =========================
+// إعدادات وروابط API
+// =========================
 const API_URL = "http://localhost:5005/api/exams";
 const STUDENTS_URL = "http://localhost:5005/api/students";
 const EXAM_MARKS_URL = "http://localhost:5005/api/exam-marks";
 
+// =========================
+// الأنواع (Types)
+// =========================
+interface Exam {
+  _id?: string;
+  id?: number;
+  name: string;
+  date: string; // ISO (yyyy-mm-dd) أو نص
+  time: string; // HH:mm
+  result?: string; // للطالب فقط (غير مستخدمة للمعلم)
+}
+
+interface StudentDoc {
+  _id: string;
+  firstName?: string;
+  lastName?: string;
+  name?: string; // بعض الأنظمة قد ترسل حقل name موحّد
+}
+
+interface MarkRow {
+  _id?: string;
+  exam: string | Exam;
+  student: string | StudentDoc;
+  mark: string | number | null;
+  detail?: string;
+}
+
+// =========================
+// أدوات مساعدة
+// =========================
+const isNumberLike = (v: unknown) => {
+  if (v === null || v === undefined) return false;
+  const s = String(v).trim();
+  if (s === "") return false;
+  const n = Number(s);
+  return Number.isFinite(n);
+};
+
+const toNumberOrNull = (v: unknown): number | null => {
+  if (!isNumberLike(v)) return null;
+  return Number(v);
+};
+
+const cn = (...cls: Array<string | false | null | undefined>) =>
+  cls.filter(Boolean).join(" ");
+
+const formatAvg = (x: number | null | undefined, digits = 1) =>
+  x == null || Number.isNaN(x) ? undefined : x.toFixed(digits);
+
+const safeExamId = (ex: Exam | null | undefined): string | null => {
+  if (!ex) return null;
+  const val = ex._id ?? ex.id;
+  if (val === undefined || val === null) return null;
+  return String(val);
+};
+
+const getUserRole = (): "student" | "teacher" | "admin" => {
+  try {
+    const raw = localStorage.getItem("user");
+    if (!raw) return "student";
+    const parsed = JSON.parse(raw);
+    return (parsed?.role as "student" | "teacher" | "admin") ?? "student";
+  } catch {
+    return "student";
+  }
+};
+
+// =========================
+// مكونات صغيرة قابلة لإعادة الاستخدام
+// =========================
+const Badge: React.FC<{
+  intent?: "success" | "muted";
+  children?: React.ReactNode;
+}> = ({ intent = "muted", children }) => (
+  <span
+    className={cn(
+      "inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-semibold border",
+      intent === "success"
+        ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+        : "bg-gray-100 text-gray-600 border-gray-200"
+    )}>
+    {children}
+  </span>
+);
+
+const PillButton: React.FC<
+  React.ButtonHTMLAttributes<HTMLButtonElement> & {
+    variant?: "primary" | "warn" | "danger" | "neutral";
+  }
+> = ({ variant = "primary", className, children, ...rest }) => {
+  const base =
+    "px-3 py-1.5 text-sm rounded-lg shadow-sm focus:outline-none focus:ring-2 transition";
+  const palette: Record<string, string> = {
+    primary:
+      "bg-emerald-600 hover:bg-emerald-700 text-white focus:ring-emerald-300",
+    warn: "bg-amber-500 hover:bg-amber-600 text-white focus:ring-amber-300",
+    danger: "bg-rose-600 hover:bg-rose-700 text-white focus:ring-rose-300",
+    neutral:
+      "bg-gray-200 hover:bg-gray-300 text-emerald-700 focus:ring-gray-300",
+  };
+  return (
+    <button className={cn(base, palette[variant], className)} {...rest}>
+      {children}
+    </button>
+  );
+};
+
+const TransparentModal: React.FC<{
+  open: boolean;
+  onClose: () => void;
+  maxWidth?: string; // e.g. "max-w-lg", "max-w-2xl"
+  children: React.ReactNode;
+  cardClassName?: string;
+  ariaLabel?: string;
+}> = ({
+  open,
+  onClose,
+  maxWidth = "max-w-lg",
+  children,
+  cardClassName,
+  ariaLabel,
+}) => {
+  if (!open) return null;
+  return (
+    <div
+      className="fixed inset-0 bg-transparent flex items-center justify-center z-50"
+      role="dialog"
+      aria-label={ariaLabel ?? "Modal"}
+      aria-modal
+      onMouseDown={(e) => {
+        // إغلاق عند الضغط خارج البطاقة
+        if (e.target === e.currentTarget) onClose();
+      }}>
+      <div
+        className={cn(
+          "bg-white/90 backdrop-blur rounded-2xl border shadow-2xl p-6 w-full",
+          maxWidth,
+          cardClassName ?? "border-emerald-200"
+        )}>
+        {children}
+      </div>
+    </div>
+  );
+};
+
+const Field: React.FC<{
+  label: string;
+  children: React.ReactNode;
+  htmlFor?: string;
+  hint?: string;
+  required?: boolean;
+}> = ({ label, children, htmlFor, hint, required }) => (
+  <div>
+    <label htmlFor={htmlFor} className="block mb-1 font-bold text-emerald-700">
+      {label} {required ? <span className="text-rose-600">*</span> : null}
+    </label>
+    {children}
+    {hint ? (
+      <p className="text-[12px] text-emerald-900/60 mt-1">{hint}</p>
+    ) : null}
+  </div>
+);
+
+// =========================
+// المكوّن الرئيسي
+// =========================
 const ExamSchedule: React.FC = () => {
-  // State for edit exam modal
+  // ——— الحالة (State)
+  const [exams, setExams] = useState<Exam[]>([]);
+  const [loadingExams, setLoadingExams] = useState(true);
+
+  const [showAddExamModal, setShowAddExamModal] = useState(false);
+  const [newExam, setNewExam] = useState({ name: "", date: "", time: "" });
+
   const [showEditExamModal, setShowEditExamModal] = useState(false);
   const [editExam, setEditExam] = useState<Exam | null>(null);
 
-  // Loading & empty states for table
-  const [loadingExams, setLoadingExams] = useState(true);
-
-  // Handler for saving exam edits
-  const handleEditExam = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editExam) return;
-    const examId = String(editExam._id || editExam.id);
-    await fetch(`${API_URL}/${examId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(editExam),
-    });
-    setExams((prev: Exam[]) =>
-      prev.map((ex: Exam) =>
-        String(ex._id || ex.id) === examId ? editExam : ex
-      )
-    );
-    setShowEditExamModal(false);
-    setEditExam(null);
-  };
-
-  const [exams, setExams] = useState<Exam[]>([]);
   const [showMarkModal, setShowMarkModal] = useState(false);
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
-  const [students, setStudents] = useState<any[]>([]);
-  const [marks, setMarks] = useState<{
-    [studentId: string]: { mark: string; detail: string };
-  }>({});
-  const [showAddExamModal, setShowAddExamModal] = useState(false);
-  const [newExam, setNewExam] = useState({ name: "", date: "", time: "" });
-  const [studentMarks, setStudentMarks] = useState<{
-    [examId: string]: string;
-  }>({});
 
-  // Detect user role from localStorage
-  const user = localStorage.getItem("user");
-  let role = "student";
-  if (user) {
+  const [students, setStudents] = useState<StudentDoc[]>([]);
+  const [marks, setMarks] = useState<
+    Record<string, { mark: string; detail: string }>
+  >({});
+
+  // للطالب: خريطة examId -> mark
+  const [studentMarks, setStudentMarks] = useState<Record<string, string>>({});
+
+  // للمعلم/الإدمن: examId -> average
+  const [examAverages, setExamAverages] = useState<
+    Record<string, number | null>
+  >({});
+
+  // بحث وفرز بسيط
+  const [query, setQuery] = useState("");
+  const [sortKey, setSortKey] = useState<"date" | "name">("date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  // دور المستخدم
+  const role = getUserRole();
+
+  // مرجع لمنع تعدد الطلبات عند إغلاق وفتح المودال بسرعة
+  const markModalAbortRef = useRef<AbortController | null>(null);
+
+  // ——— مساعدات API
+  const fetchExamAverage = async (examId: string): Promise<number | null> => {
     try {
-      role = JSON.parse(user).role || "student";
-    } catch {}
-  }
+      const res = await fetch(`${EXAM_MARKS_URL}/${examId}/average`);
+      if (!res.ok) return null;
+      const data = await res.json(); // { average, count }
+      const avg = typeof data?.average === "number" ? data.average : null;
+      return avg;
+    } catch {
+      return null;
+    }
+  };
 
-  // حذف الامتحان
-  const handleDeleteExam = async (examIdRaw: string | number) => {
-    const examId = String(examIdRaw);
-    if (!window.confirm("هل أنت متأكد من حذف الامتحان؟")) return;
-    await fetch(`${API_URL}/${examId}`, { method: "DELETE" });
-    setExams((prev: Exam[]) =>
-      prev.filter((e: Exam) => String(e._id || e.id) !== examId)
+  const refreshAverageForExam = async (examId: string) => {
+    const avg = await fetchExamAverage(examId);
+    setExamAverages((prev) => ({ ...prev, [examId]: avg }));
+  };
+
+  const refreshAllAverages = async (list: Exam[]) => {
+    const entries = await Promise.all(
+      list.map(async (ex) => {
+        const id = String(ex._id ?? ex.id);
+        const avg = await fetchExamAverage(id);
+        return [id, avg] as const;
+      })
     );
+    setExamAverages(Object.fromEntries(entries));
   };
 
-  // حذف العلامة لطالب
-  const handleDeleteMark = async (
-    examIdRaw: string | number,
-    studentIdRaw: string | number
-  ) => {
-    const examId = String(examIdRaw);
-    const studentId = String(studentIdRaw);
-    if (!window.confirm("هل أنت متأكد من حذف العلامة؟")) return;
-    await fetch(`${EXAM_MARKS_URL}/${examId}/${studentId}`, {
-      method: "DELETE",
+  const fillMarksFromApi = (rows: MarkRow[]) => {
+    const obj: Record<string, { mark: string; detail: string }> = {};
+    rows.forEach((r) => {
+      const sid = String((r.student as any)?._id ?? r.student);
+      obj[sid] = { mark: String(r.mark ?? ""), detail: String(r.detail ?? "") };
     });
-    setMarks((prev: any) => ({
-      ...prev,
-      [studentId]: { mark: "", detail: "" },
-    }));
+    setMarks(obj);
   };
 
-  // تعديل العلامة لطالب
-  const [showEditMarkModal, setShowEditMarkModal] = useState(false);
-  const [editMarkStudent, setEditMarkStudent] = useState<any>(null);
-  const [editMarkValue, setEditMarkValue] = useState("");
-  const [editMarkDetail, setEditMarkDetail] = useState("");
-
-  const handleEditMark = (examIdRaw: string | number, student: any) => {
-    setEditMarkStudent(student);
-    setEditMarkValue(marks[student._id]?.mark || "");
-    setEditMarkDetail(marks[student._id]?.detail || "");
-    setShowEditMarkModal(true);
-  };
-
-  const handleSaveEditMark = async () => {
-    if (!selectedExam || !editMarkStudent) return;
-    const examId = String(selectedExam._id || selectedExam.id);
-    const studentId = String(editMarkStudent._id);
-    await fetch(`${EXAM_MARKS_URL}/${examId}/${studentId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mark: editMarkValue, detail: editMarkDetail }),
-    });
-    setMarks((prev: any) => ({
-      ...prev,
-      [editMarkStudent._id]: { mark: editMarkValue, detail: editMarkDetail },
-    }));
-    setShowEditMarkModal(false);
-    setEditMarkStudent(null);
-  };
-
-  useEffect(() => {
-    setLoadingExams(true);
-    fetch(API_URL)
-      .then((res) => res.json())
-      .then((data) => setExams(data))
-      .catch(() => setExams([]))
-      .finally(() => setLoadingExams(false));
-  }, []);
-
-  // Add exam for all students (send to backend)
+  // ——— CRUD (Exams)
   const handleAddExam = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -138,35 +291,63 @@ const ExamSchedule: React.FC = () => {
         body: JSON.stringify(newExam),
       });
       if (res.ok) {
-        const added = await res.json();
-        setExams((prev) => [...prev, added]);
+        const added: Exam = await res.json();
+        setExams((prev) => {
+          const next = [...prev, added];
+          setExamAverages((p) => ({
+            ...p,
+            [String(added._id ?? added.id)]: null,
+          }));
+          return next;
+        });
         setShowAddExamModal(false);
         setNewExam({ name: "", date: "", time: "" });
       }
     } catch {}
   };
 
-  // When opening mark modal, fetch students
-  useEffect(() => {
-    if (showMarkModal && selectedExam) {
-      fetch(STUDENTS_URL)
-        .then((res) => res.json())
-        .then((data) => setStudents(data))
-        .catch(() => setStudents([]));
-    }
-  }, [showMarkModal, selectedExam]);
+  const handleEditExam = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editExam) return;
+    const examId = String(editExam._id ?? editExam.id);
+    try {
+      await fetch(`${API_URL}/${examId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editExam),
+      });
+      setExams((prev) =>
+        prev.map((ex) => (String(ex._id ?? ex.id) === examId ? editExam : ex))
+      );
+      setShowEditExamModal(false);
+      setEditExam(null);
+    } catch {}
+  };
 
-  // Add marks for all students to backend
+  const handleDeleteExam = async (examIdRaw: string | number) => {
+    const examId = String(examIdRaw);
+    if (!window.confirm("هل أنت متأكد من حذف الامتحان؟")) return;
+    try {
+      await fetch(`${API_URL}/${examId}`, { method: "DELETE" });
+      setExams((prev) => prev.filter((e) => String(e._id ?? e.id) !== examId));
+      setExamAverages((prev) => {
+        const { [examId]: _, ...rest } = prev;
+        return rest;
+      });
+    } catch {}
+  };
+
+  // ——— CRUD (Marks)
   const handleAddMark = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedExam) return;
-    const marksArr = students.map((student) => ({
-      student: student._id,
-      mark: marks[student._id]?.mark || "",
-      detail: marks[student._id]?.detail || "",
+    const marksArr = students.map((s) => ({
+      student: s._id,
+      mark: marks[s._id]?.mark ?? "",
+      detail: marks[s._id]?.detail ?? "",
     }));
     try {
-      const examId = selectedExam._id || selectedExam.id;
+      const examId = String(selectedExam._id ?? selectedExam.id);
       await fetch(`${EXAM_MARKS_URL}/${examId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -175,53 +356,148 @@ const ExamSchedule: React.FC = () => {
       setShowMarkModal(false);
       setMarks({});
       setSelectedExam(null);
+      refreshAverageForExam(examId);
     } catch {}
   };
 
-  // Fetch student marks if role is student
-  useEffect(() => {
-    if (role === "student" && user) {
-      try {
-        const studentId = JSON.parse(user)._id;
-        fetch(`${EXAM_MARKS_URL}/student/${studentId}`)
-          .then((res) => res.json())
-          .then((data) => {
-            const marksMap: { [examId: string]: string } = {};
-            data.forEach((markObj: any) => {
-              const examId =
-                (markObj.exam && (markObj.exam._id || markObj.exam.id)) ||
-                markObj.exam ||
-                markObj.examId ||
-                markObj.exam_id ||
-                markObj.examId ||
-                markObj.exam;
-              marksMap[String(examId)] = markObj.mark;
-            });
-            setStudentMarks(marksMap);
-          })
-          .catch(() => setStudentMarks({}));
-      } catch {}
-    }
-  }, [role, user]);
-
-  // شارة نتيجة لطيفة
-  const ResultBadge: React.FC<{ text?: string }> = ({ text }) => {
-    if (!text || !text.trim()) {
-      return (
-        <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 border border-gray-200">
-          -
-        </span>
-      );
-    }
-    return (
-      <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">
-        {text}
-      </span>
-    );
+  const handleDeleteMark = async (
+    examIdRaw: string | number,
+    studentIdRaw: string | number
+  ) => {
+    const examId = String(examIdRaw);
+    const studentId = String(studentIdRaw);
+    if (!window.confirm("هل أنت متأكد من حذف العلامة؟")) return;
+    try {
+      await fetch(`${EXAM_MARKS_URL}/${examId}/${studentId}`, {
+        method: "DELETE",
+      });
+      setMarks((prev) => ({ ...prev, [studentId]: { mark: "", detail: "" } }));
+      refreshAverageForExam(examId);
+    } catch {}
   };
 
+  // ——— فتح مودال العلامات: جلب الطلاب + علامات الامتحان الحالية
+  useEffect(() => {
+    if (!showMarkModal || !selectedExam) return;
+
+    // إلغاء أي طلبات سابقة
+    markModalAbortRef.current?.abort();
+    const ac = new AbortController();
+    markModalAbortRef.current = ac;
+
+    (async () => {
+      try {
+        const examId = String(selectedExam._id ?? selectedExam.id);
+
+        // 1) الطلاب
+        const sRes = await fetch(STUDENTS_URL, { signal: ac.signal });
+        const sData: StudentDoc[] = await sRes.json();
+        if (!ac.signal.aborted) setStudents(Array.isArray(sData) ? sData : []);
+
+        // 2) العلامات الحالية
+        const mRes = await fetch(`${EXAM_MARKS_URL}/${examId}`, {
+          signal: ac.signal,
+        });
+        if (mRes.ok) {
+          const mData: MarkRow[] = await mRes.json();
+          if (!ac.signal.aborted && Array.isArray(mData))
+            fillMarksFromApi(mData);
+        }
+      } catch {
+        // تجاهل الأخطاء (إغلاق مفاجئ مثلًا)
+      }
+    })();
+
+    return () => ac.abort();
+  }, [showMarkModal, selectedExam]);
+
+  // ——— عند التحميل: جلب الامتحانات + المتوسطات
+  useEffect(() => {
+    setLoadingExams(true);
+    (async () => {
+      try {
+        const res = await fetch(API_URL);
+        const data: Exam[] = await res.json();
+        const list = Array.isArray(data) ? data : [];
+        setExams(list);
+        await refreshAllAverages(list);
+      } catch {
+        setExams([]);
+        setExamAverages({});
+      } finally {
+        setLoadingExams(false);
+      }
+    })();
+  }, []);
+
+  // ——— الطالب: جلب علاماته الشخصية
+  useEffect(() => {
+    if (role !== "student") return;
+    try {
+      const raw = localStorage.getItem("user");
+      if (!raw) return;
+      const sid = JSON.parse(raw)?._id;
+      if (!sid) return;
+
+      (async () => {
+        try {
+          const res = await fetch(`${EXAM_MARKS_URL}/student/${sid}`);
+          const rows: MarkRow[] = await res.json();
+          const map: Record<string, string> = {};
+          rows.forEach((r) => {
+            const exId = String((r.exam as any)?._id ?? (r as any).exam ?? "");
+            if (exId) map[exId] = String(r.mark ?? "");
+          });
+          setStudentMarks(map);
+        } catch {
+          setStudentMarks({});
+        }
+      })();
+    } catch {}
+  }, [role]);
+
+  // ——— تصفية/فرز
+  const filteredSortedExams = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    let out = exams.filter((ex) =>
+      q
+        ? String(ex.name ?? "")
+            .toLowerCase()
+            .includes(q) || String(ex.date ?? "").includes(q)
+        : true
+    );
+
+    out = out.sort((a, b) => {
+      const dir = sortDir === "asc" ? 1 : -1;
+      if (sortKey === "name") {
+        return dir * String(a.name).localeCompare(String(b.name));
+      }
+      // sort by date (fallback to name)
+      const da = String(a.date ?? "");
+      const db = String(b.date ?? "");
+      const comp = da.localeCompare(db);
+      if (comp !== 0) return dir * comp;
+      return dir * String(a.name).localeCompare(String(b.name));
+    });
+
+    return out;
+  }, [exams, query, sortKey, sortDir]);
+
+  // ——— مكوّنات عرض صغيرة
+  const ResultBadge: React.FC<{ text?: string }> = ({ text }) => (
+    <Badge intent={text && text.trim() ? "success" : "muted"}>
+      {text && text.trim() ? text : "-"}
+    </Badge>
+  );
+
+  const AvgBadge: React.FC<{ value: number | null | undefined }> = ({
+    value,
+  }) => <ResultBadge text={formatAvg(value) ?? ""} />;
+
+  // ——— واجهة المستخدم
   return (
-    <div className="max-w-5xl mx-auto p-4 md:p-6" dir="rtl" lang="ar">
+    <div className="max-w-6xl mx-auto p-4 md:p-6" dir="rtl" lang="ar">
+      {/* العنوان */}
       <div className="mb-6">
         <h2 className="text-3xl md:text-4xl font-extrabold text-center text-emerald-700 tracking-tight">
           جدول الامتحانات
@@ -231,19 +507,46 @@ const ExamSchedule: React.FC = () => {
         </p>
       </div>
 
-      {(role === "teacher" || role === "admin") && (
-        <div className="flex flex-wrap gap-3 justify-center mb-5">
-          <button
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-sm hover:shadow transition"
-            onClick={() => setShowAddExamModal(true)}>
-            إضافة امتحان لكل الطلاب
-          </button>
+      {/* شريط الأدوات */}
+      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            placeholder="بحث باسم الامتحان أو التاريخ..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="w-full sm:w-64 border border-emerald-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-300"
+          />
+          <div className="hidden sm:flex items-center gap-1">
+            <span className="text-sm text-emerald-800/70">فرز حسب:</span>
+            <select
+              value={sortKey}
+              onChange={(e) => setSortKey(e.target.value as any)}
+              className="border border-emerald-200 rounded-lg px-2 py-1 bg-white text-sm">
+              <option value="date">التاريخ</option>
+              <option value="name">الاسم</option>
+            </select>
+            <button
+              className="border border-emerald-200 rounded-lg px-2 py-1 text-sm bg-white"
+              onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+              title="عكس اتجاه الفرز">
+              {sortDir === "asc" ? "↑" : "↓"}
+            </button>
+          </div>
         </div>
-      )}
 
-      {/* Card + Scroll container */}
+        {(role === "teacher" || role === "admin") && (
+          <div className="flex items-center justify-end gap-2">
+            <PillButton onClick={() => setShowAddExamModal(true)}>
+              إضافة امتحان لكل الطلاب
+            </PillButton>
+          </div>
+        )}
+      </div>
+
+      {/* البطاقة + الجدول */}
       <div className="bg-white/90 backdrop-blur rounded-2xl border border-emerald-100 shadow-[0_10px_30px_rgba(16,185,129,0.08)] overflow-hidden">
-        {/* Table (md and up) */}
+        {/* جدول للشاشات المتوسطة فما فوق */}
         <div className="hidden md:block overflow-auto">
           <table className="min-w-full text-center align-middle">
             <thead className="sticky top-0 z-10">
@@ -251,7 +554,11 @@ const ExamSchedule: React.FC = () => {
                 <th className="px-4 py-3 text-sm font-bold">اسم الامتحان</th>
                 <th className="px-4 py-3 text-sm font-bold">التاريخ</th>
                 <th className="px-4 py-3 text-sm font-bold">الوقت</th>
-                <th className="px-4 py-3 text-sm font-bold">النتيجة</th>
+                <th className="px-4 py-3 text-sm font-bold">
+                  {role === "teacher" || role === "admin"
+                    ? "متوسط العلامات"
+                    : "النتيجة"}
+                </th>
                 {(role === "teacher" || role === "admin") && (
                   <th className="px-4 py-3 text-sm font-bold">إجراءات</th>
                 )}
@@ -259,10 +566,11 @@ const ExamSchedule: React.FC = () => {
             </thead>
 
             <tbody className="divide-y divide-emerald-50">
+              {/* Skeleton */}
               {loadingExams && (
                 <>
                   {Array.from({ length: 3 }).map((_, i) => (
-                    <tr key={`skeleton-${i}`} className="animate-pulse">
+                    <tr key={`sk-${i}`} className="animate-pulse">
                       <td className="px-4 py-4">
                         <div className="h-3.5 w-40 mx-auto rounded bg-emerald-100" />
                       </td>
@@ -285,27 +593,29 @@ const ExamSchedule: React.FC = () => {
                 </>
               )}
 
-              {!loadingExams && exams.length === 0 && (
+              {/* لا يوجد بيانات */}
+              {!loadingExams && filteredSortedExams.length === 0 && (
                 <tr>
                   <td
                     colSpan={role === "teacher" || role === "admin" ? 5 : 4}
                     className="px-6 py-10 text-emerald-700/70">
-                    لا توجد امتحانات حالياً.
+                    لا توجد امتحانات مطابقة لبحثك.
                   </td>
                 </tr>
               )}
 
+              {/* عناصر الجدول */}
               {!loadingExams &&
-                exams.map((exam, idx) => {
-                  const examId =
-                    exam._id || exam.id ? String(exam._id || exam.id) : "";
-                  const isZebra = idx % 2 === 0;
+                filteredSortedExams.map((exam, idx) => {
+                  const examId = String(exam._id ?? exam.id ?? "");
+                  const zebra = idx % 2 === 0;
                   return (
                     <tr
                       key={examId}
-                      className={`${
-                        isZebra ? "bg-emerald-50/30" : "bg-white"
-                      } hover:bg-emerald-50 transition-colors`}>
+                      className={cn(
+                        zebra ? "bg-emerald-50/30" : "bg-white",
+                        "hover:bg-emerald-50 transition-colors"
+                      )}>
                       <td className="px-4 py-3 font-semibold text-emerald-900">
                         {exam.name}
                       </td>
@@ -316,37 +626,35 @@ const ExamSchedule: React.FC = () => {
                         {exam.time}
                       </td>
                       <td className="px-4 py-3">
-                        {role === "student" ? (
-                          <ResultBadge text={studentMarks[examId] || ""} />
+                        {role === "teacher" || role === "admin" ? (
+                          <AvgBadge value={examAverages[examId]} />
                         ) : (
-                          <ResultBadge text={exam.result} />
+                          <ResultBadge text={studentMarks[examId] ?? ""} />
                         )}
                       </td>
-
                       {(role === "teacher" || role === "admin") && (
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-center gap-2">
-                            <button
-                              className="px-3 py-1.5 text-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                            <PillButton
                               onClick={() => {
                                 setSelectedExam(exam);
                                 setShowMarkModal(true);
                               }}>
                               إضافة العلامات
-                            </button>
-                            <button
-                              className="px-3 py-1.5 text-sm rounded-lg bg-amber-500 hover:bg-amber-600 text-white shadow-sm"
+                            </PillButton>
+                            <PillButton
+                              variant="warn"
                               onClick={() => {
                                 setEditExam({ ...exam });
                                 setShowEditExamModal(true);
                               }}>
                               تعديل
-                            </button>
-                            <button
-                              className="px-3 py-1.5 text-sm rounded-lg bg-rose-600 hover:bg-rose-700 text-white shadow-sm"
+                            </PillButton>
+                            <PillButton
+                              variant="danger"
                               onClick={() => handleDeleteExam(examId)}>
                               حذف
-                            </button>
+                            </PillButton>
                           </div>
                         </td>
                       )}
@@ -357,11 +665,11 @@ const ExamSchedule: React.FC = () => {
           </table>
         </div>
 
-        {/* Cards (mobile) */}
+        {/* بطاقات للموبايل */}
         <div className="md:hidden divide-y divide-emerald-50">
           {loadingExams &&
             Array.from({ length: 3 }).map((_, i) => (
-              <div key={`m-skel-${i}`} className="p-4 animate-pulse">
+              <div key={`m-sk-${i}`} className="p-4 animate-pulse">
                 <div className="h-4 w-48 rounded bg-emerald-100 mb-3" />
                 <div className="flex items-center gap-3 text-sm">
                   <div className="h-3 w-20 rounded bg-emerald-100" />
@@ -370,16 +678,15 @@ const ExamSchedule: React.FC = () => {
               </div>
             ))}
 
-          {!loadingExams && exams.length === 0 && (
+          {!loadingExams && filteredSortedExams.length === 0 && (
             <div className="p-6 text-center text-emerald-700/70">
               لا توجد امتحانات حالياً.
             </div>
           )}
 
           {!loadingExams &&
-            exams.map((exam) => {
-              const examId =
-                exam._id || exam.id ? String(exam._id || exam.id) : "";
+            filteredSortedExams.map((exam) => {
+              const examId = String(exam._id ?? exam.id ?? "");
               return (
                 <div key={`m-${examId}`} className="p-4">
                   <div className="flex items-start justify-between">
@@ -392,38 +699,36 @@ const ExamSchedule: React.FC = () => {
                         <span>⏰ {exam.time}</span>
                       </div>
                     </div>
-                    <ResultBadge
-                      text={
-                        role === "student"
-                          ? studentMarks[examId] || ""
-                          : exam.result
-                      }
-                    />
+                    {role === "teacher" || role === "admin" ? (
+                      <AvgBadge value={examAverages[examId]} />
+                    ) : (
+                      <ResultBadge text={studentMarks[examId] ?? ""} />
+                    )}
                   </div>
 
                   {(role === "teacher" || role === "admin") && (
                     <div className="mt-3 flex gap-2">
-                      <button
-                        className="flex-1 px-3 py-2 text-sm rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                      <PillButton
+                        className="flex-1"
                         onClick={() => {
                           setSelectedExam(exam);
                           setShowMarkModal(true);
                         }}>
                         إضافة العلامات
-                      </button>
-                      <button
-                        className="px-3 py-2 text-sm rounded-lg bg-amber-500 hover:bg-amber-600 text-white shadow-sm"
+                      </PillButton>
+                      <PillButton
+                        variant="warn"
                         onClick={() => {
                           setEditExam({ ...exam });
                           setShowEditExamModal(true);
                         }}>
                         تعديل
-                      </button>
-                      <button
-                        className="px-3 py-2 text-sm rounded-lg bg-rose-600 hover:bg-rose-700 text-white shadow-sm"
+                      </PillButton>
+                      <PillButton
+                        variant="danger"
                         onClick={() => handleDeleteExam(examId)}>
                         حذف
-                      </button>
+                      </PillButton>
                     </div>
                   )}
                 </div>
@@ -432,297 +737,269 @@ const ExamSchedule: React.FC = () => {
         </div>
       </div>
 
-      {/* ملاحظة صغيرة أسفل الجدول */}
-    
+      {/* ———————————————— مودال: إضافة امتحان ———————————————— */}
+      <TransparentModal
+        open={showAddExamModal}
+        onClose={() => setShowAddExamModal(false)}
+        maxWidth="max-w-lg"
+        ariaLabel="إضافة امتحان جديد">
+        <h3 className="text-2xl font-extrabold mb-6 text-center text-emerald-700 border-b pb-4 tracking-wide">
+          إضافة امتحان جديد
+        </h3>
+        <form onSubmit={handleAddExam} className="space-y-5">
+          <Field label="اسم الامتحان" required>
+            <input
+              className="w-full border border-emerald-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-lg bg-emerald-50 placeholder:text-emerald-400"
+              type="text"
+              value={newExam.name}
+              onChange={(e) =>
+                setNewExam((p) => ({ ...p, name: e.target.value }))
+              }
+              placeholder="مثلاً اختبار القرآن"
+              required
+            />
+          </Field>
 
-      {/* Modal for adding exam */}
-      {showAddExamModal && (
-        <div className="fixed inset-0 bg-emerald-100/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white/90 rounded-2xl shadow-2xl p-10 w-full max-w-lg border border-emerald-200">
-            <h3 className="text-3xl font-extrabold mb-8 text-center text-emerald-700 border-b pb-4 tracking-wide">
-              إضافة امتحان جديد
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="التاريخ" required>
+              <input
+                className="w-full border border-emerald-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-lg bg-emerald-50"
+                type="date"
+                value={newExam.date}
+                onChange={(e) =>
+                  setNewExam((p) => ({ ...p, date: e.target.value }))
+                }
+                required
+              />
+            </Field>
+            <Field label="الوقت" required>
+              <input
+                className="w-full border border-emerald-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-lg bg-emerald-50"
+                type="time"
+                value={newExam.time}
+                onChange={(e) =>
+                  setNewExam((p) => ({ ...p, time: e.target.value }))
+                }
+                required
+              />
+            </Field>
+          </div>
+
+          <div className="flex justify-between pt-2">
+            <PillButton type="submit">حفظ</PillButton>
+            <PillButton
+              type="button"
+              variant="neutral"
+              onClick={() => setShowAddExamModal(false)}>
+              إلغاء
+            </PillButton>
+          </div>
+        </form>
+      </TransparentModal>
+
+      {/* ———————————————— مودال: تعديل الامتحان ———————————————— */}
+      <TransparentModal
+        open={
+          (role === "teacher" || role === "admin") &&
+          showEditExamModal &&
+          !!editExam
+        }
+        onClose={() => setShowEditExamModal(false)}
+        maxWidth="max-w-lg"
+        cardClassName="border-yellow-200"
+        ariaLabel="تعديل الامتحان">
+        {editExam ? (
+          <>
+            <h3 className="text-2xl font-extrabold mb-6 text-center text-yellow-700 border-b pb-4 tracking-wide">
+              تعديل الامتحان
             </h3>
-            <form onSubmit={handleAddExam} className="space-y-7">
-              <div>
-                <label className="block mb-2 font-bold text-emerald-700 text-lg">
-                  اسم الامتحان
-                </label>
+            <form onSubmit={handleEditExam} className="space-y-5">
+              <Field label="اسم الامتحان" required>
                 <input
-                  className="w-full border border-emerald-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-lg bg-emerald-50 placeholder:text-emerald-400"
+                  className="w-full border border-yellow-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-lg bg-yellow-50 placeholder:text-yellow-400"
                   type="text"
-                  value={newExam.name}
+                  value={editExam.name}
                   onChange={(e) =>
-                    setNewExam({ ...newExam, name: e.target.value })
+                    setEditExam((p) => (p ? { ...p, name: e.target.value } : p))
                   }
                   required
-                  placeholder="مثلاً اختبار القرآن"
                 />
-              </div>
+              </Field>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block mb-2 font-bold text-emerald-700 text-lg">
-                    التاريخ
-                  </label>
+                <Field label="التاريخ" required>
                   <input
-                    className="w-full border border-emerald-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-lg bg-emerald-50"
+                    className="w-full border border-yellow-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-lg bg-yellow-50"
                     type="date"
-                    value={newExam.date}
+                    value={editExam.date}
                     onChange={(e) =>
-                      setNewExam({ ...newExam, date: e.target.value })
+                      setEditExam((p) =>
+                        p ? { ...p, date: e.target.value } : p
+                      )
                     }
                     required
                   />
-                </div>
-                <div>
-                  <label className="block mb-2 font-bold text-emerald-700 text-lg">
-                    الوقت
-                  </label>
+                </Field>
+                <Field label="الوقت" required>
                   <input
-                    className="w-full border border-emerald-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-lg bg-emerald-50"
+                    className="w-full border border-yellow-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-lg bg-yellow-50"
                     type="time"
-                    value={newExam.time}
+                    value={editExam.time}
                     onChange={(e) =>
-                      setNewExam({ ...newExam, time: e.target.value })
+                      setEditExam((p) =>
+                        p ? { ...p, time: e.target.value } : p
+                      )
                     }
                     required
                   />
-                </div>
+                </Field>
               </div>
-              <div className="flex justify-between mt-8">
-                <button
-                  type="submit"
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3 px-8 rounded-xl shadow-lg text-xl transition">
-                  حفظ
-                </button>
-                <button
+
+              <div className="flex justify-between pt-2">
+                <PillButton type="submit" variant="warn">
+                  حفظ التعديل
+                </PillButton>
+                <PillButton
                   type="button"
-                  className="bg-gray-200 hover:bg-gray-300 text-emerald-700 font-bold py-3 px-8 rounded-xl shadow text-xl transition"
-                  onClick={() => setShowAddExamModal(false)}>
+                  variant="neutral"
+                  onClick={() => setShowEditExamModal(false)}>
                   إلغاء
-                </button>
+                </PillButton>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+          </>
+        ) : null}
+      </TransparentModal>
 
-      {/* Modal for adding marks for all students */}
-      {showMarkModal && selectedExam && (
+      {/* ———————————————— مودال: إدارة العلامات ———————————————— */}
+      <TransparentModal
+        open={showMarkModal && !!selectedExam}
+        onClose={() => setShowMarkModal(false)}
+        maxWidth="max-w-3xl"
+        ariaLabel="إضافة علامات الطلاب للامتحان">
+        <h3 className="text-xl font-bold mb-6 text-center text-blue-700 border-b pb-3">
+          إضافة علامات الطلاب للامتحان
+        </h3>
+
         <div className="fixed inset-0 bg-emerald-100/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white/90 rounded-2xl shadow-2xl p-8 w-full max-w-2xl overflow-y-auto max-h-[90vh] border border-emerald-200">
-            <h3 className="text-xl font-bold mb-6 text-center text-blue-700 border-b pb-3">
-              إضافة علامات الطلاب للامتحان
+          <div className="bg-white/95 rounded-2xl shadow-2xl p-6 w-full max-w-md border border-emerald-200 overflow-y-auto max-h-[80vh]">
+            <h3 className="text-xl font-bold mb-4 text-center text-emerald-700">
+              إضافة علامة للامتحان
             </h3>
-            <form onSubmit={handleAddMark}>
+            <form onSubmit={handleAddMark} className="space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {students.map((student) => (
-                  <div
-                    key={student._id}
-                    className="border rounded-xl p-4 bg-emerald-50 shadow-sm">
-                    <div className="font-bold mb-2 text-emerald-700 text-lg">
-                      {student.firstName} {student.lastName}
-                    </div>
-                    <input
-                      className="w-full border border-emerald-300 rounded-lg px-3 py-2 mb-2 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-lg bg-white placeholder:text-emerald-400"
-                      type="text"
-                      value={marks[student._id]?.mark || ""}
-                      onChange={(e) =>
-                        setMarks((m) => ({
-                          ...m,
-                          [student._id]: {
-                            ...m[student._id],
-                            mark: e.target.value,
-                          },
-                        }))
-                      }
-                      placeholder="العلامة (اختياري)"
-                    />
-                    <input
-                      className="w-full border border-emerald-300 rounded-lg px-3 py-2 mb-2 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-lg bg-white placeholder:text-emerald-400"
-                      type="text"
-                      value={marks[student._id]?.detail || ""}
-                      onChange={(e) =>
-                        setMarks((m) => ({
-                          ...m,
-                          [student._id]: {
-                            ...m[student._id],
-                            detail: e.target.value,
-                          },
-                        }))
-                      }
-                      placeholder="تفاصيل أو ملاحظة (اختياري)"
-                    />
-                    <div className="flex gap-2 mt-2">
-                      <button
-                        type="button"
-                        className="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded text-xs"
-                        onClick={() =>
-                          handleEditMark(
-                            String(selectedExam?._id || selectedExam?.id || ""),
-                            student
-                          )
-                        }>
-                        تعديل العلامة
-                      </button>
-                      <button
-                        type="button"
-                        className="bg-rose-600 hover:bg-rose-700 text-white px-2 py-1 rounded text-xs"
-                        onClick={() =>
-                          handleDeleteMark(
-                            String(selectedExam?._id || selectedExam?.id || ""),
-                            String(student._id)
-                          )
-                        }>
-                        حذف العلامة
-                      </button>
+                {students.map((student) => {
+                  const sid = student._id;
+                  const fullName =
+                    student.name ??
+                    `${student.firstName ?? ""} ${
+                      student.lastName ?? ""
+                    }`.trim();
+                  return (
+                    <div
+                      key={sid}
+                      className="border rounded-xl p-4 bg-emerald-50/80 shadow-sm">
+                      <div className="font-bold mb-2 text-emerald-700 text-lg">
+                        {fullName || "طالب"}
+                      </div>
 
-                      {/* Modal for editing mark */}
-                      {showEditMarkModal && editMarkStudent && (
-                        <div className="fixed inset-0 bg-yellow-100/50 backdrop-blur-sm flex items-center justify-center z-50">
-                          <div className="bg-white/90 rounded-2xl shadow-2xl p-8 w-full max-w-md border border-yellow-200">
-                            <h3 className="text-2xl font-bold mb-6 text-center text-yellow-700 border-b pb-3">
-                              تعديل علامة الطالب
-                            </h3>
-                            <div className="mb-4 font-bold text-lg text-yellow-700 text-center">
-                              {editMarkStudent.firstName}{" "}
-                              {editMarkStudent.lastName}
-                            </div>
-                            <div className="mb-4">
-                              <label className="block mb-2 font-bold text-yellow-700">
-                                العلامة
-                              </label>
-                              <input
-                                className="w-full border border-yellow-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-yellow-400 text-lg"
-                                type="text"
-                                value={editMarkValue}
-                                onChange={(e) =>
-                                  setEditMarkValue(e.target.value)
+                      <Field label="العلامة">
+                        <input
+                          className="w-full border border-emerald-300 rounded-lg px-3 py-2 mb-2 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-lg bg-white placeholder:text-emerald-400"
+                          type="text"
+                          inputMode="decimal"
+                          value={marks[sid]?.mark ?? ""}
+                          onChange={(e) =>
+                            setMarks((m) => ({
+                              ...m,
+                              [sid]: {
+                                ...(m[sid] ?? { mark: "", detail: "" }),
+                                mark: e.target.value,
+                              },
+                            }))
+                          }
+                          placeholder="مثلاً 85"
+                        />
+                      </Field>
+
+                      <Field label="تفاصيل / ملاحظة">
+                        <input
+                          className="w-full border border-emerald-300 rounded-lg px-3 py-2 mb-2 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-lg bg-white placeholder:text-emerald-400"
+                          type="text"
+                          value={marks[sid]?.detail ?? ""}
+                          onChange={(e) =>
+                            setMarks((m) => ({
+                              ...m,
+                              [sid]: {
+                                ...(m[sid] ?? { mark: "", detail: "" }),
+                                detail: e.target.value,
+                              },
+                            }))
+                          }
+                          placeholder="اختياري"
+                        />
+                      </Field>
+
+                      <div className="flex gap-2 mt-2">
+                        <PillButton
+                          variant="warn"
+                          type="button"
+                          onClick={async () => {
+                            if (!selectedExam) return;
+                            const examId = safeExamId(selectedExam);
+                            if (!examId) return;
+                            const newMark = marks[sid]?.mark ?? "";
+                            const newDetail = marks[sid]?.detail ?? "";
+                            try {
+                              await fetch(
+                                `${EXAM_MARKS_URL}/${examId}/${sid}`,
+                                {
+                                  method: "PUT",
+                                  headers: {
+                                    "Content-Type": "application/json",
+                                  },
+                                  body: JSON.stringify({
+                                    mark: newMark,
+                                    detail: newDetail,
+                                  }),
                                 }
-                              />
-                            </div>
-                            <div className="mb-4">
-                              <label className="block mb-2 font-bold text-yellow-700">
-                                تفاصيل أو ملاحظة
-                              </label>
-                              <input
-                                className="w-full border border-yellow-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-yellow-400 text-lg"
-                                type="text"
-                                value={editMarkDetail}
-                                onChange={(e) =>
-                                  setEditMarkDetail(e.target.value)
-                                }
-                              />
-                            </div>
-                            <div className="flex justify-between mt-6">
-                              <button
-                                type="button"
-                                className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-6 rounded-lg shadow text-lg"
-                                onClick={handleSaveEditMark}>
-                                حفظ التعديل
-                              </button>
-                              <button
-                                type="button"
-                                className="bg-gray-200 hover:bg-gray-300 text-yellow-700 font-bold py-2 px-6 rounded-lg shadow text-lg"
-                                onClick={() => setShowEditMarkModal(false)}>
-                                إلغاء
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
+                              );
+                              refreshAverageForExam(examId);
+                            } catch {}
+                          }}>
+                          تعديل سريع
+                        </PillButton>
+
+                        <PillButton
+                          variant="danger"
+                          type="button"
+                          onClick={() => {
+                            if (!selectedExam) return;
+                            const examId = safeExamId(selectedExam);
+                            if (!examId) return;
+                            handleDeleteMark(examId, sid);
+                          }}>
+                          حذف العلامة
+                        </PillButton>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
+
               <div className="flex justify-between mt-4">
-                <button
-                  type="submit"
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl shadow-sm">
-                  حفظ جميع العلامات
-                </button>
-                <button
+                <PillButton type="submit">حفظ جميع العلامات</PillButton>
+                <PillButton
                   type="button"
-                  className="bg-gray-200 hover:bg-gray-300 text-emerald-700 font-bold py-2 px-4 rounded-xl shadow-sm"
+                  variant="neutral"
                   onClick={() => setShowMarkModal(false)}>
                   إلغاء
-                </button>
+                </PillButton>
               </div>
             </form>
           </div>
         </div>
-      )}
-
-      {/* Modal: تعديل الامتحان */}
-      {(role === "teacher" || role === "admin") &&
-        showEditExamModal &&
-        editExam && (
-          <div className="fixed inset-0 bg-yellow-100/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-white/90 rounded-2xl shadow-2xl p-10 w-full max-w-lg border border-yellow-200">
-              <h3 className="text-3xl font-extrabold mb-8 text-center text-yellow-700 border-b pb-4 tracking-wide">
-                تعديل الامتحان
-              </h3>
-              <form onSubmit={handleEditExam} className="space-y-7">
-                <div>
-                  <label className="block mb-2 font-bold text-yellow-700 text-lg">
-                    اسم الامتحان
-                  </label>
-                  <input
-                    className="w-full border border-yellow-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-lg bg-yellow-50 placeholder:text-yellow-400"
-                    type="text"
-                    value={editExam.name}
-                    onChange={(e) =>
-                      setEditExam({ ...editExam, name: e.target.value })
-                    }
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block mb-2 font-bold text-yellow-700 text-lg">
-                      التاريخ
-                    </label>
-                    <input
-                      className="w-full border border-yellow-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-lg bg-yellow-50"
-                      type="date"
-                      value={editExam.date}
-                      onChange={(e) =>
-                        setEditExam({ ...editExam, date: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block mb-2 font-bold text-yellow-700 text-lg">
-                      الوقت
-                    </label>
-                    <input
-                      className="w-full border border-yellow-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-lg bg-yellow-50"
-                      type="time"
-                      value={editExam.time}
-                      onChange={(e) =>
-                        setEditExam({ ...editExam, time: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-between mt-8">
-                  <button
-                    type="submit"
-                    className="bg-yellow-500 hover:bg-yellow-600 text-white font-extrabold py-3 px-8 rounded-xl shadow-lg text-xl transition">
-                    حفظ التعديل
-                  </button>
-                  <button
-                    type="button"
-                    className="bg-gray-200 hover:bg-gray-300 text-yellow-700 font-bold py-3 px-8 rounded-xl shadow text-xl transition"
-                    onClick={() => setShowEditExamModal(false)}>
-                    إلغاء
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+      </TransparentModal>
     </div>
   );
 };
