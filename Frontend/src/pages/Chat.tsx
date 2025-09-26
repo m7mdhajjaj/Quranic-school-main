@@ -1,8 +1,10 @@
-import Footer from "../components/Footer";
+// ...existing code...
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { MdPhotoCamera } from "react-icons/md";
+import { FiPaperclip, FiMic } from "react-icons/fi";
 import { io, Socket } from "socket.io-client";
 // If you add shadcn/ui you can replace basic elements with nicer components.
-import UserInfoModal from "../components/UserInfoModal";
+// ...existing code...
 
 type AttachmentType = "image" | "file" | "audio";
 
@@ -35,6 +37,7 @@ interface Contact {
   group?: string;
   unread?: number;
   isGroup?: boolean; // for group list
+  isOnline?: boolean; // <-- new flag
 }
 
 interface User {
@@ -47,8 +50,7 @@ interface User {
 const API_URL = "http://localhost:5005/api";
 const SOCKET_URL = "http://localhost:5005";
 
-// Lazy load emoji picker (install any: emoji-mart, emoji-picker-react, etc.)
-const EmojiPicker = React.lazy(() => import(/* webpackIgnore: true */ "emoji-picker-react").catch(() => ({ default: () => null })));
+// ...existing code...
 
 const Chat: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -68,12 +70,79 @@ const Chat: React.FC = () => {
 
   // Compose
   const [messageInput, setMessageInput] = useState("");
-  const [showEmoji, setShowEmoji] = useState(false);
+  // ...existing code...
   const [uploading, setUploading] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<BlobPart[]>([]);
+  const [showCamera, setShowCamera] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  // Camera logic
+  const openCamera = async () => {
+    setShowCamera(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+      }
+    } catch (err) {
+      alert("تعذر الوصول إلى الكاميرا");
+      setShowCamera(false);
+    }
+  };
+
+  const closeCamera = () => {
+    setShowCamera(false);
+    if (videoRef.current && videoRef.current.srcObject) {
+      const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
+      tracks.forEach(track => track.stop());
+      videoRef.current.srcObject = null;
+    }
+  };
+
+  const capturePhoto = async () => {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth || 320;
+    canvas.height = video.videoHeight || 240;
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(async blob => {
+        if (blob) {
+          // Upload photo to backend
+          const form = new FormData();
+          form.append("file", blob, `photo-${Date.now()}.png`);
+          let url: string | null = null;
+          try {
+            const resp = await fetch(`${API_URL}/upload`, {
+              method: "POST",
+              headers: { ...(getAuthHeaders() as any) },
+              body: form,
+            });
+            if (resp.ok) {
+              const data = await resp.json();
+              url = data.url;
+            }
+          } catch {}
+          if (!url) return;
+          setAttachments(prev => [
+            ...prev,
+            {
+              url,
+              name: `photo-${Date.now()}.png`,
+              type: "image",
+              size: blob.size,
+            },
+          ]);
+        }
+      }, "image/png");
+    }
+    closeCamera();
+  };
 
   // Presence
   const [isTyping, setIsTyping] = useState(false);
@@ -163,6 +232,7 @@ const Chat: React.FC = () => {
                 lastName: s.lastName || "",
                 group: s.group || s.section || "",
                 unread: s.unread || 0,
+                isOnline: s.isOnline, // <-- set isOnline from response
               }))
             : [];
           setContacts(list);
@@ -179,6 +249,7 @@ const Chat: React.FC = () => {
               lastName: t.lastName || "",
               group: Array.isArray(t.groups) ? t.groups.join(", ") : "",
               unread: t.unread || 0,
+              isOnline: t.isOnline, // <-- set isOnline from response
             }));
           }
           if (list.length === 0) {
@@ -191,6 +262,7 @@ const Chat: React.FC = () => {
                 lastName: t.lastName || "",
                 group: Array.isArray(t.groups) ? t.groups.join(", ") : "",
                 unread: t.unread || 0,
+                isOnline: t.isOnline, // <-- set isOnline from response
               }));
             }
           }
@@ -408,11 +480,7 @@ const Chat: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messageInput]);
 
-  // ----- Compose: emoji, uploads, voice -----
-  const onPickEmoji = (emojiData: any) => {
-    const emoji = emojiData?.emoji || emojiData?.native || "";
-    setMessageInput(prev => prev + emoji);
-  };
+  // ...existing code...
 
   const onFilesSelected = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -420,11 +488,8 @@ const Chat: React.FC = () => {
     try {
       const newAtts: Attachment[] = [];
       for (const f of Array.from(files)) {
-        // Upload to your API (create an /upload endpoint that returns {url})
-        // Fallback: create object URL (temporary) — replace with server URL after upload.
         const form = new FormData();
         form.append("file", f);
-        // Try REST upload
         let url: string | null = null;
         try {
           const resp = await fetch(`${API_URL}/upload`, {
@@ -437,8 +502,7 @@ const Chat: React.FC = () => {
             url = data.url;
           }
         } catch {}
-        if (!url) url = URL.createObjectURL(f); // temporary preview
-
+        if (!url) continue; // Only use backend URLs
         const type: AttachmentType = f.type.startsWith("image/")
           ? "image"
           : f.type.startsWith("audio/")
@@ -461,9 +525,31 @@ const Chat: React.FC = () => {
       rec.ondataavailable = e => audioChunksRef.current.push(e.data);
       rec.onstop = async () => {
         const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        const file = new File([blob], `voice-${Date.now()}.webm`, { type: "audio/webm" });
-        // Upload as any other file
-        await onFilesSelected({ 0: file, length: 1, item: (i: number) => (i === 0 ? file : null) } as unknown as FileList);
+        // Upload voice to backend
+        const form = new FormData();
+        form.append("file", blob, `voice-${Date.now()}.webm`);
+        let url: string | null = null;
+        try {
+          const resp = await fetch(`${API_URL}/upload`, {
+            method: "POST",
+            headers: { ...(getAuthHeaders() as any) },
+            body: form,
+          });
+          if (resp.ok) {
+            const data = await resp.json();
+            url = data.url;
+          }
+        } catch {}
+        if (!url) return;
+        setAttachments(prev => [
+          ...prev,
+          {
+            url,
+            name: `voice-${Date.now()}.webm`,
+            type: "audio",
+            size: blob.size,
+          },
+        ]);
       };
       rec.start();
       mediaRecorderRef.current = rec;
@@ -479,6 +565,8 @@ const Chat: React.FC = () => {
   };
 
   // ----- Send message -----
+  const [sendSuccess, setSendSuccess] = useState(false);
+
   const sendMessage = async () => {
     if ((!messageInput.trim() && attachments.length === 0) || !selectedContact) return;
 
@@ -516,6 +604,8 @@ const Chat: React.FC = () => {
     // Send via socket if connected
     if (socketRef.current?.connected) {
       socketRef.current.emit("sendMessage", payload);
+      setSendSuccess(true);
+      setTimeout(() => setSendSuccess(false), 1200);
     } else {
       // REST fallback
       try {
@@ -542,6 +632,8 @@ const Chat: React.FC = () => {
             else copy.push(normalized);
             return copy;
           });
+          setSendSuccess(true);
+          setTimeout(() => setSendSuccess(false), 1200);
         } else {
           setMessages(prev => prev.map(m => (m._id === temp._id ? { ...m, __pending: false, __error: true } : m)));
         }
@@ -575,6 +667,19 @@ const Chat: React.FC = () => {
     socketRef.current?.emit("deleteMessage", { messageId: m._id }); // TODO server
     try {
       await fetch(`${API_URL}/chat/${m._id}`, { method: "DELETE", headers: { ...(getAuthHeaders() as any) } }); // TODO server route
+    } catch {}
+  };
+
+  // Show pin button only on hover
+  const handleTogglePin = async (id: string) => {
+    setPinnedIds(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [id, ...prev]));
+    // Save pin/unpin to backend for current user
+    try {
+      await fetch(`${API_URL}/chat/pin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(getAuthHeaders() as any) },
+        body: JSON.stringify({ messageId: id, userId: currentUserId, action: pinnedIds.includes(id) ? "unpin" : "pin" }),
+      });
     } catch {}
   };
 
@@ -628,6 +733,8 @@ const Chat: React.FC = () => {
     );
   };
 
+  const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null);
+
   return (
     <div className="min-h-screen relative p-2 md:p-6" dir="rtl">
       {/* Background */}
@@ -648,19 +755,7 @@ const Chat: React.FC = () => {
           {/* Left Pane */}
           <div className="w-full md:w-1/3 border-l border-gray-100">
             <div className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-600 p-3 text-white font-bold shadow-lg flex items-center gap-2">
-              <button
-                className={`px-3 py-1 rounded-full text-sm ${listTab === "direct" ? "bg-white/20" : "hover:bg-white/10"}`}
-                onClick={() => setListTab("direct")}
-              >
-                محادثات
-              </button>
-              <button
-                className={`px-3 py-1 rounded-full text-sm ${listTab === "group" ? "bg-white/20" : "hover:bg-white/10"}`}
-                onClick={() => setListTab("group")}
-              >
-                مجموعات
-              </button>
-              <div className="ml-auto text-xs opacity-90">{currentUser?.firstName}</div>
+              <div className="text-lg font-bold">{currentUser?.firstName}</div>
             </div>
 
             {/* Search */}
@@ -678,74 +773,42 @@ const Chat: React.FC = () => {
                 <div>جارٍ التحميل...</div>
               ) : (
                 <>
-                  {listTab === "direct" ? (
-                    <ul className="h-[500px] overflow-y-auto">
-                      {[...contacts]
-                        .sort((a, b) => `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`, "ar"))
-                        .map((c) => (
-                          <li
-                            key={c._id}
-                            className={`flex items-center justify-between p-3 rounded-xl cursor-pointer ${
-                              selectedContact?._id === c._id && !selectedContact?.isGroup
-                                ? "bg-white border-2 border-emerald-200"
-                                : "hover:bg-gray-50"
-                            }`}
-                            onClick={() => {
-                              setSelectedContact({ ...c, isGroup: false });
-                              setListTab("direct");
-                            }}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="relative w-10 h-10">
-                                <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold bg-gradient-to-br from-emerald-500 to-teal-600">
-                                  {(c.firstName || "").charAt(0)}
-                                </div>
-                                <span className="absolute bottom-1 left-1 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></span>
-                              </div>
-                              <div>
-                                <div className="font-medium">{c.firstName} {c.lastName}</div>
-                                <div className="text-xs text-gray-500">{c.group}</div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {c.unread ? (
-                                <span className="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">{c.unread}</span>
-                              ) : (
-                                <span className="w-2 h-2 bg-green-400 rounded-full" />
-                              )}
-                            </div>
-                          </li>
-                        ))}
-                    </ul>
-                  ) : (
-                    <ul className="h-[500px] overflow-y-auto">
-                      {groups.map((g) => (
+                  <ul className="h-[500px] overflow-y-auto">
+                    {[...contacts]
+                      .sort((a, b) => `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`, "ar"))
+                      .map((c) => (
                         <li
-                          key={g._id}
+                          key={c._id}
                           className={`flex items-center justify-between p-3 rounded-xl cursor-pointer ${
-                            selectedContact?._id === g._id && selectedContact?.isGroup
+                            selectedContact?._id === c._id
                               ? "bg-white border-2 border-emerald-200"
                               : "hover:bg-gray-50"
                           }`}
                           onClick={() => {
-                            setSelectedContact({ ...g, isGroup: true });
-                            setListTab("group");
+                            setSelectedContact({ ...c });
                           }}
                         >
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold bg-gradient-to-br from-teal-500 to-emerald-600">
-                              {g.group?.charAt(0) || "G"}
+                            <div className="relative w-10 h-10">
+                              <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold bg-gradient-to-br from-emerald-500 to-teal-600">
+                                {(c.firstName || "").charAt(0)}
+                              </div>
+                              {/* Online status indicator from DB only */}
+                              <span className={`absolute bottom-1 left-1 w-3 h-3 border-2 border-white rounded-full ${c.isOnline ? "bg-green-400" : "bg-red-400"}`}></span>
                             </div>
                             <div>
-                              <div className="font-medium">{g.firstName} {g.lastName}</div>
-                              <div className="text-xs text-gray-500">#{g._id}</div>
+                              <div className="font-medium">{c.firstName} {c.lastName}</div>
+                              <div className="text-xs text-gray-500">{c.group}</div>
                             </div>
                           </div>
-                          <span className="w-2 h-2 bg-green-400 rounded-full" />
+                          <div className="flex items-center gap-2">
+                            {c.unread ? (
+                              <span className="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">{c.unread}</span>
+                            ) : null}
+                          </div>
                         </li>
                       ))}
-                    </ul>
-                  )}
+                  </ul>
                 </>
               )}
             </div>
@@ -754,18 +817,21 @@ const Chat: React.FC = () => {
           {/* Conversation */}
           <div className="flex-1 flex flex-col">
             <div className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-600 p-4 text-white flex items-center gap-3 shadow-lg">
+              {/* Chat header: show online status and full name only if a contact is selected */}
               <div className="relative w-10 h-10">
                 <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
                   {(selectedContact?.firstName || " ").charAt(0)}
                 </div>
-                <span className={`absolute bottom-1 left-1 w-3 h-3 border-2 border-white rounded-full ${peerOnline ? "bg-green-400" : "bg-gray-300"}`}></span>
+                {selectedContact && (
+                  <span className={`absolute bottom-1 left-1 w-3 h-3 border-2 border-white rounded-full ${selectedContact.isOnline ? "bg-green-400" : "bg-red-400"}`}></span>
+                )}
               </div>
               <div className="flex-1">
                 <div className="font-bold">
                   {selectedContact ? `${selectedContact.firstName} ${selectedContact.lastName || ""}` : "المحادثات"}
                 </div>
                 <div className="text-xs">
-                  {selectedContact ? (peerTyping ? "يكتب الآن…" : peerOnline ? "متصل الآن" : "غير متصل") : "اختر محادثة لبدء التواصل"}
+                  {selectedContact ? (peerTyping ? "يكتب الآن…" : selectedContact.isOnline ? "متصل الآن" : "غير متصل") : "اختر محادثة لبدء التواصل"}
                 </div>
               </div>
               {selectedContact && (
@@ -840,16 +906,23 @@ const Chat: React.FC = () => {
                                 >
                                   {/* Actions */}
                                   <div className={`mb-1 flex items-center ${mine ? "justify-end" : "justify-start"} gap-2 opacity-80`}>
-                                    <button className="text-xs" onClick={() => toggleReaction(m._id, "👍")}>👍</button>
-                                    <button className="text-xs" onClick={() => toggleReaction(m._id, "❤️")}>❤️</button>
-                                    <button className="text-xs" onClick={() => toggleReaction(m._id, "😂")}>😂</button>
-                                    <button className="text-xs" onClick={() => togglePin(m._id)}>📌</button>
-                                    {mine && (
-                                      <>
-                                        <button className="text-xs underline" onClick={() => editMessage(m)}>تعديل</button>
-                                        <button className="text-xs underline" onClick={() => deleteMessage(m)}>حذف</button>
-                                      </>
+                                    <button
+                                      className="text-xs p-1 rounded-full hover:bg-gray-200"
+                                      onClick={() => setActionMenuOpen(m._id === actionMenuOpen ? null : m._id)}
+                                      title="خيارات"
+                                      style={{ minWidth: 24, minHeight: 24 }}
+                                    >
+                                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+                                    </button>
+                                    {actionMenuOpen === m._id && (
+                                      <div className="absolute mt-8 right-0 bg-white border rounded-xl shadow-lg z-50 min-w-[120px] flex flex-col text-right animate-fade-in">
+                                        <button className="px-4 py-2 hover:bg-gray-100 text-sm" onClick={() => { handleTogglePin(m._id); setActionMenuOpen(null); }}>📌 تثبيت</button>
+                                        {mine && <button className="px-4 py-2 hover:bg-gray-100 text-sm" onClick={() => { editMessage(m); setActionMenuOpen(null); }}>✏️ تعديل</button>}
+                                        {mine && <button className="px-4 py-2 hover:bg-gray-100 text-sm" onClick={() => { deleteMessage(m); setActionMenuOpen(null); }}>🗑️ حذف</button>}
+                                        <button className="px-4 py-2 hover:bg-gray-100 text-sm" onClick={() => setActionMenuOpen(null)}>إغلاق</button>
+                                      </div>
                                     )}
+                                    {/* ...existing emoji/reaction buttons... */}
                                   </div>
 
                                   {/* Body */}
@@ -939,17 +1012,10 @@ const Chat: React.FC = () => {
                 }}
                 className="flex gap-2 md:gap-3 items-end"
               >
-                <button
-                  type="button"
-                  onClick={() => setShowEmoji(v => !v)}
-                  className="px-3 py-3 rounded-2xl border hover:bg-gray-50"
-                  title="Emoji"
-                >
-                  😊
-                </button>
+                {/* ...existing code... */}
 
-                <label className="px-3 py-3 rounded-2xl border hover:bg-gray-50 cursor-pointer" title="إرفاق">
-                  📎
+                <label className="px-3 py-3 rounded-2xl border hover:bg-gray-50 cursor-pointer flex items-center justify-center" title="إرفاق" style={{ width: 44, height: 44, padding: 0 }}>
+                  <FiPaperclip size={24} color="#059669" />
                   <input
                     type="file"
                     className="hidden"
@@ -958,14 +1024,24 @@ const Chat: React.FC = () => {
                     accept="image/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
                   />
                 </label>
+                <button
+                  type="button"
+                  className="px-3 py-3 rounded-2xl border hover:bg-gray-50 flex items-center justify-center"
+                  title="فتح الكاميرا"
+                  onClick={openCamera}
+                  disabled={showCamera}
+                >
+                  <MdPhotoCamera size={28} color="#10B981" />
+                </button>
 
                 <button
                   type="button"
                   onClick={isRecording ? stopRecording : startRecording}
-                  className={`px-3 py-3 rounded-2xl border hover:bg-gray-50 ${isRecording ? "animate-pulse border-red-400" : ""}`}
+                  className={`px-3 py-3 rounded-2xl border hover:bg-gray-50 flex items-center justify-center ${isRecording ? "animate-pulse border-red-400" : ""}`}
                   title="رسالة صوتية"
+                  style={{ width: 44, height: 44, padding: 0 }}
                 >
-                  {isRecording ? "⏹️" : "🎙️"}
+                  <FiMic size={24} color={isRecording ? "#dc2626" : "#059669"} />
                 </button>
 
                 <input
@@ -975,43 +1051,58 @@ const Chat: React.FC = () => {
                   placeholder={selectedContact ? "اكتب رسالتك هنا..." : "اختر محادثة أولاً"}
                   disabled={!selectedContact}
                 />
+                {/* Camera modal */}
+                {showCamera && (
+                  <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl p-6 shadow-xl flex flex-col items-center gap-4 relative">
+                      <video ref={videoRef} autoPlay playsInline className="rounded-lg border w-80 h-60 bg-black" />
+                      <div className="flex gap-4 mt-2">
+                        <button type="button" className="px-4 py-2 bg-emerald-600 text-white rounded-lg" onClick={capturePhoto}>التقاط صورة</button>
+                        <button type="button" className="px-4 py-2 bg-gray-400 text-white rounded-lg" onClick={closeCamera}>إغلاق</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <button
                   type="submit"
-                  className="hidden md:inline-block bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 md:px-6 py-3 md:py-4 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 text-sm md:text-base disabled:opacity-50"
+                  className="hidden md:inline-block bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 md:px-6 py-3 md:py-4 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 text-sm md:text-base disabled:opacity-50 flex items-center gap-2"
                   disabled={!selectedContact || (!messageInput.trim() && attachments.length === 0) || uploading}
                 >
-                  {uploading ? "يرفع..." : "إرسال"}
+                  <span className="flex items-center gap-1">
+                    {uploading ? "يرفع..." : "إرسال"}
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                  </span>
                 </button>
 
                 {/* Floating send for mobile */}
                 <button
                   type="button"
-                  className="md:hidden fixed bottom-8 right-8 z-50 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-6 py-4 rounded-full font-bold shadow-xl hover:scale-105 transition-all duration-200 disabled:opacity-50"
+                  className="md:hidden fixed bottom-8 right-8 z-50 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-6 py-4 rounded-full font-bold shadow-xl hover:scale-105 transition-all duration-200 disabled:opacity-50 flex items-center gap-2"
                   onClick={sendMessage}
                   disabled={!selectedContact || (!messageInput.trim() && attachments.length === 0) || uploading}
                 >
-                  إرسال
+                  <span className="flex items-center gap-1">
+                    إرسال
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                  </span>
                 </button>
+
+                {/* Success indicator */}
+                {sendSuccess && (
+                  <div className="fixed bottom-24 right-8 z-50 bg-green-500 text-white px-6 py-3 rounded-full shadow-xl font-bold animate-bounce">
+                    تم الإرسال بنجاح
+                  </div>
+                )}
               </form>
 
-              {/* Emoji picker popover */}
-              {showEmoji && (
-                <div className="absolute bottom-24 right-4 bg-white border rounded-xl shadow-2xl p-2 z-50 w-72 h-80 overflow-hidden">
-                  <React.Suspense fallback={<div className="p-3 text-sm">جارٍ التحميل…</div>}>
-                    {/* Works if you installed "emoji-picker-react". Otherwise renders null gracefully. */}
-                    <EmojiPicker onEmojiClick={(_, e) => onPickEmoji(e)} />
-                  </React.Suspense>
-                </div>
-              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Optional user info modal */}
-      {/* <UserInfoModal user={selectedUserInfo as any} userRole={"student"} onClose={() => setSelectedUserInfo(null)} /> */}
-      <Footer />
+
+  {/* ...existing code... */}
     </div>
   );
 };

@@ -258,16 +258,25 @@ exports.getMe = async (req, res) => {
         });
       }
 
-      // إرسال بيانات الطالب
+      // إرسال جميع بيانات الطالب
       return res.status(200).json({
         success: true,
         user: {
           _id: student._id,
           studentId: student.studentId,
+          idNumber: student.idNumber,
           firstName: student.firstName,
           fatherName: student.fatherName,
+          grandFatherName: student.grandFatherName,
+          motherName: student.motherName,
           lastName: student.lastName,
+          birthDate: student.birthDate,
+          age: student.age,
+          gender: student.gender,
+          residence: student.residence,
+          teacher: student.teacher,
           group: student.group,
+          email: student.email,
           role: "student",
         },
       });
@@ -282,14 +291,24 @@ exports.getMe = async (req, res) => {
         });
       }
 
-      // إرسال بيانات المعلم
+      // إرسال جميع بيانات المعلم
       return res.status(200).json({
         success: true,
         user: {
           _id: teacher._id,
           teacherId: teacher.teacherId,
+          idNumber: teacher.idNumber,
           firstName: teacher.firstName,
+          fatherName: teacher.fatherName,
+          grandFatherName: teacher.grandFatherName,
+          motherName: teacher.motherName,
           lastName: teacher.lastName,
+          birthDate: teacher.birthDate,
+          age: teacher.age,
+          gender: teacher.gender,
+          residence: teacher.residence,
+          email: teacher.email,
+          phoneNumber: teacher.phoneNumber,
           groups: teacher.groups,
           role: teacher.role,
         },
