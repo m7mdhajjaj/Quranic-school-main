@@ -68,6 +68,15 @@ const studentSchema = new mongoose.Schema(
       type: String,
       required: [true, "اسم الحلقة مطلوب"],
     },
+    email: {
+      type: String,
+      required: false,
+      unique: false,
+    },
+    phoneNumber: {
+      type: String,
+      required: false,
+    },
   },
   { timestamps: true },
 );

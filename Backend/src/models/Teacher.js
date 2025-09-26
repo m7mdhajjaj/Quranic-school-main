@@ -48,6 +48,11 @@ const teacherSchema = new mongoose.Schema(
       type: String,
       required: false, // اختياري للمعلمين الحاليين
     },
+    age: {
+      type: Number,
+      required: false, // العمر اختياري للمعلمين الحاليين
+      min: [0, "العمر يجب أن يكون رقماً موجباً"],
+    },
     groups: {
       type: [String],
       required: [true, "يجب تحديد الحلقات التي يدرسها المعلم"],

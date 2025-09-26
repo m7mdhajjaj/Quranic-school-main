@@ -8,6 +8,10 @@ router.get("/", studentController.getStudents);
 // Get students by group
 router.get("/group/:group", studentController.getStudentsByGroup);
 
+
+// Get single student by ID (for profile)
+router.get("/:id", studentController.getStudentById);
+
 // Add new student
 router.post("/", studentController.createStudent);
 
