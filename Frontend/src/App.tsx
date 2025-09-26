@@ -1,6 +1,7 @@
 import "./App.css";
 import Header from "./components/Header";
 import Home from "./pages/Home";
+import Profile from "./pages/Profile";
 import Login from "./pages/Login";
 import Goals from "./pages/Goals";
 import News from "./pages/news";
@@ -37,7 +38,7 @@ function AppContent() {
   return (
     <>
       {!isLoginPage && <Header />}
-      <Routes>
+  <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/goals" element={<Goals />} />
@@ -57,7 +58,8 @@ function AppContent() {
         <Route path="/prayer-times" element={<PrayerTimes />} />
         <Route path="/quran" element={<QuranPage />} />
         <Route path="/quran-audio" element={<QuranAudio />} />
-        <Route path="/change-password" element={<ChangePass />} />
+  <Route path="/change-password" element={<ChangePass />} />
+  <Route path="/profile" element={<Profile />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {!isLoginPage && !isChatPage && !isQuranPage && <Footer />}
