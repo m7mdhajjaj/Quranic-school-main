@@ -3,7 +3,7 @@ const Student = require("../models/Student");
 const Teacher = require("../models/Teacher");
 
 // JWT Secret - في الحالة المثالية يجب وضع هذا في ملف .env
-const JWT_SECRET = "quranic-school-secret-key";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // وسيط للتحقق من المصادقة
 exports.protect = async (req, res, next) => {

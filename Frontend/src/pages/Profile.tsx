@@ -1,3 +1,4 @@
+type User = Student | Teacher;
 
 import React, { useEffect, useState } from 'react';
 import { Edit, Phone, Mail, Calendar, MapPin, Users, BookOpen, Camera, Lock, Save, X } from 'lucide-react';
@@ -7,26 +8,46 @@ import 'react-toastify/dist/ReactToastify.css';
 // ========================
 // Types aligned to backend
 // ========================
-interface User {
+
+interface Student {
   _id: string;
-  studentId?: number;
-  teacherId?: number;
-  idNumber?: string;
+  studentId: number;
+  idNumber: string;
   firstName: string;
   fatherName?: string;
   grandFatherName?: string;
   motherName?: string;
   lastName: string;
-  birthDate?: string; // ISO string
+  birthDate?: string;
   gender?: string;
   residence?: string;
   teacher?: string;
   group?: string;
   email?: string;
   phoneNumber?: string;
+  role?: 'student';
+  avatar?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+interface Teacher {
+  _id: string;
+  teacherId: number;
+  idNumber?: string;
+  firstName: string;
+  fatherName?: string;
+  grandFatherName?: string;
+  motherName?: string;
+  lastName: string;
+  birthDate?: string;
+  gender?: string;
+  residence?: string;
   groups?: string[];
-  role?: string; // 'student' | 'teacher' | 'admin'
-  avatar?: string; // filename or URL
+  email?: string;
+  phoneNumber?: string;
+  role?: 'teacher' | 'admin';
+  avatar?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -134,7 +155,7 @@ const Profile: React.FC = () => {
 
         const tryOrder: Endpoint[] = hinted === 'students' ? ['students', 'teachers'] : ['teachers', 'students'];
 
-        let fetched: User | null = null;
+  let fetched: User | null = null;
         let usedEndpoint: Endpoint | undefined;
         let lastErr: any = null;
 
@@ -157,7 +178,7 @@ const Profile: React.FC = () => {
         }
 
         const effectiveRole = resolveRole(stored, fetched, usedEndpoint);
-        const finalUser = { ...fetched, role: effectiveRole } as User;
+  const finalUser = { ...fetched, role: effectiveRole } as User;
 
         setUser(finalUser);
         setEditedUser(finalUser);
@@ -187,8 +208,20 @@ const Profile: React.FC = () => {
   // ------------------------
   // Input handlers
   // ------------------------
-  const handleInputChange = (field: keyof User, value: string | number) => {
-    setEditedUser((prev) => (prev ? { ...prev, [field]: value } : prev));
+  const handleInputChange = (field: string, value: string | number) => {
+    setEditedUser((prev) => {
+      if (!prev) return prev;
+      if (field === 'group' && 'group' in prev) {
+        return { ...prev, group: value as string } as User;
+      }
+      if (field === 'teacher' && 'teacher' in prev) {
+        return { ...prev, teacher: value as string } as User;
+      }
+      if (field === 'groups' && 'groups' in prev) {
+        return { ...prev, groups: value as string[] } as User;
+      }
+      return { ...prev, [field]: value };
+    });
   };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -277,12 +310,12 @@ const Profile: React.FC = () => {
         birthDate: editedUser.birthDate ?? '',
         gender: editedUser.gender ?? '',
         residence: editedUser.residence ?? '',
-        teacher: editedUser.teacher ?? '',
-        group: editedUser.group ?? '',
+  teacher: 'teacher' in editedUser ? editedUser.teacher ?? '' : '',
+  group: 'group' in editedUser ? editedUser.group ?? '' : '',
         email: editedUser.email ?? '',
         phoneNumber: editedUser.phoneNumber ?? '',
         avatar: editedUser.avatar ?? undefined,
-      } as Partial<User>;
+  } as Partial<User>;
 
       const resp = await fetch(`${API_URL}/${endpoint}/${user._id}`, {
         method: 'PUT',
@@ -299,7 +332,7 @@ const Profile: React.FC = () => {
       }
 
       const json = await resp.json().catch(() => ({} as any));
-      const updated: User = json?.data ?? json;
+  const updated: User = json?.data ?? json;
 
       setUser(updated);
       setEditedUser(updated);
@@ -626,13 +659,18 @@ const Profile: React.FC = () => {
                   {isEditing ? (
                     <input
                       type="text"
-                      value={displayUser.group || ''}
-                      onChange={(e) => handleInputChange('group', e.target.value)}
+                      value={('group' in displayUser && displayUser.group) ? displayUser.group : ''}
+                      onChange={(e) => {
+                        if ('group' in displayUser) handleInputChange('group', e.target.value);
+                      }}
                       className="w-full mt-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                       placeholder="اسم الحلقة"
                     />
                   ) : (
-                    <p className="text-sm text-slate-600">{displayUser.group || displayUser.groups?.join(', ') || 'غير محدد'}</p>
+                    <p className="text-sm text-slate-600">
+                      {'group' in displayUser && displayUser.group ? displayUser.group :
+                        'groups' in displayUser && displayUser.groups ? displayUser.groups.join(', ') : 'غير محدد'}
+                    </p>
                   )}
                 </div>
               )}
@@ -647,13 +685,15 @@ const Profile: React.FC = () => {
                   {isEditing ? (
                     <input
                       type="text"
-                      value={displayUser.teacher || ''}
-                      onChange={(e) => handleInputChange('teacher', e.target.value)}
+                      value={('teacher' in displayUser && displayUser.teacher) ? displayUser.teacher : ''}
+                      onChange={(e) => {
+                        if ('teacher' in displayUser) handleInputChange('teacher', e.target.value);
+                      }}
                       className="w-full mt-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                       placeholder="اسم المعلم"
                     />
                   ) : (
-                    <p className="text-sm text-slate-600">{displayUser.teacher || 'غير محدد'}</p>
+                    <p className="text-sm text-slate-600">{'teacher' in displayUser && displayUser.teacher ? displayUser.teacher : 'غير محدد'}</p>
                   )}
                 </div>
               )}
