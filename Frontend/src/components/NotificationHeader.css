@@ -68,7 +68,7 @@
 .notification-dropdown {
   position: absolute;
   top: 100%;
-  right: -50px; /* تحريك الإشعار إلى اليمين بشكل أساسي */
+  left: -50px; /* تحريك الإشعار إلى اليمين بدلاً من right */
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
@@ -456,7 +456,7 @@
   }
 }
 
-/* تأثير اللودنج */
+/* تأثير اللودينج */
 .notification-loading {
   padding: 20px;
   text-align: center;
@@ -536,4 +536,81 @@
 .quran-reminder .notification-icon::before {
   content: "📖";
   font-size: 20px;
+}
+
+/* تحسينات إضافية للعرض على الشاشات الكبيرة */
+@media (min-width: 1024px) {
+  .notification-dropdown {
+    width: 450px;
+    max-height: 600px;
+  }
+  
+  .notification-header h3 {
+    font-size: 20px;
+  }
+  
+  .notification-item {
+    padding: 18px 24px;
+  }
+  
+  .notification-title {
+    font-size: 15px;
+  }
+  
+  .notification-message {
+    font-size: 14px;
+  }
+}
+
+/* تحسين العرض على الشاشات الصغيرة جداً */
+@media (max-width: 480px) {
+  .notification-dropdown {
+    left: 5px !important;
+    right: 5px !important;
+  }
+  
+  .notification-header {
+    padding: 14px 16px;
+  }
+  
+  .notification-header h3 {
+    font-size: 16px;
+  }
+}
+
+/* تحسين التباين للوضع المظلم (إذا تم تطبيقه لاحقاً) */
+@media (prefers-color-scheme: dark) {
+  .notification-dropdown {
+    background: #1f2937;
+    border-color: #374151;
+  }
+  
+  .notification-header {
+    background: linear-gradient(135deg, #1f2937, #111827);
+    border-color: #374151;
+  }
+  
+  .notification-header h3 {
+    color: #f9fafb;
+  }
+  
+  .notification-item {
+    border-color: #374151;
+  }
+  
+  .notification-item:hover {
+    background: linear-gradient(135deg, #374151, #4b5563);
+  }
+  
+  .notification-title {
+    color: #f9fafb;
+  }
+  
+  .notification-message {
+    color: #d1d5db;
+  }
+  
+  .notification-time {
+    color: #9ca3af;
+  }
 }
