@@ -50,6 +50,21 @@ const Chat: React.FC = () => {
     } catch (e) {
       // ignore
     }
+    // Check if coming from notification
+    const chatNotifRaw = localStorage.getItem("chatNotification");
+    if (chatNotifRaw) {
+      try {
+        const chatNotif = JSON.parse(chatNotifRaw);
+        setSelectedContact({
+          _id: chatNotif.recipientId || chatNotif.senderId,
+          firstName: "محادثة تلقائية",
+          lastName: "",
+          group: "",
+          unread: 0,
+        });
+        localStorage.removeItem("chatNotification");
+      } catch (e) {}
+    }
   }, []);
 
   useEffect(() => {
@@ -599,13 +614,7 @@ const Chat: React.FC = () => {
               {selectedContact ? (
                 <div className="h-full">
                   <div className="space-y-4 min-h-full flex flex-col justify-end">
-                    {messages.length === 0 ? (
-                      <>
-                        <div className="max-w-xs md:max-w-md bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 p-3 md:p-4 rounded-2xl shadow-lg">
-                          مرحباً، يمكنك الآن مراسلة المعلم.
-                        </div>
-                      </>
-                    ) : (
+                    {messages.length === 0 ? null : (
                       messages.map((m) => (
                         <div
                           key={m._id}
