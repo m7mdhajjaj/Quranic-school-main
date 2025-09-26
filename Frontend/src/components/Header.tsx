@@ -370,6 +370,29 @@ const Header = () => {
                     <button
                       onClick={() => {
                         setProfileMenuOpen(false);
+                        navigate('/profile');
+                      }}
+                      className="w-full text-right py-3 px-5 text-gray-700 hover:bg-emerald-50/80 hover:text-emerald-600 transition-colors flex items-center gap-3"
+                    >
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 4a8 8 0 100 16 8 8 0 000-16zm0 4a4 4 0 110 8 4 4 0 010-8z"
+                        />
+                      </svg>
+                      صفحة شخصية
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setProfileMenuOpen(false);
                         navigate('/change-password');
                       }}
                       className="w-full text-right py-3 px-5 text-gray-700 hover:bg-emerald-50/80 hover:text-emerald-600 transition-colors flex items-center gap-3"
