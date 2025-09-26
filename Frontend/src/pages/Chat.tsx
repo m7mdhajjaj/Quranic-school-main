@@ -31,6 +31,7 @@ const Chat: React.FC = () => {
     Array<{ _id: string; sender: string; text: string; createdAt: string }>
   >([]);
   const [messageInput, setMessageInput] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const socketRef = useRef<Socket | null>(null);
 
@@ -470,12 +471,24 @@ const Chat: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-slate-100 p-2 md:p-6"
+      className="min-h-screen relative p-2 md:p-6"
       dir="rtl">
-      <div className="max-w-6xl mx-auto bg-white rounded-xl md:rounded-2xl shadow-2xl overflow-hidden backdrop-blur-sm border border-white/20">
+      {/* SVG background pattern */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" viewBox="0 0 800 600">
+        <defs>
+          <radialGradient id="bgGrad" cx="50%" cy="50%" r="80%">
+            <stop offset="0%" stop-color="#d1fae5" stop-opacity="0.5" />
+            <stop offset="100%" stop-color="#fff" stop-opacity="0.8" />
+          </radialGradient>
+        </defs>
+        <rect width="800" height="600" fill="url(#bgGrad)" />
+        <circle cx="700" cy="100" r="80" fill="#10B981" fill-opacity="0.08" />
+        <circle cx="100" cy="500" r="60" fill="#059669" fill-opacity="0.07" />
+      </svg>
+      <div className="max-w-6xl mx-auto bg-white rounded-xl md:rounded-2xl shadow-2xl overflow-hidden backdrop-blur-sm border border-white/20 relative z-10">
         <div className="flex flex-col md:flex-row min-h-[80vh]">
           <div className="w-full md:w-1/3 border-l border-gray-100">
-            <div className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-600 p-4 text-white font-bold shadow-lg">
+            <div className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-600 p-4 text-white font-bold shadow-lg flex items-center gap-2">
               قائمة المحادثات
             </div>
             <div className="p-3 md:p-4 max-h-[50vh] md:max-h-none overflow-y-auto chat-scroll">
@@ -503,13 +516,13 @@ const Chat: React.FC = () => {
                           }`}
                           onClick={() => setSelectedContact(c)}>
                           <div className="flex items-center gap-3">
-                            <div
-                              className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold"
-                              style={{
-                                background:
-                                  "linear-gradient(135deg,#10B981,#059669)",
-                              }}>
-                              {(c.firstName || "").charAt(0)}
+                            <div className="relative w-10 h-10">
+                              <div
+                                className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold bg-gradient-to-br from-emerald-500 to-teal-600">
+                                {(c.firstName || "").charAt(0)}
+                              </div>
+                              {/* Online status dot */}
+                              <span className="absolute bottom-1 left-1 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></span>
                             </div>
                             <div>
                               <div className="font-medium">
@@ -551,11 +564,7 @@ const Chat: React.FC = () => {
                           onClick={() => setSelectedContact(c)}>
                           <div className="flex items-center gap-3">
                             <div
-                              className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold"
-                              style={{
-                                background:
-                                  "linear-gradient(135deg,#10B981,#059669)",
-                              }}>
+                              className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold bg-gradient-to-br from-emerald-500 to-teal-600">
                               {(c.firstName || "").charAt(0)}
                             </div>
                             <div>
@@ -586,8 +595,12 @@ const Chat: React.FC = () => {
 
           <div className="flex-1 flex flex-col">
             <div className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-600 p-4 md:p-4 text-white flex items-center gap-3 shadow-lg">
-              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                {(selectedContact?.firstName || " ").charAt(0)}
+              <div className="relative w-10 h-10">
+                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                  {(selectedContact?.firstName || " ").charAt(0)}
+                </div>
+                {/* Online status dot */}
+                <span className="absolute bottom-1 left-1 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></span>
               </div>
               <div className="flex-1">
                 <div className="font-bold">
@@ -614,28 +627,57 @@ const Chat: React.FC = () => {
               {selectedContact ? (
                 <div className="h-full">
                   <div className="space-y-4 min-h-full flex flex-col justify-end">
+                    {/* Date separator logic */}
                     {messages.length === 0 ? null : (
-                      messages.map((m) => (
-                        <div
-                          key={m._id}
-                          className={`flex ${
-                            m.sender === (currentUser?._id || "me")
-                              ? "justify-end"
-                              : "justify-start"
-                          }`}>
-                          <div
-                            className={`max-w-xs md:max-w-md lg:max-w-lg p-3 md:p-4 rounded-2xl shadow-lg ${
-                              m.sender === (currentUser?._id || "me")
-                                ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white"
-                                : "bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800"
-                            }`}>
-                            <p>{m.text}</p>
-                            <div className="text-xs mt-1 text-gray-500">
-                              {new Date(m.createdAt).toLocaleTimeString()}
-                            </div>
-                          </div>
+                      (() =>
+                         {
+                        let lastDate: string | null = null;
+                        return messages.map((m) => {
+                          const msgDate = new Date(m.createdAt).toLocaleDateString();
+                          const showDate = lastDate !== msgDate;
+                          lastDate = msgDate;
+                          return (
+                            <React.Fragment key={m._id}>
+                              {showDate && (
+                                <div className="flex justify-center my-2">
+                                  <span className="bg-white text-gray-500 px-4 py-1 rounded-full shadow text-xs border border-gray-100">
+                                    {msgDate}
+                                  </span>
+                                </div>
+                              )}
+                              <div
+                                className={`flex animate-fade-in ${
+                                  m.sender === (currentUser?._id || "me")
+                                    ? "justify-end"
+                                    : "justify-start"
+                                }`}
+                              >
+                                <div
+                                  className={`max-w-xs md:max-w-md lg:max-w-lg p-3 md:p-4 rounded-2xl shadow-lg transition-all duration-300 transform animate-slide-in ${
+                                    m.sender === (currentUser?._id || "me")
+                                      ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white"
+                                      : "bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800"
+                                  }`}
+                                >
+                                  <p className="whitespace-pre-line break-words text-base">{m.text}</p>
+                                  <div className="text-xs mt-1 text-gray-500 text-right">
+                                    {new Date(m.createdAt).toLocaleTimeString()}
+                                  </div>
+                                </div>
+                              </div>
+                            </React.Fragment>
+                          );
+                        });
+                      })()
+                    )}
+                    {/* Typing indicator */}
+                    {isTyping && (
+                      <div className="flex justify-start animate-fade-in">
+                        <div className="max-w-xs px-4 py-2 rounded-2xl shadow bg-gradient-to-r from-gray-100 to-green-100 text-gray-800 flex items-center gap-2">
+                          <span className="animate-bounce">...</span>
+                          <span className="text-xs text-gray-400">يكتب الآن</span>
                         </div>
-                      ))
+                      </div>
                     )}
                     <div ref={messagesEndRef} />
                   </div>
@@ -666,7 +708,7 @@ const Chat: React.FC = () => {
               )}
             </div>
 
-            <div className="p-3 md:p-4 border-t border-gray-200 bg-white shadow-lg">
+            <div className="p-3 md:p-4 border-t border-gray-200 bg-white shadow-lg relative">
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -681,10 +723,21 @@ const Chat: React.FC = () => {
                 />
                 <button
                   type="submit"
-                  className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 md:px-6 py-3 md:py-4 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 text-sm md:text-base">
+                  className="hidden md:inline-block bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 md:px-6 py-3 md:py-4 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 text-sm md:text-base"
+                  disabled={!messageInput.trim()}
+                >
                   إرسال
                 </button>
               </form>
+              {/* Floating send button for mobile */}
+              <button
+                type="button"
+                className="md:hidden fixed bottom-8 right-8 z-50 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-6 py-4 rounded-full font-bold shadow-xl hover:scale-105 transition-all duration-200"
+                onClick={sendMessage}
+                disabled={!messageInput.trim()}
+              >
+                إرسال
+              </button>
             </div>
           </div>
         </div>
