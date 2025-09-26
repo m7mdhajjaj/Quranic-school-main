@@ -127,32 +127,7 @@ const Home = () => {
     <div
       className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100"
       dir="rtl">
-      <div className="w-full flex justify-center items-center mt-8 mb-6">
-        {currentUser && (
-          <div className="bg-white/80 rounded-2xl shadow-lg px-8 py-6 text-center border border-emerald-100 max-w-xl mx-auto">
-            <h2 className="text-2xl md:text-3xl font-bold text-emerald-700 mb-2">
-              {currentUser.role === "student"
-                ? `أهلاً وسهلاً بك في أكاديمية المهاجرين، الطالب العزيز ${
-                    currentUser.firstName || ""
-                  } ${currentUser.fatherName || ""} ${
-                    currentUser.lastName || ""
-                  }`.trim()
-                : `أهلاً وسهلاً بك في أكاديمية المهاجرين، المعلم الفاضل ${
-                    currentUser.firstName || currentUser.name || ""
-                  } ${currentUser.lastName || ""}`.trim()}
-            </h2>
-            <p className="text-lg text-gray-700 mb-1">
-              نتمنى لك رحلة تعليمية مليئة بالنجاح والتميز في رحاب القرآن الكريم
-              وعلومه.
-            </p>
-            {currentUser.role === "student" && currentUser.group && (
-              <span className="block text-md text-gray-500 mt-2">
-                المجموعة: {currentUser.group}
-              </span>
-            )}
-          </div>
-        )}
-      </div>
+      {/* Removed personalized greeting from above hero section */}
       <div className="container mx-auto py-12 px-4">
         {/* Hero Section */}{" "}
         <div className="flex flex-col-reverse md:flex-row items-center justify-between bg-white rounded-2xl overflow-hidden shadow-lg">
@@ -161,33 +136,43 @@ const Home = () => {
             className="w-full md:w-1/2 p-8 md:p-12"
             data-aos="fade-right"
             data-aos-delay="200">
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-800">
-              <div className="mb-2" data-aos="fade-up" data-aos-delay="300">
-                أهلاً بك في أكاديمية
+            {/* Personalized Greeting inside hero section */}
+            {currentUser && (
+              <div className="text-center mb-8">
+                <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-emerald-700 mb-4 leading-snug">
+                  {currentUser.role === "student"
+                    ? `أهلاً وسهلاً بك في أكاديمية المهاجرين، الطالب العزيز ${
+                        currentUser.firstName || ""
+                      } ${currentUser.fatherName || ""} ${
+                        currentUser.lastName || ""
+                      }`.trim()
+                    : `أهلاً وسهلاً بك في أكاديمية المهاجرين، المعلم الفاضل ${
+                        currentUser.firstName || currentUser.name || ""
+                      } ${currentUser.lastName || ""}`.trim()}
+                </h2>
+                <div className="mx-auto max-w-2xl">
+                  <p className="text-xl md:text-2xl text-gray-700 mb-3 font-medium">
+                    يسرنا انضمامك إلى أكاديمية المهاجرين، حيث نؤمن أنك جزء من
+                    رحلة التميز في رحاب القرآن الكريم.
+                  </p>
+                  <p className="text-lg text-gray-600 mb-2">
+                    نتمنى لك رحلة تعليمية ملهمة ومليئة بالنجاح، وأن تحقق أهدافك
+                    وتصل إلى أعلى درجات التفوق في حفظ وتلاوة وفهم كتاب الله عز
+                    وجل.
+                  </p>
+                  {currentUser.role === "student" && currentUser.group && (
+                    <span className="block text-md text-gray-500 mt-2">
+                      المجموعة: {currentUser.group}
+                    </span>
+                  )}
+                </div>
               </div>
-              <div
-                className="text-emerald-700 mb-3"
-                data-aos="fade-up"
-                data-aos-delay="500">
-                مدرسة المهاجرين
-              </div>
-              <div data-aos="fade-up" data-aos-delay="700">
-                لتعليم القرآن الكريم وعلومه
-              </div>
-            </h1>
-
-            <p
-              className="text-slate-600 mb-8 mt-6 text-lg"
-              data-aos="fade-up"
-              data-aos-delay="900">
-              حيث التميّز في تعليم القرآن الكريم بمنهجية متقنة وأساليب حديثة
-            </p>
-
+            )}
             <button
               onClick={() => {
                 navigate("/soon");
               }}
-              className="bg-emerald-600 text-white px-8 py-3 rounded-full hover:bg-emerald-700 transition duration-300 shadow-md"
+              className="bg-emerald-600 text-white px-8 py-3 rounded-full hover:bg-emerald-700 transition duration-300 shadow-md mx-auto block"
               data-aos="zoom-in"
               data-aos-delay="1100">
               ابدأ رحلتك التعليمية
