@@ -4,7 +4,9 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
 // JWT Secret - في الحالة المثالية يجب وضع هذا في ملف .env
-const JWT_SECRET = "quranic-school-secret-key";
+const JWT_SECRET = process.env.JWT_SECRET;
+
+const { body, validationResult } = require('express-validator');
 
 // تسجيل الدخول بواسطة رقم الطالب ورقم الهوية
 exports.login = async (req, res) => {
@@ -23,6 +25,7 @@ exports.login = async (req, res) => {
 
     // Otherwise, proceed with student login
     // التحقق من إدخال رقم الطالب ورقم الهوية
+    // (already validated above)
     if (!studentId || !idNumber) {
       return res.status(400).json({
         success: false,
@@ -99,6 +102,7 @@ exports.login = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "حدث خطأ أثناء تسجيل الدخول",
+      error: process.env.NODE_ENV === "production" ? undefined : error.message
     });
   }
 };

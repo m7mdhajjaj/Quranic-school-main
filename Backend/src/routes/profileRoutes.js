@@ -12,20 +12,12 @@ const jwt = require('jsonwebtoken');
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
-
   if (!token) {
-    return res.status(401).json({ 
-      success: false, 
-      message: 'رمز الوصول مطلوب' 
-    });
+    return res.status(401).json({ success: false, message: 'رمز الوصول مطلوب' });
   }
-
-  jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key', (err, user) => {
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'رمز وصول غير صحيح' 
-      });
+      return res.status(403).json({ success: false, message: 'رمز وصول غير صحيح', error: process.env.NODE_ENV === "production" ? undefined : err.message });
     }
     req.user = user;
     next();
@@ -64,7 +56,7 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
+    fileSize: 2 * 1024 * 1024 // 2MB limit for avatars
   }
 });
 

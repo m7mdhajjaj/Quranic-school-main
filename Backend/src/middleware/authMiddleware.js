@@ -127,9 +127,10 @@ exports.adminProtect = async (req, res, next) => {
     });
   } catch (error) {
     console.error("Admin protect middleware error:", error);
-    res.status(401).json({
-      success: false,
-      message: "خطأ في التحقق من صلاحيات المسؤول",
-    });
+      return res.status(401).json({
+        success: false,
+        message: "رمز المصادقة غير صالح أو منتهي الصلاحية",
+        error: process.env.NODE_ENV === "production" ? undefined : error.message
+      });
   }
 };
