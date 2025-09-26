@@ -145,12 +145,22 @@ exports.createTeacher = async (req, res) => {
       });
     }
 
+
     // Check if teacher with same email already exists
     const existingTeacher = await Teacher.findOne({ email });
     if (existingTeacher) {
       return res.status(400).json({
         success: false,
         message: "البريد الإلكتروني مستخدم بالفعل",
+      });
+    }
+
+    // Check if teacher with same phone number already exists
+    const existingPhone = await Teacher.findOne({ phoneNumber });
+    if (existingPhone) {
+      return res.status(400).json({
+        success: false,
+        message: "رقم الهاتف مستخدم بالفعل",
       });
     }
 
@@ -244,6 +254,7 @@ exports.updateTeacher = async (req, res) => {
       });
     }
 
+
     // If email is being updated, check for duplicates
     if (updates.email && updates.email !== teacher.email) {
       const existingTeacher = await Teacher.findOne({ email: updates.email });
@@ -251,6 +262,17 @@ exports.updateTeacher = async (req, res) => {
         return res.status(400).json({
           success: false,
           message: "البريد الإلكتروني مستخدم بالفعل",
+        });
+      }
+    }
+
+    // If phoneNumber is being updated, check for duplicates
+    if (updates.phoneNumber && updates.phoneNumber !== teacher.phoneNumber) {
+      const existingPhone = await Teacher.findOne({ phoneNumber: updates.phoneNumber });
+      if (existingPhone) {
+        return res.status(400).json({
+          success: false,
+          message: "رقم الهاتف مستخدم بالفعل",
         });
       }
     }

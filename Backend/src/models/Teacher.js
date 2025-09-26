@@ -35,6 +35,8 @@ const teacherSchema = new mongoose.Schema(
     phoneNumber: {
       type: String,
       required: [true, "رقم الهاتف مطلوب"],
+      match: [/^09\d{8}$/, "رقم الهاتف يجب أن يبدأ بـ 09 ويتكون من 10 أرقام"],
+      unique: true,
     },
     idNumber: {
       type: String,

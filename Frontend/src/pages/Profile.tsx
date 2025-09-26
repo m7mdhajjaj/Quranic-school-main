@@ -1,8 +1,13 @@
-  // (REMOVED: will move inside component)
+
+
 import React, { useEffect, useState } from 'react';
 import { Edit, Phone, Mail, Calendar, MapPin, Users, BookOpen, Camera, Lock, Save, X } from 'lucide-react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-// Types based on your database schema
+// ========================
+// Types aligned to backend
+// ========================
 interface User {
   _id: string;
   studentId?: number;
@@ -13,7 +18,7 @@ interface User {
   grandFatherName?: string;
   motherName?: string;
   lastName: string;
-  birthDate?: string;
+  birthDate?: string; // ISO string
   gender?: string;
   residence?: string;
   teacher?: string;
@@ -21,166 +26,254 @@ interface User {
   email?: string;
   phoneNumber?: string;
   groups?: string[];
-  role?: string;
-  avatar?: string;
+  role?: string; // 'student' | 'teacher' | 'admin'
+  avatar?: string; // filename or URL
   createdAt?: string;
   updatedAt?: string;
 }
-  // Helper to format date
-  function formatDate(dateString?: string) {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
+
+const API_URL = 'http://localhost:5005/api';
+
+// ========================
+// Helpers
+// ========================
+function formatDate(dateString?: string) {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+function calculateAge(birthDate?: string) {
+  if (!birthDate) return '';
+  const today = new Date();
+  const birth = new Date(birthDate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
+}
+
+async function fetchJson(url: string, token: string) {
+  const res = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    const err: any = new Error(`${res.status} ${res.statusText} :: ${text}`);
+    err.status = res.status;
+    throw err;
   }
+  const json = await res.json().catch(() => ({}));
+  return json?.data ?? json;
+}
 
-  // Helper to calculate age from birthDate
-  function calculateAge(birthDate?: string) {
-    if (!birthDate) return '';
-    const today = new Date();
-    const birth = new Date(birthDate);
-    let age = today.getFullYear() - birth.getFullYear();
-    const m = today.getMonth() - birth.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
-    return age;
-  }
-
-const API_URL = "http://localhost:5005/api";
-
+// ========================
+// Component
+// ========================
 const Profile: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editedUser, setEditedUser] = useState<User | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string>("");
+  const [avatarPreview, setAvatarPreview] = useState<string>('');
   const [saving, setSaving] = useState(false);
 
-  // Fetch user data on component mount
+  // ------------------------
+  // Load user on mount
+  // ------------------------
   useEffect(() => {
-    fetchUserData();
+    const run = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const userJson = localStorage.getItem('user');
+        if (!token || !userJson) {
+          window.location.href = '/login';
+          return;
+        }
+        const stored = JSON.parse(userJson);
+        const userId: string = stored._id;
+
+        // pick the likely endpoint then fallback
+        const hinted = stored.studentId
+          ? 'students'
+          : stored.teacherId
+          ? 'teachers'
+          : stored.role === 'teacher'
+          ? 'teachers'
+          : 'students';
+
+        const tryOrder = hinted === 'students' ? ['students', 'teachers'] : ['teachers', 'students'];
+
+        let fetched: User | null = null;
+        let lastErr: any = null;
+        for (const ep of tryOrder) {
+          try {
+            const u = await fetchJson(`${API_URL}/${ep}/${userId}`, token);
+            fetched = { ...u, role: u.role || (ep === 'teachers' ? 'teacher' : 'student') };
+            break;
+          } catch (e: any) {
+            lastErr = e;
+            if (e?.status !== 404) break;
+          }
+        }
+
+        if (!fetched) {
+          console.error('Failed to fetch user:', lastErr);
+          return;
+        }
+
+        setUser(fetched);
+        setEditedUser(fetched);
+        setAvatarPreview(
+          fetched.avatar
+            ? fetched.avatar.startsWith('http')
+              ? fetched.avatar
+              : `${API_URL}/uploads/${fetched.avatar}`
+            : ''
+        );
+      } catch (e) {
+        console.error('Error fetching user data:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    run();
   }, []);
 
-  const fetchUserData = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const userJson = localStorage.getItem('user');
-      
-      if (!token || !userJson) {
-        window.location.href = '/login';
-        return;
-      }
-
-      const userData = JSON.parse(userJson);
-      const userId = userData._id;
-      const userType = userData.role || 'student';
-
-      // Determine the correct endpoint based on user type
-      const endpoint = userType === 'student' ? 'students' : 'teachers';
-      
-      const response = await fetch(`${API_URL}/${endpoint}/${userId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        const fetchedUser = result.data || result;
-        setUser(fetchedUser);
-        setEditedUser(fetchedUser);
-        
-        // Set avatar preview if exists
-        if (fetchedUser.avatar) {
-          setAvatarPreview(`${API_URL}/uploads/${fetchedUser.avatar}`);
-        }
-      } else {
-        console.error('Failed to fetch user data');
-      }
-    } catch (error) {
-      console.error('Error fetching user data:', error);
-    } finally {
-      setLoading(false);
-    }
+  // ------------------------
+  // Input handlers
+  // ------------------------
+  const handleInputChange = (field: keyof User, value: string | number) => {
+    setEditedUser((prev) => (prev ? { ...prev, [field]: value } : prev));
   };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setAvatarFile(file);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setAvatarPreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+    setAvatarFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setAvatarPreview(String(ev.target?.result || ''));
+    reader.readAsDataURL(file);
   };
 
-  const handleInputChange = (field: keyof User, value: string | number) => {
-    if (editedUser) {
-      setEditedUser({
-        ...editedUser,
-        [field]: value
-      });
-    }
-  };
+  // ------------------------
+  // Birthdate lock: disable if a full month hasn’t passed since last update
+  // ------------------------
+  function canEditBirthDate(): boolean {
+    const u = isEditing ? editedUser : user;
+    if (!u?.birthDate || !u?.updatedAt) return true; // allow first-time / no updatedAt cases
 
+    const lastEdit = new Date(u.updatedAt);
+    const lastYear = lastEdit.getFullYear();
+    const lastMonth = lastEdit.getMonth();
+    const lastDay = lastEdit.getDate();
+
+    // next calendar month (same day if possible)
+    let nextMonth = lastMonth + 1;
+    let nextYear = lastYear;
+    if (nextMonth > 11) {
+      nextMonth = 0;
+      nextYear++;
+    }
+    const maxDay = new Date(nextYear, nextMonth + 1, 0).getDate();
+    const nextMonthDay = Math.min(lastDay, maxDay);
+    const unlockDate = new Date(
+      nextYear,
+      nextMonth,
+      nextMonthDay,
+      lastEdit.getHours(),
+      lastEdit.getMinutes(),
+      lastEdit.getSeconds()
+    );
+    return new Date() >= unlockDate;
+  }
+
+  // ------------------------
+  // Save profile
+  // ------------------------
   const handleSave = async () => {
     if (!editedUser || !user) return;
-
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
-      const userType = user.role || 'student';
-      const endpoint = userType === 'student' ? 'students' : 'teachers';
+      if (!token) throw new Error('No token');
 
-      // First, upload avatar if changed
+      const endpoint = user.studentId
+        ? 'students'
+        : user.teacherId
+        ? 'teachers'
+        : user.role === 'teacher'
+        ? 'teachers'
+        : 'students';
+
+      // 1) avatar (optional if backend supports it)
       if (avatarFile) {
-        const formData = new FormData();
-        formData.append('avatar', avatarFile);
-
-        const avatarResponse = await fetch(`${API_URL}/${endpoint}/${user._id}/avatar`, {
+        const fd = new FormData();
+        fd.append('avatar', avatarFile);
+        const res = await fetch(`${API_URL}/${endpoint}/${user._id}/avatar`, {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          },
-          body: formData
+          headers: { Authorization: `Bearer ${token}` },
+          body: fd,
         });
-
-        if (avatarResponse.ok) {
-          const avatarResult = await avatarResponse.json();
-          editedUser.avatar = avatarResult.avatar;
+        if (!res.ok) {
+          const t = await res.text().catch(() => '');
+          throw new Error(`Avatar upload failed: ${res.status} ${t}`);
+        }
+        const data = await res.json().catch(() => ({} as any));
+        const newAvatar = (data?.data?.avatar ?? data?.avatar) as string | undefined;
+        if (newAvatar) {
+          setEditedUser((prev) => (prev ? { ...prev, avatar: newAvatar } : prev));
+          setAvatarPreview(`${API_URL}/uploads/${newAvatar}`);
         }
       }
 
-      // Update user data
-      const updateResponse = await fetch(`${API_URL}/${endpoint}/${user._id}`, {
+      // 2) profile fields (send only what backend expects)
+      const payload = {
+        firstName: editedUser.firstName ?? '',
+        fatherName: editedUser.fatherName ?? '',
+        grandFatherName: editedUser.grandFatherName ?? '',
+        motherName: editedUser.motherName ?? '',
+        lastName: editedUser.lastName ?? '',
+        birthDate: editedUser.birthDate ?? '',
+        gender: editedUser.gender ?? '',
+        residence: editedUser.residence ?? '',
+        teacher: editedUser.teacher ?? '',
+        group: editedUser.group ?? '',
+        email: editedUser.email ?? '',
+        phoneNumber: editedUser.phoneNumber ?? '',
+        avatar: editedUser.avatar ?? undefined,
+      } as Partial<User>;
+
+      const resp = await fetch(`${API_URL}/${endpoint}/${user._id}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(editedUser)
+        body: JSON.stringify(payload),
       });
 
-      if (updateResponse.ok) {
-        const result = await updateResponse.json();
-        setUser(result.data || result);
-        setIsEditing(false);
-        setAvatarFile(null);
-        
-        // Update localStorage
-        localStorage.setItem('user', JSON.stringify(result.data || result));
-        
-        alert('تم تحديث البيانات بنجاح');
-      } else {
-        alert('فشل في تحديث البيانات');
+      if (!resp.ok) {
+        const t = await resp.text().catch(() => '');
+        throw new Error(`Update failed: ${resp.status} ${t}`);
       }
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      alert('حدث خطأ أثناء تحديث البيانات');
+
+      const json = await resp.json().catch(() => ({} as any));
+      const updated: User = json?.data ?? json;
+
+      setUser(updated);
+      setEditedUser(updated);
+      setIsEditing(false);
+      setAvatarFile(null);
+      localStorage.setItem('user', JSON.stringify(updated));
+  toast.success('تم تحديث البيانات بنجاح');
+    } catch (e) {
+      console.error(e);
+  toast.error('فشل في تحديث البيانات. حاول مجددًا.');
     } finally {
       setSaving(false);
     }
@@ -190,11 +283,7 @@ const Profile: React.FC = () => {
     setEditedUser(user);
     setIsEditing(false);
     setAvatarFile(null);
-    if (user?.avatar) {
-      setAvatarPreview(`${API_URL}/uploads/${user.avatar}`);
-    } else {
-      setAvatarPreview("");
-    }
+    setAvatarPreview(user?.avatar ? `${API_URL}/uploads/${user.avatar}` : '');
   };
 
   if (loading) {
@@ -218,30 +307,7 @@ const Profile: React.FC = () => {
     );
   }
 
-
-  const displayUser = isEditing ? editedUser! : user;
-
-  // Helper to check if a month has passed since last birthDate change
-  function canEditBirthDate(): boolean {
-    if (!displayUser?.birthDate || !displayUser?.updatedAt) return true;
-    const lastEdit = new Date(displayUser.updatedAt);
-    const now = new Date();
-    // Allow edit if at least one full calendar month has passed
-    const lastYear = lastEdit.getFullYear();
-    const lastMonth = lastEdit.getMonth();
-    const lastDay = lastEdit.getDate();
-    let nextMonth = lastMonth + 1;
-    let nextYear = lastYear;
-    if (nextMonth > 11) {
-      nextMonth = 0;
-      nextYear++;
-    }
-    // Get the max day in the next month
-    const maxDay = new Date(nextYear, nextMonth + 1, 0).getDate();
-    const nextMonthDay = Math.min(lastDay, maxDay);
-    const nextMonthDate = new Date(nextYear, nextMonth, nextMonthDay, lastEdit.getHours(), lastEdit.getMinutes(), lastEdit.getSeconds());
-    return now >= nextMonthDate;
-  }
+  const displayUser = (isEditing ? editedUser : user)!;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 py-8 px-4" dir="rtl">
@@ -252,9 +318,9 @@ const Profile: React.FC = () => {
           <p className="text-slate-600">أعرض/عدّل بياناتك وصورتك الشخصية</p>
         </div>
 
-        {/* Main Profile Card */}
+        {/* Card */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          {/* Profile Header */}
+          {/* Banner */}
           <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-8 py-6 text-white relative">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-6">
@@ -262,51 +328,42 @@ const Profile: React.FC = () => {
                 <div className="relative">
                   <div className="w-24 h-24 rounded-full border-4 border-white overflow-hidden bg-white shadow-lg">
                     {avatarPreview ? (
-                      <img
-                        src={avatarPreview}
-                        alt="Profile"
-                        className="w-full h-full object-cover"
-                      />
+                      <img src={avatarPreview} alt="Profile" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center">
                         <div className="text-2xl font-bold text-emerald-600">
-                          {displayUser.firstName.charAt(0)}
+                          {displayUser.firstName?.charAt(0) || '؟'}
                         </div>
                       </div>
                     )}
                   </div>
-                  
+
                   {isEditing && (
                     <label className="absolute -bottom-2 -right-2 bg-white rounded-full p-2 shadow-lg cursor-pointer hover:bg-gray-50 transition-colors">
                       <Camera className="w-4 h-4 text-emerald-600" />
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleAvatarChange}
-                        className="hidden"
-                      />
+                      <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
                     </label>
                   )}
                 </div>
 
-                {/* User Info */}
+                {/* Name + Role */}
                 <div>
                   <h2 className="text-2xl font-bold">
                     {displayUser.firstName} {displayUser.lastName}
                   </h2>
                   <p className="text-emerald-100 flex items-center gap-2 mt-1">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      displayUser.role === 'admin' ? 'bg-red-500' : 
-                      displayUser.role === 'teacher' ? 'bg-blue-500' : 'bg-green-500'
-                    }`}>
-                      {displayUser.role === 'admin' ? 'مدير' : 
-                       displayUser.role === 'teacher' ? 'معلم' : 'طالب'}
+                    <span
+                      className={`px-3 py-1 rounded-full text-sm font-medium ${
+                        displayUser.role === 'admin' ? 'bg-red-500' : displayUser.role === 'teacher' ? 'bg-blue-500' : 'bg-green-500'
+                      }`}
+                    >
+                      {displayUser.role === 'admin' ? 'مدير' : displayUser.role === 'teacher' ? 'معلم' : 'طالب'}
                     </span>
                   </p>
                 </div>
               </div>
 
-              {/* Action Buttons */}
+              {/* Actions */}
               <div className="flex gap-3">
                 {isEditing ? (
                   <>
@@ -315,15 +372,13 @@ const Profile: React.FC = () => {
                       disabled={saving}
                       className="bg-white text-emerald-600 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center gap-2 disabled:opacity-50"
                     >
-                      <Save className="w-4 h-4" />
-                      {saving ? 'جارِ الحفظ...' : 'حفظ'}
+                      <Save className="w-4 h-4" /> {saving ? 'جارِ الحفظ...' : 'حفظ'}
                     </button>
                     <button
                       onClick={handleCancel}
                       className="bg-white/20 text-white px-4 py-2 rounded-lg font-medium hover:bg-white/30 transition-colors flex items-center gap-2"
                     >
-                      <X className="w-4 h-4" />
-                      إلغاء
+                      <X className="w-4 h-4" /> إلغاء
                     </button>
                   </>
                 ) : (
@@ -332,15 +387,13 @@ const Profile: React.FC = () => {
                       onClick={() => setIsEditing(true)}
                       className="bg-white text-emerald-600 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center gap-2"
                     >
-                      <Edit className="w-4 h-4" />
-                      تعديل المعلومات الشخصية
+                      <Edit className="w-4 h-4" /> تعديل المعلومات الشخصية
                     </button>
                     <button
-                      onClick={() => window.location.href = '/change-password'}
+                      onClick={() => (window.location.href = '/change-password')}
                       className="bg-white/20 text-white px-4 py-2 rounded-lg font-medium hover:bg-white/30 transition-colors flex items-center gap-2"
                     >
-                      <Lock className="w-4 h-4" />
-                      تغيير كلمة المرور
+                      <Lock className="w-4 h-4" /> تغيير كلمة المرور
                     </button>
                   </>
                 )}
@@ -348,34 +401,64 @@ const Profile: React.FC = () => {
             </div>
           </div>
 
-          {/* Profile Content */}
+          {/* Content */}
           <div className="p-8">
-
-
-            {/* --- معلومات أساسية --- */}
+            {/* Basic info */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {/* الاسم الكامل */}
+              {/* Full name */}
               <div className="bg-slate-50 rounded-xl p-4 flex flex-col items-center">
                 <BookOpen className="w-8 h-8 text-emerald-600 mb-2" />
                 <h3 className="font-semibold text-slate-800 mb-1">الاسم الكامل</h3>
                 {isEditing ? (
                   <>
-                    <input type="text" value={displayUser.firstName || ''} onChange={e => handleInputChange('firstName', e.target.value)} className="w-full mt-1 mb-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="الاسم الأول" />
-                    <input type="text" value={displayUser.fatherName || ''} onChange={e => handleInputChange('fatherName', e.target.value)} className="w-full mt-1 mb-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="اسم الأب" />
-                    <input type="text" value={displayUser.grandFatherName || ''} onChange={e => handleInputChange('grandFatherName', e.target.value)} className="w-full mt-1 mb-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="اسم الجد" />
-                    <input type="text" value={displayUser.lastName || ''} onChange={e => handleInputChange('lastName', e.target.value)} className="w-full mt-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="اسم العائلة" />
+                    <input
+                      type="text"
+                      value={displayUser.firstName || ''}
+                      onChange={(e) => handleInputChange('firstName', e.target.value)}
+                      className="w-full mt-1 mb-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      placeholder="الاسم الأول"
+                    />
+                    <input
+                      type="text"
+                      value={displayUser.fatherName || ''}
+                      onChange={(e) => handleInputChange('fatherName', e.target.value)}
+                      className="w-full mt-1 mb-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      placeholder="اسم الأب"
+                    />
+                    <input
+                      type="text"
+                      value={displayUser.grandFatherName || ''}
+                      onChange={(e) => handleInputChange('grandFatherName', e.target.value)}
+                      className="w-full mt-1 mb-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      placeholder="اسم الجد"
+                    />
+                    <input
+                      type="text"
+                      value={displayUser.lastName || ''}
+                      onChange={(e) => handleInputChange('lastName', e.target.value)}
+                      className="w-full mt-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      placeholder="اسم العائلة"
+                    />
                   </>
                 ) : (
-                  <p className="text-sm text-slate-600 text-center">{displayUser.firstName} {displayUser.fatherName} {displayUser.grandFatherName} {displayUser.lastName}</p>
+                  <p className="text-sm text-slate-600 text-center">
+                    {displayUser.firstName} {displayUser.fatherName} {displayUser.grandFatherName} {displayUser.lastName}
+                  </p>
                 )}
               </div>
-              {/* رقم الهوية */}
+
+              {/* ID */}
               <div className="bg-slate-50 rounded-xl p-4 flex flex-col items-center">
-                <span className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mb-2"><span className="text-purple-600 font-bold text-xs">ID</span></span>
+                <span className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mb-2">
+                  <span className="text-purple-600 font-bold text-xs">ID</span>
+                </span>
                 <h3 className="font-semibold text-slate-800 mb-1">رقم الهوية</h3>
-                <p className="text-sm text-slate-600 font-mono">{displayUser.idNumber || displayUser._id?.slice(-8) || 'غير متوفر'}</p>
+                <p className="text-sm text-slate-600 font-mono">
+                  {displayUser.idNumber || displayUser._id?.slice(-8) || 'غير متوفر'}
+                </p>
               </div>
-              {/* تاريخ الميلاد والعمر والجنس */}
+
+              {/* Birthdate / Age / Gender */}
               <div className="bg-slate-50 rounded-xl p-4 flex flex-col items-center">
                 <Calendar className="w-8 h-8 text-yellow-600 mb-2" />
                 <h3 className="font-semibold text-slate-800 mb-1">تاريخ الميلاد / العمر / الجنس</h3>
@@ -384,8 +467,8 @@ const Profile: React.FC = () => {
                     <input
                       type="date"
                       value={displayUser.birthDate ? displayUser.birthDate.slice(0, 10) : ''}
-                      onChange={e => handleInputChange('birthDate', e.target.value)}
-                      className="w-full mt-1 mb-2 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      onChange={(e) => handleInputChange('birthDate', e.target.value)}
+                      className="w-full mt-1 mb-2 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-60"
                       placeholder="تاريخ الميلاد"
                       title="تاريخ الميلاد"
                       aria-label="تاريخ الميلاد"
@@ -398,7 +481,12 @@ const Profile: React.FC = () => {
                       <span className="text-xs text-gray-500">العمر:</span>
                       <span className="text-sm font-bold text-emerald-700">{calculateAge(displayUser.birthDate)} سنة</span>
                     </div>
-                    <select value={displayUser.gender || ''} onChange={e => handleInputChange('gender', e.target.value)} className="w-full mt-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" title="الجنس">
+                    <select
+                      value={displayUser.gender || ''}
+                      onChange={(e) => handleInputChange('gender', e.target.value)}
+                      className="w-full mt-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      title="الجنس"
+                    >
                       <option value="">اختر الجنس</option>
                       <option value="ذكر">ذكر</option>
                       <option value="انثى">أنثى</option>
@@ -406,7 +494,9 @@ const Profile: React.FC = () => {
                   </>
                 ) : (
                   <div className="w-full flex flex-col items-center">
-                    <span className="text-sm text-slate-600 mb-1">تاريخ الميلاد: {displayUser.birthDate ? formatDate(displayUser.birthDate) : 'غير محدد'}</span>
+                    <span className="text-sm text-slate-600 mb-1">
+                      تاريخ الميلاد: {displayUser.birthDate ? formatDate(displayUser.birthDate) : 'غير محدد'}
+                    </span>
                     <span className="text-sm text-emerald-700 font-bold mb-1">العمر: {calculateAge(displayUser.birthDate)} سنة</span>
                     <span className="text-sm text-slate-600">{displayUser.gender ? `الجنس: ${displayUser.gender}` : ''}</span>
                   </div>
@@ -414,97 +504,142 @@ const Profile: React.FC = () => {
               </div>
             </div>
 
-            {/* --- معلومات التواصل --- */}
+            {/* Contact info */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {/* رقم الهاتف */}
+              {/* Phone */}
               <div className="bg-slate-50 rounded-xl p-4 flex flex-col items-center">
                 <Phone className="w-8 h-8 text-orange-600 mb-2" />
                 <h3 className="font-semibold text-slate-800 mb-1">رقم الهاتف</h3>
                 {isEditing ? (
-                  <input type="tel" value={displayUser.phoneNumber || ''} onChange={e => handleInputChange('phoneNumber', e.target.value)} className="w-full mt-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="رقم الهاتف" />
+                  <input
+                    type="tel"
+                    value={displayUser.phoneNumber || ''}
+                    onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+                    className="w-full mt-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="رقم الهاتف"
+                  />
                 ) : (
-                  <p className="text-sm text-slate-600">{displayUser.phoneNumber}</p>
+                  <p className="text-sm text-slate-600">{displayUser.phoneNumber || 'غير متوفر'}</p>
                 )}
               </div>
-              {/* البريد الإلكتروني */}
+
+              {/* Email */}
               <div className="bg-slate-50 rounded-xl p-4 flex flex-col items-center">
                 <Mail className="w-8 h-8 text-green-600 mb-2" />
                 <h3 className="font-semibold text-slate-800 mb-1">البريد الإلكتروني</h3>
                 {isEditing ? (
-                  <input type="email" value={displayUser.email || ''} onChange={e => handleInputChange('email', e.target.value)} className="w-full mt-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="البريد الإلكتروني" />
+                  <input
+                    type="email"
+                    value={displayUser.email || ''}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    className="w-full mt-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="البريد الإلكتروني"
+                  />
                 ) : (
-                  <p className="text-sm text-slate-600 break-all">{displayUser.email}</p>
+                  <p className="text-sm text-slate-600 break-all">{displayUser.email || 'غير متوفر'}</p>
                 )}
               </div>
-              {/* مكان السكن */}
+
+              {/* Residence */}
               <div className="bg-slate-50 rounded-xl p-4 flex flex-col items-center">
                 <MapPin className="w-8 h-8 text-pink-600 mb-2" />
                 <h3 className="font-semibold text-slate-800 mb-1">مكان السكن</h3>
                 {isEditing ? (
-                  <input type="text" value={displayUser.residence || ''} onChange={e => handleInputChange('residence', e.target.value)} className="w-full mt-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="مكان السكن" />
+                  <input
+                    type="text"
+                    value={displayUser.residence || ''}
+                    onChange={(e) => handleInputChange('residence', e.target.value)}
+                    className="w-full mt-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="مكان السكن"
+                  />
                 ) : (
-                  <p className="text-sm text-slate-600">{displayUser.residence}</p>
+                  <p className="text-sm text-slate-600">{displayUser.residence || 'غير متوفر'}</p>
                 )}
               </div>
             </div>
 
-            {/* --- معلومات دراسية --- */}
+            {/* Academic */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* اسم الأم */}
+              {/* Mother name */}
               <div className="bg-slate-50 rounded-xl p-4 flex flex-col items-center">
-                <span className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center mb-2"><span className="text-pink-600 font-bold text-xs">أم</span></span>
+                <span className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center mb-2">
+                  <span className="text-pink-600 font-bold text-xs">أم</span>
+                </span>
                 <h3 className="font-semibold text-slate-800 mb-1">اسم الأم</h3>
                 {isEditing ? (
-                  <input type="text" value={displayUser.motherName || ''} onChange={e => handleInputChange('motherName', e.target.value)} className="w-full mt-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="اسم الأم" />
+                  <input
+                    type="text"
+                    value={displayUser.motherName || ''}
+                    onChange={(e) => handleInputChange('motherName', e.target.value)}
+                    className="w-full mt-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="اسم الأم"
+                  />
                 ) : (
-                  <p className="text-sm text-slate-600">{displayUser.motherName}</p>
+                  <p className="text-sm text-slate-600">{displayUser.motherName || 'غير متوفر'}</p>
                 )}
               </div>
-              {/* الحلقة */}
+
+              {/* Group */}
               <div className="bg-slate-50 rounded-xl p-4 flex flex-col items-center">
                 <Users className="w-8 h-8 text-teal-600 mb-2" />
                 <h3 className="font-semibold text-slate-800 mb-1">الحلقة</h3>
                 {isEditing ? (
-                  <input type="text" value={displayUser.group || ''} onChange={e => handleInputChange('group', e.target.value)} className="w-full mt-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="اسم الحلقة" />
+                  <input
+                    type="text"
+                    value={displayUser.group || ''}
+                    onChange={(e) => handleInputChange('group', e.target.value)}
+                    className="w-full mt-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="اسم الحلقة"
+                  />
                 ) : (
-                  <p className="text-sm text-slate-600">{displayUser.group || (displayUser.groups?.join(', ') || 'غير محدد')}</p>
+                  <p className="text-sm text-slate-600">{displayUser.group || displayUser.groups?.join(', ') || 'غير محدد'}</p>
                 )}
               </div>
-              {/* المعلم الخاص */}
+
+              {/* Teacher */}
               <div className="bg-slate-50 rounded-xl p-4 flex flex-col items-center">
                 <span className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mb-2">
                   <span className="text-blue-600 font-bold text-xs">معلم</span>
                 </span>
-                <h3 className="font-semibold text-slate-800 mb-1">المعلم </h3>
+                <h3 className="font-semibold text-slate-800 mb-1">المعلم</h3>
                 {isEditing ? (
-                  <input type="text" value={displayUser.teacher || ''} onChange={e => handleInputChange('teacher', e.target.value)} className="w-full mt-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" placeholder="اسم المعلم" />
+                  <input
+                    type="text"
+                    value={displayUser.teacher || ''}
+                    onChange={(e) => handleInputChange('teacher', e.target.value)}
+                    className="w-full mt-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="اسم المعلم"
+                  />
                 ) : (
                   <p className="text-sm text-slate-600">{displayUser.teacher || 'غير محدد'}</p>
                 )}
               </div>
-              {/* تاريخ إنشاء الحساب */}
-              <div className="bg-slate-50 rounded-xl p-4 flex flex-col items-center">
+
+              {/* Created at */}
+              <div className="bg-slate-50 rounded-xl p-4 flex flex-col items-center md:col-span-2 lg:col-span-1">
                 <span className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center mb-2">
                   <Calendar className="w-5 h-5 text-gray-500" />
                 </span>
                 <h3 className="font-semibold text-slate-800 mb-1">تاريخ إنشاء الحساب</h3>
                 <p className="text-sm text-slate-600">
-                  {displayUser.createdAt ? new Date(displayUser.createdAt).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' }) : ''}
+                  {displayUser.createdAt ? formatDate(displayUser.createdAt) : 'غير متوفر'}
                 </p>
               </div>
             </div>
 
-            {/* Bottom Notice */}
+            {/* Notice */}
             <div className="mt-8 p-4 bg-blue-50 rounded-xl border border-blue-200">
               <p className="text-sm text-blue-700 text-center">
-                إذا لم تتمكن من تحديث أكثر التفاصيل، حاول إعادة تحميل الصفحة أو التحقق من الاتصال.
+                إذا لم تتمكن من تحديث التفاصيل، حاول إعادة تحميل الصفحة أو التحقق من الاتصال بالإنترنت.
               </p>
             </div>
           </div>
         </div>
       </div>
-    </div>
-    //
+
+    {/* Toast notifications */}
+    <ToastContainer position="top-center" autoClose={3000} rtl={true} />
+  </div>
   );
 };
 
