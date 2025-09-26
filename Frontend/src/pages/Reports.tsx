@@ -17,7 +17,7 @@ const Reports = () => {
       }
     }
   }, []);
-
+///aaxas
   return (
     <div className="container mx-auto py-8" dir="rtl">
       <h1 className="text-2xl font-bold mb-6 text-center">التقارير</h1>
