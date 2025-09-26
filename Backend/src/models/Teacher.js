@@ -64,6 +64,10 @@ const teacherSchema = new mongoose.Schema(
       enum: ["teacher", "admin"],
       default: "teacher",
     },
+    avatar: {
+      type: String,
+      required: false,
+    },
   },
   { timestamps: true },
 );
