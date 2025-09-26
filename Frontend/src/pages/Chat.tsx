@@ -1,3 +1,4 @@
+import Footer from "../components/Footer";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 // If you add shadcn/ui you can replace basic elements with nicer components.
@@ -684,10 +685,10 @@ const Chat: React.FC = () => {
                         .map((c) => (
                           <li
                             key={c._id}
-                            className={`flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition-all duration-200 ${
+                            className={`flex items-center justify-between p-3 rounded-xl cursor-pointer ${
                               selectedContact?._id === c._id && !selectedContact?.isGroup
-                                ? "bg-gradient-to-r from-emerald-50 to-teal-50 shadow-md border-2 border-emerald-200"
-                                : "hover:shadow-sm"
+                                ? "bg-white border-2 border-emerald-200"
+                                : "hover:bg-gray-50"
                             }`}
                             onClick={() => {
                               setSelectedContact({ ...c, isGroup: false });
@@ -721,10 +722,10 @@ const Chat: React.FC = () => {
                       {groups.map((g) => (
                         <li
                           key={g._id}
-                          className={`flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 cursor-pointer transition-all duration-200 ${
+                          className={`flex items-center justify-between p-3 rounded-xl cursor-pointer ${
                             selectedContact?._id === g._id && selectedContact?.isGroup
-                              ? "bg-gradient-to-r from-emerald-50 to-teal-50 shadow-md border-2 border-emerald-200"
-                              : "hover:shadow-sm"
+                              ? "bg-white border-2 border-emerald-200"
+                              : "hover:bg-gray-50"
                           }`}
                           onClick={() => {
                             setSelectedContact({ ...g, isGroup: true });
@@ -1010,6 +1011,7 @@ const Chat: React.FC = () => {
 
       {/* Optional user info modal */}
       {/* <UserInfoModal user={selectedUserInfo as any} userRole={"student"} onClose={() => setSelectedUserInfo(null)} /> */}
+      <Footer />
     </div>
   );
 };
