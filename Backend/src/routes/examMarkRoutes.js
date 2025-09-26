@@ -2,12 +2,22 @@ const express = require("express");
 const router = express.Router();
 const examMarkController = require("../controllers/examMarkController");
 
-// Get all marks for an exam
+// علامات طالب واحد
+router.get("/student/:studentId", examMarkController.getStudentMarks);
+
+// علامات امتحان واحد
 router.get("/:examId", examMarkController.getExamMarks);
-// Set marks for students in an exam
+
+// معدل الامتحان
+router.get("/:examId/average", examMarkController.getExamAverage);
+
+// إضافة أو تعديل علامات عدة طلاب دفعة واحدة
 router.post("/:examId", examMarkController.setExamMarks);
 
-// Get all marks for a specific student
-router.get("/student/:studentId", examMarkController.getStudentMarks);
+// تعديل علامة طالب واحد
+router.put("/:examId/:studentId", examMarkController.updateStudentMark);
+
+// حذف علامة طالب
+router.delete("/:examId/:studentId", examMarkController.deleteStudentMark);
 
 module.exports = router;

@@ -11,4 +11,7 @@ const examMarkSchema = new mongoose.Schema({
   detail: { type: String },
 });
 
+// يضمن أن الطالب ما ياخذش أكثر من علامة لنفس الامتحان
+examMarkSchema.index({ exam: 1, student: 1 }, { unique: true });
+
 module.exports = mongoose.model("ExamMark", examMarkSchema);
