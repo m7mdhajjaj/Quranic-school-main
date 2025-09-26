@@ -163,33 +163,26 @@ const Profile: React.FC = () => {
   // ------------------------
   // Birthdate lock: disable if a full month hasn’t passed since last update
   // ------------------------
+  // Allow 2 birthdate edits per calendar month, reset at start of month
   function canEditBirthDate(): boolean {
     const u = isEditing ? editedUser : user;
-    if (!u?.birthDate || !u?.updatedAt) return true; // allow first-time / no updatedAt cases
+    if (!u?._id) return true;
+    const now = new Date();
+    const ym = `${now.getFullYear()}-${now.getMonth() + 1}`;
+    const key = `birthDateEditAttempts_${u._id}_${ym}`;
+    const attempts = Number(localStorage.getItem(key) || '0');
+    return attempts < 2;
+  }
 
-    const lastEdit = new Date(u.updatedAt);
-    const lastYear = lastEdit.getFullYear();
-    const lastMonth = lastEdit.getMonth();
-    const lastDay = lastEdit.getDate();
-
-    // next calendar month (same day if possible)
-    let nextMonth = lastMonth + 1;
-    let nextYear = lastYear;
-    if (nextMonth > 11) {
-      nextMonth = 0;
-      nextYear++;
-    }
-    const maxDay = new Date(nextYear, nextMonth + 1, 0).getDate();
-    const nextMonthDay = Math.min(lastDay, maxDay);
-    const unlockDate = new Date(
-      nextYear,
-      nextMonth,
-      nextMonthDay,
-      lastEdit.getHours(),
-      lastEdit.getMinutes(),
-      lastEdit.getSeconds()
-    );
-    return new Date() >= unlockDate;
+  // Helper to increment birthdate edit attempts
+  function incrementBirthDateEditAttempts() {
+    const u = isEditing ? editedUser : user;
+    if (!u?._id) return;
+    const now = new Date();
+    const ym = `${now.getFullYear()}-${now.getMonth() + 1}`;
+    const key = `birthDateEditAttempts_${u._id}_${ym}`;
+    const attempts = Number(localStorage.getItem(key) || '0');
+    localStorage.setItem(key, String(attempts + 1));
   }
 
   // ------------------------
@@ -197,6 +190,10 @@ const Profile: React.FC = () => {
   // ------------------------
   const handleSave = async () => {
     if (!editedUser || !user) return;
+    // Detect if birthDate changed and increment attempts
+    if (editedUser.birthDate !== user.birthDate) {
+      incrementBirthDateEditAttempts();
+    }
     setSaving(true);
     try {
       const token = localStorage.getItem('token');
@@ -475,7 +472,7 @@ const Profile: React.FC = () => {
                       disabled={!canEditBirthDate()}
                     />
                     {!canEditBirthDate() && (
-                      <span className="text-xs text-red-500 mb-2">لا يمكنك تعديل تاريخ الميلاد إلا مرة كل شهر</span>
+                      <span className="text-xs text-red-500 mb-2">لا يمكنك تعديل تاريخ الميلاد إلا مرتين في الشهر، ستتجدد المحاولات في بداية الشهر القادم</span>
                     )}
                     <div className="w-full flex flex-row items-center justify-between gap-2 mb-2">
                       <span className="text-xs text-gray-500">العمر:</span>
