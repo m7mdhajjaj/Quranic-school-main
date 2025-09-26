@@ -266,8 +266,8 @@ const Header = () => {
     </NavLink>
   );
 
-  const renderUserAvatar = (size = 'default') => {
-    const sizeClasses = {
+  const renderUserAvatar = (size: 'default' | 'mobile' = 'default') => {
+    const sizeClasses: { [key in 'default' | 'mobile']: string } = {
       default: 'h-11 w-11 lg:h-13 lg:w-13',
       mobile: 'h-12 w-12',
     };
@@ -327,7 +327,9 @@ const Header = () => {
 
                   {currentUser && (
                     <span className="hidden lg:block text-base font-semibold text-white max-w-32 truncate">
-                      {currentUser.firstName || currentUser.name || ''}
+                      {currentUser.firstName && currentUser.lastName
+                        ? `${currentUser.firstName} ${currentUser.lastName}`
+                        : currentUser.firstName || currentUser.name || ''}
                     </span>
                   )}
 
@@ -352,7 +354,9 @@ const Header = () => {
                   <div className="absolute right-0 top-full mt-3 w-72 bg-white/95 backdrop-blur-lg rounded-xl shadow-2xl border border-gray-100/80 py-2 z-[100]">
                     <div className="px-5 py-4 border-b border-gray-100/80">
                       <span className="block text-emerald-700 font-bold text-lg">
-                        {currentUser?.firstName || currentUser?.name}
+                        {currentUser?.firstName && currentUser?.lastName
+                          ? `${currentUser.firstName} ${currentUser.lastName}`
+                          : currentUser?.firstName || currentUser?.name}
                       </span>
                       <span className="block text-gray-500 text-sm mt-1">
                         {currentUser?.role === 'teacher'
