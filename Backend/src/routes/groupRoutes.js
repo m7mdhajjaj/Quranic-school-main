@@ -4,7 +4,7 @@ const groupController = require("../controllers/groupController");
 const authMiddleware = require("../middleware/authMiddleware");
 
 // جميع routes تحتاج إلى مصادقة الإداري
-router.use(authMiddleware.verifyAdmin);
+router.use(authMiddleware.adminProtect);
 
 // إنشاء حلقة جديدة
 router.post("/", groupController.createGroup);
