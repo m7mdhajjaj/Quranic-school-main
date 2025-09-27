@@ -83,7 +83,7 @@ const Header = () => {
     setCurrentUser(null);
     setIsMenuOpen(false);
     setProfileMenuOpen(false);
-
+//dasdd
     navigate('/login', { replace: true });
   }, [socket, avatarUrl, navigate]);
 
