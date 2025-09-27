@@ -1,58 +1,68 @@
 // models/Teacher.js
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const teacherSchema = new mongoose.Schema(
   {
-    teacherId: { type: Number, required: true, unique: true },
-
-    // سيتم حفظها مُشفّرة في الـ controller
-    password: { type: String, required: [true, "كلمة المرور مطلوبة"] },
-
-    firstName: { type: String, required: [true, "الاسم الأول مطلوب"] },
-    lastName:  { type: String, required: [true, "اسم العائلة مطلوب"] },
-    fatherName: { type: String, required: false },
-    grandFatherName: { type: String, required: false },
-
-    email: { type: String, required: [true, "البريد الإلكتروني مطلوب"], unique: true },
-
-    // اختر واحدًا من النمطين حسب مشروعك:
-    // فلسطين (جوال/الوطنية): يبدأ بـ 05
-    phoneNumber: {
-      type: String,
-      required: [true, "رقم الهاتف مطلوب"],
-      match: [/^05\d{8}$/, "رقم الهاتف يجب أن يبدأ بـ 05 ويتكون من 10 أرقام"],
+    teacherId: {
+      type: Number,
+      required: true,
       unique: true,
     },
-    // أو إذا تريد 09:
-    // phoneNumber: {
-    //   type: String,
-    //   required: [true, "رقم الهاتف مطلوب"],
-    //   match: [/^09\d{8}$/, "رقم الهاتف يجب أن يبدأ بـ 09 ويتكون من 10 أرقام"],
-    //   unique: true,
-    // },
+    password: {
+      type: String,
+      required: [true, 'كلمة المرور مطلوبة'],
+    },
 
-    idNumber: { type: String, required: false },
-    motherName: { type: String, required: false },
+    // الاسماء
+    firstName: { type: String, required: [true, 'الاسم الأول مطلوب'] },
+    lastName: { type: String, required: [true, 'اسم العائلة مطلوب'] },
+    fatherName: { type: String },
+    grandFatherName: { type: String },
+    motherName: { type: String },
 
-    birthDate: { type: String, required: false },
-    age: { type: Number, required: false, min: [0, "العمر يجب أن يكون رقماً موجباً"] },
+    // هوية/تواصل
+    idNumber: { type: String },
+    email: {
+      type: String,
+      required: [true, 'البريد الإلكتروني مطلوب'],
+      unique: true,
+    },
+    phoneNumber: {
+      type: String,
+      required: [true, 'رقم الهاتف مطلوب'],
+      unique: true,
+      match: [/^09\d{8}$/, 'رقم الهاتف يجب أن يبدأ بـ 09 ويتكون من 10 أرقام'],
+    },
 
-    // حقول كانت مستخدمة في الـ controller
-    gender: { type: String, enum: ["ذكر", "أنثى", "male", "female"], required: false },
-    residence: { type: String, required: false },
-    yearsOfExperience: { type: Number, required: false, default: 0, min: 0 },
+    // معلومات شخصية
+    birthDate: { type: String }, // أبقيناها String لتوافق الكود لديك
+    age: { type: Number, min: [0, 'العمر يجب أن يكون رقماً موجباً'] },
+    gender: {
+      type: String,
+      enum: ['male', 'female', 'ذكر', 'أنثى'],
+      required: false,
+    },
+    residence: { type: String },
 
-    groupName: { type: String, required: false }, // اسم حلقة واحدة (اختياري)
-    groups: { type: [String], required: [true, "يجب تحديد الحلقات التي يدرسها المعلم"], default: [] },
+    // الحلقات
+    groups: { type: [String], default: [] }, // كان required ويسبب فشل عند عدم الإرسال
+    groupName: { type: String }, // يستخدمه الكونترولر لتعبئة groups
 
-    role: { type: String, enum: ["teacher", "admin"], default: "teacher" },
+    // خبرة/دور
+    yearsOfExperience: { type: Number, default: 0 },
+    role: { type: String, enum: ['teacher', 'admin'], default: 'teacher' },
 
-    avatar: { type: String, required: false }, // نخزن مسارًا نسبيًا مثل: avatars/xxx.jpg
+    // الصورة
+    avatar: { type: String }, // مسار نسبي مثل avatars/file.jpg
 
-    // لدعم الحذف الناعم
+    // حالة التفعيل (يستخدمها الكونترولر في getAll/stats/delete)
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Teacher", teacherSchema);
+const Teacher = mongoose.model('Teacher', teacherSchema);
+module.exports = Teacher;
+
+
+/////okkkk
