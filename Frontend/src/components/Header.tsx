@@ -572,12 +572,7 @@ const Header = () => {
                     (e.key === 'Enter' || e.key === ' ') &&
                     setProfileMenuOpen((v) => !v)
                   }
-                  onMouseEnter={() => {
-                    // Preload Profile page on hover for faster navigation
-                    import(/* webpackChunkName: "profile" */ '../pages/Profile').catch(() => {
-                      // Silently handle preload errors
-                    });
-                  }}
+
                   aria-haspopup="menu"
                   aria-expanded={profileMenuOpen}
                   aria-controls="profile-menu"
@@ -639,10 +634,7 @@ const Header = () => {
                           setProfileMenuOpen(false);
                           navigate('/profile');
                         }}
-                        onMouseEnter={() => {
-                          // Preload Profile page on hover
-                          import(/* webpackChunkName: "profile" */ '../pages/Profile').catch(() => {});
-                        }}
+
                         className="w-full text-right py-3 px-6 text-gray-700 hover:bg-emerald-50/80 hover:text-emerald-700 transition-all duration-200 flex items-center gap-3 group"
                       >
                         <div className="p-1.5 rounded-lg bg-emerald-100 group-hover:bg-emerald-200 transition-colors">
