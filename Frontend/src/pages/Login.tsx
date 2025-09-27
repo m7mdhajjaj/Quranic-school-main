@@ -2,11 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '../config';
-import useUserAuth from '../hooks/useUserAuth';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { saveUserData } = useUserAuth();
 
   const [formData, setFormData] = useState({
     userId: '',
@@ -143,7 +141,9 @@ const Login = () => {
 
       if (response.data && response.data.user && response.data.token) {
         // Save user data
-        saveUserData(response.data.user, response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('userId', response.data.user._id);
 
         // Handle remember me functionality
         if (rememberMe) {

@@ -9,7 +9,6 @@ import {
   MapPin,
   Users,
   BookOpen,
-  Camera,
   Lock,
   Save,
   X,
@@ -19,6 +18,8 @@ import {
   IdCard,
 } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
+import Avatar from "../components/Avatar";
+import { fetchAvatarBlobUrl, getUserGender } from "../hooks/useAvatar";
 import "react-toastify/dist/ReactToastify.css";
 
 // ============================
@@ -137,21 +138,7 @@ const recordEditLocal = (field: "birthDate" | "gender", userId: string) => {
   localStorage.setItem(keyFor(field, userId), JSON.stringify(updated));
 };
 
-// جلب الأفاتار كـ Blob URL من الـ API
-async function fetchAvatarBlobUrl(ep: Endpoint, id: string): Promise<string> {
-  try {
-    const res = await fetch(`${API_URL}/${ep}/${id}/avatar`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-      },
-    });
-    if (!res.ok) return "";
-    const blob = await res.blob();
-    return URL.createObjectURL(blob);
-  } catch {
-    return "";
-  }
-}
+// fetchAvatarBlobUrl is now imported from useAvatar hook
 
 // ============================
 // Component
@@ -427,42 +414,29 @@ const Profile: React.FC = () => {
               className={`relative group ${
                 mounted ? "opacity-100 scale-100" : "opacity-0 scale-95"
               } transition-all duration-500`}>
-              <div className="w-24 h-24 md:w-28 md:h-28 rounded-full ring-4 ring-white/30 bg-white overflow-hidden flex items-center justify-center shadow-xl">
-                {avatarFile ? (
-                  <img
-                    src={URL.createObjectURL(avatarFile)}
-                    alt="avatar"
-                    className="w-full h-full object-cover"
-                  />
-                ) : avatarUrl ? (
-                  <img
-                    src={avatarUrl}
-                    alt="avatar"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <UserIcon className="w-12 h-12 text-emerald-600" />
-                )}
-              </div>
+              <Avatar
+                src={avatarUrl}
+                previewSrc={avatarFile ? URL.createObjectURL(avatarFile) : null}
+                userName={user.firstName}
+                gender={getUserGender(user)}
+                size="3xl"
+                border="ring"
+                showEditButton={isEditing}
+                onEditClick={() => document.getElementById('avatar')?.click()}
+                fallbackIcon={<UserIcon className="w-12 h-12 text-emerald-600" />}
+              />
               {isEditing && (
-                <>
-                  <label
-                    htmlFor="avatar"
-                    className="absolute -bottom-2 right-0 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full p-2 cursor-pointer shadow-lg transition transform group-hover:-translate-y-0.5"
-                    title="تغيير الصورة">
-                    <Camera className="w-4 h-4" />
-                  </label>
-                  <input
-                    id="avatar"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0] || null;
-                      setAvatarFile(f);
-                    }}
-                  />
-                </>
+                <input
+                  id="avatar"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  aria-label="تغيير صورة الملف الشخصي"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0] || null;
+                    setAvatarFile(f);
+                  }}
+                />
               )}
             </div>
           </div>
