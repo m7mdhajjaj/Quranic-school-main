@@ -25,7 +25,7 @@ import "react-toastify/dist/ReactToastify.css";
 // ============================
 // الإعداد
 // ============================
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5005/api";
+import { API_URL } from '../config';
 
 // Axios مع التوكن
 const api = axios.create({ baseURL: API_URL });
@@ -169,30 +169,53 @@ const Profile: React.FC = () => {
   );
   const age = useMemo(() => calcAge(user?.birthDate), [user?.birthDate]);
 
-  // معرف المستخدم
-  const getUserId = () => {
+  // معرف المستخدم وتحديد النوع
+  const getUserInfo = () => {
     const idFromLocal = localStorage.getItem("userId");
-    if (idFromLocal) return idFromLocal;
+    let userRole = null;
+    let userId = idFromLocal;
+    
     try {
       const raw = localStorage.getItem("user");
       if (raw) {
         const parsed = JSON.parse(raw);
-        return parsed?._id || parsed?.id;
+        userId = userId || parsed?._id || parsed?.id;
+        userRole = parsed?.role;
       }
     } catch {}
-    return "";
+    
+    return { userId: userId || "", userRole };
   };
 
   // تحميل البيانات
   const loadUser = async () => {
-    const id = getUserId();
+    const { userId: id, userRole } = getUserInfo();
     if (!id) {
       setFetchState({ status: "error", message: "لا يوجد مستخدم مسجّل." });
       return;
     }
     setFetchState({ status: "loading" });
+    
     try {
-      // جرّب الطالب أولاً
+      // إذا كان النوع معروف من localStorage، جرّبه أولاً
+      if (userRole === "teacher" || userRole?.includes("admin") || userRole?.includes("teacher")) {
+        try {
+          const u: UserBase = await fetchJson(`/teachers/${id}`);
+          setUser({ ...u, role: u.role ?? "teacher" });
+          setEndpoint("teachers");
+          const url = await fetchAvatarBlobUrl("teachers", u._id);
+          setAvatarUrl((prev) => {
+            if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+            return url;
+          });
+          setFetchState({ status: "ok" });
+          return;
+        } catch (e: any) {
+          if (e?.response?.status !== 404) throw e;
+        }
+      }
+      
+      // جرّب الطالب
       try {
         const u: UserBase = await fetchJson(`/students/${id}`);
         setUser({ ...u, role: u.role ?? "student" });
@@ -207,16 +230,19 @@ const Profile: React.FC = () => {
       } catch (e: any) {
         if (e?.response?.status !== 404) throw e;
       }
-      // جرّب المعلّم
-      const u: UserBase = await fetchJson(`/teachers/${id}`);
-      setUser({ ...u, role: u.role ?? "teacher" });
-      setEndpoint("teachers");
-      const url = await fetchAvatarBlobUrl("teachers", u._id);
-      setAvatarUrl((prev) => {
-        if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
-        return url;
-      });
-      setFetchState({ status: "ok" });
+      
+      // جرّب المعلّم (إذا لم يجرّب بعد)
+      if (userRole !== "teacher" && !userRole?.includes("admin") && !userRole?.includes("teacher")) {
+        const u: UserBase = await fetchJson(`/teachers/${id}`);
+        setUser({ ...u, role: u.role ?? "teacher" });
+        setEndpoint("teachers");
+        const url = await fetchAvatarBlobUrl("teachers", u._id);
+        setAvatarUrl((prev) => {
+          if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+          return url;
+        });
+        setFetchState({ status: "ok" });
+      }
     } catch (e: any) {
       setFetchState({
         status: "error",

@@ -7,7 +7,7 @@ import Avatar from './Avatar';
 import { useAvatar, getUserGender } from '../hooks/useAvatar';
 import { io, Socket } from 'socket.io-client';
 import axios from 'axios';
-import { API_BASE_URL } from '../config';
+import { API_BASE_URL, API_URL } from '../config';
 
 interface User {
   _id: string;
@@ -17,11 +17,9 @@ interface User {
   lastName?: string;
 }
 
-const API_ORIGIN = API_BASE_URL;
-
 /** Axios instance */
 const api = axios.create({
-  baseURL: API_ORIGIN,
+  baseURL: API_URL,
   withCredentials: false,
 });
 
@@ -97,7 +95,7 @@ const Header = () => {
   useEffect(() => {
     const token = localStorage.getItem('token') || undefined;
 
-    const s = io(API_ORIGIN, {
+    const s = io(API_BASE_URL, {
       transports: ['websocket', 'polling'],
       auth: token ? { token } : undefined,
       reconnection: true,
@@ -362,7 +360,7 @@ const Header = () => {
               <NotificationHeader
                 userId={currentUser._id}
                 socket={socket}
-                apiUrl={API_ORIGIN}
+                apiUrl={API_BASE_URL}
               />
             </div>
           </div>
@@ -432,7 +430,7 @@ const Header = () => {
                     <NotificationHeader
                       userId={currentUser._id}
                       socket={socket}
-                      apiUrl={API_ORIGIN}
+                      apiUrl={API_BASE_URL}
                     />
                   </div>
                 </div>

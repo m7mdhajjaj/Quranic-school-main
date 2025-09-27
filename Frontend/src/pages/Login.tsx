@@ -116,20 +116,34 @@ const Login = () => {
     try {
       let response;
 
+      console.log('📡 Making request to:', `${API_URL}/auth/login`);
+
       // Try student login first
       try {
         response = await axios.post(`${API_URL}/auth/login`, {
           studentId: formData.userId,
           idNumber: formData.password,
+        }, {
+          timeout: 10000, // 10 second timeout
+          headers: {
+            'Content-Type': 'application/json'
+          }
         });
         console.log('✅ Student login successful!');
-      } catch {
-        console.log('❌ Student login failed, trying teacher login...');
+      } catch (studentLoginError: any) {
+        console.log('❌ Student login failed:', studentLoginError.message);
+        console.log('🔄 Trying teacher login...');
+        
         // If student login fails, try teacher login
         response = await axios.post(`${API_URL}/auth/login`, {
           teacherId: formData.userId,
           password: formData.password,
           userType: 'teacher',
+        }, {
+          timeout: 10000, // 10 second timeout
+          headers: {
+            'Content-Type': 'application/json'
+          }
         });
         console.log('✅ Teacher login successful!');
       }
@@ -170,13 +184,25 @@ const Login = () => {
         console.error('❌ Invalid response data:', response.data);
         setError('رد غير صحيح من الخادم. رجاءً تأكد من الرقم وكلمة المرور.');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('❌ Login error:', error);
-
-      if (error.response?.data?.message) {
-        setError(error.response.data.message);
-      } else if (error.message) {
-        setError(error.message);
+      
+      const axiosError = error as any;
+      
+      // Handle network errors
+      if (axiosError.code === 'ECONNREFUSED' || axiosError.code === 'ERR_NETWORK') {
+        setError('لا يمكن الاتصال بالخادم. تأكد من أن الخادم يعمل على المنفذ 5005.');
+        console.error('🚨 Server connection failed - Backend might not be running');
+      } else if (axiosError.code === 'ECONNABORTED') {
+        setError('انتهت مهلة الاتصال. تحقق من اتصال الإنترنت.');
+      } else if (axiosError.response?.status === 401) {
+        setError('بيانات الدخول غير صحيحة. تأكد من الرقم وكلمة المرور.');
+      } else if (axiosError.response?.status === 500) {
+        setError('خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقاً.');
+      } else if (axiosError.response?.data?.message) {
+        setError(axiosError.response.data.message);
+      } else if (axiosError.message) {
+        setError(`خطأ في الاتصال: ${axiosError.message}`);
       } else {
         setError('فشل تسجيل الدخول. رجاءً تأكد من الرقم وكلمة المرور.');
       }
