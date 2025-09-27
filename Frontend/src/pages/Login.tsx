@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { API_URL } from '../config';
-import useUserAuth from '../hooks/useUserAuth';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { API_URL } from "../config";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -117,29 +116,33 @@ const Login = () => {
     try {
       let response;
 
-      console.log('📡 Making request to:', `${API_URL}/auth/login`);
+      console.log("📡 Making request to:", `${API_URL}/auth/login`);
 
       // Try student login first
       try {
-        response = await axios.post(`${API_URL}/auth/login`, {
-          studentId: formData.userId,
-          idNumber: formData.password,
-        }, {
-          timeout: 10000, // 10 second timeout
-          headers: {
-            'Content-Type': 'application/json'
+        response = await axios.post(
+          `${API_URL}/auth/login`,
+          {
+            studentId: formData.userId,
+            idNumber: formData.password,
+          },
+          {
+            timeout: 10000, // 10 second timeout
+            headers: {
+              "Content-Type": "application/json",
+            },
           }
-        });
-        console.log('✅ Student login successful!');
+        );
+        console.log("✅ Student login successful!");
       } catch {
-        console.log('❌ Student login failed, trying teacher login...');
+        console.log("❌ Student login failed, trying teacher login...");
         // If student login fails, try teacher login
         response = await axios.post(`${API_URL}/auth/login`, {
           teacherId: formData.userId,
           password: formData.password,
-          userType: 'teacher',
+          userType: "teacher",
         });
-        console.log('✅ Teacher login successful!');
+        console.log("✅ Teacher login successful!");
       }
 
       console.log(
@@ -149,9 +152,9 @@ const Login = () => {
 
       if (response.data && response.data.user && response.data.token) {
         // Save user data
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('userId', response.data.user._id);
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("userId", response.data.user._id);
 
         // Handle remember me functionality
         if (rememberMe) {
@@ -183,7 +186,7 @@ const Login = () => {
         setError("رد غير صحيح من الخادم. رجاءً تأكد من الرقم وكلمة المرور.");
       }
     } catch (error: any) {
-      console.error('❌ Login error:', error);
+      console.error("❌ Login error:", error);
 
       if (error.response?.data?.message) {
         setError(error.response.data.message);
@@ -296,7 +299,7 @@ const Login = () => {
             </div>
           </div>
 
-          <h1 className="text-3xl font-bold text-center mb-8 text-slate-800 bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
             {resetStep === 1 ? "نسيت كلمة المرور" : "كلمة مرور جديدة"}
           </h1>
 
@@ -505,7 +508,7 @@ const Login = () => {
         </div>
 
         {/* Title */}
-        <h1 className="text-3xl font-bold text-center mb-8 text-slate-800 bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+        <h1 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
           تسجيل الدخول
         </h1>
 
