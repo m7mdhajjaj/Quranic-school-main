@@ -48,8 +48,10 @@ const studentSchema = new mongoose.Schema(
       match: [/^05\d{8}$/, 'الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام'],
       unique: true,
     },
-avatar: { data: Buffer, contentType: String }
+    avatar: { data: Buffer, contentType: String },
+    isActive: { type: Boolean, default: false },
   },
+
   { timestamps: true }
 );
 

@@ -27,7 +27,7 @@ const teacherSchema = new mongoose.Schema(
       required: [true, 'البريد الإلكتروني مطلوب'],
       unique: true,
     },
-      phoneNumber: {
+    phoneNumber: {
       type: String,
       required: [true, 'رقم الهاتف مطلوب'],
       match: [/^05\d{8}$/, 'الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام'],
@@ -54,9 +54,9 @@ const teacherSchema = new mongoose.Schema(
     role: { type: String, enum: ['teacher', 'admin'], default: 'teacher' },
 
     // الصورة
-avatar: { data: Buffer, contentType: String },
+    avatar: { data: Buffer, contentType: String },
 
-    isActive: { type: Boolean, default: true },
+    isActive: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
@@ -64,4 +64,3 @@ avatar: { data: Buffer, contentType: String },
 const Teacher = mongoose.model('Teacher', teacherSchema);
 module.exports = Teacher;
 
-/////okkkk
