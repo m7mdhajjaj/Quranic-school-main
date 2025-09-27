@@ -1,9 +1,22 @@
-
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
-  Edit, Phone, Mail, Calendar, MapPin, Users, BookOpen,
-  Camera, Lock, Save, X, User as UserIcon, Loader2, RefreshCw, IdCard,
+  Edit,
+  Phone,
+  Mail,
+  Calendar,
+  MapPin,
+  Users,
+  BookOpen,
+  Camera,
+  Lock,
+  Save,
+  X,
+  User as UserIcon,
+  Loader2,
+  RefreshCw,
+  IdCard,
 } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -33,7 +46,7 @@ interface UserBase {
   motherName?: string;
   lastName?: string;
   birthDate?: string; // ISO
-  gender?: string;    // 'male' | 'female' | 'ذكر' | 'انثى'
+  gender?: string; // 'male' | 'female' | 'ذكر' | 'انثى'
   residence?: string;
   email?: string;
   phoneNumber?: string;
@@ -44,6 +57,8 @@ interface UserBase {
   age?: number;
   teacherId?: number;
   studentId?: number;
+  group?: string;
+  teacher?: string;
 }
 
 type Endpoint = "students" | "teachers";
@@ -58,7 +73,11 @@ type FetchState =
 // Helpers
 // ============================
 const toArabicGender = (g?: string) =>
-  g === "male" || g === "ذكر" ? "ذكر" : g === "female" || g === "أنثى" || g === "انثى" ? "أنثى" : "غير محدد";
+  g === "male" || g === "ذكر"
+    ? "ذكر"
+    : g === "female" || g === "أنثى" || g === "انثى"
+    ? "أنثى"
+    : "غير محدد";
 
 const calcAge = (iso?: string) => {
   if (!iso) return undefined;
@@ -76,7 +95,11 @@ const formatDate = (iso?: string) => {
   const d = new Date(iso);
   return Number.isNaN(+d)
     ? "غير محدد"
-    : d.toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" });
+    : d.toLocaleDateString("ar-EG", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
 };
 
 const nv = (v?: string | number) =>
@@ -97,7 +120,8 @@ const pruneRolling = (timestamps: string[]) => {
   const now = new Date();
   return timestamps.filter((iso) => now < addOneMonth(new Date(iso)));
 };
-const keyFor = (field: "birthDate" | "gender", userId: string) => `editHistory_${field}_${userId}`;
+const keyFor = (field: "birthDate" | "gender", userId: string) =>
+  `editHistory_${field}_${userId}`;
 
 /** يرجع: {allowed, remaining, list} */
 const canEditFieldLocal = (field: "birthDate" | "gender", userId: string) => {
@@ -117,7 +141,9 @@ const recordEditLocal = (field: "birthDate" | "gender", userId: string) => {
 async function fetchAvatarBlobUrl(ep: Endpoint, id: string): Promise<string> {
   try {
     const res = await fetch(`${API_URL}/${ep}/${id}/avatar`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` },
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+      },
     });
     if (!res.ok) return "";
     const blob = await res.blob();
@@ -131,6 +157,7 @@ async function fetchAvatarBlobUrl(ep: Endpoint, id: string): Promise<string> {
 // Component
 // ============================
 const Profile: React.FC = () => {
+  const navigate = useNavigate();
   const [user, setUser] = useState<UserBase | null>(null);
   const [endpoint, setEndpoint] = useState<Endpoint>("students");
   const [fetchState, setFetchState] = useState<FetchState>({ status: "idle" });
@@ -147,7 +174,10 @@ const Profile: React.FC = () => {
 
   // عرض الاسم الكامل + العمر ديناميكي
   const fullName = useMemo(
-    () => [user?.firstName, user?.fatherName, user?.grandFatherName, user?.lastName].filter(Boolean).join(" "),
+    () =>
+      [user?.firstName, user?.fatherName, user?.grandFatherName, user?.lastName]
+        .filter(Boolean)
+        .join(" "),
     [user]
   );
   const age = useMemo(() => calcAge(user?.birthDate), [user?.birthDate]);
@@ -201,7 +231,10 @@ const Profile: React.FC = () => {
       });
       setFetchState({ status: "ok" });
     } catch (e: any) {
-      setFetchState({ status: "error", message: e?.response?.data?.message || "فشل تحميل البيانات" });
+      setFetchState({
+        status: "error",
+        message: e?.response?.data?.message || "فشل تحميل البيانات",
+      });
     }
   };
 
@@ -209,7 +242,8 @@ const Profile: React.FC = () => {
     loadUser();
     setTimeout(() => setMounted(true), 10); // لتفعيل انتقالات Tailwind
     return () => {
-      if (avatarUrl && avatarUrl.startsWith("blob:")) URL.revokeObjectURL(avatarUrl);
+      if (avatarUrl && avatarUrl.startsWith("blob:"))
+        URL.revokeObjectURL(avatarUrl);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -236,7 +270,8 @@ const Profile: React.FC = () => {
       birthDate: edited.birthDate,
       gender: edited.gender,
       residence: edited.residence,
-      email: edited.email,
+      idNumber: edited.idNumber,
+      // تم حذف الإيميل من التعديلات
       phoneNumber: edited.phoneNumber,
       groups: edited.groups,
     };
@@ -248,14 +283,18 @@ const Profile: React.FC = () => {
     if (changingBirth) {
       const b = canEditFieldLocal("birthDate", user._id);
       if (!b.allowed) {
-        toast.error("لا يمكنك تعديل تاريخ الميلاد أكثر من مرتين خلال شهر كامل من آخر تعديلاتك");
+        toast.error(
+          "لا يمكنك تعديل تاريخ الميلاد أكثر من مرتين خلال شهر كامل من آخر تعديلاتك"
+        );
         return;
       }
     }
     if (changingGender) {
       const g = canEditFieldLocal("gender", user._id);
       if (!g.allowed) {
-        toast.error("لا يمكنك تعديل الجنس أكثر من مرتين خلال شهر كامل من آخر تعديلاتك");
+        toast.error(
+          "لا يمكنك تعديل الجنس أكثر من مرتين خلال شهر كامل من آخر تعديلاتك"
+        );
         return;
       }
     }
@@ -333,8 +372,7 @@ const Profile: React.FC = () => {
             <div>{fetchState.message}</div>
             <button
               onClick={loadUser}
-              className="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-xl hover:bg-red-700 transition"
-            >
+              className="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-xl hover:bg-red-700 transition">
               <RefreshCw className="w-4 h-4" />
               إعادة المحاولة
             </button>
@@ -351,32 +389,57 @@ const Profile: React.FC = () => {
   const remainingGender = canEditFieldLocal("gender", user._id).remaining;
 
   return (
-    <div className={`p-4 md:p-6 transition-all duration-500 ${mounted ? "opacity-100" : "opacity-0"}`} dir="rtl">
+    <div
+      className={`p-4 md:p-6 transition-all duration-500 ${
+        mounted ? "opacity-100" : "opacity-0"
+      }`}
+      dir="rtl">
       <div className="mx-auto max-w-6xl space-y-6">
         {/* الهيدر */}
-        <div className={`relative rounded-3xl p-5 md:p-6 shadow-md overflow-hidden
+        <div
+          className={`relative rounded-3xl p-5 md:p-6 shadow-md overflow-hidden
           bg-gradient-to-br from-emerald-600 via-emerald-600 to-emerald-700
           ring-1 ring-emerald-500/20`}>
           {/* طبقة زجاجية خفيفة */}
           <div className="absolute inset-0 bg-white/5 -[2px] pointer-events-none" />
           <div className="relative flex items-start justify-between gap-4">
-            <div className={`transition-all ${mounted ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"} duration-500`}>
+            <div
+              className={`transition-all ${
+                mounted
+                  ? "translate-y-0 opacity-100"
+                  : "translate-y-2 opacity-0"
+              } duration-500`}>
               <div className="text-2xl md:text-3xl font-extrabold text-white drop-shadow-sm">
                 {fullName || "الملف الشخصي"}
               </div>
               <div className="mt-2 inline-flex items-center gap-2 bg-white/15 text-white px-3 py-1 rounded-full text-sm shadow-sm">
                 <BookOpen className="w-4 h-4" />
-                {user.role === "teacher" ? "معلّم" : user.role === "student" ? "طالب" : "مستخدم"}
+                {user.role === "teacher"
+                  ? "معلّم"
+                  : user.role === "student"
+                  ? "طالب"
+                  : "مستخدم"}
               </div>
             </div>
 
             {/* الأفاتار */}
-            <div className={`relative group ${mounted ? "opacity-100 scale-100" : "opacity-0 scale-95"} transition-all duration-500`}>
+            <div
+              className={`relative group ${
+                mounted ? "opacity-100 scale-100" : "opacity-0 scale-95"
+              } transition-all duration-500`}>
               <div className="w-24 h-24 md:w-28 md:h-28 rounded-full ring-4 ring-white/30 bg-white overflow-hidden flex items-center justify-center shadow-xl">
                 {avatarFile ? (
-                  <img src={URL.createObjectURL(avatarFile)} alt="avatar" className="w-full h-full object-cover" />
+                  <img
+                    src={URL.createObjectURL(avatarFile)}
+                    alt="avatar"
+                    className="w-full h-full object-cover"
+                  />
                 ) : avatarUrl ? (
-                  <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+                  <img
+                    src={avatarUrl}
+                    alt="avatar"
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <UserIcon className="w-12 h-12 text-emerald-600" />
                 )}
@@ -386,8 +449,7 @@ const Profile: React.FC = () => {
                   <label
                     htmlFor="avatar"
                     className="absolute -bottom-2 right-0 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full p-2 cursor-pointer shadow-lg transition transform group-hover:-translate-y-0.5"
-                    title="تغيير الصورة"
-                  >
+                    title="تغيير الصورة">
                     <Camera className="w-4 h-4" />
                   </label>
                   <input
@@ -411,21 +473,13 @@ const Profile: React.FC = () => {
               <>
                 <button
                   onClick={beginEdit}
-                  className="inline-flex items-center gap-2 bg-white text-emerald-700 font-semibold px-4 py-2 rounded-xl hover:bg-emerald-50 active:scale-[.99] transition"
-                >
+                  className="inline-flex items-center gap-2 bg-white text-emerald-700 font-semibold px-4 py-2 rounded-xl hover:bg-emerald-50 active:scale-[.99] transition">
                   <Edit className="w-4 h-4" />
                   تعديل المعلومات الشخصية
                 </button>
                 <button
-                  onClick={() => {
-                    const oldPass = prompt("أدخل كلمة المرور الحالية:");
-                    if (!oldPass) return;
-                    const newPass = prompt("أدخل كلمة المرور الجديدة:");
-                    if (!newPass) return;
-                    changePassword(oldPass, newPass);
-                  }}
-                  className="inline-flex items-center gap-2 bg-white/20 text-white font-semibold px-4 py-2 rounded-xl hover:bg-white/30 active:scale-[.99] transition"
-                >
+                  onClick={() => navigate("/change-password")}
+                  className="inline-flex items-center gap-2 bg-white/20 text-white font-semibold px-4 py-2 rounded-xl hover:bg-white/30 active:scale-[.99] transition">
                   <Lock className="w-4 h-4" />
                   تغيير كلمة المرور
                 </button>
@@ -434,15 +488,13 @@ const Profile: React.FC = () => {
               <>
                 <button
                   onClick={saveProfile}
-                  className="inline-flex items-center gap-2 bg-white text-emerald-700 font-extrabold px-4 py-2 rounded-xl hover:bg-emerald-50 active:scale-[.99] transition motion-safe:animate-none"
-                >
+                  className="inline-flex items-center gap-2 bg-white text-emerald-700 font-extrabold px-4 py-2 rounded-xl hover:bg-emerald-50 active:scale-[.99] transition motion-safe:animate-none">
                   <Save className="w-4 h-4" />
                   حفظ
                 </button>
                 <button
                   onClick={cancelEdit}
-                  className="inline-flex items-center gap-2 bg-white/20 text-white font-semibold px-4 py-2 rounded-xl hover:bg-white/30 active:scale-[.99] transition"
-                >
+                  className="inline-flex items-center gap-2 bg-white/20 text-white font-semibold px-4 py-2 rounded-xl hover:bg-white/30 active:scale-[.99] transition">
                   <X className="w-4 h-4" />
                   إلغاء
                 </button>
@@ -464,12 +516,16 @@ const Profile: React.FC = () => {
                     <TextInput
                       placeholder="الاسم الأول"
                       value={edited?.firstName ?? ""}
-                      onChange={(v) => setEdited((p) => (p ? { ...p, firstName: v } : p))}
+                      onChange={(v) =>
+                        setEdited((p) => (p ? { ...p, firstName: v } : p))
+                      }
                     />
                     <TextInput
                       placeholder="اسم العائلة"
                       value={edited?.lastName ?? ""}
-                      onChange={(v) => setEdited((p) => (p ? { ...p, lastName: v } : p))}
+                      onChange={(v) =>
+                        setEdited((p) => (p ? { ...p, lastName: v } : p))
+                      }
                     />
                   </div>
                 ) : (
@@ -486,11 +542,12 @@ const Profile: React.FC = () => {
               title="رقم الهوية"
               value={
                 isEditing ? (
-                  <input
-                    value={user.idNumber ?? ""}
-                    readOnly
-                    disabled
-                    className="w-full border rounded-xl px-3 py-2 bg-slate-100 text-slate-500 cursor-not-allowed"
+                  <TextInput
+                    value={edited?.idNumber ?? ""}
+                    onChange={(v) =>
+                      setEdited((p) => (p ? { ...p, idNumber: v } : p))
+                    }
+                    placeholder="رقم الهوية"
                   />
                 ) : (
                   nv(user.idNumber)
@@ -500,7 +557,9 @@ const Profile: React.FC = () => {
           )}
 
           {/* تاريخ الميلاد / العمر / الجنس + عداد المحاولات */}
-          {shouldShow(Boolean(user.birthDate) || Boolean(user.gender) || isEditing) && (
+          {shouldShow(
+            Boolean(user.birthDate) || Boolean(user.gender) || isEditing
+          ) && (
             <InfoCard
               icon={<Calendar className="w-6 h-6 text-amber-600" />}
               title="تاريخ الميلاد / العمر / الجنس"
@@ -510,16 +569,28 @@ const Profile: React.FC = () => {
                     <div className="grid grid-cols-3 gap-2">
                       <TextInput
                         type="date"
-                        value={edited?.birthDate ? edited.birthDate.slice(0, 10) : ""}
+                        value={
+                          edited?.birthDate ? edited.birthDate.slice(0, 10) : ""
+                        }
                         onChange={(v) =>
-                          setEdited((p) => (p ? { ...p, birthDate: v ? new Date(v).toISOString() : "" } : p))
+                          setEdited((p) =>
+                            p
+                              ? {
+                                  ...p,
+                                  birthDate: v ? new Date(v).toISOString() : "",
+                                }
+                              : p
+                          )
                         }
                       />
                       <select
                         className="w-full border rounded-xl px-3 py-2 focus:outline-none focus:ring"
                         value={edited?.gender ?? ""}
-                        onChange={(e) => setEdited((p) => (p ? { ...p, gender: e.target.value } : p))}
-                      >
+                        onChange={(e) =>
+                          setEdited((p) =>
+                            p ? { ...p, gender: e.target.value } : p
+                          )
+                        }>
                         <option value="">غير محدد</option>
                         <option value="male">ذكر</option>
                         <option value="female">أنثى</option>
@@ -529,14 +600,17 @@ const Profile: React.FC = () => {
                       </div>
                     </div>
                     <div className="text-xs text-slate-500">
-                      المتبقي لتعديل تاريخ الميلاد: <b>{remainingBirth}</b> / 2 — المتبقي لتعديل الجنس: <b>{remainingGender}</b> / 2
+                      المتبقي لتعديل تاريخ الميلاد: <b>{remainingBirth}</b> / 2
+                      — المتبقي لتعديل الجنس: <b>{remainingGender}</b> / 2
                     </div>
                   </div>
                 ) : (
                   <>
                     <div>تاريخ الميلاد: {formatDate(user.birthDate)}</div>
                     <div className="mt-1">العمر: {age ?? "—"} سنة</div>
-                    <div className="mt-1">الجنس: {toArabicGender(user.gender)}</div>
+                    <div className="mt-1">
+                      الجنس: {toArabicGender(user.gender)}
+                    </div>
                   </>
                 )
               }
@@ -553,7 +627,9 @@ const Profile: React.FC = () => {
                   <TextInput
                     placeholder="المدينة / الحي"
                     value={edited?.residence ?? ""}
-                    onChange={(v) => setEdited((p) => (p ? { ...p, residence: v } : p))}
+                    onChange={(v) =>
+                      setEdited((p) => (p ? { ...p, residence: v } : p))
+                    }
                   />
                 ) : (
                   nv(user.residence)
@@ -573,7 +649,9 @@ const Profile: React.FC = () => {
                     type="email"
                     placeholder="email@example.com"
                     value={edited?.email ?? ""}
-                    onChange={(v) => setEdited((p) => (p ? { ...p, email: v } : p))}
+                    onChange={(v) =>
+                      setEdited((p) => (p ? { ...p, email: v } : p))
+                    }
                   />
                 ) : (
                   nv(user.email)
@@ -592,7 +670,9 @@ const Profile: React.FC = () => {
                   <TextInput
                     placeholder="05xxxxxxxx"
                     value={edited?.phoneNumber ?? ""}
-                    onChange={(v) => setEdited((p) => (p ? { ...p, phoneNumber: v } : p))}
+                    onChange={(v) =>
+                      setEdited((p) => (p ? { ...p, phoneNumber: v } : p))
+                    }
                   />
                 ) : (
                   nv(user.phoneNumber)
@@ -601,28 +681,30 @@ const Profile: React.FC = () => {
             />
           )}
 
-          {/* المجموعات */}
-          {shouldShow(Boolean(user.groups && user.groups.length)) && (
+          {/* اسم المجموعة */}
+          {user.role === "student" && !isEditing && (
             <InfoCard
               icon={<Users className="w-6 h-6 text-sky-600" />}
-              title="المجموعات"
-              value={
-                isEditing ? (
-                  <TextInput
-                    placeholder="افصل بين الأسماء بفاصلة"
-                    value={(edited?.groups ?? []).join(", ")}
-                    onChange={(v) =>
-                      setEdited((p) =>
-                        p ? { ...p, groups: v.split(",").map((s) => s.trim()).filter(Boolean) } : p
-                      )
-                    }
-                  />
-                ) : user.groups && user.groups.length ? (
-                  user.groups.join("، ")
-                ) : (
-                  "غير متوفر"
-                )
-              }
+              title="اسم المجموعة"
+              value={nv(user.group)}
+            />
+          )}
+
+          {/* اسم المعلم */}
+          {user.role === "student" && !isEditing && (
+            <InfoCard
+              icon={<UserIcon className="w-6 h-6 text-emerald-600" />}
+              title="اسم المعلم"
+              value={nv(user.teacher)}
+            />
+          )}
+
+          {/* رقم الطالب */}
+          {user.role === "student" && user.studentId && !isEditing && (
+            <InfoCard
+              icon={<IdCard className="w-6 h-6 text-blue-600" />}
+              title="رقم الطالب"
+              value={nv(user.studentId)}
             />
           )}
 
@@ -645,11 +727,11 @@ const Profile: React.FC = () => {
 // ============================
 // عناصر فرعية
 // ============================
-const InfoCard: React.FC<{ icon: React.ReactNode; title: string; value: React.ReactNode }> = ({
-  icon,
-  title,
-  value,
-}) => (
+const InfoCard: React.FC<{
+  icon: React.ReactNode;
+  title: string;
+  value: React.ReactNode;
+}> = ({ icon, title, value }) => (
   <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
     <div className="flex items-center gap-3 mb-2">
       <div className="bg-slate-50 p-2 rounded-xl">{icon}</div>
