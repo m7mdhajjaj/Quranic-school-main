@@ -8,18 +8,18 @@ NotificationHeader Styles
 .notification-button {
   background: none;
   border: none;
-  font-size: 28px;
+  font-size: 24px;
   cursor: pointer;
   position: relative;
-  padding: 10px;
+  padding: 8px;
   border-radius: 50%;
   transition: all 0.3s ease;
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
 }
 
 .notification-button:hover {
@@ -68,7 +68,7 @@ NotificationHeader Styles
 .notification-dropdown {
   position: absolute;
   top: 100%;
-  left: -50px; /* تحريك الإشعار إلى اليمين بدلاً من right */
+  left: 0; /* محاذاة مع زر الإشعارات */
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
@@ -83,6 +83,7 @@ NotificationHeader Styles
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   animation: slideDown 0.3s ease-out;
+  margin-top: 8px; /* مساحة صغيرة بين الزر والقائمة */
 }
 
 @keyframes slideDown {
