@@ -9,6 +9,7 @@ export const useAuthGuard = () => {
     const checkAuthStatus = () => {
       const user = localStorage.getItem("user");
       const isLoginPage = location.pathname === "/login";
+      const isAdminPage = location.pathname.startsWith("/admin");
 
       // إذا لم يكن المستخدم مسجل دخول ولم يكن في صفحة تسجيل الدخول
       if (!user && !isLoginPage) {
@@ -18,8 +19,22 @@ export const useAuthGuard = () => {
 
       // إذا كان المستخدم مسجل دخول وفي صفحة تسجيل الدخول
       if (user && isLoginPage) {
-        navigate("/", { replace: true });
+        const userObj = JSON.parse(user);
+        if (userObj.role === "admin") {
+          navigate("/admin/dashboard", { replace: true });
+        } else {
+          navigate("/", { replace: true });
+        }
         return false;
+      }
+
+      // If user is on admin pages but not admin, redirect to home
+      if (user && isAdminPage) {
+        const userObj = JSON.parse(user);
+        if (userObj.role !== "admin") {
+          navigate("/", { replace: true });
+          return false;
+        }
       }
 
       return true;

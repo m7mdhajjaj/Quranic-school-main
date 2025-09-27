@@ -1,70 +1,70 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { API_URL } from '../config';
-import useUserAuth from '../hooks/useUserAuth';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { API_URL } from "../config";
+import useUserAuth from "../hooks/useUserAuth";
 
 const Login = () => {
   const navigate = useNavigate();
   const { saveUserData } = useUserAuth();
 
   const [formData, setFormData] = useState({
-    userId: '',
-    password: '',
+    userId: "",
+    password: "",
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotPasswordData, setForgotPasswordData] = useState({
-    firstName: '',
-    fatherName: '',
-    grandFatherName: '',
-    lastName: '',
-    motherName: '',
-    idNumber: '',
-    birthDate: '',
+    firstName: "",
+    fatherName: "",
+    grandFatherName: "",
+    lastName: "",
+    motherName: "",
+    idNumber: "",
+    birthDate: "",
   });
   const [resetStep, setResetStep] = useState(1);
   const [newPasswordData, setNewPasswordData] = useState({
-    password: '',
-    confirmPassword: '',
+    password: "",
+    confirmPassword: "",
   });
 
   // Load saved credentials and check authentication on component mount
   useEffect(() => {
-    const user = localStorage.getItem('user');
+    const user = localStorage.getItem("user");
     if (user) {
-      console.log('🔄 User already logged in, redirecting to home...');
-      navigate('/', { replace: true });
+      console.log("🔄 User already logged in, redirecting to home...");
+      navigate("/", { replace: true });
       return;
     }
 
     // Load saved credentials if remember me was checked
-    const savedCredentials = localStorage.getItem('savedCredentials');
+    const savedCredentials = localStorage.getItem("savedCredentials");
     if (savedCredentials) {
       try {
         const credentials = JSON.parse(savedCredentials);
         setFormData({
-          userId: credentials.userId || '',
-          password: credentials.password || '',
+          userId: credentials.userId || "",
+          password: credentials.password || "",
         });
         setRememberMe(true);
       } catch (error) {
-        console.error('Error parsing saved credentials:', error);
-        localStorage.removeItem('savedCredentials');
+        console.error("Error parsing saved credentials:", error);
+        localStorage.removeItem("savedCredentials");
       }
     }
 
     const preventBack = () => {
-      window.history.pushState(null, '', window.location.href);
+      window.history.pushState(null, "", window.location.href);
     };
 
-    window.history.pushState(null, '', window.location.href);
-    window.addEventListener('popstate', preventBack);
+    window.history.pushState(null, "", window.location.href);
+    window.addEventListener("popstate", preventBack);
 
     return () => {
-      window.removeEventListener('popstate', preventBack);
+      window.removeEventListener("popstate", preventBack);
     };
   }, [navigate]);
 
@@ -74,7 +74,7 @@ const Login = () => {
       ...prev,
       [name]: value,
     }));
-    if (error) setError('');
+    if (error) setError("");
   };
 
   const handleRememberMeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,7 +83,7 @@ const Login = () => {
 
     // If unchecked, remove saved credentials immediately
     if (!checked) {
-      localStorage.removeItem('savedCredentials');
+      localStorage.removeItem("savedCredentials");
     }
   };
 
@@ -95,7 +95,7 @@ const Login = () => {
       ...prev,
       [name]: value,
     }));
-    if (error) setError('');
+    if (error) setError("");
   };
 
   const handleNewPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,16 +104,16 @@ const Login = () => {
       ...prev,
       [name]: value,
     }));
-    if (error) setError('');
+    if (error) setError("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setIsLoading(true);
 
-    console.log('🔐 Login attempt started...');
-    console.log('👤 User ID:', formData.userId);
+    console.log("🔐 Login attempt started...");
+    console.log("👤 User ID:", formData.userId);
 
     try {
       let response;
@@ -124,21 +124,32 @@ const Login = () => {
           studentId: formData.userId,
           idNumber: formData.password,
         });
-        console.log('✅ Student login successful!');
+        console.log("✅ Student login successful!");
       } catch {
-        console.log('❌ Student login failed, trying teacher login...');
+        console.log("❌ Student login failed, trying teacher login...");
         // If student login fails, try teacher login
-        response = await axios.post(`${API_URL}/auth/login`, {
-          teacherId: formData.userId,
-          password: formData.password,
-          userType: 'teacher',
-        });
-        console.log('✅ Teacher login successful!');
+        try {
+          response = await axios.post(`${API_URL}/auth/login`, {
+            teacherId: formData.userId,
+            password: formData.password,
+            userType: "teacher",
+          });
+          console.log("✅ Teacher login successful!");
+        } catch {
+          console.log("❌ Teacher login failed, trying admin login...");
+          // If teacher login fails, try admin login
+          response = await axios.post(`${API_URL}/auth/login`, {
+            adminId: formData.userId,
+            password: formData.password,
+            userType: "admin",
+          });
+          console.log("✅ Admin login successful!");
+        }
       }
 
       console.log(
-        '👤 User logged in:',
-        response.data.user?.firstName || response.data.user?.name || 'Unknown'
+        "👤 User logged in:",
+        response.data.user?.firstName || response.data.user?.name || "Unknown"
       );
 
       if (response.data && response.data.user && response.data.token) {
@@ -148,37 +159,41 @@ const Login = () => {
         // Handle remember me functionality
         if (rememberMe) {
           localStorage.setItem(
-            'savedCredentials',
+            "savedCredentials",
             JSON.stringify({
               userId: formData.userId,
               password: formData.password,
             })
           );
-          console.log('💾 Credentials saved for next login');
+          console.log("💾 Credentials saved for next login");
         } else {
-          localStorage.removeItem('savedCredentials');
+          localStorage.removeItem("savedCredentials");
         }
 
-        console.log('🎉 Login successful!');
-        console.log('🚀 Navigating to home page...');
+        console.log("🎉 Login successful!");
+        console.log("🚀 Navigating to appropriate page...");
 
-        // Navigate to home page with a small delay to ensure state is updated
+        // Navigate to appropriate page based on role
+        const userRole = response.data.user.role;
+        const targetPage = userRole === "admin" ? "/admin" : "/";
+
+        // Navigate with a small delay to ensure state is updated
         setTimeout(() => {
-          navigate('/', { replace: true });
+          navigate(targetPage, { replace: true });
         }, 100);
       } else {
-        console.error('❌ Invalid response data:', response.data);
-        setError('رد غير صحيح من الخادم. رجاءً تأكد من الرقم وكلمة المرور.');
+        console.error("❌ Invalid response data:", response.data);
+        setError("رد غير صحيح من الخادم. رجاءً تأكد من الرقم وكلمة المرور.");
       }
     } catch (error: any) {
-      console.error('❌ Login error:', error);
+      console.error("❌ Login error:", error);
 
       if (error.response?.data?.message) {
         setError(error.response.data.message);
       } else if (error.message) {
         setError(error.message);
       } else {
-        setError('فشل تسجيل الدخول. رجاءً تأكد من الرقم وكلمة المرور.');
+        setError("فشل تسجيل الدخول. رجاءً تأكد من الرقم وكلمة المرور.");
       }
     } finally {
       setIsLoading(false);
@@ -187,7 +202,7 @@ const Login = () => {
 
   const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setIsLoading(true);
 
     try {
@@ -198,14 +213,14 @@ const Login = () => {
       if (response.data.success) {
         setResetStep(2);
       } else {
-        setError(response.data.message || 'فشل في التحقق من البيانات');
+        setError(response.data.message || "فشل في التحقق من البيانات");
       }
     } catch (error: any) {
-      console.error('Forgot password error:', error);
+      console.error("Forgot password error:", error);
       if (error.response?.data?.message) {
         setError(error.response.data.message);
       } else {
-        setError('فشل في التحقق من البيانات. رجاءً تأكد من صحة المعلومات.');
+        setError("فشل في التحقق من البيانات. رجاءً تأكد من صحة المعلومات.");
       }
     } finally {
       setIsLoading(false);
@@ -214,17 +229,17 @@ const Login = () => {
 
   const handleNewPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setIsLoading(true);
 
     if (newPasswordData.password !== newPasswordData.confirmPassword) {
-      setError('كلمة المرور وتأكيد كلمة المرور غير متطابقتين');
+      setError("كلمة المرور وتأكيد كلمة المرور غير متطابقتين");
       setIsLoading(false);
       return;
     }
 
     if (newPasswordData.password.length < 6) {
-      setError('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+      setError("كلمة المرور يجب أن تكون 6 أحرف على الأقل");
       setIsLoading(false);
       return;
     }
@@ -236,31 +251,31 @@ const Login = () => {
       });
 
       if (response.data.success) {
-        alert('تم تغيير كلمة المرور بنجاح!');
+        alert("تم تغيير كلمة المرور بنجاح!");
         setShowForgotPassword(false);
         setResetStep(1);
         setForgotPasswordData({
-          firstName: '',
-          fatherName: '',
-          grandFatherName: '',
-          lastName: '',
-          motherName: '',
-          idNumber: '',
-          birthDate: '',
+          firstName: "",
+          fatherName: "",
+          grandFatherName: "",
+          lastName: "",
+          motherName: "",
+          idNumber: "",
+          birthDate: "",
         });
         setNewPasswordData({
-          password: '',
-          confirmPassword: '',
+          password: "",
+          confirmPassword: "",
         });
       } else {
-        setError(response.data.message || 'فشل في تغيير كلمة المرور');
+        setError(response.data.message || "فشل في تغيير كلمة المرور");
       }
     } catch (error: any) {
-      console.error('Reset password error:', error);
+      console.error("Reset password error:", error);
       if (error.response?.data?.message) {
         setError(error.response.data.message);
       } else {
-        setError('فشل في تغيير كلمة المرور. رجاءً المحاولة مرة أخرى.');
+        setError("فشل في تغيير كلمة المرور. رجاءً المحاولة مرة أخرى.");
       }
     } finally {
       setIsLoading(false);
@@ -271,8 +286,7 @@ const Login = () => {
     return (
       <div
         className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50"
-        dir="rtl"
-      >
+        dir="rtl">
         <div className="bg-white/90 backdrop-blur-sm p-10 rounded-3xl shadow-2xl w-full max-w-md border border-white/20">
           <div className="flex justify-center mb-8">
             <div className="relative">
@@ -286,7 +300,7 @@ const Login = () => {
           </div>
 
           <h1 className="text-3xl font-bold text-center mb-8 text-slate-800 bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-            {resetStep === 1 ? 'نسيت كلمة المرور' : 'كلمة مرور جديدة'}
+            {resetStep === 1 ? "نسيت كلمة المرور" : "كلمة مرور جديدة"}
           </h1>
 
           {error && (
@@ -406,16 +420,14 @@ const Login = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-emerald-700 hover:to-teal-700 focus:ring-4 focus:ring-emerald-300 focus:outline-none transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-                >
-                  {isLoading ? 'جارٍ التحقق...' : 'تحقق من البيانات'}
+                  className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-emerald-700 hover:to-teal-700 focus:ring-4 focus:ring-emerald-300 focus:outline-none transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg">
+                  {isLoading ? "جارٍ التحقق..." : "تحقق من البيانات"}
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setShowForgotPassword(false)}
-                  className="w-full bg-gray-200 text-gray-700 py-3 px-6 rounded-xl font-semibold hover:bg-gray-300 focus:ring-4 focus:ring-gray-300 focus:outline-none transition-all duration-200"
-                >
+                  className="w-full bg-gray-200 text-gray-700 py-3 px-6 rounded-xl font-semibold hover:bg-gray-300 focus:ring-4 focus:ring-gray-300 focus:outline-none transition-all duration-200">
                   العودة لتسجيل الدخول
                 </button>
               </div>
@@ -456,9 +468,8 @@ const Login = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-emerald-700 hover:to-teal-700 focus:ring-4 focus:ring-emerald-300 focus:outline-none transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-                >
-                  {isLoading ? 'جارٍ التحديث...' : 'تحديث كلمة المرور'}
+                  className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-emerald-700 hover:to-teal-700 focus:ring-4 focus:ring-emerald-300 focus:outline-none transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg">
+                  {isLoading ? "جارٍ التحديث..." : "تحديث كلمة المرور"}
                 </button>
 
                 <button
@@ -467,8 +478,7 @@ const Login = () => {
                     setResetStep(1);
                     setShowForgotPassword(false);
                   }}
-                  className="w-full bg-gray-200 text-gray-700 py-3 px-6 rounded-xl font-semibold hover:bg-gray-300 focus:ring-4 focus:ring-gray-300 focus:outline-none transition-all duration-200"
-                >
+                  className="w-full bg-gray-200 text-gray-700 py-3 px-6 rounded-xl font-semibold hover:bg-gray-300 focus:ring-4 focus:ring-gray-300 focus:outline-none transition-all duration-200">
                   إلغاء
                 </button>
               </div>
@@ -482,8 +492,7 @@ const Login = () => {
   return (
     <div
       className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50"
-      dir="rtl"
-    >
+      dir="rtl">
       {/* Main Login Card */}
       <div className="bg-white/90 backdrop-blur-sm p-10 rounded-3xl shadow-2xl w-full max-w-md border border-white/20">
         {/* Logo Section */}
@@ -510,8 +519,7 @@ const Login = () => {
               <svg
                 className="w-5 h-5 mr-2 flex-shrink-0"
                 fill="currentColor"
-                viewBox="0 0 20 20"
-              >
+                viewBox="0 0 20 20">
                 <path
                   fillRule="evenodd"
                   d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
@@ -528,8 +536,7 @@ const Login = () => {
           <div>
             <label
               className="block text-sm font-medium text-gray-700 mb-2"
-              htmlFor="userId"
-            >
+              htmlFor="userId">
               رقم الطالب أو رقم الهوية
             </label>
             <input
@@ -547,8 +554,7 @@ const Login = () => {
           <div>
             <label
               className="block text-sm font-medium text-gray-700 mb-2"
-              htmlFor="password"
-            >
+              htmlFor="password">
               كلمة المرور
             </label>
             <input
@@ -576,8 +582,7 @@ const Login = () => {
               />
               <label
                 htmlFor="remember-me"
-                className="mr-2 block text-sm text-gray-700"
-              >
+                className="mr-2 block text-sm text-gray-700">
                 تذكرني
               </label>
             </div>
@@ -585,8 +590,7 @@ const Login = () => {
             <button
               type="button"
               onClick={() => setShowForgotPassword(true)}
-              className="text-sm text-emerald-600 hover:text-emerald-800 font-medium transition-colors duration-200"
-            >
+              className="text-sm text-emerald-600 hover:text-emerald-800 font-medium transition-colors duration-200">
               نسيت كلمة المرور؟
             </button>
           </div>
@@ -595,34 +599,30 @@ const Login = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-emerald-700 hover:to-teal-700 focus:ring-4 focus:ring-emerald-300 focus:outline-none transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-          >
+            className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-emerald-700 hover:to-teal-700 focus:ring-4 focus:ring-emerald-300 focus:outline-none transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg">
             {isLoading ? (
               <div className="flex items-center justify-center">
                 <svg
                   className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
-                  viewBox="0 0 24 24"
-                >
+                  viewBox="0 0 24 24">
                   <circle
                     className="opacity-25"
                     cx="12"
                     cy="12"
                     r="10"
                     stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
+                    strokeWidth="4"></circle>
                   <path
                     className="opacity-75"
                     fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
                 جارٍ تسجيل الدخول...
               </div>
             ) : (
-              'تسجيل الدخول'
+              "تسجيل الدخول"
             )}
           </button>
         </form>

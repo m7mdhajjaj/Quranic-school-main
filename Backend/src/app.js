@@ -26,14 +26,16 @@ app.use((req, res, next) => {
 // Middleware
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
-const allowedOrigins = process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : ["http://localhost:5173"];
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(",")
+  : ["http://localhost:5173"];
 app.use(
   cors({
     origin: function (origin, callback) {
       // allow requests with no origin (like mobile apps, curl, etc.)
       if (!origin) return callback(null, true);
       if (allowedOrigins.indexOf(origin) === -1) {
-        const msg = 'CORS policy: This origin is not allowed.';
+        const msg = "CORS policy: This origin is not allowed.";
         return callback(new Error(msg), false);
       }
       return callback(null, true);
@@ -67,6 +69,7 @@ app.get("/test-upload", (req, res) => {
 // Routes
 app.use("/api/students", require("./routes/studentRoutes"));
 app.use("/api/teachers", require("./routes/teacherRoutes"));
+app.use("/api/admins", require("./routes/adminRoutes"));
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/news", require("./routes/newsRoutes"));
 app.use("/api/activities", require("./routes/activityRoutes"));
@@ -80,6 +83,7 @@ app.use("/api/notifications", require("./routes/notificationRoutes"));
 app.use("/api/exams", require("./routes/examRoutes"));
 app.use("/api/exam-marks", require("./routes/examMarkRoutes"));
 app.use("/api/sessions", require("./routes/sessionRoutes"));
+app.use("/api/groups", require("./routes/groupRoutes"));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

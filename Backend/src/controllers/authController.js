@@ -1,12 +1,13 @@
 const Student = require("../models/Student");
 const Teacher = require("../models/Teacher");
+const Admin = require("../models/Admin");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
 // JWT Secret - في الحالة المثالية يجب وضع هذا في ملف .env
 const JWT_SECRET = process.env.JWT_SECRET;
 
-const { body, validationResult } = require('express-validator');
+const { body, validationResult } = require("express-validator");
 
 // تسجيل الدخول بواسطة رقم الطالب ورقم الهوية
 exports.login = async (req, res) => {
@@ -21,6 +22,11 @@ exports.login = async (req, res) => {
     // Check if it's a teacher login
     if (userType === "teacher") {
       return await loginTeacher(req, res);
+    }
+
+    // Check if it's an admin login
+    if (userType === "admin") {
+      return await loginAdmin(req, res);
     }
 
     // Otherwise, proceed with student login
@@ -80,7 +86,7 @@ exports.login = async (req, res) => {
         role: "student",
       },
       JWT_SECRET,
-      { expiresIn: "7d" },
+      { expiresIn: "7d" }
     );
 
     // إرسال البيانات المصادق عليها
@@ -102,7 +108,7 @@ exports.login = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "حدث خطأ أثناء تسجيل الدخول",
-      error: process.env.NODE_ENV === "production" ? undefined : error.message
+      error: process.env.NODE_ENV === "production" ? undefined : error.message,
     });
   }
 };
@@ -150,7 +156,7 @@ const loginTeacher = async (req, res) => {
         role: teacher.role,
       },
       JWT_SECRET,
-      { expiresIn: "7d" },
+      { expiresIn: "7d" }
     );
 
     // إرسال البيانات المصادق عليها
@@ -168,6 +174,72 @@ const loginTeacher = async (req, res) => {
     });
   } catch (error) {
     console.error("Teacher login error:", error);
+    res.status(500).json({
+      success: false,
+      message: "حدث خطأ أثناء تسجيل الدخول",
+    });
+  }
+};
+
+// تسجيل دخول الإداري
+const loginAdmin = async (req, res) => {
+  try {
+    const { adminId, password } = req.body;
+
+    // التحقق من إدخال رقم الإداري وكلمة المرور
+    if (!adminId || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "الرجاء إدخال رقم الإداري وكلمة المرور",
+      });
+    }
+
+    // البحث عن الإداري باستخدام رقم الإداري
+    const admin = await Admin.findOne({ adminId });
+
+    if (!admin) {
+      return res.status(401).json({
+        success: false,
+        message: "رقم الإداري غير موجود",
+      });
+    }
+
+    // التحقق من صحة كلمة المرور
+    const isMatch = await bcrypt.compare(password, admin.password);
+
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "كلمة المرور غير صحيحة",
+      });
+    }
+
+    // إنشاء رمز JWT
+    const token = jwt.sign(
+      {
+        id: admin._id,
+        adminId: admin.adminId,
+        name: `${admin.firstName} ${admin.lastName}`,
+        role: "admin",
+      },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    // إرسال البيانات المصادق عليها
+    res.status(200).json({
+      success: true,
+      token,
+      user: {
+        _id: admin._id,
+        adminId: admin.adminId,
+        firstName: admin.firstName,
+        lastName: admin.lastName,
+        role: "admin",
+      },
+    });
+  } catch (error) {
+    console.error("Admin login error:", error);
     res.status(500).json({
       success: false,
       message: "حدث خطأ أثناء تسجيل الدخول",
@@ -284,6 +356,38 @@ exports.getMe = async (req, res) => {
           role: "student",
         },
       });
+    } else if (decoded.role === "admin") {
+      // البحث عن الإداري في قاعدة البيانات
+      const admin = await Admin.findById(decoded.id);
+
+      if (!admin) {
+        return res.status(404).json({
+          success: false,
+          message: "الإداري غير موجود",
+        });
+      }
+
+      // إرسال جميع بيانات الإداري
+      return res.status(200).json({
+        success: true,
+        user: {
+          _id: admin._id,
+          adminId: admin.adminId,
+          idNumber: admin.idNumber,
+          firstName: admin.firstName,
+          fatherName: admin.fatherName,
+          grandFatherName: admin.grandFatherName,
+          motherName: admin.motherName,
+          lastName: admin.lastName,
+          birthDate: admin.birthDate,
+          age: admin.age,
+          gender: admin.gender,
+          residence: admin.residence,
+          email: admin.email,
+          phoneNumber: admin.phoneNumber,
+          role: "admin",
+        },
+      });
     } else {
       // البحث عن المعلم في قاعدة البيانات
       const teacher = await Teacher.findById(decoded.id);
@@ -374,6 +478,8 @@ exports.changePassword = async (req, res) => {
     // البحث عن المستخدم حسب النوع
     if (userType === "teacher" || userType === "admin") {
       user = await Teacher.findById(userId);
+    } else if (userType === "admin") {
+      user = await Admin.findById(userId);
     } else {
       user = await Student.findById(userId);
     }
@@ -394,7 +500,7 @@ exports.changePassword = async (req, res) => {
       // للمعلمين، التحقق من كلمة المرور المشفرة
       isCurrentPasswordValid = await bcrypt.compare(
         currentPassword,
-        user.password,
+        user.password
       );
     } else {
       // للطلاب، التحقق إذا كانت كلمة المرور مشفرة أم لا
@@ -407,7 +513,7 @@ exports.changePassword = async (req, res) => {
         console.log("Checking encrypted password");
         isCurrentPasswordValid = await bcrypt.compare(
           currentPassword,
-          user.password,
+          user.password
         );
       } else if (user.password) {
         // كلمة المرور غير مشفرة (نص عادي)
@@ -434,6 +540,10 @@ exports.changePassword = async (req, res) => {
     // تحديث كلمة المرور في قاعدة البيانات
     if (userType === "teacher" || userType === "admin") {
       await Teacher.findByIdAndUpdate(userId, {
+        password: hashedNewPassword,
+      });
+    } else if (userType === "admin") {
+      await Admin.findByIdAndUpdate(userId, {
         password: hashedNewPassword,
       });
     } else {

@@ -77,7 +77,6 @@
 
 // export default App;
 
-
 // Frontend/src/App.tsx
 import "./App.css";
 import Header from "./components/Header";
@@ -90,6 +89,7 @@ import Footer from "./components/Footer";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import useAuthGuard from "./hooks/useAuthGuard";
+import useAdminGuard from "./hooks/useAdminGuard";
 import Arrangement from "./pages/Arrangement";
 import Activities from "./pages/Activities";
 import DailyMarks from "./pages/DailyMarks";
@@ -106,6 +106,9 @@ import Soon from "./components/Soon";
 import Reports from "./pages/Reports";
 import Timetable from "./pages/Timetable";
 import ExamSchedule from "./pages/ExamSchedule";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminManagement from "./pages/AdminManagement";
+import AdminHeader from "./components/AdminHeader";
 
 // Import the AuthFlagProvider
 import { AuthFlagProvider } from "./hooks/AuthFlagContext";
@@ -116,13 +119,19 @@ function AppContent() {
   const isChatPage = location.pathname === "/chat";
   const isQuranPage =
     location.pathname === "/quran" || location.pathname === "/quran-audio";
+  const isAdminPage = location.pathname.startsWith("/admin");
 
-  // استخدام hook الحماية
-  useAuthGuard();
+  // Use appropriate auth guard based on route
+  if (isAdminPage) {
+    useAdminGuard(); // Only admins can access admin pages
+  } else {
+    useAuthGuard(); // Regular auth for other pages
+  }
 
   return (
     <>
-      {!isLoginPage && <Header />}
+      {isAdminPage && <AdminHeader />}
+      {!isLoginPage && !isAdminPage && <Header />}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
@@ -144,9 +153,16 @@ function AppContent() {
         <Route path="/quran-audio" element={<QuranAudio />} />
         <Route path="/change-password" element={<ChangePass />} />
         <Route path="/profile" element={<Profile />} />
+        {/* Admin Routes - Protected */}
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/management" element={<AdminManagement />} />
+        {/* Redirect /admin to /admin/dashboard */}
+        <Route path="/admin" element={<AdminDashboard />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
-      {!isLoginPage && !isChatPage && !isQuranPage && <Footer />}
+      {!isLoginPage && !isChatPage && !isQuranPage && !isAdminPage && (
+        <Footer />
+      )}
     </>
   );
 }
