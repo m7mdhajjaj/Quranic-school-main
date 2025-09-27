@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const teacherSchema = new mongoose.Schema(
   {
@@ -9,15 +9,15 @@ const teacherSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, "كلمة المرور مطلوبة"],
+      required: [true, 'كلمة المرور مطلوبة'],
     },
     firstName: {
       type: String,
-      required: [true, "الاسم الأول مطلوب"],
+      required: [true, 'الاسم الأول مطلوب'],
     },
     lastName: {
       type: String,
-      required: [true, "اسم العائلة مطلوب"],
+      required: [true, 'اسم العائلة مطلوب'],
     },
     fatherName: {
       type: String,
@@ -29,14 +29,17 @@ const teacherSchema = new mongoose.Schema(
     },
     email: {
       type: String,
-      required: [true, "البريد الإلكتروني مطلوب"],
+      required: [true, 'البريد الإلكتروني مطلوب'],
       unique: true,
     },
     phoneNumber: {
       type: String,
-      required: [true, "رقم الهاتف مطلوب"],
-      match: [/^09\d{8}$/, "رقم الهاتف يجب أن يبدأ بـ 09 ويتكون من 10 أرقام"],
-      unique: true,
+      trim: true,
+      // مثال فلسطين/شركات جوال/وطنية: 05XXXXXXXX
+      validate: {
+        validator: (v) => !v || /^05\d{8}$/.test(v),
+        message: 'الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام',
+      },
     },
     idNumber: {
       type: String,
@@ -53,25 +56,26 @@ const teacherSchema = new mongoose.Schema(
     age: {
       type: Number,
       required: false, // العمر اختياري للمعلمين الحاليين
-      min: [0, "العمر يجب أن يكون رقماً موجباً"],
+      min: [0, 'العمر يجب أن يكون رقماً موجباً'],
     },
     groups: {
       type: [String],
-      required: [true, "يجب تحديد الحلقات التي يدرسها المعلم"],
+      required: [true, 'يجب تحديد الحلقات التي يدرسها المعلم'],
     },
     role: {
       type: String,
-      enum: ["teacher", "admin"],
-      default: "teacher",
+      enum: ['teacher', 'admin'],
+      default: 'teacher',
     },
     avatar: {
       type: String,
       required: false,
     },
+    isActive: { type: Boolean, default: true },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
-const Teacher = mongoose.model("Teacher", teacherSchema);
+const Teacher = mongoose.model('Teacher', teacherSchema);
 
 module.exports = Teacher;

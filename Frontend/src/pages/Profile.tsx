@@ -1,729 +1,1315 @@
-type User = Student | Teacher;
+// // src/pages/Profile.tsx
+// import React, { useEffect, useMemo, useState } from 'react';
+// import axios from 'axios';
+// import {
+//   Edit,
+//   Phone,
+//   Mail,
+//   Calendar,
+//   MapPin,
+//   Users,
+//   BookOpen,
+//   Camera,
+//   Lock,
+//   Save,
+//   X,
+//   User as UserIcon,
+//   Loader2,
+//   RefreshCw,
+//   IdCard,
+// } from 'lucide-react';
+// import { toast, ToastContainer } from 'react-toastify';
+// import 'react-toastify/dist/ReactToastify.css';
 
-import React, { useEffect, useState } from 'react';
-import { Edit, Phone, Mail, Calendar, MapPin, Users, BookOpen, Camera, Lock, Save, X } from 'lucide-react';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+// // ============================
+// // الإعداد
+// // ============================
+// const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:5005/api';
 
-// ========================
-// Types aligned to backend
-// ========================
+// // Axios مع التوكن
+// const api = axios.create({ baseURL: API_URL });
+// api.interceptors.request.use((config) => {
+//   const token = localStorage.getItem('token');
+//   if (token) config.headers.Authorization = `Bearer ${token}`;
+//   return config;
+// });
 
-interface Student {
+// // ============================
+// // Types
+// // ============================
+// interface UserBase {
+//   _id: string;
+//   idNumber?: string;
+//   firstName?: string;
+//   fatherName?: string;
+//   grandFatherName?: string;
+//   motherName?: string;
+//   lastName?: string;
+//   birthDate?: string; // ISO
+//   gender?: string;
+//   residence?: string;
+//   email?: string;
+//   phoneNumber?: string;
+//   groups?: string[];
+//   role?: 'student' | 'teacher' | 'admin';
+//   createdAt?: string;
+//   updatedAt?: string;
+//   age?: number;
+//   teacherId?: number;
+//   studentId?: number;
+// }
+
+// type Endpoint = 'students' | 'teachers';
+
+// type FetchState =
+//   | { status: 'idle' }
+//   | { status: 'loading' }
+//   | { status: 'ok' }
+//   | { status: 'error'; message: string };
+
+// // ============================
+// // Helpers
+// // ============================
+// const toArabicGender = (g?: string) =>
+//   g === 'male' || g === 'ذكر'
+//     ? 'ذكر'
+//     : g === 'female' || g === 'أنثى'
+//       ? 'أنثى'
+//       : 'غير محدد';
+
+// const calcAge = (iso?: string) => {
+//   if (!iso) return undefined;
+//   const d = new Date(iso);
+//   if (Number.isNaN(+d)) return undefined;
+//   const now = new Date();
+//   let age = now.getFullYear() - d.getFullYear();
+//   const m = now.getMonth() - d.getMonth();
+//   if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--;
+//   return age;
+// };
+
+// const formatDate = (iso?: string) => {
+//   if (!iso) return 'غير محدد';
+//   const d = new Date(iso);
+//   return Number.isNaN(+d)
+//     ? 'غير محدد'
+//     : d.toLocaleDateString('ar-EG', {
+//         year: 'numeric',
+//         month: 'long',
+//         day: 'numeric',
+//       });
+// };
+
+// const nv = (v?: string | number) =>
+//   v === undefined || v === null || v === '' ? 'غير متوفر' : String(v);
+
+// const fetchJson = async (url: string) => {
+//   const res = await api.get(url);
+//   return res.data?.data ?? res.data;
+// };
+
+// // اجلب الأفاتار كـ Blob URL من الـ API
+// async function fetchAvatarBlobUrl(ep: Endpoint, id: string): Promise<string> {
+//   try {
+//     const res = await fetch(`${API_URL}/${ep}/${id}/avatar`, {
+//       headers: {
+//         Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
+//       },
+//     });
+//     if (!res.ok) return '';
+//     const blob = await res.blob();
+//     return URL.createObjectURL(blob);
+//   } catch {
+//     return '';
+//   }
+// }
+
+// // ============================
+// // Component
+// // ============================
+// const Profile: React.FC = () => {
+//   const [user, setUser] = useState<UserBase | null>(null);
+//   const [endpoint, setEndpoint] = useState<Endpoint>('students');
+//   const [fetchState, setFetchState] = useState<FetchState>({ status: 'idle' });
+
+//   const [isEditing, setIsEditing] = useState(false);
+//   const [edited, setEdited] = useState<UserBase | null>(null);
+
+//   // للصورة
+//   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+//   const [avatarUrl, setAvatarUrl] = useState<string>('');
+
+//   // توليد اسم كامل
+//   const fullName = useMemo(
+//     () =>
+//       [user?.firstName, user?.fatherName, user?.grandFatherName, user?.lastName]
+//         .filter(Boolean)
+//         .join(' '),
+//     [user]
+//   );
+//   const age = useMemo(() => user?.age ?? calcAge(user?.birthDate), [user]);
+
+//   // معرف المستخدم
+//   const getUserId = () => {
+//     const idFromLocal = localStorage.getItem('userId');
+//     if (idFromLocal) return idFromLocal;
+//     try {
+//       const raw = localStorage.getItem('user');
+//       if (raw) {
+//         const parsed = JSON.parse(raw);
+//         return parsed?._id || parsed?.id;
+//       }
+//     } catch {}
+//     return '';
+//   };
+
+//   // تحميل البيانات
+//   const loadUser = async () => {
+//     const id = getUserId();
+//     if (!id) {
+//       setFetchState({ status: 'error', message: 'لا يوجد مستخدم مسجّل.' });
+//       return;
+//     }
+//     setFetchState({ status: 'loading' });
+//     try {
+//       // جرّب الطالب أولاً
+//       try {
+//         const u: UserBase = await fetchJson(`/students/${id}`);
+//         setUser({ ...u, role: u.role ?? 'student' });
+//         setEndpoint('students');
+//         const url = await fetchAvatarBlobUrl('students', u._id);
+//         setAvatarUrl((prev) => {
+//           if (prev && prev.startsWith('blob:')) URL.revokeObjectURL(prev);
+//           return url;
+//         });
+//         setFetchState({ status: 'ok' });
+//         return;
+//       } catch (e: any) {
+//         if (e?.response?.status !== 404) throw e;
+//       }
+//       // جرّب المعلّم
+//       const u: UserBase = await fetchJson(`/teachers/${id}`);
+//       setUser({ ...u, role: u.role ?? 'teacher' });
+//       setEndpoint('teachers');
+//       const url = await fetchAvatarBlobUrl('teachers', u._id);
+//       setAvatarUrl((prev) => {
+//         if (prev && prev.startsWith('blob:')) URL.revokeObjectURL(prev);
+//         return url;
+//       });
+//       setFetchState({ status: 'ok' });
+//     } catch (e: any) {
+//       setFetchState({
+//         status: 'error',
+//         message: e?.response?.data?.message || 'فشل تحميل البيانات',
+//       });
+//     }
+//   };
+
+//   useEffect(() => {
+//     loadUser();
+//     return () => {
+//       if (avatarUrl && avatarUrl.startsWith('blob:'))
+//         URL.revokeObjectURL(avatarUrl);
+//     };
+//     // eslint-disable-next-line react-hooks/exhaustive-deps
+//   }, []);
+
+//   // تحرير
+//   const beginEdit = () => {
+//     setEdited(user);
+//     setIsEditing(true);
+//   };
+//   const cancelEdit = () => {
+//     setIsEditing(false);
+//     setEdited(null);
+//     setAvatarFile(null);
+//     // ارجع للـ avatarUrl الحالي (نفسه)
+//   };
+
+//   // حفظ
+//   const saveProfile = async () => {
+//     if (!user || !edited) return;
+//     try {
+//       // (1) البيانات النصية
+//       const payload: Partial<UserBase> = {
+//         firstName: edited.firstName,
+//         lastName: edited.lastName,
+//         idNumber: edited.idNumber,
+//         birthDate: edited.birthDate,
+//         gender: edited.gender,
+//         residence: edited.residence,
+//         email: edited.email,
+//         phoneNumber: edited.phoneNumber,
+//         groups: edited.groups,
+//       };
+//       await api.put(`/${endpoint}/${user._id}`, payload);
+
+//       // (2) رفع الصورة داخل الداتابيس (in-memory)
+//       if (avatarFile) {
+//         const fd = new FormData();
+//         fd.append('avatar', avatarFile);
+//         await api.post(`/${endpoint}/${user._id}/avatar`, fd, {
+//           headers: { 'Content-Type': 'multipart/form-data' },
+//         });
+//         // أعد تحميل صورة الأفاتار كبلاَب
+//         const newUrl = await fetchAvatarBlobUrl(endpoint, user._id);
+//         setAvatarUrl((prev) => {
+//           if (prev && prev.startsWith('blob:')) URL.revokeObjectURL(prev);
+//           return newUrl;
+//         });
+//         setAvatarFile(null);
+//       }
+
+//       // حدّث العرض
+//       setUser({ ...user, ...payload });
+//       setEdited(null);
+//       setIsEditing(false);
+//       toast.success('تم حفظ التعديلات بنجاح');
+//     } catch (e: any) {
+//       toast.error(e?.response?.data?.message || 'تعذّر حفظ التعديلات');
+//     }
+//   };
+
+//   const changePassword = async (oldPass: string, newPass: string) => {
+//     try {
+//       await api.put(`/${endpoint}/${user?._id}/password`, {
+//         oldPassword: oldPass,
+//         newPassword: newPass,
+//       });
+//       toast.success('تم تغيير كلمة المرور');
+//     } catch (e: any) {
+//       toast.error(e?.response?.data?.message || 'تعذّر تغيير كلمة المرور');
+//     }
+//   };
+
+//   // UI حالات
+//   if (fetchState.status === 'loading') {
+//     return (
+//       <div className="p-6 flex items-center justify-center min-h-[60vh]">
+//         <div className="flex items-center gap-3 text-slate-600">
+//           <Loader2 className="w-6 h-6 animate-spin" />
+//           <span>جارِ تحميل الملف الشخصي…</span>
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   if (fetchState.status === 'error') {
+//     return (
+//       <div className="p-6">
+//         <div className="mx-auto max-w-5xl">
+//           <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 flex items-center justify-between">
+//             <div>{fetchState.message}</div>
+//             <button
+//               onClick={loadUser}
+//               className="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+//             >
+//               <RefreshCw className="w-4 h-4" />
+//               إعادة المحاولة
+//             </button>
+//           </div>
+//         </div>
+//         <ToastContainer rtl position="top-center" />
+//       </div>
+//     );
+//   }
+
+//   if (!user) return null;
+
+//   return (
+//     <div className="p-4 md:p-6" dir="rtl">
+//       <div className="mx-auto max-w-6xl">
+//         {/* الهيدر */}
+//         <div className="bg-emerald-600 text-white rounded-2xl p-5 md:p-6 relative shadow-md">
+//           <div className="flex items-start justify-between gap-4">
+//             <div>
+//               <div className="text-2xl md:text-3xl font-bold">
+//                 {fullName || 'الملف الشخصي'}
+//               </div>
+//               <div className="mt-2 inline-flex items-center gap-2 bg-emerald-700/60 px-3 py-1 rounded-full text-sm">
+//                 <BookOpen className="w-4 h-4" />
+//                 {user.role === 'teacher'
+//                   ? 'معلّم'
+//                   : user.role === 'student'
+//                     ? 'طالب'
+//                     : 'مستخدم'}
+//               </div>
+//             </div>
+
+//             {/* الأفاتار */}
+//             <div className="relative">
+//               <div className="w-24 h-24 md:w-28 md:h-28 rounded-full ring-4 ring-white/30 bg-white overflow-hidden flex items-center justify-center shadow-lg">
+//                 {avatarFile ? (
+//                   <img
+//                     src={URL.createObjectURL(avatarFile)}
+//                     alt="avatar"
+//                     className="w-full h-full object-cover"
+//                   />
+//                 ) : avatarUrl ? (
+//                   <img
+//                     src={avatarUrl}
+//                     alt="avatar"
+//                     className="w-full h-full object-cover"
+//                   />
+//                 ) : (
+//                   <UserIcon className="w-12 h-12 text-emerald-600" />
+//                 )}
+//               </div>
+//               {isEditing && (
+//                 <>
+//                   <label
+//                     htmlFor="avatar"
+//                     className="absolute -bottom-2 right-0 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full p-2 cursor-pointer shadow"
+//                     title="تغيير الصورة"
+//                   >
+//                     <Camera className="w-4 h-4" />
+//                   </label>
+//                   <input
+//                     id="avatar"
+//                     type="file"
+//                     accept="image/*"
+//                     className="hidden"
+//                     onChange={(e) => {
+//                       const f = e.target.files?.[0] || null;
+//                       setAvatarFile(f);
+//                     }}
+//                   />
+//                 </>
+//               )}
+//             </div>
+//           </div>
+
+//           {/* أزرار */}
+//           <div className="mt-4 flex flex-wrap gap-3">
+//             {!isEditing ? (
+//               <>
+//                 <button
+//                   onClick={beginEdit}
+//                   className="inline-flex items-center gap-2 bg-white text-emerald-700 font-medium px-4 py-2 rounded-lg hover:bg-emerald-50"
+//                 >
+//                   <Edit className="w-4 h-4" />
+//                   تعديل المعلومات الشخصية
+//                 </button>
+//                 <button
+//                   onClick={() => {
+//                     const oldPass = prompt('أدخل كلمة المرور الحالية:');
+//                     if (!oldPass) return;
+//                     const newPass = prompt('أدخل كلمة المرور الجديدة:');
+//                     if (!newPass) return;
+//                     changePassword(oldPass, newPass);
+//                   }}
+//                   className="inline-flex items-center gap-2 bg-white/20 text-white font-medium px-4 py-2 rounded-lg hover:bg-white/30"
+//                 >
+//                   <Lock className="w-4 h-4" />
+//                   تغيير كلمة المرور
+//                 </button>
+//               </>
+//             ) : (
+//               <>
+//                 <button
+//                   onClick={saveProfile}
+//                   className="inline-flex items-center gap-2 bg-white text-emerald-700 font-semibold px-4 py-2 rounded-lg hover:bg-emerald-50"
+//                 >
+//                   <Save className="w-4 h-4" />
+//                   حفظ
+//                 </button>
+//                 <button
+//                   onClick={cancelEdit}
+//                   className="inline-flex items-center gap-2 bg-white/20 text-white font-medium px-4 py-2 rounded-lg hover:bg-white/30"
+//                 >
+//                   <X className="w-4 h-4" />
+//                   إلغاء
+//                 </button>
+//               </>
+//             )}
+//           </div>
+//         </div>
+
+//         {/* البطاقات */}
+//         <div className="grid md:grid-cols-3 gap-4 mt-6">
+//           {/* الاسم الكامل */}
+//           <InfoCard
+//             icon={<Users className="w-6 h-6 text-emerald-600" />}
+//             title="الاسم الكامل"
+//             value={
+//               isEditing ? (
+//                 <div className="grid grid-cols-2 gap-2">
+//                   <TextInput
+//                     placeholder="الاسم الأول"
+//                     value={edited?.firstName ?? ''}
+//                     onChange={(v) =>
+//                       setEdited((p) => (p ? { ...p, firstName: v } : p))
+//                     }
+//                   />
+//                   <TextInput
+//                     placeholder="اسم العائلة"
+//                     value={edited?.lastName ?? ''}
+//                     onChange={(v) =>
+//                       setEdited((p) => (p ? { ...p, lastName: v } : p))
+//                     }
+//                   />
+//                 </div>
+//               ) : (
+//                 nv(fullName)
+//               )
+//             }
+//           />
+
+//           {/* رقم الهوية */}
+//           <InfoCard
+//             icon={<IdCard className="w-6 h-6 text-purple-600" />}
+//             title="رقم الهوية"
+//             value={
+//               isEditing ? (
+//                 <TextInput
+//                   placeholder="رقم الهوية"
+//                   value={edited?.idNumber ?? ''}
+//                   onChange={(v) =>
+//                     setEdited((p) => (p ? { ...p, idNumber: v } : p))
+//                   }
+//                 />
+//               ) : (
+//                 nv(user.idNumber)
+//               )
+//             }
+//           />
+
+//           {/* تاريخ الميلاد / العمر / الجنس */}
+//           <InfoCard
+//             icon={<Calendar className="w-6 h-6 text-amber-600" />}
+//             title="تاريخ الميلاد / العمر / الجنس"
+//             value={
+//               isEditing ? (
+//                 <div className="grid grid-cols-3 gap-2">
+//                   <TextInput
+//                     type="date"
+//                     value={
+//                       edited?.birthDate ? edited.birthDate.slice(0, 10) : ''
+//                     }
+//                     onChange={(v) =>
+//                       setEdited((p) =>
+//                         p
+//                           ? {
+//                               ...p,
+//                               birthDate: v ? new Date(v).toISOString() : '',
+//                             }
+//                           : p
+//                       )
+//                     }
+//                   />
+//                   <select
+//                     className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring"
+//                     value={edited?.gender ?? ''}
+//                     onChange={(e) =>
+//                       setEdited((p) =>
+//                         p ? { ...p, gender: e.target.value } : p
+//                       )
+//                     }
+//                   >
+//                     <option value="">غير محدد</option>
+//                     <option value="male">ذكر</option>
+//                     <option value="female">أنثى</option>
+//                   </select>
+//                   <div className="bg-slate-50 text-slate-700 rounded-lg px-3 py-2">
+//                     العمر: {calcAge(edited?.birthDate) ?? '—'}
+//                   </div>
+//                 </div>
+//               ) : (
+//                 <>
+//                   <div>تاريخ الميلاد: {formatDate(user.birthDate)}</div>
+//                   <div className="mt-1">العمر: {age ?? '—'} سنة</div>
+//                   <div className="mt-1">
+//                     الجنس: {toArabicGender(user.gender)}
+//                   </div>
+//                 </>
+//               )
+//             }
+//           />
+
+//           {/* مكان السكن */}
+//           <InfoCard
+//             icon={<MapPin className="w-6 h-6 text-pink-600" />}
+//             title="مكان السكن"
+//             value={
+//               isEditing ? (
+//                 <TextInput
+//                   placeholder="المدينة / الحي"
+//                   value={edited?.residence ?? ''}
+//                   onChange={(v) =>
+//                     setEdited((p) => (p ? { ...p, residence: v } : p))
+//                   }
+//                 />
+//               ) : (
+//                 nv(user.residence)
+//               )
+//             }
+//           />
+
+//           {/* البريد */}
+//           <InfoCard
+//             icon={<Mail className="w-6 h-6 text-emerald-600" />}
+//             title="البريد الإلكتروني"
+//             value={
+//               isEditing ? (
+//                 <TextInput
+//                   type="email"
+//                   placeholder="email@example.com"
+//                   value={edited?.email ?? ''}
+//                   onChange={(v) =>
+//                     setEdited((p) => (p ? { ...p, email: v } : p))
+//                   }
+//                 />
+//               ) : (
+//                 nv(user.email)
+//               )
+//             }
+//           />
+
+//           {/* الهاتف */}
+//           <InfoCard
+//             icon={<Phone className="w-6 h-6 text-orange-600" />}
+//             title="رقم الهاتف"
+//             value={
+//               isEditing ? (
+//                 <TextInput
+//                   placeholder="05xxxxxxxx"
+//                   value={edited?.phoneNumber ?? ''}
+//                   onChange={(v) =>
+//                     setEdited((p) => (p ? { ...p, phoneNumber: v } : p))
+//                   }
+//                 />
+//               ) : (
+//                 nv(user.phoneNumber)
+//               )
+//             }
+//           />
+
+//           {/* المجموعات */}
+//           <InfoCard
+//             icon={<Users className="w-6 h-6 text-sky-600" />}
+//             title="المجموعات"
+//             value={
+//               isEditing ? (
+//                 <TextInput
+//                   placeholder="افصل بين الأسماء بفاصلة"
+//                   value={(edited?.groups ?? []).join(', ')}
+//                   onChange={(v) =>
+//                     setEdited((p) =>
+//                       p
+//                         ? {
+//                             ...p,
+//                             groups: v
+//                               .split(',')
+//                               .map((s) => s.trim())
+//                               .filter(Boolean),
+//                           }
+//                         : p
+//                     )
+//                   }
+//                 />
+//               ) : user.groups && user.groups.length ? (
+//                 user.groups.join('، ')
+//               ) : (
+//                 'غير متوفر'
+//               )
+//             }
+//           />
+
+//           {/* تاريخ إنشاء الحساب */}
+//           <InfoCard
+//             icon={<Calendar className="w-6 h-6 text-slate-600" />}
+//             title="تاريخ إنشاء الحساب"
+//             value={user.createdAt ? formatDate(user.createdAt) : 'غير متوفر'}
+//           />
+//         </div>
+//       </div>
+
+//       <ToastContainer rtl position="top-center" />
+//     </div>
+//   );
+// };
+
+// // ============================
+// // عناصر فرعية
+// // ============================
+// const InfoCard: React.FC<{
+//   icon: React.ReactNode;
+//   title: string;
+//   value: React.ReactNode;
+// }> = ({ icon, title, value }) => (
+//   <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+//     <div className="flex items-center gap-3 mb-2">
+//       <div className="bg-slate-50 p-2 rounded-xl">{icon}</div>
+//       <div className="font-semibold text-slate-800">{title}</div>
+//     </div>
+//     <div className="text-slate-700 leading-relaxed">{value}</div>
+//   </div>
+// );
+
+// const TextInput: React.FC<{
+//   value: string;
+//   onChange: (v: string) => void;
+//   placeholder?: string;
+//   type?: string;
+// }> = ({ value, onChange, placeholder, type = 'text' }) => (
+//   <input
+//     type={type}
+//     value={value}
+//     onChange={(e) => onChange(e.target.value)}
+//     placeholder={placeholder}
+//     className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring focus:ring-emerald-200"
+//   />
+// );
+
+// export default Profile;
+
+
+// src/pages/Profile.tsx
+import React, { useEffect, useMemo, useState } from "react";
+import axios from "axios";
+import {
+  Edit, Phone, Mail, Calendar, MapPin, Users, BookOpen,
+  Camera, Lock, Save, X, User as UserIcon, Loader2, RefreshCw, IdCard,
+} from "lucide-react";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+// ============================
+// الإعداد
+// ============================
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5005/api";
+
+// Axios مع التوكن
+const api = axios.create({ baseURL: API_URL });
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+// ============================
+// Types
+// ============================
+interface UserBase {
   _id: string;
-  studentId: number;
-  idNumber: string;
-  firstName: string;
-  fatherName?: string;
-  grandFatherName?: string;
-  motherName?: string;
-  lastName: string;
-  birthDate?: string;
-  gender?: string;
-  residence?: string;
-  teacher?: string;
-  group?: string;
-  email?: string;
-  phoneNumber?: string;
-  role?: 'student';
-  avatar?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-interface Teacher {
-  _id: string;
-  teacherId: number;
   idNumber?: string;
-  firstName: string;
+  firstName?: string;
   fatherName?: string;
   grandFatherName?: string;
   motherName?: string;
-  lastName: string;
-  birthDate?: string;
-  gender?: string;
+  lastName?: string;
+  birthDate?: string; // ISO
+  gender?: string;    // 'male' | 'female' | 'ذكر' | 'انثى'
   residence?: string;
-  groups?: string[];
   email?: string;
   phoneNumber?: string;
-  role?: 'teacher' | 'admin';
-  avatar?: string;
+  groups?: string[];
+  role?: "student" | "teacher" | "admin";
   createdAt?: string;
   updatedAt?: string;
+  age?: number;
+  teacherId?: number;
+  studentId?: number;
 }
 
-type Endpoint = 'students' | 'teachers';
-type EffectiveRole = 'student' | 'teacher' | 'admin';
+type Endpoint = "students" | "teachers";
 
-const API_URL = 'http://localhost:5005/api';
+type FetchState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "ok" }
+  | { status: "error"; message: string };
 
-// ========================
+// ============================
 // Helpers
-// ========================
-function formatDate(dateString?: string) {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
-}
+// ============================
+const toArabicGender = (g?: string) =>
+  g === "male" || g === "ذكر" ? "ذكر" : g === "female" || g === "أنثى" || g === "انثى" ? "أنثى" : "غير محدد";
 
-function calculateAge(birthDate?: string) {
-  if (!birthDate) return '' as any;
-  const today = new Date();
-  const birth = new Date(birthDate);
-  let age = today.getFullYear() - birth.getFullYear();
-  const m = today.getMonth() - birth.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+const calcAge = (iso?: string) => {
+  if (!iso) return undefined;
+  const d = new Date(iso);
+  if (Number.isNaN(+d)) return undefined;
+  const now = new Date();
+  let age = now.getFullYear() - d.getFullYear();
+  const m = now.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--;
   return age;
-}
+};
 
-async function fetchJson(url: string, token: string) {
-  const res = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    const err: any = new Error(`${res.status} ${res.statusText} :: ${text}`);
-    err.status = res.status;
-    throw err;
+const formatDate = (iso?: string) => {
+  if (!iso) return "غير محدد";
+  const d = new Date(iso);
+  return Number.isNaN(+d)
+    ? "غير محدد"
+    : d.toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" });
+};
+
+const nv = (v?: string | number) =>
+  v === undefined || v === null || v === "" ? "غير متوفر" : String(v);
+
+const fetchJson = async (url: string) => {
+  const res = await api.get(url);
+  return res.data?.data ?? res.data;
+};
+
+// ------ تحكم التعديلات (مرتان خلال شهر متحرك) ------
+const addOneMonth = (dt: Date) => {
+  const d = new Date(dt);
+  d.setMonth(d.getMonth() + 1);
+  return d;
+};
+const pruneRolling = (timestamps: string[]) => {
+  const now = new Date();
+  return timestamps.filter((iso) => now < addOneMonth(new Date(iso)));
+};
+const keyFor = (field: "birthDate" | "gender", userId: string) => `editHistory_${field}_${userId}`;
+
+/** يرجع: {allowed, remaining, list} */
+const canEditFieldLocal = (field: "birthDate" | "gender", userId: string) => {
+  const raw = localStorage.getItem(keyFor(field, userId));
+  const list = pruneRolling(raw ? JSON.parse(raw) : []);
+  const allowed = list.length < 2;
+  const remaining = Math.max(0, 2 - list.length);
+  return { allowed, remaining, list };
+};
+const recordEditLocal = (field: "birthDate" | "gender", userId: string) => {
+  const { list } = canEditFieldLocal(field, userId);
+  const updated = [...list, new Date().toISOString()];
+  localStorage.setItem(keyFor(field, userId), JSON.stringify(updated));
+};
+
+// جلب الأفاتار كـ Blob URL من الـ API
+async function fetchAvatarBlobUrl(ep: Endpoint, id: string): Promise<string> {
+  try {
+    const res = await fetch(`${API_URL}/${ep}/${id}/avatar`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` },
+    });
+    if (!res.ok) return "";
+    const blob = await res.blob();
+    return URL.createObjectURL(blob);
+  } catch {
+    return "";
   }
-  const json = await res.json().catch(() => ({}));
-  return json?.data ?? json;
 }
 
-function resolveRole(stored: any, fetched: any, endpointUsed?: Endpoint): EffectiveRole {
-  // Strongest hint: explicit loginAs saved at login time
-  const loginAs: EffectiveRole | undefined = stored?.loginAs;
-  if (loginAs === 'student' || loginAs === 'teacher' || loginAs === 'admin') return loginAs;
-
-  // Next: role in localStorage
-  if (stored?.role === 'admin' || stored?.role === 'teacher' || stored?.role === 'student') return stored.role;
-
-  // Next: role returned from backend
-  if (fetched?.role === 'admin' || fetched?.role === 'teacher' || fetched?.role === 'student') return fetched.role;
-
-  // Otherwise infer from endpoint used
-  if (endpointUsed === 'teachers') return 'teacher';
-  return 'student';
-}
-
-function roleBadge(role: EffectiveRole) {
-  return {
-    text: role === 'admin' ? 'مدير' : role === 'teacher' ? 'معلم' : 'طالب',
-    className:
-      role === 'admin' ? 'bg-red-500' : role === 'teacher' ? 'bg-blue-500' : 'bg-green-500',
-  };
-}
-
-// ========================
+// ============================
 // Component
-// ========================
+// ============================
 const Profile: React.FC = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<UserBase | null>(null);
+  const [endpoint, setEndpoint] = useState<Endpoint>("students");
+  const [fetchState, setFetchState] = useState<FetchState>({ status: "idle" });
+
   const [isEditing, setIsEditing] = useState(false);
-  const [editedUser, setEditedUser] = useState<User | null>(null);
+  const [edited, setEdited] = useState<UserBase | null>(null);
+
+  // للأفاتار
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string>('');
-  const [saving, setSaving] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
 
-  // ------------------------
-  // Load user on mount
-  // ------------------------
-  useEffect(() => {
-    const run = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const userJson = localStorage.getItem('user');
-        if (!token || !userJson) {
-          window.location.href = '/login';
-          return;
-        }
-        const stored = JSON.parse(userJson);
-        const userId: string = stored._id;
+  // عرض الاسم الكامل + العمر ديناميكي
+  const fullName = useMemo(
+    () => [user?.firstName, user?.fatherName, user?.grandFatherName, user?.lastName].filter(Boolean).join(" "),
+    [user]
+  );
+  const age = useMemo(() => calcAge(user?.birthDate), [user?.birthDate]);
 
-        // Respect loginAs if present, otherwise infer
-        const loginAs = (stored?.loginAs as EffectiveRole | undefined);
-        const hinted: Endpoint =
-          loginAs === 'teacher' ? 'teachers' :
-          loginAs === 'student' ? 'students' :
-          stored.studentId ? 'students' :
-          stored.teacherId ? 'teachers' :
-          stored.role === 'teacher' ? 'teachers' : 'students';
-
-        const tryOrder: Endpoint[] = hinted === 'students' ? ['students', 'teachers'] : ['teachers', 'students'];
-
-  let fetched: User | null = null;
-        let usedEndpoint: Endpoint | undefined;
-        let lastErr: any = null;
-
-        for (const ep of tryOrder) {
-          try {
-            const u = await fetchJson(`${API_URL}/${ep}/${userId}`, token);
-            fetched = u;
-            usedEndpoint = ep;
-            break;
-          } catch (e: any) {
-            lastErr = e;
-            if (e?.status !== 404) break; // only fall back on 404
-          }
-        }
-
-        if (!fetched) {
-          console.error('Failed to fetch user:', lastErr);
-          toast.error('تعذّر تحميل البيانات');
-          return;
-        }
-
-        const effectiveRole = resolveRole(stored, fetched, usedEndpoint);
-  const finalUser = { ...fetched, role: effectiveRole } as User;
-
-        setUser(finalUser);
-        setEditedUser(finalUser);
-
-        try {
-          const mergedStored = { ...stored, role: effectiveRole };
-          localStorage.setItem('user', JSON.stringify(mergedStored));
-        } catch {}
-
-        setAvatarPreview(
-          finalUser.avatar
-            ? finalUser.avatar.startsWith('http')
-              ? finalUser.avatar
-              : `${API_URL}/uploads/${finalUser.avatar}`
-            : ''
-        );
-      } catch (e) {
-        console.error('Error fetching user data:', e);
-        toast.error('خطأ أثناء تحميل البيانات');
-      } finally {
-        setLoading(false);
+  // معرف المستخدم
+  const getUserId = () => {
+    const idFromLocal = localStorage.getItem("userId");
+    if (idFromLocal) return idFromLocal;
+    try {
+      const raw = localStorage.getItem("user");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return parsed?._id || parsed?.id;
       }
+    } catch {}
+    return "";
+  };
+
+  // تحميل البيانات
+  const loadUser = async () => {
+    const id = getUserId();
+    if (!id) {
+      setFetchState({ status: "error", message: "لا يوجد مستخدم مسجّل." });
+      return;
+    }
+    setFetchState({ status: "loading" });
+    try {
+      // جرّب الطالب أولاً
+      try {
+        const u: UserBase = await fetchJson(`/students/${id}`);
+        setUser({ ...u, role: u.role ?? "student" });
+        setEndpoint("students");
+        const url = await fetchAvatarBlobUrl("students", u._id);
+        setAvatarUrl((prev) => {
+          if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+          return url;
+        });
+        setFetchState({ status: "ok" });
+        return;
+      } catch (e: any) {
+        if (e?.response?.status !== 404) throw e;
+      }
+      // جرّب المعلّم
+      const u: UserBase = await fetchJson(`/teachers/${id}`);
+      setUser({ ...u, role: u.role ?? "teacher" });
+      setEndpoint("teachers");
+      const url = await fetchAvatarBlobUrl("teachers", u._id);
+      setAvatarUrl((prev) => {
+        if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+        return url;
+      });
+      setFetchState({ status: "ok" });
+    } catch (e: any) {
+      setFetchState({ status: "error", message: e?.response?.data?.message || "فشل تحميل البيانات" });
+    }
+  };
+
+  useEffect(() => {
+    loadUser();
+    return () => {
+      if (avatarUrl && avatarUrl.startsWith("blob:")) URL.revokeObjectURL(avatarUrl);
     };
-    run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ------------------------
-  // Input handlers
-  // ------------------------
-  const handleInputChange = (field: string, value: string | number) => {
-    setEditedUser((prev) => {
-      if (!prev) return prev;
-      if (field === 'group' && 'group' in prev) {
-        return { ...prev, group: value as string } as User;
-      }
-      if (field === 'teacher' && 'teacher' in prev) {
-        return { ...prev, teacher: value as string } as User;
-      }
-      if (field === 'groups' && 'groups' in prev) {
-        return { ...prev, groups: value as string[] } as User;
-      }
-      return { ...prev, [field]: value };
-    });
+  // تحرير
+  const beginEdit = () => {
+    setEdited(user);
+    setIsEditing(true);
+  };
+  const cancelEdit = () => {
+    setIsEditing(false);
+    setEdited(null);
+    setAvatarFile(null);
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setAvatarFile(file);
-    const reader = new FileReader();
-    reader.onload = (ev) => setAvatarPreview(String(ev.target?.result || ''));
-    reader.readAsDataURL(file);
-  };
+  // حفظ
+  const saveProfile = async () => {
+    if (!user || !edited) return;
 
-  // ------------------------
-  // Birthdate lock: allow 2 edits per month (resets at month start)
-  // ------------------------
-  function canEditBirthDate(): boolean {
-    const u = isEditing ? editedUser : user;
-    if (!u?._id) return true;
-    const now = new Date();
-    const ym = `${now.getFullYear()}-${now.getMonth() + 1}`; // e.g., 2025-9
-    const key = `birthDateEditAttempts_${u._id}_${ym}`;
-    const attempts = Number(localStorage.getItem(key) || '0');
-    return attempts < 2; // max 2 edits per month
-  }
+    // لا تعدّل رقم الهوية أبداً: لا نُرسله ولا نسمح بتغييره
+    const payload: Partial<UserBase> = {
+      firstName: edited.firstName,
+      lastName: edited.lastName,
+      birthDate: edited.birthDate,
+      gender: edited.gender,
+      residence: edited.residence,
+      email: edited.email,
+      phoneNumber: edited.phoneNumber,
+      groups: edited.groups,
+      // idNumber: (محظور)
+    };
 
-  function incrementBirthDateEditAttempts() {
-    const u = isEditing ? editedUser : user;
-    if (!u?._id) return;
-    const now = new Date();
-    const ym = `${now.getFullYear()}-${now.getMonth() + 1}`;
-    const key = `birthDateEditAttempts_${u._id}_${ym}`;
-    const attempts = Number(localStorage.getItem(key) || '0');
-    localStorage.setItem(key, String(attempts + 1));
-  }
+    // تحقق محلي: نافذة شهر متحركة لكل من تاريخ الميلاد والجنس
+    const changingBirth = edited.birthDate !== user.birthDate;
+    const changingGender = (edited.gender ?? "") !== (user.gender ?? "");
 
-  // ------------------------
-  // Save profile
-  // ------------------------
-  const handleSave = async () => {
-    if (!editedUser || !user) return;
-
-    // If date changed, count an attempt
-    if (editedUser.birthDate !== user.birthDate) {
-      if (!canEditBirthDate()) {
-        toast.error('لا يمكنك تعديل تاريخ الميلاد أكثر من مرتين في هذا الشهر');
+    // birthDate
+    if (changingBirth) {
+      const b = canEditFieldLocal("birthDate", user._id);
+      if (!b.allowed) {
+        toast.error("لا يمكنك تعديل تاريخ الميلاد أكثر من مرتين خلال شهر كامل من آخر تعديلاتك");
         return;
       }
-      incrementBirthDateEditAttempts();
+    }
+    // gender
+    if (changingGender) {
+      const g = canEditFieldLocal("gender", user._id);
+      if (!g.allowed) {
+        toast.error("لا يمكنك تعديل الجنس أكثر من مرتين خلال شهر كامل من آخر تعديلاتك");
+        return;
+      }
     }
 
-    setSaving(true);
     try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('No token');
+      // (1) البيانات النصية
+      await api.put(`/${endpoint}/${user._id}`, payload);
 
-      const role = ((user.role as EffectiveRole) || 'student');
-      const endpoint: Endpoint = role === 'teacher' || role === 'admin' ? 'teachers' : 'students';
+      // سجّل التعديلات المسموحة محليًا بعد نجاح الطلب
+      if (changingBirth) recordEditLocal("birthDate", user._id);
+      if (changingGender) recordEditLocal("gender", user._id);
 
-      // 1) avatar (if backend supports it)
+      // (2) رفع الصورة داخل الداتابيس (in-memory)
       if (avatarFile) {
         const fd = new FormData();
-        fd.append('avatar', avatarFile);
-        const res = await fetch(`${API_URL}/${endpoint}/${user._id}/avatar`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
-          body: fd,
+        fd.append("avatar", avatarFile);
+        await api.post(`/${endpoint}/${user._id}/avatar`, fd, {
+          headers: { "Content-Type": "multipart/form-data" },
         });
-        if (!res.ok) {
-          const t = await res.text().catch(() => '');
-          throw new Error(`Avatar upload failed: ${res.status} ${t}`);
-        }
-        const data = await res.json().catch(() => ({} as any));
-        const newAvatar = (data?.data?.avatar ?? data?.avatar) as string | undefined;
-        if (newAvatar) {
-          setEditedUser((prev) => (prev ? { ...prev, avatar: newAvatar } : prev));
-          setAvatarPreview(`${API_URL}/uploads/${newAvatar}`);
-        }
+        // أعد تحميل صورة الأفاتار كبلاَب
+        const newUrl = await fetchAvatarBlobUrl(endpoint, user._id);
+        setAvatarUrl((prev) => {
+          if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+          return newUrl;
+        });
+        setAvatarFile(null);
       }
 
-      // 2) profile fields (send only expected fields)
-      const payload = {
-        firstName: editedUser.firstName ?? '',
-        fatherName: editedUser.fatherName ?? '',
-        grandFatherName: editedUser.grandFatherName ?? '',
-        motherName: editedUser.motherName ?? '',
-        lastName: editedUser.lastName ?? '',
-        birthDate: editedUser.birthDate ?? '',
-        gender: editedUser.gender ?? '',
-        residence: editedUser.residence ?? '',
-  teacher: 'teacher' in editedUser ? editedUser.teacher ?? '' : '',
-  group: 'group' in editedUser ? editedUser.group ?? '' : '',
-        email: editedUser.email ?? '',
-        phoneNumber: editedUser.phoneNumber ?? '',
-        avatar: editedUser.avatar ?? undefined,
-  } as Partial<User>;
-
-      const resp = await fetch(`${API_URL}/${endpoint}/${user._id}`, {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!resp.ok) {
-        const t = await resp.text().catch(() => '');
-        throw new Error(`Update failed: ${resp.status} ${t}`);
-      }
-
-      const json = await resp.json().catch(() => ({} as any));
-  const updated: User = json?.data ?? json;
-
-      setUser(updated);
-      setEditedUser(updated);
+      // حدّث العرض (العمر يُحسب ديناميكيًا من birthDate)
+      setUser({ ...user, ...payload });
+      setEdited(null);
       setIsEditing(false);
-      setAvatarFile(null);
-      localStorage.setItem('user', JSON.stringify({ ...(JSON.parse(localStorage.getItem('user') || '{}')), ...updated }));
-      toast.success('تم تحديث البيانات بنجاح');
-    } catch (e) {
-      console.error(e);
-      toast.error('فشل في تحديث البيانات. حاول مجددًا.');
-    } finally {
-      setSaving(false);
+      toast.success("تم حفظ التعديلات بنجاح");
+    } catch (e: any) {
+      // في حال الخادم يطبّق نفس القيد ويرجع 429 أو يمنع الهوية
+      const msg = e?.response?.data?.message || "تعذّر حفظ التعديلات";
+      toast.error(msg);
     }
   };
 
-  const handleCancel = () => {
-    setEditedUser(user);
-    setIsEditing(false);
-    setAvatarFile(null);
-    setAvatarPreview(user?.avatar ? `${API_URL}/uploads/${user.avatar}` : '');
+  const changePassword = async (oldPass: string, newPass: string) => {
+    try {
+      await api.put(`/${endpoint}/${user?._id}/password`, {
+        oldPassword: oldPass,
+        newPassword: newPass,
+      });
+      toast.success("تم تغيير كلمة المرور");
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || "تعذّر تغيير كلمة المرور");
+    }
   };
 
-  if (loading) {
+  // UI حالات
+  if (fetchState.status === "loading") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">جارِ تحميل البيانات...</p>
+      <div className="p-6 flex items-center justify-center min-h-[60vh]">
+        <div className="flex items-center gap-3 text-slate-600">
+          <Loader2 className="w-6 h-6 animate-spin" />
+          <span>جارِ تحميل الملف الشخصي…</span>
         </div>
       </div>
     );
   }
 
-  if (!user) {
+  if (fetchState.status === "error") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-slate-600">لم يتم العثور على بيانات المستخدم</p>
+      <div className="p-6">
+        <div className="mx-auto max-w-5xl">
+          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 flex items-center justify-between">
+            <div>{fetchState.message}</div>
+            <button
+              onClick={loadUser}
+              className="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+            >
+              <RefreshCw className="w-4 h-4" />
+              إعادة المحاولة
+            </button>
+          </div>
         </div>
+        <ToastContainer rtl position="top-center" />
       </div>
     );
   }
 
-  const displayUser = (isEditing ? editedUser : user)!;
-  const role = (displayUser.role as EffectiveRole) || 'student';
-  const badge = roleBadge(role);
-  const isStudent = role === 'student';
-  const isTeacher = role === 'teacher';
-  const isAdmin = role === 'admin';
+  if (!user) return null;
+
+  const remainingBirth = canEditFieldLocal("birthDate", user._id).remaining;
+  const remainingGender = canEditFieldLocal("gender", user._id).remaining;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 py-8 px-4" dir="rtl">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-slate-800 mb-2">الصفحة الشخصية</h1>
-          <p className="text-slate-600">أعرض/عدّل بياناتك وصورتك الشخصية</p>
+    <div className="p-4 md:p-6" dir="rtl">
+      <div className="mx-auto max-w-6xl">
+        {/* الهيدر */}
+        <div className="bg-emerald-600 text-white rounded-2xl p-5 md:p-6 relative shadow-md">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="text-2xl md:text-3xl font-bold">{fullName || "الملف الشخصي"}</div>
+              <div className="mt-2 inline-flex items-center gap-2 bg-emerald-700/60 px-3 py-1 rounded-full text-sm">
+                <BookOpen className="w-4 h-4" />
+                {user.role === "teacher" ? "معلّم" : user.role === "student" ? "طالب" : "مستخدم"}
+              </div>
+            </div>
+
+            {/* الأفاتار */}
+            <div className="relative">
+              <div className="w-24 h-24 md:w-28 md:h-28 rounded-full ring-4 ring-white/30 bg-white overflow-hidden flex items-center justify-center shadow-lg">
+                {avatarFile ? (
+                  <img src={URL.createObjectURL(avatarFile)} alt="avatar" className="w-full h-full object-cover" />
+                ) : avatarUrl ? (
+                  <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <UserIcon className="w-12 h-12 text-emerald-600" />
+                )}
+              </div>
+              {isEditing && (
+                <>
+                  <label
+                    htmlFor="avatar"
+                    className="absolute -bottom-2 right-0 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full p-2 cursor-pointer shadow"
+                    title="تغيير الصورة"
+                  >
+                    <Camera className="w-4 h-4" />
+                  </label>
+                  <input
+                    id="avatar"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0] || null;
+                      setAvatarFile(f);
+                    }}
+                  />
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* أزرار */}
+          <div className="mt-4 flex flex-wrap gap-3">
+            {!isEditing ? (
+              <>
+                <button
+                  onClick={beginEdit}
+                  className="inline-flex items-center gap-2 bg-white text-emerald-700 font-medium px-4 py-2 rounded-lg hover:bg-emerald-50"
+                >
+                  <Edit className="w-4 h-4" />
+                  تعديل المعلومات الشخصية
+                </button>
+                <button
+                  onClick={() => {
+                    const oldPass = prompt("أدخل كلمة المرور الحالية:");
+                    if (!oldPass) return;
+                    const newPass = prompt("أدخل كلمة المرور الجديدة:");
+                    if (!newPass) return;
+                    changePassword(oldPass, newPass);
+                  }}
+                  className="inline-flex items-center gap-2 bg-white/20 text-white font-medium px-4 py-2 rounded-lg hover:bg-white/30"
+                >
+                  <Lock className="w-4 h-4" />
+                  تغيير كلمة المرور
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={saveProfile}
+                  className="inline-flex items-center gap-2 bg-white text-emerald-700 font-semibold px-4 py-2 rounded-lg hover:bg-emerald-50"
+                >
+                  <Save className="w-4 h-4" />
+                  حفظ
+                </button>
+                <button
+                  onClick={cancelEdit}
+                  className="inline-flex items-center gap-2 bg-white/20 text-white font-medium px-4 py-2 rounded-lg hover:bg-white/30"
+                >
+                  <X className="w-4 h-4" />
+                  إلغاء
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
-        {/* Card */}
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          {/* Banner */}
-          <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-8 py-6 text-white relative">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-6">
-                {/* Avatar */}
-                <div className="relative">
-                  <div className="w-24 h-24 rounded-full border-4 border-white overflow-hidden bg-white shadow-lg">
-                    {avatarPreview ? (
-                      <img src={avatarPreview} alt="Profile" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center">
-                        <div className="text-2xl font-bold text-emerald-600">
-                          {displayUser.firstName?.charAt(0) || '؟'}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {isEditing && (
-                    <label className="absolute -bottom-2 -right-2 bg-white rounded-full p-2 shadow-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                      <Camera className="w-4 h-4 text-emerald-600" />
-                      <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
-                    </label>
-                  )}
+        {/* البطاقات */}
+        <div className="grid md:grid-cols-3 gap-4 mt-6">
+          {/* الاسم الكامل */}
+          <InfoCard
+            icon={<Users className="w-6 h-6 text-emerald-600" />}
+            title="الاسم الكامل"
+            value={
+              isEditing ? (
+                <div className="grid grid-cols-2 gap-2">
+                  <TextInput
+                    placeholder="الاسم الأول"
+                    value={edited?.firstName ?? ""}
+                    onChange={(v) => setEdited((p) => (p ? { ...p, firstName: v } : p))}
+                  />
+                  <TextInput
+                    placeholder="اسم العائلة"
+                    value={edited?.lastName ?? ""}
+                    onChange={(v) => setEdited((p) => (p ? { ...p, lastName: v } : p))}
+                  />
                 </div>
+              ) : (
+                nv(fullName)
+              )
+            }
+          />
 
-                {/* Name + Role */}
-                <div>
-                  <h2 className="text-2xl font-bold">
-                    {displayUser.firstName} {displayUser.lastName}
-                  </h2>
-                  <p className="text-emerald-100 flex items-center gap-2 mt-1">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${badge.className}`}>
-                      {badge.text}
-                    </span>
-                  </p>
-                </div>
-              </div>
+          {/* رقم الهوية — غير قابل للتعديل */}
+          <InfoCard
+            icon={<IdCard className="w-6 h-6 text-purple-600" />}
+            title="رقم الهوية"
+            value={
+              isEditing ? (
+                <input
+                  value={user.idNumber ?? ""}
+                  readOnly
+                  disabled
+                  className="w-full border rounded-lg px-3 py-2 bg-slate-100 text-slate-500 cursor-not-allowed"
+                />
+              ) : (
+                nv(user.idNumber)
+              )
+            }
+          />
 
-              {/* Actions */}
-              <div className="flex gap-3">
-                {isEditing ? (
-                  <>
-                    <button
-                      onClick={handleSave}
-                      disabled={saving}
-                      className="bg-white text-emerald-600 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center gap-2 disabled:opacity-50"
-                    >
-                      <Save className="w-4 h-4" /> {saving ? 'جارِ الحفظ...' : 'حفظ'}
-                    </button>
-                    <button
-                      onClick={handleCancel}
-                      className="bg-white/20 text-white px-4 py-2 rounded-lg font-medium hover:bg-white/30 transition-colors flex items-center gap-2"
-                    >
-                      <X className="w-4 h-4" /> إلغاء
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => setIsEditing(true)}
-                      className="bg-white text-emerald-600 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center gap-2"
-                    >
-                      <Edit className="w-4 h-4" /> تعديل المعلومات الشخصية
-                    </button>
-                    <button
-                      onClick={() => (window.location.href = '/change-password')}
-                      className="bg-white/20 text-white px-4 py-2 rounded-lg font-medium hover:bg-white/30 transition-colors flex items-center gap-2"
-                    >
-                      <Lock className="w-4 h-4" /> تغيير كلمة المرور
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Content */}
-          <div className="p-8">
-            {/* Basic info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {/* Full name */}
-              <div className="bg-slate-50 rounded-xl p-4 flex flex-col items-center">
-                <BookOpen className="w-8 h-8 text-emerald-600 mb-2" />
-                <h3 className="font-semibold text-slate-800 mb-1">الاسم الكامل</h3>
-                {isEditing ? (
-                  <>
-                    <input
-                      type="text"
-                      value={displayUser.firstName || ''}
-                      onChange={(e) => handleInputChange('firstName', e.target.value)}
-                      className="w-full mt-1 mb-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="الاسم الأول"
-                    />
-                    <input
-                      type="text"
-                      value={displayUser.fatherName || ''}
-                      onChange={(e) => handleInputChange('fatherName', e.target.value)}
-                      className="w-full mt-1 mb-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="اسم الأب"
-                    />
-                    <input
-                      type="text"
-                      value={displayUser.grandFatherName || ''}
-                      onChange={(e) => handleInputChange('grandFatherName', e.target.value)}
-                      className="w-full mt-1 mb-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="اسم الجد"
-                    />
-                    <input
-                      type="text"
-                      value={displayUser.lastName || ''}
-                      onChange={(e) => handleInputChange('lastName', e.target.value)}
-                      className="w-full mt-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="اسم العائلة"
-                    />
-                  </>
-                ) : (
-                  <p className="text-sm text-slate-600 text-center">
-                    {displayUser.firstName} {displayUser.fatherName} {displayUser.grandFatherName} {displayUser.lastName}
-                  </p>
-                )}
-              </div>
-
-              {/* ID */}
-              <div className="bg-slate-50 rounded-xl p-4 flex flex-col items-center">
-                <span className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mb-2">
-                  <span className="text-purple-600 font-bold text-xs">ID</span>
-                </span>
-                <h3 className="font-semibold text-slate-800 mb-1">رقم الهوية</h3>
-                <p className="text-sm text-slate-600 font-mono">
-                  {displayUser.idNumber || displayUser._id?.slice(-8) || 'غير متوفر'}
-                </p>
-              </div>
-
-              {/* Birthdate / Age / Gender */}
-              <div className="bg-slate-50 rounded-xl p-4 flex flex-col items-center">
-                <Calendar className="w-8 h-8 text-yellow-600 mb-2" />
-                <h3 className="font-semibold text-slate-800 mb-1">تاريخ الميلاد / العمر / الجنس</h3>
-                {isEditing ? (
-                  <>
-                    <input
+          {/* تاريخ الميلاد / العمر / الجنس + عداد المحاولات */}
+          <InfoCard
+            icon={<Calendar className="w-6 h-6 text-amber-600" />}
+            title="تاريخ الميلاد / العمر / الجنس"
+            value={
+              isEditing ? (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-3 gap-2">
+                    <TextInput
                       type="date"
-                      value={displayUser.birthDate ? displayUser.birthDate.slice(0, 10) : ''}
-                      onChange={(e) => handleInputChange('birthDate', e.target.value)}
-                      className="w-full mt-1 mb-2 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-60"
-                      placeholder="تاريخ الميلاد"
-                      title="تاريخ الميلاد"
-                      aria-label="تاريخ الميلاد"
-                      disabled={!canEditBirthDate()}
+                      value={edited?.birthDate ? edited.birthDate.slice(0, 10) : ""}
+                      onChange={(v) =>
+                        setEdited((p) => (p ? { ...p, birthDate: v ? new Date(v).toISOString() : "" } : p))
+                      }
                     />
-                    {!canEditBirthDate() && (
-                      <span className="text-xs text-red-500 mb-2">لا يمكنك تعديل تاريخ الميلاد إلا مرتين في الشهر، ستتجدد المحاولات في بداية الشهر القادم</span>
-                    )}
-                    <div className="w-full flex flex-row items-center justify-between gap-2 mb-2">
-                      <span className="text-xs text-gray-500">العمر:</span>
-                      <span className="text-sm font-bold text-emerald-700">{calculateAge(displayUser.birthDate)} سنة</span>
-                    </div>
                     <select
-                      value={displayUser.gender || ''}
-                      onChange={(e) => handleInputChange('gender', e.target.value)}
-                      className="w-full mt-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      title="الجنس"
+                      className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring"
+                      value={edited?.gender ?? ""}
+                      onChange={(e) => setEdited((p) => (p ? { ...p, gender: e.target.value } : p))}
                     >
-                      <option value="">اختر الجنس</option>
-                      <option value="ذكر">ذكر</option>
-                      <option value="انثى">أنثى</option>
+                      <option value="">غير محدد</option>
+                      <option value="male">ذكر</option>
+                      <option value="female">أنثى</option>
                     </select>
-                  </>
-                ) : (
-                  <div className="w-full flex flex-col items-center">
-                    <span className="text-sm text-slate-600 mb-1">
-                      تاريخ الميلاد: {displayUser.birthDate ? formatDate(displayUser.birthDate) : 'غير محدد'}
-                    </span>
-                    <span className="text-sm text-emerald-700 font-bold mb-1">العمر: {calculateAge(displayUser.birthDate)} سنة</span>
-                    <span className="text-sm text-slate-600">{displayUser.gender ? `الجنس: ${displayUser.gender}` : ''}</span>
+                    <div className="bg-slate-50 text-slate-700 rounded-lg px-3 py-2">
+                      العمر: {calcAge(edited?.birthDate) ?? "—"}
+                    </div>
                   </div>
-                )}
-              </div>
-            </div>
-
-            {/* Contact info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {/* Phone */}
-              <div className="bg-slate-50 rounded-xl p-4 flex flex-col items-center">
-                <Phone className="w-8 h-8 text-orange-600 mb-2" />
-                <h3 className="font-semibold text-slate-800 mb-1">رقم الهاتف</h3>
-                {isEditing ? (
-                  <input
-                    type="tel"
-                    value={displayUser.phoneNumber || ''}
-                    onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-                    className="w-full mt-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    placeholder="رقم الهاتف"
-                  />
-                ) : (
-                  <p className="text-sm text-slate-600">{displayUser.phoneNumber || 'غير متوفر'}</p>
-                )}
-              </div>
-
-              {/* Email */}
-              <div className="bg-slate-50 rounded-xl p-4 flex flex-col items-center">
-                <Mail className="w-8 h-8 text-green-600 mb-2" />
-                <h3 className="font-semibold text-slate-800 mb-1">البريد الإلكتروني</h3>
-                {isEditing ? (
-                  <input
-                    type="email"
-                    value={displayUser.email || ''}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    className="w-full mt-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    placeholder="البريد الإلكتروني"
-                  />
-                ) : (
-                  <p className="text-sm text-slate-600 break-all">{displayUser.email || 'غير متوفر'}</p>
-                )}
-              </div>
-
-              {/* Residence */}
-              <div className="bg-slate-50 rounded-xl p-4 flex flex-col items-center">
-                <MapPin className="w-8 h-8 text-pink-600 mb-2" />
-                <h3 className="font-semibold text-slate-800 mb-1">مكان السكن</h3>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={displayUser.residence || ''}
-                    onChange={(e) => handleInputChange('residence', e.target.value)}
-                    className="w-full mt-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    placeholder="مكان السكن"
-                  />
-                ) : (
-                  <p className="text-sm text-slate-600">{displayUser.residence || 'غير متوفر'}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Academic — student-specific sections */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Mother name — Students only */}
-              {isStudent && (
-                <div className="bg-slate-50 rounded-xl p-4 flex flex-col items-center">
-                  <span className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center mb-2">
-                    <span className="text-pink-600 font-bold text-xs">أم</span>
-                  </span>
-                  <h3 className="font-semibold text-slate-800 mb-1">اسم الأم</h3>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={displayUser.motherName || ''}
-                      onChange={(e) => handleInputChange('motherName', e.target.value)}
-                      className="w-full mt-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="اسم الأم"
-                    />
-                  ) : (
-                    <p className="text-sm text-slate-600">{displayUser.motherName || 'غير متوفر'}</p>
-                  )}
+                  <div className="text-xs text-slate-500">
+                    المتبقي لتعديل تاريخ الميلاد: <b>{remainingBirth}</b> / 2 — المتبقي لتعديل الجنس: <b>{remainingGender}</b> / 2
+                  </div>
                 </div>
-              )}
+              ) : (
+                <>
+                  <div>تاريخ الميلاد: {formatDate(user.birthDate)}</div>
+                  <div className="mt-1">العمر: {age ?? "—"} سنة</div>
+                  <div className="mt-1">الجنس: {toArabicGender(user.gender)}</div>
+                </>
+              )
+            }
+          />
 
-              {/* Group — Students only */}
-              {isStudent && (
-                <div className="bg-slate-50 rounded-xl p-4 flex flex-col items-center">
-                  <Users className="w-8 h-8 text-teal-600 mb-2" />
-                  <h3 className="font-semibold text-slate-800 mb-1">الحلقة</h3>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={('group' in displayUser && displayUser.group) ? displayUser.group : ''}
-                      onChange={(e) => {
-                        if ('group' in displayUser) handleInputChange('group', e.target.value);
-                      }}
-                      className="w-full mt-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="اسم الحلقة"
-                    />
-                  ) : (
-                    <p className="text-sm text-slate-600">
-                      {'group' in displayUser && displayUser.group ? displayUser.group :
-                        'groups' in displayUser && displayUser.groups ? displayUser.groups.join(', ') : 'غير محدد'}
-                    </p>
-                  )}
-                </div>
-              )}
+          {/* مكان السكن */}
+          <InfoCard
+            icon={<MapPin className="w-6 h-6 text-pink-600" />}
+            title="مكان السكن"
+            value={
+              isEditing ? (
+                <TextInput
+                  placeholder="المدينة / الحي"
+                  value={edited?.residence ?? ""}
+                  onChange={(v) => setEdited((p) => (p ? { ...p, residence: v } : p))}
+                />
+              ) : (
+                nv(user.residence)
+              )
+            }
+          />
 
-              {/* Teacher — Students only */}
-              {isStudent && (
-                <div className="bg-slate-50 rounded-xl p-4 flex flex-col items-center">
-                  <span className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mb-2">
-                    <span className="text-blue-600 font-bold text-xs">معلم</span>
-                  </span>
-                  <h3 className="font-semibold text-slate-800 mb-1">المعلم</h3>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={('teacher' in displayUser && displayUser.teacher) ? displayUser.teacher : ''}
-                      onChange={(e) => {
-                        if ('teacher' in displayUser) handleInputChange('teacher', e.target.value);
-                      }}
-                      className="w-full mt-1 px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="اسم المعلم"
-                    />
-                  ) : (
-                    <p className="text-sm text-slate-600">{'teacher' in displayUser && displayUser.teacher ? displayUser.teacher : 'غير محدد'}</p>
-                  )}
-                </div>
-              )}
+          {/* البريد */}
+          <InfoCard
+            icon={<Mail className="w-6 h-6 text-emerald-600" />}
+            title="البريد الإلكتروني"
+            value={
+              isEditing ? (
+                <TextInput
+                  type="email"
+                  placeholder="email@example.com"
+                  value={edited?.email ?? ""}
+                  onChange={(v) => setEdited((p) => (p ? { ...p, email: v } : p))}
+                />
+              ) : (
+                nv(user.email)
+              )
+            }
+          />
 
-              {/* Created at */}
-              <div className="bg-slate-50 rounded-xl p-4 flex flex-col items-center md:col-span-2 lg:col-span-1">
-                <span className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center mb-2">
-                  <Calendar className="w-5 h-5 text-gray-500" />
-                </span>
-                <h3 className="font-semibold text-slate-800 mb-1">تاريخ إنشاء الحساب</h3>
-                <p className="text-sm text-slate-600">
-                  {displayUser.createdAt ? formatDate(displayUser.createdAt) : 'غير متوفر'}
-                </p>
-              </div>
-            </div>
+          {/* الهاتف */}
+          <InfoCard
+            icon={<Phone className="w-6 h-6 text-orange-600" />}
+            title="رقم الهاتف"
+            value={
+              isEditing ? (
+                <TextInput
+                  placeholder="05xxxxxxxx"
+                  value={edited?.phoneNumber ?? ""}
+                  onChange={(v) => setEdited((p) => (p ? { ...p, phoneNumber: v } : p))}
+                />
+              ) : (
+                nv(user.phoneNumber)
+              )
+            }
+          />
 
-            {/* Notice */}
-            <div className="mt-8 p-4 bg-blue-50 rounded-xl border border-blue-200">
-              <p className="text-sm text-blue-700 text-center">
-                إذا لم تتمكن من تحديث التفاصيل، حاول إعادة تحميل الصفحة أو التحقق من الاتصال بالإنترنت.
-              </p>
-            </div>
-          </div>
+          {/* المجموعات */}
+          <InfoCard
+            icon={<Users className="w-6 h-6 text-sky-600" />}
+            title="المجموعات"
+            value={
+              isEditing ? (
+                <TextInput
+                  placeholder="افصل بين الأسماء بفاصلة"
+                  value={(edited?.groups ?? []).join(", ")}
+                  onChange={(v) =>
+                    setEdited((p) =>
+                      p ? { ...p, groups: v.split(",").map((s) => s.trim()).filter(Boolean) } : p
+                    )
+                  }
+                />
+              ) : user.groups && user.groups.length ? (
+                user.groups.join("، ")
+              ) : (
+                "غير متوفر"
+              )
+            }
+          />
+
+          {/* تاريخ إنشاء الحساب */}
+          <InfoCard
+            icon={<Calendar className="w-6 h-6 text-slate-600" />}
+            title="تاريخ إنشاء الحساب"
+            value={user.createdAt ? formatDate(user.createdAt) : "غير متوفر"}
+          />
         </div>
       </div>
 
-      {/* Toast notifications */}
-      <ToastContainer position="top-center" autoClose={3000} rtl={true} />
+      <ToastContainer rtl position="top-center" />
     </div>
   );
 };
+
+// ============================
+// عناصر فرعية
+// ============================
+const InfoCard: React.FC<{ icon: React.ReactNode; title: string; value: React.ReactNode }> = ({
+  icon,
+  title,
+  value,
+}) => (
+  <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+    <div className="flex items-center gap-3 mb-2">
+      <div className="bg-slate-50 p-2 rounded-xl">{icon}</div>
+      <div className="font-semibold text-slate-800">{title}</div>
+    </div>
+    <div className="text-slate-700 leading-relaxed">{value}</div>
+  </div>
+);
+
+const TextInput: React.FC<{
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  type?: string;
+}> = ({ value, onChange, placeholder, type = "text" }) => (
+  <input
+    type={type}
+    value={value}
+    onChange={(e) => onChange(e.target.value)}
+    placeholder={placeholder}
+    className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring focus:ring-emerald-200"
+  />
+);
 
 export default Profile;
