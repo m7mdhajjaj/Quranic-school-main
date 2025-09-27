@@ -1,4 +1,4 @@
-// src/pages/Profile.tsx
+
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import {
@@ -142,6 +142,9 @@ const Profile: React.FC = () => {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string>("");
 
+  // ظهور أنيق على التحميل
+  const [mounted, setMounted] = useState(false);
+
   // عرض الاسم الكامل + العمر ديناميكي
   const fullName = useMemo(
     () => [user?.firstName, user?.fatherName, user?.grandFatherName, user?.lastName].filter(Boolean).join(" "),
@@ -204,6 +207,7 @@ const Profile: React.FC = () => {
 
   useEffect(() => {
     loadUser();
+    setTimeout(() => setMounted(true), 10); // لتفعيل انتقالات Tailwind
     return () => {
       if (avatarUrl && avatarUrl.startsWith("blob:")) URL.revokeObjectURL(avatarUrl);
     };
@@ -235,14 +239,12 @@ const Profile: React.FC = () => {
       email: edited.email,
       phoneNumber: edited.phoneNumber,
       groups: edited.groups,
-      // idNumber: (محظور)
     };
 
     // تحقق محلي: نافذة شهر متحركة لكل من تاريخ الميلاد والجنس
     const changingBirth = edited.birthDate !== user.birthDate;
     const changingGender = (edited.gender ?? "") !== (user.gender ?? "");
 
-    // birthDate
     if (changingBirth) {
       const b = canEditFieldLocal("birthDate", user._id);
       if (!b.allowed) {
@@ -250,7 +252,6 @@ const Profile: React.FC = () => {
         return;
       }
     }
-    // gender
     if (changingGender) {
       const g = canEditFieldLocal("gender", user._id);
       if (!g.allowed) {
@@ -263,18 +264,17 @@ const Profile: React.FC = () => {
       // (1) البيانات النصية
       await api.put(`/${endpoint}/${user._id}`, payload);
 
-      // سجّل التعديلات المسموحة محليًا بعد نجاح الطلب
+      // سجّل التعديلات بعد نجاح الطلب
       if (changingBirth) recordEditLocal("birthDate", user._id);
       if (changingGender) recordEditLocal("gender", user._id);
 
-      // (2) رفع الصورة داخل الداتابيس (in-memory)
+      // (2) رفع الصورة
       if (avatarFile) {
         const fd = new FormData();
         fd.append("avatar", avatarFile);
         await api.post(`/${endpoint}/${user._id}/avatar`, fd, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        // أعد تحميل صورة الأفاتار كبلاَب
         const newUrl = await fetchAvatarBlobUrl(endpoint, user._id);
         setAvatarUrl((prev) => {
           if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
@@ -283,13 +283,11 @@ const Profile: React.FC = () => {
         setAvatarFile(null);
       }
 
-      // حدّث العرض (العمر يُحسب ديناميكيًا من birthDate)
       setUser({ ...user, ...payload });
       setEdited(null);
       setIsEditing(false);
       toast.success("تم حفظ التعديلات بنجاح");
     } catch (e: any) {
-      // في حال الخادم يطبّق نفس القيد ويرجع 429 أو يمنع الهوية
       const msg = e?.response?.data?.message || "تعذّر حفظ التعديلات";
       toast.error(msg);
     }
@@ -305,6 +303,14 @@ const Profile: React.FC = () => {
     } catch (e: any) {
       toast.error(e?.response?.data?.message || "تعذّر تغيير كلمة المرور");
     }
+  };
+
+  // منطق إظهار/إخفاء بطاقة:
+  // - إذا الدور Student & ليست في وضع التعديل & لا توجد بيانات: نخفي البطاقة
+  // - خلاف ذلك نظهرها
+  const shouldShow = (valuePresent: boolean) => {
+    if (user?.role === "student" && !isEditing && !valuePresent) return false;
+    return true;
   };
 
   // UI حالات
@@ -323,11 +329,11 @@ const Profile: React.FC = () => {
     return (
       <div className="p-6">
         <div className="mx-auto max-w-5xl">
-          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 flex items-center justify-between">
+          <div className="bg-red-50/90  border border-red-200 text-red-700 rounded-2xl p-4 flex items-center justify-between shadow-sm">
             <div>{fetchState.message}</div>
             <button
               onClick={loadUser}
-              className="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+              className="inline-flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-xl hover:bg-red-700 transition"
             >
               <RefreshCw className="w-4 h-4" />
               إعادة المحاولة
@@ -345,22 +351,28 @@ const Profile: React.FC = () => {
   const remainingGender = canEditFieldLocal("gender", user._id).remaining;
 
   return (
-    <div className="p-4 md:p-6" dir="rtl">
-      <div className="mx-auto max-w-6xl">
+    <div className={`p-4 md:p-6 transition-all duration-500 ${mounted ? "opacity-100" : "opacity-0"}`} dir="rtl">
+      <div className="mx-auto max-w-6xl space-y-6">
         {/* الهيدر */}
-        <div className="bg-emerald-600 text-white rounded-2xl p-5 md:p-6 relative shadow-md">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <div className="text-2xl md:text-3xl font-bold">{fullName || "الملف الشخصي"}</div>
-              <div className="mt-2 inline-flex items-center gap-2 bg-emerald-700/60 px-3 py-1 rounded-full text-sm">
+        <div className={`relative rounded-3xl p-5 md:p-6 shadow-md overflow-hidden
+          bg-gradient-to-br from-emerald-600 via-emerald-600 to-emerald-700
+          ring-1 ring-emerald-500/20`}>
+          {/* طبقة زجاجية خفيفة */}
+          <div className="absolute inset-0 bg-white/5 -[2px] pointer-events-none" />
+          <div className="relative flex items-start justify-between gap-4">
+            <div className={`transition-all ${mounted ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"} duration-500`}>
+              <div className="text-2xl md:text-3xl font-extrabold text-white drop-shadow-sm">
+                {fullName || "الملف الشخصي"}
+              </div>
+              <div className="mt-2 inline-flex items-center gap-2 bg-white/15 text-white px-3 py-1 rounded-full text-sm shadow-sm">
                 <BookOpen className="w-4 h-4" />
                 {user.role === "teacher" ? "معلّم" : user.role === "student" ? "طالب" : "مستخدم"}
               </div>
             </div>
 
             {/* الأفاتار */}
-            <div className="relative">
-              <div className="w-24 h-24 md:w-28 md:h-28 rounded-full ring-4 ring-white/30 bg-white overflow-hidden flex items-center justify-center shadow-lg">
+            <div className={`relative group ${mounted ? "opacity-100 scale-100" : "opacity-0 scale-95"} transition-all duration-500`}>
+              <div className="w-24 h-24 md:w-28 md:h-28 rounded-full ring-4 ring-white/30 bg-white overflow-hidden flex items-center justify-center shadow-xl">
                 {avatarFile ? (
                   <img src={URL.createObjectURL(avatarFile)} alt="avatar" className="w-full h-full object-cover" />
                 ) : avatarUrl ? (
@@ -373,7 +385,7 @@ const Profile: React.FC = () => {
                 <>
                   <label
                     htmlFor="avatar"
-                    className="absolute -bottom-2 right-0 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full p-2 cursor-pointer shadow"
+                    className="absolute -bottom-2 right-0 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full p-2 cursor-pointer shadow-lg transition transform group-hover:-translate-y-0.5"
                     title="تغيير الصورة"
                   >
                     <Camera className="w-4 h-4" />
@@ -399,7 +411,7 @@ const Profile: React.FC = () => {
               <>
                 <button
                   onClick={beginEdit}
-                  className="inline-flex items-center gap-2 bg-white text-emerald-700 font-medium px-4 py-2 rounded-lg hover:bg-emerald-50"
+                  className="inline-flex items-center gap-2 bg-white text-emerald-700 font-semibold px-4 py-2 rounded-xl hover:bg-emerald-50 active:scale-[.99] transition"
                 >
                   <Edit className="w-4 h-4" />
                   تعديل المعلومات الشخصية
@@ -412,7 +424,7 @@ const Profile: React.FC = () => {
                     if (!newPass) return;
                     changePassword(oldPass, newPass);
                   }}
-                  className="inline-flex items-center gap-2 bg-white/20 text-white font-medium px-4 py-2 rounded-lg hover:bg-white/30"
+                  className="inline-flex items-center gap-2 bg-white/20 text-white font-semibold px-4 py-2 rounded-xl hover:bg-white/30 active:scale-[.99] transition"
                 >
                   <Lock className="w-4 h-4" />
                   تغيير كلمة المرور
@@ -422,14 +434,14 @@ const Profile: React.FC = () => {
               <>
                 <button
                   onClick={saveProfile}
-                  className="inline-flex items-center gap-2 bg-white text-emerald-700 font-semibold px-4 py-2 rounded-lg hover:bg-emerald-50"
+                  className="inline-flex items-center gap-2 bg-white text-emerald-700 font-extrabold px-4 py-2 rounded-xl hover:bg-emerald-50 active:scale-[.99] transition motion-safe:animate-none"
                 >
                   <Save className="w-4 h-4" />
                   حفظ
                 </button>
                 <button
                   onClick={cancelEdit}
-                  className="inline-flex items-center gap-2 bg-white/20 text-white font-medium px-4 py-2 rounded-lg hover:bg-white/30"
+                  className="inline-flex items-center gap-2 bg-white/20 text-white font-semibold px-4 py-2 rounded-xl hover:bg-white/30 active:scale-[.99] transition"
                 >
                   <X className="w-4 h-4" />
                   إلغاء
@@ -440,172 +452,188 @@ const Profile: React.FC = () => {
         </div>
 
         {/* البطاقات */}
-        <div className="grid md:grid-cols-3 gap-4 mt-6">
+        <div className="grid md:grid-cols-3 gap-4">
           {/* الاسم الكامل */}
-          <InfoCard
-            icon={<Users className="w-6 h-6 text-emerald-600" />}
-            title="الاسم الكامل"
-            value={
-              isEditing ? (
-                <div className="grid grid-cols-2 gap-2">
-                  <TextInput
-                    placeholder="الاسم الأول"
-                    value={edited?.firstName ?? ""}
-                    onChange={(v) => setEdited((p) => (p ? { ...p, firstName: v } : p))}
-                  />
-                  <TextInput
-                    placeholder="اسم العائلة"
-                    value={edited?.lastName ?? ""}
-                    onChange={(v) => setEdited((p) => (p ? { ...p, lastName: v } : p))}
-                  />
-                </div>
-              ) : (
-                nv(fullName)
-              )
-            }
-          />
+          {shouldShow(Boolean(fullName)) && (
+            <InfoCard
+              icon={<Users className="w-6 h-6 text-emerald-600" />}
+              title="الاسم الكامل"
+              value={
+                isEditing ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    <TextInput
+                      placeholder="الاسم الأول"
+                      value={edited?.firstName ?? ""}
+                      onChange={(v) => setEdited((p) => (p ? { ...p, firstName: v } : p))}
+                    />
+                    <TextInput
+                      placeholder="اسم العائلة"
+                      value={edited?.lastName ?? ""}
+                      onChange={(v) => setEdited((p) => (p ? { ...p, lastName: v } : p))}
+                    />
+                  </div>
+                ) : (
+                  nv(fullName)
+                )
+              }
+            />
+          )}
 
           {/* رقم الهوية — غير قابل للتعديل */}
-          <InfoCard
-            icon={<IdCard className="w-6 h-6 text-purple-600" />}
-            title="رقم الهوية"
-            value={
-              isEditing ? (
-                <input
-                  value={user.idNumber ?? ""}
-                  readOnly
-                  disabled
-                  className="w-full border rounded-lg px-3 py-2 bg-slate-100 text-slate-500 cursor-not-allowed"
-                />
-              ) : (
-                nv(user.idNumber)
-              )
-            }
-          />
+          {shouldShow(Boolean(user.idNumber)) && (
+            <InfoCard
+              icon={<IdCard className="w-6 h-6 text-purple-600" />}
+              title="رقم الهوية"
+              value={
+                isEditing ? (
+                  <input
+                    value={user.idNumber ?? ""}
+                    readOnly
+                    disabled
+                    className="w-full border rounded-xl px-3 py-2 bg-slate-100 text-slate-500 cursor-not-allowed"
+                  />
+                ) : (
+                  nv(user.idNumber)
+                )
+              }
+            />
+          )}
 
           {/* تاريخ الميلاد / العمر / الجنس + عداد المحاولات */}
-          <InfoCard
-            icon={<Calendar className="w-6 h-6 text-amber-600" />}
-            title="تاريخ الميلاد / العمر / الجنس"
-            value={
-              isEditing ? (
-                <div className="space-y-2">
-                  <div className="grid grid-cols-3 gap-2">
-                    <TextInput
-                      type="date"
-                      value={edited?.birthDate ? edited.birthDate.slice(0, 10) : ""}
-                      onChange={(v) =>
-                        setEdited((p) => (p ? { ...p, birthDate: v ? new Date(v).toISOString() : "" } : p))
-                      }
-                    />
-                    <select
-                      className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring"
-                      value={edited?.gender ?? ""}
-                      onChange={(e) => setEdited((p) => (p ? { ...p, gender: e.target.value } : p))}
-                    >
-                      <option value="">غير محدد</option>
-                      <option value="male">ذكر</option>
-                      <option value="female">أنثى</option>
-                    </select>
-                    <div className="bg-slate-50 text-slate-700 rounded-lg px-3 py-2">
-                      العمر: {calcAge(edited?.birthDate) ?? "—"}
+          {shouldShow(Boolean(user.birthDate) || Boolean(user.gender) || isEditing) && (
+            <InfoCard
+              icon={<Calendar className="w-6 h-6 text-amber-600" />}
+              title="تاريخ الميلاد / العمر / الجنس"
+              value={
+                isEditing ? (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-3 gap-2">
+                      <TextInput
+                        type="date"
+                        value={edited?.birthDate ? edited.birthDate.slice(0, 10) : ""}
+                        onChange={(v) =>
+                          setEdited((p) => (p ? { ...p, birthDate: v ? new Date(v).toISOString() : "" } : p))
+                        }
+                      />
+                      <select
+                        className="w-full border rounded-xl px-3 py-2 focus:outline-none focus:ring"
+                        value={edited?.gender ?? ""}
+                        onChange={(e) => setEdited((p) => (p ? { ...p, gender: e.target.value } : p))}
+                      >
+                        <option value="">غير محدد</option>
+                        <option value="male">ذكر</option>
+                        <option value="female">أنثى</option>
+                      </select>
+                      <div className="bg-slate-50 text-slate-700 rounded-xl px-3 py-2">
+                        العمر: {calcAge(edited?.birthDate) ?? "—"}
+                      </div>
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      المتبقي لتعديل تاريخ الميلاد: <b>{remainingBirth}</b> / 2 — المتبقي لتعديل الجنس: <b>{remainingGender}</b> / 2
                     </div>
                   </div>
-                  <div className="text-xs text-slate-500">
-                    المتبقي لتعديل تاريخ الميلاد: <b>{remainingBirth}</b> / 2 — المتبقي لتعديل الجنس: <b>{remainingGender}</b> / 2
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div>تاريخ الميلاد: {formatDate(user.birthDate)}</div>
-                  <div className="mt-1">العمر: {age ?? "—"} سنة</div>
-                  <div className="mt-1">الجنس: {toArabicGender(user.gender)}</div>
-                </>
-              )
-            }
-          />
+                ) : (
+                  <>
+                    <div>تاريخ الميلاد: {formatDate(user.birthDate)}</div>
+                    <div className="mt-1">العمر: {age ?? "—"} سنة</div>
+                    <div className="mt-1">الجنس: {toArabicGender(user.gender)}</div>
+                  </>
+                )
+              }
+            />
+          )}
 
           {/* مكان السكن */}
-          <InfoCard
-            icon={<MapPin className="w-6 h-6 text-pink-600" />}
-            title="مكان السكن"
-            value={
-              isEditing ? (
-                <TextInput
-                  placeholder="المدينة / الحي"
-                  value={edited?.residence ?? ""}
-                  onChange={(v) => setEdited((p) => (p ? { ...p, residence: v } : p))}
-                />
-              ) : (
-                nv(user.residence)
-              )
-            }
-          />
+          {shouldShow(Boolean(user.residence)) && (
+            <InfoCard
+              icon={<MapPin className="w-6 h-6 text-pink-600" />}
+              title="مكان السكن"
+              value={
+                isEditing ? (
+                  <TextInput
+                    placeholder="المدينة / الحي"
+                    value={edited?.residence ?? ""}
+                    onChange={(v) => setEdited((p) => (p ? { ...p, residence: v } : p))}
+                  />
+                ) : (
+                  nv(user.residence)
+                )
+              }
+            />
+          )}
 
           {/* البريد */}
-          <InfoCard
-            icon={<Mail className="w-6 h-6 text-emerald-600" />}
-            title="البريد الإلكتروني"
-            value={
-              isEditing ? (
-                <TextInput
-                  type="email"
-                  placeholder="email@example.com"
-                  value={edited?.email ?? ""}
-                  onChange={(v) => setEdited((p) => (p ? { ...p, email: v } : p))}
-                />
-              ) : (
-                nv(user.email)
-              )
-            }
-          />
+          {shouldShow(Boolean(user.email)) && (
+            <InfoCard
+              icon={<Mail className="w-6 h-6 text-emerald-600" />}
+              title="البريد الإلكتروني"
+              value={
+                isEditing ? (
+                  <TextInput
+                    type="email"
+                    placeholder="email@example.com"
+                    value={edited?.email ?? ""}
+                    onChange={(v) => setEdited((p) => (p ? { ...p, email: v } : p))}
+                  />
+                ) : (
+                  nv(user.email)
+                )
+              }
+            />
+          )}
 
           {/* الهاتف */}
-          <InfoCard
-            icon={<Phone className="w-6 h-6 text-orange-600" />}
-            title="رقم الهاتف"
-            value={
-              isEditing ? (
-                <TextInput
-                  placeholder="05xxxxxxxx"
-                  value={edited?.phoneNumber ?? ""}
-                  onChange={(v) => setEdited((p) => (p ? { ...p, phoneNumber: v } : p))}
-                />
-              ) : (
-                nv(user.phoneNumber)
-              )
-            }
-          />
+          {shouldShow(Boolean(user.phoneNumber)) && (
+            <InfoCard
+              icon={<Phone className="w-6 h-6 text-orange-600" />}
+              title="رقم الهاتف"
+              value={
+                isEditing ? (
+                  <TextInput
+                    placeholder="05xxxxxxxx"
+                    value={edited?.phoneNumber ?? ""}
+                    onChange={(v) => setEdited((p) => (p ? { ...p, phoneNumber: v } : p))}
+                  />
+                ) : (
+                  nv(user.phoneNumber)
+                )
+              }
+            />
+          )}
 
           {/* المجموعات */}
-          <InfoCard
-            icon={<Users className="w-6 h-6 text-sky-600" />}
-            title="المجموعات"
-            value={
-              isEditing ? (
-                <TextInput
-                  placeholder="افصل بين الأسماء بفاصلة"
-                  value={(edited?.groups ?? []).join(", ")}
-                  onChange={(v) =>
-                    setEdited((p) =>
-                      p ? { ...p, groups: v.split(",").map((s) => s.trim()).filter(Boolean) } : p
-                    )
-                  }
-                />
-              ) : user.groups && user.groups.length ? (
-                user.groups.join("، ")
-              ) : (
-                "غير متوفر"
-              )
-            }
-          />
+          {shouldShow(Boolean(user.groups && user.groups.length)) && (
+            <InfoCard
+              icon={<Users className="w-6 h-6 text-sky-600" />}
+              title="المجموعات"
+              value={
+                isEditing ? (
+                  <TextInput
+                    placeholder="افصل بين الأسماء بفاصلة"
+                    value={(edited?.groups ?? []).join(", ")}
+                    onChange={(v) =>
+                      setEdited((p) =>
+                        p ? { ...p, groups: v.split(",").map((s) => s.trim()).filter(Boolean) } : p
+                      )
+                    }
+                  />
+                ) : user.groups && user.groups.length ? (
+                  user.groups.join("، ")
+                ) : (
+                  "غير متوفر"
+                )
+              }
+            />
+          )}
 
           {/* تاريخ إنشاء الحساب */}
-          <InfoCard
-            icon={<Calendar className="w-6 h-6 text-slate-600" />}
-            title="تاريخ إنشاء الحساب"
-            value={user.createdAt ? formatDate(user.createdAt) : "غير متوفر"}
-          />
+          {shouldShow(Boolean(user.createdAt)) && (
+            <InfoCard
+              icon={<Calendar className="w-6 h-6 text-slate-600" />}
+              title="تاريخ إنشاء الحساب"
+              value={user.createdAt ? formatDate(user.createdAt) : "غير متوفر"}
+            />
+          )}
         </div>
       </div>
 
@@ -622,7 +650,7 @@ const InfoCard: React.FC<{ icon: React.ReactNode; title: string; value: React.Re
   title,
   value,
 }) => (
-  <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+  <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
     <div className="flex items-center gap-3 mb-2">
       <div className="bg-slate-50 p-2 rounded-xl">{icon}</div>
       <div className="font-semibold text-slate-800">{title}</div>
@@ -642,7 +670,7 @@ const TextInput: React.FC<{
     value={value}
     onChange={(e) => onChange(e.target.value)}
     placeholder={placeholder}
-    className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring focus:ring-emerald-200"
+    className="w-full border rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-300 transition"
   />
 );
 
