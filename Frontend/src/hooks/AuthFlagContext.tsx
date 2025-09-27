@@ -1,3 +1,4 @@
+// Frontend/src/contexts/AuthFlagContext.tsx
 import React, {
   createContext,
   useContext,
@@ -7,18 +8,22 @@ import React, {
   useCallback,
 } from "react";
 
-interface OnlineStatusContextType {
+interface AuthFlagContextType {
   isOnline: boolean;
+  authFlag: boolean; // Main authentication flag
   setOnlineStatus: (status: boolean) => void;
   markUserOnline: () => void;
   markUserOffline: () => void;
+  // New methods for explicit flag management
+  setAuthFlag: (flag: boolean) => void;
+  toggleAuthFlag: () => void;
 }
 
-const OnlineStatusContext = createContext<OnlineStatusContextType | undefined>(
+const AuthFlagContext = createContext<AuthFlagContextType | undefined>(
   undefined
 );
 
-interface OnlineStatusProviderProps {
+interface AuthFlagProviderProps {
   children: ReactNode;
 }
 
@@ -41,26 +46,44 @@ const getAuthPresence = (): boolean => {
   return Boolean(user && token);
 };
 
-export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({
+export const AuthFlagProvider: React.FC<AuthFlagProviderProps> = ({
   children,
 }) => {
-  // Start with false to avoid SSR hydration mismatch; we correct after mount.
+  // Main authentication flag state
+  const [authFlag, setAuthFlagState] = useState<boolean>(false);
   const [isOnline, setIsOnline] = useState<boolean>(false);
 
+  // Enhanced setOnlineStatus that also updates the auth flag
   const setOnlineStatus = useCallback((status: boolean) => {
-    // Console logs kept as requested
     console.log(`🟢 Online Status Changed: ${status ? "ONLINE" : "OFFLINE"}`);
     console.log(`📊 User is now: ${status ? "✅ Online" : "❌ Offline"}`);
+    
     setIsOnline(status);
+    setAuthFlagState(status);
+  }, []);
+
+  // Method to set auth flag directly
+  const setAuthFlag = useCallback((flag: boolean) => {
+    setAuthFlagState(flag);
+    setIsOnline(flag);
+  }, []);
+
+  // Method to toggle auth flag
+  const toggleAuthFlag = useCallback(() => {
+    setAuthFlagState(prev => {
+      const newValue = !prev;
+      setIsOnline(newValue);
+      return newValue;
+    });
   }, []);
 
   const markUserOnline = useCallback(() => {
-    console.log("🔵 User Login Successful - Setting Online Status to TRUE");
+    console.log("🔵 User Login Successful");
     setOnlineStatus(true);
   }, [setOnlineStatus]);
 
   const markUserOffline = useCallback(() => {
-    console.log("🔴 User Logout Successful - Setting Online Status to FALSE");
+    console.log("🔴 User Logout Successful");
     setOnlineStatus(false);
   }, [setOnlineStatus]);
 
@@ -70,16 +93,17 @@ export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({
 
     const initialFromAuth = getAuthPresence();
     // If you want to also factor in real network state:
-    const networkOk = typeof navigator !== "undefined" ? navigator.onLine : true;
+    const networkOk = typeof navigator !== "undefined" ? 
+      navigator.onLine : true;
 
     if (initialFromAuth) {
       console.log(
-        "🟡 Initial Check: User data found in localStorage - Setting Online Status to TRUE"
+        "🟡 Initial Check: User data found in localStorage"
       );
-      setOnlineStatus(true && networkOk);
+      setOnlineStatus(networkOk);
     } else {
       console.log(
-        "🟡 Initial Check: No user data found - Setting Online Status to FALSE"
+        "🟡 Initial Check: No user data found"
       );
       setOnlineStatus(false);
     }
@@ -94,12 +118,12 @@ export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({
         const present = getAuthPresence();
         if (!present) {
           console.log(
-            "🟠 Storage Change Detected: User data removed - Setting Online Status to FALSE"
+            "🟠 Storage Change Detected: User data removed"
           );
           setOnlineStatus(false);
         } else {
           console.log(
-            "🟠 Storage Change Detected: User data present - Setting Online Status to TRUE"
+            "🟠 Storage Change Detected: User data present"
           );
           setOnlineStatus(true);
         }
@@ -116,9 +140,16 @@ export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({
 
     const goOnline = () => {
       // Only go ONLINE if auth presence exists
-      if (getAuthPresence()) setOnlineStatus(true);
+      if (getAuthPresence()) {
+        console.log("🌐 Network Online");
+        setOnlineStatus(true);
+      }
     };
-    const goOffline = () => setOnlineStatus(false);
+    
+    const goOffline = () => {
+      console.log("🌐 Network Offline");
+      setOnlineStatus(false);
+    };
 
     window.addEventListener("online", goOnline);
     window.addEventListener("offline", goOffline);
@@ -129,26 +160,29 @@ export const OnlineStatusProvider: React.FC<OnlineStatusProviderProps> = ({
     };
   }, [setOnlineStatus]);
 
-  const contextValue: OnlineStatusContextType = {
+  const contextValue: AuthFlagContextType = {
     isOnline,
+    authFlag,
     setOnlineStatus,
     markUserOnline,
     markUserOffline,
+    setAuthFlag,
+    toggleAuthFlag,
   };
 
   return (
-    <OnlineStatusContext.Provider value={contextValue}>
+    <AuthFlagContext.Provider value={contextValue}>
       {children}
-    </OnlineStatusContext.Provider>
+    </AuthFlagContext.Provider>
   );
 };
 
-export const useOnlineStatus = (): OnlineStatusContextType => {
-  const ctx = useContext(OnlineStatusContext);
+export const useAuthFlag = (): AuthFlagContextType => {
+  const ctx = useContext(AuthFlagContext);
   if (!ctx) {
-    throw new Error("useOnlineStatus must be used within an OnlineStatusProvider");
+    throw new Error("useAuthFlag must be used within an AuthFlagProvider");
   }
   return ctx;
 };
 
-export { OnlineStatusContext };
+export { AuthFlagContext };

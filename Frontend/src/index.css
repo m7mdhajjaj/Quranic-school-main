@@ -123,6 +123,7 @@
 
 .chat-bubble {
   position: relative;
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
 }
 
@@ -140,6 +141,7 @@
   mask:
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor; /* Fallback for Webkit browsers */
   mask-composite: exclude;
 }
 
@@ -166,3 +168,97 @@
 .message-input:focus {
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
+
+/* Avatar skeleton animations */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Animation delay utilities */
+.animation-delay-0 {
+  animation-delay: 0ms;
+}
+
+.animation-delay-200 {
+  animation-delay: 200ms;
+}
+
+.animation-delay-400 {
+  animation-delay: 400ms;
+}
+
+/* Enhanced skeleton animations */
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes slide-shimmer {
+  0% {
+    transform: translateX(-100%) skewX(-15deg);
+  }
+  100% {
+    transform: translateX(200%) skewX(-15deg);
+  }
+}
+
+/* Skeleton utilities */
+.skeleton-shimmer {
+  animation: slide-shimmer 2s infinite;
+}
+
+.skeleton-pulse {
+  animation: pulse-slow 2s infinite;
+}
+
+/* Skeleton loading states */
+.skeleton-loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-loading::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, currentColor, transparent);
+  animation: shimmer 2s infinite;
+  opacity: 0.1;
+}
+
+/* Image fade in animation */
+@keyframes fadeInImage {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+
