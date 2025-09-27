@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import NotificationHeader from './NotificationHeader';
 import { io, Socket } from 'socket.io-client';
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 
 interface User {
   _id: string;
@@ -13,8 +14,7 @@ interface User {
   lastName?: string;
 }
 
-const API_ORIGIN =
-  import.meta.env.VITE_API_ORIGIN?.toString() || 'http://localhost:5005';
+const API_ORIGIN = API_BASE_URL;
 
 /** Axios instance */
 const api = axios.create({
@@ -27,7 +27,7 @@ api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
     config.headers = config.headers ?? {};
-    (config.headers as any).Authorization = `Bearer ${token}`;
+    config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
@@ -40,6 +40,8 @@ const Header = () => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string>('');
   const [avatarLoading, setAvatarLoading] = useState(false);
+  const [logoLoaded, setLogoLoaded] = useState(false);
+  const [officialPhotoLoaded, setOfficialPhotoLoaded] = useState(false);
 
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -58,15 +60,7 @@ const Header = () => {
 
   const toggleMenu = () => setIsMenuOpen((v) => !v);
 
-  const safeRevoke = (url?: string) => {
-    if (url && url.startsWith('blob:')) {
-      try {
-        URL.revokeObjectURL(url);
-      } catch {
-        /* noop */
-      }
-    }
-  };
+
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem('user');
@@ -76,7 +70,6 @@ const Header = () => {
     socket?.disconnect();
     setSocket(null);
 
-    safeRevoke(avatarUrl);
     setAvatarUrl('');
     setAvatarLoading(false);
 
@@ -85,52 +78,61 @@ const Header = () => {
     setProfileMenuOpen(false);
 //dasdd
     navigate('/login', { replace: true });
-  }, [socket, avatarUrl, navigate]);
+  }, [socket, navigate]);
 
-  // ---------- avatar via axios + cache ----------
+  // ---------- simple avatar URL with loading ----------
   const fetchUserAvatar = useCallback(
-    async (userId: string, role: string) => {
-      if (!userId || avatarLoading) return;
-
-      const cacheKey = `avatar:${role}:${userId}`;
-      const cached = sessionStorage.getItem(cacheKey);
-      if (cached) {
-        setAvatarUrl(cached);
-        return;
-      }
-
+    (userId: string, role: string) => {
+      if (!userId) return;
+      
       setAvatarLoading(true);
-
-      try {
-        const endpoint = role === 'student' ? 'students' : 'teachers';
-        const res = await api.get(`/api/${endpoint}/${userId}/avatar`, {
-          responseType: 'blob',
-          // نحاول تجاوز الـ cache الوسيط إن وُجد
-          headers: { 'Cache-Control': 'no-cache' },
-          validateStatus: (s) => [200, 204, 304, 404].includes(s),
-        });
-
-        // 404 أو Blob فارغ => لا صورة
-        if (!res.data || res.status === 404 || (res.data as Blob).size === 0) {
-          setAvatarUrl('');
-          return;
-        }
-
-        // success
-        safeRevoke(avatarUrl);
-        const url = URL.createObjectURL(res.data as Blob);
-        setAvatarUrl(url);
-        sessionStorage.setItem(cacheKey, url);
-      } catch (e) {
-        if (process.env.NODE_ENV !== 'production') {
-          console.error('avatar fetch error', e);
-        }
-        setAvatarUrl('');
-      } finally {
-        setAvatarLoading(false);
-      }
+      
+      // Add minimum loading time to show skeleton (prevent flash)
+      const minLoadingTime = 300; // 300ms minimum
+      const startTime = Date.now();
+      
+      // Simple direct URL to avatar endpoint with token for auth
+      const token = localStorage.getItem('token');
+      const endpoint = role === 'student' ? 'students' : 'teachers';
+      const avatarUrl = `${API_ORIGIN}/api/${endpoint}/${userId}/avatar?t=${Date.now()}${token ? `&token=${token}` : ''}`;
+      
+      // Test if avatar exists by creating an image element
+      const img = new Image();
+      
+      const handleLoadComplete = (success: boolean, url?: string) => {
+        const elapsedTime = Date.now() - startTime;
+        const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
+        
+        // Ensure minimum loading time to prevent skeleton flash
+        setTimeout(() => {
+          if (success && url) {
+            setAvatarUrl(url);
+          } else {
+            setAvatarUrl('');
+          }
+          setAvatarLoading(false);
+        }, remainingTime);
+      };
+      
+      // Add timeout for slow connections
+      const timeout = setTimeout(() => {
+        img.onload = null;
+        img.onerror = null;
+        handleLoadComplete(false);
+      }, 8000); // 8 second timeout
+      
+      img.onload = () => {
+        clearTimeout(timeout);
+        handleLoadComplete(true, avatarUrl);
+      };
+      img.onerror = () => {
+        clearTimeout(timeout);
+        handleLoadComplete(false);
+      };
+      
+      img.src = avatarUrl;
     },
-    [avatarLoading, avatarUrl]
+    []
   );
 
   // ---------- init user ----------
@@ -165,7 +167,7 @@ const Header = () => {
 
     const onConnect = () => setSocket(s);
     const onDisconnect = () => setSocket(null);
-    const onError = (e: any) => {
+    const onError = (e: Error) => {
       if (process.env.NODE_ENV !== 'production') console.error('socket error', e);
       setSocket(s); // نبقي المرجع موجودًا حتى لو لم يتصل بعد
     };
@@ -204,8 +206,7 @@ const Header = () => {
     };
   }, [profileMenuOpen]);
 
-  // ---------- revoke blob on unmount / avatar change ----------
-  useEffect(() => () => safeRevoke(avatarUrl), [avatarUrl]);
+
 
   // ---------- nav items ----------
   const primaryNavItems = useMemo(
@@ -356,16 +357,65 @@ const Header = () => {
     </svg>
   );
 
+  // Generic Image Skeleton Component
+  const ImageSkeleton = ({ className, variant = 'default' }: { 
+    className: string; 
+    variant?: 'default' | 'avatar' | 'logo';
+  }) => (
+    <div
+      className={`${className} relative overflow-hidden flex items-center justify-center ${
+        variant === 'logo' 
+          ? 'bg-gradient-to-br from-blue-200/80 to-indigo-300/80 dark:from-blue-600/80 dark:to-indigo-700/80'
+          : variant === 'avatar'
+          ? 'bg-gradient-to-br from-emerald-200/80 to-teal-300/80 dark:from-emerald-600/80 dark:to-teal-700/80'
+          : 'bg-gradient-to-br from-gray-200/80 to-gray-300/80 dark:from-gray-600/80 dark:to-gray-700/80'
+      } backdrop-blur-sm`}
+      aria-label="جاري تحميل الصورة"
+    >
+      {/* Multiple shimmer layers for depth */}
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 dark:via-gray-300/50 to-transparent animate-[shimmer_2s_ease-in-out_infinite]" />
+      <div className="absolute inset-0 bg-gradient-to-l from-transparent via-white/30 dark:via-gray-400/30 to-transparent animate-[shimmer_2.5s_ease-in-out_infinite] animation-delay-500" />
+      
+      {/* Pulsing background with breathing effect */}
+      <div className="absolute inset-0 bg-white/30 dark:bg-gray-400/30 animate-[pulse-slow_3s_ease-in-out_infinite]" />
+      
+      {/* Subtle border shimmer */}
+      <div className="absolute inset-0 border border-white/40 dark:border-gray-300/40 animate-pulse rounded-[inherit]" />
+      
+      {/* Loading dots */}
+      <div className="absolute inset-0 flex items-center justify-center z-10">
+        <div className="flex space-x-0.5">
+          <div className="w-1 h-1 bg-gray-500/80 dark:bg-gray-400/80 rounded-full animate-[bounce_1.4s_ease-in-out_infinite] animation-delay-0"></div>
+          <div className="w-1 h-1 bg-gray-500/80 dark:bg-gray-400/80 rounded-full animate-[bounce_1.4s_ease-in-out_infinite] animation-delay-200"></div>
+          <div className="w-1 h-1 bg-gray-500/80 dark:bg-gray-400/80 rounded-full animate-[bounce_1.4s_ease-in-out_infinite] animation-delay-400"></div>
+        </div>
+      </div>
+    </div>
+  );
+
   const AvatarSkeleton = () => (
     <div
       className={`w-8 h-8 lg:w-10 lg:h-10 rounded-full border-2 overflow-hidden flex items-center justify-center ${
         userGender === 'female'
           ? 'bg-gradient-to-br from-pink-400 to-fuchsia-500 border-pink-200/50 shadow-pink-500/30'
           : 'bg-gradient-to-br from-emerald-400 to-teal-500 border-emerald-200/50 shadow-emerald-500/30'
-      } shadow-lg animate-pulse`}
+      } shadow-lg relative`}
       aria-label="جاري تحميل الصورة"
     >
-      <div className="w-full h-full bg-white/30 rounded-full" />
+      {/* Shimmer effect */}
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-[shimmer_1.5s_ease-in-out_infinite] rounded-full" />
+      
+      {/* Pulsing background */}
+      <div className="w-full h-full bg-white/20 rounded-full animate-pulse" />
+      
+      {/* Loading dots */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="flex space-x-1">
+          <div className="w-1 h-1 bg-white/70 rounded-full animate-[bounce_1.4s_ease-in-out_infinite] animation-delay-0"></div>
+          <div className="w-1 h-1 bg-white/70 rounded-full animate-[bounce_1.4s_ease-in-out_infinite] animation-delay-200"></div>
+          <div className="w-1 h-1 bg-white/70 rounded-full animate-[bounce_1.4s_ease-in-out_infinite] animation-delay-400"></div>
+        </div>
+      </div>
     </div>
   );
 
@@ -379,20 +429,39 @@ const Header = () => {
           userGender === 'female'
             ? 'bg-gradient-to-br from-pink-400 to-fuchsia-500 border-pink-200/50 shadow-pink-500/30'
             : 'bg-gradient-to-br from-emerald-400 to-teal-500 border-emerald-200/50 shadow-emerald-500/30'
-        } shadow-lg`}
+        } shadow-lg group relative`}
         aria-label="القائمة الشخصية"
+        onClick={() => {
+          // Retry loading avatar if it failed and not currently loading
+          if (!avatarUrl && !avatarLoading && currentUser?._id && currentUser?.role) {
+            fetchUserAvatar(currentUser._id, currentUser.role);
+          }
+        }}
       >
         {avatarUrl ? (
           <img
             src={avatarUrl}
             alt="صورة المستخدم"
-            className="object-cover w-full h-full rounded-full"
-            onError={() => setAvatarUrl('')}
+            className="object-cover w-full h-full rounded-full transition-opacity duration-200 opacity-0 animate-[fadeIn_0.3s_ease-in-out_forwards]"
+            onLoad={(e) => {
+              (e.target as HTMLImageElement).style.opacity = '1';
+            }}
+            onError={() => {
+              setAvatarUrl('');
+            }}
           />
         ) : currentUser ? (
-          <span className="text-white font-bold text-sm lg:text-base drop-shadow-sm">
-            {(currentUser.firstName || currentUser.name || '').charAt(0)}
-          </span>
+          <div className="relative w-full h-full flex items-center justify-center">
+            <span className="text-white font-bold text-sm lg:text-base drop-shadow-sm">
+              {(currentUser.firstName || currentUser.name || '').charAt(0)}
+            </span>
+            {/* Subtle retry indicator on hover */}
+            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full flex items-center justify-center">
+              <svg className="w-3 h-3 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </div>
+          </div>
         ) : (
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -428,7 +497,7 @@ const Header = () => {
             <div className="hidden md:block absolute left-3 lg:left-6 top-1/2 -translate-y-1/2 z-[60]">
               <NotificationHeader
                 userId={currentUser._id}
-                socket={socket as any}
+                socket={socket}
                 apiUrl={API_ORIGIN}
               />
             </div>
@@ -438,14 +507,26 @@ const Header = () => {
           <div className="flex items-center justify-between py-2 lg:py-3">
             {/* RIGHT: Logo + Academy Name */}
             <div className="flex items-center justify-start gap-3">
-              <div className="w-10 h-10 lg:w-14 lg:h-14 rounded-full bg-white/20 backdrop-blur-md border-2 border-white/30 flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 lg:w-14 lg:h-14 rounded-full bg-white/20 backdrop-blur-md border-2 border-white/30 flex items-center justify-center shadow-lg relative overflow-hidden">
+                {!logoLoaded && (
+                  <ImageSkeleton 
+                    className="w-8 h-8 lg:w-10 lg:h-10 rounded-full absolute inset-0 m-auto" 
+                    variant="logo"
+                  />
+                )}
                 <img
                   src="/src/images/logo.jpg"
                   alt="لوغو الأكاديمية"
-                  className="w-8 h-8 lg:w-10 lg:h-10 rounded-full object-cover"
-                  onError={(e) =>
-                    ((e.target as HTMLImageElement).style.display = 'none')
-                  }
+                  className={`w-8 h-8 lg:w-10 lg:h-10 rounded-full object-cover transition-all duration-500 ${
+                    logoLoaded 
+                      ? 'opacity-100 scale-100' 
+                      : 'opacity-0 scale-95'
+                  }`}
+                  onLoad={() => setLogoLoaded(true)}
+                  onError={(e) => {
+                    setLogoLoaded(true);
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
                 />
               </div>
               <div>
@@ -686,14 +767,26 @@ const Header = () => {
               {/* mobile header */}
               <div className="flex items-center justify-between mb-6 pb-4 border-b border-emerald-500/30">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border-2 border-white/30 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border-2 border-white/30 flex items-center justify-center relative overflow-hidden">
+                    {!officialPhotoLoaded && (
+                      <ImageSkeleton 
+                        className="w-7 h-7 rounded-full absolute inset-0 m-auto" 
+                        variant="avatar"
+                      />
+                    )}
                     <img
                       src="/src/images/officialPhoto.jpg"
                       alt="Logo"
-                      className="w-7 h-7 rounded-full object-cover"
-                      onError={(e) =>
-                        ((e.target as HTMLImageElement).style.display = 'none')
-                      }
+                      className={`w-7 h-7 rounded-full object-cover transition-all duration-500 ${
+                        officialPhotoLoaded 
+                          ? 'opacity-100 scale-100' 
+                          : 'opacity-0 scale-95'
+                      }`}
+                      onLoad={() => setOfficialPhotoLoaded(true)}
+                      onError={(e) => {
+                        setOfficialPhotoLoaded(true);
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
                     />
                   </div>
                   <div>
@@ -733,7 +826,7 @@ const Header = () => {
                   {/* نظهر الجرس أيضًا داخل القائمة الجانبية للجوال */}
                   <NotificationHeader
                     userId={currentUser._id}
-                    socket={socket as any}
+                    socket={socket}
                     apiUrl={API_ORIGIN}
                   />
                 </div>

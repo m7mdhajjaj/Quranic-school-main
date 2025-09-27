@@ -80,6 +80,7 @@ NotificationHeader Styles
   z-index: 9999;
   direction: rtl;
   overflow: hidden;
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   animation: slideDown 0.3s ease-out;
 }
