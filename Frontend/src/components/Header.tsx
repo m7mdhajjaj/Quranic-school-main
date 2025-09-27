@@ -1,319 +1,349 @@
+
 import { NavLink, useNavigate } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import NotificationHeader from './NotificationHeader';
-import io from 'socket.io-client';
+import { io, Socket } from 'socket.io-client';
+import axios from 'axios';
 
 interface User {
   _id: string;
   name: string;
-  role?: string;
+  role?: 'student' | 'teacher' | 'admin' | string;
   firstName?: string;
   lastName?: string;
-  gender?: string;
 }
 
-const API_URL = "http://localhost:5005/api";
+const API_ORIGIN =
+  import.meta.env.VITE_API_ORIGIN?.toString() || 'http://localhost:5005';
+
+/** Axios instance */
+const api = axios.create({
+  baseURL: API_ORIGIN,
+  withCredentials: false,
+});
+
+/** Attach token automatically */
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers = config.headers ?? {};
+    (config.headers as any).Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 const Header = () => {
-  // State Management
+  // ---------- state ----------
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [socket, setSocket] = useState<any>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState<string>("");
+  const [avatarUrl, setAvatarUrl] = useState<string>('');
   const [avatarLoading, setAvatarLoading] = useState(false);
+
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  // Computed Values
-  const isTeacherOrAdmin = currentUser?.role === 'teacher' || currentUser?.role === 'admin';
+  // ---------- helpers ----------
+  const isTeacherOrAdmin =
+    currentUser?.role === 'teacher' || currentUser?.role === 'admin';
+
+  const getUserGender = (user: User | null) => {
+    if (!user) return 'male';
+    const name = user.firstName || user.name || '';
+    if (/a$|ة$|ه$|ya$|ia$|ina$/i.test(name.trim())) return 'female';
+    return 'male';
+  };
   const userGender = getUserGender(currentUser);
 
-  // Helper Functions
-  function getUserGender(user: User | null) {
-    if (!user) return 'male';
-    
-    // Check explicit gender field first
-    if (user.gender) {
-      if (user.gender === 'أنثى' || user.gender === 'انثى' || user.gender === 'female') {
-        return 'female';
+  const toggleMenu = () => setIsMenuOpen((v) => !v);
+
+  const safeRevoke = (url?: string) => {
+    if (url && url.startsWith('blob:')) {
+      try {
+        URL.revokeObjectURL(url);
+      } catch {
+        /* noop */
       }
-      if (user.gender === 'ذكر' || user.gender === 'male') {
-        return 'male';
-      }
-    }
-    
-    // Fallback to name pattern detection
-    const name = user.firstName || user.name || '';
-    if (/a$|ة$|ه$|ya$|ia$|ina$|ina$/i.test(name.trim())) return 'female';
-    return 'male';
-  }
-
-  function toggleMenu() {
-    setIsMenuOpen(!isMenuOpen);
-  }
-
-  function handleLogout() {
-    // Clear storage and disconnect socket
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    localStorage.removeItem('userId');
-    
-    if (socket) {
-      socket.disconnect();
-    }
-
-    // Clean up avatar URL
-    if (avatarUrl && avatarUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(avatarUrl);
-    }
-
-    // Reset state
-    setCurrentUser(null);
-    setSocket(null);
-    setAvatarUrl("");
-    setIsMenuOpen(false);
-    setProfileMenuOpen(false);
-
-    // Handle browser history
-    window.history.pushState(null, '', window.location.href);
-    window.history.replaceState(null, '', '/login');
-
-    navigate('/login', { replace: true });
-
-    // Prevent back navigation after logout
-    setTimeout(() => {
-      window.history.pushState(null, '', '/login');
-      const preventBackAfterLogout = () => {
-        const userInStorage = localStorage.getItem('user');
-        if (!userInStorage) {
-          window.history.pushState(null, '', '/login');
-        }
-      };
-      window.addEventListener('popstate', preventBackAfterLogout);
-      
-      return () => window.removeEventListener('popstate', preventBackAfterLogout);
-    }, 100);
-  }
-
-  // Fetch user avatar from database
-  const fetchUserAvatar = async (userId: string, userRole: string) => {
-    if (!userId || avatarLoading) return;
-    
-    setAvatarLoading(true);
-    try {
-      const endpoint = userRole === 'student' ? 'students' : 'teachers';
-      const token = localStorage.getItem('token');
-      
-      const response = await fetch(`${API_URL}/${endpoint}/${userId}/avatar`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const blob = await response.blob();
-        if (blob.size > 0) {
-          // Clean up previous avatar URL
-          if (avatarUrl && avatarUrl.startsWith('blob:')) {
-            URL.revokeObjectURL(avatarUrl);
-          }
-          
-          const imageUrl = URL.createObjectURL(blob);
-          setAvatarUrl(imageUrl);
-        } else {
-          setAvatarUrl("");
-        }
-      } else {
-        setAvatarUrl("");
-      }
-    } catch (error) {
-      console.error('Error fetching avatar:', error);
-      setAvatarUrl("");
-    } finally {
-      setAvatarLoading(false);
     }
   };
 
-  // Initialize user and socket connection
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+
+    socket?.disconnect();
+    setSocket(null);
+
+    safeRevoke(avatarUrl);
+    setAvatarUrl('');
+    setAvatarLoading(false);
+
+    setCurrentUser(null);
+    setIsMenuOpen(false);
+    setProfileMenuOpen(false);
+
+    navigate('/login', { replace: true });
+  }, [socket, avatarUrl, navigate]);
+
+  // ---------- avatar via axios + cache ----------
+  const fetchUserAvatar = useCallback(
+    async (userId: string, role: string) => {
+      if (!userId || avatarLoading) return;
+
+      const cacheKey = `avatar:${role}:${userId}`;
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        setAvatarUrl(cached);
+        return;
+      }
+
+      setAvatarLoading(true);
+
+      try {
+        const endpoint = role === 'student' ? 'students' : 'teachers';
+        const res = await api.get(`/api/${endpoint}/${userId}/avatar`, {
+          responseType: 'blob',
+          // نحاول تجاوز الـ cache الوسيط إن وُجد
+          headers: { 'Cache-Control': 'no-cache' },
+          validateStatus: (s) => [200, 204, 304, 404].includes(s),
+        });
+
+        // 404 أو Blob فارغ => لا صورة
+        if (!res.data || res.status === 404 || (res.data as Blob).size === 0) {
+          setAvatarUrl('');
+          return;
+        }
+
+        // success
+        safeRevoke(avatarUrl);
+        const url = URL.createObjectURL(res.data as Blob);
+        setAvatarUrl(url);
+        sessionStorage.setItem(cacheKey, url);
+      } catch (e) {
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('avatar fetch error', e);
+        }
+        setAvatarUrl('');
+      } finally {
+        setAvatarLoading(false);
+      }
+    },
+    [avatarLoading, avatarUrl]
+  );
+
+  // ---------- init user ----------
   useEffect(() => {
-    // Load user from localStorage
     const userJson = localStorage.getItem('user');
     if (userJson) {
       try {
         const userData = JSON.parse(userJson) as User;
         setCurrentUser(userData);
-        
-        // Fetch user avatar
         if (userData._id && userData.role) {
           fetchUserAvatar(userData._id, userData.role);
         }
       } catch (err) {
         console.error('Error parsing user data:', err);
-        navigate('/login');
+        navigate('/login', { replace: true });
       }
     }
+  }, [fetchUserAvatar, navigate]);
 
-    // Initialize socket connection
-    const token = localStorage.getItem('token');
-    if (token && userJson) {
-      try {
-        const socketConnection = io('http://localhost:5005', {
-          auth: { token },
-          transports: ['websocket', 'polling']
-        });
-
-        socketConnection.on('connect', () => {
-          console.log('Socket connected');
-          setSocket(socketConnection);
-        });
-
-        socketConnection.on('disconnect', () => {
-          console.log('Socket disconnected');
-        });
-
-        socketConnection.on('connect_error', (error) => {
-          console.error('Socket connection error:', error);
-        });
-
-        return () => {
-          socketConnection.disconnect();
-        };
-      } catch (err) {
-        console.error('Socket initialization error:', err);
-      }
-    }
-  }, [navigate]);
-
-  // Handle click outside profile menu
+  // ---------- init socket (always) to ensure NotificationHeader renders ----------
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
-        setProfileMenuOpen(false);
-      }
+    const token = localStorage.getItem('token') || undefined;
+
+    const s = io(API_ORIGIN, {
+      transports: ['websocket', 'polling'],
+      auth: token ? { token } : undefined,
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+    });
+
+    const onConnect = () => setSocket(s);
+    const onDisconnect = () => setSocket(null);
+    const onError = (e: any) => {
+      if (process.env.NODE_ENV !== 'production') console.error('socket error', e);
+      setSocket(s); // نبقي المرجع موجودًا حتى لو لم يتصل بعد
     };
 
-    if (profileMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
+    s.on('connect', onConnect);
+    s.on('disconnect', onDisconnect);
+    s.on('connect_error', onError);
+    s.on('error', onError);
+
+    return () => {
+      s.off('connect', onConnect);
+      s.off('disconnect', onDisconnect);
+      s.off('connect_error', onError);
+      s.off('error', onError);
+      s.disconnect();
+    };
+  }, []);
+
+  // ---------- close profile menu on outside click / esc ----------
+  useEffect(() => {
+    if (!profileMenuOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(e.target as Node)
+      )
+        setProfileMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setProfileMenuOpen(false);
+
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
   }, [profileMenuOpen]);
 
-  // Navigation Items Configuration
-  const primaryNavItems = [
-    {
-      to: '/',
-      label: 'الصفحة الرئيسية',
-      icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
-      stroke: true,
-    },
-    {
-      to: '/news',
-      label: 'الأخبار',
-      icon: 'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5a2.5 2.5 0 00-2.5-2.5H15',
-      stroke: true,
-    },
-    {
-      to: '/goals',
-      label: 'الأهداف',
-      icon: 'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z',
-      stroke: true,
-    },
-    {
-      to: '/daily-marks',
-      label: 'العلامات اليومية',
-      icon: 'M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4',
-      stroke: true,
-    },
-    {
-      to: '/test',
-      label: 'الاختبارات',
-      icon: 'M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01',
-      stroke: true,
-    },
-    {
-      to: '/exam-schedule',
-      label: 'جدول الامتحانات',
-      icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
-      stroke: true,
-    },
-    {
-      to: '/prayer-times',
-      label: 'مواقيت الصلاة',
-      icon: 'M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z',
-      stroke: true,
-    },
-  ];
+  // ---------- revoke blob on unmount / avatar change ----------
+  useEffect(() => () => safeRevoke(avatarUrl), [avatarUrl]);
 
-  const secondaryNavItems = [
-    {
-      to: '/quran',
-      label: 'القرآن الكريم',
-      icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
-      stroke: true,
-    },
-    {
-      to: '/quran-audio',
-      label: 'القرآن الصوتي',
-      icon: 'M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M9 9v6l6-3-6-3z',
-      stroke: true,
-    },
-    {
-      to: '/arrangement',
-      label: 'الترتيب',
-      icon: 'M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 113 0v1m0 0V11m0-5.5a1.5 1.5 0 113 0v3m-3-3a1.5 1.5 0 113 0v3m-3-3a1.5 1.5 0 113 0v3',
-      stroke: true,
-    },
-    {
-      to: '/activities',
-      label: 'الأنشطة',
-      icon: 'M19 11H5m14-7H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zM9 10h6m-6 4h6m-6 4h6',
-      stroke: true,
-    },
-    {
-      to: '/absence',
-      label: 'الحضور والغياب',
-      icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z',
-      stroke: true,
-    },
-    {
-      to: '/reports',
-      label: 'التقارير',
-      icon: 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-      stroke: true,
-    },
-    {
-      to: '/chat',
-      label: 'تواصل مع المعلم',
-      icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
-      stroke: true,
-    },
-    ...(isTeacherOrAdmin
-      ? [
-          {
-            to: '/managment',
-            label: 'الإدارة',
-            icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zm4.675 7.683a3 3 0 11-6 0 3 3 0 016 0z',
-            stroke: true,
-          },
-        ]
-      : []),
-    {
-      to: '/timetable',
-      label: 'جدول الحصص',
-      icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
-      stroke: true,
-    },
-  ];
+  // ---------- nav items ----------
+  const primaryNavItems = useMemo(
+    () => [
+      {
+        to: '/',
+        label: 'الصفحة الرئيسية',
+        icon:
+          'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
+        stroke: true,
+      },
+      {
+        to: '/news',
+        label: 'الأخبار',
+        icon:
+          'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5a2.5 2.5 0 00-2.5-2.5H15',
+        stroke: true,
+      },
+      {
+        to: '/goals',
+        label: 'الأهداف',
+        icon:
+          'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z',
+        stroke: true,
+      },
+      {
+        to: '/daily-marks',
+        label: 'العلامات اليومية',
+        icon:
+          'M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4',
+        stroke: true,
+      },
+      {
+        to: '/test',
+        label: 'الاختبارات',
+        icon:
+          'M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01',
+        stroke: true,
+      },
+      {
+        to: '/exam-schedule',
+        label: 'جدول الامتحانات',
+        icon:
+          'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
+        stroke: true,
+      },
+      {
+        to: '/prayer-times',
+        label: 'مواقيت الصلاة',
+        icon:
+          'M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z',
+        stroke: true,
+      },
+    ],
+    []
+  );
 
-  // Component Renderers
-  const renderIcon = (icon: string, stroke = false) => (
+  const secondaryNavItems = useMemo(() => {
+    const base = [
+      {
+        to: '/quran',
+        label: 'القرآن الكريم',
+        icon:
+          'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
+        stroke: true,
+      },
+      {
+        to: '/quran-audio',
+        label: 'القرآن الصوتي',
+        icon:
+          'M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M9 9v6l6-3-6-3z',
+        stroke: true,
+      },
+      {
+        to: '/arrangement',
+        label: 'الترتيب',
+        icon:
+          'M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 113 0v1m0 0V11m0-5.5a1.5 1.5 0 113 0v3m-3-3a1.5 1.5 0 113 0v3m-3-3a1.5 1.5 0 113 0v3',
+        stroke: true,
+      },
+      {
+        to: '/activities',
+        label: 'الأنشطة',
+        icon:
+          'M19 11H5m14-7H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zM9 10h6m-6 4h6m-6 4h6',
+        stroke: true,
+      },
+      {
+        to: '/absence',
+        label: 'الحضور والغياب',
+        icon:
+          'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z',
+        stroke: true,
+      },
+      {
+        to: '/reports',
+        label: 'التقارير',
+        icon:
+          'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+        stroke: true,
+      },
+      {
+        to: '/chat',
+        label: 'تواصل مع المعلم',
+        icon:
+          'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
+        stroke: true,
+      },
+      {
+        to: '/timetable',
+        label: 'جدول الحصص',
+        icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+        stroke: true,
+      },
+    ] as const;
+
+    if (!isTeacherOrAdmin) return base;
+    return [
+      ...base.slice(0, 7),
+      {
+        to: '/managment',
+        label: 'الإدارة',
+        icon:
+          'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zm4.675 7.683a3 3 0 11-6 0 3 3 0 016 0z',
+        stroke: true,
+      },
+      ...base.slice(7),
+    ];
+  }, [isTeacherOrAdmin]);
+
+  // ---------- ui helpers ----------
+  const renderIcon = (d: string, stroke = false) => (
     <svg
-      className="w-5 h-5"
+      className="w-4 h-4 lg:w-5 lg:h-5"
       fill={stroke ? 'none' : 'currentColor'}
       stroke={stroke ? 'currentColor' : undefined}
       viewBox="0 0 24 24"
+      aria-hidden="true"
     >
       <path
         strokeLinecap={stroke ? 'round' : undefined}
@@ -321,83 +351,161 @@ const Header = () => {
         strokeWidth={stroke ? 2 : undefined}
         fillRule={!stroke ? 'evenodd' : undefined}
         clipRule={!stroke ? 'evenodd' : undefined}
-        d={icon}
+        d={d}
       />
     </svg>
   );
 
+  const AvatarSkeleton = () => (
+    <div
+      className={`w-8 h-8 lg:w-10 lg:h-10 rounded-full border-2 overflow-hidden flex items-center justify-center ${
+        userGender === 'female'
+          ? 'bg-gradient-to-br from-pink-400 to-fuchsia-500 border-pink-200/50 shadow-pink-500/30'
+          : 'bg-gradient-to-br from-emerald-400 to-teal-500 border-emerald-200/50 shadow-emerald-500/30'
+      } shadow-lg animate-pulse`}
+      aria-label="جاري تحميل الصورة"
+    >
+      <div className="w-full h-full bg-white/30 rounded-full" />
+    </div>
+  );
+
   const renderUserAvatar = () => {
-    const getInitials = () => {
-      if (currentUser?.firstName) {
-        return currentUser.firstName.charAt(0);
-      }
-      if (currentUser?.name) {
-        return currentUser.name.charAt(0);
-      }
-      return '؟';
-    };
+    if (avatarLoading) return <AvatarSkeleton />;
 
     return (
       <button
-        className={`w-10 h-10 lg:w-11 lg:h-11 rounded-full border-2 overflow-hidden transition-all duration-300 hover:scale-105 flex items-center justify-center ${
+        type="button"
+        className={`w-8 h-8 lg:w-10 lg:h-10 rounded-full border-2 overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-lg flex items-center justify-center ${
           userGender === 'female'
-            ? 'bg-gradient-to-br from-pink-400 to-fuchsia-500 border-pink-300'
-            : 'bg-gradient-to-br from-emerald-400 to-teal-500 border-emerald-300'
-        }`}
+            ? 'bg-gradient-to-br from-pink-400 to-fuchsia-500 border-pink-200/50 shadow-pink-500/30'
+            : 'bg-gradient-to-br from-emerald-400 to-teal-500 border-emerald-200/50 shadow-emerald-500/30'
+        } shadow-lg`}
+        aria-label="القائمة الشخصية"
       >
-        {avatarLoading ? (
-          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-        ) : avatarUrl ? (
+        {avatarUrl ? (
           <img
             src={avatarUrl}
-            alt="avatar"
-            className="object-cover w-full h-full rounded-full min-w-0 min-h-0"
-            onError={() => {
-              console.log('Avatar failed to load, falling back to initials');
-              setAvatarUrl("");
-            }}
+            alt="صورة المستخدم"
+            className="object-cover w-full h-full rounded-full"
+            onError={() => setAvatarUrl('')}
           />
-        ) : (
-          <span className="text-white font-bold text-lg lg:text-xl">
-            {getInitials()}
+        ) : currentUser ? (
+          <span className="text-white font-bold text-sm lg:text-base drop-shadow-sm">
+            {(currentUser.firstName || currentUser.name || '').charAt(0)}
           </span>
+        ) : (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-4 w-4 lg:h-5 lg:w-5 text-white"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+            />
+          </svg>
         )}
       </button>
     );
   };
 
+  // ---------- render ----------
   return (
     <>
       {/* Main Header */}
       <header
-        className="sticky top-0 z-50 bg-gradient-to-r from-emerald-600 to-teal-500 text-white shadow-lg"
+        className="sticky top-0 z-50 bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-500 text-white shadow-2xl border-b border-emerald-400/20"
         dir="rtl"
       >
-        <div className="container mx-auto px-4 lg:px-6">
-          <div className="flex items-center justify-between py-1 lg:py-2">
-            {/* User Profile Section - Far Left */}
-            <div className="flex items-center gap-4 order-first">
-              <div
-                className="hidden md:flex items-center relative"
-                ref={profileMenuRef}
-              >
+        <div className="container mx-auto px-3 lg:px-6 relative">
+          {/* === FAR-LEFT BELL (absolute) === */}
+          {currentUser && (
+            <div className="hidden md:block absolute left-3 lg:left-6 top-1/2 -translate-y-1/2 z-[60]">
+              <NotificationHeader
+                userId={currentUser._id}
+                socket={socket as any}
+                apiUrl={API_ORIGIN}
+              />
+            </div>
+          )}
+
+          {/* الصف الرئيسي */}
+          <div className="flex items-center justify-between py-2 lg:py-3">
+            {/* RIGHT: Logo + Academy Name */}
+            <div className="flex items-center justify-start gap-3">
+              <div className="w-10 h-10 lg:w-14 lg:h-14 rounded-full bg-white/20 backdrop-blur-md border-2 border-white/30 flex items-center justify-center shadow-lg">
+                <img
+                  src="/src/images/logo.jpg"
+                  alt="لوغو الأكاديمية"
+                  className="w-8 h-8 lg:w-10 lg:h-10 rounded-full object-cover"
+                  onError={(e) =>
+                    ((e.target as HTMLImageElement).style.display = 'none')
+                  }
+                />
+              </div>
+              <div>
+                <h1 className="text-xl lg:text-3xl font-bold bg-gradient-to-l from-white via-emerald-100 to-white bg-clip-text text-transparent drop-shadow-sm">
+                  مدرسة القرآن الكريم
+                </h1>
+                <p className="text-xs lg:text-sm text-emerald-100/80 font-medium hidden lg:block">
+                  أكاديمية مدرسة الهجرة للقرآن الكريم وعلومه
+                </p>
+              </div>
+            </div>
+
+            {/* CENTER: Desktop Nav */}
+            <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
+              {primaryNavItems.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) =>
+                    `px-2 lg:px-3 py-2 rounded-xl text-xs lg:text-sm font-medium transition-all duration-300 flex items-center gap-1.5 lg:gap-2 backdrop-blur-sm ${
+                      isActive
+                        ? 'bg-white/25 text-white shadow-lg border border-white/30 scale-105'
+                        : 'text-emerald-100 hover:bg-white/15 hover:text-white hover:scale-105 border border-transparent hover:border-white/20'
+                    }`
+                  }
+                >
+                  {renderIcon(item.icon, item.stroke)}
+                  <span className="whitespace-nowrap">{item.label}</span>
+                </NavLink>
+              ))}
+            </nav>
+
+            {/* LEFT: Profile + Mobile Button */}
+            <div className="flex items-center gap-2 lg:gap-3">
+              {/* Profile */}
+              <div className="hidden md:flex items-center relative" ref={profileMenuRef}>
                 <div
-                  className="flex items-center gap-3 cursor-pointer p-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 transition-all duration-300"
-                  onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                  role="button"
+                  tabIndex={0}
+                  className="flex items-center gap-2 lg:gap-3 cursor-pointer p-2 lg:p-3 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all duration-300 hover:shadow-lg hover:scale-105"
+                  onClick={() => setProfileMenuOpen((v) => !v)}
+                  onKeyDown={(e) =>
+                    (e.key === 'Enter' || e.key === ' ') &&
+                    setProfileMenuOpen((v) => !v)
+                  }
+                  aria-haspopup="menu"
+                  aria-expanded={profileMenuOpen}
+                  aria-controls="profile-menu"
                 >
                   {renderUserAvatar()}
-
                   {currentUser && (
-                    <span className="hidden lg:block text-base font-semibold text-white max-w-32 truncate">
+                    <span className="hidden lg:block text-sm lg:text-base font-semibold text-white max-w-28 lg:max-w-32 truncate drop-shadow-sm">
                       {currentUser.firstName && currentUser.lastName
                         ? `${currentUser.firstName} ${currentUser.lastName}`
                         : currentUser.firstName || currentUser.name || ''}
                     </span>
                   )}
-
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className={`h-4 w-4 text-white transition-transform duration-300 ${
+                    className={`h-3 w-3 lg:h-4 lg:w-4 text-white transition-transform duration-300 ${
                       profileMenuOpen ? 'rotate-180' : ''
                     }`}
                     fill="none"
@@ -413,201 +521,190 @@ const Header = () => {
                   </svg>
                 </div>
 
-                {/* Profile Dropdown */}
                 {profileMenuOpen && (
-                  <div className="absolute right-0 top-full mt-3 w-72 bg-white/95 backdrop-blur-lg rounded-xl shadow-2xl border border-gray-100/80 py-2 z-[100]">
-                    <div className="px-5 py-4 border-b border-gray-100/80">
-                      <span className="block text-emerald-700 font-bold text-lg">
-                        {currentUser?.firstName && currentUser?.lastName
-                          ? `${currentUser.firstName} ${currentUser.lastName}`
-                          : currentUser?.firstName || currentUser?.name}
-                      </span>
-                      <span className="block text-gray-500 text-sm mt-1">
-                        {currentUser?.role === 'teacher'
-                          ? 'معلم'
-                          : currentUser?.role === 'admin'
-                            ? 'مدير'
-                            : 'طالب'}
-                      </span>
+                  <div
+                    id="profile-menu"
+                    className="absolute right-0 top-full mt-2 w-72 bg-white/98 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-100/80 py-2 z-[100]"
+                  >
+                    <div className="px-6 py-4 border-b border-gray-100/80 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-t-2xl">
+                      <div className="flex items-center gap-3">
+                        {renderUserAvatar()}
+                        <div>
+                          <span className="block text-emerald-800 font-bold text-lg">
+                            {currentUser?.firstName && currentUser?.lastName
+                              ? `${currentUser.firstName} ${currentUser.lastName}`
+                              : currentUser?.firstName || currentUser?.name}
+                          </span>
+                          <span className="block text-emerald-600 text-sm mt-1 font-medium">
+                            {currentUser?.role === 'teacher'
+                              ? 'معلم'
+                              : currentUser?.role === 'admin'
+                              ? 'مدير'
+                              : 'طالب'}
+                          </span>
+                        </div>
+                      </div>
                     </div>
 
-                    <button
-                      onClick={() => {
-                        setProfileMenuOpen(false);
-                        navigate('/profile');
-                      }}
-                      className="w-full text-right py-3 px-5 text-gray-700 hover:bg-emerald-50/80 hover:text-emerald-600 transition-colors flex items-center gap-3"
-                    >
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                    <div className="py-2">
+                      <button
+                        onClick={() => {
+                          setProfileMenuOpen(false);
+                          navigate('/profile');
+                        }}
+                        className="w-full text-right py-3 px-6 text-gray-700 hover:bg-emerald-50/80 hover:text-emerald-700 transition-all duration-200 flex items-center gap-3 group"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                        />
-                      </svg>
-                      الملف الشخصي
-                    </button>
+                        <div className="p-1.5 rounded-lg bg-emerald-100 group-hover:bg-emerald-200 transition-colors">
+                          <svg
+                            className="w-4 h-4 text-emerald-600"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                            />
+                          </svg>
+                        </div>
+                        <span className="font-medium">الملف الشخصي</span>
+                      </button>
 
-                    <button
-                      onClick={() => {
-                        setProfileMenuOpen(false);
-                        navigate('/change-password');
-                      }}
-                      className="w-full text-right py-3 px-5 text-gray-700 hover:bg-emerald-50/80 hover:text-emerald-600 transition-colors flex items-center gap-3"
-                    >
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                      <button
+                        onClick={() => {
+                          setProfileMenuOpen(false);
+                          navigate('/change-password');
+                        }}
+                        className="w-full text-right py-3 px-6 text-gray-700 hover:bg-blue-50/80 hover:text-blue-700 transition-all duration-200 flex items-center gap-3 group"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-                        />
-                      </svg>
-                      تغيير كلمة المرور
-                    </button>
+                        <div className="p-1.5 rounded-lg bg-blue-100 group-hover:bg-blue-200 transition-colors">
+                          <svg
+                            className="w-4 h-4 text-blue-600"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1721 9z"
+                            />
+                          </svg>
+                        </div>
+                        <span className="font-medium">تغيير كلمة المرور</span>
+                      </button>
 
-                    <button
-                      onClick={() => {
-                        setProfileMenuOpen(false);
-                        handleLogout();
-                      }}
-                      className="w-full text-right py-3 px-5 text-red-600 hover:bg-red-50/80 hover:text-red-700 transition-colors flex items-center gap-3"
-                    >
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                      <div className="border-t border-gray-100 my-2" />
+
+                      <button
+                        onClick={() => {
+                          setProfileMenuOpen(false);
+                          handleLogout();
+                        }}
+                        className="w-full text-right py-3 px-6 text-red-600 hover:bg-red-50/80 hover:text-red-700 transition-all duration-200 flex items-center gap-3 group"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                        />
-                      </svg>
-                      تسجيل الخروج
-                    </button>
+                        <div className="p-1.5 rounded-lg bg-red-100 group-hover:bg-red-200 transition-colors">
+                          <svg
+                            className="w-4 h-4 text-red-600"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                            />
+                          </svg>
+                        </div>
+                        <span className="font-medium">تسجيل الخروج</span>
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
 
-              {/* Notifications */}
-              {currentUser && socket && (
-                <NotificationHeader 
-                  userId={currentUser._id} 
-                  socket={socket}
-                  apiUrl={API_URL}
-                />
-              )}
-            </div>
-
-            {/* School Title - Center */}
-            <div className="text-center flex-1">
-              <h1 className="text-xl lg:text-2xl font-bold bg-gradient-to-l from-white to-emerald-100 bg-clip-text text-transparent">
-                مدرسة القرآن الكريم
-              </h1>
-            </div>
-
-            {/* Mobile Menu Button - Far Right */}
-            <div className="md:hidden">
-              <button
-                onClick={toggleMenu}
-                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
-                aria-label="Toggle menu"
-              >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+              {/* Mobile menu button */}
+              <div className="md:hidden">
+                <button
+                  onClick={toggleMenu}
+                  className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-all duration-300 backdrop-blur-md border border-white/20 hover:scale-105"
+                  aria-label="فتح القائمة"
+                  aria-expanded={isMenuOpen}
                 >
-                  {isMenuOpen ? (
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  ) : (
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 6h16M4 12h16M4 18h16"
-                    />
-                  )}
-                </svg>
-              </button>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {isMenuOpen ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    )}
+                  </svg>
+                </button>
+              </div>
             </div>
-
-            {/* Desktop Navigation - Right */}
-            <nav className="hidden md:flex items-center gap-1">
-              {primaryNavItems.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) =>
-                    `px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
-                      isActive
-                        ? 'bg-white/20 text-white shadow-md'
-                        : 'text-emerald-100 hover:bg-white/10 hover:text-white'
-                    }`
-                  }
-                >
-                  {renderIcon(item.icon, item.stroke)}
-                  <span>{item.label}</span>
-                </NavLink>
-              ))}
-            </nav>
           </div>
 
           {/* Secondary Navigation Bar - Desktop */}
-          <div className="hidden md:block border-t border-emerald-500/30 pt-2 pb-1">
-            <nav className="flex items-center justify-center gap-1 flex-wrap">
-              {secondaryNavItems.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) =>
-                    `px-2 py-1.5 rounded-md text-xs font-medium transition-all duration-200 flex items-center gap-1.5 ${
-                      isActive
-                        ? 'bg-white/15 text-white'
-                        : 'text-emerald-200 hover:bg-white/10 hover:text-white'
-                    }`
-                  }
-                >
-                  {renderIcon(item.icon, item.stroke)}
-                  <span>{item.label}</span>
-                </NavLink>
-              ))}
-            </nav>
+          <div className="hidden md:block border-top border-emerald-400/30 pt-2 pb-2">
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl px-4 py-2 border border-white/20">
+              <nav className="flex items-center justify-center gap-1 flex-wrap">
+                {secondaryNavItems.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    className={({ isActive }) =>
+                      `px-2 lg:px-3 py-1.5 lg:py-2 rounded-lg text-xs lg:text-sm font-medium transition-all duration-300 flex items-center gap-1 lg:gap-1.5 ${
+                        isActive
+                          ? 'bg-white/20 text-white shadow-md border border-white/30'
+                          : 'text-emerald-100 hover:bg-white/15 hover:text-white hover:scale-105 border border-transparent hover:border-white/20'
+                      }`
+                    }
+                  >
+                    {renderIcon(item.icon, item.stroke)}
+                    <span className="whitespace-nowrap hidden lg:inline">{item.label}</span>
+                  </NavLink>
+                ))}
+              </nav>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile Drawer */}
       {isMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" onClick={toggleMenu}>
-          <div className="fixed right-0 top-0 h-full w-80 max-w-[90vw] bg-gradient-to-b from-emerald-600 to-emerald-800 shadow-2xl overflow-y-auto" dir="rtl">
+        <div className="md:hidden fixed inset-0 z-40">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={toggleMenu} />
+          <div
+            className="fixed right-0 top-0 h-full w-80 max-w-[90vw] bg-gradient-to-b from-emerald-600 via-emerald-700 to-emerald-800 shadow-2xl overflow-y-auto"
+            dir="rtl"
+          >
             <div className="p-6">
-              {/* Mobile Header */}
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-white">القائمة الرئيسية</h2>
+              {/* mobile header */}
+              <div className="flex items-center justify-between mb-6 pb-4 border-b border-emerald-500/30">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border-2 border-white/30 flex items-center justify-center">
+                    <img
+                      src="/src/images/officialPhoto.jpg"
+                      alt="Logo"
+                      className="w-7 h-7 rounded-full object-cover"
+                      onError={(e) =>
+                        ((e.target as HTMLImageElement).style.display = 'none')
+                      }
+                    />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-white">القائمة الرئيسية</h2>
+                    <p className="text-emerald-200 text-sm">مدرسة القرآن الكريم</p>
+                  </div>
+                </div>
                 <button
                   onClick={toggleMenu}
-                  className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+                  className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors backdrop-blur-md border border-white/20"
+                  aria-label="إغلاق القائمة"
                 >
                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -615,87 +712,75 @@ const Header = () => {
                 </button>
               </div>
 
-              {/* Mobile User Profile */}
+              {/* mobile profile + notifications */}
               {currentUser && (
-                <div className="flex items-center gap-3 mb-6 p-4 bg-white/10 rounded-xl backdrop-blur-sm">
+                <div className="flex items-center gap-4 mb-6 p-4 bg-white/10 rounded-2xl backdrop-blur-md border border-white/20">
                   {renderUserAvatar()}
-                  <div>
-                    <div className="text-white font-semibold">
+                  <div className="flex-1">
+                    <div className="text-white font-semibold text-lg">
                       {currentUser.firstName && currentUser.lastName
                         ? `${currentUser.firstName} ${currentUser.lastName}`
                         : currentUser.firstName || currentUser.name || ''}
                     </div>
                     <div className="text-emerald-200 text-sm">
-                      {currentUser?.role === 'teacher'
+                      {currentUser.role === 'teacher'
                         ? 'معلم'
-                        : currentUser?.role === 'admin'
-                          ? 'مدير'
-                          : 'طالب'}
+                        : currentUser.role === 'admin'
+                        ? 'مدير'
+                        : 'طالب'}
                     </div>
                   </div>
+                  {/* نظهر الجرس أيضًا داخل القائمة الجانبية للجوال */}
+                  <NotificationHeader
+                    userId={currentUser._id}
+                    socket={socket as any}
+                    apiUrl={API_ORIGIN}
+                  />
                 </div>
               )}
 
-              {/* Mobile Primary Navigation */}
-              <div className="space-y-2 mb-6">
-                <h3 className="text-emerald-200 text-sm font-medium mb-3">التنقل الرئيسي</h3>
-                {primaryNavItems.map((item) => (
+              {/* nav */}
+              <div className="space-y-1">
+                {[...primaryNavItems, ...secondaryNavItems].map((item) => (
                   <NavLink
                     key={item.to}
                     to={item.to}
                     onClick={() => setIsMenuOpen(false)}
                     className={({ isActive }) =>
-                      `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                      `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group ${
                         isActive
-                          ? 'bg-white/20 text-white shadow-md'
-                          : 'text-emerald-100 hover:bg-white/10 hover:text-white'
+                          ? 'bg-white/20 text-white shadow-lg border border-white/30'
+                          : 'text-emerald-100 hover:bg-white/15 hover:text-white hover:translate-x-1'
                       }`
                     }
                   >
-                    {renderIcon(item.icon, item.stroke)}
-                    <span className="font-medium">{item.label}</span>
+                    <div className="p-2 rounded-lg bg-white/10 group-hover:bg-white/20 transition-colors">
+                      {renderIcon(item.icon, item.stroke)}
+                    </div>
+                    <span className="font-medium flex-1">{item.label}</span>
+                    <svg className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
                   </NavLink>
                 ))}
               </div>
 
-              {/* Mobile Secondary Navigation */}
-              <div className="space-y-2 mb-6">
-                <h3 className="text-emerald-200 text-sm font-medium mb-3">خدمات إضافية</h3>
-                {secondaryNavItems.map((item) => (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    onClick={() => setIsMenuOpen(false)}
-                    className={({ isActive }) =>
-                      `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                        isActive
-                          ? 'bg-white/20 text-white shadow-md'
-                          : 'text-emerald-100 hover:bg-white/10 hover:text-white'
-                      }`
-                    }
-                  >
-                    {renderIcon(item.icon, item.stroke)}
-                    <span className="font-medium">{item.label}</span>
-                  </NavLink>
-                ))}
-              </div>
-
-              {/* Mobile Profile Actions */}
-              {currentUser && (
-                <div className="space-y-2 border-t border-emerald-500/30 pt-4">
-                  <h3 className="text-emerald-200 text-sm font-medium mb-3">إعدادات الحساب</h3>
-                  
+              {/* actions */}
+              {currentUser ? (
+                <div className="space-y-2 border-top border-emerald-500/30 pt-4 mt-6">
                   <button
                     onClick={() => {
                       setIsMenuOpen(false);
                       navigate('/profile');
                     }}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-emerald-100 hover:bg-white/10 hover:text-white transition-all duration-200"
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-emerald-100 hover:bg-white/15 hover:text-white transition-all duration-300 group hover:translate-x-1"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                    <span className="font-medium">الملف الشخصي</span>
+                    <div className="p-2 rounded-lg bg-emerald-500/20 group-hover:bg-emerald-500/30 transition-colors">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </div>
+                    <span className="font-medium flex-1">الملف الشخصي</span>
                   </button>
 
                   <button
@@ -703,12 +788,14 @@ const Header = () => {
                       setIsMenuOpen(false);
                       navigate('/change-password');
                     }}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-emerald-100 hover:bg-white/10 hover:text-white transition-all duration-200"
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-emerald-100 hover:bg-white/15 hover:text-white transition-all duration-300 group hover:translate-x-1"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                    </svg>
-                    <span className="font-medium">تغيير كلمة المرور</span>
+                    <div className="p-2 rounded-lg bg-blue-500/20 group-hover:bg-blue-500/30 transition-colors">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1721 9z" />
+                      </svg>
+                    </div>
+                    <span className="font-medium flex-1">تغيير كلمة المرور</span>
                   </button>
 
                   <button
@@ -716,29 +803,24 @@ const Header = () => {
                       setIsMenuOpen(false);
                       handleLogout();
                     }}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-300 hover:bg-red-500/20 hover:text-red-100 transition-all duration-200"
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-300 hover:bg-red-500/20 hover:text-red-100 transition-all duration-300 group hover:translate-x-1"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
-                    <span className="font-medium">تسجيل الخروج</span>
+                    <div className="p-2 rounded-lg bg-red-500/20 group-hover:bg-red-500/30 transition-colors">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                    </div>
+                    <span className="font-medium flex-1">تسجيل الخروج</span>
                   </button>
                 </div>
-              )}
-
-              {/* Mobile Login Button (if not logged in) */}
-              {!currentUser && (
-                <div className="border-t border-emerald-500/30 pt-4">
+              ) : (
+                <div className="border-t border-emerald-500/30 pt-4 mt-6">
                   <button
                     onClick={() => {
                       setIsMenuOpen(false);
                       navigate('/login');
                     }}
-                    className={`w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
-                      currentUser
-                        ? 'bg-red-500/90 hover:bg-red-500 text-white'
-                        : 'bg-emerald-500/90 hover:bg-emerald-500 text-white'
-                    }`}
+                    className="w-full flex items-center justify-center gap-3 px-4 py-4 rounded-xl font-medium transition-all duration-300 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg hover:shadow-xl hover:scale-105"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
