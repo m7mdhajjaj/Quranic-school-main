@@ -2,33 +2,18 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import {
-  Edit,
-  Phone,
-  Mail,
-  Calendar,
-  MapPin,
-  Users,
-  BookOpen,
-  Camera,
-  Lock,
-  Save,
-  X,
-  User as UserIcon,
-  Loader2,
-  RefreshCw,
-  IdCard,
+  Edit, Phone, Mail, Calendar, MapPin, Users, BookOpen,
+  Camera, Lock, Save, X, User as UserIcon, Loader2, RefreshCw, IdCard,
 } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 // ============================
-// التهيئة
+// الإعداد
 // ============================
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5005/api";
-const UPLOADS_URL = (path: string | undefined) =>
-  path ? `${API_URL.replace("/api", "")}/uploads/${path}` : "";
 
-// Axios instance مع التوكن
+// Axios مع التوكن
 const api = axios.create({ baseURL: API_URL });
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
@@ -37,7 +22,7 @@ api.interceptors.request.use((config) => {
 });
 
 // ============================
-// Types (متوافقة مع الباك)
+// Types
 // ============================
 interface UserBase {
   _id: string;
@@ -48,16 +33,15 @@ interface UserBase {
   motherName?: string;
   lastName?: string;
   birthDate?: string; // ISO
-  gender?: string;
+  gender?: string;    // 'male' | 'female' | 'ذكر' | 'انثى'
   residence?: string;
   email?: string;
   phoneNumber?: string;
   groups?: string[];
   role?: "student" | "teacher" | "admin";
-  avatar?: string; // relative path like 'avatars/xxx.jpg'
   createdAt?: string;
   updatedAt?: string;
-  age?: number; // قد يجي من السيرفر
+  age?: number;
   teacherId?: number;
   studentId?: number;
 }
@@ -71,10 +55,10 @@ type FetchState =
   | { status: "error"; message: string };
 
 // ============================
-// أدوات مساعدة
+// Helpers
 // ============================
 const toArabicGender = (g?: string) =>
-  g === "male" || g === "ذكر" ? "ذكر" : g === "female" || g === "أنثى" ? "أنثى" : "غير محدد";
+  g === "male" || g === "ذكر" ? "ذكر" : g === "female" || g === "أنثى" || g === "انثى" ? "أنثى" : "غير محدد";
 
 const calcAge = (iso?: string) => {
   if (!iso) return undefined;
@@ -92,41 +76,83 @@ const formatDate = (iso?: string) => {
   const d = new Date(iso);
   return Number.isNaN(+d)
     ? "غير محدد"
-    : d.toLocaleDateString("ar-EG", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
+    : d.toLocaleDateString("ar-EG", { year: "numeric", month: "long", day: "numeric" });
 };
 
 const nv = (v?: string | number) =>
   v === undefined || v === null || v === "" ? "غير متوفر" : String(v);
 
+const fetchJson = async (url: string) => {
+  const res = await api.get(url);
+  return res.data?.data ?? res.data;
+};
+
+// ------ تحكم التعديلات (مرتان خلال شهر متحرك) ------
+const addOneMonth = (dt: Date) => {
+  const d = new Date(dt);
+  d.setMonth(d.getMonth() + 1);
+  return d;
+};
+const pruneRolling = (timestamps: string[]) => {
+  const now = new Date();
+  return timestamps.filter((iso) => now < addOneMonth(new Date(iso)));
+};
+const keyFor = (field: "birthDate" | "gender", userId: string) => `editHistory_${field}_${userId}`;
+
+/** يرجع: {allowed, remaining, list} */
+const canEditFieldLocal = (field: "birthDate" | "gender", userId: string) => {
+  const raw = localStorage.getItem(keyFor(field, userId));
+  const list = pruneRolling(raw ? JSON.parse(raw) : []);
+  const allowed = list.length < 2;
+  const remaining = Math.max(0, 2 - list.length);
+  return { allowed, remaining, list };
+};
+const recordEditLocal = (field: "birthDate" | "gender", userId: string) => {
+  const { list } = canEditFieldLocal(field, userId);
+  const updated = [...list, new Date().toISOString()];
+  localStorage.setItem(keyFor(field, userId), JSON.stringify(updated));
+};
+
+// جلب الأفاتار كـ Blob URL من الـ API
+async function fetchAvatarBlobUrl(ep: Endpoint, id: string): Promise<string> {
+  try {
+    const res = await fetch(`${API_URL}/${ep}/${id}/avatar`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` },
+    });
+    if (!res.ok) return "";
+    const blob = await res.blob();
+    return URL.createObjectURL(blob);
+  } catch {
+    return "";
+  }
+}
+
 // ============================
-// المكوّن
+// Component
 // ============================
 const Profile: React.FC = () => {
   const [user, setUser] = useState<UserBase | null>(null);
   const [endpoint, setEndpoint] = useState<Endpoint>("students");
   const [fetchState, setFetchState] = useState<FetchState>({ status: "idle" });
 
-  // للتحرير
   const [isEditing, setIsEditing] = useState(false);
   const [edited, setEdited] = useState<UserBase | null>(null);
 
-  // للصورة
+  // للأفاتار
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const avatarPreview = useMemo(() => {
-    if (avatarFile) return URL.createObjectURL(avatarFile);
-    return user?.avatar ? UPLOADS_URL(user.avatar) : "";
-  }, [avatarFile, user?.avatar]);
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
 
-  // ========== جلب البيانات ==========
+  // عرض الاسم الكامل + العمر ديناميكي
+  const fullName = useMemo(
+    () => [user?.firstName, user?.fatherName, user?.grandFatherName, user?.lastName].filter(Boolean).join(" "),
+    [user]
+  );
+  const age = useMemo(() => calcAge(user?.birthDate), [user?.birthDate]);
+
+  // معرف المستخدم
   const getUserId = () => {
-    // جرّب عدة مصادر:
     const idFromLocal = localStorage.getItem("userId");
     if (idFromLocal) return idFromLocal;
-    // إن كان عندك تخزين للحساب في localStorage
     try {
       const raw = localStorage.getItem("user");
       if (raw) {
@@ -137,50 +163,54 @@ const Profile: React.FC = () => {
     return "";
   };
 
+  // تحميل البيانات
   const loadUser = async () => {
     const id = getUserId();
     if (!id) {
       setFetchState({ status: "error", message: "لا يوجد مستخدم مسجّل." });
       return;
     }
-
     setFetchState({ status: "loading" });
     try {
-      // جرّب طالب
+      // جرّب الطالب أولاً
       try {
-        const { data } = await api.get(`/${"students"}/${id}`);
-        const u: UserBase = data?.data ?? data;
+        const u: UserBase = await fetchJson(`/students/${id}`);
         setUser({ ...u, role: u.role ?? "student" });
         setEndpoint("students");
+        const url = await fetchAvatarBlobUrl("students", u._id);
+        setAvatarUrl((prev) => {
+          if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+          return url;
+        });
         setFetchState({ status: "ok" });
         return;
-      } catch (err: any) {
-        if (err?.response?.status !== 404) throw err;
+      } catch (e: any) {
+        if (e?.response?.status !== 404) throw e;
       }
-      // جرّب معلّم
-      const { data } = await api.get(`/${"teachers"}/${id}`);
-      const u: UserBase = data?.data ?? data;
+      // جرّب المعلّم
+      const u: UserBase = await fetchJson(`/teachers/${id}`);
       setUser({ ...u, role: u.role ?? "teacher" });
       setEndpoint("teachers");
+      const url = await fetchAvatarBlobUrl("teachers", u._id);
+      setAvatarUrl((prev) => {
+        if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+        return url;
+      });
       setFetchState({ status: "ok" });
     } catch (e: any) {
-      setFetchState({
-        status: "error",
-        message: e?.response?.data?.message || "فشل تحميل البيانات",
-      });
+      setFetchState({ status: "error", message: e?.response?.data?.message || "فشل تحميل البيانات" });
     }
   };
 
   useEffect(() => {
     loadUser();
-    // تنظيف عنوان URL Object لملف الصورة
     return () => {
-      if (avatarPreview && avatarPreview.startsWith("blob:")) URL.revokeObjectURL(avatarPreview);
+      if (avatarUrl && avatarUrl.startsWith("blob:")) URL.revokeObjectURL(avatarUrl);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ========== أحداث التحرير ==========
+  // تحرير
   const beginEdit = () => {
     setEdited(user);
     setIsEditing(true);
@@ -191,65 +221,93 @@ const Profile: React.FC = () => {
     setAvatarFile(null);
   };
 
+  // حفظ
   const saveProfile = async () => {
     if (!user || !edited) return;
+
+    // لا تعدّل رقم الهوية أبداً: لا نُرسله ولا نسمح بتغييره
+    const payload: Partial<UserBase> = {
+      firstName: edited.firstName,
+      lastName: edited.lastName,
+      birthDate: edited.birthDate,
+      gender: edited.gender,
+      residence: edited.residence,
+      email: edited.email,
+      phoneNumber: edited.phoneNumber,
+      groups: edited.groups,
+      // idNumber: (محظور)
+    };
+
+    // تحقق محلي: نافذة شهر متحركة لكل من تاريخ الميلاد والجنس
+    const changingBirth = edited.birthDate !== user.birthDate;
+    const changingGender = (edited.gender ?? "") !== (user.gender ?? "");
+
+    // birthDate
+    if (changingBirth) {
+      const b = canEditFieldLocal("birthDate", user._id);
+      if (!b.allowed) {
+        toast.error("لا يمكنك تعديل تاريخ الميلاد أكثر من مرتين خلال شهر كامل من آخر تعديلاتك");
+        return;
+      }
+    }
+    // gender
+    if (changingGender) {
+      const g = canEditFieldLocal("gender", user._id);
+      if (!g.allowed) {
+        toast.error("لا يمكنك تعديل الجنس أكثر من مرتين خلال شهر كامل من آخر تعديلاتك");
+        return;
+      }
+    }
+
     try {
-      // 1) تحديث النصوص
-      const payload: Partial<UserBase> = {
-        firstName: edited.firstName,
-        lastName: edited.lastName,
-        idNumber: edited.idNumber,
-        birthDate: edited.birthDate,
-        gender: edited.gender,
-        residence: edited.residence,
-        email: edited.email,
-        phoneNumber: edited.phoneNumber,
-        groups: edited.groups,
-      };
+      // (1) البيانات النصية
       await api.put(`/${endpoint}/${user._id}`, payload);
 
-      // 2) رفع الصورة إن وُجدت
+      // سجّل التعديلات المسموحة محليًا بعد نجاح الطلب
+      if (changingBirth) recordEditLocal("birthDate", user._id);
+      if (changingGender) recordEditLocal("gender", user._id);
+
+      // (2) رفع الصورة داخل الداتابيس (in-memory)
       if (avatarFile) {
         const fd = new FormData();
         fd.append("avatar", avatarFile);
-        const { data } = await api.post(`/${endpoint}/${user._id}/avatar`, fd, {
+        await api.post(`/${endpoint}/${user._id}/avatar`, fd, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        const newAvatar = data?.data?.avatar ?? data?.avatar;
-        if (newAvatar) {
-          edited.avatar = newAvatar;
-        }
+        // أعد تحميل صورة الأفاتار كبلاَب
+        const newUrl = await fetchAvatarBlobUrl(endpoint, user._id);
+        setAvatarUrl((prev) => {
+          if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+          return newUrl;
+        });
+        setAvatarFile(null);
       }
 
-      setUser(edited);
+      // حدّث العرض (العمر يُحسب ديناميكيًا من birthDate)
+      setUser({ ...user, ...payload });
+      setEdited(null);
       setIsEditing(false);
-      setAvatarFile(null);
       toast.success("تم حفظ التعديلات بنجاح");
     } catch (e: any) {
-      toast.error(e?.response?.data?.message || "تعذّر حفظ التعديلات");
+      // في حال الخادم يطبّق نفس القيد ويرجع 429 أو يمنع الهوية
+      const msg = e?.response?.data?.message || "تعذّر حفظ التعديلات";
+      toast.error(msg);
     }
   };
 
   const changePassword = async (oldPass: string, newPass: string) => {
     try {
-      // أمثلة لتغيير كلمة السر — غيّر المسار حسب سيرفرك
-      await api.put(`/${endpoint}/${user?._id}/password`, { oldPassword: oldPass, newPassword: newPass });
+      await api.put(`/${endpoint}/${user?._id}/password`, {
+        oldPassword: oldPass,
+        newPassword: newPass,
+      });
       toast.success("تم تغيير كلمة المرور");
     } catch (e: any) {
       toast.error(e?.response?.data?.message || "تعذّر تغيير كلمة المرور");
     }
   };
 
-  // ========== واجهة المستخدم ==========
-  const age = useMemo(() => user?.age ?? calcAge(user?.birthDate), [user]);
-  const fullName = useMemo(
-    () =>
-      [user?.firstName, user?.fatherName, user?.grandFatherName, user?.lastName]
-        .filter(Boolean)
-        .join(" "),
-    [user]
-  );
-
+  // UI حالات
   if (fetchState.status === "loading") {
     return (
       <div className="p-6 flex items-center justify-center min-h-[60vh]">
@@ -283,8 +341,11 @@ const Profile: React.FC = () => {
 
   if (!user) return null;
 
+  const remainingBirth = canEditFieldLocal("birthDate", user._id).remaining;
+  const remainingGender = canEditFieldLocal("gender", user._id).remaining;
+
   return (
-    <div className="p-4 md:p-6">
+    <div className="p-4 md:p-6" dir="rtl">
       <div className="mx-auto max-w-6xl">
         {/* الهيدر */}
         <div className="bg-emerald-600 text-white rounded-2xl p-5 md:p-6 relative shadow-md">
@@ -297,11 +358,13 @@ const Profile: React.FC = () => {
               </div>
             </div>
 
-            {/* صورة البروفايل */}
+            {/* الأفاتار */}
             <div className="relative">
               <div className="w-24 h-24 md:w-28 md:h-28 rounded-full ring-4 ring-white/30 bg-white overflow-hidden flex items-center justify-center shadow-lg">
-                {avatarPreview ? (
-                  <img src={avatarPreview} alt="avatar" className="w-full h-full object-cover" />
+                {avatarFile ? (
+                  <img src={URL.createObjectURL(avatarFile)} alt="avatar" className="w-full h-full object-cover" />
+                ) : avatarUrl ? (
+                  <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
                 ) : (
                   <UserIcon className="w-12 h-12 text-emerald-600" />
                 )}
@@ -402,16 +465,17 @@ const Profile: React.FC = () => {
             }
           />
 
-          {/* رقم الهوية */}
+          {/* رقم الهوية — غير قابل للتعديل */}
           <InfoCard
             icon={<IdCard className="w-6 h-6 text-purple-600" />}
             title="رقم الهوية"
             value={
               isEditing ? (
-                <TextInput
-                  placeholder="رقم الهوية"
-                  value={edited?.idNumber ?? ""}
-                  onChange={(v) => setEdited((p) => (p ? { ...p, idNumber: v } : p))}
+                <input
+                  value={user.idNumber ?? ""}
+                  readOnly
+                  disabled
+                  className="w-full border rounded-lg px-3 py-2 bg-slate-100 text-slate-500 cursor-not-allowed"
                 />
               ) : (
                 nv(user.idNumber)
@@ -419,31 +483,36 @@ const Profile: React.FC = () => {
             }
           />
 
-          {/* تاريخ الميلاد / العمر / الجنس */}
+          {/* تاريخ الميلاد / العمر / الجنس + عداد المحاولات */}
           <InfoCard
             icon={<Calendar className="w-6 h-6 text-amber-600" />}
             title="تاريخ الميلاد / العمر / الجنس"
             value={
               isEditing ? (
-                <div className="grid grid-cols-3 gap-2">
-                  <TextInput
-                    type="date"
-                    value={edited?.birthDate ? edited.birthDate.slice(0, 10) : ""}
-                    onChange={(v) =>
-                      setEdited((p) => (p ? { ...p, birthDate: v ? new Date(v).toISOString() : "" } : p))
-                    }
-                  />
-                  <select
-                    className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring"
-                    value={edited?.gender ?? ""}
-                    onChange={(e) => setEdited((p) => (p ? { ...p, gender: e.target.value } : p))}
-                  >
-                    <option value="">غير محدد</option>
-                    <option value="male">ذكر</option>
-                    <option value="female">أنثى</option>
-                  </select>
-                  <div className="bg-slate-50 text-slate-700 rounded-lg px-3 py-2">
-                    العمر: {calcAge(edited?.birthDate) ?? "—"}
+                <div className="space-y-2">
+                  <div className="grid grid-cols-3 gap-2">
+                    <TextInput
+                      type="date"
+                      value={edited?.birthDate ? edited.birthDate.slice(0, 10) : ""}
+                      onChange={(v) =>
+                        setEdited((p) => (p ? { ...p, birthDate: v ? new Date(v).toISOString() : "" } : p))
+                      }
+                    />
+                    <select
+                      className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring"
+                      value={edited?.gender ?? ""}
+                      onChange={(e) => setEdited((p) => (p ? { ...p, gender: e.target.value } : p))}
+                    >
+                      <option value="">غير محدد</option>
+                      <option value="male">ذكر</option>
+                      <option value="female">أنثى</option>
+                    </select>
+                    <div className="bg-slate-50 text-slate-700 rounded-lg px-3 py-2">
+                      العمر: {calcAge(edited?.birthDate) ?? "—"}
+                    </div>
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    المتبقي لتعديل تاريخ الميلاد: <b>{remainingBirth}</b> / 2 — المتبقي لتعديل الجنس: <b>{remainingGender}</b> / 2
                   </div>
                 </div>
               ) : (
@@ -508,7 +577,7 @@ const Profile: React.FC = () => {
             }
           />
 
-          {/* المجموعات (للمعلم/الطالب إن وُجدت) */}
+          {/* المجموعات */}
           <InfoCard
             icon={<Users className="w-6 h-6 text-sky-600" />}
             title="المجموعات"
@@ -518,10 +587,16 @@ const Profile: React.FC = () => {
                   placeholder="افصل بين الأسماء بفاصلة"
                   value={(edited?.groups ?? []).join(", ")}
                   onChange={(v) =>
-                    setEdited((p) => (p ? { ...p, groups: v.split(",").map((s) => s.trim()).filter(Boolean) } : p))
+                    setEdited((p) =>
+                      p ? { ...p, groups: v.split(",").map((s) => s.trim()).filter(Boolean) } : p
+                    )
                   }
                 />
-              ) : (user.groups && user.groups.length ? user.groups.join("، ") : "غير متوفر")
+              ) : user.groups && user.groups.length ? (
+                user.groups.join("، ")
+              ) : (
+                "غير متوفر"
+              )
             }
           />
 
@@ -542,21 +617,19 @@ const Profile: React.FC = () => {
 // ============================
 // عناصر فرعية
 // ============================
-const InfoCard: React.FC<{
-  icon: React.ReactNode;
-  title: string;
-  value: React.ReactNode;
-}> = ({ icon, title, value }) => {
-  return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
-      <div className="flex items-center gap-3 mb-2">
-        <div className="bg-slate-50 p-2 rounded-xl">{icon}</div>
-        <div className="font-semibold text-slate-800">{title}</div>
-      </div>
-      <div className="text-slate-700 leading-relaxed">{value}</div>
+const InfoCard: React.FC<{ icon: React.ReactNode; title: string; value: React.ReactNode }> = ({
+  icon,
+  title,
+  value,
+}) => (
+  <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+    <div className="flex items-center gap-3 mb-2">
+      <div className="bg-slate-50 p-2 rounded-xl">{icon}</div>
+      <div className="font-semibold text-slate-800">{title}</div>
     </div>
-  );
-};
+    <div className="text-slate-700 leading-relaxed">{value}</div>
+  </div>
+);
 
 const TextInput: React.FC<{
   value: string;
@@ -574,6 +647,3 @@ const TextInput: React.FC<{
 );
 
 export default Profile;
-
-
-/////ok

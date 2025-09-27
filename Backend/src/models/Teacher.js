@@ -27,21 +27,23 @@ const teacherSchema = new mongoose.Schema(
       required: [true, 'البريد الإلكتروني مطلوب'],
       unique: true,
     },
-    phoneNumber: {
+      phoneNumber: {
       type: String,
       required: [true, 'رقم الهاتف مطلوب'],
+      match: [/^05\d{8}$/, 'الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام'],
       unique: true,
-      match: [/^09\d{8}$/, 'رقم الهاتف يجب أن يبدأ بـ 09 ويتكون من 10 أرقام'],
     },
 
     // معلومات شخصية
     birthDate: { type: String }, // أبقيناها String لتوافق الكود لديك
+
     age: { type: Number, min: [0, 'العمر يجب أن يكون رقماً موجباً'] },
     gender: {
       type: String,
       enum: ['male', 'female', 'ذكر', 'أنثى'],
       required: false,
     },
+
     residence: { type: String },
 
     // الحلقات
@@ -49,13 +51,11 @@ const teacherSchema = new mongoose.Schema(
     groupName: { type: String }, // يستخدمه الكونترولر لتعبئة groups
 
     // خبرة/دور
-    yearsOfExperience: { type: Number, default: 0 },
     role: { type: String, enum: ['teacher', 'admin'], default: 'teacher' },
 
     // الصورة
-    avatar: { type: String }, // مسار نسبي مثل avatars/file.jpg
+    avatar: { type: String }, 
 
-    // حالة التفعيل (يستخدمها الكونترولر في getAll/stats/delete)
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }
@@ -63,6 +63,5 @@ const teacherSchema = new mongoose.Schema(
 
 const Teacher = mongoose.model('Teacher', teacherSchema);
 module.exports = Teacher;
-
 
 /////okkkk

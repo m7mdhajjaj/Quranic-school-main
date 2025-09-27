@@ -424,31 +424,33 @@
 const Teacher = require("../models/Teacher");
 const bcrypt = require("bcryptjs");
 
-// حساب العمر
+// ------- helpers -------
 const calculateAge = (birthDate) => {
   if (!birthDate) return 0;
-  const today = new Date();
   const d = new Date(birthDate);
   if (isNaN(d.getTime())) return 0;
+
+  const today = new Date();
   let age = today.getFullYear() - d.getFullYear();
   const m = today.getMonth() - d.getMonth();
   if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--;
   return age;
 };
 
-// رقم المعلّم التالي
 const generateTeacherId = async () => {
   const last = await Teacher.findOne().sort({ teacherId: -1 }).select("teacherId");
   return last ? last.teacherId + 1 : 200001;
 };
 
-// -------- CRUD --------
+// ------- controllers -------
 exports.getAllTeachers = async (_req, res) => {
   try {
-    const teachers = await Teacher.find({ isActive: true }).select("-password");
-    res.status(200).json({ success: true, data: teachers });
-  } catch (e) {
-    res.status(500).json({ success: false, message: "حدث خطأ أثناء جلب المعلمين" });
+    // return full teacher docs (minus password) so UI has everything (including avatar)
+    const teachers = await Teacher.find({}).select("-password");
+    return res.status(200).json({ success: true, data: teachers });
+  } catch (error) {
+    console.error("Error fetching teachers:", error);
+    return res.status(500).json({ success: false, message: "حدث خطأ أثناء جلب المعلمين" });
   }
 };
 
@@ -456,54 +458,82 @@ exports.getTeacherById = async (req, res) => {
   try {
     const teacher = await Teacher.findById(req.params.id).select("-password");
     if (!teacher) return res.status(404).json({ success: false, message: "المعلم غير موجود" });
-    res.status(200).json({ success: true, data: teacher });
-  } catch (e) {
-    res.status(500).json({ success: false, message: "حدث خطأ أثناء جلب المعلم" });
+    return res.status(200).json({ success: true, data: teacher });
+  } catch (error) {
+    console.error("Error fetching teacher:", error);
+    return res.status(500).json({ success: false, message: "حدث خطأ أثناء جلب المعلم" });
   }
 };
 
 exports.createTeacher = async (req, res) => {
   try {
     const {
-      firstName, fatherName, grandFatherName, lastName,
-      birthDate, gender, residence, email, phoneNumber,
-      groupName, yearsOfExperience = 0, password, role = "teacher",
-      idNumber, motherName
+      firstName, lastName, email, phoneNumber,
+      fatherName, grandFatherName, motherName,
+      idNumber, birthDate, gender, residence,
+      groupName, yearsOfExperience = 0, role = "teacher",
+      password,
     } = req.body;
 
-    // تحقق أساسي
+    // basic validation (keep minimal and practical)
     const must = ["firstName", "lastName", "email", "phoneNumber"];
-    for (const f of must) if (!req.body[f]) return res.status(400).json({ success:false, message:`حقل ${f} مطلوب` });
+    for (const f of must) {
+      if (!req.body[f]) {
+        return res.status(400).json({ success: false, message: `حقل ${f} مطلوب` });
+      }
+    }
 
-    // كلمة السر: إن لم تأتِ → teacherId
+    // duplicates
+    if (await Teacher.findOne({ email })) {
+      return res.status(400).json({ success: false, message: "البريد الإلكتروني مستخدم بالفعل" });
+    }
+    if (await Teacher.findOne({ phoneNumber })) {
+      return res.status(400).json({ success: false, message: "رقم الهاتف مستخدم بالفعل" });
+    }
+
+    // teacherId + password
     const teacherId = await generateTeacherId();
     const rawPass = password || String(teacherId);
-    const salt = await bcrypt.genSalt(10);
-    const hashed = await bcrypt.hash(rawPass, salt);
+    const hashed = await bcrypt.hash(rawPass, 10);
 
-    // فريد
-    if (await Teacher.findOne({ email }))       return res.status(400).json({ success:false, message:"البريد الإلكتروني مستخدم بالفعل" });
-    if (await Teacher.findOne({ phoneNumber })) return res.status(400).json({ success:false, message:"رقم الهاتف مستخدم بالفعل" });
-
+    // age
     const age = calculateAge(birthDate);
-    if (birthDate && age < 18) return res.status(400).json({ success:false, message:"يجب أن يكون عمر المعلم 18 عام على الأقل" });
+    if (birthDate && age < 18) {
+      return res.status(400).json({ success: false, message: "يجب أن يكون عمر المعلم 18 عام على الأقل" });
+    }
 
     const doc = await Teacher.create({
       teacherId,
       password: hashed,
-      firstName, fatherName, grandFatherName, lastName,
-      birthDate, age, gender, residence, email, phoneNumber,
-      yearsOfExperience, role, idNumber, motherName,
+      firstName,
+      lastName,
+      fatherName,
+      grandFatherName,
+      motherName,
+      idNumber,
+      birthDate,
+      age,
+      gender,
+      residence,
+      email,
+      phoneNumber,
       groupName,
-      groups: groupName ? [groupName] : [],  // موحّد مع السكيمة
+      groups: groupName ? [groupName] : [],
+      yearsOfExperience,
+      role,
+      // avatar left empty initially
+      // isActive default comes from schema
     });
 
     const out = doc.toObject();
     delete out.password;
-    res.status(201).json({ success: true, message: "تم إنشاء حساب المعلم بنجاح", data: out });
-  } catch (e) {
-    if (e.code === 11000) return res.status(400).json({ success:false, message:"بريد أو رقم هاتف/معلّم مكرر" });
-    res.status(500).json({ success:false, message:"حدث خطأ أثناء إنشاء حساب المعلم" });
+    return res.status(201).json({ success: true, message: "تم إنشاء حساب المعلم بنجاح", data: out });
+  } catch (error) {
+    console.error("Error creating teacher:", error);
+    if (error.code === 11000) {
+      return res.status(400).json({ success: false, message: "البيانات فريدة (بريد/هاتف/teacherId) مكررة" });
+    }
+    return res.status(500).json({ success: false, message: "حدث خطأ أثناء إنشاء حساب المعلم" });
   }
 };
 
@@ -512,41 +542,49 @@ exports.updateTeacher = async (req, res) => {
     const id = req.params.id;
     const updates = { ...req.body };
 
-    const teacher = await Teacher.findById(id).select("+password");
-    if (!teacher) return res.status(404).json({ success:false, message:"المعلم غير موجود" });
+    const existing = await Teacher.findById(id).select("+password");
+    if (!existing) return res.status(404).json({ success: false, message: "المعلم غير موجود" });
 
-    if (updates.email && updates.email !== teacher.email) {
+    // uniqueness checks
+    if (updates.email && updates.email !== existing.email) {
       if (await Teacher.findOne({ email: updates.email })) {
-        return res.status(400).json({ success:false, message:"البريد الإلكتروني مستخدم بالفعل" });
+        return res.status(400).json({ success: false, message: "البريد الإلكتروني مستخدم بالفعل" });
       }
     }
-    if (updates.phoneNumber && updates.phoneNumber !== teacher.phoneNumber) {
+    if (updates.phoneNumber && updates.phoneNumber !== existing.phoneNumber) {
       if (await Teacher.findOne({ phoneNumber: updates.phoneNumber })) {
-        return res.status(400).json({ success:false, message:"رقم الهاتف مستخدم بالفعل" });
+        return res.status(400).json({ success: false, message: "رقم الهاتف مستخدم بالفعل" });
       }
     }
 
+    // age recalc
     if (updates.birthDate) {
       updates.age = calculateAge(updates.birthDate);
-      if (updates.age < 18) return res.status(400).json({ success:false, message:"يجب أن يكون عمر المعلم 18 عام على الأقل" });
+      if (updates.age < 18) {
+        return res.status(400).json({ success: false, message: "يجب أن يكون عمر المعلم 18 عام على الأقل" });
+      }
     }
 
+    // password hashing if provided
     if (updates.password) {
-      const salt = await bcrypt.genSalt(10);
-      updates.password = await bcrypt.hash(updates.password, salt);
+      updates.password = await bcrypt.hash(updates.password, 10);
     }
 
+    // groups unify with groupName if provided
     if (Object.prototype.hasOwnProperty.call(updates, "groupName")) {
       updates.groups = updates.groupName ? [updates.groupName] : [];
     }
 
     const updated = await Teacher.findByIdAndUpdate(
-      id, { ...updates, updatedAt: new Date() }, { new: true, runValidators: true }
+      id,
+      { ...updates, updatedAt: new Date() },
+      { new: true, runValidators: true }
     ).select("-password");
 
-    res.status(200).json({ success:true, message:"تم تحديث بيانات المعلم بنجاح", data: updated });
-  } catch (e) {
-    res.status(500).json({ success:false, message:"حدث خطأ أثناء تحديث بيانات المعلم" });
+    return res.status(200).json({ success: true, message: "تم تحديث بيانات المعلم بنجاح", data: updated });
+  } catch (error) {
+    console.error("Error updating teacher:", error);
+    return res.status(500).json({ success: false, message: "حدث خطأ أثناء تحديث بيانات المعلم" });
   }
 };
 
@@ -554,46 +592,53 @@ exports.deleteTeacher = async (req, res) => {
   try {
     const id = req.params.id;
     const t = await Teacher.findById(id);
-    if (!t) return res.status(404).json({ success:false, message:"المعلم غير موجود" });
-    await Teacher.findByIdAndUpdate(id, { isActive: false });
-    res.status(200).json({ success:true, message:"تم حذف المعلم بنجاح" });
-  } catch (e) {
-    res.status(500).json({ success:false, message:"حدث خطأ أثناء حذف المعلم" });
+    if (!t) return res.status(404).json({ success: false, message: "المعلم غير موجود" });
+
+    // soft delete (requires isActive in schema)
+    await Teacher.findByIdAndUpdate(id, { isActive: false, updatedAt: new Date() });
+    return res.status(200).json({ success: true, message: "تم حذف المعلم بنجاح" });
+  } catch (error) {
+    console.error("Error deleting teacher:", error);
+    return res.status(500).json({ success: false, message: "حدث خطأ أثناء حذف المعلم" });
   }
 };
 
 exports.getTeacherStats = async (_req, res) => {
   try {
+    // requires isActive in schema; if not present, remove filters
     const totalTeachers = await Teacher.countDocuments({ isActive: true });
-    const totalAdmins   = await Teacher.countDocuments({ role: "admin", isActive: true });
+    const totalAdmins = await Teacher.countDocuments({ role: "admin", isActive: true });
     const totalActiveTeachers = await Teacher.countDocuments({ role: "teacher", isActive: true });
 
     const teachers = await Teacher.find({ isActive: true }).select("-password -avatar");
-    const experienceGroups = {
-      "مبتدئ (0-2 سنة)": teachers.filter(t => (t.yearsOfExperience || 0) <= 2).length,
-      "متوسط (3-5 سنوات)": teachers.filter(t => (t.yearsOfExperience || 0) >= 3 && (t.yearsOfExperience || 0) <= 5).length,
-      "خبير (6-10 سنوات)": teachers.filter(t => (t.yearsOfExperience || 0) >= 6 && (t.yearsOfExperience || 0) <= 10).length,
-      "خبير جداً (+10 سنوات)": teachers.filter(t => (t.yearsOfExperience || 0) > 10).length,
+
+    const exp = (x) => Number.isFinite(x) ? x : 0;
+    const experienceDistribution = {
+      "مبتدئ (0-2 سنة)": teachers.filter(t => exp(t.yearsOfExperience) <= 2).length,
+      "متوسط (3-5 سنوات)": teachers.filter(t => exp(t.yearsOfExperience) >= 3 && exp(t.yearsOfExperience) <= 5).length,
+      "خبير (6-10 سنوات)": teachers.filter(t => exp(t.yearsOfExperience) >= 6 && exp(t.yearsOfExperience) <= 10).length,
+      "خبير جداً (+10 سنوات)": teachers.filter(t => exp(t.yearsOfExperience) > 10).length,
     };
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: {
         totalTeachers,
         totalAdmins,
         totalActiveTeachers,
-        experienceDistribution: experienceGroups,
+        experienceDistribution,
         teachers: teachers.map(t => ({
           _id: t._id,
           teacherId: t.teacherId,
-          fullName: `${t.firstName || ""} ${t.fatherName || ""} ${t.lastName || ""}`.trim(),
+          fullName: `${t.firstName || ""} ${t.fatherName || ""} ${t.lastName || ""}`.replace(/\s+/g, " ").trim(),
           groupName: t.groupName,
-          yearsOfExperience: t.yearsOfExperience || 0,
+          yearsOfExperience: exp(t.yearsOfExperience),
           role: t.role,
         })),
       },
     });
-  } catch (e) {
-    res.status(500).json({ success:false, message:"حدث خطأ أثناء جلب إحصائيات المعلمين" });
+  } catch (error) {
+    console.error("Error fetching teacher stats:", error);
+    return res.status(500).json({ success: false, message: "حدث خطأ أثناء جلب إحصائيات المعلمين" });
   }
 };
