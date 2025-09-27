@@ -639,26 +639,6 @@ const Profile: React.FC = () => {
           )}
 
           {/* البريد */}
-          {shouldShow(Boolean(user.email)) && (
-            <InfoCard
-              icon={<Mail className="w-6 h-6 text-emerald-600" />}
-              title="البريد الإلكتروني"
-              value={
-                isEditing ? (
-                  <TextInput
-                    type="email"
-                    placeholder="email@example.com"
-                    value={edited?.email ?? ""}
-                    onChange={(v) =>
-                      setEdited((p) => (p ? { ...p, email: v } : p))
-                    }
-                  />
-                ) : (
-                  nv(user.email)
-                )
-              }
-            />
-          )}
 
           {/* الهاتف */}
           {shouldShow(Boolean(user.phoneNumber)) && (
