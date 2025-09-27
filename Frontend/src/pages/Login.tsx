@@ -137,12 +137,23 @@ const Login = () => {
       } catch {
         console.log("❌ Student login failed, trying teacher login...");
         // If student login fails, try teacher login
-        response = await axios.post(`${API_URL}/auth/login`, {
-          teacherId: formData.userId,
-          password: formData.password,
-          userType: "teacher",
-        });
-        console.log("✅ Teacher login successful!");
+        try {
+          response = await axios.post(`${API_URL}/auth/login`, {
+            teacherId: formData.userId,
+            password: formData.password,
+            userType: "teacher",
+          });
+          console.log("✅ Teacher login successful!");
+        } catch {
+          console.log("❌ Teacher login failed, trying admin login...");
+          // If teacher login fails, try admin login
+          response = await axios.post(`${API_URL}/auth/login`, {
+            adminId: formData.userId,
+            password: formData.password,
+            userType: "admin",
+          });
+          console.log("✅ Admin login successful!");
+        }
       }
 
       console.log(
