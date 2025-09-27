@@ -9,6 +9,8 @@ import {
   FaEnvelope,
   FaPhone,
 } from "react-icons/fa";
+import Avatar from './Avatar';
+import { getUserGender } from '../hooks/useAvatar';
 
 interface UserInfoModalProps {
   user: {
@@ -50,6 +52,7 @@ const UserInfoModal: React.FC<UserInfoModalProps> = ({
         <button
           onClick={onClose}
           className="absolute top-4 left-4 text-gray-500 hover:text-gray-700 z-10"
+          aria-label="إغلاق النافذة"
         >
           <FaTimes size={24} />
         </button>
@@ -57,13 +60,14 @@ const UserInfoModal: React.FC<UserInfoModalProps> = ({
         {/* User avatar - centered */}
         <div className="flex flex-col items-center justify-center pt-8 pb-4 bg-gradient-to-r from-emerald-600 to-teal-500">
           <div className="relative mb-2">
-            <div className="w-24 h-24 rounded-full bg-white p-1">
-              <img
-                src={user.imageUrl || "https://via.placeholder.com/150"}
-                alt={`${user.firstName} ${user.lastName}`}
-                className="w-full h-full rounded-full object-cover"
-              />
-            </div>
+            <Avatar
+              src={user.imageUrl}
+              userName={user.firstName}
+              gender={getUserGender(user)}
+              size="3xl"
+              border="thick"
+              className="bg-white p-1"
+            />
           </div>
           <h2 className="text-white text-xl font-bold text-center">
             {user.firstName} {user.lastName}

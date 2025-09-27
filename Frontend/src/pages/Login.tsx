@@ -1,12 +1,11 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { API_URL } from "../config";
-import useUserAuth from "../hooks/useUserAuth";
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { API_URL } from '../config';
+import useUserAuth from '../hooks/useUserAuth';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { saveUserData } = useUserAuth();
 
   const [formData, setFormData] = useState({
     userId: "",
@@ -118,33 +117,29 @@ const Login = () => {
     try {
       let response;
 
+      console.log('📡 Making request to:', `${API_URL}/auth/login`);
+
       // Try student login first
       try {
         response = await axios.post(`${API_URL}/auth/login`, {
           studentId: formData.userId,
           idNumber: formData.password,
+        }, {
+          timeout: 10000, // 10 second timeout
+          headers: {
+            'Content-Type': 'application/json'
+          }
         });
-        console.log("✅ Student login successful!");
+        console.log('✅ Student login successful!');
       } catch {
-        console.log("❌ Student login failed, trying teacher login...");
+        console.log('❌ Student login failed, trying teacher login...');
         // If student login fails, try teacher login
-        try {
-          response = await axios.post(`${API_URL}/auth/login`, {
-            teacherId: formData.userId,
-            password: formData.password,
-            userType: "teacher",
-          });
-          console.log("✅ Teacher login successful!");
-        } catch {
-          console.log("❌ Teacher login failed, trying admin login...");
-          // If teacher login fails, try admin login
-          response = await axios.post(`${API_URL}/auth/login`, {
-            adminId: formData.userId,
-            password: formData.password,
-            userType: "admin",
-          });
-          console.log("✅ Admin login successful!");
-        }
+        response = await axios.post(`${API_URL}/auth/login`, {
+          teacherId: formData.userId,
+          password: formData.password,
+          userType: 'teacher',
+        });
+        console.log('✅ Teacher login successful!');
       }
 
       console.log(
@@ -154,7 +149,9 @@ const Login = () => {
 
       if (response.data && response.data.user && response.data.token) {
         // Save user data
-        saveUserData(response.data.user, response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('userId', response.data.user._id);
 
         // Handle remember me functionality
         if (rememberMe) {
@@ -186,7 +183,7 @@ const Login = () => {
         setError("رد غير صحيح من الخادم. رجاءً تأكد من الرقم وكلمة المرور.");
       }
     } catch (error: any) {
-      console.error("❌ Login error:", error);
+      console.error('❌ Login error:', error);
 
       if (error.response?.data?.message) {
         setError(error.response.data.message);
