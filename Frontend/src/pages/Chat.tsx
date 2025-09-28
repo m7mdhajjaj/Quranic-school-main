@@ -59,8 +59,8 @@ const Chat: React.FC = () => {
 
   // Left pane
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [groups, setGroups] = useState<Contact[]>([]); // { _id: groupName, isGroup: true }
-  const [listTab, setListTab] = useState<"direct" | "group">("direct");
+  // const [groups, setGroups] = useState<Contact[]>([]); // { _id: groupName, isGroup: true }
+  // const [listTab, setListTab] = useState<"direct" | "group">("direct");
   const [loading, setLoading] = useState(false);
 
   // Conversation
@@ -176,7 +176,7 @@ const Chat: React.FC = () => {
     return "";
   };
 
-  const getAuthHeaders = () => {
+  const getAuthHeaders = (): Record<string, string> => {
     const rawUser = localStorage.getItem("user");
     let token = localStorage.getItem("token") || "";
     if (!token && rawUser) {
@@ -277,10 +277,10 @@ const Chat: React.FC = () => {
 
         // Example groups list — replace with your actual groups source
         // If you have Teacher.groups or Student.group you can populate from there
-        setGroups([
-          { _id: "Group-A", firstName: "مجموعة", lastName: "A", group: "A", isGroup: true },
-          { _id: "Group-B", firstName: "مجموعة", lastName: "B", group: "B", isGroup: true },
-        ]);
+        // setGroups([
+        //   { _id: "Group-A", firstName: "مجموعة", lastName: "A", group: "A", isGroup: true },
+        //   { _id: "Group-B", firstName: "مجموعة", lastName: "B", group: "B", isGroup: true },
+        // ]);
       } finally {
         setLoading(false);
       }

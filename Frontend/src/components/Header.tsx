@@ -355,7 +355,7 @@ const Header = () => {
       >
 
 
-        <div className="container mx-auto px-3 lg:px-6 relative">
+        <div className="container mx-auto px-2 lg:px-4 xl:px-6 relative">
           {/* الصف الرئيسي */}
           <div className="flex items-center justify-between py-2 lg:py-3">
             {/* RIGHT: Logo + Academy Name */}
@@ -607,25 +607,25 @@ const Header = () => {
           </div>
 
           {/* Secondary Navigation Bar and Notification Header Row - Desktop */}
-          <div className="hidden md:flex items-center justify-between border-top border-emerald-400/30 pt-2 pb-2 gap-4">
-            {/* Compact Secondary Navigation */}
-            <div className="flex-1 max-w-4xl">
-              <div className="bg-white/10 backdrop-blur-md rounded-xl px-3 py-1.5 border border-white/20">
-                <nav className="flex items-center justify-center gap-0.5 flex-wrap">
+          <div className="hidden md:flex items-center justify-between border-top border-emerald-400/30 pt-3 pb-3 gap-4">
+            {/* Expanded Secondary Navigation */}
+            <div className="flex-1 max-w-6xl mx-auto">
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl px-4 lg:px-6 py-2.5 border border-white/20 shadow-lg">
+                <nav className="flex items-center justify-center gap-1 lg:gap-2 overflow-x-auto scrollbar-hide">
                   {secondaryNavItems.map((item) => (
                     <NavLink
                       key={item.to}
                       to={item.to}
                       className={({ isActive }) =>
-                        `px-1.5 lg:px-2 py-1 lg:py-1.5 rounded-lg text-xs font-medium transition-all duration-300 flex items-center gap-1 ${
+                        `px-2.5 lg:px-3 py-2 lg:py-2.5 rounded-xl text-xs lg:text-sm font-medium transition-all duration-300 flex items-center gap-1.5 lg:gap-2 whitespace-nowrap flex-shrink-0 ${
                           isActive
-                            ? 'bg-white/20 text-white shadow-md border border-white/30'
-                            : 'text-emerald-100 hover:bg-white/15 hover:text-white hover:scale-105 border border-transparent hover:border-white/20'
+                            ? 'bg-white/25 text-white shadow-lg border border-white/40 scale-105 font-semibold'
+                            : 'text-emerald-100 hover:bg-white/20 hover:text-white hover:scale-105 border border-transparent hover:border-white/25'
                         }`
                       }
                     >
                       {renderIcon(item.icon, item.stroke)}
-                      <span className="whitespace-nowrap hidden xl:inline text-xs">
+                      <span className="text-xs lg:text-sm">
                         {item.label}
                       </span>
                     </NavLink>
@@ -636,8 +636,8 @@ const Header = () => {
 
             {/* Desktop Notification Header */}
             {currentUser && (
-              <div className="flex-shrink-0">
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-2 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 hover:bg-white/15">
+              <div className="flex-shrink-0 ml-4">
+                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-2.5 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 hover:bg-white/15">
                   <NotificationHeader
                     userId={currentUser._id}
                     socket={socket}

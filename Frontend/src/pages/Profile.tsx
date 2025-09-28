@@ -4,7 +4,6 @@ import axios from "axios";
 import {
   Edit,
   Phone,
-  Mail,
   Calendar,
   MapPin,
   Users,
