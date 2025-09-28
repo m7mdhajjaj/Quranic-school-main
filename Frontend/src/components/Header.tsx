@@ -453,7 +453,7 @@ const Header = () => {
                 {profileMenuOpen && (
                   <div
                     id="profile-menu"
-                    className="absolute right-0 top-full mt-2 w-72 bg-white/98 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-100/80 py-2 z-[100]"
+                    className="absolute left-1/2 transform -translate-x-1/2 top-full mt-2 w-64 bg-white/98 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-100/80 py-2 z-[100]"
                   >
                     <div className="px-6 py-4 border-b border-gray-100/80 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-t-2xl">
                       <div className="flex items-center gap-3">

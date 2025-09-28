@@ -831,7 +831,7 @@ const Chat: React.FC = () => {
 
     // إذا كان المُرسِل object يحتوي على الاسم
     if (typeof sender === 'object' && sender?.firstName) {
-      return sender.firstName;
+      return `${sender.firstName} ${sender.lastName || ''}`;
     }
 
     // إذا كان المُرسِل مجرد ID، ابحث عنه في قائمة الكونتاكتس
@@ -839,12 +839,12 @@ const Chat: React.FC = () => {
     if (senderId) {
       const contact = contacts.find((c) => c._id === senderId);
       if (contact) {
-        return contact.firstName;
+        return `${contact.firstName} ${contact.lastName || ''}`;
       }
 
       // إذا كان المُرسِل هو المستخدم الحالي
       if (senderId === currentUserId) {
-        return currentUser?.firstName || 'أنت';
+        return `${currentUser?.firstName || 'أنت'} ${currentUser?.lastName || ''}`;
       }
     }
 
@@ -961,7 +961,7 @@ const Chat: React.FC = () => {
           {/* Left Pane */}
           <div className="w-full md:w-1/3 border-l border-gray-100">
             <div className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-600 p-3 text-white font-bold shadow-lg flex items-center gap-2">
-              <div className="text-lg font-bold">{currentUser?.firstName}</div>
+              <div className="text-lg font-bold">{currentUser?.firstName} {currentUser?.lastName || ''}</div>
             </div>
 
             {/* Search */}
@@ -1012,7 +1012,7 @@ const Chat: React.FC = () => {
                             </div>
                             <div>
                               <div className="font-medium">
-                                {c.firstName}
+                                {c.firstName} {c.lastName || ''}
                               </div>
                               <div className="text-xs text-gray-500">
                                 {c.group}
@@ -1347,7 +1347,13 @@ const Chat: React.FC = () => {
                                       />
                                       <div className="flex flex-col flex-1 min-w-0">
                                         <div className="text-xs text-gray-600 mb-1 font-medium">
-                                          {typeof m.sender === 'object' ? m.sender.firstName : (contacts.find(c => c._id === m.sender)?.firstName || 'مستخدم')}
+                                          {typeof m.sender === 'object' 
+                                            ? `${m.sender.firstName} ${m.sender.lastName || ''}` 
+                                            : (contacts.find(c => c._id === m.sender) 
+                                                ? `${contacts.find(c => c._id === m.sender)?.firstName} ${contacts.find(c => c._id === m.sender)?.lastName || ''}` 
+                                                : 'مستخدم'
+                                              )
+                                          }
                                         </div>
                                         {/* نص الرد - يظهر فوق الرسالة */}
                                         {m.replyTo && (
@@ -1578,11 +1584,11 @@ const Chat: React.FC = () => {
                       </p>
                       <div className="text-xs text-gray-500 mt-1">
                         {typeof replyTo.sender === 'object'
-                          ? replyTo.sender.firstName
-                          : contacts.find((c) => c._id === replyTo.sender)
-                              ?.firstName ||
-                            currentUser?.firstName ||
-                            'مستخدم'}{' '}
+                          ? `${replyTo.sender.firstName} ${replyTo.sender.lastName || ''}`
+                          : (contacts.find((c) => c._id === replyTo.sender)
+                              ? `${contacts.find((c) => c._id === replyTo.sender)?.firstName} ${contacts.find((c) => c._id === replyTo.sender)?.lastName || ''}`
+                              : `${currentUser?.firstName || ''} ${currentUser?.lastName || ''}`
+                            ) || 'مستخدم'}{' '}
                         • منذ{' '}
                         {new Date(replyTo.createdAt).toLocaleTimeString(
                           'ar-EG',

@@ -690,7 +690,10 @@ const Chat: React.FC = () => {
                                               </svg>
                                               <span className="text-xs text-black font-medium">
                                                 {typeof message.replyTo === 'object' && message.replyTo.sender
-                                                  ? (typeof message.replyTo.sender === 'object' ? message.replyTo.sender.firstName : "مستخدم")
+                                                  ? (typeof message.replyTo.sender === 'object' 
+                                                      ? `${message.replyTo.sender.firstName} ${message.replyTo.sender.lastName || ''}` 
+                                                      : "مستخدم"
+                                                    )
                                                   : "مستخدم"}
                                               </span>
                                             </div>
@@ -747,7 +750,10 @@ const Chat: React.FC = () => {
                                               ? (typeof message.replyTo.sender === 'object' ? message.replyTo.sender._id : message.replyTo.sender)
                                               : null;
                                             const repliedToUserName = typeof message.replyTo === 'object' && message.replyTo.sender
-                                              ? (typeof message.replyTo.sender === 'object' ? message.replyTo.sender.firstName : "مستخدم")
+                                              ? (typeof message.replyTo.sender === 'object' 
+                                                  ? `${message.replyTo.sender.firstName} ${message.replyTo.sender.lastName || ''}` 
+                                                  : "مستخدم"
+                                                )
                                               : "مستخدم";
                                             
                                             if (currentUserId === repliedToUserId) {
@@ -772,7 +778,10 @@ const Chat: React.FC = () => {
                                               </svg>
                                               <span className="text-xs text-emerald-600 font-medium">
                                                 {typeof message.replyTo === 'object' && message.replyTo.sender
-                                                  ? (typeof message.replyTo.sender === 'object' ? message.replyTo.sender.firstName : "مستخدم")
+                                                  ? (typeof message.replyTo.sender === 'object' 
+                                                      ? `${message.replyTo.sender.firstName} ${message.replyTo.sender.lastName || ''}` 
+                                                      : "مستخدم"
+                                                    )
                                                   : "مستخدم"}
                                               </span>
                                             </div>
@@ -834,7 +843,13 @@ const Chat: React.FC = () => {
                             {replyTo.text || "رسالة"}
                           </p>
                           <div className="text-xs text-gray-500 mt-1">
-                            {typeof replyTo.sender === 'object' ? replyTo.sender.firstName : contacts.find(c => c._id === replyTo.sender)?.firstName || "مستخدم"} • منذ {new Date(replyTo.createdAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
+                                                                        {typeof replyTo.sender === 'object' 
+                                              ? `${replyTo.sender.firstName} ${replyTo.sender.lastName || ''}` 
+                                              : (contacts.find(c => c._id === replyTo.sender) 
+                                                  ? `${contacts.find(c => c._id === replyTo.sender)?.firstName} ${contacts.find(c => c._id === replyTo.sender)?.lastName || ''}` 
+                                                  : "مستخدم"
+                                                )
+                                            } • منذ {new Date(replyTo.createdAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
                           </div>
                         </div>
                         <button 
