@@ -55,12 +55,6 @@ interface Contact {
   isOnline?: boolean; // <-- new flag
 }
 
-interface User {
-  _id: string;
-  firstName: string;
-  role?: string;
-  imageUrl?: string;
-}
 
 const API_URL = 'http://localhost:5005/api';
 const SOCKET_URL = 'http://localhost:5005';
@@ -161,7 +155,9 @@ const Chat: React.FC = () => {
           group: '',
           unread: 0,
         });
-      } catch {}
+      } catch {
+        // intentionally ignored
+      }
       localStorage.removeItem('chatNotification');
     }
   }, []);
@@ -808,16 +804,6 @@ const Chat: React.FC = () => {
     } catch {}
   };
 
-  const togglePin = (id: string) => {
-    setPinnedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [id, ...prev]
-    );
-    socketRef.current?.emit('pinMessage', {
-      messageId: id,
-      chatId: selectedId,
-      isGroup: isGroupChat,
-    }); // TODO server
-  };
 
   // ----- Search & filtered view -----
   const filteredMessages = useMemo(() => {
@@ -1020,15 +1006,13 @@ const Chat: React.FC = () => {
                                 gender={getUserGender(c)}
                                 size="md"
                                 className="ring-2 ring-white/30"
+                                showStatus={true}
+                                forceStatus={c.isOnline ? 'online' : 'offline'}
                               />
-                              {/* Online status indicator from DB only */}
-                              <span
-                                className={`absolute bottom-0 left-7 w-3 h-3 border-2 border-white rounded-full ${c.isOnline ? 'bg-green-400' : 'bg-red-400'}`}
-                              ></span>
                             </div>
                             <div>
                               <div className="font-medium">
-                                {c.firstName} {c.lastName}
+                                {c.firstName}
                               </div>
                               <div className="text-xs text-gray-500">
                                 {c.group}
@@ -1293,7 +1277,7 @@ const Chat: React.FC = () => {
                                         </div>
                                       )}
 
-                                      <div className="px-6 py-3 rounded-2xl shadow-md transition-all duration-200 backdrop-blur-sm bg-green-500/90 text-white border border-green-400/30 min-h-[50px]">
+                                      <div className="px-6 py-3 rounded-2xl shadow-md transition-all duration-200 backdrop-blur-sm bg-green-500/75 text-white border border-green-400/25 min-h-[50px]">
                                         {m.text && (
                                           <p className="whitespace-pre-line break-all text-sm leading-snug max-w-[300px]">
                                             {searchQuery
@@ -1352,54 +1336,53 @@ const Chat: React.FC = () => {
                                   </>
                                 ) : (
                                   <>
-                                    {/* للرسائل الرمادية: 1. وقت, 2. رسالة, 3. Reply+خيارات */}
-                                    {/* 1. ديف الوقت أولاً */}
-                                    <div className="absolute -right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
-                                      <div className="bg-black/80 text-white text-xs px-2 py-1 rounded-full whitespace-nowrap shadow-lg backdrop-blur-sm">
-                                        {new Date(
-                                          m.createdAt
-                                        ).toLocaleTimeString('ar-EG', {
-                                          hour: '2-digit',
-                                          minute: '2-digit',
-                                        })}
-                                      </div>
-                                    </div>
-
-                                    {/* 2. ديف الرسالة الرمادية */}
-                                    <div className="max-w-[85%]">
-                                      {/* نص الرد - يظهر فوق الرسالة */}
-                                      {m.replyTo && (
-                                        <div className="mb-0.5 text-left">
-                                          <span className="text-xs text-gray-500 font-normal bg-transparent px-2 py-0.5 rounded-full opacity-70">
-                                            {(() => {
-                                              const currentUserId =
-                                                typeof currentUser ===
-                                                  'object' && currentUser
-                                                  ? getEntityId(currentUser)
-                                                  : null;
-                                              const repliedToUserId =
-                                                typeof m.replyTo === 'object' &&
-                                                m.replyTo.sender
-                                                  ? typeof m.replyTo.sender ===
-                                                    'object'
-                                                    ? m.replyTo.sender._id
-                                                    : m.replyTo.sender
-                                                  : null;
-                                              const repliedToUserName =
-                                                getUserDisplayName(m.replyTo);
-
-                                              if (
-                                                currentUserId ===
-                                                repliedToUserId
-                                              ) {
-                                                return 'قمت بالرد على نفسك';
-                                              } else {
-                                                return `قمت بالرد على ${repliedToUserName}`;
-                                              }
-                                            })()}
-                                          </span>
+                                    {/* للرسائل الرمادية: Avatar + اسم المرسل + رسالة + خيارات */}
+                                    {/* 1. Avatar واسم المرسل */}
+                                    <div className="flex items-start gap-2 max-w-[85%]">
+                                      <Avatar
+                                        userName={typeof m.sender === 'object' ? m.sender.firstName : (contacts.find(c => c._id === m.sender)?.firstName || 'مستخدم')}
+                                        gender={getUserGender(typeof m.sender === 'object' ? m.sender : contacts.find(c => c._id === m.sender) || null)}
+                                        size="sm"
+                                        className="flex-shrink-0 mt-1"
+                                      />
+                                      <div className="flex flex-col flex-1 min-w-0">
+                                        <div className="text-xs text-gray-600 mb-1 font-medium">
+                                          {typeof m.sender === 'object' ? m.sender.firstName : (contacts.find(c => c._id === m.sender)?.firstName || 'مستخدم')}
                                         </div>
-                                      )}
+                                        {/* نص الرد - يظهر فوق الرسالة */}
+                                        {m.replyTo && (
+                                          <div className="mb-0.5 text-left">
+                                            <span className="text-xs text-gray-500 font-normal bg-transparent px-2 py-0.5 rounded-full opacity-70">
+                                              {(() => {
+                                                const currentUserId =
+                                                  typeof currentUser ===
+                                                    'object' && currentUser
+                                                    ? getEntityId(currentUser)
+                                                    : null;
+                                                const repliedToUserId =
+                                                  typeof m.replyTo === 'object' &&
+                                                  m.replyTo.sender
+                                                    ? typeof m.replyTo.sender ===
+                                                      'object'
+                                                      ? m.replyTo.sender._id
+                                                      : m.replyTo.sender
+                                                    : null;
+                                                const repliedToUserName =
+                                                  getUserDisplayName(m.replyTo);
+
+                                                if (
+                                                  currentUserId ===
+                                                  repliedToUserId
+                                                ) {
+                                                  return 'رد على نفسه';
+                                                } else {
+                                                  return `رد على ${repliedToUserName}`;
+                                                }
+                                              })()
+                                              }
+                                            </span>
+                                          </div>
+                                        )}
 
                                       <div className="px-6 py-3 rounded-2xl shadow-md transition-all duration-200 backdrop-blur-sm bg-gray-100/85 text-gray-800 border border-gray-300/40 min-h-[50px]">
                                         {m.text && (
@@ -1437,6 +1420,19 @@ const Chat: React.FC = () => {
                                         )}
                                         {renderAttachments(m.attachments)}
                                         {renderReactions(m)}
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* وقت الرسالة عند hover */}
+                                    <div className="absolute -right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+                                      <div className="bg-black/80 text-white text-xs px-2 py-1 rounded-full whitespace-nowrap shadow-lg backdrop-blur-sm">
+                                        {new Date(
+                                          m.createdAt
+                                        ).toLocaleTimeString('ar-EG', {
+                                          hour: '2-digit',
+                                          minute: '2-digit',
+                                        })}
                                       </div>
                                     </div>
 

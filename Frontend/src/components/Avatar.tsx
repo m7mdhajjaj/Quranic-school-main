@@ -1,6 +1,6 @@
 import React from 'react';
 import { User as UserIcon } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
+import { useAvatarStatus } from '../hooks/useUserStatus';
 
 export interface AvatarProps {
   /** Avatar image URL */
@@ -114,13 +114,22 @@ const Avatar: React.FC<AvatarProps> = ({
   showStatus = false,
   forceStatus,
 }) => {
-  // جلب حالة المصادقة من useAuth
-  const { isAuthenticated } = useAuth();
+  // جلب حالة المستخدم من قاعدة البيانات أو النظام المحلي
+  const { isOnline: dbStatus, statusType } = useAvatarStatus(forceStatus);
   const displaySrc = previewSrc || src;
   const initials = userName ? userName.charAt(0).toUpperCase() : '';
 
-  // تحديد حالة الاتصال
-  const isOnline = forceStatus ? forceStatus === 'online' : isAuthenticated;
+  // تحديد حالة الاتصال (أولوية لقاعدة البيانات)
+  const isOnline = dbStatus;
+  
+  // تحديد نص التلميح حسب مصدر الحالة
+  const getStatusTitle = () => {
+    const status = isOnline ? 'متصل' : 'غير متصل';
+    const source = statusType === 'database' ? '(من قاعدة البيانات)' :
+                   statusType === 'realtime' ? '(مباشر)' :
+                   statusType === 'forced' ? '(إجبار)' : '(احتياطي)';
+    return `${status} ${source}`;
+  };
 
   const genderColors = {
     female: 'bg-gradient-to-br from-pink-400 to-fuchsia-500 border-pink-200/50 shadow-pink-500/30',
@@ -259,7 +268,7 @@ const Avatar: React.FC<AvatarProps> = ({
             }
             ${isOnline ? 'animate-pulse' : ''}
           `}
-          title={isOnline ? 'متصل' : 'غير متصل'}
+          title={getStatusTitle()}
           aria-label={isOnline ? 'المستخدم متصل' : 'المستخدم غير متصل'}
         >
           {/* Inner glow effect */}
