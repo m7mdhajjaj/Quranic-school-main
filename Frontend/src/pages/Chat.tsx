@@ -984,8 +984,8 @@ const Chat: React.FC = () => {
                                 
                                 <div className="flex items-center gap-1 max-w-[92%]">
                                   <div
-                                    className={`px-5 py-2 rounded-2xl shadow-sm transition-all duration-200 flex-1 ${
-                                      mine ? "bg-green-500 text-white" : "bg-gray-100 text-gray-800"
+                                    className={`px-5 py-2 rounded-2xl shadow-sm transition-all duration-200 flex-1 backdrop-blur-sm ${
+                                      mine ? "bg-green-500/90 text-white border border-green-400/30" : "bg-gray-100/85 text-gray-800 border border-gray-300/40"
                                     } ${highlightedId === m._id ? "ring-2 ring-amber-400" : ""}`}
                                   >
                                     {m.text && (
@@ -1011,6 +1011,18 @@ const Chat: React.FC = () => {
                                     )}
                                   </div>
                                   
+                                  {/* زر Reply لجميع الرسائل */}
+                                  <button 
+                                    className={`p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ${
+                                      mine ? "hover:bg-green-100 text-green-600" : "hover:bg-gray-100 text-gray-600"
+                                    }`}
+                                    title="رد"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                    </svg>
+                                  </button>
+                                  
                                   {/* قائمة 3 نقاط */}
                                   <button 
                                     className="p-1 rounded-full hover:bg-gray-200 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
@@ -1023,11 +1035,11 @@ const Chat: React.FC = () => {
                                   </button>
                                   
                                   {actionMenuOpen === m._id && (
-                                    <div className="absolute top-8 right-0 bg-white border rounded-xl shadow-lg z-50 min-w-[120px] flex flex-col text-right animate-fade-in">
-                                      <button className="px-4 py-2 hover:bg-gray-100 text-sm" onClick={() => { handleTogglePin(m._id); setActionMenuOpen(null); }}>📌 تثبيت</button>
-                                      {mine && <button className="px-4 py-2 hover:bg-gray-100 text-sm" onClick={() => { editMessage(m); setActionMenuOpen(null); }}>✏️ تعديل</button>}
-                                      {mine && <button className="px-4 py-2 hover:bg-gray-100 text-sm" onClick={() => { deleteMessage(m); setActionMenuOpen(null); }}>🗑️ حذف</button>}
-                                      <button className="px-4 py-2 hover:bg-gray-100 text-sm" onClick={() => setActionMenuOpen(null)}>إغلاق</button>
+                                    <div className="absolute top-8 right-0 bg-transparent border-0 rounded-xl z-50 min-w-[120px] flex flex-col text-right animate-fade-in">
+                                      <button className="px-4 py-2 hover:bg-white/90 text-gray-800 text-sm rounded-lg mb-1 backdrop-blur-sm border border-gray-200/50" onClick={() => { handleTogglePin(m._id); setActionMenuOpen(null); }}>📌 تثبيت</button>
+                                      {mine && <button className="px-4 py-2 hover:bg-white/90 text-gray-800 text-sm rounded-lg mb-1 backdrop-blur-sm border border-gray-200/50" onClick={() => { editMessage(m); setActionMenuOpen(null); }}>✏️ تعديل</button>}
+                                      {mine && <button className="px-4 py-2 hover:bg-white/90 text-red-600 text-sm rounded-lg mb-1 backdrop-blur-sm border border-gray-200/50" onClick={() => { deleteMessage(m); setActionMenuOpen(null); }}>🗑️ حذف</button>}
+                                      <button className="px-4 py-2 hover:bg-white/90 text-gray-800 text-sm rounded-lg backdrop-blur-sm border border-gray-200/50" onClick={() => setActionMenuOpen(null)}>إغلاق</button>
                                     </div>
                                   )}
                                 </div>
