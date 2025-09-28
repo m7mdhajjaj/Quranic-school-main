@@ -976,10 +976,14 @@ const Chat: React.FC = () => {
                                       )}
                                     </div>
                                     
+
+
+
+
                                     {/* 2. ديف الرسالة الأخضر */}
                                     <div className="max-w-[92%]">
                                       {/* نص الرد - يظهر فوق الرسالة */}
-                                      {m.replyTo && (
+                                      {/* {m.replyTo && (
                                         <div className="mb-1 text-right">
                                           <span className="text-xs text-white/40 font-normal bg-white/5 px-2 py-1 rounded-full reply-text-badge animate-bounce-in-reply">
                                             {(() => {
@@ -999,8 +1003,31 @@ const Chat: React.FC = () => {
                                             })()}
                                           </span>
                                         </div>
-                                      )}
-                                      
+                                      )} */}
+
+
+
+{/* شارة أعلى الفقاعة: "قمت بالرد على ..." */}
+{m.replyTo && (
+  <div className="mb-1 text-right">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-medium bg-transparent text-black border-0">
+      <svg className="w-3 h-3 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+      </svg>
+      {(() => {
+        const me = typeof currentUser === 'object' && currentUser ? getEntityId(currentUser) : null;
+        const repliedId = typeof m.replyTo === 'object' && m.replyTo.sender
+          ? (typeof m.replyTo.sender === 'object' ? m.replyTo.sender._id : m.replyTo.sender)
+          : null;
+        const repliedName = typeof m.replyTo === 'object' && m.replyTo.sender
+          ? (typeof m.replyTo.sender === 'object' ? m.replyTo.sender.firstName : "مستخدم")
+          : "مستخدم";
+        return me === repliedId ? "قمت بالرد على نفسك" : `قمت بالرد على ${repliedName}`;
+      })()}
+    </span>
+  </div>
+)}
+
                                       <div className="px-5 py-2 rounded-2xl shadow-sm transition-all duration-200 backdrop-blur-sm bg-green-500/90 text-white border border-green-400/30">
                                         {/* عرض الرسالة المردود عليها للرسائل الخضراء */}
                                         {m.replyTo && (

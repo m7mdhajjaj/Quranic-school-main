@@ -685,16 +685,16 @@ const Chat: React.FC = () => {
                                           {/* الرسالة المردود عليها */}
                                           <div className="p-2 bg-white/20 rounded-lg border-r-2 border-white/50">
                                             <div className="flex items-center gap-1 mb-1">
-                                              <svg className="w-3 h-3 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <svg className="w-3 h-3 text-black/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                                               </svg>
-                                              <span className="text-xs text-white/80 font-medium">
+                                              <span className="text-xs text-black font-medium">
                                                 {typeof message.replyTo === 'object' && message.replyTo.sender
                                                   ? (typeof message.replyTo.sender === 'object' ? message.replyTo.sender.firstName : "مستخدم")
                                                   : "مستخدم"}
                                               </span>
                                             </div>
-                                            <p className="text-xs text-white/90 line-clamp-2">
+                                            <p className="text-xs text-black/80 line-clamp-2">
                                               {typeof message.replyTo === 'object' && message.replyTo.text ? message.replyTo.text : "رسالة"}
                                             </p>
                                           </div>
