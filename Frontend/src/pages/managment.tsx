@@ -825,7 +825,7 @@ const Managment: React.FC = () => {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {currentStudents.length > 0 ? (
                       currentStudents.map((student, index) => (
-                        <tr key={student.id} className="hover:bg-gray-50">
+                        <tr key={student._id || student.id || `student-${index}`} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {indexOfFirstStudent + index + 1}
                           </td>

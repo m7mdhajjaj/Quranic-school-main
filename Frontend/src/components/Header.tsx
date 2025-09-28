@@ -453,18 +453,20 @@ const Header = () => {
                 {profileMenuOpen && (
                   <div
                     id="profile-menu"
-                    className="absolute left-1/2 transform -translate-x-1/2 top-full mt-2 w-64 bg-white/98 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-100/80 py-2 z-[100]"
+                    className="absolute left-1/2 transform -translate-x-1/2 top-full mt-3 w-56 bg-white/96 backdrop-blur-2xl rounded-2xl shadow-2xl border border-emerald-100/50 py-1 z-[100] animate-in slide-in-from-top-5 duration-200"
                   >
-                    <div className="px-6 py-4 border-b border-gray-100/80 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-t-2xl">
-                      <div className="flex items-center gap-3">
-                        {renderUserAvatar()}
+                    <div className="px-4 py-3 border-b border-emerald-100/60 bg-gradient-to-r from-emerald-50/80 to-teal-50/80 rounded-t-2xl">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8">
+                          {renderUserAvatar()}
+                        </div>
                         <div>
-                          <span className="block text-emerald-800 font-bold text-lg">
+                          <span className="block text-emerald-800 font-bold text-base">
                             {currentUser?.firstName && currentUser?.lastName
                               ? `${currentUser.firstName} ${currentUser.lastName}`
                               : currentUser?.firstName || currentUser?.name}
                           </span>
-                          <span className="block text-emerald-600 text-sm mt-1 font-medium">
+                          <span className="block text-emerald-600 text-xs mt-0.5 font-medium">
                             {currentUser?.role === 'teacher'
                               ? 'معلم'
                               : currentUser?.role === 'admin'
@@ -475,17 +477,17 @@ const Header = () => {
                       </div>
                     </div>
 
-                    <div className="py-2">
+                    <div className="py-1">
                       <button
                         onClick={() => {
                           setProfileMenuOpen(false);
                           navigate('/profile');
                         }}
-                        className="w-full text-right py-3 px-6 text-gray-700 hover:bg-emerald-50/80 hover:text-emerald-700 transition-all duration-200 flex items-center gap-3 group"
+                        className="w-full text-right py-2.5 px-4 text-gray-700 hover:bg-emerald-50/80 hover:text-emerald-700 transition-all duration-200 flex items-center gap-2.5 group"
                       >
-                        <div className="p-1.5 rounded-lg bg-emerald-100 group-hover:bg-emerald-200 transition-colors">
+                        <div className="p-1 rounded-lg bg-emerald-100 group-hover:bg-emerald-200 transition-colors">
                           <svg
-                            className="w-4 h-4 text-emerald-600"
+                            className="w-3.5 h-3.5 text-emerald-600"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -498,7 +500,7 @@ const Header = () => {
                             />
                           </svg>
                         </div>
-                        <span className="font-medium">الملف الشخصي</span>
+                        <span className="font-medium text-sm">الملف الشخصي</span>
                       </button>
 
                       <button
@@ -506,11 +508,11 @@ const Header = () => {
                           setProfileMenuOpen(false);
                           navigate('/change-password');
                         }}
-                        className="w-full text-right py-3 px-6 text-gray-700 hover:bg-blue-50/80 hover:text-blue-700 transition-all duration-200 flex items-center gap-3 group"
+                        className="w-full text-right py-2.5 px-4 text-gray-700 hover:bg-blue-50/80 hover:text-blue-700 transition-all duration-200 flex items-center gap-2.5 group"
                       >
-                        <div className="p-1.5 rounded-lg bg-blue-100 group-hover:bg-blue-200 transition-colors">
+                        <div className="p-1 rounded-lg bg-blue-100 group-hover:bg-blue-200 transition-colors">
                           <svg
-                            className="w-4 h-4 text-blue-600"
+                            className="w-3.5 h-3.5 text-blue-600"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -523,21 +525,21 @@ const Header = () => {
                             />
                           </svg>
                         </div>
-                        <span className="font-medium">تغيير كلمة المرور</span>
+                        <span className="font-medium text-sm">تغيير كلمة المرور</span>
                       </button>
 
-                      <div className="border-t border-gray-100 my-2" />
+                      <div className="border-t border-gray-100 my-1.5" />
 
                       <button
                         onClick={() => {
                           setProfileMenuOpen(false);
                           handleLogout();
                         }}
-                        className="w-full text-right py-3 px-6 text-red-600 hover:bg-red-50/80 hover:text-red-700 transition-all duration-200 flex items-center gap-3 group"
+                        className="w-full text-right py-2.5 px-4 text-red-600 hover:bg-red-50/80 hover:text-red-700 transition-all duration-200 flex items-center gap-2.5 group"
                       >
-                        <div className="p-1.5 rounded-lg bg-red-100 group-hover:bg-red-200 transition-colors">
+                        <div className="p-1 rounded-lg bg-red-100 group-hover:bg-red-200 transition-colors">
                           <svg
-                            className="w-4 h-4 text-red-600"
+                            className="w-3.5 h-3.5 text-red-600"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -550,7 +552,7 @@ const Header = () => {
                             />
                           </svg>
                         </div>
-                        <span className="font-medium">تسجيل الخروج</span>
+                        <span className="font-medium text-sm">تسجيل الخروج</span>
                       </button>
                     </div>
                   </div>
