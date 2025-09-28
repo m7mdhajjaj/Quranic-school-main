@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const Student = require("../models/Student");
 const Teacher = require("../models/Teacher");
+const Admin = require("../models/Admin");
 
 // JWT Secret - في الحالة المثالية يجب وضع هذا في ملف .env
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -73,6 +74,21 @@ exports.protect = async (req, res, next) => {
     }
 
     if (error.name === "TokenExpiredError") {
+      // Set isActive to false for expired tokens
+      try {
+        const decoded = jwt.decode(token);
+        if (decoded && decoded.id) {
+          if (decoded.role === "student" || !decoded.role) {
+            await Student.findByIdAndUpdate(decoded.id, { isActive: false });
+          } else if (decoded.role === "admin") {
+            await Admin.findByIdAndUpdate(decoded.id, { isActive: false });
+          } else {
+            await Teacher.findByIdAndUpdate(decoded.id, { isActive: false });
+          }
+        }
+      } catch (updateError) {
+        console.error("Error updating isActive on token expiry:", updateError);
+      }
       return res.status(401).json({
         success: false,
         message: "انتهت صلاحية رمز المصادقة",

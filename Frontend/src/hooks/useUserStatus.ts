@@ -1,6 +1,7 @@
 // hooks/useUserStatus.ts
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
+import { API_BASE_URL } from '../config';
 
 interface UserStatus {
   isOnline: boolean;
@@ -27,7 +28,7 @@ export const useUserStatus = (userId?: string): UserStatus => {
 
     const fetchUserStatus = async () => {
       try {
-        const response = await fetch(`http://localhost:5005/api/users/${targetUserId}/status`, {
+        const response = await fetch(`${API_BASE_URL}/api/users/${targetUserId}/status`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',

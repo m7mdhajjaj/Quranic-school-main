@@ -2,9 +2,8 @@
 // routes/userStatusRoutes.js
 
 const express = require('express');
-const Student = require('../models/Student');
-const Teacher = require('../models/Teacher');
-const { protect } = require('../middleware/authMiddleware');
+const { getUserStatus, getActiveUsers, setUserStatus } = require('../controllers/userStatusController');
+const { protect, adminProtect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
@@ -142,5 +141,10 @@ router.put('/:userId/status', protect, async (req, res) => {
     });
   }
 });
+
+// New enhanced routes using controller
+router.get('/active', protect, getActiveUsers);
+router.get('/:userId/status', protect, getUserStatus);
+router.put('/:userId/status', adminProtect, setUserStatus);
 
 module.exports = router;

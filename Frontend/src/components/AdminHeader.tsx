@@ -2,19 +2,11 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Avatar from "./Avatar";
 import { useAvatar, getUserGender } from "../hooks/useAvatar";
-
-interface User {
-  _id: string;
-  name: string;
-  role?: "student" | "teacher" | "admin" | string;
-  firstName?: string;
-  lastName?: string;
-}
-
+import { useAuth } from "../hooks/useAuth";
 
 
 const AdminHeader: React.FC = () => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const { user: currentUser, logout: authLogout } = useAuth();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -30,28 +22,17 @@ const AdminHeader: React.FC = () => {
   const userGender = getUserGender(currentUser);
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-    localStorage.removeItem("userId");
-    setCurrentUser(null);
     setProfileMenuOpen(false);
-    navigate("/login", { replace: true });
+    authLogout();
   };
 
 
 
   useEffect(() => {
-    const userJson = localStorage.getItem("user");
-    if (userJson) {
-      try {
-        const userData = JSON.parse(userJson) as User;
-        setCurrentUser(userData);
-      } catch (err) {
-        console.error("Error parsing user data:", err);
-        navigate("/login", { replace: true });
-      }
+    if (!currentUser) {
+      navigate("/login", { replace: true });
     }
-  }, [navigate]);
+  }, [currentUser, navigate]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

@@ -76,6 +76,9 @@ exports.login = async (req, res) => {
       });
     }
 
+    // Set isActive to true on login
+    await Student.findByIdAndUpdate(student._id, { isActive: true });
+
     // إنشاء رمز JWT
     const token = jwt.sign(
       {
@@ -101,6 +104,7 @@ exports.login = async (req, res) => {
         lastName: student.lastName,
         group: student.group,
         role: "student",
+        isActive: true,
       },
     });
   } catch (error) {
@@ -146,6 +150,9 @@ const loginTeacher = async (req, res) => {
       });
     }
 
+    // Set isActive to true on login
+    await Teacher.findByIdAndUpdate(teacher._id, { isActive: true });
+
     // إنشاء رمز JWT
     const token = jwt.sign(
       {
@@ -170,6 +177,7 @@ const loginTeacher = async (req, res) => {
         lastName: teacher.lastName,
         groups: teacher.groups,
         role: teacher.role,
+        isActive: true,
       },
     });
   } catch (error) {
@@ -214,6 +222,9 @@ const loginAdmin = async (req, res) => {
       });
     }
 
+    // Set isActive to true on login
+    await Admin.findByIdAndUpdate(admin._id, { isActive: true });
+
     // إنشاء رمز JWT
     const token = jwt.sign(
       {
@@ -236,6 +247,7 @@ const loginAdmin = async (req, res) => {
         firstName: admin.firstName,
         lastName: admin.lastName,
         role: "admin",
+        isActive: true,
       },
     });
   } catch (error) {
@@ -786,6 +798,36 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "حدث خطأ أثناء تغيير كلمة المرور",
+    });
+  }
+};
+
+// Logout functionality
+exports.logout = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const userRole = req.user.role;
+
+    // Set isActive to false based on user type
+    if (userRole === "student") {
+      await Student.findByIdAndUpdate(userId, { isActive: false });
+    } else if (userRole === "teacher" || userRole === "admin") {
+      if (userRole === "admin") {
+        await Admin.findByIdAndUpdate(userId, { isActive: false });
+      } else {
+        await Teacher.findByIdAndUpdate(userId, { isActive: false });
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "تم تسجيل الخروج بنجاح",
+    });
+  } catch (error) {
+    console.error("Logout error:", error);
+    res.status(500).json({
+      success: false,
+      message: "حدث خطأ أثناء تسجيل الخروج",
     });
   }
 };

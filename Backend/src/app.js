@@ -134,14 +134,50 @@ io.on("connection", (socket) => {
   }
 
   // User login - store their user ID and socket ID
-  socket.on("login", (userData) => {
+  socket.on("login", async (userData) => {
     onlineUsers.set(userData.userId, {
       socketId: socket.id,
       role: userData.role,
       firstName: userData.firstName || "مستخدم",
     });
+    
+    // Set isActive to true in database
+    try {
+      if (userData.role === "student") {
+        await Student.findByIdAndUpdate(userData.userId, { isActive: true });
+      } else if (userData.role === "admin") {
+        await require("./models/Admin").findByIdAndUpdate(userData.userId, { isActive: true });
+      } else {
+        await require("./models/Teacher").findByIdAndUpdate(userData.userId, { isActive: true });
+      }
+    } catch (error) {
+      console.error("Error setting isActive on socket login:", error);
+    }
+    
     console.log(`User logged in: ${userData.userId} as ${userData.role}`);
     console.log("Online users:", [...onlineUsers.entries()]);
+  });
+
+  // Handle logout
+  socket.on("logout", async (userData) => {
+    console.log(`User logging out: ${userData.userId}`);
+    
+    // Set isActive to false in database
+    try {
+      if (userData.role === "student") {
+        await Student.findByIdAndUpdate(userData.userId, { isActive: false });
+      } else if (userData.role === "admin") {
+        await require("./models/Admin").findByIdAndUpdate(userData.userId, { isActive: false });
+      } else {
+        await require("./models/Teacher").findByIdAndUpdate(userData.userId, { isActive: false });
+      }
+    } catch (error) {
+      console.error("Error setting isActive=false on logout:", error);
+    }
+    
+    // Remove from online users
+    onlineUsers.delete(userData.userId);
+    console.log(`User logged out: ${userData.userId}`);
   });
 
   // Handle private messages
@@ -331,12 +367,25 @@ io.on("connection", (socket) => {
   });
 
   // Handle disconnect
-  socket.on("disconnect", () => {
+  socket.on("disconnect", async () => {
     console.log(`User disconnected: ${socket.id}`);
 
-    // Remove user from online users
+    // Remove user from online users and set isActive to false
     for (const [userId, userData] of onlineUsers.entries()) {
       if (userData.socketId === socket.id) {
+        // Set isActive to false in database
+        try {
+          if (userData.role === "student") {
+            await Student.findByIdAndUpdate(userId, { isActive: false });
+          } else if (userData.role === "admin") {
+            await require("./models/Admin").findByIdAndUpdate(userId, { isActive: false });
+          } else {
+            await require("./models/Teacher").findByIdAndUpdate(userId, { isActive: false });
+          }
+        } catch (error) {
+          console.error("Error setting isActive=false on disconnect:", error);
+        }
+        
         onlineUsers.delete(userId);
         console.log(`User removed from online list: ${userId}`);
         break;

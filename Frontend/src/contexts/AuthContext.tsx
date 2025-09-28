@@ -1,4 +1,6 @@
-import React, { createContext, useState, useEffect, type ReactNode } from 'react';
+import React, { createContext, useState, useEffect, useRef, type ReactNode } from 'react';
+import { io, Socket } from 'socket.io-client';
+import { API_BASE_URL } from '../config';
 
 // تعريف أنواع البيانات
 export interface User {
@@ -14,6 +16,7 @@ export interface User {
   adminId?: string;
   group?: string;
   imageUrl?: string;
+  isActive?: boolean;
   // يمكن إضافة المزيد من الخصائص حسب الحاجة
 }
 
@@ -23,6 +26,7 @@ export interface AuthContextType {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  socket: Socket | null;
   
   // وظائف إدارة المصادقة
   login: (userData: User, authToken: string) => void;
@@ -49,6 +53,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const socketRef = useRef<Socket | null>(null);
+
+  // Initialize socket connection
+  useEffect(() => {
+    socketRef.current = io(API_BASE_URL, {
+      autoConnect: false,
+    });
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+    };
+  }, []);
+
+  // Handle tab close/page unload
+  useEffect(() => {
+    const handleBeforeUnload = async () => {
+      if (user && socketRef.current) {
+        socketRef.current.emit('logout', {
+          userId: user._id,
+          role: user.role
+        });
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [user]);
 
   // تحميل بيانات المستخدم من localStorage عند بدء التطبيق
   useEffect(() => {
@@ -61,6 +96,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const parsedUser = JSON.parse(savedUser);
           setUser(parsedUser);
           setToken(savedToken);
+          
+          // Connect socket and emit login
+          if (socketRef.current) {
+            socketRef.current.connect();
+            socketRef.current.emit('login', {
+              userId: parsedUser._id,
+              role: parsedUser.role,
+              firstName: parsedUser.firstName || parsedUser.name
+            });
+          }
+          
           console.log('🔄 تم استرداد بيانات المستخدم من التخزين المحلي:', parsedUser.firstName || parsedUser.name);
         }
       } catch (error) {
@@ -80,14 +126,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // وظيفة تسجيل الدخول
   const login = (userData: User, authToken: string) => {
     try {
-      // حفظ البيانات في الحالة المحلية
-      setUser(userData);
+      // حفظ البيانات في الحالة المحلية مع تعيين isActive=true
+      const userWithActiveStatus = { ...userData, isActive: true };
+      setUser(userWithActiveStatus);
       setToken(authToken);
 
       // حفظ البيانات في localStorage
-      localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('user', JSON.stringify(userWithActiveStatus));
       localStorage.setItem('token', authToken);
       localStorage.setItem('userId', userData._id);
+
+      // Connect socket and emit login
+      if (socketRef.current) {
+        socketRef.current.connect();
+        socketRef.current.emit('login', {
+          userId: userData._id,
+          role: userData.role,
+          firstName: userData.firstName || userData.name
+        });
+      }
 
       console.log('✅ تم تسجيل الدخول بنجاح:', userData.firstName || userData.name);
     } catch (error) {
@@ -157,6 +214,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     token,
     isAuthenticated,
     isLoading,
+    socket: socketRef.current,
     
     // الوظائف
     login,

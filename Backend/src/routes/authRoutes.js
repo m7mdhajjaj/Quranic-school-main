@@ -1,6 +1,7 @@
 const express = require("express");
 const {
   login,
+  logout,
   getMe,
   registerTeacher,
   changePassword,
@@ -13,6 +14,9 @@ const router = express.Router();
 
 // مسار تسجيل الدخول للطلاب والمعلمين
 router.post("/login", login);
+
+// مسار تسجيل الخروج
+router.post("/logout", protect, logout);
 
 // مسار للحصول على بيانات المستخدم الحالي
 router.get("/me", getMe);
