@@ -969,42 +969,43 @@ const Chat: React.FC = () => {
                                   </span>
                                 </div>
                               )}
-                              <div className={`flex ${mine ? "justify-end" : "justify-start"} mb-3 group`} id={`msg-${m._id}`}>
+                              <div className={`flex ${mine ? "justify-end" : "justify-start"} mb-3 group relative`} id={`msg-${m._id}`}>
+                                {/* وقت المستقبل على اليسار */}
+                                {!mine && (
+                                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 mr-3 self-end mb-1">
+                                    <div className="bg-black text-white text-xs px-3 py-1 rounded-lg whitespace-nowrap">
+                                      {new Date(m.createdAt).toLocaleTimeString()}
+                                    </div>
+                                  </div>
+                                )}
+                                
                                 <div className="flex items-center gap-2 max-w-[75%]">
                                   <div
                                     className={`px-5 py-2 rounded-2xl shadow-sm transition-all duration-200 flex-1 ${
-                                      mine ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"
+                                      mine ? "bg-green-500 text-white" : "bg-gray-100 text-gray-800"
                                     } ${highlightedId === m._id ? "ring-2 ring-amber-400" : ""}`}
                                   >
-                                    <div className="flex items-center justify-between w-full">
-                                      <div className="flex-1 mr-4">
-                                        {m.text && (
-                                          <p className="whitespace-pre-line break-words text-sm leading-tight">
-                                            {searchQuery
-                                              ? (m.text.split(new RegExp(`(${searchQuery})`, "gi")).map((part, i) =>
-                                                  part.toLowerCase() === searchQuery.toLowerCase() ? <mark key={i} className="bg-yellow-200 rounded px-1">{part}</mark> : <span key={i}>{part}</span>
-                                                ))
-                                              : m.text}
-                                            {m.editedAt && <span className="ml-2 text-xs opacity-75 italic">(معدل)</span>}
-                                          </p>
-                                        )}
-                                        {renderAttachments(m.attachments)}
-                                        {renderReactions(m)}
-                                      </div>
-                                      
-                                      <div className={`text-xs opacity-70 flex items-center gap-1 flex-shrink-0 ${
-                                        mine ? "text-blue-100" : "text-gray-500"
-                                      }`}>
-                                        <span>
-                                          {new Date(m.createdAt).toLocaleTimeString()}
+                                    {m.text && (
+                                      <p className="whitespace-pre-line break-all text-sm leading-snug max-w-[300px]">
+                                        {searchQuery
+                                          ? (m.text.split(new RegExp(`(${searchQuery})`, "gi")).map((part, i) =>
+                                              part.toLowerCase() === searchQuery.toLowerCase() ? <mark key={i} className="bg-yellow-200 rounded px-1">{part}</mark> : <span key={i}>{part}</span>
+                                            ))
+                                          : m.text}
+                                        {m.editedAt && <span className="ml-2 text-xs opacity-75 italic">(معدل)</span>}
+                                      </p>
+                                    )}
+                                    {renderAttachments(m.attachments)}
+                                    {renderReactions(m)}
+                                    
+                                    {/* علامات الحالة للمرسل فقط */}
+                                    {mine && (
+                                      <div className="mt-1 text-right">
+                                        <span className="text-xs opacity-70">
+                                          {renderMessageStatus(m)}
                                         </span>
-                                        {mine && (
-                                          <span>
-                                            {renderMessageStatus(m)}
-                                          </span>
-                                        )}
                                       </div>
-                                    </div>
+                                    )}
                                   </div>
                                   
                                   {/* قائمة 3 نقاط */}
@@ -1027,6 +1028,15 @@ const Chat: React.FC = () => {
                                     </div>
                                   )}
                                 </div>
+                                
+                                {/* وقت المرسل على اليمين */}
+                                {mine && (
+                                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 ml-3 self-end mb-1">
+                                    <div className="bg-black text-white text-xs px-3 py-1 rounded-lg whitespace-nowrap">
+                                      {new Date(m.createdAt).toLocaleTimeString()}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             </React.Fragment>
                           );

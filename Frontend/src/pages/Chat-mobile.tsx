@@ -610,39 +610,40 @@ const Chat: React.FC = () => {
                               key={message._id}
                               className={`flex ${
                                 isCurrentUser ? "justify-end" : "justify-start"
-                              } mb-3 animate-slideIn`}
+                              } mb-3 animate-slideIn group relative`}
                               style={{ animationDelay: `${index * 0.05}s` }}
                             >
+                              {/* وقت المستقبل على اليسار */}
+                              {!isCurrentUser && (
+                                <div className="opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300 mr-2 self-end mb-1">
+                                  <div className="bg-black text-white text-xs px-2 py-1 rounded-lg whitespace-nowrap">
+                                    {new Date(message.createdAt).toLocaleTimeString("ar-EG", {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+                              
                               <div className="flex items-center gap-2 max-w-[80%]">
                                 <div
                                   className={`px-4 py-2 rounded-2xl shadow-sm transition-all duration-200 flex-1 ${
                                     isCurrentUser
-                                      ? "bg-blue-500 text-white"
+                                      ? "bg-green-500 text-white"
                                       : "bg-gray-100 text-gray-800"
                                   }`}
                                 >
-                                  <div className="flex items-center justify-between w-full">
-                                    <p className="text-sm leading-tight break-words flex-1 mr-3">
-                                      {message.text}
-                                    </p>
-                                    <div className={`text-xs opacity-70 flex items-center gap-1 flex-shrink-0 ${
-                                      isCurrentUser ? "text-blue-100" : "text-gray-500"
-                                    }`}>
-                                      <span>
-                                        {new Date(
-                                          message.createdAt,
-                                        ).toLocaleTimeString("ar-EG", {
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                        })}
+                                  <p className="text-sm leading-snug break-all max-w-[200px]">
+                                    {message.text}
+                                  </p>
+                                  {/* علامات الحالة للمرسل فقط */}
+                                  {isCurrentUser && (
+                                    <div className="mt-1 text-right">
+                                      <span className="text-xs opacity-70">
+                                        {renderMessageStatus(message, isCurrentUser)}
                                       </span>
-                                      {isCurrentUser && (
-                                        <span>
-                                          {renderMessageStatus(message, isCurrentUser)}
-                                        </span>
-                                      )}
                                     </div>
-                                  </div>
+                                  )}
                                 </div>
                                 
                                 {/* قائمة 3 نقاط */}
@@ -652,6 +653,18 @@ const Chat: React.FC = () => {
                                   </svg>
                                 </button>
                               </div>
+                              
+                              {/* وقت المرسل على اليمين */}
+                              {isCurrentUser && (
+                                <div className="opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300 ml-2 self-end mb-1">
+                                  <div className="bg-black text-white text-xs px-2 py-1 rounded-lg whitespace-nowrap">
+                                    {new Date(message.createdAt).toLocaleTimeString("ar-EG", {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           );
                         })}
