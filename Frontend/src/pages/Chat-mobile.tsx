@@ -615,17 +615,17 @@ const Chat: React.FC = () => {
                             >
                               {/* وقت المستقبل على اليسار */}
                               {!isCurrentUser && (
-                                <div className="opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300 mr-2 self-end mb-1">
-                                  <div className="bg-black text-white text-xs px-2 py-1 rounded-lg whitespace-nowrap">
+                                <div className="opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300 mr-1 self-center">
+                                  <div className="bg-black/80 text-white text-xs px-3 py-2 rounded-full whitespace-nowrap shadow-lg backdrop-blur-sm">
                                     {new Date(message.createdAt).toLocaleTimeString("ar-EG", {
                                       hour: "2-digit",
-                                      minute: "2-digit",
+                                      minute: "2-digit"
                                     })}
                                   </div>
                                 </div>
                               )}
                               
-                              <div className="flex items-center gap-2 max-w-[80%]">
+                              <div className="flex items-center gap-1 max-w-[95%]">
                                 <div
                                   className={`px-4 py-2 rounded-2xl shadow-sm transition-all duration-200 flex-1 ${
                                     isCurrentUser
@@ -656,11 +656,11 @@ const Chat: React.FC = () => {
                               
                               {/* وقت المرسل على اليمين */}
                               {isCurrentUser && (
-                                <div className="opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300 ml-2 self-end mb-1">
-                                  <div className="bg-black text-white text-xs px-2 py-1 rounded-lg whitespace-nowrap">
+                                <div className="opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300 ml-1 self-center">
+                                  <div className="bg-black/80 text-white text-xs px-3 py-2 rounded-full whitespace-nowrap shadow-lg backdrop-blur-sm">
                                     {new Date(message.createdAt).toLocaleTimeString("ar-EG", {
                                       hour: "2-digit",
-                                      minute: "2-digit",
+                                      minute: "2-digit"
                                     })}
                                   </div>
                                 </div>
