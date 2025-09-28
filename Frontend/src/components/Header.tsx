@@ -5,17 +5,12 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import NotificationHeader from './NotificationHeader';
 import Avatar from './Avatar';
 import { useAvatar, getUserGender } from '../hooks/useAvatar';
+import { useAuth } from '../hooks/useAuth';
 import { io, Socket } from 'socket.io-client';
 import axios from 'axios';
 import { API_BASE_URL, API_URL } from '../config';
 
-interface User {
-  _id: string;
-  name: string;
-  role?: 'student' | 'teacher' | 'admin' | string;
-  firstName?: string;
-  lastName?: string;
-}
+// استخدم User type من AuthContext
 
 /** Axios instance */
 const api = axios.create({
@@ -34,9 +29,11 @@ api.interceptors.request.use((config) => {
 });
 
 const Header = () => {
+  // ---------- استخدام useAuth ----------
+  const { user: currentUser, logout: authLogout, isAuthenticated, token } = useAuth();
+  
   // ---------- state ----------
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [socket, setSocket] = useState<Socket | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   // Avatar state is now handled by useAvatar hook
@@ -61,39 +58,27 @@ const Header = () => {
   const toggleMenu = () => setIsMenuOpen((v) => !v);
 
   const handleLogout = useCallback(() => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    localStorage.removeItem('userId');
-
     socket?.disconnect();
     setSocket(null);
-
-    setCurrentUser(null);
     setIsMenuOpen(false);
     setProfileMenuOpen(false);
-
-    navigate('/login', { replace: true });
-  }, [socket, navigate]);
+    
+    // استخدام authLogout من useAuth
+    authLogout();
+  }, [socket, authLogout]);
 
   // Avatar loading is now handled by useAvatar hook
 
-  // ---------- init user ----------
+  // المستخدم يتم تحميله تلقائياً من useAuth
+  // إعادة التوجه إذا لم يكن مسجلاً دخوله
   useEffect(() => {
-    const userJson = localStorage.getItem('user');
-    if (userJson) {
-      try {
-        const userData = JSON.parse(userJson) as User;
-        setCurrentUser(userData);
-      } catch (err) {
-        console.error('Error parsing user data:', err);
-        navigate('/login', { replace: true });
-      }
+    if (!isAuthenticated && !currentUser) {
+      navigate('/login', { replace: true });
     }
-  }, [navigate]);
+  }, [isAuthenticated, currentUser, navigate]);
 
   // ---------- init socket (always) to ensure NotificationHeader renders ----------
   useEffect(() => {
-    const token = localStorage.getItem('token') || undefined;
 
     const s = io(API_BASE_URL, {
       transports: ['websocket', 'polling'],
@@ -124,7 +109,7 @@ const Header = () => {
       s.off('error', onError);
       s.disconnect();
     };
-  }, []);
+  }, [token]);
 
   // ---------- close profile menu on outside click / esc ----------
   useEffect(() => {
@@ -330,6 +315,7 @@ const Header = () => {
       loading={avatarLoading}
       size="md"
       clickable={true}
+      showStatus={true} // إظهار نقطة الحالة
       onClick={() => {
         // Retry loading avatar if it failed and not currently loading
         if (

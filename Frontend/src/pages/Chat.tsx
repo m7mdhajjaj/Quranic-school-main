@@ -1265,13 +1265,7 @@ const Chat: React.FC = () => {
 
                                     {/* 2. ديف الرسالة الأخضر */}
                                     <div className="max-w-[85%]">
-                                      {/* نص الرد - يظهر فوق الرسالة */}
-                                      {/* {m.replyTo && (
-                              
-
-
-
-{/* شارة أعلى الفقاعة: "قمت بالرد على ..." */}
+                                      {/* شارة أعلى الفقاعة: "قمت بالرد على ..." */}
                                       {m.replyTo && (
                                         <div className="mb-0.5 text-right">
                                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-medium bg-transparent text-black border-0 opacity-70">
@@ -1679,8 +1673,9 @@ const Chat: React.FC = () => {
                 {/* ...existing code... */}
 
                 <label
-                  className="px-3 py-3 rounded-2xl border hover:bg-gray-50 cursor-pointer flex items-center justify-center chat-attach-btn"
+                  className="px-3 py-3 rounded-2xl border hover:bg-gray-50 cursor-pointer flex items-center justify-center"
                   title="إرفاق"
+                  style={{ width: 44, height: 44, padding: 0 }}
                 >
                   <FiPaperclip size={24} color="#059669" />
                   <input

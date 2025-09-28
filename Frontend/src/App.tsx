@@ -28,16 +28,35 @@ import ExamSchedule from "./pages/ExamSchedule";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminManagement from "./pages/AdminManagement";
 import AdminHeader from "./components/AdminHeader";
+import Loading from "./components/Loading";
+import { AuthProvider } from "./contexts/AuthContext";
+import { useAuth } from "./hooks/useAuth";
 
 function AppContent() {
   const location = useLocation();
+  const { isLoading, isAuthenticated } = useAuth();
+  
   const isLoginPage = location.pathname === "/login";
   const isChatPage = location.pathname === "/chat";
   const isQuranPage =
     location.pathname === "/quran" || location.pathname === "/quran-audio";
   const isAdminPage = location.pathname.startsWith("/admin");
 
-  // Auth guards removed - authentication now handled differently
+  // عرض Loading أثناء تحميل بيانات المصادقة
+  if (isLoading) {
+    return <Loading fullscreen message="جاري تحميل بيانات المستخدم..." />;
+  }
+
+  // إعادة التوجه للمسارات المحمية إذا لم يكن مسجلاً دخوله
+  if (!isAuthenticated && !isLoginPage) {
+    return (
+      <>
+        <Routes>
+          <Route path="*" element={<Login />} />
+        </Routes>
+      </>
+    );
+  }
 
   return (
     <>
@@ -81,7 +100,9 @@ function AppContent() {
 function App() {
   return (
     <BrowserRouter>
-      <AppContent />
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </BrowserRouter>
   );
 }

@@ -2,9 +2,11 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API_URL } from "../config";
+import { useAuth } from "../hooks/useAuth";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login: authLogin, isAuthenticated } = useAuth();
 
   const [formData, setFormData] = useState({
     userId: "",
@@ -54,6 +56,14 @@ const Login = () => {
       }
     }
 
+    // إعادة التوجه إذا كان المستخدم مسجلاً دخوله
+    if (isAuthenticated) {
+      const userRole = JSON.parse(localStorage.getItem("user") || "{}").role;
+      const targetPage = userRole === "admin" ? "/admin" : "/";
+      navigate(targetPage, { replace: true });
+      return;
+    }
+
     const preventBack = () => {
       window.history.pushState(null, "", window.location.href);
     };
@@ -64,7 +74,7 @@ const Login = () => {
     return () => {
       window.removeEventListener("popstate", preventBack);
     };
-  }, [navigate]);
+  }, [navigate, isAuthenticated]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -162,10 +172,8 @@ const Login = () => {
       );
 
       if (response.data && response.data.user && response.data.token) {
-        // Save user data
-        localStorage.setItem("user", JSON.stringify(response.data.user));
-        localStorage.setItem("token", response.data.token);
-        localStorage.setItem("userId", response.data.user._id);
+        // استخدام authLogin بدلاً من حفظ البيانات يدوياً
+        authLogin(response.data.user, response.data.token);
 
         // Handle remember me functionality
         if (rememberMe) {

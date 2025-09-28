@@ -9,6 +9,8 @@ A flexible and reusable Avatar component that supports different sizes, genders,
 - **Loading State**: Built-in skeleton loading animation
 - **Fallback Support**: Shows user initials or custom icon when no image
 - **Interactive**: Supports clickable avatars and edit functionality
+- **Status Indicator**: Green/red dot showing online/offline status
+- **Auth Integration**: Automatically syncs with global authentication state
 - **Accessibility**: Full ARIA support and keyboard navigation
 - **Customizable**: Border styles, custom classes, and more
 
@@ -43,6 +45,7 @@ import Avatar from './components/Avatar';
   gender={userGender}
   size="md"
   clickable={true}
+  showStatus={true} // إظهار نقطة الحالة
   onClick={handleProfileClick}
 />
 ```
@@ -71,6 +74,39 @@ import Avatar from './components/Avatar';
   gender={getUserGender(user)}
   size="2xl"
   border="thick"
+  showStatus={true}
+/>
+```
+
+### Status Indicator Usage
+
+```tsx
+// Automatic status (syncs with auth)
+<Avatar
+  userName="أحمد محمد"
+  size="lg"
+  showStatus={true}
+  gender="male"
+/>
+
+// Force specific status
+<Avatar
+  src={avatarUrl}
+  userName="فاطمة علي"
+  size="xl"
+  showStatus={true}
+  forceStatus="online" // Green dot regardless of auth
+  gender="female"
+/>
+
+// With edit button and status
+<Avatar
+  userName="محمد أحمد"
+  size="2xl"
+  showStatus={true}
+  showEditButton={true}
+  onEditClick={handleEdit}
+  gender="male"
 />
 ```
 
@@ -92,6 +128,8 @@ import Avatar from './components/Avatar';
 | `onEditClick` | `() => void` | - | Edit button click handler |
 | `fallbackIcon` | `React.ReactNode` | - | Custom fallback icon |
 | `border` | `'none' \| 'thin' \| 'thick' \| 'ring'` | `'thick'` | Border style |
+| `showStatus` | `boolean` | `false` | Show online/offline status indicator |
+| `forceStatus` | `'online' \| 'offline'` | - | Force specific status (overrides auth) |
 
 ## Size Reference
 

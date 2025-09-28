@@ -1,5 +1,6 @@
 import React from 'react';
 import { User as UserIcon } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
 
 export interface AvatarProps {
   /** Avatar image URL */
@@ -30,6 +31,10 @@ export interface AvatarProps {
   fallbackIcon?: React.ReactNode;
   /** Border style */
   border?: 'none' | 'thin' | 'thick' | 'ring';
+  /** Show online status indicator */
+  showStatus?: boolean;
+  /** Force status (overrides useAuth) */
+  forceStatus?: 'online' | 'offline';
 }
 
 const sizeClasses = {
@@ -69,6 +74,28 @@ const textSizeClasses = {
   '3xl': 'text-2xl md:text-3xl',
 };
 
+// أحجام نقطة الحالة
+const statusDotSizeClasses = {
+  xs: 'w-2 h-2',
+  sm: 'w-2.5 h-2.5',
+  md: 'w-3 h-3',
+  lg: 'w-3.5 h-3.5',
+  xl: 'w-4 h-4',
+  '2xl': 'w-5 h-5',
+  '3xl': 'w-6 h-6',
+};
+
+// موضع نقطة الحالة
+const statusDotPositionClasses = {
+  xs: 'bottom-0 right-0',
+  sm: 'bottom-0 right-0',
+  md: 'bottom-0.5 right-0.5',
+  lg: 'bottom-0.5 right-0.5',
+  xl: 'bottom-1 right-1',
+  '2xl': 'bottom-1 right-1',
+  '3xl': 'bottom-1.5 right-1.5',
+};
+
 const Avatar: React.FC<AvatarProps> = ({
   src,
   previewSrc,
@@ -84,9 +111,16 @@ const Avatar: React.FC<AvatarProps> = ({
   onEditClick,
   fallbackIcon,
   border = 'thick',
+  showStatus = false,
+  forceStatus,
 }) => {
+  // جلب حالة المصادقة من useAuth
+  const { isAuthenticated } = useAuth();
   const displaySrc = previewSrc || src;
   const initials = userName ? userName.charAt(0).toUpperCase() : '';
+
+  // تحديد حالة الاتصال
+  const isOnline = forceStatus ? forceStatus === 'online' : isAuthenticated;
 
   const genderColors = {
     female: 'bg-gradient-to-br from-pink-400 to-fuchsia-500 border-pink-200/50 shadow-pink-500/30',
@@ -206,12 +240,56 @@ const Avatar: React.FC<AvatarProps> = ({
         )}
       </div>
 
+      {/* Status indicator - نقطة الحالة */}
+      {showStatus && (
+        <div 
+          className={`
+            absolute 
+            ${statusDotPositionClasses[size]} 
+            ${statusDotSizeClasses[size]} 
+            rounded-full 
+            border-2 
+            border-white 
+            shadow-lg
+            transition-all 
+            duration-300
+            ${isOnline 
+              ? 'bg-green-500 shadow-green-500/50' 
+              : 'bg-red-500 shadow-red-500/50'
+            }
+            ${isOnline ? 'animate-pulse' : ''}
+          `}
+          title={isOnline ? 'متصل' : 'غير متصل'}
+          aria-label={isOnline ? 'المستخدم متصل' : 'المستخدم غير متصل'}
+        >
+          {/* Inner glow effect */}
+          <div className={`
+            absolute inset-0.5 rounded-full 
+            ${isOnline ? 'bg-green-400' : 'bg-red-400'} 
+            opacity-60
+          `} />
+        </div>
+      )}
+
       {/* Edit button */}
       {showEditButton && onEditClick && (
         <button
           type="button"
           onClick={onEditClick}
-          className="absolute -bottom-2 right-0 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full p-2 cursor-pointer shadow-lg transition transform group-hover:-translate-y-0.5"
+          className={`
+            absolute 
+            ${showStatus ? '-bottom-2 left-0' : '-bottom-2 right-0'}
+            bg-emerald-600 
+            hover:bg-emerald-700 
+            text-white 
+            rounded-full 
+            p-2 
+            cursor-pointer 
+            shadow-lg 
+            transition 
+            transform 
+            group-hover:-translate-y-0.5
+          `}
           title="تغيير الصورة"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
