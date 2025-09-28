@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
-import { API_BASE_URL } from "../config";
+import Avatar from "./Avatar";
+import { useAvatar, getUserGender } from "../hooks/useAvatar";
 
 interface User {
   _id: string;
@@ -11,88 +11,34 @@ interface User {
   lastName?: string;
 }
 
-const API_ORIGIN = API_BASE_URL;
 
-const api = axios.create({
-  baseURL: API_ORIGIN,
-  withCredentials: false,
-});
-
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers = config.headers ?? {};
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
 
 const AdminHeader: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState<string>("");
-  const [avatarLoading, setAvatarLoading] = useState(false);
 
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Use the reusable avatar hook
+  const { avatarUrl, avatarLoading } = useAvatar({
+    userId: currentUser?._id,
+    userRole: currentUser?.role,
+  });
+
+  const userGender = getUserGender(currentUser);
+
   const handleLogout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
     localStorage.removeItem("userId");
-    setAvatarUrl("");
-    setAvatarLoading(false);
     setCurrentUser(null);
     setProfileMenuOpen(false);
     navigate("/login", { replace: true });
   };
 
-  const fetchUserAvatar = (userId: string, role: string) => {
-    if (!userId) return;
-    setAvatarLoading(true);
 
-    const minLoadingTime = 300;
-    const startTime = Date.now();
-
-    const token = localStorage.getItem("token");
-    const endpoint = role === "student" ? "students" : "teachers";
-    const avatarUrl = `${API_ORIGIN}/api/${endpoint}/${userId}/avatar?t=${Date.now()}${
-      token ? `&token=${token}` : ""
-    }`;
-
-    const img = new Image();
-    const handleLoadComplete = (success: boolean, url?: string) => {
-      const elapsedTime = Date.now() - startTime;
-      const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
-
-      setTimeout(() => {
-        if (success && url) {
-          setAvatarUrl(url);
-        } else {
-          setAvatarUrl("");
-        }
-        setAvatarLoading(false);
-      }, remainingTime);
-    };
-
-    const timeout = setTimeout(() => {
-      img.onload = null;
-      img.onerror = null;
-      handleLoadComplete(false);
-    }, 8000);
-
-    img.onload = () => {
-      clearTimeout(timeout);
-      handleLoadComplete(true, avatarUrl);
-    };
-    img.onerror = () => {
-      clearTimeout(timeout);
-      handleLoadComplete(false);
-    };
-
-    img.src = avatarUrl;
-  };
 
   useEffect(() => {
     const userJson = localStorage.getItem("user");
@@ -100,9 +46,6 @@ const AdminHeader: React.FC = () => {
       try {
         const userData = JSON.parse(userJson) as User;
         setCurrentUser(userData);
-        if (userData._id && userData.role) {
-          fetchUserAvatar(userData._id, userData.role);
-        }
       } catch (err) {
         console.error("Error parsing user data:", err);
         navigate("/login", { replace: true });
@@ -167,21 +110,13 @@ const AdminHeader: React.FC = () => {
               <button
                 onClick={() => setProfileMenuOpen(!profileMenuOpen)}
                 className="flex items-center space-x-2 text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                  {avatarLoading ? (
-                    <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                  ) : avatarUrl ? (
-                    <img
-                      src={avatarUrl}
-                      alt="Avatar"
-                      className="w-8 h-8 rounded-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-gray-600 font-medium">
-                      {currentUser?.firstName?.charAt(0) || "A"}
-                    </span>
-                  )}
-                </div>
+                <Avatar
+                  src={avatarUrl}
+                  userName={currentUser?.firstName || currentUser?.name}
+                  gender={userGender}
+                  loading={avatarLoading}
+                  size="sm"
+                />
                 <span className="text-gray-700">
                   {currentUser?.firstName} {currentUser?.lastName}
                 </span>

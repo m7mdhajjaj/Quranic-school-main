@@ -3,6 +3,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { MdPhotoCamera } from "react-icons/md";
 import { FiPaperclip, FiMic } from "react-icons/fi";
 import { io, Socket } from "socket.io-client";
+import Avatar from "../components/Avatar";
+import { getUserGender } from "../hooks/useAvatar";
 // If you add shadcn/ui you can replace basic elements with nicer components.
 // ...existing code...
 
@@ -789,12 +791,15 @@ const Chat: React.FC = () => {
                           }}
                         >
                           <div className="flex items-center gap-3">
-                            <div className="relative w-10 h-10">
-                              <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold bg-gradient-to-br from-emerald-500 to-teal-600">
-                                {(c.firstName || "").charAt(0)}
-                              </div>
+                            <div className="relative">
+                              <Avatar
+                                userName={c.firstName}
+                                gender={getUserGender(c)}
+                                size="md"
+                                className="ring-2 ring-white/30"
+                              />
                               {/* Online status indicator from DB only */}
-                              <span className={`absolute bottom-1 left-1 w-3 h-3 border-2 border-white rounded-full ${c.isOnline ? "bg-green-400" : "bg-red-400"}`}></span>
+                              <span className={`absolute bottom-0 left-7 w-3 h-3 border-2 border-white rounded-full ${c.isOnline ? "bg-green-400" : "bg-red-400"}`}></span>
                             </div>
                             <div>
                               <div className="font-medium">{c.firstName} {c.lastName}</div>
@@ -818,12 +823,15 @@ const Chat: React.FC = () => {
           <div className="flex-1 flex flex-col">
             <div className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-600 p-4 text-white flex items-center gap-3 shadow-lg">
               {/* Chat header: show online status and full name only if a contact is selected */}
-              <div className="relative w-10 h-10">
-                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                  {(selectedContact?.firstName || " ").charAt(0)}
-                </div>
+              <div className="relative">
+                <Avatar
+                  userName={selectedContact?.firstName}
+                  gender={getUserGender(selectedContact)}
+                  size="md"
+                  className="ring-2 ring-white/30"
+                />
                 {selectedContact && (
-                  <span className={`absolute bottom-1 left-1 w-3 h-3 border-2 border-white rounded-full ${selectedContact.isOnline ? "bg-green-400" : "bg-red-400"}`}></span>
+                  <span className={`absolute bottom-0 left-7 w-3 h-3 border-2 border-white rounded-full ${selectedContact.isOnline ? "bg-green-400" : "bg-red-400"}`}></span>
                 )}
               </div>
               <div className="flex-1">

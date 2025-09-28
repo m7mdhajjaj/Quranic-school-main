@@ -9,8 +9,6 @@ import News from "./pages/news";
 import Footer from "./components/Footer";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useLocation } from "react-router-dom";
-import useAuthGuard from "./hooks/useAuthGuard";
-import useAdminGuard from "./hooks/useAdminGuard";
 import Arrangement from "./pages/Arrangement";
 import Activities from "./pages/Activities";
 import DailyMarks from "./pages/DailyMarks";
@@ -31,9 +29,6 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminManagement from "./pages/AdminManagement";
 import AdminHeader from "./components/AdminHeader";
 
-// Import the AuthFlagProvider
-import { AuthFlagProvider } from "./hooks/AuthFlagContext";
-
 function AppContent() {
   const location = useLocation();
   const isLoginPage = location.pathname === "/login";
@@ -42,12 +37,7 @@ function AppContent() {
     location.pathname === "/quran" || location.pathname === "/quran-audio";
   const isAdminPage = location.pathname.startsWith("/admin");
 
-  // Use appropriate auth guard based on route
-  if (isAdminPage) {
-    useAdminGuard(); // Only admins can access admin pages
-  } else {
-    useAuthGuard(); // Regular auth for other pages
-  }
+  // Auth guards removed - authentication now handled differently
 
   return (
     <>
@@ -90,11 +80,9 @@ function AppContent() {
 
 function App() {
   return (
-    <AuthFlagProvider>
-      <BrowserRouter>
-        <AppContent />
-      </BrowserRouter>
-    </AuthFlagProvider>
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
   );
 }
 

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { io, Socket } from "socket.io-client";
 import { API_URL } from "../config";
+import Avatar from "../components/Avatar";
+import { getUserGender } from "../hooks/useAvatar";
 
 interface Contact {
   _id: string;
@@ -427,15 +429,12 @@ const Chat: React.FC = () => {
                     >
                       <div className="flex items-center gap-3 md:gap-4">
                         <div className="relative">
-                          <div
-                            className="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-white font-bold text-base md:text-lg shadow-lg chat-bubble"
-                            style={{
-                              background:
-                                "linear-gradient(135deg, #10B981, #059669, #047857)",
-                            }}
-                          >
-                            {(c.firstName || "").charAt(0)}
-                          </div>
+                          <Avatar
+                            userName={c.firstName}
+                            gender={getUserGender(c)}
+                            size="lg"
+                            className="shadow-lg"
+                          />
                           <div className="absolute -bottom-1 -right-1 w-3 h-3 md:w-4 md:h-4 bg-green-400 rounded-full border-2 border-white shadow-sm animate-pulse-slow"></div>
                         </div>
                         <div className="flex-1 min-w-0">
@@ -478,15 +477,12 @@ const Chat: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div className="relative">
-                        <div
-                          className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg"
-                          style={{
-                            background:
-                              "linear-gradient(135deg, #10B981, #059669, #047857)",
-                          }}
-                        >
-                          {(selectedContact.firstName || "").charAt(0)}
-                        </div>
+                        <Avatar
+                          userName={selectedContact.firstName}
+                          gender={getUserGender(selectedContact)}
+                          size="xl"
+                          className="shadow-lg"
+                        />
                         <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white shadow-sm animate-pulse"></div>
                       </div>
                       <div>
