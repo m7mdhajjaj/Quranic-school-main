@@ -19,6 +19,9 @@ router.get(
 // Create a message
 router.post("/", protect, chatController.createMessage);
 
+// Send a message (with optional reply)
+router.post("/send", protect, chatController.createMessage);
+
 // Mark messages as read
 router.put("/read", protect, chatController.markAsRead);
 

@@ -48,6 +48,11 @@ const chatSchema = mongoose.Schema(
     readAt: {
       type: Date,
     },
+    replyTo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Chat",
+      default: null,
+    },
   },
   {
     timestamps: true,

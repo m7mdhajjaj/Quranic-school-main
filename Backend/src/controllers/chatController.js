@@ -22,6 +22,14 @@ const getUserMessages = async (req, res) => {
       .populate({
         path: "recipient",
         select: "firstName lastName",
+      })
+      .populate({
+        path: "replyTo",
+        select: "text sender createdAt",
+        populate: {
+          path: "sender",
+          select: "firstName lastName"
+        }
       });
 
     res.status(200).json(messages);
@@ -46,6 +54,14 @@ const getGroupMessages = async (req, res) => {
       .populate({
         path: "sender",
         select: "firstName lastName",
+      })
+      .populate({
+        path: "replyTo",
+        select: "text sender createdAt",
+        populate: {
+          path: "sender",
+          select: "firstName lastName"
+        }
       });
 
     res.status(200).json(messages);
@@ -111,7 +127,24 @@ const getConversation = async (req, res) => {
           isGroupMessage: false,
         },
       ],
-    }).sort({ createdAt: 1 });
+    })
+    .sort({ createdAt: 1 })
+    .populate({
+      path: "sender",
+      select: "firstName lastName",
+    })
+    .populate({
+      path: "recipient",
+      select: "firstName lastName",
+    })
+    .populate({
+      path: "replyTo",
+      select: "text sender createdAt",
+      populate: {
+        path: "sender",
+        select: "firstName lastName"
+      }
+    });
 
     console.log("Found messages count:", messages.length);
     console.log("Messages found:", JSON.stringify(messages, null, 2));
@@ -136,6 +169,7 @@ const createMessage = async (req, res) => {
       isGroupMessage,
       group,
       text,
+      replyTo,
     } = req.body;
 
     const newMessage = new Chat({
@@ -146,11 +180,31 @@ const createMessage = async (req, res) => {
       isGroupMessage,
       group: isGroupMessage ? group : null,
       text,
+      replyTo: replyTo || null,
     });
 
     const savedMessage = await newMessage.save();
 
-    res.status(201).json(savedMessage);
+    // Populate the saved message with reply and sender information
+    const populatedMessage = await Chat.findById(savedMessage._id)
+      .populate({
+        path: "sender",
+        select: "firstName lastName",
+      })
+      .populate({
+        path: "recipient", 
+        select: "firstName lastName",
+      })
+      .populate({
+        path: "replyTo",
+        select: "text sender createdAt",
+        populate: {
+          path: "sender",
+          select: "firstName lastName"
+        }
+      });
+
+    res.status(201).json(populatedMessage);
   } catch (error) {
     console.error("Error creating message:", error);
     res

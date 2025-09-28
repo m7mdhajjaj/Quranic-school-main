@@ -153,6 +153,7 @@ io.on("connection", (socket) => {
         recipientModel,
         text,
         senderName,
+        replyTo,
       } = messageData;
 
       console.log("sendMessage received with data:", messageData);
@@ -166,6 +167,7 @@ io.on("connection", (socket) => {
             recipientModel,
             isGroupMessage: false,
             text,
+            replyTo,
           },
           null,
           2
@@ -181,9 +183,29 @@ io.on("connection", (socket) => {
         recipientModel,
         isGroupMessage: false,
         text,
+        replyTo: replyTo || null,
       });
 
       const savedMessage = await newMessage.save();
+
+      // Populate the saved message with reply information
+      const populatedMessage = await Chat.findById(savedMessage._id)
+        .populate({
+          path: "sender",
+          select: "firstName lastName",
+        })
+        .populate({
+          path: "recipient", 
+          select: "firstName lastName",
+        })
+        .populate({
+          path: "replyTo",
+          select: "text sender createdAt",
+          populate: {
+            path: "sender",
+            select: "firstName lastName"
+          }
+        });
 
       // إرسال إشعار للمستلم عبر خدمة الإشعارات
       if (notificationService) {
@@ -208,9 +230,9 @@ io.on("connection", (socket) => {
           recipientData.socketId
         );
         recipientOnline = true;
-        // Send the message to the recipient
+        // Send the message to the recipient with populated data
         io.to(recipientData.socketId).emit("receiveMessage", {
-          ...savedMessage._doc,
+          ...populatedMessage._doc,
           senderName,
         });
 
@@ -230,9 +252,9 @@ io.on("connection", (socket) => {
         });
       }
 
-      // Send confirmation back to sender with delivery status
+      // Send confirmation back to sender with delivery status and populated data
       socket.emit("messageSent", {
-        ...savedMessage._doc,
+        ...populatedMessage._doc,
         delivered: true,
         recipientOnline,
       });
@@ -245,7 +267,7 @@ io.on("connection", (socket) => {
   // Handle group messages (for teachers sending to students)
   socket.on("sendGroupMessage", async (messageData) => {
     try {
-      const { sender, senderModel, group, text, senderName } = messageData;
+      const { sender, senderModel, group, text, senderName, replyTo } = messageData;
 
       // Create and save the message
       const newMessage = new Chat({
@@ -254,9 +276,25 @@ io.on("connection", (socket) => {
         isGroupMessage: true,
         group,
         text,
+        replyTo: replyTo || null,
       });
 
       const savedMessage = await newMessage.save();
+
+      // Populate the saved message with reply information
+      const populatedMessage = await Chat.findById(savedMessage._id)
+        .populate({
+          path: "sender",
+          select: "firstName lastName",
+        })
+        .populate({
+          path: "replyTo",
+          select: "text sender createdAt",
+          populate: {
+            path: "sender",
+            select: "firstName lastName"
+          }
+        });
 
       // Emit to all students in the group who are online
       for (const [userId, userData] of onlineUsers.entries()) {
@@ -265,15 +303,15 @@ io.on("connection", (socket) => {
           const student = await Student.findById(userId);
           if (student && student.group === group) {
             io.to(userData.socketId).emit("receiveMessage", {
-              ...savedMessage._doc,
+              ...populatedMessage._doc,
               senderName,
             });
           }
         }
       }
 
-      // Send confirmation back to teacher
-      socket.emit("messageSent", savedMessage);
+      // Send confirmation back to teacher with populated data
+      socket.emit("messageSent", populatedMessage);
     } catch (error) {
       console.error("Error sending group message:", error);
       socket.emit("error", { message: "Error sending group message" });

@@ -1,6 +1,5 @@
 // ...existing code...
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { MdPhotoCamera } from "react-icons/md";
 import { FiPaperclip, FiMic } from "react-icons/fi";
 import { io, Socket } from "socket.io-client";
 import Avatar from "../components/Avatar";
@@ -20,7 +19,7 @@ interface Attachment {
 
 interface ChatMessage {
   _id: string;
-  sender: string;                 // userId
+  sender: string | { _id: string; firstName: string; lastName?: string };                 // userId or populated user
   text?: string;
   createdAt: string;
   read?: boolean;
@@ -31,6 +30,12 @@ interface ChatMessage {
   editedAt?: string;
   reactions?: Record<string, string[]>; // emoji -> [userIds]
   attachments?: Attachment[];
+  replyTo?: {                     // الرسالة المردود عليها (populated)
+    _id: string;
+    text: string;
+    sender: { _id: string; firstName: string; lastName?: string };
+    createdAt: string;
+  } | string;                     // or just ID if not populated
   // client-only helpers
   __pending?: boolean;
   __error?: boolean;
@@ -82,72 +87,21 @@ const Chat: React.FC = () => {
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<BlobPart[]>([]);
-  const [showCamera, setShowCamera] = useState(false);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  // Camera logic
-  const openCamera = async () => {
-    setShowCamera(true);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-      }
-    } catch (err) {
-      alert("تعذر الوصول إلى الكاميرا");
-      setShowCamera(false);
-    }
-  };
+  
+  // Reply functionality
+  const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
 
-  const closeCamera = () => {
-    setShowCamera(false);
-    if (videoRef.current && videoRef.current.srcObject) {
-      const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
-      tracks.forEach(track => track.stop());
-      videoRef.current.srcObject = null;
-    }
-  };
 
-  const capturePhoto = async () => {
-    if (!videoRef.current) return;
-    const video = videoRef.current;
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth || 320;
-    canvas.height = video.videoHeight || 240;
-    const ctx = canvas.getContext("2d");
-    if (ctx) {
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      canvas.toBlob(async blob => {
-        if (blob) {
-          // Upload photo to backend
-          const form = new FormData();
-          form.append("file", blob, `photo-${Date.now()}.png`);
-          let url: string | null = null;
-          try {
-            const resp = await fetch(`${API_URL}/upload`, {
-              method: "POST",
-              headers: { ...(getAuthHeaders() as any) },
-              body: form,
-            });
-            if (resp.ok) {
-              const data = await resp.json();
-              url = data.url;
-            }
-          } catch {}
-          if (!url) return;
-          setAttachments(prev => [
-            ...prev,
-            {
-              url,
-              name: `photo-${Date.now()}.png`,
-              type: "image",
-              size: blob.size,
-            },
-          ]);
-        }
-      }, "image/png");
-    }
-    closeCamera();
+  // Reply functions
+  const handleReply = (message: ChatMessage) => {
+    setReplyTo(message);
+    // Focus on input
+    const inputElement = document.querySelector('input[placeholder*="اكتب رسالتك"]') as HTMLInputElement;
+    if (inputElement) inputElement.focus();
+  };
+  
+  const cancelReply = () => {
+    setReplyTo(null);
   };
 
   // Presence
@@ -307,6 +261,7 @@ const Chat: React.FC = () => {
               text: m.text,
               createdAt: m.createdAt,
               read: m.read,
+              replyTo: m.replyTo || undefined, // إضافة معلومات الرد
               // attachments(optional): server support later
             }))
           : [];
@@ -326,6 +281,7 @@ const Chat: React.FC = () => {
               text: m.text,
               createdAt: m.createdAt,
               read: m.read,
+              replyTo: m.replyTo || undefined, // إضافة معلومات الرد
             }))
           : [];
         setMessages(list);
@@ -372,6 +328,9 @@ const Chat: React.FC = () => {
 
     // Receive new message
     s.on("receiveMessage", (msg: any) => {
+      console.log("Received message from socket:", msg);
+      console.log("replyTo data:", msg.replyTo);
+      
       const incoming: ChatMessage = {
         _id: msg._id || Date.now().toString(),
         sender: getEntityId(msg.sender) || msg.senderId || msg.sender || "",
@@ -379,6 +338,7 @@ const Chat: React.FC = () => {
         createdAt: msg.createdAt || new Date().toISOString(),
         read: msg.read ?? false,
         attachments: msg.attachments || undefined,
+        replyTo: msg.replyTo || undefined, // إضافة معلومات الرد
       };
       const belongsToThisChat = isGroupChat
         ? msg.isGroupMessage && (msg.group === selectedContact?._id)
@@ -397,6 +357,9 @@ const Chat: React.FC = () => {
     // Server ack for sent message
     s.on("messageSent", (saved: any) => {
       if (!saved) return;
+      console.log("Message sent confirmation:", saved);
+      console.log("messageSent replyTo:", saved.replyTo);
+      
       const normalized: ChatMessage = {
         _id: saved._id || Date.now().toString(),
         sender: getEntityId(saved.sender) || currentUserId || saved.senderId || saved.sender || "",
@@ -407,6 +370,7 @@ const Chat: React.FC = () => {
         deliveredAt: saved.deliveredAt,
         recipientOnline: saved.recipientOnline ?? false,
         attachments: saved.attachments || undefined,
+        replyTo: saved.replyTo || undefined, // إضافة معلومات الرد
         __pending: false,
       };
       setMessages(prev => {
@@ -611,6 +575,7 @@ const Chat: React.FC = () => {
       senderModel: getModelName(currentUser?.role),
       text: messageInput.trim() || undefined,
       attachments: attachments.length ? attachments : undefined, // server: add to schema if desired
+      replyTo: replyTo?._id || undefined, // إضافة الرد
     };
 
     if (isGroupChat) {
@@ -630,11 +595,13 @@ const Chat: React.FC = () => {
       createdAt: new Date().toISOString(),
       read: false,
       attachments: attachments.length ? attachments : undefined,
+      replyTo: replyTo?._id || undefined, // إضافة معرف الرد فقط
       __pending: true,
     };
     setMessages(prev => [...prev, temp]);
     setMessageInput("");
     setAttachments([]);
+    setReplyTo(null); // إلغاء الرد بعد الإرسال
     scrollToBottomSmooth();
 
     // Send via socket if connected
@@ -663,6 +630,7 @@ const Chat: React.FC = () => {
               createdAt: saved.createdAt,
               read: saved.read ?? false,
               attachments: saved.attachments || temp.attachments,
+              replyTo: saved.replyTo || undefined, // إضافة الرح
             };
             if (idx !== -1) copy[idx] = normalized;
             else copy.push(normalized);
@@ -732,7 +700,10 @@ const Chat: React.FC = () => {
   }, [messages, searchQuery]);
 
   // ----- UI helpers -----
-  const bubbleMine = (m: ChatMessage) => m.sender === (currentUserId || "me");
+  const bubbleMine = (m: ChatMessage) => {
+    const senderId = typeof m.sender === 'object' ? m.sender._id : m.sender;
+    return senderId === (currentUserId || "me");
+  };
   const renderReactions = (m: ChatMessage) => {
     if (!m.reactions) return null;
     const entries = Object.entries(m.reactions);
@@ -978,6 +949,7 @@ const Chat: React.FC = () => {
                                       <button 
                                         className="p-1 rounded-full hover:bg-green-100 text-green-600 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
                                         title="رد"
+                                        onClick={() => handleReply(m)}
                                       >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
@@ -1006,7 +978,52 @@ const Chat: React.FC = () => {
                                     
                                     {/* 2. ديف الرسالة الأخضر */}
                                     <div className="max-w-[92%]">
+                                      {/* نص الرد - يظهر فوق الرسالة */}
+                                      {m.replyTo && (
+                                        <div className="mb-1 text-right">
+                                          <span className="text-xs text-white/40 font-normal bg-white/5 px-2 py-1 rounded-full reply-text-badge animate-bounce-in-reply">
+                                            {(() => {
+                                              const currentUserId = typeof currentUser === 'object' && currentUser ? getEntityId(currentUser) : null;
+                                              const repliedToUserId = typeof m.replyTo === 'object' && m.replyTo.sender 
+                                                ? (typeof m.replyTo.sender === 'object' ? m.replyTo.sender._id : m.replyTo.sender)
+                                                : null;
+                                              const repliedToUserName = typeof m.replyTo === 'object' && m.replyTo.sender
+                                                ? (typeof m.replyTo.sender === 'object' ? m.replyTo.sender.firstName : "مستخدم")
+                                                : "مستخدم";
+                                              
+                                              if (currentUserId === repliedToUserId) {
+                                                return "قمت بالرد على نفسك";
+                                              } else {
+                                                return `قمت بالرد على ${repliedToUserName}`;
+                                              }
+                                            })()}
+                                          </span>
+                                        </div>
+                                      )}
+                                      
                                       <div className="px-5 py-2 rounded-2xl shadow-sm transition-all duration-200 backdrop-blur-sm bg-green-500/90 text-white border border-green-400/30">
+                                        {/* عرض الرسالة المردود عليها للرسائل الخضراء */}
+                                        {m.replyTo && (
+                                          <div className="mb-2">
+                                            {/* الرسالة المردود عليها */}
+                                            <div className="p-2 bg-white/20 rounded-lg border-r-2 border-white/50">
+                                              <div className="flex items-center gap-1 mb-1">
+                                                <svg className="w-3 h-3 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                                </svg>
+                                                <span className="text-xs text-white/80 font-medium">
+                                                  {typeof m.replyTo === 'object' && m.replyTo.sender
+                                                    ? (typeof m.replyTo.sender === 'object' ? m.replyTo.sender.firstName : "مستخدم")
+                                                    : "مستخدم"}
+                                                </span>
+                                              </div>
+                                              <p className="text-xs text-white/90 line-clamp-2">
+                                                {typeof m.replyTo === 'object' && m.replyTo.text ? m.replyTo.text : "رسالة"}
+                                              </p>
+                                            </div>
+                                          </div>
+                                        )}
+                                        
                                         {m.text && (
                                           <p className="whitespace-pre-line break-all text-sm leading-snug max-w-[300px]">
                                             {searchQuery
@@ -1053,7 +1070,52 @@ const Chat: React.FC = () => {
                                     
                                     {/* 2. ديف الرسالة الرمادية */}
                                     <div className="max-w-[92%]">
+                                      {/* نص الرد - يظهر فوق الرسالة */}
+                                      {m.replyTo && (
+                                        <div className="mb-1 text-left">
+                                          <span className="text-xs text-gray-400 font-normal bg-gray-50 px-2 py-1 rounded-full animate-bounce-in-reply">
+                                            {(() => {
+                                              const currentUserId = typeof currentUser === 'object' && currentUser ? getEntityId(currentUser) : null;
+                                              const repliedToUserId = typeof m.replyTo === 'object' && m.replyTo.sender 
+                                                ? (typeof m.replyTo.sender === 'object' ? m.replyTo.sender._id : m.replyTo.sender)
+                                                : null;
+                                              const repliedToUserName = typeof m.replyTo === 'object' && m.replyTo.sender
+                                                ? (typeof m.replyTo.sender === 'object' ? m.replyTo.sender.firstName : "مستخدم")
+                                                : "مستخدم";
+                                              
+                                              if (currentUserId === repliedToUserId) {
+                                                return "قمت بالرد على نفسك";
+                                              } else {
+                                                return `قمت بالرد على ${repliedToUserName}`;
+                                              }
+                                            })()}
+                                          </span>
+                                        </div>
+                                      )}
+                                      
                                       <div className="px-5 py-2 rounded-2xl shadow-sm transition-all duration-200 backdrop-blur-sm bg-gray-100/85 text-gray-800 border border-gray-300/40">
+                                        {/* عرض الرسالة المردود عليها للرسائل الرمادية */}
+                                        {m.replyTo && (
+                                          <div className="mb-2">
+                                            {/* الرسالة المردود عليها */}
+                                            <div className="p-2 bg-gray-200/60 rounded-lg border-l-2 border-emerald-500/70">
+                                              <div className="flex items-center gap-1 mb-1">
+                                                <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                                </svg>
+                                                <span className="text-xs text-emerald-600 font-medium">
+                                                  {typeof m.replyTo === 'object' && m.replyTo.sender
+                                                    ? (typeof m.replyTo.sender === 'object' ? m.replyTo.sender.firstName : "مستخدم")
+                                                    : "مستخدم"}
+                                                </span>
+                                              </div>
+                                              <p className="text-xs text-gray-600 line-clamp-2">
+                                                {typeof m.replyTo === 'object' && m.replyTo.text ? m.replyTo.text : "رسالة"}
+                                              </p>
+                                            </div>
+                                          </div>
+                                        )}
+                                        
                                         {m.text && (
                                           <p className="whitespace-pre-line break-all text-sm leading-snug max-w-[300px]">
                                             {searchQuery
@@ -1074,6 +1136,7 @@ const Chat: React.FC = () => {
                                       <button 
                                         className="p-1 rounded-full hover:bg-gray-100 text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
                                         title="رد"
+                                        onClick={() => handleReply(m)}
                                       >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
@@ -1133,6 +1196,36 @@ const Chat: React.FC = () => {
 
             {/* Composer */}
             <div className="p-3 md:p-4 border-t border-gray-200 bg-white shadow-lg relative">
+              {/* Reply preview - تصميم محسن مثل الصورة */}
+              {replyTo && (
+                <div className="mb-3 bg-white border-r-4 border-emerald-500 shadow-sm rounded-l-lg overflow-hidden animate-slide-down">
+                  <div className="flex items-center justify-between p-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                        </svg>
+                        <span className="text-xs font-semibold text-emerald-600">رد على:</span>
+                      </div>
+                      <p className="text-sm text-gray-700 line-clamp-2 pr-6">
+                        {replyTo.text || "رسالة"}
+                      </p>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {typeof replyTo.sender === 'object' ? replyTo.sender.firstName : contacts.find(c => c._id === replyTo.sender)?.firstName || "مستخدم"} • منذ {new Date(replyTo.createdAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                    <button 
+                      onClick={cancelReply}
+                      className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all duration-200"
+                      title="إلغاء الرد"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              )}
               {/* Attachment previews */}
               {attachments.length > 0 && (
                 <div className="mb-3 flex gap-3 flex-wrap">
@@ -1175,15 +1268,6 @@ const Chat: React.FC = () => {
                     accept="image/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
                   />
                 </label>
-                <button
-                  type="button"
-                  className="px-3 py-3 rounded-2xl border hover:bg-gray-50 flex items-center justify-center"
-                  title="فتح الكاميرا"
-                  onClick={openCamera}
-                  disabled={showCamera}
-                >
-                  <MdPhotoCamera size={28} color="#10B981" />
-                </button>
 
                 <button
                   type="button"
@@ -1202,19 +1286,6 @@ const Chat: React.FC = () => {
                   placeholder={selectedContact ? "اكتب رسالتك هنا..." : "اختر محادثة أولاً"}
                   disabled={!selectedContact}
                 />
-                {/* Camera modal */}
-                {showCamera && (
-                  <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-xl p-6 shadow-xl flex flex-col items-center gap-4 relative">
-                      <video ref={videoRef} autoPlay playsInline className="rounded-lg border w-80 h-60 bg-black" />
-                      <div className="flex gap-4 mt-2">
-                        <button type="button" className="px-4 py-2 bg-emerald-600 text-white rounded-lg" onClick={capturePhoto}>التقاط صورة</button>
-                        <button type="button" className="px-4 py-2 bg-gray-400 text-white rounded-lg" onClick={closeCamera}>إغلاق</button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
                 <button
                   type="submit"
                   className="hidden md:inline-block bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 md:px-6 py-3 md:py-4 rounded-2xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 text-sm md:text-base disabled:opacity-50 flex items-center gap-2"

@@ -14,7 +14,7 @@ interface Contact {
 
 interface Message {
   _id: string;
-  sender: string;
+  sender: string | { _id: string; firstName: string; lastName?: string };
   text: string;
   createdAt: string;
   read?: boolean;
@@ -22,6 +22,12 @@ interface Message {
   deliveredAt?: string;
   readAt?: string;
   recipientOnline?: boolean;
+  replyTo?: {
+    _id: string;
+    text: string;
+    sender: { _id: string; firstName: string; lastName?: string };
+    createdAt: string;
+  } | string;
   __pending?: boolean;
   __error?: boolean;
 }
@@ -33,12 +39,22 @@ const Chat: React.FC = () => {
   );
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showContactList, setShowContactList] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<Socket | null>(null);
+  
+  // Reply functions
+  const handleReply = (message: Message) => {
+    setReplyTo(message);
+  };
+  
+  const cancelReply = () => {
+    setReplyTo(null);
+  };
 
   // Load current user from localStorage
   useEffect(() => {
@@ -274,6 +290,7 @@ const Chat: React.FC = () => {
         getModelName(currentUser?.role) === "Teacher" ? "Student" : "Teacher",
       text: messageInput.trim(),
       senderName: currentUser?.firstName || "",
+      replyTo: replyTo?._id || undefined, // إضافة الرد
     };
 
     const tempMsg = {
@@ -284,6 +301,7 @@ const Chat: React.FC = () => {
       __pending: true,
       delivered: false,
       read: false,
+      replyTo: replyTo?._id || undefined, // إضافة الرد للمعاينة المحلية
     };
 
     setMessages((prev) => [...prev, tempMsg]);
@@ -293,6 +311,7 @@ const Chat: React.FC = () => {
     }
 
     setMessageInput("");
+    setReplyTo(null); // إلغاء الرد بعد الإرسال
     setTimeout(
       () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }),
       50,
@@ -603,8 +622,8 @@ const Chat: React.FC = () => {
                     ) : (
                       <div className="space-y-4">
                         {messages.map((message, index) => {
-                          const isCurrentUser =
-                            message.sender === getEntityId(currentUser);
+                          const senderId = typeof message.sender === 'object' ? message.sender._id : message.sender;
+                          const isCurrentUser = senderId === getEntityId(currentUser);
                           return (
                             <div
                               key={message._id}
@@ -618,7 +637,10 @@ const Chat: React.FC = () => {
                                   {/* للرسائل الخضراء: Reply+خيارات, رسالة, وقت */}
                                   {/* 1. ديف Reply + 3 نقاط */}
                                   <div className="flex items-center gap-1">
-                                    <button className="p-1 rounded-full hover:bg-green-100 text-green-600 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity flex-shrink-0">
+                                    <button 
+                                      className="p-1 rounded-full hover:bg-green-100 text-green-600 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity flex-shrink-0"
+                                      onClick={() => handleReply(message)}
+                                    >
                                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                                       </svg>
@@ -633,7 +655,52 @@ const Chat: React.FC = () => {
                                   
                                   {/* 2. ديف الرسالة الأخضر */}
                                   <div className="max-w-[95%]">
+                                    {/* نص الرد - يظهر فوق الرسالة */}
+                                    {message.replyTo && (
+                                      <div className="mb-1 text-right">
+                                        <span className="text-xs text-white/40 font-normal bg-white/5 px-2 py-1 rounded-full reply-text-badge animate-bounce-in-reply">
+                                          {(() => {
+                                            const currentUserId = getEntityId(currentUser);
+                                            const repliedToUserId = typeof message.replyTo === 'object' && message.replyTo.sender 
+                                              ? (typeof message.replyTo.sender === 'object' ? message.replyTo.sender._id : message.replyTo.sender)
+                                              : null;
+                                            const repliedToUserName = typeof message.replyTo === 'object' && message.replyTo.sender
+                                              ? (typeof message.replyTo.sender === 'object' ? message.replyTo.sender.firstName : "مستخدم")
+                                              : "مستخدم";
+                                            
+                                            if (currentUserId === repliedToUserId) {
+                                              return "قمت بالرد على نفسك";
+                                            } else {
+                                              return `قمت بالرد على ${repliedToUserName}`;
+                                            }
+                                          })()}
+                                        </span>
+                                      </div>
+                                    )}
+                                    
                                     <div className="px-4 py-2 rounded-2xl shadow-sm transition-all duration-200 backdrop-blur-sm bg-green-500/90 text-white border border-green-400/30">
+                                      {/* عرض الرسالة المردود عليها */}
+                                      {message.replyTo && (
+                                        <div className="mb-2">
+                                          {/* الرسالة المردود عليها */}
+                                          <div className="p-2 bg-white/20 rounded-lg border-r-2 border-white/50">
+                                            <div className="flex items-center gap-1 mb-1">
+                                              <svg className="w-3 h-3 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                              </svg>
+                                              <span className="text-xs text-white/80 font-medium">
+                                                {typeof message.replyTo === 'object' && message.replyTo.sender
+                                                  ? (typeof message.replyTo.sender === 'object' ? message.replyTo.sender.firstName : "مستخدم")
+                                                  : "مستخدم"}
+                                              </span>
+                                            </div>
+                                            <p className="text-xs text-white/90 line-clamp-2">
+                                              {typeof message.replyTo === 'object' && message.replyTo.text ? message.replyTo.text : "رسالة"}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      )}
+                                      
                                       <p className="text-sm leading-snug break-all max-w-[200px]">
                                         {message.text}
                                       </p>
@@ -670,7 +737,52 @@ const Chat: React.FC = () => {
                                   
                                   {/* 2. ديف الرسالة الرمادية */}
                                   <div className="max-w-[95%]">
+                                    {/* نص الرد - يظهر فوق الرسالة */}
+                                    {message.replyTo && (
+                                      <div className="mb-1 text-left">
+                                        <span className="text-xs text-gray-400 font-normal bg-gray-50 px-2 py-1 rounded-full animate-bounce-in-reply">
+                                          {(() => {
+                                            const currentUserId = getEntityId(currentUser);
+                                            const repliedToUserId = typeof message.replyTo === 'object' && message.replyTo.sender 
+                                              ? (typeof message.replyTo.sender === 'object' ? message.replyTo.sender._id : message.replyTo.sender)
+                                              : null;
+                                            const repliedToUserName = typeof message.replyTo === 'object' && message.replyTo.sender
+                                              ? (typeof message.replyTo.sender === 'object' ? message.replyTo.sender.firstName : "مستخدم")
+                                              : "مستخدم";
+                                            
+                                            if (currentUserId === repliedToUserId) {
+                                              return "قمت بالرد على نفسك";
+                                            } else {
+                                              return `قمت بالرد على ${repliedToUserName}`;
+                                            }
+                                          })()}
+                                        </span>
+                                      </div>
+                                    )}
+                                    
                                     <div className="px-4 py-2 rounded-2xl shadow-sm transition-all duration-200 backdrop-blur-sm bg-gray-100/85 text-gray-800 border border-gray-300/40">
+                                      {/* عرض الرسالة المردود عليها */}
+                                      {message.replyTo && (
+                                        <div className="mb-2">
+                                          {/* الرسالة المردود عليها */}
+                                          <div className="p-2 bg-gray-200/60 rounded-lg border-l-2 border-emerald-500/70">
+                                            <div className="flex items-center gap-1 mb-1">
+                                              <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                              </svg>
+                                              <span className="text-xs text-emerald-600 font-medium">
+                                                {typeof message.replyTo === 'object' && message.replyTo.sender
+                                                  ? (typeof message.replyTo.sender === 'object' ? message.replyTo.sender.firstName : "مستخدم")
+                                                  : "مستخدم"}
+                                              </span>
+                                            </div>
+                                            <p className="text-xs text-gray-600 line-clamp-2">
+                                              {typeof message.replyTo === 'object' && message.replyTo.text ? message.replyTo.text : "رسالة"}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      )}
+                                      
                                       <p className="text-sm leading-snug break-all max-w-[200px]">
                                         {message.text}
                                       </p>
@@ -679,7 +791,10 @@ const Chat: React.FC = () => {
                                   
                                   {/* 3. ديف Reply + 3 نقاط */}
                                   <div className="flex items-center gap-1">
-                                    <button className="p-1 rounded-full hover:bg-gray-100 text-gray-600 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity flex-shrink-0">
+                                    <button 
+                                      className="p-1 rounded-full hover:bg-gray-100 text-gray-600 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity flex-shrink-0"
+                                      onClick={() => handleReply(message)}
+                                    >
                                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                                       </svg>
@@ -704,6 +819,38 @@ const Chat: React.FC = () => {
 
                 {/* Message Input */}
                 <div className="border-t border-gray-200 bg-white p-4 md:p-6 shadow-lg">
+                  {/* Reply Preview - تصميم محسن مثل الصورة */}
+                  {replyTo && (
+                    <div className="mb-3 bg-white border-r-4 border-emerald-500 shadow-sm rounded-l-lg overflow-hidden animate-slide-down">
+                      <div className="flex items-center justify-between p-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                            </svg>
+                            <span className="text-xs font-semibold text-emerald-600">رد على:</span>
+                          </div>
+                          <p className="text-sm text-gray-700 line-clamp-2 pr-6">
+                            {replyTo.text || "رسالة"}
+                          </p>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {typeof replyTo.sender === 'object' ? replyTo.sender.firstName : contacts.find(c => c._id === replyTo.sender)?.firstName || "مستخدم"} • منذ {new Date(replyTo.createdAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </div>
+                        <button 
+                          onClick={cancelReply}
+                          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all duration-200"
+                          title="إلغاء الرد"
+                          type="button"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
