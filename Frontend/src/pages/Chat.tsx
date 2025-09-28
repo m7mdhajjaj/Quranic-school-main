@@ -1029,27 +1029,6 @@ const Chat: React.FC = () => {
 )}
 
                                       <div className="px-5 py-2 rounded-2xl shadow-sm transition-all duration-200 backdrop-blur-sm bg-green-500/90 text-white border border-green-400/30">
-                                        {/* عرض الرسالة المردود عليها للرسائل الخضراء */}
-                                        {m.replyTo && (
-                                          <div className="mb-2">
-                                            {/* الرسالة المردود عليها */}
-                                            <div className="p-2 bg-white/20 rounded-lg border-r-2 border-white/50">
-                                              <div className="flex items-center gap-1 mb-1">
-                                                <svg className="w-3 h-3 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                                                </svg>
-                                                <span className="text-xs text-white/80 font-medium">
-                                                  {typeof m.replyTo === 'object' && m.replyTo.sender
-                                                    ? (typeof m.replyTo.sender === 'object' ? m.replyTo.sender.firstName : "مستخدم")
-                                                    : "مستخدم"}
-                                                </span>
-                                              </div>
-                                              <p className="text-xs text-white/90 line-clamp-2">
-                                                {typeof m.replyTo === 'object' && m.replyTo.text ? m.replyTo.text : "رسالة"}
-                                              </p>
-                                            </div>
-                                          </div>
-                                        )}
                                         
                                         {m.text && (
                                           <p className="whitespace-pre-line break-all text-sm leading-snug max-w-[300px]">
@@ -1121,27 +1100,6 @@ const Chat: React.FC = () => {
                                       )}
                                       
                                       <div className="px-5 py-2 rounded-2xl shadow-sm transition-all duration-200 backdrop-blur-sm bg-gray-100/85 text-gray-800 border border-gray-300/40">
-                                        {/* عرض الرسالة المردود عليها للرسائل الرمادية */}
-                                        {m.replyTo && (
-                                          <div className="mb-2">
-                                            {/* الرسالة المردود عليها */}
-                                            <div className="p-2 bg-gray-200/60 rounded-lg border-l-2 border-emerald-500/70">
-                                              <div className="flex items-center gap-1 mb-1">
-                                                <svg className="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                                                </svg>
-                                                <span className="text-xs text-emerald-600 font-medium">
-                                                  {typeof m.replyTo === 'object' && m.replyTo.sender
-                                                    ? (typeof m.replyTo.sender === 'object' ? m.replyTo.sender.firstName : "مستخدم")
-                                                    : "مستخدم"}
-                                                </span>
-                                              </div>
-                                              <p className="text-xs text-gray-600 line-clamp-2">
-                                                {typeof m.replyTo === 'object' && m.replyTo.text ? m.replyTo.text : "رسالة"}
-                                              </p>
-                                            </div>
-                                          </div>
-                                        )}
                                         
                                         {m.text && (
                                           <p className="whitespace-pre-line break-all text-sm leading-snug max-w-[300px]">
