@@ -355,22 +355,22 @@ const Header = () => {
       >
 
 
-        <div className="container mx-auto px-2 lg:px-4 xl:px-6 relative">
+        <div className="container mx-auto px-1 sm:px-2 md:px-3 lg:px-4 xl:px-6 relative">
           {/* الصف الرئيسي */}
-          <div className="flex items-center justify-between py-2 lg:py-3">
+          <div className="flex items-center justify-between py-1.5 sm:py-2 lg:py-3 gap-1 sm:gap-2 md:gap-3">
             {/* RIGHT: Logo + Academy Name */}
-            <div className="flex items-center justify-start gap-3">
-              <div className="w-10 h-10 lg:w-14 lg:h-14 rounded-full bg-white/20 backdrop-blur-md border-2 border-white/30 flex items-center justify-center shadow-lg relative overflow-hidden">
+            <div className="flex items-center justify-start gap-1.5 sm:gap-2 md:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 rounded-full bg-white/20 backdrop-blur-md border-2 border-white/30 flex items-center justify-center shadow-lg relative overflow-hidden flex-shrink-0">
                 {!logoLoaded && (
                   <ImageSkeleton
-                    className="w-8 h-8 lg:w-10 lg:h-10 rounded-full absolute inset-0 m-auto"
+                    className="w-6 h-6 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full absolute inset-0 m-auto"
                     variant="logo"
                   />
                 )}
                 <img
                   src="/src/images/logo.jpg"
                   alt="لوغو الأكاديمية"
-                  className={`w-8 h-8 lg:w-10 lg:h-10 rounded-full object-cover transition-all duration-500 ${
+                  className={`w-6 h-6 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full object-cover transition-all duration-500 ${
                     logoLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
                   }`}
                   onLoad={() => setLogoLoaded(true)}
@@ -380,11 +380,11 @@ const Header = () => {
                   }}
                 />
               </div>
-              <div>
-                <h1 className="text-xl lg:text-3xl font-bold bg-gradient-to-l from-white via-emerald-100 to-white bg-clip-text text-transparent drop-shadow-sm">
+              <div className="flex-shrink min-w-0">
+                <h1 className="text-sm sm:text-base md:text-lg lg:text-2xl xl:text-3xl font-bold bg-gradient-to-l from-white via-emerald-100 to-white bg-clip-text text-transparent drop-shadow-sm truncate">
                   مدرسة القرآن الكريم
                 </h1>
-                <p className="text-xs lg:text-sm text-emerald-100/80 font-medium hidden lg:block">
+                <p className="text-xs md:text-sm lg:text-base text-emerald-100/80 font-medium hidden sm:block truncate">
                   أكاديمية مدرسة الهجرة للقرآن الكريم وعلومه
                 </p>
               </div>
@@ -414,7 +414,7 @@ const Header = () => {
             <div className="flex items-center gap-2 lg:gap-3">
               {/* زر الإشعارات للجوال */}
               {currentUser && (
-                <div className="md:hidden">
+                <div className="md:hidden flex-shrink-0">
                   <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-full p-1 hover:bg-white/20 transition-all duration-300">
                     <NotificationHeader
                       userId={currentUser._id}
@@ -427,12 +427,12 @@ const Header = () => {
 
               {/* Profile */}
               <div
-                className="hidden md:flex items-center relative"
+                className="hidden md:flex items-center relative flex-shrink min-w-0"
                 ref={profileMenuRef}
               >
                 <button
                   type="button"
-                  className="flex items-center gap-2 lg:gap-3 cursor-pointer p-2 lg:p-3 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all duration-300 hover:shadow-lg hover:scale-105"
+                  className="flex items-center gap-1 md:gap-2 lg:gap-3 cursor-pointer p-1.5 md:p-2 lg:p-3 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all duration-300 hover:shadow-lg hover:scale-105 min-w-0"
                   onClick={() => setProfileMenuOpen((v) => !v)}
                   aria-haspopup="menu"
                   aria-expanded={profileMenuOpen ? 'true' : 'false'}
@@ -440,7 +440,7 @@ const Header = () => {
                 >
                   {renderUserAvatar()}
                   {currentUser && (
-                    <span className="hidden lg:block text-sm lg:text-base font-semibold text-white max-w-28 lg:max-w-32 truncate drop-shadow-sm">
+                    <span className="hidden lg:block text-xs lg:text-sm xl:text-base font-semibold text-white max-w-20 lg:max-w-24 xl:max-w-32 truncate drop-shadow-sm">
                       {currentUser.firstName && currentUser.lastName
                         ? `${currentUser.firstName} ${currentUser.lastName}`
                         : currentUser.firstName || currentUser.name || ''}
@@ -575,12 +575,12 @@ const Header = () => {
               <div className="md:hidden">
                 <button
                   onClick={toggleMenu}
-                  className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-all duration-300 backdrop-blur-md border border-white/20 hover:scale-105"
+                  className="p-1.5 sm:p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-all duration-300 backdrop-blur-md border border-white/20 hover:scale-105 flex-shrink-0"
                   aria-label="فتح القائمة"
                   aria-expanded={isMenuOpen ? 'true' : 'false'}
                 >
                   <svg
-                    className="w-5 h-5"
+                    className="w-4 h-4 sm:w-5 sm:h-5"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -636,8 +636,8 @@ const Header = () => {
 
             {/* Desktop Notification Header */}
             {currentUser && (
-              <div className="flex-shrink-0 ml-4">
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-2.5 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 hover:bg-white/15">
+              <div className="flex-shrink-0 ml-2 md:ml-3 lg:ml-4">
+                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-1.5 md:p-2 lg:p-2.5 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 hover:bg-white/15">
                   <NotificationHeader
                     userId={currentUser._id}
                     socket={socket}
@@ -664,18 +664,18 @@ const Header = () => {
             <div className="p-6">
               {/* mobile header */}
               <div className="flex items-center justify-between mb-6 pb-4 border-b border-emerald-500/30">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border-2 border-white/30 flex items-center justify-center relative overflow-hidden">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/20 backdrop-blur-md border-2 border-white/30 flex items-center justify-center relative overflow-hidden flex-shrink-0">
                     {!officialPhotoLoaded && (
                       <ImageSkeleton
-                        className="w-7 h-7 rounded-full absolute inset-0 m-auto"
+                        className="w-6 h-6 sm:w-7 sm:h-7 rounded-full absolute inset-0 m-auto"
                         variant="avatar"
                       />
                     )}
                     <img
                       src="/src/images/officialPhoto.jpg"
                       alt="Logo"
-                      className={`w-7 h-7 rounded-full object-cover transition-all duration-500 ${
+                      className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full object-cover transition-all duration-500 ${
                         officialPhotoLoaded
                           ? 'opacity-100 scale-100'
                           : 'opacity-0 scale-95'
@@ -687,11 +687,11 @@ const Header = () => {
                       }}
                     />
                   </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-white">
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-base sm:text-lg font-bold text-white truncate">
                       القائمة الرئيسية
                     </h2>
-                    <p className="text-emerald-200 text-sm">
+                    <p className="text-emerald-200 text-xs sm:text-sm truncate">
                       مدرسة القرآن الكريم
                     </p>
                   </div>
