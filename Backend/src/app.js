@@ -129,6 +129,7 @@ io.on("connection", (socket) => {
     notificationService = new NotificationService(io);
     global.notificationService = notificationService; // Make it globally accessible
     global.onlineUsers = onlineUsers; // Make onlineUsers globally accessible
+    global.io = io; // Make io globally accessible for chat controllers
   }
 
   // User login - store their user ID and socket ID
@@ -199,24 +200,42 @@ io.on("connection", (socket) => {
       console.log("Looking for recipient:", recipient, "in online users");
       console.log("Current online users:", [...onlineUsers.entries()]);
       console.log("Recipient data found:", recipientData);
+      
+      let recipientOnline = false;
       if (recipientData) {
         console.log(
           "Sending message to recipient socket:",
           recipientData.socketId
         );
+        recipientOnline = true;
         // Send the message to the recipient
         io.to(recipientData.socketId).emit("receiveMessage", {
           ...savedMessage._doc,
           senderName,
         });
+
+        // إرسال حدث التوصيل للمرسل
+        socket.emit("messageDelivered", {
+          messageId: savedMessage._id,
+          recipientOnline: true,
+        });
       } else {
         console.log(
           "Recipient is not online, message not delivered in real-time"
         );
+        // إرسال حدث التوصيل للمرسل (غير متصل)
+        socket.emit("messageDelivered", {
+          messageId: savedMessage._id,
+          recipientOnline: false,
+        });
       }
 
-      // Send confirmation back to sender
-      socket.emit("messageSent", savedMessage);
+      // Send confirmation back to sender with delivery status
+      socket.emit("messageSent", {
+        ...savedMessage._doc,
+        delivered: true,
+        recipientOnline,
+      });
     } catch (error) {
       console.error("Error sending message:", error);
       socket.emit("error", { message: "Error sending message" });

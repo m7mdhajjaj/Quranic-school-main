@@ -164,10 +164,25 @@ const markAsRead = async (req, res) => {
   try {
     const { messageIds } = req.body;
 
+    // جلب الرسائل قبل التحديث لإرسال الإشعارات
+    const messages = await Chat.find({ _id: { $in: messageIds } }).populate('sender');
+
     const result = await Chat.updateMany(
       { _id: { $in: messageIds } },
       { $set: { read: true } },
     );
+
+    // إرسال حدث القراءة لكل مرسل عبر Socket.IO
+    if (global.onlineUsers) {
+      messages.forEach(message => {
+        const senderData = global.onlineUsers.get(message.sender._id.toString());
+        if (senderData && global.io) {
+          global.io.to(senderData.socketId).emit("messageRead", {
+            messageId: message._id,
+          });
+        }
+      });
+    }
 
     res.status(200).json({ message: "Messages marked as read", result });
   } catch (error) {

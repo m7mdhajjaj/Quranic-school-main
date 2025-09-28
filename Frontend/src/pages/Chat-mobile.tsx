@@ -17,6 +17,13 @@ interface Message {
   sender: string;
   text: string;
   createdAt: string;
+  read?: boolean;
+  delivered?: boolean;
+  deliveredAt?: string;
+  readAt?: string;
+  recipientOnline?: boolean;
+  __pending?: boolean;
+  __error?: boolean;
 }
 
 const Chat: React.FC = () => {
@@ -159,6 +166,10 @@ const Chat: React.FC = () => {
         sender: getEntityId(savedMsg.sender) || getEntityId(currentUser) || "",
         text: savedMsg.text || "",
         createdAt: savedMsg.createdAt || new Date().toISOString(),
+        delivered: savedMsg.delivered ?? false,
+        deliveredAt: savedMsg.deliveredAt,
+        recipientOnline: savedMsg.recipientOnline ?? false,
+        read: savedMsg.read ?? false,
       };
 
       setMessages((prev) => {
@@ -180,6 +191,33 @@ const Chat: React.FC = () => {
         () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }),
         50,
       );
+    });
+
+    // حدث توصيل الرسالة
+    socketRef.current.on("messageDelivered", ({ messageId, recipientOnline }) => {
+      setMessages((prev) => prev.map(m => 
+        m._id === messageId 
+          ? { 
+              ...m, 
+              delivered: true, 
+              deliveredAt: new Date().toISOString(), 
+              recipientOnline 
+            } 
+          : m
+      ));
+    });
+
+    // حدث قراءة الرسالة
+    socketRef.current.on("messageRead", ({ messageId }) => {
+      setMessages((prev) => prev.map(m => 
+        m._id === messageId 
+          ? { 
+              ...m, 
+              read: true, 
+              readAt: new Date().toISOString() 
+            } 
+          : m
+      ));
     });
 
     return () => {
@@ -243,6 +281,9 @@ const Chat: React.FC = () => {
       sender: payload.sender,
       text: payload.text,
       createdAt: new Date().toISOString(),
+      __pending: true,
+      delivered: false,
+      read: false,
     };
 
     setMessages((prev) => [...prev, tempMsg]);
@@ -256,6 +297,38 @@ const Chat: React.FC = () => {
       () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }),
       50,
     );
+  };
+
+  // دالة لعرض حالة الرسائل بالألوان المطلوبة
+  const renderMessageStatus = (message: Message, isCurrentUser: boolean) => {
+    // عرض الحالة فقط للرسائل المرسلة من المستخدم الحالي
+    if (!isCurrentUser) return null;
+
+    if (message.__error) {
+      return <span className="text-red-500 text-xs mr-2 font-bold">⚠️</span>;
+    }
+    
+    if (message.__pending) {
+      return <span className="text-yellow-500 text-xs mr-2 font-bold">⏳</span>;
+    }
+    
+    // إذا كانت مقروءة - صحين أزرق فاتح
+    if (message.read) {
+      return <span className="text-blue-400 text-xs mr-2 font-bold">✓✓</span>;
+    }
+    
+    // إذا وصلت والمستلم متصل - صح واحد أخضر
+    if (message.delivered && message.recipientOnline) {
+      return <span className="text-green-500 text-xs mr-2 font-bold">✓</span>;
+    }
+    
+    // إذا وصلت والمستلم غير متصل - صح واحد برتقالي
+    if (message.delivered) {
+      return <span className="text-orange-400 text-xs mr-2 font-bold">✓</span>;
+    }
+    
+    // مرسلة فقط - صح واحد رمادي فاتح
+    return <span className="text-gray-300 text-xs mr-2 font-bold">✓</span>;
   };
 
   return (
@@ -550,20 +623,21 @@ const Chat: React.FC = () => {
                                 <p className="text-sm md:text-base leading-relaxed">
                                   {message.text}
                                 </p>
-                                <p
-                                  className={`text-xs mt-2 ${
-                                    isCurrentUser
-                                      ? "text-emerald-100"
-                                      : "text-gray-500"
-                                  }`}
-                                >
-                                  {new Date(
-                                    message.createdAt,
-                                  ).toLocaleTimeString("ar-EG", {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
-                                </p>
+                                <div className={`flex items-center justify-between text-xs mt-2 ${
+                                  isCurrentUser
+                                    ? "text-emerald-100"
+                                    : "text-gray-500"
+                                }`}>
+                                  <span>
+                                    {new Date(
+                                      message.createdAt,
+                                    ).toLocaleTimeString("ar-EG", {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })}
+                                  </span>
+                                  {renderMessageStatus(message, isCurrentUser)}
+                                </div>
                               </div>
                             </div>
                           );

@@ -38,6 +38,16 @@ const chatSchema = mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    delivered: {
+      type: Boolean,
+      default: false,
+    },
+    deliveredAt: {
+      type: Date,
+    },
+    readAt: {
+      type: Date,
+    },
   },
   {
     timestamps: true,

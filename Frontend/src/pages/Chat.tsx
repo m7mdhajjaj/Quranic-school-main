@@ -24,6 +24,10 @@ interface ChatMessage {
   text?: string;
   createdAt: string;
   read?: boolean;
+  delivered?: boolean;            // وصلت للمستلم
+  deliveredAt?: string;           // وقت الوصول
+  readAt?: string;                // وقت القراءة
+  recipientOnline?: boolean;      // حالة اتصال المستلم
   editedAt?: string;
   reactions?: Record<string, string[]>; // emoji -> [userIds]
   attachments?: Attachment[];
@@ -399,6 +403,9 @@ const Chat: React.FC = () => {
         text: saved.text || "",
         createdAt: saved.createdAt || new Date().toISOString(),
         read: saved.read ?? false,
+        delivered: saved.delivered ?? false,
+        deliveredAt: saved.deliveredAt,
+        recipientOnline: saved.recipientOnline ?? false,
         attachments: saved.attachments || undefined,
         __pending: false,
       };
@@ -427,6 +434,33 @@ const Chat: React.FC = () => {
     });
     s.on("messageDeleted", ({ messageId }: { messageId: string }) => {
       setMessages(prev => prev.filter(m => m._id !== messageId));
+    });
+
+    // حدث توصيل الرسالة
+    s.on("messageDelivered", ({ messageId, recipientOnline }: { messageId: string; recipientOnline: boolean }) => {
+      setMessages(prev => prev.map(m => 
+        m._id === messageId 
+          ? { 
+              ...m, 
+              delivered: true, 
+              deliveredAt: new Date().toISOString(), 
+              recipientOnline 
+            } 
+          : m
+      ));
+    });
+
+    // حدث قراءة الرسالة
+    s.on("messageRead", ({ messageId }: { messageId: string }) => {
+      setMessages(prev => prev.map(m => 
+        m._id === messageId 
+          ? { 
+              ...m, 
+              read: true, 
+              readAt: new Date().toISOString() 
+            } 
+          : m
+      ));
     });
 
     return () => {
@@ -737,6 +771,35 @@ const Chat: React.FC = () => {
 
   const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null);
 
+  // دالة لعرض حالة الرسائل بالألوان المطلوبة
+  const renderMessageStatus = (message: ChatMessage) => {
+    if (message.__error) {
+      return <span className="text-red-500 text-sm">⚠️</span>;
+    }
+    
+    if (message.__pending) {
+      return <span className="text-yellow-500 text-sm">⏳</span>;
+    }
+    
+    // إذا كانت مقروءة - صحين أزرق فاتح
+    if (message.read) {
+      return <span className="text-blue-400 text-sm font-bold">✓✓</span>;
+    }
+    
+    // إذا وصلت والمستلم متصل - صح واحد أخضر
+    if (message.delivered && message.recipientOnline) {
+      return <span className="text-green-500 text-sm font-bold">✓</span>;
+    }
+    
+    // إذا وصلت والمستلم غير متصل - صح واحد برتقالي
+    if (message.delivered) {
+      return <span className="text-orange-400 text-sm font-bold">✓</span>;
+    }
+    
+    // مرسلة فقط - صح واحد رمادي فاتح
+    return <span className="text-gray-300 text-sm font-bold">✓</span>;
+  };
+
   return (
     <div className="min-h-screen relative p-2 md:p-6" dir="rtl">
       {/* Background */}
@@ -951,7 +1014,7 @@ const Chat: React.FC = () => {
                                     {new Date(m.createdAt).toLocaleTimeString()}{" "}
                                     {mine && (
                                       <span className="ml-2">
-                                        {m.__error ? "⚠️ فشل" : m.__pending ? "⏳" : m.read ? "✓✓ مقروءة" : "✓ مرسلة"}
+                                        {renderMessageStatus(m)}
                                       </span>
                                     )}
                                   </div>
