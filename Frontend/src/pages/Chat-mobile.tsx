@@ -613,66 +613,85 @@ const Chat: React.FC = () => {
                               } mb-3 animate-slideIn group relative`}
                               style={{ animationDelay: `${index * 0.05}s` }}
                             >
-                              {/* وقت المستقبل على اليسار */}
-                              {!isCurrentUser && (
-                                <div className="opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300 mr-1 self-center">
-                                  <div className="bg-black/80 text-white text-xs px-3 py-2 rounded-full whitespace-nowrap shadow-lg backdrop-blur-sm">
-                                    {new Date(message.createdAt).toLocaleTimeString("ar-EG", {
-                                      hour: "2-digit",
-                                      minute: "2-digit"
-                                    })}
+                              {isCurrentUser ? (
+                                <>
+                                  {/* للرسائل الخضراء: Reply+خيارات, رسالة, وقت */}
+                                  {/* 1. ديف Reply + 3 نقاط */}
+                                  <div className="flex items-center gap-1">
+                                    <button className="p-1 rounded-full hover:bg-green-100 text-green-600 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity flex-shrink-0">
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                      </svg>
+                                    </button>
+                                    
+                                    <button className="p-1 rounded-full hover:bg-gray-200 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity flex-shrink-0">
+                                      <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+                                      </svg>
+                                    </button>
                                   </div>
-                                </div>
-                              )}
-                              
-                              <div className="flex items-center gap-1 max-w-[95%]">
-                                <div
-                                  className={`px-4 py-2 rounded-2xl shadow-sm transition-all duration-200 flex-1 backdrop-blur-sm ${
-                                    isCurrentUser
-                                      ? "bg-green-500/90 text-white border border-green-400/30"
-                                      : "bg-gray-100/85 text-gray-800 border border-gray-300/40"
-                                  }`}
-                                >
-                                  <p className="text-sm leading-snug break-all max-w-[200px]">
-                                    {message.text}
-                                  </p>
-                                  {/* علامات الحالة للمرسل فقط */}
-                                  {isCurrentUser && (
-                                    <div className="mt-1 text-right">
-                                      <span className="text-xs opacity-70">
-                                        {renderMessageStatus(message, isCurrentUser)}
-                                      </span>
+                                  
+                                  {/* 2. ديف الرسالة الأخضر */}
+                                  <div className="max-w-[95%]">
+                                    <div className="px-4 py-2 rounded-2xl shadow-sm transition-all duration-200 backdrop-blur-sm bg-green-500/90 text-white border border-green-400/30">
+                                      <p className="text-sm leading-snug break-all max-w-[200px]">
+                                        {message.text}
+                                      </p>
+                                      <div className="mt-1 text-right">
+                                        <span className="text-xs opacity-70">
+                                          {renderMessageStatus(message, isCurrentUser)}
+                                        </span>
+                                      </div>
                                     </div>
-                                  )}
-                                </div>
-                                
-                                {/* زر Reply لجميع الرسائل */}
-                                <button className={`p-1 rounded-full opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity flex-shrink-0 ${
-                                  isCurrentUser ? "hover:bg-green-100 text-green-600" : "hover:bg-gray-100 text-gray-600"
-                                }`}>
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                                  </svg>
-                                </button>
-                                
-                                {/* قائمة 3 نقاط */}
-                                <button className="p-1 rounded-full hover:bg-gray-200 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity flex-shrink-0">
-                                  <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
-                                  </svg>
-                                </button>
-                              </div>
-                              
-                              {/* وقت المرسل على اليمين */}
-                              {isCurrentUser && (
-                                <div className="opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300 ml-1 self-center">
-                                  <div className="bg-black/80 text-white text-xs px-3 py-2 rounded-full whitespace-nowrap shadow-lg backdrop-blur-sm">
-                                    {new Date(message.createdAt).toLocaleTimeString("ar-EG", {
-                                      hour: "2-digit",
-                                      minute: "2-digit"
-                                    })}
                                   </div>
-                                </div>
+                                  
+                                  {/* 3. ديف الوقت للرسائل الخضراء */}
+                                  <div className="opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300 ml-1 self-center">
+                                    <div className="bg-black/80 text-white text-xs px-3 py-2 rounded-full whitespace-nowrap shadow-lg backdrop-blur-sm">
+                                      {new Date(message.createdAt).toLocaleTimeString("ar-EG", {
+                                        hour: "2-digit",
+                                        minute: "2-digit"
+                                      })}
+                                    </div>
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  {/* للرسائل الرمادية: وقت, رسالة, Reply+خيارات */}
+                                  {/* 1. ديف الوقت */}
+                                  <div className="opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300 mr-1 self-center">
+                                    <div className="bg-black/80 text-white text-xs px-3 py-2 rounded-full whitespace-nowrap shadow-lg backdrop-blur-sm">
+                                      {new Date(message.createdAt).toLocaleTimeString("ar-EG", {
+                                        hour: "2-digit",
+                                        minute: "2-digit"
+                                      })}
+                                    </div>
+                                  </div>
+                                  
+                                  {/* 2. ديف الرسالة الرمادية */}
+                                  <div className="max-w-[95%]">
+                                    <div className="px-4 py-2 rounded-2xl shadow-sm transition-all duration-200 backdrop-blur-sm bg-gray-100/85 text-gray-800 border border-gray-300/40">
+                                      <p className="text-sm leading-snug break-all max-w-[200px]">
+                                        {message.text}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* 3. ديف Reply + 3 نقاط */}
+                                  <div className="flex items-center gap-1">
+                                    <button className="p-1 rounded-full hover:bg-gray-100 text-gray-600 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity flex-shrink-0">
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                      </svg>
+                                    </button>
+                                    
+                                    <button className="p-1 rounded-full hover:bg-gray-200 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity flex-shrink-0">
+                                      <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+                                      </svg>
+                                    </button>
+                                  </div>
+                                </>
                               )}
                             </div>
                           );

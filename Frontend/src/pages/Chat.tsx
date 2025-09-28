@@ -970,90 +970,134 @@ const Chat: React.FC = () => {
                                 </div>
                               )}
                               <div className={`flex ${mine ? "justify-end" : "justify-start"} mb-3 group relative`} id={`msg-${m._id}`}>
-                                {/* وقت المستقبل على اليسار */}
-                                {!mine && (
-                                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 mr-1 self-center">
-                                    <div className="bg-black/80 text-white text-xs px-3 py-2 rounded-full whitespace-nowrap shadow-lg backdrop-blur-sm">
-                                      {new Date(m.createdAt).toLocaleTimeString("ar-EG", {
-                                        hour: "2-digit",
-                                        minute: "2-digit"
-                                      })}
+                                {mine ? (
+                                  <>
+                                    {/* للرسائل الخضراء: 1. Reply+خيارات, 2. رسالة, 3. وقت */}
+                                    {/* 1. ديف Reply + 3 نقاط أولاً */}
+                                    <div className="flex items-center gap-1 relative">
+                                      <button 
+                                        className="p-1 rounded-full hover:bg-green-100 text-green-600 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                                        title="رد"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                        </svg>
+                                      </button>
+                                      
+                                      <button 
+                                        className="p-1 rounded-full hover:bg-gray-200 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                                        onClick={() => setActionMenuOpen(m._id === actionMenuOpen ? null : m._id)}
+                                        title="خيارات"
+                                      >
+                                        <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                                          <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+                                        </svg>
+                                      </button>
+                                      
+                                      {actionMenuOpen === m._id && (
+                                        <div className="absolute top-8 right-0 bg-transparent border-0 rounded-xl z-50 min-w-[120px] flex flex-col text-right animate-fade-in">
+                                          <button className="px-4 py-2 hover:bg-white/90 text-gray-800 text-sm rounded-lg mb-1 backdrop-blur-sm border border-gray-200/50" onClick={() => { handleTogglePin(m._id); setActionMenuOpen(null); }}>📌 تثبيت</button>
+                                          <button className="px-4 py-2 hover:bg-white/90 text-gray-800 text-sm rounded-lg mb-1 backdrop-blur-sm border border-gray-200/50" onClick={() => { editMessage(m); setActionMenuOpen(null); }}>✏️ تعديل</button>
+                                          <button className="px-4 py-2 hover:bg-white/90 text-red-600 text-sm rounded-lg mb-1 backdrop-blur-sm border border-gray-200/50" onClick={() => { deleteMessage(m); setActionMenuOpen(null); }}>🗑️ حذف</button>
+                                          <button className="px-4 py-2 hover:bg-white/90 text-gray-800 text-sm rounded-lg backdrop-blur-sm border border-gray-200/50" onClick={() => setActionMenuOpen(null)}>إغلاق</button>
+                                        </div>
+                                      )}
                                     </div>
-                                  </div>
-                                )}
-                                
-                                <div className="flex items-center gap-1 max-w-[92%]">
-                                  <div
-                                    className={`px-5 py-2 rounded-2xl shadow-sm transition-all duration-200 flex-1 backdrop-blur-sm ${
-                                      mine ? "bg-green-500/90 text-white border border-green-400/30" : "bg-gray-100/85 text-gray-800 border border-gray-300/40"
-                                    } ${highlightedId === m._id ? "ring-2 ring-amber-400" : ""}`}
-                                  >
-                                    {m.text && (
-                                      <p className="whitespace-pre-line break-all text-sm leading-snug max-w-[300px]">
-                                        {searchQuery
-                                          ? (m.text.split(new RegExp(`(${searchQuery})`, "gi")).map((part, i) =>
-                                              part.toLowerCase() === searchQuery.toLowerCase() ? <mark key={i} className="bg-yellow-200 rounded px-1">{part}</mark> : <span key={i}>{part}</span>
-                                            ))
-                                          : m.text}
-                                        {m.editedAt && <span className="ml-2 text-xs opacity-75 italic">(معدل)</span>}
-                                      </p>
-                                    )}
-                                    {renderAttachments(m.attachments)}
-                                    {renderReactions(m)}
                                     
-                                    {/* علامات الحالة للمرسل فقط */}
-                                    {mine && (
-                                      <div className="mt-1 text-right">
-                                        <span className="text-xs opacity-70">
-                                          {renderMessageStatus(m)}
-                                        </span>
+                                    {/* 2. ديف الرسالة الأخضر */}
+                                    <div className="max-w-[92%]">
+                                      <div className="px-5 py-2 rounded-2xl shadow-sm transition-all duration-200 backdrop-blur-sm bg-green-500/90 text-white border border-green-400/30">
+                                        {m.text && (
+                                          <p className="whitespace-pre-line break-all text-sm leading-snug max-w-[300px]">
+                                            {searchQuery
+                                              ? (m.text.split(new RegExp(`(${searchQuery})`, "gi")).map((part, i) =>
+                                                  part.toLowerCase() === searchQuery.toLowerCase() ? <mark key={i} className="bg-yellow-200 rounded px-1">{part}</mark> : <span key={i}>{part}</span>
+                                                ))
+                                              : m.text}
+                                            {m.editedAt && <span className="ml-2 text-xs opacity-75 italic">(معدل)</span>}
+                                          </p>
+                                        )}
+                                        {renderAttachments(m.attachments)}
+                                        {renderReactions(m)}
+                                        
+                                        <div className="mt-1 text-right">
+                                          <span className="text-xs opacity-70">
+                                            {renderMessageStatus(m)}
+                                          </span>
+                                        </div>
                                       </div>
-                                    )}
-                                  </div>
-                                  
-                                  {/* زر Reply لجميع الرسائل */}
-                                  <button 
-                                    className={`p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ${
-                                      mine ? "hover:bg-green-100 text-green-600" : "hover:bg-gray-100 text-gray-600"
-                                    }`}
-                                    title="رد"
-                                  >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                                    </svg>
-                                  </button>
-                                  
-                                  {/* قائمة 3 نقاط */}
-                                  <button 
-                                    className="p-1 rounded-full hover:bg-gray-200 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-                                    onClick={() => setActionMenuOpen(m._id === actionMenuOpen ? null : m._id)}
-                                    title="خيارات"
-                                  >
-                                    <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-                                      <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
-                                    </svg>
-                                  </button>
-                                  
-                                  {actionMenuOpen === m._id && (
-                                    <div className="absolute top-8 right-0 bg-transparent border-0 rounded-xl z-50 min-w-[120px] flex flex-col text-right animate-fade-in">
-                                      <button className="px-4 py-2 hover:bg-white/90 text-gray-800 text-sm rounded-lg mb-1 backdrop-blur-sm border border-gray-200/50" onClick={() => { handleTogglePin(m._id); setActionMenuOpen(null); }}>📌 تثبيت</button>
-                                      {mine && <button className="px-4 py-2 hover:bg-white/90 text-gray-800 text-sm rounded-lg mb-1 backdrop-blur-sm border border-gray-200/50" onClick={() => { editMessage(m); setActionMenuOpen(null); }}>✏️ تعديل</button>}
-                                      {mine && <button className="px-4 py-2 hover:bg-white/90 text-red-600 text-sm rounded-lg mb-1 backdrop-blur-sm border border-gray-200/50" onClick={() => { deleteMessage(m); setActionMenuOpen(null); }}>🗑️ حذف</button>}
-                                      <button className="px-4 py-2 hover:bg-white/90 text-gray-800 text-sm rounded-lg backdrop-blur-sm border border-gray-200/50" onClick={() => setActionMenuOpen(null)}>إغلاق</button>
                                     </div>
-                                  )}
-                                </div>
-                                
-                                {/* وقت المرسل على اليمين */}
-                                {mine && (
-                                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 ml-1 self-center">
-                                    <div className="bg-black/80 text-white text-xs px-3 py-2 rounded-full whitespace-nowrap shadow-lg backdrop-blur-sm">
-                                      {new Date(m.createdAt).toLocaleTimeString("ar-EG", {
-                                        hour: "2-digit",
-                                        minute: "2-digit"
-                                      })}
+                                    
+                                    {/* 3. ديف الوقت للرسائل الخضراء */}
+                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 ml-1 self-center">
+                                      <div className="bg-black/80 text-white text-xs px-3 py-2 rounded-full whitespace-nowrap shadow-lg backdrop-blur-sm">
+                                        {new Date(m.createdAt).toLocaleTimeString("ar-EG", {
+                                          hour: "2-digit",
+                                          minute: "2-digit"
+                                        })}
+                                      </div>
                                     </div>
-                                  </div>
+                                  </>
+                                ) : (
+                                  <>
+                                    {/* للرسائل الرمادية: 1. وقت, 2. رسالة, 3. Reply+خيارات */}
+                                    {/* 1. ديف الوقت أولاً */}
+                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 mr-1 self-center">
+                                      <div className="bg-black/80 text-white text-xs px-3 py-2 rounded-full whitespace-nowrap shadow-lg backdrop-blur-sm">
+                                        {new Date(m.createdAt).toLocaleTimeString("ar-EG", {
+                                          hour: "2-digit",
+                                          minute: "2-digit"
+                                        })}
+                                      </div>
+                                    </div>
+                                    
+                                    {/* 2. ديف الرسالة الرمادية */}
+                                    <div className="max-w-[92%]">
+                                      <div className="px-5 py-2 rounded-2xl shadow-sm transition-all duration-200 backdrop-blur-sm bg-gray-100/85 text-gray-800 border border-gray-300/40">
+                                        {m.text && (
+                                          <p className="whitespace-pre-line break-all text-sm leading-snug max-w-[300px]">
+                                            {searchQuery
+                                              ? (m.text.split(new RegExp(`(${searchQuery})`, "gi")).map((part, i) =>
+                                                  part.toLowerCase() === searchQuery.toLowerCase() ? <mark key={i} className="bg-yellow-200 rounded px-1">{part}</mark> : <span key={i}>{part}</span>
+                                                ))
+                                              : m.text}
+                                            {m.editedAt && <span className="ml-2 text-xs opacity-75 italic">(معدل)</span>}
+                                          </p>
+                                        )}
+                                        {renderAttachments(m.attachments)}
+                                        {renderReactions(m)}
+                                      </div>
+                                    </div>
+                                    
+                                    {/* 3. ديف Reply + 3 نقاط */}
+                                    <div className="flex items-center gap-1 relative">
+                                      <button 
+                                        className="p-1 rounded-full hover:bg-gray-100 text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                                        title="رد"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                        </svg>
+                                      </button>
+                                      
+                                      <button 
+                                        className="p-1 rounded-full hover:bg-gray-200 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                                        onClick={() => setActionMenuOpen(m._id === actionMenuOpen ? null : m._id)}
+                                        title="خيارات"
+                                      >
+                                        <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                                          <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+                                        </svg>
+                                      </button>
+                                      
+                                      {actionMenuOpen === m._id && (
+                                        <div className="absolute top-8 left-0 bg-transparent border-0 rounded-xl z-50 min-w-[120px] flex flex-col text-right animate-fade-in">
+                                          <button className="px-4 py-2 hover:bg-white/90 text-gray-800 text-sm rounded-lg mb-1 backdrop-blur-sm border border-gray-200/50" onClick={() => { handleTogglePin(m._id); setActionMenuOpen(null); }}>📌 تثبيت</button>
+                                          <button className="px-4 py-2 hover:bg-white/90 text-gray-800 text-sm rounded-lg backdrop-blur-sm border border-gray-200/50" onClick={() => setActionMenuOpen(null)}>إغلاق</button>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </>
                                 )}
                               </div>
                             </React.Fragment>
