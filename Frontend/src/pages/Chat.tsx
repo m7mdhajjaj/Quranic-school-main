@@ -969,55 +969,59 @@ const Chat: React.FC = () => {
                                   </span>
                                 </div>
                               )}
-                              <div className={`flex ${mine ? "justify-end" : "justify-start"}`} id={`msg-${m._id}`}>
-                                <div
-                                  className={`max-w-xs md:max-w-md lg:max-w-lg p-3 md:p-4 rounded-2xl shadow-lg transition-all duration-300 ${
-                                    mine ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white" : "bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800"
-                                  } ${highlightedId === m._id ? "ring-2 ring-amber-400" : ""}`}
-                                >
-                                  {/* Actions */}
-                                  <div className={`mb-1 flex items-center ${mine ? "justify-end" : "justify-start"} gap-2 opacity-80`}>
-                                    <button
-                                      className="text-xs p-1 rounded-full hover:bg-gray-200"
-                                      onClick={() => setActionMenuOpen(m._id === actionMenuOpen ? null : m._id)}
-                                      title="خيارات"
-                                      style={{ minWidth: 24, minHeight: 24 }}
-                                    >
-                                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
-                                    </button>
-                                    {actionMenuOpen === m._id && (
-                                      <div className="absolute mt-8 right-0 bg-white border rounded-xl shadow-lg z-50 min-w-[120px] flex flex-col text-right animate-fade-in">
-                                        <button className="px-4 py-2 hover:bg-gray-100 text-sm" onClick={() => { handleTogglePin(m._id); setActionMenuOpen(null); }}>📌 تثبيت</button>
-                                        {mine && <button className="px-4 py-2 hover:bg-gray-100 text-sm" onClick={() => { editMessage(m); setActionMenuOpen(null); }}>✏️ تعديل</button>}
-                                        {mine && <button className="px-4 py-2 hover:bg-gray-100 text-sm" onClick={() => { deleteMessage(m); setActionMenuOpen(null); }}>🗑️ حذف</button>}
-                                        <button className="px-4 py-2 hover:bg-gray-100 text-sm" onClick={() => setActionMenuOpen(null)}>إغلاق</button>
-                                      </div>
+                              <div className={`flex ${mine ? "justify-end" : "justify-start"} mb-3 group`} id={`msg-${m._id}`}>
+                                <div className="flex items-center gap-2 max-w-[85%]">
+                                  <div
+                                    className={`px-3 py-2 rounded-lg shadow-sm transition-all duration-200 flex-1 ${
+                                      mine ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"
+                                    } ${highlightedId === m._id ? "ring-2 ring-amber-400" : ""}`}
+                                  >
+                                    {m.text && (
+                                      <p className="whitespace-pre-line break-words text-sm leading-snug">
+                                        {searchQuery
+                                          ? (m.text.split(new RegExp(`(${searchQuery})`, "gi")).map((part, i) =>
+                                              part.toLowerCase() === searchQuery.toLowerCase() ? <mark key={i} className="bg-yellow-200 rounded px-1">{part}</mark> : <span key={i}>{part}</span>
+                                            ))
+                                          : m.text}
+                                        {m.editedAt && <span className="ml-2 text-xs opacity-75 italic">(معدل)</span>}
+                                      </p>
                                     )}
-                                    {/* ...existing emoji/reaction buttons... */}
-                                  </div>
+                                    {renderAttachments(m.attachments)}
+                                    {renderReactions(m)}
 
-                                  {/* Body */}
-                                  {m.text && (
-                                    <p className="whitespace-pre-line break-words text-base">
-                                      {searchQuery
-                                        ? (m.text.split(new RegExp(`(${searchQuery})`, "gi")).map((part, i) =>
-                                            part.toLowerCase() === searchQuery.toLowerCase() ? <mark key={i} className="bg-yellow-200">{part}</mark> : <span key={i}>{part}</span>
-                                          ))
-                                        : m.text}
-                                      {m.editedAt && <span className="ml-2 text-xs opacity-75">(معدل)</span>}
-                                    </p>
-                                  )}
-                                  {renderAttachments(m.attachments)}
-                                  {renderReactions(m)}
-
-                                  <div className={`text-xs mt-1 ${mine ? "text-emerald-50/80" : "text-gray-500"}`}>
-                                    {new Date(m.createdAt).toLocaleTimeString()}{" "}
-                                    {mine && (
-                                      <span className="ml-2">
-                                        {renderMessageStatus(m)}
+                                    <div className={`text-xs mt-1 opacity-70 ${
+                                      mine ? "text-blue-100" : "text-gray-500"
+                                    }`}>
+                                      <span>
+                                        {new Date(m.createdAt).toLocaleTimeString()}
                                       </span>
-                                    )}
+                                      {mine && (
+                                        <span className="ml-1">
+                                          {renderMessageStatus(m)}
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
+                                  
+                                  {/* قائمة 3 نقاط */}
+                                  <button 
+                                    className="p-1 rounded-full hover:bg-gray-200 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                                    onClick={() => setActionMenuOpen(m._id === actionMenuOpen ? null : m._id)}
+                                    title="خيارات"
+                                  >
+                                    <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                                      <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+                                    </svg>
+                                  </button>
+                                  
+                                  {actionMenuOpen === m._id && (
+                                    <div className="absolute top-8 right-0 bg-white border rounded-xl shadow-lg z-50 min-w-[120px] flex flex-col text-right animate-fade-in">
+                                      <button className="px-4 py-2 hover:bg-gray-100 text-sm" onClick={() => { handleTogglePin(m._id); setActionMenuOpen(null); }}>📌 تثبيت</button>
+                                      {mine && <button className="px-4 py-2 hover:bg-gray-100 text-sm" onClick={() => { editMessage(m); setActionMenuOpen(null); }}>✏️ تعديل</button>}
+                                      {mine && <button className="px-4 py-2 hover:bg-gray-100 text-sm" onClick={() => { deleteMessage(m); setActionMenuOpen(null); }}>🗑️ حذف</button>}
+                                      <button className="px-4 py-2 hover:bg-gray-100 text-sm" onClick={() => setActionMenuOpen(null)}>إغلاق</button>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </React.Fragment>

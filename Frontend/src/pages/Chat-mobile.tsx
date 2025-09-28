@@ -609,35 +609,46 @@ const Chat: React.FC = () => {
                             <div
                               key={message._id}
                               className={`flex ${
-                                isCurrentUser ? "justify-start" : "justify-end"
-                              } animate-slideIn`}
+                                isCurrentUser ? "justify-end" : "justify-start"
+                              } mb-3 animate-slideIn`}
                               style={{ animationDelay: `${index * 0.05}s` }}
                             >
-                              <div
-                                className={`max-w-xs md:max-w-md lg:max-w-lg px-4 md:px-6 py-3 md:py-4 rounded-2xl shadow-lg chat-bubble ${
-                                  isCurrentUser
-                                    ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white"
-                                    : "bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800"
-                                }`}
-                              >
-                                <p className="text-sm md:text-base leading-relaxed">
-                                  {message.text}
-                                </p>
-                                <div className={`flex items-center justify-between text-xs mt-2 ${
-                                  isCurrentUser
-                                    ? "text-emerald-100"
-                                    : "text-gray-500"
-                                }`}>
-                                  <span>
-                                    {new Date(
-                                      message.createdAt,
-                                    ).toLocaleTimeString("ar-EG", {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    })}
-                                  </span>
-                                  {renderMessageStatus(message, isCurrentUser)}
+                              <div className="flex items-center gap-2 max-w-[85%]">
+                                <div
+                                  className={`px-3 py-2 rounded-lg shadow-sm transition-all duration-200 flex-1 ${
+                                    isCurrentUser
+                                      ? "bg-blue-500 text-white"
+                                      : "bg-gray-100 text-gray-800"
+                                  }`}
+                                >
+                                  <p className="text-sm leading-snug break-words">
+                                    {message.text}
+                                  </p>
+                                  <div className={`text-xs mt-1 opacity-70 ${
+                                    isCurrentUser ? "text-blue-100" : "text-gray-500"
+                                  }`}>
+                                    <span>
+                                      {new Date(
+                                        message.createdAt,
+                                      ).toLocaleTimeString("ar-EG", {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })}
+                                    </span>
+                                    {isCurrentUser && (
+                                      <span className="ml-1">
+                                        {renderMessageStatus(message, isCurrentUser)}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
+                                
+                                {/* قائمة 3 نقاط */}
+                                <button className="p-1 rounded-full hover:bg-gray-200 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                                  <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+                                  </svg>
+                                </button>
                               </div>
                             </div>
                           );
