@@ -970,36 +970,40 @@ const Chat: React.FC = () => {
                                 </div>
                               )}
                               <div className={`flex ${mine ? "justify-end" : "justify-start"} mb-3 group`} id={`msg-${m._id}`}>
-                                <div className="flex items-center gap-2 max-w-[85%]">
+                                <div className="flex items-center gap-2 max-w-[75%]">
                                   <div
-                                    className={`px-3 py-2 rounded-lg shadow-sm transition-all duration-200 flex-1 ${
+                                    className={`px-5 py-2 rounded-2xl shadow-sm transition-all duration-200 flex-1 ${
                                       mine ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-800"
                                     } ${highlightedId === m._id ? "ring-2 ring-amber-400" : ""}`}
                                   >
-                                    {m.text && (
-                                      <p className="whitespace-pre-line break-words text-sm leading-snug">
-                                        {searchQuery
-                                          ? (m.text.split(new RegExp(`(${searchQuery})`, "gi")).map((part, i) =>
-                                              part.toLowerCase() === searchQuery.toLowerCase() ? <mark key={i} className="bg-yellow-200 rounded px-1">{part}</mark> : <span key={i}>{part}</span>
-                                            ))
-                                          : m.text}
-                                        {m.editedAt && <span className="ml-2 text-xs opacity-75 italic">(معدل)</span>}
-                                      </p>
-                                    )}
-                                    {renderAttachments(m.attachments)}
-                                    {renderReactions(m)}
-
-                                    <div className={`text-xs mt-1 opacity-70 ${
-                                      mine ? "text-blue-100" : "text-gray-500"
-                                    }`}>
-                                      <span>
-                                        {new Date(m.createdAt).toLocaleTimeString()}
-                                      </span>
-                                      {mine && (
-                                        <span className="ml-1">
-                                          {renderMessageStatus(m)}
+                                    <div className="flex items-center justify-between w-full">
+                                      <div className="flex-1 mr-4">
+                                        {m.text && (
+                                          <p className="whitespace-pre-line break-words text-sm leading-tight">
+                                            {searchQuery
+                                              ? (m.text.split(new RegExp(`(${searchQuery})`, "gi")).map((part, i) =>
+                                                  part.toLowerCase() === searchQuery.toLowerCase() ? <mark key={i} className="bg-yellow-200 rounded px-1">{part}</mark> : <span key={i}>{part}</span>
+                                                ))
+                                              : m.text}
+                                            {m.editedAt && <span className="ml-2 text-xs opacity-75 italic">(معدل)</span>}
+                                          </p>
+                                        )}
+                                        {renderAttachments(m.attachments)}
+                                        {renderReactions(m)}
+                                      </div>
+                                      
+                                      <div className={`text-xs opacity-70 flex items-center gap-1 flex-shrink-0 ${
+                                        mine ? "text-blue-100" : "text-gray-500"
+                                      }`}>
+                                        <span>
+                                          {new Date(m.createdAt).toLocaleTimeString()}
                                         </span>
-                                      )}
+                                        {mine && (
+                                          <span>
+                                            {renderMessageStatus(m)}
+                                          </span>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
                                   

@@ -613,33 +613,35 @@ const Chat: React.FC = () => {
                               } mb-3 animate-slideIn`}
                               style={{ animationDelay: `${index * 0.05}s` }}
                             >
-                              <div className="flex items-center gap-2 max-w-[85%]">
+                              <div className="flex items-center gap-2 max-w-[80%]">
                                 <div
-                                  className={`px-3 py-2 rounded-lg shadow-sm transition-all duration-200 flex-1 ${
+                                  className={`px-4 py-2 rounded-2xl shadow-sm transition-all duration-200 flex-1 ${
                                     isCurrentUser
                                       ? "bg-blue-500 text-white"
                                       : "bg-gray-100 text-gray-800"
                                   }`}
                                 >
-                                  <p className="text-sm leading-snug break-words">
-                                    {message.text}
-                                  </p>
-                                  <div className={`text-xs mt-1 opacity-70 ${
-                                    isCurrentUser ? "text-blue-100" : "text-gray-500"
-                                  }`}>
-                                    <span>
-                                      {new Date(
-                                        message.createdAt,
-                                      ).toLocaleTimeString("ar-EG", {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                      })}
-                                    </span>
-                                    {isCurrentUser && (
-                                      <span className="ml-1">
-                                        {renderMessageStatus(message, isCurrentUser)}
+                                  <div className="flex items-center justify-between w-full">
+                                    <p className="text-sm leading-tight break-words flex-1 mr-3">
+                                      {message.text}
+                                    </p>
+                                    <div className={`text-xs opacity-70 flex items-center gap-1 flex-shrink-0 ${
+                                      isCurrentUser ? "text-blue-100" : "text-gray-500"
+                                    }`}>
+                                      <span>
+                                        {new Date(
+                                          message.createdAt,
+                                        ).toLocaleTimeString("ar-EG", {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })}
                                       </span>
-                                    )}
+                                      {isCurrentUser && (
+                                        <span>
+                                          {renderMessageStatus(message, isCurrentUser)}
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                                 
