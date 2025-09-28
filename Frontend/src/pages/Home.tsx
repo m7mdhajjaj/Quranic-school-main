@@ -4,23 +4,17 @@ import { useEffect, useState, useRef } from "react";
 import type { ChangeEvent } from "react";
 import { API_URL } from "../config";
 import { useNavigate } from "react-router-dom";
-interface User {
-  _id: string;
-  name?: string;
-  role?: string;
-  firstName?: string;
-  fatherName?: string;
-  lastName?: string;
-  group?: string;
-}
+import { useAuth } from "../hooks/useAuth";
+// استخدم User type من AuthContext
 
 const Home = () => {
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
+  
   // State for the hero image
   const [heroImage, setHeroImage] = useState<string>(
     "/src/images/officialPhoto.jpg"
   );
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -34,17 +28,7 @@ const Home = () => {
     });
   }, []);
 
-  // Load user data
-  useEffect(() => {
-    const userJson = localStorage.getItem("user");
-    if (!userJson) return;
-    try {
-      const parsed = JSON.parse(userJson) as User;
-      setCurrentUser(parsed);
-    } catch (e) {
-      // ignore
-    }
-  }, []);
+  // المستخدم يتم تحميله تلقائياً من useAuth
 
   // Load hero image from database
   useEffect(() => {

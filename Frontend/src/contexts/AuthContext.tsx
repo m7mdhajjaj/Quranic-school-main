@@ -5,12 +5,14 @@ export interface User {
   _id: string;
   firstName?: string;
   lastName?: string;
+  fatherName?: string;
   name?: string;
   role: 'student' | 'teacher' | 'admin';
   email?: string;
   studentId?: string;
   teacherId?: string;
   adminId?: string;
+  group?: string;
   imageUrl?: string;
   // يمكن إضافة المزيد من الخصائص حسب الحاجة
 }

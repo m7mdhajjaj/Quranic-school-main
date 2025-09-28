@@ -4,6 +4,7 @@ import { FiPaperclip, FiMic } from 'react-icons/fi';
 import { io, Socket } from 'socket.io-client';
 import Avatar from '../components/Avatar';
 import { getUserGender } from '../hooks/useAvatar';
+import { useAuth } from '../hooks/useAuth';
 // If you add shadcn/ui you can replace basic elements with nicer components.
 // ...existing code...
 
@@ -67,7 +68,7 @@ const SOCKET_URL = 'http://localhost:5005';
 // ...existing code...
 
 const Chat: React.FC = () => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const { user: currentUser, token } = useAuth();
 
   // Left pane
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -140,14 +141,6 @@ const Chat: React.FC = () => {
   };
 
   const getAuthHeaders = (): Record<string, string> => {
-    const rawUser = localStorage.getItem('user');
-    let token = localStorage.getItem('token') || '';
-    if (!token && rawUser) {
-      try {
-        const u = JSON.parse(rawUser);
-        token = u?.token || u?.accessToken || '';
-      } catch {}
-    }
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
@@ -155,14 +148,8 @@ const Chat: React.FC = () => {
   const selectedId = getEntityId(selectedContact);
   const isGroupChat = !!selectedContact?.isGroup;
 
-  // ----- Load current user & notification deep-link -----
+  // ----- Load notification deep-link -----
   useEffect(() => {
-    const userJson = localStorage.getItem('user');
-    if (userJson) {
-      try {
-        setCurrentUser(JSON.parse(userJson));
-      } catch {}
-    }
     const chatNotifRaw = localStorage.getItem('chatNotification');
     if (chatNotifRaw) {
       try {

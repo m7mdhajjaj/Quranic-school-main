@@ -19,6 +19,7 @@ import {
 import { toast, ToastContainer } from "react-toastify";
 import Avatar from "../components/Avatar";
 import { fetchAvatarBlobUrl, getUserGender } from "../hooks/useAvatar";
+import { useAuth } from "../hooks/useAuth";
 import "react-toastify/dist/ReactToastify.css";
 
 // ============================
@@ -28,11 +29,7 @@ import { API_URL } from '../config';
 
 // Axios مع التوكن
 const api = axios.create({ baseURL: API_URL });
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
+// سيتم تحديثه لاستخدام useAuth
 
 // ============================
 // Types
@@ -144,6 +141,8 @@ const recordEditLocal = (field: "birthDate" | "gender", userId: string) => {
 // ============================
 const Profile: React.FC = () => {
   const navigate = useNavigate();
+  const { user: authUser, token } = useAuth();
+  
   const [user, setUser] = useState<UserBase | null>(null);
   const [endpoint, setEndpoint] = useState<Endpoint>("students");
   const [fetchState, setFetchState] = useState<FetchState>({ status: "idle" });
@@ -170,20 +169,10 @@ const Profile: React.FC = () => {
 
   // معرف المستخدم وتحديد النوع
   const getUserInfo = () => {
-    const idFromLocal = localStorage.getItem("userId");
-    let userRole = null;
-    let userId = idFromLocal;
+    const userId = authUser?._id || "";
+    const userRole = authUser?.role;
     
-    try {
-      const raw = localStorage.getItem("user");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        userId = userId || parsed?._id || parsed?.id;
-        userRole = parsed?.role;
-      }
-    } catch {}
-    
-    return { userId: userId || "", userRole };
+    return { userId, userRole };
   };
 
   // تحميل البيانات

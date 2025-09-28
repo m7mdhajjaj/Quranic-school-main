@@ -4,6 +4,7 @@ import axios from "axios";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from '../hooks/useAuth';
 
 const API_URL = "http://localhost:5005/api";
 
@@ -29,13 +30,15 @@ interface User {
 
 const News = () => {
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingNewsId, setEditingNewsId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isTeacherOrAdmin, setIsTeacherOrAdmin] = useState<boolean>(false);
+  
+  // Check if user is teacher or admin
+  const isTeacherOrAdmin = currentUser?.role === "teacher" || currentUser?.role === "admin";
   const [newNews, setNewNews] = useState<Partial<INews>>({
     title: "",
     content: "",
@@ -52,27 +55,6 @@ const News = () => {
   useEffect(() => {
     AOS.init({ duration: 800, once: true });
     fetchNews();
-
-    // Check user authentication status
-    const userJson = localStorage.getItem("user");
-    if (userJson) {
-      try {
-        const userData = JSON.parse(userJson) as User;
-        setCurrentUser(userData);
-
-        // Check if the user is a teacher or admin
-        if (userData.role === "teacher" || userData.role === "admin") {
-          setIsTeacherOrAdmin(true);
-        } else {
-          setIsTeacherOrAdmin(false);
-        }
-      } catch (err) {
-        console.error("Error parsing user data:", err);
-      }
-    } else {
-      // Uncomment if you want to redirect unauthenticated users
-      // navigate("/login");
-    }
   }, []);
 
   // Format date function

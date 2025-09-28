@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FaEdit, FaTrash, FaPlus, FaSearch, FaTimes } from "react-icons/fa";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useAuth, useRoleGuard } from '../hooks/useAuth';
 
 // API base URL
 const API_URL = "http://localhost:5005/api";
@@ -38,10 +39,10 @@ interface User {
 const Managment: React.FC = () => {
   // Navigation hook for redirects
   const navigate = useNavigate();
-
-  // User authentication state
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isTeacherOrAdmin, setIsTeacherOrAdmin] = useState<boolean>(false);
+  
+  // Authentication and role protection
+  const { user: currentUser } = useAuth();
+  const { hasPermission } = useRoleGuard(['teacher', 'admin']);
 
   // States
   const [students, setStudents] = useState<Student[]>([]);
@@ -75,32 +76,17 @@ const Managment: React.FC = () => {
     string | number | null
   >(null);
 
-  // Check user authentication and role
-  useEffect(() => {
-    // Check if the user is logged in
-    const userJson = localStorage.getItem("user");
-    if (userJson) {
-      try {
-        const userData = JSON.parse(userJson) as User;
-        setCurrentUser(userData);
-
-        // Check if the user is a teacher or admin
-        if (userData.role === "teacher" || userData.role === "admin") {
-          setIsTeacherOrAdmin(true);
-        } else {
-          // Redirect students to the 404 page
-          navigate("/404");
-        }
-      } catch (err) {
-        console.error("Error parsing user data:", err);
-        // Redirect to 404 if there's an error
-        navigate("/404");
-      }
-    } else {
-      // Redirect unauthenticated users to the 404 page
-      navigate("/404");
-    }
-  }, [navigate]);
+  // Return early if no permission
+  if (!hasPermission) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">ليس لديك صلاحية</h2>
+          <p className="text-gray-600">هذه الصفحة مخصصة للمعلمين والإداريين فقط</p>
+        </div>
+      </div>
+    );
+  }
 
   // Load students from the API
   useEffect(() => {
