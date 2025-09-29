@@ -1,0 +1,213 @@
+// contexts/UserStatusContext.tsx
+import React, { createContext, useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import { API_BASE_URL } from '../config';
+import { io, Socket } from 'socket.io-client';
+
+// تعريف الواجهات والأنواع
+export interface UserStatusState {
+  isOnline: boolean;
+  isActive: boolean;
+  lastSeen?: Date;
+  isLoading: boolean;
+}
+
+export interface UserStatusContextType {
+  userStatus: UserStatusState;
+  getUserStatus: (userId?: string) => UserStatusState;
+  refreshStatus: () => void;
+}
+
+// إنشاء السياق
+/* eslint-disable react-refresh/only-export-components */
+export const UserStatusContext = createContext<UserStatusContextType | undefined>(undefined);
+
+export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, token } = useAuth();
+  const [userStatuses, setUserStatuses] = useState<Record<string, UserStatusState>>({});
+  const [, setSocket] = useState<Socket | null>(null);
+
+  // الحالة الافتراضية - مستقرة
+  const defaultStatus: UserStatusState = React.useMemo(() => ({
+    isOnline: false,
+    isActive: false,
+    isLoading: false,
+  }), []);
+
+  // جلب حالة مستخدم معين
+  const fetchUserStatus = useCallback(async (userId: string) => {
+    if (!token || !userId) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/users/${userId}/status`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const status: UserStatusState = {
+          isOnline: data.isOnline || false,
+          isActive: data.isActive !== false,
+          lastSeen: data.lastSeen ? new Date(data.lastSeen) : undefined,
+          isLoading: false,
+        };
+
+        setUserStatuses(prev => ({
+          ...prev,
+          [userId]: status,
+        }));
+      } else {
+        // Fallback للحالة الافتراضية
+        setUserStatuses(prev => ({
+          ...prev,
+          [userId]: {
+            isOnline: !!token && !!user,
+            isActive: !!user && !!token,
+            isLoading: false,
+          },
+        }));
+      }
+    } catch (error) {
+      console.error('خطأ في جلب حالة المستخدم:', error);
+      setUserStatuses(prev => ({
+        ...prev,
+        [userId]: {
+          isOnline: !!token && !!user,
+          isActive: !!user && !!token,
+          isLoading: false,
+        },
+      }));
+    }
+  }, [token, user]);
+
+  // إعداد Socket.IO للتحديثات الفورية
+  useEffect(() => {
+    if (!token || !user?._id) {
+      return;
+    }
+
+    let socketInstance: Socket | null = null;
+
+    try {
+      socketInstance = io(API_BASE_URL, {
+        transports: ['polling'],
+        upgrade: false,
+        auth: { token },
+        reconnection: true,
+        reconnectionAttempts: 3,
+        reconnectionDelay: 1000,
+        timeout: 5000,
+      });
+
+      socketInstance.on('connect', () => {
+        console.log('UserStatus Socket connected');
+        setSocket(socketInstance);
+        
+        // جلب الحالة الأولية للمستخدم الحالي
+        if (user._id) {
+          fetchUserStatus(user._id);
+        }
+      });
+
+      socketInstance.on('disconnect', () => {
+        console.log('UserStatus Socket disconnected');
+        setSocket(null);
+      });
+
+      // الاستماع لتحديثات حالة المستخدمين
+      socketInstance.on('userStatusChange', (data: { 
+        userId: string; 
+        isOnline: boolean; 
+        isActive: boolean; 
+        lastSeen?: string;
+      }) => {
+        setUserStatuses(prev => ({
+          ...prev,
+          [data.userId]: {
+            isOnline: data.isOnline,
+            isActive: data.isActive,
+            lastSeen: data.lastSeen ? new Date(data.lastSeen) : undefined,
+            isLoading: false,
+          },
+        }));
+      });
+
+      socketInstance.on('error', (error) => {
+        console.error('UserStatus Socket error:', error);
+      });
+
+    } catch (error) {
+      console.warn('Socket.IO not available for user status:', error);
+      // Fallback: جلب الحالة مباشرة
+      if (user._id) {
+        fetchUserStatus(user._id);
+      }
+    }
+
+    return () => {
+      if (socketInstance) {
+        socketInstance.disconnect();
+      }
+    };
+  }, [token, user?._id, fetchUserStatus]);
+
+  // تحديث دوري كل 30 ثانية للمستخدمين المحملين
+  useEffect(() => {
+    const interval = setInterval(() => {
+      Object.keys(userStatuses).forEach(userId => {
+        if (userId && token) {
+          fetchUserStatus(userId);
+        }
+      });
+    }, 30000); // كل 30 ثانية
+
+    return () => clearInterval(interval);
+  }, [userStatuses, token, fetchUserStatus]);
+
+  // دالة للحصول على حالة مستخدم معين
+  const getUserStatus = useCallback((userId?: string): UserStatusState => {
+    const targetUserId = userId || user?._id;
+    if (!targetUserId) return defaultStatus;
+
+    const status = userStatuses[targetUserId];
+    
+    // إذا لم تكن الحالة محملة بعد، اجلبها
+    if (!status && token) {
+      setUserStatuses(prev => ({
+        ...prev,
+        [targetUserId]: { ...defaultStatus, isLoading: true },
+      }));
+      fetchUserStatus(targetUserId);
+      return { ...defaultStatus, isLoading: true };
+    }
+
+    return status || defaultStatus;
+  }, [user?._id, userStatuses, token, fetchUserStatus, defaultStatus]);
+
+  // دالة لتحديث الحالة يدوياً
+  const refreshStatus = useCallback(() => {
+    if (user?._id && token) {
+      fetchUserStatus(user._id);
+    }
+  }, [user?._id, token, fetchUserStatus]);
+
+  // حالة المستخدم الحالي
+  const userStatus = getUserStatus();
+
+  const contextValue: UserStatusContextType = {
+    userStatus,
+    getUserStatus,
+    refreshStatus,
+  };
+
+  return (
+    <UserStatusContext.Provider value={contextValue}>
+      {children}
+    </UserStatusContext.Provider>
+  );
+};
+
+export default UserStatusProvider;

@@ -31,6 +31,7 @@ import AdminHeader from "./components/AdminHeader";
 import Loading from "./components/Loading";
 import { AuthProvider } from "./contexts/AuthContext";
 import { useAuth } from "./hooks/useAuth";
+import { UserStatusProvider } from "./contexts/UserStatusContext";
 
 function AppContent() {
   const location = useLocation();
@@ -101,7 +102,9 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppContent />
+        <UserStatusProvider>
+          <AppContent />
+        </UserStatusProvider>
       </AuthProvider>
     </BrowserRouter>
   );

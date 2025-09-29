@@ -35,6 +35,10 @@ export interface AvatarProps {
   border?: 'none' | 'thin' | 'thick' | 'ring';
   /** Show online status indicator */
   showStatus?: boolean;
+  /** Show status text next to avatar */
+  showStatusText?: boolean;
+  /** Status indicator size (separate from avatar size) */
+  statusSize?: 'sm' | 'md' | 'lg';
   /** Force status (overrides useAuth) */
   forceStatus?: 'online' | 'offline';
 }
@@ -115,6 +119,8 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
   fallbackIcon,
   border = 'thick',
   showStatus = false,
+  showStatusText = false,
+  statusSize = 'md',
   forceStatus,
 }) => {
   // جلب حالة المستخدم من قاعدة البيانات
@@ -145,6 +151,29 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
     if (isActive) return 'نشط';
     if (isOnline) return 'متصل';
     return 'غير متصل';
+  };
+
+  // دوال من PresenceIndicator المدمجة
+  const getStatusColor = () => {
+    if (loading || (!isActive && !isOnline)) return 'bg-gray-400';
+    if (isOnline && isActive) return 'bg-green-500';
+    if (isActive) return 'bg-yellow-500';
+    return 'bg-gray-400';
+  };
+
+  const getStatusText = () => {
+    if (loading || (!isActive && !isOnline)) return 'غير متصل';
+    if (isOnline && isActive) return 'متصل الآن';
+    if (isActive) return 'نشط';
+    return 'غير متصل';
+  };
+
+  const getStatusDotSize = () => {
+    switch (statusSize) {
+      case 'sm': return 'w-2 h-2';
+      case 'lg': return 'w-4 h-4';
+      default: return 'w-3 h-3';
+    }
   };
 
   // دالة للحصول على لون الجنس مع دعم القيم العربية والإنجليزية
@@ -350,6 +379,32 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
       )}
     </div>
   );
+
+  // إرجاع المحتوى مع النص الاختياري
+  if (showStatusText) {
+    return (
+      <div className="flex items-center gap-2">
+        <AvatarContent />
+        {showStatus && (
+          <div className="flex items-center gap-1">
+            <div
+              className={`
+                ${getStatusDotSize()}
+                ${getStatusColor()}
+                rounded-full
+                border-2 border-white
+                shadow-sm
+              `}
+              title={getStatusText()}
+            />
+            <span className="text-xs text-gray-600">
+              {getStatusText()}
+            </span>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return <AvatarContent />;
 });
