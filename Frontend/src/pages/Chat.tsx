@@ -50,7 +50,7 @@ interface Contact {
   group?: string;
   unread?: number;
   isGroup?: boolean; // for group list
-  isOnline?: boolean; // <-- new flag
+  isActive?: boolean; // <-- active flag from database
 }
 
 
@@ -65,16 +65,16 @@ const ChatAvatar: React.FC<{
   size?: 'sm' | 'md' | 'lg';
   showStatus?: boolean;
   className?: string;
-  isOnline?: boolean;
-}> = ({ user, size = 'md', showStatus = false, className = '', isOnline }) => {
+  isActive?: boolean;
+}> = ({ user, size = 'md', showStatus = false, className = '', isActive }) => {
   const userGender = getUserGender(user);
   const { avatarUrl, avatarLoading } = useAvatar({
     userId: user?._id,
     userRole: 'student', // default role for contacts
   });
 
-  const onlineStatus = showStatus && isOnline !== undefined 
-    ? (isOnline ? 'online' : 'offline') 
+  const onlineStatus = showStatus && isActive !== undefined 
+    ? (isActive ? 'online' : 'offline') 
     : undefined;
 
   return (
@@ -203,7 +203,7 @@ const Chat: React.FC = () => {
                 lastName: s.lastName || '',
                 group: s.group || s.section || '',
                 unread: s.unread || 0,
-                isOnline: s.isOnline, // <-- set isOnline from response
+                isActive: s.isActive, // <-- set isActive from response
               }))
             : [];
           setContacts(list);
@@ -224,7 +224,7 @@ const Chat: React.FC = () => {
               lastName: t.lastName || '',
               group: Array.isArray(t.groups) ? t.groups.join(', ') : '',
               unread: t.unread || 0,
-              isOnline: t.isOnline, // <-- set isOnline from response
+              isActive: t.isActive, // <-- set isActive from response
             }));
           }
           if (list.length === 0) {
@@ -240,7 +240,7 @@ const Chat: React.FC = () => {
                 lastName: t.lastName || '',
                 group: Array.isArray(t.groups) ? t.groups.join(', ') : '',
                 unread: t.unread || 0,
-                isOnline: t.isOnline, // <-- set isOnline from response
+                isActive: t.isActive, // <-- set isActive from response
               }));
             }
           }
@@ -1031,7 +1031,7 @@ const Chat: React.FC = () => {
                                 size="md"
                                 className="ring-2 ring-white/30"
                                 showStatus={true}
-                                isOnline={c.isOnline}
+                                isActive={c.isActive}
                               />
                             </div>
                             <div>
@@ -1068,7 +1068,7 @@ const Chat: React.FC = () => {
                   size="md"
                   className=""
                   showStatus={true}
-                  isOnline={selectedContact?.isOnline}
+                  isActive={selectedContact?.isActive}
                 />
               </div>
               <div className="flex-1">
@@ -1081,9 +1081,9 @@ const Chat: React.FC = () => {
                   {selectedContact
                     ? peerTyping
                       ? 'يكتب الآن…'
-                      : selectedContact.isOnline
-                        ? 'متصل الآن'
-                        : 'غير متصل'
+                      : selectedContact.isActive
+                        ? 'نشط الآن'
+                        : 'غير نشط'
                     : 'اختر محادثة لبدء التواصل'}
                 </div>
               </div>

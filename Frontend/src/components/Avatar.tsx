@@ -124,7 +124,7 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
   forceStatus,
 }) => {
   // جلب حالة المستخدم من قاعدة البيانات
-  const { isActive, isOnline } = useUserStatus(userId);
+  const { isActive } = useUserStatus(userId);
   const displaySrc = previewSrc || src;
   const initials = userName ? userName.charAt(0).toUpperCase() : '';
 
@@ -133,9 +133,9 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
     if (forceStatus === 'online') return true;
     if (forceStatus === 'offline') return false;
     
-    // منطق أكثر استقرارًا: إعطاء أولوية للحالة النشطة
-    if (isActive !== undefined && isOnline !== undefined) {
-      return isActive || isOnline;
+    // اعتماد على isActive فقط
+    if (isActive !== undefined) {
+      return isActive;
     }
     
     // fallback للحالة الافتراضية (متصل)
@@ -145,27 +145,23 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
   // تحديد نص التلميح حسب حالة المستخدم
   const getStatusTitle = () => {
     if (forceStatus)
-      return forceStatus === 'online' ? 'متصل (مفروض)' : 'غير متصل (مفروض)';
+      return forceStatus === 'online' ? 'نشط (مفروض)' : 'غير نشط (مفروض)';
     
-    if (isActive && isOnline) return 'متصل ونشط';
     if (isActive) return 'نشط';
-    if (isOnline) return 'متصل';
-    return 'غير متصل';
+    return 'غير نشط';
   };
 
   // دوال من PresenceIndicator المدمجة
   const getStatusColor = () => {
-    if (loading || (!isActive && !isOnline)) return 'bg-gray-400';
-    if (isOnline && isActive) return 'bg-green-500';
-    if (isActive) return 'bg-yellow-500';
+    if (loading || !isActive) return 'bg-gray-400';
+    if (isActive) return 'bg-green-500';
     return 'bg-gray-400';
   };
 
   const getStatusText = () => {
-    if (loading || (!isActive && !isOnline)) return 'غير متصل';
-    if (isOnline && isActive) return 'متصل الآن';
-    if (isActive) return 'نشط';
-    return 'غير متصل';
+    if (loading || !isActive) return 'غير نشط';
+    if (isActive) return 'نشط الآن';
+    return 'غير نشط';
   };
 
   const getStatusDotSize = () => {

@@ -492,16 +492,7 @@ exports.getAllTeachers = async (req, res) => {
     // return full teacher docs (minus password) so UI has everything (including avatar)
     const teachers = await Teacher.find({}).select("-password");
     
-    // Add isOnline status based on isActive flag
-    const teachersWithOnlineStatus = teachers.map(teacher => {
-      const teacherObj = teacher.toObject();
-      return {
-        ...teacherObj,
-        isOnline: teacher.isActive || false
-      };
-    });
-    
-    return res.status(200).json({ success: true, data: teachersWithOnlineStatus });
+    return res.status(200).json({ success: true, data: teachers });
   } catch (error) {
     console.error("Error fetching teachers:", error);
     return res.status(500).json({ success: false, message: "حدث خطأ أثناء جلب المعلمين" });

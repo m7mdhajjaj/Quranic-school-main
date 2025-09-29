@@ -6,7 +6,6 @@ import { io, Socket } from 'socket.io-client';
 
 // تعريف الواجهات والأنواع
 export interface UserStatusState {
-  isOnline: boolean;
   isActive: boolean;
   lastSeen?: Date;
   isLoading: boolean;
@@ -29,7 +28,6 @@ export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   // الحالة الافتراضية - مستقرة
   const defaultStatus: UserStatusState = React.useMemo(() => ({
-    isOnline: false,
     isActive: false,
     isLoading: false,
   }), []);
@@ -49,7 +47,6 @@ export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (response.ok) {
         const data = await response.json();
         const status: UserStatusState = {
-          isOnline: data.isOnline || false,
           isActive: data.isActive !== false,
           lastSeen: data.lastSeen ? new Date(data.lastSeen) : undefined,
           isLoading: false,
@@ -64,7 +61,6 @@ export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setUserStatuses(prev => ({
           ...prev,
           [userId]: {
-            isOnline: !!token && !!user,
             isActive: !!user && !!token,
             isLoading: false,
           },
@@ -75,7 +71,6 @@ export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setUserStatuses(prev => ({
         ...prev,
         [userId]: {
-          isOnline: !!token && !!user,
           isActive: !!user && !!token,
           isLoading: false,
         },
@@ -120,14 +115,12 @@ export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       // الاستماع لتحديثات حالة المستخدمين
       socketInstance.on('userStatusChange', (data: { 
         userId: string; 
-        isOnline: boolean; 
         isActive: boolean; 
         lastSeen?: string;
       }) => {
         setUserStatuses(prev => ({
           ...prev,
           [data.userId]: {
-            isOnline: data.isOnline,
             isActive: data.isActive,
             lastSeen: data.lastSeen ? new Date(data.lastSeen) : undefined,
             isLoading: false,

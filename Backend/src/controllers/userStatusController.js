@@ -2,7 +2,7 @@ const Student = require("../models/Student");
 const Teacher = require("../models/Teacher");
 const Admin = require("../models/Admin");
 
-// Get user status (isActive, isOnline)
+// Get user status (isActive only)
 exports.getUserStatus = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -52,14 +52,12 @@ exports.getUserStatus = async (req, res) => {
       // حقول عليا مطلوبة من الواجهة الحالية
       userId: user._id,
       isActive: isActive,
-      isOnline: isActive,
       userType: userType,
       lastSeen: user.updatedAt,
       // كائن data المفصل للاستخدام المستقبلي
       data: {
         userId: user._id,
         isActive: isActive,
-        isOnline: isActive,
         userType: userType,
         lastSeen: user.updatedAt,
         serverTimestamp: new Date().toISOString(),

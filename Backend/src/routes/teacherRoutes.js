@@ -151,16 +151,7 @@ router.get("/for-student/:studentId", async (req, res) => {
 
     const teachers = await Teacher.find({ groups: { $in: sGroups } }).select("-password");
     
-    // Add isOnline status based on isActive flag
-    const teachersWithOnlineStatus = teachers.map(teacher => {
-      const teacherObj = teacher.toObject();
-      return {
-        ...teacherObj,
-        isOnline: teacher.isActive || false
-      };
-    });
-    
-    return res.status(200).json({ success: true, data: teachersWithOnlineStatus });
+    return res.status(200).json({ success: true, data: teachers });
   } catch (error) {
     return res.status(500).json({ success: false, message: "Error fetching teachers for student" });
   }

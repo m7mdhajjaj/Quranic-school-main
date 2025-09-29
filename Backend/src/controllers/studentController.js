@@ -138,17 +138,7 @@ const Student = require("../models/Student");
 exports.getStudents = async (req, res) => {
   try {
     const students = await Student.find();
-    
-    // Add isOnline status based on isActive flag
-    const studentsWithOnlineStatus = students.map(student => {
-      const studentObj = student.toObject();
-      return {
-        ...studentObj,
-        isOnline: student.isActive || false
-      };
-    });
-    
-    res.json(studentsWithOnlineStatus);
+    res.json(students);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -158,17 +148,7 @@ exports.getStudents = async (req, res) => {
 exports.getStudentsByGroup = async (req, res) => {
   try {
     const students = await Student.find({ group: req.params.group });
-    
-    // Add isOnline status based on isActive flag
-    const studentsWithOnlineStatus = students.map(student => {
-      const studentObj = student.toObject();
-      return {
-        ...studentObj,
-        isOnline: student.isActive || false
-      };
-    });
-    
-    res.json(studentsWithOnlineStatus);
+    res.json(students);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
