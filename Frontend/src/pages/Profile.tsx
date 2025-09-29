@@ -435,6 +435,9 @@ const Profile: React.FC = () => {
                 gender={getUserGender(user)}
                 size="3xl"
                 border="ring"
+                      showStatus={true} // إظهار نقطة الحالة
+                      
+
                 showEditButton={isEditing}
                 onEditClick={() => document.getElementById('avatar')?.click()}
                 fallbackIcon={<UserIcon className="w-12 h-12 text-emerald-600" />}
