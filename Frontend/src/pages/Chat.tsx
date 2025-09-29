@@ -1079,7 +1079,7 @@ const Chat: React.FC = () => {
                 <ChatAvatar
                   user={selectedContact}
                   size="md"
-                  className="ring-2 ring-white/30"
+                  className=""
                   showStatus={true}
                   isOnline={selectedContact?.isOnline}
                 />
