@@ -98,7 +98,7 @@ const statusDotPositionClasses = {
   '3xl': 'bottom-1.5 right-1.5',
 };
 
-const Avatar: React.FC<AvatarProps> = ({
+const Avatar: React.FC<AvatarProps> = React.memo(({
   src,
   previewSrc,
   alt = 'صورة المستخدم',
@@ -352,6 +352,6 @@ const Avatar: React.FC<AvatarProps> = ({
   );
 
   return <AvatarContent />;
-};
+});
 
 export default Avatar;

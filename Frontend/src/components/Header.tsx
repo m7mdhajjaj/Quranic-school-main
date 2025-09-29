@@ -49,7 +49,7 @@ const Header = () => {
 
   const userGender = getUserGender(currentUser);
 
-  // Avatar hook
+  // Avatar hook مع memoization لمنع re-fetching المتكرر
   const { avatarUrl, avatarLoading } = useAvatar({
     userId: currentUser?._id,
     userRole: currentUser?.role,

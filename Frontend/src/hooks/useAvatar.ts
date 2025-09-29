@@ -37,13 +37,11 @@ export const useAvatar = ({
       const token = localStorage.getItem('token');
       const endpoint = role === 'student' ? 'students' : 'teachers';
       
-      // إضافة cache busting أقل تعقيداً - فقط عند الحاجة
-      const cacheBuster = Date.now();
-      const url = `${API_URL}/${endpoint}/${id}/avatar?v=${Math.floor(cacheBuster / 60000)}${
-        token ? `&token=${token}` : ''
-      }`;
+      // تقليل cache busting - كل 30 دقيقة بدلاً من كل دقيقة
+      const cacheKey = Math.floor(Date.now() / 1800000); // 30 minutes
+      const url = `${API_URL}/${endpoint}/${id}/avatar?v=${cacheKey}`;
 
-      // استخدام fetch API بدلاً من Image لأداء أفضل
+      // استخدام fetch API مع تحسينات الكاش
       const controller = new AbortController();
       
       const handleLoadComplete = (success: boolean, loadedUrl?: string) => {
@@ -67,14 +65,14 @@ export const useAvatar = ({
         handleLoadComplete(false);
       }, 6000); // تقليل timeout لتحسين الأداء
 
-      // Use fetch with proper error handling
+      // Use fetch with improved caching strategy
       fetch(url, {
         method: 'GET',
         signal: controller.signal,
         headers: {
           'Authorization': `Bearer ${token || ''}`,
         },
-        cache: 'no-cache', // ضمان حصول على أحدث إصدار
+        cache: 'default', // السماح بالكاش الافتراضي للمتصفح
       })
       .then(response => {
         clearTimeout(timeout);

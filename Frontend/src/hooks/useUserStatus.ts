@@ -83,8 +83,8 @@ export const useUserStatus = (userId?: string): UserStatus => {
     // تأخير قصير لضمان استقرار الاتصال
     const initialTimeout = setTimeout(fetchUserStatus, 500);
 
-    // تحديث أقل تكراراً لتحسين الأداء
-    const interval = setInterval(fetchUserStatus, 45000);
+    // تحديث أقل تكراراً لتحسين الأداء - كل دقيقتين
+    const interval = setInterval(fetchUserStatus, 120000);
     
     return () => {
       isMounted = false;
