@@ -36,13 +36,8 @@ exports.getUserStatus = async (req, res) => {
       });
     }
 
-    // Check if user is online (in memory) with safer access
-    const onlineUsers = global.onlineUsers || new Map();
-    const isOnline = onlineUsers.has(userId);
-    
-    // استخدام منطق أفضل لتحديد الحالة النشطة
-    const isActive = user.isActive !== false; // افتراضياً نشط إلا إذا كان محدد صراحة كغير نشط
-    const isReallyOnline = isOnline && isActive;
+    // استخدم فلاغ isActive مباشرة من قاعدة البيانات
+    const isActive = user.isActive === true;
 
     // Cache control headers لتحسين الأداء
     res.set({
@@ -57,14 +52,14 @@ exports.getUserStatus = async (req, res) => {
       // حقول عليا مطلوبة من الواجهة الحالية
       userId: user._id,
       isActive: isActive,
-      isOnline: isReallyOnline,
+      isOnline: isActive,
       userType: userType,
       lastSeen: user.updatedAt,
       // كائن data المفصل للاستخدام المستقبلي
       data: {
         userId: user._id,
         isActive: isActive,
-        isOnline: isReallyOnline,
+        isOnline: isActive,
         userType: userType,
         lastSeen: user.updatedAt,
         serverTimestamp: new Date().toISOString(),

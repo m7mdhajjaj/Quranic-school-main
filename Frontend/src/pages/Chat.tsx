@@ -152,15 +152,17 @@ const Chat: React.FC = () => {
       : 'Student';
   };
 
-  const getEntityId = (obj: any) => {
+  const getEntityId = (obj: string | { _id?: string; id?: string; teacherId?: string; studentId?: string; userId?: string; toString?: () => string } | null | undefined) => {
     if (!obj) return '';
     if (typeof obj === 'string') return obj;
-    if (obj._id) return String(obj._id);
-    if (obj.id) return String(obj.id);
-    if (obj.teacherId) return String(obj.teacherId);
-    if (obj.studentId) return String(obj.studentId);
-    if (obj.userId) return String(obj.userId);
-    if (typeof obj.toString === 'function') return obj.toString();
+    if (typeof obj === 'object') {
+      if (obj._id) return String(obj._id);
+      if (obj.id) return String(obj.id);
+      if (obj.teacherId) return String(obj.teacherId);
+      if (obj.studentId) return String(obj.studentId);
+      if (obj.userId) return String(obj.userId);
+      if (typeof obj.toString === 'function') return obj.toString();
+    }
     return '';
   };
 
@@ -174,20 +176,9 @@ const Chat: React.FC = () => {
 
   // ----- Load notification deep-link -----
   useEffect(() => {
+    // تنظيف الإشعارات القديمة من localStorage فقط
     const chatNotifRaw = localStorage.getItem('chatNotification');
     if (chatNotifRaw) {
-      try {
-        const n = JSON.parse(chatNotifRaw);
-        setSelectedContact({
-          _id: n.recipientId || n.senderId,
-          firstName: 'محادثة تلقائية',
-          lastName: '',
-          group: '',
-          unread: 0,
-        });
-      } catch {
-        // intentionally ignored
-      }
       localStorage.removeItem('chatNotification');
     }
   }, []);
@@ -225,7 +216,8 @@ const Chat: React.FC = () => {
           );
           let list: Contact[] = [];
           if (trySpecific.ok) {
-            const data = await trySpecific.json();
+            const response = await trySpecific.json();
+            const data = response.success ? response.data : response;
             list = (Array.isArray(data) ? data : []).map((t: any) => ({
               _id: t._id || t.id,
               firstName: t.firstName || t.name || 'Teacher',
@@ -240,7 +232,8 @@ const Chat: React.FC = () => {
               headers: { ...getAuthHeaders() },
             });
             if (allTeachers.ok) {
-              const data = await allTeachers.json();
+              const response = await allTeachers.json();
+              const data = response.success ? response.data : response;
               list = (Array.isArray(data) ? data : []).map((t: any) => ({
                 _id: t._id || t.id,
                 firstName: t.firstName || t.name || 'Teacher',
@@ -251,27 +244,11 @@ const Chat: React.FC = () => {
               }));
             }
           }
-          if (list.length === 0) {
-            list = [
-              {
-                _id: 'teacher-1001',
-                firstName: 'محمد',
-                lastName: 'حجاج',
-                group: '',
-                unread: 0,
-              },
-            ];
-          }
           setContacts(list);
           if (!selectedContact && list.length) setSelectedContact(list[0]);
         }
 
-        // Example groups list — replace with your actual groups source
-        // If you have Teacher.groups or Student.group you can populate from there
-        // setGroups([
-        //   { _id: "Group-A", firstName: "مجموعة", lastName: "A", group: "A", isGroup: true },
-        //   { _id: "Group-B", firstName: "مجموعة", lastName: "B", group: "B", isGroup: true },
-        // ]);
+   
       } finally {
         setLoading(false);
       }
@@ -1015,6 +992,16 @@ const Chat: React.FC = () => {
             <div className="p-3 md:p-4 max-h-[50vh] md:max-h-none overflow-y-auto chat-scroll">
               {loading ? (
                 <div>جارٍ التحميل...</div>
+              ) : contacts.length === 0 ? (
+                <div className="text-center text-gray-500 py-8">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
+                  <p className="text-sm font-medium text-gray-600">لا توجد جهات اتصال</p>
+                  <p className="text-xs text-gray-400 mt-1">سيتم عرض جهات الاتصال من قاعدة البيانات هنا</p>
+                </div>
               ) : (
                 <>
                   <ul className="h-[500px] overflow-y-auto">
