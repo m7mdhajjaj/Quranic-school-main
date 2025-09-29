@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FaEdit, FaTrash, FaPlus, FaSearch, FaTimes } from "react-icons/fa";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { useAuth, useRoleGuard } from '../hooks/useAuth';
+import { useAuth } from "../hooks/useAuth";
 
 // API base URL
 const API_URL = "http://localhost:5005/api";
@@ -26,21 +26,23 @@ interface Student {
   group: string;
 }
 
-
 const Managment: React.FC = () => {
   // Navigation hook for redirects
   const navigate = useNavigate();
-  
-  // Authentication and role protection
+
+  // Authentication - تعديل هنا
   const { user: currentUser } = useAuth();
-  const { hasPermission } = useRoleGuard(['teacher', 'admin']);
+
+  // التحقق من الصلاحيات بطريقة مباشرة
+  const userRole = currentUser?.role || "";
+  const hasPermission = userRole === "teacher" || userRole === "admin";
 
   // States
   const [students, setStudents] = useState<Student[]>([]);
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedGroup, setSelectedGroup] = useState("all"); // New state for selected group
+  const [selectedGroup, setSelectedGroup] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [groups, setGroups] = useState<string[]>(['ازهار الحمد"المهاجرين ب']);
   const [isLoading, setIsLoading] = useState(false);
@@ -48,8 +50,8 @@ const Managment: React.FC = () => {
 
   // Form state
   const [formData, setFormData] = useState<Omit<Student, "id">>({
-    studentId: 0, // Will be set automatically when adding a new student
-    idNumber: "", // رقم الهوية (سيستخدم ككلمة مرور)
+    studentId: 0,
+    idNumber: "",
     firstName: "",
     fatherName: "",
     grandFatherName: "",
@@ -67,20 +69,10 @@ const Managment: React.FC = () => {
     string | number | null
   >(null);
 
-  // Return early if no permission
-  if (!hasPermission) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">ليس لديك صلاحية</h2>
-          <p className="text-gray-600">هذه الصفحة مخصصة للمعلمين والإداريين فقط</p>
-        </div>
-      </div>
-    );
-  }
-
   // Load students from the API
   useEffect(() => {
+    if (!hasPermission) return; // لا نحمّل البيانات إذا لم تكن هناك صلاحية
+
     const fetchStudents = async () => {
       setIsLoading(true);
       try {
@@ -158,7 +150,7 @@ const Managment: React.FC = () => {
     };
 
     fetchStudents();
-  }, []);
+  }, [hasPermission]);
 
   // Calculate age from birth date
   const calculateAge = (birthDate: string): number => {
@@ -185,7 +177,7 @@ const Managment: React.FC = () => {
 
   // Handle input change
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
 
@@ -194,7 +186,7 @@ const Managment: React.FC = () => {
       setFormData({
         ...formData,
         [name]: value,
-        age: isNaN(age) ? 0 : age, // Ensure age is a number
+        age: isNaN(age) ? 0 : age,
       });
     } else {
       setFormData({
@@ -208,28 +200,34 @@ const Managment: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate all required fields
-    const requiredFields: Array<{
-      field: keyof typeof formData;
-      label: string;
-    }> = [
-      { field: "firstName", label: "الاسم" },
-      { field: "fatherName", label: "اسم الأب" },
-      { field: "grandFatherName", label: "اسم الجد" },
-      { field: "lastName", label: "اسم العائلة" },
-      { field: "motherName", label: "اسم الأم" },
-      { field: "birthDate", label: "تاريخ الميلاد" },
-      { field: "group", label: "اسم الحلقة" },
-    ];
-
-    for (const { field, label } of requiredFields) {
-      if (!formData[field]) {
-        alert(`الرجاء إدخال ${label}`);
+    try {
+      // Basic validation - ensure formData exists
+      if (!formData) {
+        alert("حدث خطأ في النموذج. يرجى إعادة تحميل الصفحة.");
         return;
       }
-    }
 
-    try {
+      // Validate all required fields
+      const requiredFields: Array<{
+        field: keyof typeof formData;
+        label: string;
+      }> = [
+        { field: "firstName", label: "الاسم" },
+        { field: "fatherName", label: "اسم الأب" },
+        { field: "grandFatherName", label: "اسم الجد" },
+        { field: "lastName", label: "اسم العائلة" },
+        { field: "motherName", label: "اسم الأم" },
+        { field: "birthDate", label: "تاريخ الميلاد" },
+        { field: "group", label: "اسم الحلقة" },
+      ];
+
+      for (const { field, label } of requiredFields) {
+        if (!formData[field]) {
+          alert(`الرجاء إدخال ${label}`);
+          return;
+        }
+      }
+
       // Validate age is a number
       if (isNaN(formData.age) || formData.age <= 0) {
         alert("العمر يجب أن يكون رقماً موجباً");
@@ -250,40 +248,51 @@ const Managment: React.FC = () => {
             (typeof currentStudentId === "string" &&
               student._id === currentStudentId) ||
             (typeof currentStudentId === "number" &&
-              student.id === currentStudentId),
+              student.id === currentStudentId)
         );
 
         if (studentToUpdate?._id) {
           // Update student in the database
           const response = await axios.put(
             `${API_URL}/students/${studentToUpdate._id}`,
-            studentData,
+            studentData
           );
 
-          // Update the students list
-          setStudents(
-            students.map((student) =>
-              student._id === studentToUpdate._id ? response.data : student,
-            ),
-          );
+          // Validate response data
+          if (response.data && typeof response.data === "object") {
+            // Update the students list using functional update
+            setStudents((prevStudents) =>
+              prevStudents.map((student) =>
+                student._id === studentToUpdate._id
+                  ? { ...response.data, _id: studentToUpdate._id }
+                  : student
+              )
+            );
+
+            alert("تم تحديث بيانات الطالب بنجاح");
+          } else {
+            throw new Error("البيانات المرجعة من الخادم غير صحيحة");
+          }
         } else {
           // Fallback to local update if no MongoDB ID is available
-          setStudents(
-            students.map((student) =>
+          setStudents((prevStudents) =>
+            prevStudents.map((student) =>
               student.id === currentStudentId
                 ? {
                     ...studentData,
-                    id: currentStudentId,
+                    id: currentStudentId as number,
                   }
-                : student,
-            ),
+                : student
+            )
           );
+
+          alert("تم تحديث بيانات الطالب بنجاح");
         }
       } else {
         // Add new student to the database
         console.log(
           `Posting to ${API_URL}/students with data:`,
-          JSON.stringify(studentData, null, 2),
+          JSON.stringify(studentData, null, 2)
         );
 
         try {
@@ -294,13 +303,20 @@ const Managment: React.FC = () => {
               headers: {
                 "Content-Type": "application/json",
               },
-            },
+            }
           );
 
           console.log("Server response:", response.data);
 
-          // Add the new student to the local state
-          setStudents([...students, response.data]);
+          // Validate response data
+          if (response.data && typeof response.data === "object") {
+            // Add the new student to the local state using functional update
+            setStudents((prevStudents) => [...prevStudents, response.data]);
+
+            alert("تم إضافة الطالب بنجاح");
+          } else {
+            throw new Error("البيانات المرجعة من الخادم غير صحيحة");
+          }
         } catch (apiError: any) {
           console.error("API Error details:", apiError);
 
@@ -311,7 +327,7 @@ const Managment: React.FC = () => {
           } else if (apiError.request) {
             console.error("No response received:", apiError.request);
             throw new Error(
-              "لم يتم تلقي استجابة من الخادم. تحقق من اتصالك بالإنترنت.",
+              "لم يتم تلقي استجابة من الخادم. تحقق من اتصالك بالإنترنت."
             );
           } else {
             console.error("Error setting up request:", apiError.message);
@@ -320,7 +336,7 @@ const Managment: React.FC = () => {
         }
       }
 
-      // Reset form
+      // Reset form only on success
       resetForm();
     } catch (error: any) {
       console.error("Error saving student:", error);
@@ -341,6 +357,8 @@ const Managment: React.FC = () => {
         }
 
         alert(`خطأ: ${errorMessage}`);
+      } else if (error.message) {
+        alert(`خطأ: ${error.message}`);
       } else {
         alert("حدث خطأ أثناء حفظ بيانات الطالب. يرجى المحاولة مرة أخرى.");
       }
@@ -349,24 +367,59 @@ const Managment: React.FC = () => {
 
   // Handle edit button click
   const handleEdit = (student: Student) => {
-    setIsFormVisible(true);
-    setIsEditMode(true);
-    setCurrentStudentId(student._id || student.id || null);
-    setFormData({
-      studentId: student.studentId,
-      idNumber: student.idNumber,
-      firstName: student.firstName,
-      fatherName: student.fatherName,
-      grandFatherName: student.grandFatherName,
-      motherName: student.motherName,
-      lastName: student.lastName,
-      birthDate: student.birthDate,
-      age: student.age,
-      gender: student.gender,
-      residence: student.residence,
-      teacher: student.teacher,
-      group: student.group,
-    });
+    try {
+      setIsFormVisible(true);
+      setIsEditMode(true);
+      setCurrentStudentId(student._id || student.id || null);
+
+      // تحويل تاريخ الميلاد لصيغة YYYY-MM-DD
+      let birthDateValue = "";
+      if (student.birthDate) {
+        const d = new Date(student.birthDate);
+        if (!isNaN(d.getTime())) {
+          birthDateValue = d.toISOString().slice(0, 10);
+        }
+      }
+
+      // تحويل قيمة الجنس للصيغة الصحيحة
+      let genderValue: "ذكر" | "انثى" = "ذكر";
+      if (student.gender) {
+        const normalizedGender = student.gender.trim();
+        if (
+          normalizedGender === "ذكر" ||
+          normalizedGender === "male" ||
+          normalizedGender === "Male"
+        ) {
+          genderValue = "ذكر";
+        } else if (
+          normalizedGender === "انثى" ||
+          normalizedGender === "أنثى" ||
+          normalizedGender === "female" ||
+          normalizedGender === "Female"
+        ) {
+          genderValue = "انثى";
+        }
+      }
+
+      setFormData({
+        studentId: student.studentId || 0,
+        idNumber: student.idNumber || "",
+        firstName: student.firstName || "",
+        fatherName: student.fatherName || "",
+        grandFatherName: student.grandFatherName || "",
+        motherName: student.motherName || "",
+        lastName: student.lastName || "",
+        birthDate: birthDateValue,
+        age: student.age || 0,
+        gender: genderValue,
+        residence: student.residence || "نابلس",
+        teacher: student.teacher || "محمد حجاج",
+        group: student.group || 'ازهار الحمد"المهاجرين ب',
+      });
+    } catch (error) {
+      console.error("Error in handleEdit:", error);
+      alert("حدث خطأ أثناء تحميل بيانات الطالب للتعديل");
+    }
   };
 
   // Handle delete button click
@@ -377,7 +430,7 @@ const Managment: React.FC = () => {
       try {
         // Find the student with the given ID
         const studentToDelete = students.find(
-          (student) => student._id === studentId || student.id === studentId,
+          (student) => student._id === studentId || student.id === studentId
         );
 
         if (studentToDelete?._id) {
@@ -385,13 +438,15 @@ const Managment: React.FC = () => {
           await axios.delete(`${API_URL}/students/${studentToDelete._id}`);
         }
 
-        // Remove from local state
-        setStudents(
-          students.filter(
+        // Remove from local state using functional update
+        setStudents((prevStudents) =>
+          prevStudents.filter(
             (student) =>
-              !(student._id === studentId || student.id === studentId),
-          ),
+              !(student._id === studentId || student.id === studentId)
+          )
         );
+
+        alert("تم حذف الطالب بنجاح");
       } catch (error) {
         console.error("Error deleting student:", error);
         alert("حدث خطأ أثناء حذف الطالب. يرجى المحاولة مرة أخرى.");
@@ -431,18 +486,24 @@ const Managment: React.FC = () => {
 
   // Filter students based on search and selected group
   const filteredStudents = students.filter((student) => {
+    // Ensure student object exists and has required properties
+    if (!student || typeof student !== "object") return false;
+
     // First check if the student belongs to the selected group
     const groupMatches =
       selectedGroup === "all" || student.group === selectedGroup;
 
     // Then check if the student matches the search term
     const searchMatches =
-      student.firstName.includes(searchTerm) ||
-      student.lastName.includes(searchTerm) ||
-      `${student.firstName} ${student.fatherName} ${student.lastName}`.includes(
-        searchTerm,
-      ) ||
-      student.studentId.toString().includes(searchTerm);
+      (student.firstName && student.firstName.includes(searchTerm)) ||
+      (student.lastName && student.lastName.includes(searchTerm)) ||
+      (student.firstName &&
+        student.fatherName &&
+        student.lastName &&
+        `${student.firstName} ${student.fatherName} ${student.lastName}`.includes(
+          searchTerm
+        )) ||
+      (student.studentId && student.studentId.toString().includes(searchTerm));
 
     // Both conditions must be true
     return groupMatches && searchMatches;
@@ -453,13 +514,34 @@ const Managment: React.FC = () => {
   const indexOfFirstStudent = indexOfLastStudent - studentsPerPage;
   const currentStudents = filteredStudents.slice(
     indexOfFirstStudent,
-    indexOfLastStudent,
+    indexOfLastStudent
   );
   const totalPages = Math.ceil(filteredStudents.length / studentsPerPage);
 
   const paginate = (pageNumber: number) => {
     setCurrentPage(pageNumber);
   };
+
+  // Return early if no permission
+  if (!hasPermission) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">
+            ليس لديك صلاحية
+          </h2>
+          <p className="text-gray-600 mb-4">
+            هذه الصفحة مخصصة للمعلمين والإداريين فقط
+          </p>
+          <button
+            onClick={() => navigate("/")}
+            className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors">
+            العودة للصفحة الرئيسية
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-4 my-4" dir="rtl">
@@ -483,8 +565,7 @@ const Managment: React.FC = () => {
                   isFormVisible
                     ? "bg-red-500 hover:bg-red-600"
                     : "bg-green-600 hover:bg-green-700"
-                }`}
-              >
+                }`}>
                 {isFormVisible ? (
                   <>
                     <FaTimes className="ml-2" /> إلغاء
@@ -507,8 +588,7 @@ const Managment: React.FC = () => {
                   <select
                     className="appearance-none w-full p-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm pr-10"
                     value={selectedGroup}
-                    onChange={(e) => setSelectedGroup(e.target.value)}
-                  >
+                    onChange={(e) => setSelectedGroup(e.target.value)}>
                     <option value="all">جميع الطلاب</option>
                     {groups.map((group) => (
                       <option key={group} value={group}>
@@ -520,8 +600,7 @@ const Managment: React.FC = () => {
                     <svg
                       className="fill-current h-4 w-4"
                       xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 20 20"
-                    >
+                      viewBox="0 0 20 20">
                       <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
                     </svg>
                   </div>
@@ -692,8 +771,7 @@ const Managment: React.FC = () => {
                       required
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
                       value={formData.gender}
-                      onChange={handleInputChange}
-                    >
+                      onChange={handleInputChange}>
                       <option value="ذكر">ذكر</option>
                       <option value="انثى">انثى</option>
                     </select>
@@ -724,8 +802,7 @@ const Managment: React.FC = () => {
                       required
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
                       value={formData.teacher}
-                      onChange={handleInputChange}
-                    >
+                      onChange={handleInputChange}>
                       <option value="محمد حجاج">محمد حجاج</option>
                     </select>
                   </div>
@@ -740,8 +817,7 @@ const Managment: React.FC = () => {
                       required
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500"
                       value={formData.group}
-                      onChange={handleInputChange}
-                    >
+                      onChange={handleInputChange}>
                       <option value='ازهار الحمد"المهاجرين ب'>
                         ازهار الحمد"المهاجرين ب
                       </option>
@@ -753,14 +829,12 @@ const Managment: React.FC = () => {
                   <button
                     type="button"
                     onClick={resetForm}
-                    className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 transition-colors"
-                  >
+                    className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 transition-colors">
                     إلغاء
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors"
-                  >
+                    className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors">
                     {isEditMode ? "تحديث البيانات" : "إضافة الطالب"}
                   </button>
                 </div>
@@ -769,54 +843,47 @@ const Managment: React.FC = () => {
           )}
 
           {/* Students Table */}
-          {isLoading ? (
-            <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
-              <div className="flex items-center justify-center p-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-700"></div>
-                <p className="mr-3 text-lg text-gray-600">
-                  جاري تحميل البيانات...
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        #
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        رقم الطالب
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        الاسم الكامل
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        العمر
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        الجنس
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        مكان السكن
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        المعلم
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        الحلقة
-                      </th>
-                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        الإجراءات
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {currentStudents.length > 0 ? (
-                      currentStudents.map((student, index) => (
-                        <tr key={student._id || student.id || `student-${index}`} className="hover:bg-gray-50">
+          <div className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      #
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      رقم الطالب
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      الاسم الكامل
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      العمر
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      الجنس
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      مكان السكن
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      المعلم
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      الحلقة
+                    </th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      الإجراءات
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {currentStudents && currentStudents.length > 0 ? (
+                    currentStudents.map((student, index) =>
+                      student && typeof student === "object" ? (
+                        <tr
+                          key={student._id || student.id || `student-${index}`}
+                          className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {indexOfFirstStudent + index + 1}
                           </td>
@@ -825,14 +892,19 @@ const Managment: React.FC = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-medium text-gray-900">
-                              {`${student.firstName} ${student.fatherName} ${student.grandFatherName} ${student.lastName}`}
+                              {student.firstName &&
+                              student.fatherName &&
+                              student.grandFatherName &&
+                              student.lastName
+                                ? `${student.firstName} ${student.fatherName} ${student.grandFatherName} ${student.lastName}`
+                                : "اسم غير متوفر"}
                             </div>
                             <div className="text-sm text-gray-500">
-                              الأم: {student.motherName}
+                              الأم: {student.motherName || "غير محدد"}
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {student.age}
+                            {student.age || 0}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span
@@ -840,27 +912,25 @@ const Managment: React.FC = () => {
                                 student.gender === "ذكر"
                                   ? "bg-blue-100 text-blue-800"
                                   : "bg-pink-100 text-pink-800"
-                              }`}
-                            >
-                              {student.gender}
+                              }`}>
+                              {student.gender || "غير محدد"}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {student.residence}
+                            {student.residence || "غير محدد"}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {student.teacher}
+                            {student.teacher || "غير محدد"}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {student.group}
+                            {student.group || "غير محدد"}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
                             <div className="flex justify-center space-x-3 space-x-reverse">
                               <button
                                 onClick={() => handleEdit(student)}
                                 className="text-emerald-600 hover:text-emerald-800"
-                                title="تعديل"
-                              >
+                                title="تعديل">
                                 <FaEdit size={18} />
                               </button>
                               <button
@@ -868,8 +938,7 @@ const Managment: React.FC = () => {
                                   handleDelete(student._id || student.id)
                                 }
                                 className="text-red-600 hover:text-red-800"
-                                title="حذف"
-                              >
+                                title="حذف">
                                 <FaTrash size={18} />
                               </button>
                               <button
@@ -883,15 +952,13 @@ const Managment: React.FC = () => {
                                   })
                                 }
                                 className="text-blue-600 hover:text-blue-800"
-                                title="محادثة الطالب"
-                              >
+                                title="محادثة الطالب">
                                 <svg
                                   xmlns="http://www.w3.org/2000/svg"
                                   className="h-5 w-5"
                                   fill="none"
                                   viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                >
+                                  stroke="currentColor">
                                   <path
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
@@ -903,96 +970,88 @@ const Managment: React.FC = () => {
                             </div>
                           </td>
                         </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td
-                          colSpan={9}
-                          className="px-6 py-4 text-center text-gray-500"
-                        >
-                          {searchTerm
-                            ? "لا توجد نتائج مطابقة للبحث"
-                            : "لا يوجد طلاب حاليًا"}
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                      ) : null
+                    )
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={9}
+                        className="px-6 py-4 text-center text-gray-500">
+                        {searchTerm
+                          ? "لا توجد نتائج مطابقة للبحث"
+                          : "لا يوجد طلاب حاليًا"}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
 
-              {/* Pagination */}
-              {!isLoading && totalPages > 1 && (
-                <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-                  <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-sm text-gray-700">
-                        عرض{" "}
-                        <span className="font-medium">
-                          {indexOfFirstStudent + 1}
-                        </span>{" "}
-                        إلى{" "}
-                        <span className="font-medium">
-                          {Math.min(
-                            indexOfLastStudent,
-                            filteredStudents.length,
-                          )}
-                        </span>{" "}
-                        من أصل{" "}
-                        <span className="font-medium">
-                          {filteredStudents.length}
-                        </span>{" "}
-                        طالب
-                      </p>
-                    </div>
-                    <div>
-                      <nav
-                        className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
-                        aria-label="Pagination"
-                      >
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm text-gray-700">
+                      عرض{" "}
+                      <span className="font-medium">
+                        {indexOfFirstStudent + 1}
+                      </span>{" "}
+                      إلى{" "}
+                      <span className="font-medium">
+                        {Math.min(indexOfLastStudent, filteredStudents.length)}
+                      </span>{" "}
+                      من أصل{" "}
+                      <span className="font-medium">
+                        {filteredStudents.length}
+                      </span>{" "}
+                      طالب
+                    </p>
+                  </div>
+                  <div>
+                    <nav
+                      className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                      aria-label="Pagination">
+                      <button
+                        onClick={() => paginate(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
+                          currentPage === 1
+                            ? "text-gray-300"
+                            : "text-gray-500 hover:bg-gray-50"
+                        }`}>
+                        التالي
+                      </button>
+
+                      {[...Array(totalPages)].map((_, index) => (
                         <button
-                          onClick={() => paginate(currentPage - 1)}
-                          disabled={currentPage === 1}
-                          className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
-                            currentPage === 1
-                              ? "text-gray-300"
+                          key={index}
+                          onClick={() => paginate(index + 1)}
+                          className={`relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium ${
+                            currentPage === index + 1
+                              ? "z-10 bg-emerald-50 border-emerald-500 text-emerald-600"
                               : "text-gray-500 hover:bg-gray-50"
-                          }`}
-                        >
-                          التالي
+                          }`}>
+                          {index + 1}
                         </button>
+                      ))}
 
-                        {[...Array(totalPages)].map((_, index) => (
-                          <button
-                            key={index}
-                            onClick={() => paginate(index + 1)}
-                            className={`relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium ${
-                              currentPage === index + 1
-                                ? "z-10 bg-emerald-50 border-emerald-500 text-emerald-600"
-                                : "text-gray-500 hover:bg-gray-50"
-                            }`}
-                          >
-                            {index + 1}
-                          </button>
-                        ))}
-
-                        <button
-                          onClick={() => paginate(currentPage + 1)}
-                          disabled={currentPage === totalPages}
-                          className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
-                            currentPage === totalPages
-                              ? "text-gray-300"
-                              : "text-gray-500 hover:bg-gray-50"
-                          }`}
-                        >
-                          السابق
-                        </button>
-                      </nav>
-                    </div>
+                      <button
+                        onClick={() => paginate(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
+                          currentPage === totalPages
+                            ? "text-gray-300"
+                            : "text-gray-500 hover:bg-gray-50"
+                        }`}>
+                        السابق
+                      </button>
+                    </nav>
                   </div>
                 </div>
-              )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
 
           {/* Total Count */}
           <div className="mt-4 text-gray-700">
