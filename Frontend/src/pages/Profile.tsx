@@ -575,6 +575,8 @@ const Profile: React.FC = () => {
                         }
                       />
                       <select
+                        name="الجنس"
+                        title="الجنس"
                         className="w-full border rounded-xl px-3 py-2 focus:outline-none focus:ring"
                         value={edited?.gender ?? ""}
                         onChange={(e) =>
