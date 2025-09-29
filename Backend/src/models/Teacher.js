@@ -68,6 +68,7 @@ const teacherSchema = new mongoose.Schema(
     avatar: { data: Buffer, contentType: String },
 
     isActive: { type: Boolean, default: false },
+    lastSeen: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );

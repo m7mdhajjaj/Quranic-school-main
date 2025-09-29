@@ -76,8 +76,11 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Set isActive to true on login
-    await Student.findByIdAndUpdate(student._id, { isActive: true });
+    // Set isActive to true and update lastSeen on login
+    await Student.findByIdAndUpdate(student._id, { 
+      isActive: true, 
+      lastSeen: new Date() 
+    });
 
     // إنشاء رمز JWT
     const token = jwt.sign(
@@ -150,8 +153,11 @@ const loginTeacher = async (req, res) => {
       });
     }
 
-    // Set isActive to true on login
-    await Teacher.findByIdAndUpdate(teacher._id, { isActive: true });
+    // Set isActive to true and update lastSeen on login
+    await Teacher.findByIdAndUpdate(teacher._id, { 
+      isActive: true, 
+      lastSeen: new Date() 
+    });
 
     // إنشاء رمز JWT
     const token = jwt.sign(
@@ -222,8 +228,11 @@ const loginAdmin = async (req, res) => {
       });
     }
 
-    // Set isActive to true on login
-    await Admin.findByIdAndUpdate(admin._id, { isActive: true });
+    // Set isActive to true and update lastSeen on login
+    await Admin.findByIdAndUpdate(admin._id, { 
+      isActive: true, 
+      lastSeen: new Date() 
+    });
 
     // إنشاء رمز JWT
     const token = jwt.sign(
@@ -808,14 +817,19 @@ exports.logout = async (req, res) => {
     const userId = req.user._id;
     const userRole = req.user.role;
 
-    // Set isActive to false based on user type
+    // Set isActive to false and update lastSeen based on user type
+    const updateData = {
+      isActive: false,
+      lastSeen: new Date()
+    };
+
     if (userRole === "student") {
-      await Student.findByIdAndUpdate(userId, { isActive: false });
+      await Student.findByIdAndUpdate(userId, updateData);
     } else if (userRole === "teacher" || userRole === "admin") {
       if (userRole === "admin") {
-        await Admin.findByIdAndUpdate(userId, { isActive: false });
+        await Admin.findByIdAndUpdate(userId, updateData);
       } else {
-        await Teacher.findByIdAndUpdate(userId, { isActive: false });
+        await Teacher.findByIdAndUpdate(userId, updateData);
       }
     }
 

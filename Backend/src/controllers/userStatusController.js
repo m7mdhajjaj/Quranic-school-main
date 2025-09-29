@@ -53,13 +53,13 @@ exports.getUserStatus = async (req, res) => {
       userId: user._id,
       isActive: isActive,
       userType: userType,
-      lastSeen: user.updatedAt,
+      lastSeen: user.lastSeen,
       // كائن data المفصل للاستخدام المستقبلي
       data: {
         userId: user._id,
         isActive: isActive,
         userType: userType,
-        lastSeen: user.updatedAt,
+        lastSeen: user.lastSeen,
         serverTimestamp: new Date().toISOString(),
       }
     });
@@ -152,6 +152,48 @@ exports.setUserStatus = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "حدث خطأ أثناء تعديل حالة المستخدم",
+    });
+  }
+};
+
+// Get all users last seen data
+exports.getAllLastSeen = async (req, res) => {
+  try {
+    // جلب آخر ظهور لجميع المستخدمين من جميع الجداول
+    const studentsPromise = Student.find({}, { _id: 1, lastSeen: 1, isActive: 1 }).lean();
+    const teachersPromise = Teacher.find({}, { _id: 1, lastSeen: 1, isActive: 1 }).lean();
+    const adminsPromise = Admin.find({}, { _id: 1, lastSeen: 1, isActive: 1 }).lean();
+
+    const [students, teachers, admins] = await Promise.all([
+      studentsPromise,
+      teachersPromise,
+      adminsPromise
+    ]);
+
+    const lastSeenData = [
+      ...students.map(s => ({ 
+        _id: s._id, 
+        lastSeen: s.lastSeen || new Date(),
+        isActive: s.isActive || false
+      })),
+      ...teachers.map(t => ({ 
+        _id: t._id, 
+        lastSeen: t.lastSeen || new Date(),
+        isActive: t.isActive || false
+      })),
+      ...admins.map(a => ({ 
+        _id: a._id, 
+        lastSeen: a.lastSeen || new Date(),
+        isActive: a.isActive || false
+      }))
+    ];
+
+    res.status(200).json(lastSeenData);
+  } catch (error) {
+    console.error("Get all last seen error:", error);
+    res.status(500).json({
+      success: false,
+      message: "حدث خطأ أثناء جلب بيانات آخر ظهور",
     });
   }
 };

@@ -5,6 +5,33 @@ import Avatar from '../components/Avatar';
 import { getUserGender, useAvatar } from '../hooks/useAvatar';
 import { useAuth } from '../hooks/useAuth';
 
+// دالة تنسيق آخر ظهور بالعربية
+const formatLastSeen = (lastSeen?: string | Date): string => {
+  if (!lastSeen) return 'غير محدد';
+  
+  const now = new Date();
+  const lastSeenDate = new Date(lastSeen);
+  const diffMs = now.getTime() - lastSeenDate.getTime();
+  
+  // تحويل إلى دقائق وساعات وأيام
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  
+  if (diffMinutes < 1) return 'منذ لحظات';
+  if (diffMinutes === 1) return 'قبل دقيقة';
+  if (diffMinutes < 60) return `قبل ${diffMinutes} دقيقة`;
+  if (diffHours === 1) return 'قبل ساعة';
+  if (diffHours < 24) return `قبل ${diffHours} ساعة`;
+  if (diffDays === 1) return 'قبل يوم';
+  if (diffDays < 30) return `قبل ${diffDays} يوم`;
+  if (diffDays < 365) {
+    const diffMonths = Math.floor(diffDays / 30);
+    return diffMonths === 1 ? 'قبل شهر' : `قبل ${diffMonths} شهر`;
+  }
+  const diffYears = Math.floor(diffDays / 365);
+  return diffYears === 1 ? 'قبل سنة' : `قبل ${diffYears} سنة`;
+};
 
 type AttachmentType = 'image' | 'file' | 'audio';
 
@@ -137,6 +164,10 @@ const Chat: React.FC = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [peerTyping, setPeerTyping] = useState(false);
   const [peerOnline, setPeerOnline] = useState(false);
+  
+  // User Status & Last Seen
+  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
+  const [lastSeenData, setLastSeenData] = useState<Map<string, string>>(new Map());
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const socketRef = useRef<Socket | null>(null);
@@ -254,6 +285,57 @@ const Chat: React.FC = () => {
       }
     })();
   }, [currentUser]);
+
+  // ----- Load last seen data -----
+  useEffect(() => {
+    const loadLastSeenData = async () => {
+      if (!currentUser) return;
+      try {
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+          ...(getAuthHeaders() as any),
+        };
+        const response = await fetch(`${API_URL}/user-status/last-seen`, { headers });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Last seen data from API:', data);
+          const formattedMap = new Map<string, string>();
+          const activeUsers = new Set<string>();
+          
+          data.forEach((user: any) => {
+            console.log('Processing user:', user._id, 'isActive:', user.isActive, 'lastSeen:', user.lastSeen);
+            // حفظ حالة النشاط
+            if (user.isActive) {
+              activeUsers.add(user._id);
+            }
+            // حفظ آخر ظهور لجميع المستخدمين
+            if (user.lastSeen) {
+              const formatted = formatLastSeen(user.lastSeen);
+              console.log('Formatted last seen for user', user._id, ':', formatted);
+              formattedMap.set(user._id, formatted);
+            }
+          });
+          
+          console.log('Active users:', [...activeUsers]);
+          console.log('Last seen map:', [...formattedMap.entries()]);
+          
+          setOnlineUsers(activeUsers);
+          setLastSeenData(formattedMap);
+        }
+      } catch (error) {
+        console.error('Error loading last seen data:', error);
+      }
+    };
+
+    if (contacts.length > 0) {
+      loadLastSeenData();
+      
+      // تحديث دوري كل 30 ثانية
+      const interval = setInterval(loadLastSeenData, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [contacts, currentUser, getAuthHeaders]);
 
   // ----- Load conversation -----
   const loadConversation = async () => {
@@ -1039,8 +1121,16 @@ const Chat: React.FC = () => {
                                 {c.firstName} {c.lastName || ''}
                               </div>
                               <div className="text-xs text-gray-500">
-                                {c.group}
+                                {onlineUsers.has(c._id) 
+                                  ? "نشط الآن" 
+                                  : lastSeenData.get(c._id) || "غير محدد"
+                                }
                               </div>
+                              {c.group && (
+                                <div className="text-xs text-gray-400">
+                                  {c.group}
+                                </div>
+                              )}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -1081,9 +1171,9 @@ const Chat: React.FC = () => {
                   {selectedContact
                     ? peerTyping
                       ? 'يكتب الآن…'
-                      : selectedContact.isActive
+                      : onlineUsers.has(selectedContact._id)
                         ? 'نشط الآن'
-                        : 'غير نشط'
+                        : lastSeenData.get(selectedContact._id) || 'غير محدد'
                     : 'اختر محادثة لبدء التواصل'}
                 </div>
               </div>
@@ -1165,7 +1255,7 @@ const Chat: React.FC = () => {
                                 </div>
                               )}
                               <div
-                                className={`flex ${mine ? 'justify-end' : 'justify-start'} mb-6 group relative`}
+                                className={`flex ${mine ? 'justify-end' : 'justify-start'} mb-3 group relative`}
                                 id={`msg-${m._id}`}
                               >
                                 {mine ? (
@@ -1297,9 +1387,9 @@ const Chat: React.FC = () => {
                                         </div>
                                       )}
 
-                                      <div className="px-6 py-3 rounded-2xl shadow-md transition-all duration-200 backdrop-blur-sm bg-green-500/75 text-white border border-green-400/25 min-h-[50px]">
+                                      <div className="px-4 py-2 rounded-2xl shadow-md transition-all duration-200 backdrop-blur-sm bg-green-500/75 text-white border border-green-400/25 min-h-[35px]">
                                         {m.text && (
-                                          <p className="whitespace-pre-line break-all text-sm leading-snug max-w-[300px]">
+                                          <p className="whitespace-pre-line break-all text-xs leading-tight max-w-[250px]">
                                             {searchQuery
                                               ? m.text
                                                   .split(
@@ -1334,8 +1424,8 @@ const Chat: React.FC = () => {
                                         {renderAttachments(m.attachments)}
                                         {renderReactions(m)}
 
-                                        <div className="mt-1 text-right">
-                                          <span className="text-xs opacity-70">
+                                        <div className="mt-0.5 text-right">
+                                          <span className="text-[10px] opacity-70">
                                             {renderMessageStatus(m)}
                                           </span>
                                         </div>
@@ -1450,8 +1540,8 @@ const Chat: React.FC = () => {
                                     </div>
 
                                     {/* وقت الرسالة عند hover */}
-                                    <div className="absolute -right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
-                                      <div className="bg-black/80 text-white text-xs px-2 py-1 rounded-full whitespace-nowrap shadow-lg backdrop-blur-sm">
+                                    <div className="absolute -right-1 top-3/4 -translate-y-1/4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+                                      <div className="bg-black/80 text-white text-[10px] px-1.5 py-0.5 rounded-full whitespace-nowrap shadow-lg backdrop-blur-sm">
                                         {new Date(
                                           m.createdAt
                                         ).toLocaleTimeString('ar-EG', {

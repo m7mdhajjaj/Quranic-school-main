@@ -4,6 +4,34 @@ import { API_URL } from "../config";
 import Avatar from "../components/Avatar";
 import { getUserGender } from "../hooks/useAvatar";
 
+// دالة تنسيق آخر ظهور بالعربية
+const formatLastSeen = (lastSeen?: string | Date): string => {
+  if (!lastSeen) return 'غير محدد';
+  
+  const now = new Date();
+  const lastSeenDate = new Date(lastSeen);
+  const diffMs = now.getTime() - lastSeenDate.getTime();
+  
+  // تحويل إلى دقائق وساعات وأيام
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  
+  if (diffMinutes < 1) return 'منذ لحظات';
+  if (diffMinutes === 1) return 'قبل دقيقة';
+  if (diffMinutes < 60) return `قبل ${diffMinutes} دقيقة`;
+  if (diffHours === 1) return 'قبل ساعة';
+  if (diffHours < 24) return `قبل ${diffHours} ساعة`;
+  if (diffDays === 1) return 'قبل يوم';
+  if (diffDays < 30) return `قبل ${diffDays} يوم`;
+  if (diffDays < 365) {
+    const diffMonths = Math.floor(diffDays / 30);
+    return diffMonths === 1 ? 'قبل شهر' : `قبل ${diffMonths} شهر`;
+  }
+  const diffYears = Math.floor(diffDays / 365);
+  return diffYears === 1 ? 'قبل سنة' : `قبل ${diffYears} سنة`;
+};
+
 interface Contact {
   _id: string;
   firstName: string;
@@ -44,6 +72,11 @@ const Chat: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showContactList, setShowContactList] = useState(false);
+  
+  // User Status & Last Seen
+  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
+  const [lastSeenData, setLastSeenData] = useState<Map<string, string>>(new Map());
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<Socket | null>(null);
   
@@ -102,6 +135,60 @@ const Chat: React.FC = () => {
       }
     };
     fetchContacts();
+  }, [currentUser]);
+
+  // Load Last Seen data on component mount
+  useEffect(() => {
+    const loadLastSeenData = async () => {
+      if (!currentUser) return;
+      try {
+        const authHeader = getAuthHeaders();
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+        if ((authHeader as any).Authorization)
+          headers.Authorization = (authHeader as any).Authorization as string;
+
+        const response = await fetch(`${API_URL}/user-status/last-seen`, { headers });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Mobile - Last seen data from API:', data);
+          const formattedMap = new Map<string, string>();
+          const activeUsers = new Set<string>();
+          
+          data.forEach((user: any) => {
+            console.log('Mobile - Processing user:', user._id, 'isActive:', user.isActive, 'lastSeen:', user.lastSeen);
+            // حفظ حالة النشاط
+            if (user.isActive) {
+              activeUsers.add(user._id);
+            }
+            // حفظ آخر ظهور لجميع المستخدمين
+            if (user.lastSeen) {
+              const formatted = formatLastSeen(user.lastSeen);
+              console.log('Mobile - Formatted last seen for user', user._id, ':', formatted);
+              formattedMap.set(user._id, formatted);
+            }
+          });
+          
+          console.log('Mobile - Active users:', [...activeUsers]);
+          console.log('Mobile - Last seen map:', [...formattedMap.entries()]);
+          
+          setOnlineUsers(activeUsers);
+          setLastSeenData(formattedMap);
+        }
+      } catch (error) {
+        console.error("Error loading last seen data:", error);
+      }
+    };
+
+    if (currentUser) {
+      loadLastSeenData();
+      
+      // تحديث دوري كل 30 ثانية
+      const interval = setInterval(loadLastSeenData, 30000);
+      return () => clearInterval(interval);
+    }
   }, [currentUser]);
 
   // Helper functions
@@ -533,11 +620,23 @@ const Chat: React.FC = () => {
                             size="lg"
                             className="shadow-lg"
                           />
-                          <div className="absolute -bottom-1 -right-1 w-3 h-3 md:w-4 md:h-4 bg-green-400 rounded-full border-2 border-white shadow-sm animate-pulse-slow"></div>
+                          {/* User Status Indicator */}
+                          <div className={`absolute -bottom-1 -right-1 w-3 h-3 md:w-4 md:h-4 rounded-full border-2 border-white shadow-sm ${
+                            onlineUsers.has(c._id) 
+                              ? 'bg-green-400 animate-pulse-slow' 
+                              : 'bg-gray-400'
+                          }`}></div>
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="font-semibold text-gray-800 text-base md:text-lg truncate">
                             {c.firstName} {c.lastName}
+                          </div>
+                          {/* User Status Text */}
+                          <div className="text-xs md:text-sm text-gray-500 truncate">
+                            {onlineUsers.has(c._id) 
+                              ? "متصل الآن" 
+                              : lastSeenData.get(c._id) || "غير محدد"
+                            }
                           </div>
                           {c.group && (
                             <div className="text-xs md:text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-md inline-block mt-1 truncate max-w-full">
@@ -581,14 +680,25 @@ const Chat: React.FC = () => {
                           size="xl"
                           className="shadow-lg"
                         />
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white shadow-sm animate-pulse"></div>
+                        {/* User Status Indicator */}
+                        <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white shadow-sm ${
+                          onlineUsers.has(selectedContact._id) 
+                            ? 'bg-green-400 animate-pulse' 
+                            : 'bg-gray-400'
+                        }`}></div>
                       </div>
                       <div>
                         <h3 className="font-bold text-xl">
                           {selectedContact.firstName}{" "}
                           {selectedContact.lastName || ""}
                         </h3>
-                        <p className="text-emerald-100 text-sm">متصل الآن</p>
+                        {/* User Status Text */}
+                        <p className="text-emerald-100 text-sm">
+                          {onlineUsers.has(selectedContact._id) 
+                            ? "متصل الآن" 
+                            : lastSeenData.get(selectedContact._id) || "غير محدد"
+                          }
+                        </p>
                       </div>
                     </div>
                     <button
@@ -635,7 +745,7 @@ const Chat: React.FC = () => {
                               key={message._id}
                               className={`flex ${
                                 isCurrentUser ? "justify-end" : "justify-start"
-                              } mb-3 animate-slideIn group relative`}
+                              } mb-2 animate-slideIn group relative`}
                               style={{ animationDelay: `${index * 0.05}s` }}
                             >
                               {isCurrentUser ? (
@@ -684,7 +794,7 @@ const Chat: React.FC = () => {
                                       </div>
                                     )}
                                     
-                                    <div className="px-4 py-2 rounded-2xl shadow-sm transition-all duration-200 backdrop-blur-sm bg-green-500/90 text-white border border-green-400/30">
+                                    <div className="px-3 py-1.5 rounded-2xl shadow-sm transition-all duration-200 backdrop-blur-sm bg-green-500/90 text-white border border-green-400/30">
                                       {/* عرض الرسالة المردود عليها */}
                                       {message.replyTo && (
                                         <div className="mb-2">
@@ -710,11 +820,11 @@ const Chat: React.FC = () => {
                                         </div>
                                       )}
                                       
-                                      <p className="text-sm leading-snug break-all max-w-[200px]">
+                                      <p className="text-xs leading-tight break-all max-w-[180px]">
                                         {message.text}
                                       </p>
-                                      <div className="mt-1 text-right">
-                                        <span className="text-xs opacity-70">
+                                      <div className="mt-0.5 text-right">
+                                        <span className="text-[10px] opacity-70">
                                           {renderMessageStatus(message, isCurrentUser)}
                                         </span>
                                       </div>
@@ -735,8 +845,8 @@ const Chat: React.FC = () => {
                                 <>
                                   {/* للرسائل الرمادية: وقت, رسالة, Reply+خيارات */}
                                   {/* 1. ديف الوقت */}
-                                  <div className="opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300 mr-1 self-center">
-                                    <div className="bg-black/80 text-white text-xs px-3 py-2 rounded-full whitespace-nowrap shadow-lg backdrop-blur-sm">
+                                  <div className="opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300 mr-1 self-end">
+                                    <div className="bg-black/80 text-white text-[10px] px-2 py-1 rounded-full whitespace-nowrap shadow-lg backdrop-blur-sm">
                                       {new Date(message.createdAt).toLocaleTimeString("ar-EG", {
                                         hour: "2-digit",
                                         minute: "2-digit"

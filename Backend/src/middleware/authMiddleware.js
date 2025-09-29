@@ -45,6 +45,12 @@ exports.protect = async (req, res, next) => {
       // إضافة بيانات الطالب إلى الطلب
       req.user = currentStudent;
       req.user.role = "student";
+      
+      // تحديث آخر ظهور للطالب
+      await Student.findByIdAndUpdate(decoded.id, { 
+        lastSeen: new Date(),
+        isActive: true 
+      });
     } else {
       // البحث عن المعلم في قاعدة البيانات
       const currentTeacher = await Teacher.findById(decoded.id);
@@ -59,6 +65,19 @@ exports.protect = async (req, res, next) => {
       // إضافة بيانات المعلم إلى الطلب
       req.user = currentTeacher;
       req.user.role = currentTeacher.role;
+      
+      // تحديث آخر ظهور للمعلم
+      if (currentTeacher.role === "admin") {
+        await Admin.findByIdAndUpdate(decoded.id, { 
+          lastSeen: new Date(),
+          isActive: true 
+        });
+      } else {
+        await Teacher.findByIdAndUpdate(decoded.id, { 
+          lastSeen: new Date(),
+          isActive: true 
+        });
+      }
     }
 
     next();
