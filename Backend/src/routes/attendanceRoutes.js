@@ -1,25 +1,26 @@
 const express = require("express");
 const router = express.Router();
 const attendanceController = require("../controllers/attendanceController");
-// Authentication middleware imported but not used for debugging
+// Authentication middleware - CRITICAL: All attendance routes now protected
 const { protect } = require("../middleware/authMiddleware");
 
-// Create or update attendance records for a specific date
-router.post("/", attendanceController.createAttendance); // No auth for debugging
+// Create or update attendance records for a specific date - PROTECTED
+router.post("/", protect, attendanceController.createAttendance);
 
-// Get attendance records for a specific date
-router.get("/date/:date", attendanceController.getAttendanceByDate);
+// Get attendance records for a specific date - PROTECTED
+router.get("/date/:date", protect, attendanceController.getAttendanceByDate);
 
-// Get all attendance records for a specific student
-router.get("/student/:studentId", attendanceController.getStudentAttendance);
+// Get all attendance records for a specific student - PROTECTED
+router.get("/student/:studentId", protect, attendanceController.getStudentAttendance);
 
-// Get attendance statistics for a specific student
+// Get attendance statistics for a specific student - PROTECTED
 router.get(
   "/student/:studentId/stats",
+  protect,
   attendanceController.getStudentAttendanceStats,
 );
 
-// Delete attendance record
-router.delete("/:id", attendanceController.deleteAttendance);
+// Delete attendance record - PROTECTED
+router.delete("/:id", protect, attendanceController.deleteAttendance);
 
 module.exports = router;

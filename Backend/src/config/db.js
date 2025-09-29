@@ -5,8 +5,15 @@ mongoose.set("strictQuery", false);
 const connectDB = async () => {
   try {
     console.log("Connecting to MongoDB...");
-    // Remove deprecated options
-    const conn = await mongoose.connect(process.env.MONGODB_URI);
+    // Configure connection options for better error handling
+    const conn = await mongoose.connect(process.env.MONGODB_URI, {
+      serverSelectionTimeoutMS: 10000, // 10 seconds timeout
+      socketTimeoutMS: 45000, // 45 seconds socket timeout
+      maxPoolSize: 10, // Maintain up to 10 socket connections
+    });
+    
+    // Configure mongoose buffering settings (valid options only)
+    mongoose.set('bufferCommands', false);
     console.log(`MongoDB Connected: ${conn.connection.host}`);
 
     // Test the connection by listing collections
@@ -49,11 +56,11 @@ const connectDB = async () => {
     console.error(
       "Check your MONGODB_URI in .env file and make sure your MongoDB Atlas cluster is accessible",
     );
+    console.error("Application cannot continue without database connection.");
 
-    // Don't exit process in development - allow nodemon to restart
-    if (process.env.NODE_ENV === "production") {
-      process.exit(1);
-    }
+    // Exit process in all environments - database connection is critical
+    // Note: In development, nodemon will automatically restart the process
+    process.exit(1);
   }
 };
 

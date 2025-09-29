@@ -253,22 +253,36 @@ exports.updateStudent = async (req, res) => {
     
     const updatedData = { ...req.body };
     
-    // Remove password field from updates if it's empty or undefined
-    if (!updatedData.password) {
+    // Handle password validation properly
+    if (!updatedData.password || updatedData.password.trim() === '') {
+      // If no password provided, remove it from update and use runValidators: false only for this case
       delete updatedData.password;
+      
+      const updatedStudent = await Student.findByIdAndUpdate(
+        req.params.id,
+        updatedData,
+        { new: true, runValidators: false }, // Only skip validation when password is not being updated
+      );
+      
+      if (!updatedStudent) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+      
+      res.json({ success: true, data: updatedStudent });
+    } else {
+      // If password is being updated, run full validation
+      const updatedStudent = await Student.findByIdAndUpdate(
+        req.params.id,
+        updatedData,
+        { new: true, runValidators: true }, // Enable validation when password is being updated
+      );
+      
+      if (!updatedStudent) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+      
+      res.json({ success: true, data: updatedStudent });
     }
-    
-    const updatedStudent = await Student.findByIdAndUpdate(
-      req.params.id,
-      updatedData,
-      { new: true, runValidators: false }, // Skip validation for updates to avoid password requirement
-    );
-    
-    if (!updatedStudent) {
-      return res.status(404).json({ message: "Student not found" });
-    }
-    
-    res.json({ success: true, data: updatedStudent });
   } catch (error) {
     console.error("Error updating student:", error);
     res.status(400).json({ message: error.message });

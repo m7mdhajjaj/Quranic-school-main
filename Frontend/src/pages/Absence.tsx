@@ -7,11 +7,11 @@
 // =========================================
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import api from "../api";
 
 // ================== الإعدادات العامة ==================
-const API_URL = "http://localhost:5005/api";
+// API_URL is now handled by the api instance
 
 // ---------- Types ----------
 interface Student {
@@ -167,7 +167,7 @@ const Absence = () => {
       setError(null);
 
       // 1) جلب جميع الطلاب
-      const studentsRes = await axios.get(`${API_URL}/students`);
+      const studentsRes = await api.get('/students');
       const rawStudents: Student[] = Array.isArray(studentsRes.data)
         ? studentsRes.data
         : [];
@@ -183,7 +183,7 @@ const Absence = () => {
 
       // 3) جلب حضور اليوم المحدد (إن وجد)
       try {
-        const attRes = await axios.get(`${API_URL}/attendance/date/${forDate}`);
+        const attRes = await api.get(`/attendance/date/${forDate}`);
         if (Array.isArray(attRes.data) && attRes.data.length > 0) {
           const map = new Map<string, boolean>();
           attRes.data.forEach((rec: any) =>
@@ -212,7 +212,7 @@ const Absence = () => {
   const fetchStudentAbsenceStats = async (studentId: string) => {
     try {
       setError(null);
-      const res = await axios.get(`${API_URL}/attendance/student/${studentId}`);
+      const res = await api.get(`/attendance/student/${studentId}`);
       const data = Array.isArray(res.data) ? res.data : [];
 
       // تجميع حسب الشهر/السنة
@@ -351,7 +351,7 @@ const Absence = () => {
         isPresent: s.isPresent,
       }));
 
-      await axios.post(`${API_URL}/attendance`, {
+      await api.post('/attendance', {
         date,
         records: payload,
       });
@@ -361,7 +361,7 @@ const Absence = () => {
       alert("تم حفظ سجل الحضور بنجاح ✅");
     } catch (e: any) {
       console.error(e);
-      if (axios.isAxiosError(e)) {
+      if (e.response) {
         alert(e.response?.data?.message ?? "تعذر حفظ السجل");
       } else {
         alert("تعذر حفظ السجل");
