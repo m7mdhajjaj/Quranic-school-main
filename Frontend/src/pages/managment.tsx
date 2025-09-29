@@ -26,15 +26,6 @@ interface Student {
   group: string;
 }
 
-// Define User interface for authentication
-interface User {
-  _id: string;
-  firstName: string;
-  lastName?: string;
-  email?: string;
-  role: string;
-  groups?: string[];
-}
 
 const Managment: React.FC = () => {
   // Navigation hook for redirects

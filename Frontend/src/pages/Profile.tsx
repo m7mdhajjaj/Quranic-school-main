@@ -69,12 +69,15 @@ type FetchState =
 // ============================
 // Helpers
 // ============================
-const toArabicGender = (g?: string) =>
-  g === "male" || g === "ذكر"
-    ? "ذكر"
-    : g === "female" || g === "أنثى" || g === "انثى"
-    ? "أنثى"
-    : "غير محدد";
+const toArabicGender = (g?: string) => {
+  if (!g || g.trim() === "") return "غير محدد";
+  
+  const normalized = g.trim();
+  if (normalized === "ذكر" || normalized === "male") return "ذكر";
+  if (normalized === "أنثى" || normalized === "انثى" || normalized === "female") return "أنثى";
+  
+  return "غير محدد";
+};
 
 const calcAge = (iso?: string) => {
   if (!iso) return undefined;
@@ -577,16 +580,16 @@ const Profile: React.FC = () => {
                       <select
                         name="الجنس"
                         title="الجنس"
-                        className="w-full border rounded-xl px-3 py-2 focus:outline-none focus:ring"
+                        className="w-full border rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                         value={edited?.gender ?? ""}
                         onChange={(e) =>
                           setEdited((p) =>
                             p ? { ...p, gender: e.target.value } : p
                           )
                         }>
-                        <option value="">غير محدد</option>
-                        <option value="male">ذكر</option>
-                        <option value="female">أنثى</option>
+                        <option value="" disabled>اختر الجنس</option>
+                        <option value="ذكر">👨 ذكر</option>
+                        <option value="أنثى">👩 أنثى</option>
                       </select>
                       <div className="bg-slate-50 text-slate-700 rounded-xl px-3 py-2">
                         العمر: {calcAge(edited?.birthDate) ?? "—"}
@@ -601,8 +604,16 @@ const Profile: React.FC = () => {
                   <>
                     <div>تاريخ الميلاد: {formatDate(user.birthDate)}</div>
                     <div className="mt-1">العمر: {age ?? "—"} سنة</div>
-                    <div className="mt-1">
-                      الجنس: {toArabicGender(user.gender)}
+                    <div className="mt-1 flex items-center gap-2">
+                      <span>الجنس:</span>
+                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm font-medium ${
+                        user.gender === 'ذكر' ? 'bg-blue-100 text-blue-800' :
+                        user.gender === 'أنثى' ? 'bg-pink-100 text-pink-800' :
+                        'bg-gray-100 text-gray-600'
+                      }`}>
+                        {user.gender === 'ذكر' ? '👨' : user.gender === 'أنثى' ? '👩' : '❓'}
+                        {toArabicGender(user.gender)}
+                      </span>
                     </div>
                   </>
                 )

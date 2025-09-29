@@ -123,9 +123,31 @@ export async function fetchAvatarBlobUrl(
 }
 
 /**
- * Utility function to determine user gender from name
+ * Utility function to determine user gender from name or explicit gender field
  */
-export function getUserGender(user: { firstName?: string; name?: string } | null): 'male' | 'female' {
+export function getUserGender(user: { 
+  firstName?: string; 
+  name?: string; 
+  gender?: string; 
+} | null): 'male' | 'female' | 'ذكر' | 'أنثى' {
+  if (!user) return 'ذكر';
+  
+  // إذا كان الجنس محدد صراحة، استخدمه
+  if (user.gender) {
+    if (user.gender === 'male' || user.gender === 'ذكر') return 'ذكر';
+    if (user.gender === 'female' || user.gender === 'أنثى' || user.gender === 'انثى') return 'أنثى';
+  }
+  
+  // وإلا، حدد من الاسم
+  const name = user.firstName || user.name || '';
+  if (/a$|ة$|ه$|ya$|ia$|ina$/i.test(name.trim())) return 'أنثى';
+  return 'ذكر';
+}
+
+/**
+ * Legacy function for backward compatibility - returns English values
+ */
+export function getUserGenderLegacy(user: { firstName?: string; name?: string } | null): 'male' | 'female' {
   if (!user) return 'male';
   const name = user.firstName || user.name || '';
   if (/a$|ة$|ه$|ya$|ia$|ina$/i.test(name.trim())) return 'female';

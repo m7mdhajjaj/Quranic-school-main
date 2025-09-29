@@ -16,7 +16,7 @@ export interface AvatarProps {
   /** User ID for status checking */
   userId?: string;
   /** User's gender for color theming */
-  gender?: 'male' | 'female';
+  gender?: 'male' | 'female' | 'ذكر' | 'أنثى';
   /** Whether to show loading state */
   loading?: boolean;
   /** Whether the avatar is clickable */
@@ -139,15 +139,20 @@ const Avatar: React.FC<AvatarProps> = ({
     return 'غير نشط';
   };
 
-  const genderColors = {
-    female:
-      'bg-gradient-to-br from-pink-400 to-fuchsia-500 border-pink-200/50 shadow-pink-500/30',
-    male: 'bg-gradient-to-br from-emerald-400 to-teal-500 border-emerald-200/50 shadow-emerald-500/30',
+  // دالة للحصول على لون الجنس مع دعم القيم العربية والإنجليزية
+  const getGenderColor = () => {
+    if (gender === 'male' || gender === 'ذكر') {
+      return 'bg-gradient-to-br from-emerald-400 to-teal-500 border-emerald-200/50 shadow-emerald-500/30';
+    }
+    if (gender === 'female' || gender === 'أنثى') {
+      return 'bg-gradient-to-br from-pink-400 to-fuchsia-500 border-pink-200/50 shadow-pink-500/30';
+    }
+    return 'bg-gradient-to-br from-gray-400 to-gray-500 border-gray-200/50 shadow-gray-500/30';
   };
 
   const LoadingSkeleton = () => (
     <div
-      className={`${sizeClasses[size]} rounded-full ${borderClasses[border]} overflow-hidden flex items-center justify-center ${genderColors[gender]} shadow-lg relative`}
+      className={`${sizeClasses[size]} rounded-full ${borderClasses[border]} overflow-hidden flex items-center justify-center ${getGenderColor()} shadow-lg relative`}
       aria-label="جاري تحميل الصورة"
     >
       {/* Shimmer effect */}
@@ -183,7 +188,7 @@ const Avatar: React.FC<AvatarProps> = ({
           items-center 
           justify-center 
           ${clickable ? 'cursor-pointer hover:scale-105 hover:shadow-lg transition-all duration-300' : ''} 
-          ${displaySrc ? 'bg-white' : genderColors[gender]} 
+          ${displaySrc ? 'bg-white' : getGenderColor()} 
           shadow-lg
           ${size === '3xl' ? 'shadow-xl' : ''}
           group 
