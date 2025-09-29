@@ -149,6 +149,7 @@ export async function fetchAvatarBlobUrl(
 
 /**
  * Utility function to determine user gender from name or explicit gender field
+ * Enhanced with better Arabic name pattern recognition
  */
 export function getUserGender(user: { 
   firstName?: string; 
@@ -159,13 +160,46 @@ export function getUserGender(user: {
   
   // إذا كان الجنس محدد صراحة، استخدمه
   if (user.gender) {
-    if (user.gender === 'male' || user.gender === 'ذكر') return 'ذكر';
-    if (user.gender === 'female' || user.gender === 'أنثى' || user.gender === 'انثى') return 'أنثى';
+    const genderLower = user.gender.toLowerCase().trim();
+    if (genderLower === 'male' || genderLower === 'ذكر') return 'ذكر';
+    if (genderLower === 'female' || genderLower === 'أنثى' || genderLower === 'انثى') return 'أنثى';
   }
   
-  // وإلا، حدد من الاسم
-  const name = user.firstName || user.name || '';
-  if (/a$|ة$|ه$|ya$|ia$|ina$/i.test(name.trim())) return 'أنثى';
+  // وإلا، حدد من الاسم مع تحسين أنماط الأسماء العربية
+  const name = (user.firstName || user.name || '').trim();
+  if (!name) return 'ذكر'; // افتراضي إذا لم يوجد اسم
+  
+  // أنماط أسماء الإناث العربية والإنجليزية
+  const femalePatterns = [
+    /ة$/,           // التاء المربوطة
+    /ه$/,           // الهاء
+    /اء$/,          // نهاية بـ اء (مثل فاطمة، علياء)
+    /ان$/,          // نهاية بـ ان (مثل ريان)
+    /ين$/,          // نهاية بـ ين (مثل ياسمين)
+    /a$/i,          // English names ending with 'a'
+    /ya$/i,         // English names ending with 'ya'
+    /ia$/i,         // English names ending with 'ia'
+    /ina$/i,        // English names ending with 'ina'
+    /ah$/i,         // English names ending with 'ah'
+  ];
+  
+  // أسماء إناث شائعة لا تتبع القواعد
+  const commonFemaleNames = [
+    'مريم', 'سارة', 'هدى', 'نور', 'أمل', 'سعاد', 'زينب', 'خديجة',
+    'عائشة', 'حفصة', 'رقية', 'أم كلثوم', 'سكينة', 'زهراء', 'بتول',
+    'mary', 'sarah', 'noor', 'amal', 'zeinab', 'khadija', 'aisha'
+  ];
+  
+  // تحقق من الأسماء الشائعة أولاً
+  if (commonFemaleNames.includes(name.toLowerCase())) {
+    return 'أنثى';
+  }
+  
+  // تحقق من الأنماط
+  if (femalePatterns.some(pattern => pattern.test(name))) {
+    return 'أنثى';
+  }
+  
   return 'ذكر';
 }
 

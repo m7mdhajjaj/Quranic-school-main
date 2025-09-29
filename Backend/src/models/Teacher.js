@@ -40,8 +40,19 @@ const teacherSchema = new mongoose.Schema(
     age: { type: Number, min: [0, 'العمر يجب أن يكون رقماً موجباً'] },
     gender: {
       type: String,
-      enum: ['male', 'female', 'ذكر', 'أنثى'],
+      enum: {
+        values: ['ذكر', 'انثى', 'أنثى', 'male', 'female', 'Male', 'Female'],
+        message: 'الجنس يجب أن يكون ذكر أو أنثى (Arabic) or male/female (English)',
+      },
       required: false,
+      // تطبيق تسوية تلقائية للقيم
+      set: function(value) {
+        if (!value) return value;
+        const normalized = value.toString().toLowerCase().trim();
+        if (normalized === 'male' || normalized === 'ذكر') return 'ذكر';
+        if (normalized === 'female' || normalized === 'أنثى' || normalized === 'انثى') return 'أنثى';
+        return value;
+      }
     },
 
     residence: { type: String },

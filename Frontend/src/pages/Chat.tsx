@@ -1,12 +1,10 @@
-// ...existing code...
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FiPaperclip, FiMic } from 'react-icons/fi';
 import { io, Socket } from 'socket.io-client';
 import Avatar from '../components/Avatar';
-import { getUserGender } from '../hooks/useAvatar';
+import { getUserGender, useAvatar } from '../hooks/useAvatar';
 import { useAuth } from '../hooks/useAuth';
-// If you add shadcn/ui you can replace basic elements with nicer components.
-// ...existing code...
+
 
 type AttachmentType = 'image' | 'file' | 'audio';
 
@@ -56,8 +54,42 @@ interface Contact {
 }
 
 
+
+
 const API_URL = 'http://localhost:5005/api';
 const SOCKET_URL = 'http://localhost:5005';
+
+// مكون مساعد لعرض الأفاتار مع الصورة والحالة
+const ChatAvatar: React.FC<{
+  user: Contact | { _id: string; firstName: string; lastName?: string } | null;
+  size?: 'sm' | 'md' | 'lg';
+  showStatus?: boolean;
+  className?: string;
+  isOnline?: boolean;
+}> = ({ user, size = 'md', showStatus = false, className = '', isOnline }) => {
+  const userGender = getUserGender(user);
+  const { avatarUrl, avatarLoading } = useAvatar({
+    userId: user?._id,
+    userRole: 'student', // default role for contacts
+  });
+
+  const onlineStatus = showStatus && isOnline !== undefined 
+    ? (isOnline ? 'online' : 'offline') 
+    : undefined;
+
+  return (
+    <Avatar
+      src={avatarUrl}
+      userName={user?.firstName}
+      gender={userGender}
+      size={size}
+      className={className}
+      showStatus={showStatus}
+      forceStatus={onlineStatus}
+      loading={avatarLoading}
+    />
+  );
+};
 
 // ...existing code...
 
@@ -66,8 +98,6 @@ const Chat: React.FC = () => {
 
   // Left pane
   const [contacts, setContacts] = useState<Contact[]>([]);
-  // const [groups, setGroups] = useState<Contact[]>([]); // { _id: groupName, isGroup: true }
-  // const [listTab, setListTab] = useState<"direct" | "group">("direct");
   const [loading, setLoading] = useState(false);
 
   // Conversation
@@ -1009,13 +1039,12 @@ const Chat: React.FC = () => {
                         >
                           <div className="flex items-center gap-3">
                             <div className="relative">
-                              <Avatar
-                                userName={c.firstName}
-                                gender={getUserGender(c)}
+                              <ChatAvatar
+                                user={c}
                                 size="md"
                                 className="ring-2 ring-white/30"
                                 showStatus={true}
-                                forceStatus={c.isOnline ? 'online' : 'offline'}
+                                isOnline={c.isOnline}
                               />
                             </div>
                             <div>
@@ -1047,17 +1076,13 @@ const Chat: React.FC = () => {
             <div className="bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-600 p-4 text-white flex items-center gap-3 shadow-lg">
               {/* Chat header: show online status and full name only if a contact is selected */}
               <div className="relative">
-                <Avatar
-                  userName={selectedContact?.firstName}
-                  gender={getUserGender(selectedContact)}
+                <ChatAvatar
+                  user={selectedContact}
                   size="md"
                   className="ring-2 ring-white/30"
+                  showStatus={true}
+                  isOnline={selectedContact?.isOnline}
                 />
-                {selectedContact && (
-                  <span
-                    className={`absolute bottom-0 left-7 w-3 h-3 border-2 border-white rounded-full ${selectedContact.isOnline ? 'bg-green-400' : 'bg-red-400'}`}
-                  ></span>
-                )}
               </div>
               <div className="flex-1">
                 <div className="font-bold">
@@ -1347,9 +1372,8 @@ const Chat: React.FC = () => {
                                     {/* للرسائل الرمادية: Avatar + اسم المرسل + رسالة + خيارات */}
                                     {/* 1. Avatar واسم المرسل */}
                                     <div className="flex items-start gap-2 max-w-[85%]">
-                                      <Avatar
-                                        userName={typeof m.sender === 'object' ? m.sender.firstName : (contacts.find(c => c._id === m.sender)?.firstName || 'مستخدم')}
-                                        gender={getUserGender(typeof m.sender === 'object' ? m.sender : contacts.find(c => c._id === m.sender) || null)}
+                                      <ChatAvatar
+                                        user={typeof m.sender === 'object' ? m.sender : contacts.find(c => c._id === m.sender) || null}
                                         size="sm"
                                         className="flex-shrink-0 mt-1"
                                       />

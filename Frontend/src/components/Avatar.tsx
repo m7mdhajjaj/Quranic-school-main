@@ -179,12 +179,23 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
   // دالة للحصول على لون الجنس مع دعم القيم العربية والإنجليزية
   const getGenderColor = () => {
     if (gender === 'male' || gender === 'ذكر') {
-      return 'bg-gradient-to-br from-emerald-400 to-teal-500 border-emerald-200/50 shadow-emerald-500/30';
+      return 'bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-600 border-emerald-200/60 shadow-lg shadow-emerald-500/40';
     }
     if (gender === 'female' || gender === 'أنثى') {
-      return 'bg-gradient-to-br from-pink-400 to-fuchsia-500 border-pink-200/50 shadow-pink-500/30';
+      return 'bg-gradient-to-br from-pink-400 via-rose-500 to-fuchsia-600 border-pink-200/60 shadow-lg shadow-pink-500/40';
     }
-    return 'bg-gradient-to-br from-gray-400 to-gray-500 border-gray-200/50 shadow-gray-500/30';
+    return 'bg-gradient-to-br from-gray-400 via-slate-500 to-gray-600 border-gray-200/60 shadow-lg shadow-gray-500/40';
+  };
+
+  // دالة للحصول على لون النص حسب الجنس
+  const getTextColor = () => {
+    if (gender === 'male' || gender === 'ذكر') {
+      return 'text-white drop-shadow-lg';
+    }
+    if (gender === 'female' || gender === 'أنثى') {
+      return 'text-white drop-shadow-lg';
+    }
+    return 'text-white drop-shadow-lg';
   };
 
   const LoadingSkeleton = () => (
@@ -268,20 +279,25 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
           />
         ) : (
           <div className="relative w-full h-full flex items-center justify-center">
+            {/* نمط خفيف للخلفية لإضافة عمق بصري */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="w-full h-full bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.3),transparent_50%)]" />
+            </div>
+            
             {fallbackIcon ||
               (initials ? (
                 <span
-                  className={`text-white font-bold ${textSizeClasses[size]} drop-shadow-sm`}
+                  className={`font-bold ${textSizeClasses[size]} ${getTextColor()} relative z-10`}
                 >
                   {initials}
                 </span>
               ) : (
-                <UserIcon className={`${iconSizeClasses[size]} text-white`} />
+                <UserIcon className={`${iconSizeClasses[size]} text-white drop-shadow-lg relative z-10`} />
               ))}
 
             {/* Subtle retry indicator on hover for clickable avatars */}
             {clickable && !displaySrc && (
-              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full flex items-center justify-center">
+              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full flex items-center justify-center z-20">
                 <svg
                   className="w-3 h-3 text-white/80"
                   fill="none"

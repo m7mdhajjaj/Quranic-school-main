@@ -31,10 +31,18 @@ const studentSchema = new mongoose.Schema(
     gender: {
       type: String,
       enum: {
-        values: ['ذكر', 'انثى', 'أنثى', 'male', 'female'],
-        message: 'الجنس يجب أن يكون ذكر أو انثى',
+        values: ['ذكر', 'انثى', 'أنثى', 'male', 'female', 'Male', 'Female'],
+        message: 'الجنس يجب أن يكون ذكر أو أنثى (Arabic) or male/female (English)',
       },
       required: [true, 'الجنس مطلوب'],
+      // تطبيع تسوية تلقائية للقيم
+      set: function(value) {
+        if (!value) return value;
+        const normalized = value.toString().toLowerCase().trim();
+        if (normalized === 'male' || normalized === 'ذكر') return 'ذكر';
+        if (normalized === 'female' || normalized === 'أنثى' || normalized === 'انثى') return 'أنثى';
+        return value;
+      }
     },
 
     residence: { type: String, required: [true, 'مكان السكن مطلوب'] },
