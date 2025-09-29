@@ -166,6 +166,7 @@ const ChangePass = () => {
               className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-200"
               required
               placeholder="أدخل كلمة المرور الحالية"
+              autoComplete="current-password"
             />
           </div>
 
@@ -186,6 +187,7 @@ const ChangePass = () => {
               required
               minLength={6}
               placeholder="أدخل كلمة المرور الجديدة (6 أحرف على الأقل)"
+              autoComplete="new-password"
             />
           </div>
 
@@ -206,6 +208,7 @@ const ChangePass = () => {
               required
               minLength={6}
               placeholder="أعد إدخال كلمة المرور الجديدة"
+              autoComplete="new-password"
             />
           </div>
 

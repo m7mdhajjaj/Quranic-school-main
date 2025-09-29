@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect, useRef, type ReactNode } from 'react';
+import axios from 'axios';
 import { io, Socket } from 'socket.io-client';
 import { API_BASE_URL } from '../config';
 
@@ -96,6 +97,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const parsedUser = JSON.parse(savedUser);
           setUser(parsedUser);
           setToken(savedToken);
+
+          // Ensure axios sends Authorization header by default
+          axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
           
           // Connect socket and emit login
           if (socketRef.current) {
@@ -131,6 +135,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(userWithActiveStatus);
       setToken(authToken);
 
+      // Set axios Authorization header for subsequent requests
+      axios.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
+
       // حفظ البيانات في localStorage
       localStorage.setItem('user', JSON.stringify(userWithActiveStatus));
       localStorage.setItem('token', authToken);
@@ -158,6 +165,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // مسح البيانات من الحالة المحلية
       setUser(null);
       setToken(null);
+
+       // Remove axios Authorization header
+       delete axios.defaults.headers.common['Authorization'];
 
       // مسح البيانات من localStorage
       localStorage.removeItem('user');

@@ -2,9 +2,11 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API_URL } from "../config";
+import { useAuth } from "../hooks/useAuth";
 
 const TeacherLogin = () => {
   const navigate = useNavigate();
+  const { login: authLogin } = useAuth();
   const [formData, setFormData] = useState({
     teacherId: "",
     password: "",
@@ -35,9 +37,8 @@ const TeacherLogin = () => {
         userType: "teacher",
       });
 
-      // If successful, store the token and redirect
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("user", JSON.stringify(response.data.user));
+  // If successful, use central auth flow
+  authLogin(response.data.user, response.data.token);
 
       // Redirect to home page
       navigate("/");
@@ -92,6 +93,7 @@ const TeacherLogin = () => {
               value={formData.teacherId}
               onChange={handleChange}
               className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-200"
+              autoComplete="username"
               required
             />
           </div>
@@ -110,6 +112,7 @@ const TeacherLogin = () => {
               value={formData.password}
               onChange={handleChange}
               className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition duration-200"
+              autoComplete="current-password"
               required
             />
           </div>

@@ -566,6 +566,7 @@ const Login = () => {
               onChange={handleChange}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-right placeholder-gray-400"
               placeholder="أدخل رقم الطالب أو رقم الهوية"
+              autoComplete="username"
               required
             />
           </div>
@@ -584,6 +585,7 @@ const Login = () => {
               onChange={handleChange}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-right placeholder-gray-400"
               placeholder="أدخل كلمة المرور"
+              autoComplete="current-password"
               required
             />
           </div>
