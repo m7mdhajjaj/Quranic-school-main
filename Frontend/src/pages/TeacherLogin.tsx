@@ -42,12 +42,15 @@ const TeacherLogin = () => {
 
       // Redirect to home page
       navigate("/");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Login error:", error);
-      if (error.response?.data?.message) {
-        setError(error.response.data.message);
+      if (axios.isAxiosError(error)) {
+        const message = error.response?.data?.message || error.message;
+        setError(message || "فشل تسجيل الدخول. رجاءً تأكد من بيانات الدخول.");
+      } else if (error instanceof Error) {
+        setError(error.message);
       } else {
-        setError("فشل تسجيل الدخول. رجاءً تأكد من رقم المعلم وكلمة المرور.");
+        setError("فشل تسجيل الدخول. رجاءً تأكد من بيانات الدخول.");
       }
     } finally {
       setIsLoading(false);

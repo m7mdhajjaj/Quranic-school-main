@@ -3,6 +3,11 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API_URL } from "../config";
 
+type ApiErrorData = {
+  message?: string;
+  [key: string]: unknown;
+};
+
 const ChangePass = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -89,29 +94,35 @@ const ChangePass = () => {
           navigate("/");
         }, 2000);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Change password error:", error);
 
-      if (error.response) {
-        // Server responded with error status
-        console.log("Error response:", error.response.data);
-        console.log("Error status:", error.response.status);
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          // Server responded with error status
+          console.log("Error response:", error.response.data);
+          console.log("Error status:", error.response.status);
 
-        if (error.response.status === 401) {
-          setError("انتهت صلاحية جلسة العمل. يرجى تسجيل الدخول مرة أخرى");
-          setTimeout(() => navigate("/login"), 2000);
-        } else if (error.response?.data?.message) {
-          setError(error.response.data.message);
+          if (error.response.status === 401) {
+            setError("انتهت صلاحية جلسة العمل. يرجى تسجيل الدخول مرة أخرى");
+            setTimeout(() => navigate("/login"), 2000);
+          } else if ((error.response.data as ApiErrorData)?.message) {
+            setError((error.response.data as ApiErrorData).message || "");
+          } else {
+            setError(`خطأ من الخادم: ${error.response.status}`);
+          }
+        } else if (error.request) {
+          // Request was made but no response received
+          console.log("No response received:", error.request);
+          setError("لا يمكن الوصول إلى الخادم. تأكد من أن الخادم يعمل");
         } else {
-          setError(`خطأ من الخادم: ${error.response.status}`);
+          // Something else happened
+          console.log("Other error:", error.message);
+          setError("حدث خطأ أثناء تغيير كلمة المرور");
         }
-      } else if (error.request) {
-        // Request was made but no response received
-        console.log("No response received:", error.request);
-        setError("لا يمكن الوصول إلى الخادم. تأكد من أن الخادم يعمل");
+      } else if (error instanceof Error) {
+        setError(error.message);
       } else {
-        // Something else happened
-        console.log("Other error:", error.message);
         setError("حدث خطأ أثناء تغيير كلمة المرور");
       }
     } finally {

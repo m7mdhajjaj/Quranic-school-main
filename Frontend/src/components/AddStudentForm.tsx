@@ -124,6 +124,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
                     رقم الهوية *
                   </label>
                   <input
+                  title="رقم الهوية يجب أن يكون بدون فواصل أو رموز أخرى"
                     type="text"
                     name="idNumber"
                     value={formData.idNumber}
@@ -137,6 +138,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
                     كلمة المرور *
                   </label>
                   <input
+                  aria-label="كلمة المرور يجب أن تكون قوية وتتضمن حروف كبيرة وصغيرة وأرقام ورموز خاصة"
                     type="password"
                     name="password"
                     value={formData.password}

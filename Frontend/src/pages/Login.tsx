@@ -12,6 +12,8 @@ const Login = () => {
     userId: "",
     password: "",
   });
+  // Active role tab controls how we submit and how labels appear
+  const [roleTab, setRoleTab] = useState<"student" | "teacher" | "admin">("student");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -49,6 +51,9 @@ const Login = () => {
           userId: credentials.userId || "",
           password: credentials.password || "",
         });
+        if (credentials.role === "student" || credentials.role === "teacher" || credentials.role === "admin") {
+          setRoleTab(credentials.role);
+        }
         setRememberMe(true);
       } catch (error) {
         console.error("Error parsing saved credentials:", error);
@@ -126,10 +131,9 @@ const Login = () => {
     try {
       let response;
 
-      console.log("📡 Making request to:", `${API_URL}/auth/login`);
+      console.log("📡 Making request to:", `${API_URL}/auth/login`, "as", roleTab);
 
-      // Try student login first
-      try {
+      if (roleTab === "student") {
         response = await axios.post(
           `${API_URL}/auth/login`,
           {
@@ -137,33 +141,25 @@ const Login = () => {
             idNumber: formData.password,
           },
           {
-            timeout: 10000, // 10 second timeout
-            headers: {
-              "Content-Type": "application/json",
-            },
+            timeout: 10000,
+            headers: { "Content-Type": "application/json" },
           }
         );
         console.log("✅ Student login successful!");
-      } catch {
-        console.log("❌ Student login failed, trying teacher login...");
-        // If student login fails, try teacher login
-        try {
-          response = await axios.post(`${API_URL}/auth/login`, {
-            teacherId: formData.userId,
-            password: formData.password,
-            userType: "teacher",
-          });
-          console.log("✅ Teacher login successful!");
-        } catch {
-          console.log("❌ Teacher login failed, trying admin login...");
-          // If teacher login fails, try admin login
-          response = await axios.post(`${API_URL}/auth/login`, {
-            adminId: formData.userId,
-            password: formData.password,
-            userType: "admin",
-          });
-          console.log("✅ Admin login successful!");
-        }
+      } else if (roleTab === "teacher") {
+        response = await axios.post(`${API_URL}/auth/login`, {
+          teacherId: formData.userId,
+          password: formData.password,
+          userType: "teacher",
+        });
+        console.log("✅ Teacher login successful!");
+      } else {
+        response = await axios.post(`${API_URL}/auth/login`, {
+          adminId: formData.userId,
+          password: formData.password,
+          userType: "admin",
+        });
+        console.log("✅ Admin login successful!");
       }
 
       console.log(
@@ -182,6 +178,7 @@ const Login = () => {
             JSON.stringify({
               userId: formData.userId,
               password: formData.password,
+              role: roleTab,
             })
           );
           console.log("💾 Credentials saved for next login");
@@ -202,17 +199,17 @@ const Login = () => {
         }, 100);
       } else {
         console.error("❌ Invalid response data:", response.data);
-        setError("رد غير صحيح من الخادم. رجاءً تأكد من الرقم وكلمة المرور.");
+        setError("رد غير صحيح من الخادم. رجاءً تأكد من بيانات الدخول.");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("❌ Login error:", error);
-
-      if (error.response?.data?.message) {
-        setError(error.response.data.message);
-      } else if (error.message) {
+      if (axios.isAxiosError(error)) {
+        const message = error.response?.data?.message || error.message;
+        setError(message || "فشل تسجيل الدخول. رجاءً تأكد من بيانات الدخول.");
+      } else if (error instanceof Error) {
         setError(error.message);
       } else {
-        setError("فشل تسجيل الدخول. رجاءً تأكد من الرقم وكلمة المرور.");
+        setError("فشل تسجيل الدخول. رجاءً تأكد من بيانات الدخول.");
       }
     } finally {
       setIsLoading(false);
@@ -234,10 +231,13 @@ const Login = () => {
       } else {
         setError(response.data.message || "فشل في التحقق من البيانات");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Forgot password error:", error);
-      if (error.response?.data?.message) {
-        setError(error.response.data.message);
+      if (axios.isAxiosError(error)) {
+        const message = error.response?.data?.message || error.message;
+        setError(message || "فشل في التحقق من البيانات. رجاءً تأكد من صحة المعلومات.");
+      } else if (error instanceof Error) {
+        setError(error.message);
       } else {
         setError("فشل في التحقق من البيانات. رجاءً تأكد من صحة المعلومات.");
       }
@@ -289,10 +289,13 @@ const Login = () => {
       } else {
         setError(response.data.message || "فشل في تغيير كلمة المرور");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Reset password error:", error);
-      if (error.response?.data?.message) {
-        setError(error.response.data.message);
+      if (axios.isAxiosError(error)) {
+        const message = error.response?.data?.message || error.message;
+        setError(message || "فشل في تغيير كلمة المرور. رجاءً المحاولة مرة أخرى.");
+      } else if (error instanceof Error) {
+        setError(error.message);
       } else {
         setError("فشل في تغيير كلمة المرور. رجاءً المحاولة مرة أخرى.");
       }
@@ -404,6 +407,8 @@ const Login = () => {
                   onChange={handleForgotPasswordChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-right"
                   required
+                  placeholder="أدخل اسم الأم"
+                  title="الرجاء إدخال اسم الأم"
                 />
               </div>
 
@@ -418,6 +423,8 @@ const Login = () => {
                   onChange={handleForgotPasswordChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-right"
                   required
+                  placeholder="أدخل رقم الهوية"
+                  title="الرجاء إدخال رقم الهوية"
                 />
               </div>
 
@@ -432,6 +439,7 @@ const Login = () => {
                   onChange={handleForgotPasswordChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-right"
                   required
+                  title="الرجاء اختيار تاريخ الميلاد"
                 />
               </div>
 
@@ -465,6 +473,8 @@ const Login = () => {
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-right"
                   required
                   minLength={6}
+                  placeholder="أدخل كلمة المرور الجديدة"
+                  title="كلمة المرور الجديدة"
                 />
               </div>
 
@@ -480,6 +490,8 @@ const Login = () => {
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-right"
                   required
                   minLength={6}
+                  placeholder="أدخل تأكيد كلمة المرور"
+                  title="تأكيد كلمة المرور"
                 />
               </div>
 
@@ -527,36 +539,59 @@ const Login = () => {
         </div>
 
         {/* Title */}
-        <h1 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+        <h1 className="text-3xl font-bold text-center mb-6 bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
           تسجيل الدخول
         </h1>
 
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50/80 backdrop-blur-sm border border-red-200 text-red-700 rounded-xl text-center shadow-sm">
-            <div className="flex items-center justify-center">
-              <svg
-                className="w-5 h-5 mr-2 flex-shrink-0"
-                fill="currentColor"
-                viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              {error}
-            </div>
-          </div>
-        )}
+        {/* Role Tabs */}
+        <div className="flex justify-center gap-2 mb-6">
+          {([
+            { key: 'student', label: 'طالب' },
+            { key: 'teacher', label: 'معلم' },
+            { key: 'admin', label: 'إداري' },
+          ] as const).map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setRoleTab(t.key)}
+              className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
+                roleTab === t.key
+                  ? 'bg-emerald-600 text-white border-emerald-600'
+                  : 'bg-white text-emerald-700 border-emerald-200 hover:border-emerald-400'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
 
-        {/* Login Form */}
-        <form className="space-y-6" onSubmit={handleSubmit}>
+  <div>
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50/80 backdrop-blur-sm border border-red-200 text-red-700 rounded-xl text-center shadow-sm">
+              <div className="flex items-center justify-center">
+                <svg
+                  className="w-5 h-5 mr-2 flex-shrink-0"
+                  fill="currentColor"
+                  viewBox="0 0 20 20">
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                {error}
+              </div>
+            </div>
+          )}
+
+          {/* Login Form */}
+          <form className="space-y-6" onSubmit={handleSubmit}>
           <div>
             <label
               className="block text-sm font-medium text-gray-700 mb-2"
               htmlFor="userId">
-              رقم الطالب أو رقم الهوية
+              {roleTab === 'student' ? 'رقم الطالب أو رقم الهوية' : roleTab === 'teacher' ? 'رقم المعلم' : 'رقم الإداري'}
             </label>
             <input
               type="text"
@@ -565,7 +600,7 @@ const Login = () => {
               value={formData.userId}
               onChange={handleChange}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-right placeholder-gray-400"
-              placeholder="أدخل رقم الطالب أو رقم الهوية"
+              placeholder={roleTab === 'student' ? 'أدخل رقم الطالب أو رقم الهوية' : roleTab === 'teacher' ? 'أدخل رقم المعلم' : 'أدخل رقم الإداري'}
               autoComplete="username"
               required
             />
@@ -575,7 +610,7 @@ const Login = () => {
             <label
               className="block text-sm font-medium text-gray-700 mb-2"
               htmlFor="password">
-              كلمة المرور
+              {roleTab === 'student' ? 'رقم الهوية (كلمة المرور)' : 'كلمة المرور'}
             </label>
             <input
               type="password"
@@ -584,7 +619,7 @@ const Login = () => {
               value={formData.password}
               onChange={handleChange}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-right placeholder-gray-400"
-              placeholder="أدخل كلمة المرور"
+              placeholder={roleTab === 'student' ? 'أدخل رقم الهوية' : 'أدخل كلمة المرور'}
               autoComplete="current-password"
               required
             />
@@ -646,7 +681,8 @@ const Login = () => {
               "تسجيل الدخول"
             )}
           </button>
-        </form>
+          </form>
+        </div>
 
         {/* Footer */}
         <div className="mt-8 text-center">
