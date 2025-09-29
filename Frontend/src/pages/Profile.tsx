@@ -25,7 +25,7 @@ import "react-toastify/dist/ReactToastify.css";
 // ============================
 // الإعداد
 // ============================
-import { API_URL } from '../config';
+import { API_URL } from "../config";
 
 // Axios مع التوكن
 const api = axios.create({ baseURL: API_URL });
@@ -71,11 +71,12 @@ type FetchState =
 // ============================
 const toArabicGender = (g?: string) => {
   if (!g || g.trim() === "") return "غير محدد";
-  
+
   const normalized = g.trim();
   if (normalized === "ذكر" || normalized === "male") return "ذكر";
-  if (normalized === "أنثى" || normalized === "انثى" || normalized === "female") return "أنثى";
-  
+  if (normalized === "أنثى" || normalized === "انثى" || normalized === "female")
+    return "أنثى";
+
   return "غير محدد";
 };
 
@@ -145,7 +146,7 @@ const recordEditLocal = (field: "birthDate" | "gender", userId: string) => {
 const Profile: React.FC = () => {
   const navigate = useNavigate();
   const { user: authUser, token } = useAuth();
-  
+
   const [user, setUser] = useState<UserBase | null>(null);
   const [endpoint, setEndpoint] = useState<Endpoint>("students");
   const [fetchState, setFetchState] = useState<FetchState>({ status: "idle" });
@@ -174,7 +175,7 @@ const Profile: React.FC = () => {
   const getUserInfo = () => {
     const userId = authUser?._id || "";
     const userRole = authUser?.role;
-    
+
     return { userId, userRole };
   };
 
@@ -186,10 +187,14 @@ const Profile: React.FC = () => {
       return;
     }
     setFetchState({ status: "loading" });
-    
+
     try {
       // إذا كان النوع معروف من localStorage، جرّبه أولاً
-      if (userRole === "teacher" || userRole?.includes("admin") || userRole?.includes("teacher")) {
+      if (
+        userRole === "teacher" ||
+        userRole?.includes("admin") ||
+        userRole?.includes("teacher")
+      ) {
         try {
           const u: UserBase = await fetchJson(`/teachers/${id}`);
           setUser({ ...u, role: u.role ?? "teacher" });
@@ -205,7 +210,7 @@ const Profile: React.FC = () => {
           if (e?.response?.status !== 404) throw e;
         }
       }
-      
+
       // جرّب الطالب
       try {
         const u: UserBase = await fetchJson(`/students/${id}`);
@@ -221,9 +226,13 @@ const Profile: React.FC = () => {
       } catch (e: any) {
         if (e?.response?.status !== 404) throw e;
       }
-      
+
       // جرّب المعلّم (إذا لم يجرّب بعد)
-      if (userRole !== "teacher" && !userRole?.includes("admin") && !userRole?.includes("teacher")) {
+      if (
+        userRole !== "teacher" &&
+        !userRole?.includes("admin") &&
+        !userRole?.includes("teacher")
+      ) {
         const u: UserBase = await fetchJson(`/teachers/${id}`);
         setUser({ ...u, role: u.role ?? "teacher" });
         setEndpoint("teachers");
@@ -438,12 +447,12 @@ const Profile: React.FC = () => {
                 gender={getUserGender(user)}
                 size="3xl"
                 border="ring"
-                      showStatus={true} // إظهار نقطة الحالة
-                      
-
+                showStatus={true} // إظهار نقطة الحالة
                 showEditButton={isEditing}
-                onEditClick={() => document.getElementById('avatar')?.click()}
-                fallbackIcon={<UserIcon className="w-12 h-12 text-emerald-600" />}
+                onEditClick={() => document.getElementById("avatar")?.click()}
+                fallbackIcon={
+                  <UserIcon className="w-12 h-12 text-emerald-600" />
+                }
               />
               {isEditing && (
                 <input
@@ -560,7 +569,7 @@ const Profile: React.FC = () => {
               value={
                 isEditing ? (
                   <div className="space-y-2">
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                       <TextInput
                         type="date"
                         value={
@@ -577,27 +586,30 @@ const Profile: React.FC = () => {
                           )
                         }
                       />
-                      <select
-                        name="الجنس"
-                        title="الجنس"
-                        className="w-full border rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                        value={edited?.gender ?? ""}
-                        onChange={(e) =>
-                          setEdited((p) =>
-                            p ? { ...p, gender: e.target.value } : p
-                          )
-                        }>
-                        <option value="" disabled>اختر الجنس</option>
-                        <option value="ذكر">👨 ذكر</option>
-                        <option value="أنثى">👩 أنثى</option>
-                      </select>
                       <div className="bg-slate-50 text-slate-700 rounded-xl px-3 py-2">
                         العمر: {calcAge(edited?.birthDate) ?? "—"}
                       </div>
                     </div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <span>الجنس:</span>
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm font-medium ${
+                          user.gender === "ذكر"
+                            ? "bg-blue-100 text-blue-800"
+                            : user.gender === "أنثى"
+                            ? "bg-pink-100 text-pink-800"
+                            : "bg-gray-100 text-gray-600"
+                        }`}>
+                        {user.gender === "ذكر"
+                          ? "👨"
+                          : user.gender === "أنثى"
+                          ? "👩"
+                          : "❓"}
+                        {toArabicGender(user.gender)}
+                      </span>
+                    </div>
                     <div className="text-xs text-slate-500">
                       المتبقي لتعديل تاريخ الميلاد: <b>{remainingBirth}</b> / 2
-                      — المتبقي لتعديل الجنس: <b>{remainingGender}</b> / 2
                     </div>
                   </div>
                 ) : (
@@ -606,12 +618,19 @@ const Profile: React.FC = () => {
                     <div className="mt-1">العمر: {age ?? "—"} سنة</div>
                     <div className="mt-1 flex items-center gap-2">
                       <span>الجنس:</span>
-                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm font-medium ${
-                        user.gender === 'ذكر' ? 'bg-blue-100 text-blue-800' :
-                        user.gender === 'أنثى' ? 'bg-pink-100 text-pink-800' :
-                        'bg-gray-100 text-gray-600'
-                      }`}>
-                        {user.gender === 'ذكر' ? '👨' : user.gender === 'أنثى' ? '👩' : '❓'}
+                      <span
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm font-medium ${
+                          user.gender === "ذكر"
+                            ? "bg-blue-100 text-blue-800"
+                            : user.gender === "أنثى"
+                            ? "bg-pink-100 text-pink-800"
+                            : "bg-gray-100 text-gray-600"
+                        }`}>
+                        {user.gender === "ذكر"
+                          ? "👨"
+                          : user.gender === "أنثى"
+                          ? "👩"
+                          : "❓"}
                         {toArabicGender(user.gender)}
                       </span>
                     </div>
