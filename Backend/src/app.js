@@ -28,7 +28,7 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 const allowedOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(",")
-  : ["http://localhost:5173"];
+  : ["http://localhost:5173", "http://localhost:5174"];
 app.use(
   cors({
     origin: function (origin, callback) {
@@ -110,8 +110,9 @@ const server = app.listen(PORT, () => {
 // Initialize Socket.IO
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 

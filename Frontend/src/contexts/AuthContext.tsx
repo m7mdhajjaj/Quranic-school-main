@@ -60,6 +60,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     socketRef.current = io(API_BASE_URL, {
       autoConnect: false,
+      // Prefer polling to avoid websocket pre-connect close errors
+      transports: ['polling'],
+      upgrade: false,
+      path: '/socket.io',
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
     });
 
     return () => {

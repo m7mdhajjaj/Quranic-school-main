@@ -140,7 +140,13 @@ const Chat: React.FC = () => {
     if (!currentUser) return;
 
     socketRef.current = io(API_URL.replace("/api", ""), {
-      transports: ["websocket", "polling"],
+      transports: ["polling"],
+      upgrade: false,
+      path: "/socket.io",
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
     });
 
     socketRef.current.on("connect", () => {

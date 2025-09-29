@@ -81,12 +81,14 @@ const Header = () => {
   useEffect(() => {
 
     const s = io(API_BASE_URL, {
-      transports: ['websocket', 'polling'],
+      transports: ['polling'],
+      upgrade: false,
       auth: token ? { token } : undefined,
       reconnection: true,
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
+      path: '/socket.io',
     });
 
     const onConnect = () => setSocket(s);

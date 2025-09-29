@@ -311,7 +311,15 @@ const Chat: React.FC = () => {
   // ----- Socket -----
   useEffect(() => {
     if (!currentUser) return;
-    const s = io(SOCKET_URL);
+    const s = io(SOCKET_URL, {
+      transports: ['polling'],
+      upgrade: false,
+      path: '/socket.io',
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+    });
     socketRef.current = s;
 
     s.on('connect', () => {
