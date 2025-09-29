@@ -94,7 +94,7 @@ const Header = () => {
     const onConnect = () => setSocket(s);
     const onDisconnect = () => setSocket(null);
     const onError = (e: Error) => {
-      if (process.env.NODE_ENV !== 'production')
+      if (import.meta.env.MODE !== 'production')
         console.error('socket error', e);
       setSocket(s); // نبقي المرجع موجودًا حتى لو لم يتصل بعد
     };

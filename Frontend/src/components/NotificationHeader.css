@@ -1,4 +1,4 @@
-NotificationHeader Styles
+/* الحاوية العامة */
 .notification-container {
   position: relative;
   display: inline-block;
@@ -57,9 +57,11 @@ NotificationHeader Styles
   0% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.1);
   }
+
   100% {
     transform: scale(1);
   }
@@ -68,7 +70,7 @@ NotificationHeader Styles
 .notification-dropdown {
   position: absolute;
   top: 100%;
-  left: 0; /* محاذاة مع زر الإشعارات */
+  left: 0;
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
@@ -83,7 +85,7 @@ NotificationHeader Styles
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   animation: slideDown 0.3s ease-out;
-  margin-top: 8px; /* مساحة صغيرة بين الزر والقائمة */
+  margin-top: 8px;
 }
 
 @keyframes slideDown {
@@ -91,6 +93,7 @@ NotificationHeader Styles
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -121,6 +124,38 @@ NotificationHeader Styles
   font-size: 20px;
 }
 
+/* أزرار الترويسة اليمنى */
+.notification-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* زر تحديد الكل مقروء */
+.mark-all-btn {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 6px 16px -6px rgba(37, 99, 235, 0.6);
+}
+
+.mark-all-btn:hover {
+  transform: translateY(-1px);
+}
+
+.mark-all-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 .close-notifications-btn {
   background: none;
   border: none;
@@ -142,6 +177,8 @@ NotificationHeader Styles
   color: #ef4444;
   transform: scale(1.1);
 }
+
+/* بقية الأنماط كما كانت لديك ... */
 
 .notification-list {
   max-height: 350px;
@@ -211,8 +248,8 @@ NotificationHeader Styles
 
 .notification-content {
   flex: 1;
-  min-width: 0; /* للتعامل مع النص الطويل */
-  padding-right: 8px; /* مساحة من اليمين لزر الحذف */
+  min-width: 0;
+  padding-right: 8px;
 }
 
 .notification-title {
@@ -341,7 +378,7 @@ NotificationHeader Styles
   color: #f59e0b;
 }
 
-/* إشعار جديد */
+/* شارة جديد */
 .notification-item.new::after {
   content: "جديد";
   position: absolute;
@@ -360,12 +397,13 @@ NotificationHeader Styles
   from {
     transform: translateY(0px);
   }
+
   to {
     transform: translateY(-3px);
   }
 }
 
-/* أولوية عالية */
+/* أولوية */
 .notification-item[data-priority="high"] {
   border-right: 4px solid #ef4444;
 }
@@ -375,9 +413,8 @@ NotificationHeader Styles
   background: linear-gradient(135deg, #fef2f2, #fee2e2);
 }
 
-/* التجاوب مع الشاشات الصغيرة */
+/* موبايل */
 @media (max-width: 768px) {
-  /* إضافة overlay للخلفية */
   .notification-container.mobile-open::before {
     content: "";
     position: fixed;
@@ -440,9 +477,15 @@ NotificationHeader Styles
     background-color: rgba(239, 68, 68, 0.2) !important;
     transform: scale(1.15) !important;
   }
+
+  /* تنسيق زر تحديد الكل للموبايل */
+  .mark-all-btn {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
 }
 
-/* تأثيرات الحركة للإشعارات الجديدة */
+/* تأثير الدخول */
 .notification-item.animate-in {
   animation: slideInRight 0.5s ease-out;
 }
@@ -452,13 +495,14 @@ NotificationHeader Styles
     opacity: 0;
     transform: translateX(50px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
   }
 }
 
-/* تأثير اللودينج */
+/* لودينج */
 .notification-loading {
   padding: 20px;
   text-align: center;
@@ -481,12 +525,13 @@ NotificationHeader Styles
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
 }
 
-/* تخصيص Toast notifications */
+/* Toastify */
 .Toastify__toast-container--top-right {
   top: 80px !important;
   right: 20px !important;
@@ -519,7 +564,6 @@ NotificationHeader Styles
   background: rgba(255, 255, 255, 0.3) !important;
 }
 
-/* إضافات خاصة للتطبيق الإسلامي */
 .prayer-notification {
   background: linear-gradient(135deg, #8b5cf6, #7c3aed) !important;
   border-right: 4px solid #fbbf24;
@@ -540,78 +584,78 @@ NotificationHeader Styles
   font-size: 20px;
 }
 
-/* تحسينات إضافية للعرض على الشاشات الكبيرة */
+/* شاشات كبيرة */
 @media (min-width: 1024px) {
   .notification-dropdown {
     width: 450px;
     max-height: 600px;
   }
-  
+
   .notification-header h3 {
     font-size: 20px;
   }
-  
+
   .notification-item {
     padding: 18px 24px;
   }
-  
+
   .notification-title {
     font-size: 15px;
   }
-  
+
   .notification-message {
     font-size: 14px;
   }
 }
 
-/* تحسين العرض على الشاشات الصغيرة جداً */
+/* شاشات صغيرة جداً */
 @media (max-width: 480px) {
   .notification-dropdown {
     left: 5px !important;
     right: 5px !important;
   }
-  
+
   .notification-header {
     padding: 14px 16px;
   }
-  
+
   .notification-header h3 {
     font-size: 16px;
   }
 }
 
-/* تحسين التباين للوضع المظلم (إذا تم تطبيقه لاحقاً) */
+/* وضع مظلم */
 @media (prefers-color-scheme: dark) {
   .notification-dropdown {
     background: #1f2937;
     border-color: #374151;
   }
-  
+
   .notification-header {
     background: linear-gradient(135deg, #1f2937, #111827);
     border-color: #374151;
   }
-  
+
   .notification-header h3 {
     color: #f9fafb;
   }
-  
+
   .notification-item {
     border-color: #374151;
   }
-  
+
   .notification-item:hover {
     background: linear-gradient(135deg, #374151, #4b5563);
   }
-  
+
   .notification-title {
     color: #f9fafb;
   }
-  
+
   .notification-message {
     color: #d1d5db;
   }
-  
+
   .notification-time {
     color: #9ca3af;
   }
