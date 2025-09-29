@@ -5,6 +5,41 @@ import Avatar from '../components/Avatar';
 import { getUserGender, useAvatar } from '../hooks/useAvatar';
 import { useAuth } from '../hooks/useAuth';
 
+// دالة تنسيق آخر ظهور لعرض الساعة والدقائق
+const formatLastSeen = (lastSeen: Date): string => {
+  const now = new Date();
+  const diffMs = now.getTime() - lastSeen.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  
+  // تنسيق الوقت بالساعة والدقيقة
+  const hours = lastSeen.getHours().toString().padStart(2, '0');
+  const minutes = lastSeen.getMinutes().toString().padStart(2, '0');
+  const timeString = `${hours}:${minutes}`;
+  
+  // إذا كان نفس اليوم - اعرض الوقت فقط
+  if (diffDays === 0) {
+    return timeString;
+  }
+  
+  // إذا كان أمس - اعرض "أمس" + الوقت
+  if (diffDays === 1) {
+    return `أمس ${timeString}`;
+  }
+  
+  // إذا كان خلال الأسبوع الماضي - اعرض اليوم + الوقت
+  if (diffDays <= 7) {
+    const dayNames = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+    const dayName = dayNames[lastSeen.getDay()];
+    return `${dayName} ${timeString}`;
+  }
+  
+  // إذا كان أقدم من أسبوع - اعرض التاريخ + الوقت
+  const day = lastSeen.getDate().toString().padStart(2, '0');
+  const month = (lastSeen.getMonth() + 1).toString().padStart(2, '0');
+  const year = lastSeen.getFullYear();
+  return `${day}/${month}/${year} ${timeString}`;
+};
+
 
 type AttachmentType = 'image' | 'file' | 'audio';
 
@@ -139,6 +174,7 @@ const Chat: React.FC = () => {
   
   // User Status & Last Seen
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
+  const [lastSeenData, setLastSeenData] = useState<Map<string, Date>>(new Map());
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const socketRef = useRef<Socket | null>(null);
@@ -171,6 +207,8 @@ const Chat: React.FC = () => {
   const getAuthHeaders = (): Record<string, string> => {
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
+
+
 
   const currentUserId = getEntityId(currentUser);
   const selectedId = getEntityId(selectedContact);
@@ -257,7 +295,57 @@ const Chat: React.FC = () => {
     })();
   }, [currentUser]);
 
+  // ----- Load Last Seen Data -----
+  useEffect(() => {
+    const loadLastSeenData = async () => {
+      if (!currentUser) return;
+      try {
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+          ...(getAuthHeaders() as any),
+        };
+        const response = await fetch(`${API_URL}/users/last-seen`, { headers });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('🔍 البيانات المستلمة من API:', data);
+          const lastSeenMap = new Map<string, Date>();
+          
+          data.forEach((user: any) => {
+            console.log(`👤 معالجة المستخدم ${user._id}:`, {
+              isActive: user.isActive,
+              lastSeen: user.lastSeen,
+              lastSeenType: typeof user.lastSeen
+            });
+            // حفظ حالة النشاط للمستخدمين المتصلين
+            if (user.isActive) {
+              // لا نحفظ lastSeen للمستخدمين النشطين لأنهم متصلون حالياً
+            } else {
+              // للمستخدمين غير النشطين، احفظ lastSeen إذا كان متوفراً وليس null
+              if (user.lastSeen && user.lastSeen !== null) {
+                try {
+                  const lastSeenDate = new Date(user.lastSeen);
+                  // التأكد من أن التاريخ صحيح
+                  if (!isNaN(lastSeenDate.getTime())) {
+                    lastSeenMap.set(user._id, lastSeenDate);
+                  }
+                } catch (error) {
+                  console.warn(`خطأ في تحويل lastSeen للمستخدم ${user._id}:`, error);
+                }
+              }
+            }
+          });
+          
+          console.log('📊 خريطة آخر ظهور النهائية:', [...lastSeenMap.entries()]);
+          setLastSeenData(lastSeenMap);
+        }
+      } catch (error) {
+        console.error('Error loading last seen data:', error);
+      }
+    };
 
+    loadLastSeenData();
+  }, [currentUser, getAuthHeaders]);
 
   // ----- Load conversation -----
   const loadConversation = async () => {
@@ -1051,7 +1139,9 @@ const Chat: React.FC = () => {
                               <div className="text-xs text-gray-500">
                                 {onlineUsers.has(c._id) 
                                   ? "متصل" 
-                                  : "غير متصل"
+                                  : lastSeenData.has(c._id)
+                                    ? `آخر ظهور ${formatLastSeen(lastSeenData.get(c._id)!)}`
+                                    : "آخر ظهور غير محدد"
                                 }
                               </div>
                               {c.group && (
@@ -1101,7 +1191,9 @@ const Chat: React.FC = () => {
                       ? 'يكتب الآن…'
                       : onlineUsers.has(selectedContact._id)
                         ? 'متصل'
-                        : 'غير متصل'
+                        : lastSeenData.has(selectedContact._id)
+                          ? `آخر ظهور ${formatLastSeen(lastSeenData.get(selectedContact._id)!)}`
+                          : 'آخر ظهور غير محدد'
                     : 'اختر محادثة لبدء التواصل'}
                 </div>
               </div>

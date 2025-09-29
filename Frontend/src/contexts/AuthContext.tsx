@@ -1,7 +1,7 @@
 import React, { createContext, useState, useEffect, useRef, type ReactNode } from 'react';
 import axios from 'axios';
 import { io, Socket } from 'socket.io-client';
-import { API_BASE_URL } from '../config';
+import { API_BASE_URL, API_URL } from '../config';
 
 // تعريف أنواع البيانات
 export interface User {
@@ -195,8 +195,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   // وظيفة تسجيل الخروج
-  const logout = () => {
+  const logout = async () => {
     try {
+      // إرسال طلب logout للـ Backend لتحديث lastSeen
+      if (token && user) {
+        try {
+          const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          };
+          
+          await fetch(`${API_URL}/auth/logout`, { 
+            method: 'POST',
+            headers 
+          });
+        } catch (apiError) {
+          // تجاهل أخطاء API - المهم هو تنظيف البيانات المحلية
+        }
+      }
+
       // مسح البيانات من الحالة المحلية
       setUser(null);
       setToken(null);
@@ -209,8 +226,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.removeItem('token');
       localStorage.removeItem('userId');
       localStorage.removeItem('savedCredentials');
-
-      console.log('🚪 تم تسجيل الخروج بنجاح');
 
       // إعادة توجه إلى صفحة تسجيل الدخول
       window.location.href = '/login';

@@ -46,9 +46,8 @@ exports.protect = async (req, res, next) => {
       req.user = currentStudent;
       req.user.role = "student";
       
-      // تحديث آخر ظهور للطالب
+      // تحديث حالة النشاط فقط (بدون تغيير lastSeen)
       await Student.findByIdAndUpdate(decoded.id, { 
-        lastSeen: new Date(),
         isActive: true 
       });
     } else {
@@ -66,15 +65,13 @@ exports.protect = async (req, res, next) => {
       req.user = currentTeacher;
       req.user.role = currentTeacher.role;
       
-      // تحديث آخر ظهور للمعلم
+      // تحديث حالة النشاط فقط (بدون تغيير lastSeen)
       if (currentTeacher.role === "admin") {
         await Admin.findByIdAndUpdate(decoded.id, { 
-          lastSeen: new Date(),
           isActive: true 
         });
       } else {
         await Teacher.findByIdAndUpdate(decoded.id, { 
-          lastSeen: new Date(),
           isActive: true 
         });
       }

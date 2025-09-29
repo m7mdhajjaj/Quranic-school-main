@@ -823,13 +823,19 @@ exports.logout = async (req, res) => {
       lastSeen: new Date()
     };
 
+    console.log(`🔴 Logout: تحديث lastSeen للمستخدم ${userId} في ${updateData.lastSeen.toISOString()}`);
+
+    let updatedUser;
     if (userRole === "student") {
-      await Student.findByIdAndUpdate(userId, updateData);
+      updatedUser = await Student.findByIdAndUpdate(userId, updateData, { new: true });
+      console.log(`✅ Student updated - lastSeen: ${updatedUser.lastSeen}`);
     } else if (userRole === "teacher" || userRole === "admin") {
       if (userRole === "admin") {
-        await Admin.findByIdAndUpdate(userId, updateData);
+        updatedUser = await Admin.findByIdAndUpdate(userId, updateData, { new: true });
+        console.log(`✅ Admin updated - lastSeen: ${updatedUser.lastSeen}`);
       } else {
-        await Teacher.findByIdAndUpdate(userId, updateData);
+        updatedUser = await Teacher.findByIdAndUpdate(userId, updateData, { new: true });
+        console.log(`✅ Teacher updated - lastSeen: ${updatedUser.lastSeen}`);
       }
     }
 
