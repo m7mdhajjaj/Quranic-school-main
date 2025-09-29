@@ -5,8 +5,6 @@ import { API_URL } from "../config";
 import { useAuth } from "../hooks/useAuth";
 
 const Login = () => {
-  // حالة عرض كلمة المرور
-  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { login: authLogin, isAuthenticated } = useAuth();
 
@@ -14,6 +12,8 @@ const Login = () => {
     userId: "",
     password: "",
   });
+  // حالة عرض كلمة المرور
+  const [showPassword, setShowPassword] = useState(false);
   // Active role tab controls how we submit and how labels appear
   const [roleTab, setRoleTab] = useState<"student" | "teacher" | "admin">(
     "student"
@@ -39,16 +39,10 @@ const Login = () => {
 
   // Load saved credentials and check authentication on component mount
   useEffect(() => {
-    // تحقق من وجود مستخدم في sessionStorage أولاً
-    let user = sessionStorage.getItem("user");
-    if (!user) {
-      user = localStorage.getItem("user");
-    }
+    const user = localStorage.getItem("user");
     if (user) {
       console.log("🔄 User already logged in, redirecting to home...");
-      const userRole = JSON.parse(user).role;
-      const targetPage = userRole === "admin" ? "/admin" : "/";
-      navigate(targetPage, { replace: true });
+      navigate("/", { replace: true });
       return;
     }
 
@@ -77,12 +71,7 @@ const Login = () => {
 
     // إعادة التوجه إذا كان المستخدم مسجلاً دخوله
     if (isAuthenticated) {
-      let userRole = "student";
-      let userObj =
-        sessionStorage.getItem("user") || localStorage.getItem("user");
-      if (userObj) {
-        userRole = JSON.parse(userObj).role;
-      }
+      const userRole = JSON.parse(localStorage.getItem("user") || "{}").role;
       const targetPage = userRole === "admin" ? "/admin" : "/";
       navigate(targetPage, { replace: true });
       return;
@@ -205,22 +194,9 @@ const Login = () => {
               role: roleTab,
             })
           );
-          // حفظ بيانات المستخدم في localStorage
-          localStorage.setItem("user", JSON.stringify(response.data.user));
-          localStorage.setItem("token", response.data.token);
-          // إزالة بيانات المستخدم من sessionStorage إذا وجدت
-          sessionStorage.removeItem("user");
-          sessionStorage.removeItem("token");
-          console.log("💾 Credentials & user saved in localStorage");
+          console.log("💾 Credentials saved for next login");
         } else {
           localStorage.removeItem("savedCredentials");
-          // حفظ بيانات المستخدم في sessionStorage فقط
-          sessionStorage.setItem("user", JSON.stringify(response.data.user));
-          sessionStorage.setItem("token", response.data.token);
-          // إزالة بيانات المستخدم من localStorage إذا وجدت
-          localStorage.removeItem("user");
-          localStorage.removeItem("token");
-          console.log("💾 User saved in sessionStorage");
         }
 
         console.log("🎉 Login successful!");
