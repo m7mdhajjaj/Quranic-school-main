@@ -13,7 +13,9 @@ const Login = () => {
     password: "",
   });
   // Active role tab controls how we submit and how labels appear
-  const [roleTab, setRoleTab] = useState<"student" | "teacher" | "admin">("student");
+  const [roleTab, setRoleTab] = useState<"student" | "teacher" | "admin">(
+    "student"
+  );
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -35,10 +37,16 @@ const Login = () => {
 
   // Load saved credentials and check authentication on component mount
   useEffect(() => {
-    const user = localStorage.getItem("user");
+    // تحقق من وجود مستخدم في sessionStorage أولاً
+    let user = sessionStorage.getItem("user");
+    if (!user) {
+      user = localStorage.getItem("user");
+    }
     if (user) {
       console.log("🔄 User already logged in, redirecting to home...");
-      navigate("/", { replace: true });
+      const userRole = JSON.parse(user).role;
+      const targetPage = userRole === "admin" ? "/admin" : "/";
+      navigate(targetPage, { replace: true });
       return;
     }
 
@@ -51,7 +59,11 @@ const Login = () => {
           userId: credentials.userId || "",
           password: credentials.password || "",
         });
-        if (credentials.role === "student" || credentials.role === "teacher" || credentials.role === "admin") {
+        if (
+          credentials.role === "student" ||
+          credentials.role === "teacher" ||
+          credentials.role === "admin"
+        ) {
           setRoleTab(credentials.role);
         }
         setRememberMe(true);
@@ -63,7 +75,12 @@ const Login = () => {
 
     // إعادة التوجه إذا كان المستخدم مسجلاً دخوله
     if (isAuthenticated) {
-      const userRole = JSON.parse(localStorage.getItem("user") || "{}").role;
+      let userRole = "student";
+      let userObj =
+        sessionStorage.getItem("user") || localStorage.getItem("user");
+      if (userObj) {
+        userRole = JSON.parse(userObj).role;
+      }
       const targetPage = userRole === "admin" ? "/admin" : "/";
       navigate(targetPage, { replace: true });
       return;
@@ -131,7 +148,12 @@ const Login = () => {
     try {
       let response;
 
-      console.log("📡 Making request to:", `${API_URL}/auth/login`, "as", roleTab);
+      console.log(
+        "📡 Making request to:",
+        `${API_URL}/auth/login`,
+        "as",
+        roleTab
+      );
 
       if (roleTab === "student") {
         response = await axios.post(
@@ -181,9 +203,22 @@ const Login = () => {
               role: roleTab,
             })
           );
-          console.log("💾 Credentials saved for next login");
+          // حفظ بيانات المستخدم في localStorage
+          localStorage.setItem("user", JSON.stringify(response.data.user));
+          localStorage.setItem("token", response.data.token);
+          // إزالة بيانات المستخدم من sessionStorage إذا وجدت
+          sessionStorage.removeItem("user");
+          sessionStorage.removeItem("token");
+          console.log("💾 Credentials & user saved in localStorage");
         } else {
           localStorage.removeItem("savedCredentials");
+          // حفظ بيانات المستخدم في sessionStorage فقط
+          sessionStorage.setItem("user", JSON.stringify(response.data.user));
+          sessionStorage.setItem("token", response.data.token);
+          // إزالة بيانات المستخدم من localStorage إذا وجدت
+          localStorage.removeItem("user");
+          localStorage.removeItem("token");
+          console.log("💾 User saved in sessionStorage");
         }
 
         console.log("🎉 Login successful!");
@@ -235,7 +270,9 @@ const Login = () => {
       console.error("Forgot password error:", error);
       if (axios.isAxiosError(error)) {
         const message = error.response?.data?.message || error.message;
-        setError(message || "فشل في التحقق من البيانات. رجاءً تأكد من صحة المعلومات.");
+        setError(
+          message || "فشل في التحقق من البيانات. رجاءً تأكد من صحة المعلومات."
+        );
       } else if (error instanceof Error) {
         setError(error.message);
       } else {
@@ -293,7 +330,9 @@ const Login = () => {
       console.error("Reset password error:", error);
       if (axios.isAxiosError(error)) {
         const message = error.response?.data?.message || error.message;
-        setError(message || "فشل في تغيير كلمة المرور. رجاءً المحاولة مرة أخرى.");
+        setError(
+          message || "فشل في تغيير كلمة المرور. رجاءً المحاولة مرة أخرى."
+        );
       } else if (error instanceof Error) {
         setError(error.message);
       } else {
@@ -545,27 +584,28 @@ const Login = () => {
 
         {/* Role Tabs */}
         <div className="flex justify-center gap-2 mb-6">
-          {([
-            { key: 'student', label: 'طالب' },
-            { key: 'teacher', label: 'معلم' },
-            { key: 'admin', label: 'إداري' },
-          ] as const).map((t) => (
+          {(
+            [
+              { key: "student", label: "طالب" },
+              { key: "teacher", label: "معلم" },
+              { key: "admin", label: "إداري" },
+            ] as const
+          ).map((t) => (
             <button
               key={t.key}
               type="button"
               onClick={() => setRoleTab(t.key)}
               className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
                 roleTab === t.key
-                  ? 'bg-emerald-600 text-white border-emerald-600'
-                  : 'bg-white text-emerald-700 border-emerald-200 hover:border-emerald-400'
-              }`}
-            >
+                  ? "bg-emerald-600 text-white border-emerald-600"
+                  : "bg-white text-emerald-700 border-emerald-200 hover:border-emerald-400"
+              }`}>
               {t.label}
             </button>
           ))}
         </div>
 
-  <div>
+        <div>
           {/* Error Message */}
           {error && (
             <div className="mb-6 p-4 bg-red-50/80 backdrop-blur-sm border border-red-200 text-red-700 rounded-xl text-center shadow-sm">
@@ -587,100 +627,114 @@ const Login = () => {
 
           {/* Login Form */}
           <form className="space-y-6" onSubmit={handleSubmit}>
-          <div>
-            <label
-              className="block text-sm font-medium text-gray-700 mb-2"
-              htmlFor="userId">
-              {roleTab === 'student' ? 'رقم الطالب أو رقم الهوية' : roleTab === 'teacher' ? 'رقم المعلم' : 'رقم الإداري'}
-            </label>
-            <input
-              type="text"
-              id="userId"
-              name="userId"
-              value={formData.userId}
-              onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-right placeholder-gray-400"
-              placeholder={roleTab === 'student' ? 'أدخل رقم الطالب أو رقم الهوية' : roleTab === 'teacher' ? 'أدخل رقم المعلم' : 'أدخل رقم الإداري'}
-              autoComplete="username"
-              required
-            />
-          </div>
-
-          <div>
-            <label
-              className="block text-sm font-medium text-gray-700 mb-2"
-              htmlFor="password">
-              {roleTab === 'student' ? 'رقم الهوية (كلمة المرور)' : 'كلمة المرور'}
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-right placeholder-gray-400"
-              placeholder={roleTab === 'student' ? 'أدخل رقم الهوية' : 'أدخل كلمة المرور'}
-              autoComplete="current-password"
-              required
-            />
-          </div>
-
-          {/* Remember Me */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <input
-                id="remember-me"
-                name="remember-me"
-                type="checkbox"
-                checked={rememberMe}
-                onChange={handleRememberMeChange}
-                className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
-              />
+            <div>
               <label
-                htmlFor="remember-me"
-                className="mr-2 block text-sm text-gray-700">
-                تذكرني
+                className="block text-sm font-medium text-gray-700 mb-2"
+                htmlFor="userId">
+                {roleTab === "student"
+                  ? "رقم الطالب أو رقم الهوية"
+                  : roleTab === "teacher"
+                  ? "رقم المعلم"
+                  : "رقم الإداري"}
               </label>
+              <input
+                type="text"
+                id="userId"
+                name="userId"
+                value={formData.userId}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-right placeholder-gray-400"
+                placeholder={
+                  roleTab === "student"
+                    ? "أدخل رقم الطالب أو رقم الهوية"
+                    : roleTab === "teacher"
+                    ? "أدخل رقم المعلم"
+                    : "أدخل رقم الإداري"
+                }
+                autoComplete="username"
+                required
+              />
             </div>
 
-            <button
-              type="button"
-              onClick={() => setShowForgotPassword(true)}
-              className="text-sm text-emerald-600 hover:text-emerald-800 font-medium transition-colors duration-200">
-              نسيت كلمة المرور؟
-            </button>
-          </div>
+            <div>
+              <label
+                className="block text-sm font-medium text-gray-700 mb-2"
+                htmlFor="password">
+                {roleTab === "student"
+                  ? "رقم الهوية (كلمة المرور)"
+                  : "كلمة المرور"}
+              </label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-right placeholder-gray-400"
+                placeholder={
+                  roleTab === "student" ? "أدخل رقم الهوية" : "أدخل كلمة المرور"
+                }
+                autoComplete="current-password"
+                required
+              />
+            </div>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-emerald-700 hover:to-teal-700 focus:ring-4 focus:ring-emerald-300 focus:outline-none transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg">
-            {isLoading ? (
-              <div className="flex items-center justify-center">
-                <svg
-                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24">
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                جارٍ تسجيل الدخول...
+            {/* Remember Me */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <input
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={handleRememberMeChange}
+                  className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+                />
+                <label
+                  htmlFor="remember-me"
+                  className="mr-2 block text-sm text-gray-700">
+                  تذكرني
+                </label>
               </div>
-            ) : (
-              "تسجيل الدخول"
-            )}
-          </button>
+
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(true)}
+                className="text-sm text-emerald-600 hover:text-emerald-800 font-medium transition-colors duration-200">
+                نسيت كلمة المرور؟
+              </button>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-emerald-700 hover:to-teal-700 focus:ring-4 focus:ring-emerald-300 focus:outline-none transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg">
+              {isLoading ? (
+                <div className="flex items-center justify-center">
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24">
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  جارٍ تسجيل الدخول...
+                </div>
+              ) : (
+                "تسجيل الدخول"
+              )}
+            </button>
           </form>
         </div>
 
