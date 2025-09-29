@@ -258,21 +258,23 @@ const Managment: React.FC = () => {
             studentData
           );
 
-          // Validate response data
-          if (response.data && typeof response.data === "object") {
-            // Update the students list using functional update
-            setStudents((prevStudents) =>
-              prevStudents.map((student) =>
-                student._id === studentToUpdate._id
-                  ? { ...response.data, _id: studentToUpdate._id }
-                  : student
-              )
-            );
+          // Update the students list using the form data directly
+          // This ensures the UI shows the updated data immediately
+          const updatedStudent = {
+            ...studentToUpdate,
+            ...studentData,
+            _id: studentToUpdate._id,
+          };
 
-            alert("تم تحديث بيانات الطالب بنجاح");
-          } else {
-            throw new Error("البيانات المرجعة من الخادم غير صحيحة");
-          }
+          console.log("Updated student with form data:", updatedStudent);
+
+          setStudents((prevStudents) =>
+            prevStudents.map((student) =>
+              student._id === studentToUpdate._id ? updatedStudent : student
+            )
+          );
+
+          alert("تم تحديث بيانات الطالب بنجاح");
         } else {
           // Fallback to local update if no MongoDB ID is available
           setStudents((prevStudents) =>
