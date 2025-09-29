@@ -33,4 +33,18 @@ router.post("/verify-identity", verifyIdentity);
 // مسار لإعادة تعيين كلمة المرور
 router.post("/reset-password", resetPassword);
 
+// مسار للتحقق من صحة التوكن
+router.get("/verify", protect, (req, res) => {
+  res.json({
+    success: true,
+    message: "التوكن صحيح",
+    user: {
+      _id: req.user.id || req.user._id,
+      role: req.user.role,
+      firstName: req.user.firstName,
+      lastName: req.user.lastName
+    }
+  });
+});
+
 module.exports = router;

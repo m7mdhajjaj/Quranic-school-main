@@ -9,20 +9,24 @@ exports.getUserStatus = async (req, res) => {
     let user = null;
     let userType = '';
 
-    // Try to find user in different models
-    user = await Student.findById(userId);
-    if (user) {
+    // Try to find user in different models with better caching
+    const findUserPromises = [
+      Student.findById(userId).lean(),
+      Teacher.findById(userId).lean(),
+      Admin.findById(userId).lean()
+    ];
+
+    const [student, teacher, admin] = await Promise.allSettled(findUserPromises);
+    
+    if (student.status === 'fulfilled' && student.value) {
+      user = student.value;
       userType = 'student';
-    } else {
-      user = await Teacher.findById(userId);
-      if (user) {
-        userType = 'teacher';
-      } else {
-        user = await Admin.findById(userId);
-        if (user) {
-          userType = 'admin';
-        }
-      }
+    } else if (teacher.status === 'fulfilled' && teacher.value) {
+      user = teacher.value;
+      userType = 'teacher';
+    } else if (admin.status === 'fulfilled' && admin.value) {
+      user = admin.value;
+      userType = 'admin';
     }
 
     if (!user) {
@@ -32,25 +36,38 @@ exports.getUserStatus = async (req, res) => {
       });
     }
 
-    // Check if user is online (in memory)
-    const isOnline = global.onlineUsers ? global.onlineUsers.has(userId) : false;
+    // Check if user is online (in memory) with safer access
+    const onlineUsers = global.onlineUsers || new Map();
+    const isOnline = onlineUsers.has(userId);
+    
+    // استخدام منطق أفضل لتحديد الحالة النشطة
+    const isActive = user.isActive !== false; // افتراضياً نشط إلا إذا كان محدد صراحة كغير نشط
+    const isReallyOnline = isOnline && isActive;
 
-    // استجابة متوافقة للخلف وللأمام: حقول عليا + كائن data مفصل
+    // Cache control headers لتحسين الأداء
+    res.set({
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+
+    // استجابة محسنة ومتوافقة
     res.status(200).json({
       success: true,
       // حقول عليا مطلوبة من الواجهة الحالية
       userId: user._id,
-      isActive: user.isActive || false,
-      isOnline: isOnline,
+      isActive: isActive,
+      isOnline: isReallyOnline,
       userType: userType,
       lastSeen: user.updatedAt,
       // كائن data المفصل للاستخدام المستقبلي
       data: {
         userId: user._id,
-        isActive: user.isActive || false,
-        isOnline: isOnline,
+        isActive: isActive,
+        isOnline: isReallyOnline,
         userType: userType,
         lastSeen: user.updatedAt,
+        serverTimestamp: new Date().toISOString(),
       }
     });
   } catch (error) {
@@ -58,6 +75,7 @@ exports.getUserStatus = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "حدث خطأ أثناء جلب حالة المستخدم",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };

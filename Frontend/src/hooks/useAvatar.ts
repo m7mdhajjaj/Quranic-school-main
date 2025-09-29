@@ -36,13 +36,16 @@ export const useAvatar = ({
       const startTime = Date.now();
       const token = localStorage.getItem('token');
       const endpoint = role === 'student' ? 'students' : 'teachers';
-      const url = `${API_URL}/${endpoint}/${id}/avatar?t=${Date.now()}${
+      
+      // إضافة cache busting أقل تعقيداً - فقط عند الحاجة
+      const cacheBuster = Date.now();
+      const url = `${API_URL}/${endpoint}/${id}/avatar?v=${Math.floor(cacheBuster / 60000)}${
         token ? `&token=${token}` : ''
       }`;
 
-      // Test if avatar exists by creating an image element
-      const img = new Image();
-
+      // استخدام fetch API بدلاً من Image لأداء أفضل
+      const controller = new AbortController();
+      
       const handleLoadComplete = (success: boolean, loadedUrl?: string) => {
         const elapsedTime = Date.now() - startTime;
         const remainingTime = Math.max(0, minLoadingTime - elapsedTime);
@@ -58,24 +61,48 @@ export const useAvatar = ({
         }, remainingTime);
       };
 
-      // Add timeout for slow connections
+      // Timeout with abort controller for better cleanup
       const timeout = setTimeout(() => {
-        img.onload = null;
-        img.onerror = null;
+        controller.abort();
         handleLoadComplete(false);
-      }, 8000); // 8 second timeout
+      }, 6000); // تقليل timeout لتحسين الأداء
 
-      img.onload = () => {
+      // Use fetch with proper error handling
+      fetch(url, {
+        method: 'GET',
+        signal: controller.signal,
+        headers: {
+          'Authorization': `Bearer ${token || ''}`,
+        },
+        cache: 'no-cache', // ضمان حصول على أحدث إصدار
+      })
+      .then(response => {
         clearTimeout(timeout);
-        handleLoadComplete(true, url);
-      };
-
-      img.onerror = () => {
+        if (response.ok && response.status === 200) {
+          // تحقق من نوع المحتوى
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.startsWith('image/')) {
+            handleLoadComplete(true, url);
+          } else {
+            handleLoadComplete(false);
+          }
+        } else {
+          handleLoadComplete(false);
+        }
+      })
+      .catch(error => {
         clearTimeout(timeout);
+        if (error.name !== 'AbortError') {
+          console.warn('Avatar fetch failed:', error.message);
+        }
         handleLoadComplete(false);
+      });
+      
+      // Return cleanup function
+      return () => {
+        clearTimeout(timeout);
+        controller.abort();
       };
-
-      img.src = url;
     },
     [minLoadingTime]
   );

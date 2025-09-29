@@ -157,18 +157,42 @@ router.post('/:id/avatar', studentAvatarUpload.single('avatar'), async (req, res
   }
 });
 
-// Serve student avatar
+// Serve student avatar with improved caching and performance
 router.get('/:id/avatar', async (req, res) => {
   try {
-    const student = await Student.findById(req.params.id).select("avatar");
-    if (!student || !student.avatar || !student.avatar.data) {
-      return res.status(404).send('لا توجد صورة');
+    const { id } = req.params;
+    
+    // Cache headers for better performance
+    const cacheTime = 60 * 60; // 1 hour
+    res.set({
+      'Cache-Control': `public, max-age=${cacheTime}`,
+      'ETag': `student-${id}`,
+      'Last-Modified': new Date().toUTCString()
+    });
+    
+    // Check if client has cached version
+    const clientETag = req.headers['if-none-match'];
+    if (clientETag === `student-${id}`) {
+      return res.status(304).end();
     }
-    res.set('Content-Type', student.avatar.contentType || 'image/jpeg');
+    
+    const student = await Student.findById(id).select("avatar updatedAt").lean();
+    if (!student || !student.avatar || !student.avatar.data) {
+      return res.status(404).json({ error: 'لا توجد صورة' });
+    }
+    
+    // Set proper content type and send optimized response
+    const contentType = student.avatar.contentType || 'image/jpeg';
+    res.set({
+      'Content-Type': contentType,
+      'Content-Length': student.avatar.data.length,
+      'Accept-Ranges': 'bytes'
+    });
+    
     res.send(student.avatar.data);
   } catch (e) {
     console.error('Error serving student avatar:', e);
-    res.status(500).send('خطأ في عرض الصورة');
+    res.status(500).json({ error: 'خطأ في عرض الصورة' });
   }
 });
 

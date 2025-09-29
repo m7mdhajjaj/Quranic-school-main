@@ -122,21 +122,29 @@ const Avatar: React.FC<AvatarProps> = ({
   const displaySrc = previewSrc || src;
   const initials = userName ? userName.charAt(0).toUpperCase() : '';
 
-  // تحديد حالة المستخدم
-  const userIsOnline =
-    forceStatus === 'online'
-      ? true
-      : forceStatus === 'offline'
-        ? false
-        : isActive && isOnline;
+  // تحديد حالة المستخدم مع منطق محسن
+  const userIsOnline = (() => {
+    if (forceStatus === 'online') return true;
+    if (forceStatus === 'offline') return false;
+    
+    // منطق أكثر استقرارًا: إعطاء أولوية للحالة النشطة
+    if (isActive !== undefined && isOnline !== undefined) {
+      return isActive || isOnline;
+    }
+    
+    // fallback للحالة الافتراضية (متصل)
+    return isActive !== false;
+  })();
 
   // تحديد نص التلميح حسب حالة المستخدم
   const getStatusTitle = () => {
     if (forceStatus)
       return forceStatus === 'online' ? 'متصل (مفروض)' : 'غير متصل (مفروض)';
+    
     if (isActive && isOnline) return 'متصل ونشط';
-    if (isActive) return 'نشط وغير متصل';
-    return 'غير نشط';
+    if (isActive) return 'نشط';
+    if (isOnline) return 'متصل';
+    return 'غير متصل';
   };
 
   // دالة للحصول على لون الجنس مع دعم القيم العربية والإنجليزية

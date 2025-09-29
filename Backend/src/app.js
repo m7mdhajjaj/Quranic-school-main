@@ -134,29 +134,53 @@ io.on("connection", (socket) => {
     global.io = io; // Make io globally accessible for chat controllers
   }
 
-  // User login - store their user ID and socket ID
+  // User login - store their user ID and socket ID with improved handling
   socket.on("login", async (userData) => {
-    onlineUsers.set(userData.userId, {
+    const { userId, role, firstName } = userData;
+    
+    // Store user in online users map
+    onlineUsers.set(userId, {
       socketId: socket.id,
-      role: userData.role,
-      firstName: userData.firstName || "مستخدم",
+      role: role,
+      firstName: firstName || "مستخدم",
+      loginTime: new Date().toISOString(),
     });
     
-    // Set isActive to true in database
+    // Set isActive to true in database with better error handling
     try {
-      if (userData.role === "student") {
-        await Student.findByIdAndUpdate(userData.userId, { isActive: true });
-      } else if (userData.role === "admin") {
-        await require("./models/Admin").findByIdAndUpdate(userData.userId, { isActive: true });
+      let updateResult;
+      if (role === "student") {
+        updateResult = await Student.findByIdAndUpdate(
+          userId, 
+          { isActive: true, lastSeen: new Date() }, 
+          { new: true, upsert: false }
+        );
+      } else if (role === "admin") {
+        const Admin = require("./models/Admin");
+        updateResult = await Admin.findByIdAndUpdate(
+          userId, 
+          { isActive: true, lastSeen: new Date() }, 
+          { new: true, upsert: false }
+        );
+      } else if (role === "teacher") {
+        const Teacher = require("./models/Teacher");
+        updateResult = await Teacher.findByIdAndUpdate(
+          userId, 
+          { isActive: true, lastSeen: new Date() }, 
+          { new: true, upsert: false }
+        );
+      }
+      
+      if (updateResult) {
+        console.log(`✅ User ${firstName} (${userId}) logged in successfully as ${role}`);
       } else {
-        await require("./models/Teacher").findByIdAndUpdate(userData.userId, { isActive: true });
+        console.warn(`⚠️  User ${userId} not found in ${role} collection`);
       }
     } catch (error) {
-      console.error("Error setting isActive on socket login:", error);
+      console.error(`❌ Error setting isActive for user ${userId}:`, error.message);
     }
     
-    console.log(`User logged in: ${userData.userId} as ${userData.role}`);
-    console.log("Online users:", [...onlineUsers.entries()]);
+    console.log(`📊 Online users: ${onlineUsers.size}`);
   });
 
   // Handle logout
@@ -367,28 +391,48 @@ io.on("connection", (socket) => {
     }
   });
 
-  // Handle disconnect
-  socket.on("disconnect", async () => {
-    console.log(`User disconnected: ${socket.id}`);
+  // Handle disconnect with improved cleanup
+  socket.on("disconnect", async (reason) => {
+    console.log(`🔌 Socket disconnected: ${socket.id} (reason: ${reason})`);
 
     // Remove user from online users and set isActive to false
     for (const [userId, userData] of onlineUsers.entries()) {
       if (userData.socketId === socket.id) {
+        const { role, firstName } = userData;
+        
         // Set isActive to false in database
         try {
-          if (userData.role === "student") {
-            await Student.findByIdAndUpdate(userId, { isActive: false });
-          } else if (userData.role === "admin") {
-            await require("./models/Admin").findByIdAndUpdate(userId, { isActive: false });
-          } else {
-            await require("./models/Teacher").findByIdAndUpdate(userId, { isActive: false });
+          let updateResult;
+          if (role === "student") {
+            updateResult = await Student.findByIdAndUpdate(
+              userId, 
+              { isActive: false, lastSeen: new Date() },
+              { new: true }
+            );
+          } else if (role === "admin") {
+            const Admin = require("./models/Admin");
+            updateResult = await Admin.findByIdAndUpdate(
+              userId, 
+              { isActive: false, lastSeen: new Date() },
+              { new: true }
+            );
+          } else if (role === "teacher") {
+            const Teacher = require("./models/Teacher");
+            updateResult = await Teacher.findByIdAndUpdate(
+              userId, 
+              { isActive: false, lastSeen: new Date() },
+              { new: true }
+            );
           }
+          
+          console.log(`✅ User ${firstName} (${userId}) marked as inactive`);
         } catch (error) {
-          console.error("Error setting isActive=false on disconnect:", error);
+          console.error(`❌ Error setting isActive=false for user ${userId}:`, error.message);
         }
         
         onlineUsers.delete(userId);
-        console.log(`User removed from online list: ${userId}`);
+        console.log(`👋 User ${firstName} removed from online list`);
+        console.log(`📊 Remaining online users: ${onlineUsers.size}`);
         break;
       }
     }

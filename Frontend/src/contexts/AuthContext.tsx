@@ -96,30 +96,56 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // تحميل بيانات المستخدم من localStorage عند بدء التطبيق
   useEffect(() => {
-    const initializeAuth = () => {
+    const initializeAuth = async () => {
       try {
         const savedUser = localStorage.getItem('user');
         const savedToken = localStorage.getItem('token');
 
         if (savedUser && savedToken) {
           const parsedUser = JSON.parse(savedUser);
-          setUser(parsedUser);
-          setToken(savedToken);
-
-          // Ensure axios sends Authorization header by default
-          axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
           
-          // Connect socket and emit login
-          if (socketRef.current) {
-            socketRef.current.connect();
-            socketRef.current.emit('login', {
-              userId: parsedUser._id,
-              role: parsedUser.role,
-              firstName: parsedUser.firstName || parsedUser.name
+          // تحقق من صحة التوكن قبل المتابعة
+          try {
+            const response = await axios.get(`${API_BASE_URL}/api/auth/verify`, {
+              headers: { 'Authorization': `Bearer ${savedToken}` },
+              timeout: 3000 // 3 ثواني فقط
             });
+            
+            if (response.data.success) {
+              setUser(parsedUser);
+              setToken(savedToken);
+              
+              // Ensure axios sends Authorization header by default
+              axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
+              
+              // Connect socket and emit login with delay
+              if (socketRef.current) {
+                socketRef.current.connect();
+                
+                // تأخير قصير لضمان استقرار الاتصال
+                setTimeout(() => {
+                  if (socketRef.current?.connected) {
+                    socketRef.current.emit('login', {
+                      userId: parsedUser._id,
+                      role: parsedUser.role,
+                      firstName: parsedUser.firstName || parsedUser.name
+                    });
+                  }
+                }, 500);
+              }
+              
+              console.log('✅ تم استرداد بيانات معتمدة للمستخدم:', parsedUser.firstName || parsedUser.name);
+            } else {
+              throw new Error('توكن غير صالح');
+            }
+          } catch {
+            console.warn('⚠️  فشل في التحقق من التوكن, مسح البيانات');
+            // مسح البيانات القديمة/غير الصالحة
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            localStorage.removeItem('userId');
+            delete axios.defaults.headers.common['Authorization'];
           }
-          
-          console.log('🔄 تم استرداد بيانات المستخدم من التخزين المحلي:', parsedUser.firstName || parsedUser.name);
         }
       } catch (error) {
         console.error('❌ خطأ في تحميل بيانات المستخدم:', error);
@@ -127,6 +153,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         localStorage.removeItem('user');
         localStorage.removeItem('token');
         localStorage.removeItem('userId');
+        delete axios.defaults.headers.common['Authorization'];
       } finally {
         setIsLoading(false);
       }
