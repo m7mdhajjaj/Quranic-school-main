@@ -1,6 +1,6 @@
 import React from 'react';
 import { User as UserIcon } from 'lucide-react';
-import { useAvatarStatus } from '../hooks/useUserStatus';
+import { useUserStatus } from '../hooks/useUserStatus';
 
 export interface AvatarProps {
   /** Avatar image URL */
@@ -13,6 +13,8 @@ export interface AvatarProps {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
   /** User's name for fallback initial */
   userName?: string;
+  /** User ID for status checking */
+  userId?: string;
   /** User's gender for color theming */
   gender?: 'male' | 'female';
   /** Whether to show loading state */
@@ -102,6 +104,7 @@ const Avatar: React.FC<AvatarProps> = ({
   alt = 'صورة المستخدم',
   size = 'md',
   userName,
+  userId,
   gender = 'male',
   loading = false,
   clickable = false,
@@ -114,25 +117,31 @@ const Avatar: React.FC<AvatarProps> = ({
   showStatus = false,
   forceStatus,
 }) => {
-  // جلب حالة المستخدم من قاعدة البيانات أو النظام المحلي
-  const { isOnline: dbStatus, statusType } = useAvatarStatus(forceStatus);
+  // جلب حالة المستخدم من قاعدة البيانات
+  const { isActive, isOnline } = useUserStatus(userId);
   const displaySrc = previewSrc || src;
   const initials = userName ? userName.charAt(0).toUpperCase() : '';
 
-  // تحديد حالة الاتصال (أولوية لقاعدة البيانات)
-  const isOnline = dbStatus;
-  
-  // تحديد نص التلميح حسب مصدر الحالة
+  // تحديد حالة المستخدم
+  const userIsOnline =
+    forceStatus === 'online'
+      ? true
+      : forceStatus === 'offline'
+        ? false
+        : isActive && isOnline;
+
+  // تحديد نص التلميح حسب حالة المستخدم
   const getStatusTitle = () => {
-    const status = isOnline ? 'متصل' : 'غير متصل';
-    const source = statusType === 'database' ? '(من قاعدة البيانات)' :
-                   statusType === 'realtime' ? '(مباشر)' :
-                   statusType === 'forced' ? '(إجبار)' : '(احتياطي)';
-    return `${status} ${source}`;
+    if (forceStatus)
+      return forceStatus === 'online' ? 'متصل (مفروض)' : 'غير متصل (مفروض)';
+    if (isActive && isOnline) return 'متصل ونشط';
+    if (isActive) return 'نشط وغير متصل';
+    return 'غير نشط';
   };
 
   const genderColors = {
-    female: 'bg-gradient-to-br from-pink-400 to-fuchsia-500 border-pink-200/50 shadow-pink-500/30',
+    female:
+      'bg-gradient-to-br from-pink-400 to-fuchsia-500 border-pink-200/50 shadow-pink-500/30',
     male: 'bg-gradient-to-br from-emerald-400 to-teal-500 border-emerald-200/50 shadow-emerald-500/30',
   };
 
@@ -188,7 +197,7 @@ const Avatar: React.FC<AvatarProps> = ({
             if (e.key === 'Enter' || e.key === ' ') {
               onClick?.();
             }
-          }
+          },
         })}
         aria-label={clickable ? 'القائمة الشخصية' : alt}
       >
@@ -217,15 +226,16 @@ const Avatar: React.FC<AvatarProps> = ({
           />
         ) : (
           <div className="relative w-full h-full flex items-center justify-center">
-            {fallbackIcon || (
-              initials ? (
-                <span className={`text-white font-bold ${textSizeClasses[size]} drop-shadow-sm`}>
+            {fallbackIcon ||
+              (initials ? (
+                <span
+                  className={`text-white font-bold ${textSizeClasses[size]} drop-shadow-sm`}
+                >
                   {initials}
                 </span>
               ) : (
                 <UserIcon className={`${iconSizeClasses[size]} text-white`} />
-              )
-            )}
+              ))}
 
             {/* Subtle retry indicator on hover for clickable avatars */}
             {clickable && !displaySrc && (
@@ -251,7 +261,7 @@ const Avatar: React.FC<AvatarProps> = ({
 
       {/* Status indicator - نقطة الحالة */}
       {showStatus && (
-        <div 
+        <div
           className={`
             absolute 
             ${statusDotPositionClasses[size]} 
@@ -262,21 +272,24 @@ const Avatar: React.FC<AvatarProps> = ({
             shadow-lg
             transition-all 
             duration-300
-            ${isOnline 
-              ? 'bg-green-500 shadow-green-500/50' 
-              : 'bg-red-500 shadow-red-500/50'
+            ${
+              userIsOnline
+                ? 'bg-green-500 shadow-green-500/50'
+                : 'bg-red-500 shadow-red-500/50'
             }
-            ${isOnline ? 'animate-pulse' : ''}
+            ${userIsOnline ? 'animate-pulse' : ''}
           `}
           title={getStatusTitle()}
-          aria-label={isOnline ? 'المستخدم متصل' : 'المستخدم غير متصل'}
+          aria-label={userIsOnline ? 'المستخدم متصل' : 'المستخدم غير متصل'}
         >
           {/* Inner glow effect */}
-          <div className={`
+          <div
+            className={`
             absolute inset-0.5 rounded-full 
-            ${isOnline ? 'bg-green-400' : 'bg-red-400'} 
+            ${userIsOnline ? 'bg-green-400' : 'bg-red-400'} 
             opacity-60
-          `} />
+          `}
+          />
         </div>
       )}
 
@@ -301,14 +314,24 @@ const Avatar: React.FC<AvatarProps> = ({
           `}
           title="تغيير الصورة"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth={2}
               d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
             />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+            />
           </svg>
         </button>
       )}
