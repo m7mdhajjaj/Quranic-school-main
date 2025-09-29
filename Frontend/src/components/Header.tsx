@@ -1,6 +1,6 @@
 
 
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import NotificationHeader from './NotificationHeader';
 import Avatar from './Avatar';
@@ -347,8 +347,12 @@ const Header = () => {
           {/* الصف الرئيسي */}
           <div className="flex items-center justify-between py-1.5 sm:py-2 lg:py-3 gap-1 sm:gap-2 md:gap-3">
             {/* RIGHT: Logo + Academy Name */}
-            <div className="flex items-center justify-start gap-1.5 sm:gap-2 md:gap-3">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 rounded-full bg-white/20 backdrop-blur-md border-2 border-white/30 flex items-center justify-center shadow-lg relative overflow-hidden flex-shrink-0">
+            <Link 
+              to="/" 
+              className="flex items-center justify-start gap-1.5 sm:gap-2 md:gap-3 hover:opacity-90 transition-opacity duration-200 cursor-pointer group"
+              title="العودة إلى الصفحة الرئيسية"
+            >
+              <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 rounded-full bg-white/20 backdrop-blur-md border-2 border-white/30 flex items-center justify-center shadow-lg relative overflow-hidden flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
                 {!logoLoaded && (
                   <ImageSkeleton
                     className="w-6 h-6 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full absolute inset-0 m-auto"
@@ -369,14 +373,14 @@ const Header = () => {
                 />
               </div>
               <div className="flex-shrink min-w-0">
-                <h1 className="text-sm sm:text-base md:text-lg lg:text-2xl xl:text-3xl font-bold bg-gradient-to-l from-white via-emerald-100 to-white bg-clip-text text-transparent drop-shadow-sm truncate">
+                <h1 className="text-sm sm:text-base md:text-lg lg:text-2xl xl:text-3xl font-bold bg-gradient-to-l from-white via-emerald-100 to-white bg-clip-text text-transparent drop-shadow-sm truncate group-hover:text-emerald-100 transition-colors duration-200">
                   مدرسة القرآن الكريم
                 </h1>
-                <p className="text-xs md:text-sm lg:text-base text-emerald-100/80 font-medium hidden sm:block truncate">
+                <p className="text-xs md:text-sm lg:text-base text-emerald-100/80 font-medium hidden sm:block truncate group-hover:text-emerald-100 transition-colors duration-200">
                   أكاديمية مدرسة الهجرة للقرآن الكريم وعلومه
                 </p>
               </div>
-            </div>
+            </Link>
 
             {/* CENTER: Desktop Nav */}
             <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
@@ -654,8 +658,13 @@ const Header = () => {
             <div className="p-6">
               {/* mobile header */}
               <div className="flex items-center justify-between mb-6 pb-4 border-b border-emerald-500/30">
-                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/20 backdrop-blur-md border-2 border-white/30 flex items-center justify-center relative overflow-hidden flex-shrink-0">
+                <Link 
+                  to="/" 
+                  className="flex items-center gap-2 sm:gap-3 min-w-0 hover:opacity-90 transition-opacity duration-200 cursor-pointer group"
+                  onClick={toggleMenu} // إغلاق القائمة عند النقر على اللوغو
+                  title="العودة إلى الصفحة الرئيسية"
+                >
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/20 backdrop-blur-md border-2 border-white/30 flex items-center justify-center relative overflow-hidden flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
                     {!officialPhotoLoaded && (
                       <ImageSkeleton
                         className="w-6 h-6 sm:w-7 sm:h-7 rounded-full absolute inset-0 m-auto"
@@ -678,14 +687,14 @@ const Header = () => {
                     />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h2 className="text-base sm:text-lg font-bold text-white truncate">
+                    <h2 className="text-base sm:text-lg font-bold text-white truncate group-hover:text-emerald-100 transition-colors duration-200">
                       القائمة الرئيسية
                     </h2>
-                    <p className="text-emerald-200 text-xs sm:text-sm truncate">
+                    <p className="text-emerald-200 text-xs sm:text-sm truncate group-hover:text-emerald-100 transition-colors duration-200">
                       مدرسة القرآن الكريم
                     </p>
                   </div>
-                </div>
+                </Link>
                 <button
                   onClick={toggleMenu}
                   className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors backdrop-blur-md border border-white/20"

@@ -32,10 +32,23 @@ const allowedOrigins = process.env.CORS_ORIGINS
 app.use(
   cors({
     origin: function (origin, callback) {
-      // allow requests with no origin (like mobile apps, curl, etc.)
-      if (!origin) return callback(null, true);
+      // Allow requests with no origin in development or from localhost
+      if (!origin) {
+        // Allow if NODE_ENV is explicitly set to development or if we're in local development
+        if (process.env.NODE_ENV === 'development' || process.env.PORT === '5005') {
+          return callback(null, true);
+        }
+        const msg = "CORS policy: Requests without origin are not allowed in production.";
+        return callback(new Error(msg), false);
+      }
+      
+      // Always allow localhost origins for development
+      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        return callback(null, true);
+      }
+      
       if (allowedOrigins.indexOf(origin) === -1) {
-        const msg = "CORS policy: This origin is not allowed.";
+        const msg = `CORS policy: Origin ${origin} is not allowed.`;
         return callback(new Error(msg), false);
       }
       return callback(null, true);
@@ -377,6 +390,81 @@ io.on("connection", (socket) => {
     } catch (error) {
       console.error("Error sending group message:", error);
       socket.emit("error", { message: "Error sending group message" });
+    }
+  });
+
+  // Handle message editing
+  socket.on("editMessage", async (data) => {
+    try {
+      const { messageId, text } = data;
+      
+      if (!messageId || !text || text.trim() === '') {
+        socket.emit("messageEditError", { error: "Message ID and text are required" });
+        return;
+      }
+      
+      const message = await Chat.findById(messageId);
+      if (!message) {
+        socket.emit("messageEditError", { error: "Message not found" });
+        return;
+      }
+      
+      // Update the message
+      message.text = text.trim();
+      message.editedAt = new Date();
+      await message.save();
+      
+      // Get populated message
+      const updatedMessage = await Chat.findById(messageId)
+        .populate('sender', 'firstName lastName')
+        .populate('recipient', 'firstName lastName');
+        
+      socket.emit("messageEdited", updatedMessage);
+      
+      // Find recipient's socket and emit to them
+      const recipientData = onlineUsers.get(message.recipient.toString());
+      if (recipientData) {
+        io.to(recipientData.socketId).emit("messageEdited", updatedMessage);
+      }
+    } catch (error) {
+      console.error("Error editing message:", error);
+      socket.emit("messageEditError", { error: "Failed to edit message" });
+    }
+  });
+  
+  // Handle message deletion
+  socket.on("deleteMessage", async (data) => {
+    try {
+      const { messageId } = data;
+      
+      if (!messageId) {
+        socket.emit("messageDeleteError", { error: "Message ID is required" });
+        return;
+      }
+      
+      const message = await Chat.findById(messageId);
+      if (!message) {
+        socket.emit("messageDeleteError", { error: "Message not found" });
+        return;
+      }
+      
+      // Store recipient ID before deletion
+      const recipientId = message.recipient.toString();
+      
+      // Delete the message
+      await Chat.findByIdAndDelete(messageId);
+      
+      // Emit to both sender and recipient
+      socket.emit("messageDeleted", { messageId });
+      
+      // Find recipient's socket and emit to them
+      const recipientData = onlineUsers.get(recipientId);
+      if (recipientData) {
+        io.to(recipientData.socketId).emit("messageDeleted", { messageId });
+      }
+    } catch (error) {
+      console.error("Error deleting message:", error);
+      socket.emit("messageDeleteError", { error: "Failed to delete message" });
     }
   });
 

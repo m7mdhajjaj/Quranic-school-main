@@ -198,12 +198,23 @@ exports.deleteActivity = async (req, res) => {
     if (!activity) {
       return res.status(404).json({ message: "النشاط غير موجود" });
     }
-
-    // Delete the activity
+    
+    // Delete associated image file from filesystem
+    if (activity.image && activity.image !== '/uploads/activities/placeholder.jpg') {
+      const imagePath = path.join(__dirname, '../../public', activity.image);
+      try {
+        if (fs.existsSync(imagePath)) {
+          fs.unlinkSync(imagePath);
+          console.log('Deleted activity image file:', imagePath);
+        }
+      } catch (fileError) {
+        console.error('Error deleting image file:', fileError);
+        // Continue with activity deletion even if file deletion fails
+      }
+    }
+    
+    // Delete the activity from database
     await Activity.findByIdAndDelete(req.params.id);
-
-    // TODO: Delete associated image file from the filesystem if it's not a placeholder
-    // This requires more complex code to safely delete files and handle errors
 
     res.status(200).json({ message: "تم حذف النشاط بنجاح" });
   } catch (error) {
