@@ -5,39 +5,52 @@ import Avatar from '../components/Avatar';
 import { getUserGender, useAvatar } from '../hooks/useAvatar';
 import { useAuth } from '../hooks/useAuth';
 
-// دالة تنسيق آخر ظهور لعرض الساعة والدقائق
+// دالة تنسيق آخر ظهور بصيغة "منذ..." 
 const formatLastSeen = (lastSeen: Date): string => {
   const now = new Date();
   const diffMs = now.getTime() - lastSeen.getTime();
+  
+  // تحويل إلى وحدات مختلفة
+  const diffSeconds = Math.floor(diffMs / 1000);
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const diffWeeks = Math.floor(diffDays / 7);
+  const diffMonths = Math.floor(diffDays / 30);
   
-  // تنسيق الوقت بالساعة والدقيقة
-  const hours = lastSeen.getHours().toString().padStart(2, '0');
-  const minutes = lastSeen.getMinutes().toString().padStart(2, '0');
-  const timeString = `${hours}:${minutes}`;
-  
-  // إذا كان نفس اليوم - اعرض الوقت فقط
-  if (diffDays === 0) {
-    return timeString;
+  // إذا كان أقل من دقيقة
+  if (diffSeconds < 60) {
+    return "منذ لحظات";
   }
   
-  // إذا كان أمس - اعرض "أمس" + الوقت
-  if (diffDays === 1) {
-    return `أمس ${timeString}`;
+  // إذا كان أقل من ساعة
+  if (diffMinutes < 60) {
+    return diffMinutes === 1 ? "منذ دقيقة" : `منذ ${diffMinutes} دقيقة`;
   }
   
-  // إذا كان خلال الأسبوع الماضي - اعرض اليوم + الوقت
-  if (diffDays <= 7) {
-    const dayNames = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-    const dayName = dayNames[lastSeen.getDay()];
-    return `${dayName} ${timeString}`;
+  // إذا كان أقل من يوم (24 ساعة)
+  if (diffHours < 24) {
+    return diffHours === 1 ? "منذ ساعة" : `منذ ${diffHours} ساعة`;
   }
   
-  // إذا كان أقدم من أسبوع - اعرض التاريخ + الوقت
-  const day = lastSeen.getDate().toString().padStart(2, '0');
-  const month = (lastSeen.getMonth() + 1).toString().padStart(2, '0');
-  const year = lastSeen.getFullYear();
-  return `${day}/${month}/${year} ${timeString}`;
+  // إذا كان أقل من أسبوع
+  if (diffDays < 7) {
+    return diffDays === 1 ? "منذ يوم" : `منذ ${diffDays} أيام`;
+  }
+  
+  // إذا كان أقل من شهر
+  if (diffWeeks < 4) {
+    return diffWeeks === 1 ? "منذ أسبوع" : `منذ ${diffWeeks} أسابيع`;
+  }
+  
+  // إذا كان أقل من سنة
+  if (diffMonths < 12) {
+    return diffMonths === 1 ? "منذ شهر" : `منذ ${diffMonths} أشهر`;
+  }
+  
+  // إذا كان أكثر من سنة
+  const diffYears = Math.floor(diffMonths / 12);
+  return diffYears === 1 ? "منذ سنة" : `منذ ${diffYears} سنوات`;
 };
 
 
@@ -310,6 +323,7 @@ const Chat: React.FC = () => {
           const data = await response.json();
           console.log('🔍 البيانات المستلمة من API:', data);
           const lastSeenMap = new Map<string, Date>();
+          const activeUsersSet = new Set<string>();
           
           data.forEach((user: any) => {
             console.log(`👤 معالجة المستخدم ${user._id}:`, {
@@ -317,34 +331,46 @@ const Chat: React.FC = () => {
               lastSeen: user.lastSeen,
               lastSeenType: typeof user.lastSeen
             });
+            
             // حفظ حالة النشاط للمستخدمين المتصلين
-            if (user.isActive) {
-              // لا نحفظ lastSeen للمستخدمين النشطين لأنهم متصلون حالياً
-            } else {
-              // للمستخدمين غير النشطين، احفظ lastSeen إذا كان متوفراً وليس null
-              if (user.lastSeen && user.lastSeen !== null) {
-                try {
-                  const lastSeenDate = new Date(user.lastSeen);
-                  // التأكد من أن التاريخ صحيح
-                  if (!isNaN(lastSeenDate.getTime())) {
-                    lastSeenMap.set(user._id, lastSeenDate);
-                  }
-                } catch (error) {
-                  console.warn(`خطأ في تحويل lastSeen للمستخدم ${user._id}:`, error);
+            if (user.isActive === true) {
+              activeUsersSet.add(user._id);
+            }
+            
+            // حفظ lastSeen لجميع المستخدمين (حتى المتصلين منهم)
+            if (user.lastSeen && user.lastSeen !== null) {
+              try {
+                const lastSeenDate = new Date(user.lastSeen);
+                // التأكد من أن التاريخ صحيح
+                if (!isNaN(lastSeenDate.getTime())) {
+                  lastSeenMap.set(user._id, lastSeenDate);
                 }
+              } catch (error) {
+                console.warn(`خطأ في تحويل lastSeen للمستخدم ${user._id}:`, error);
               }
             }
           });
           
           console.log('📊 خريطة آخر ظهور النهائية:', [...lastSeenMap.entries()]);
+          console.log('👥 المستخدمون النشطون:', [...activeUsersSet]);
+          
           setLastSeenData(lastSeenMap);
+          setOnlineUsers(activeUsersSet);
+        } else {
+          console.error('🚨 فشل في تحميل بيانات آخر ظهور:', response.status, response.statusText);
+          const errorText = await response.text();
+          console.error('📄 تفاصيل الخطأ:', errorText);
         }
       } catch (error) {
-        console.error('Error loading last seen data:', error);
+        console.error('🚨 خطأ في طلب بيانات آخر ظهور:', error);
       }
     };
 
     loadLastSeenData();
+    
+    // تحديث البيانات كل 30 ثانية
+    const interval = setInterval(loadLastSeenData, 30000);
+    return () => clearInterval(interval);
   }, [currentUser, getAuthHeaders]);
 
   // ----- Load conversation -----
@@ -436,9 +462,43 @@ const Chat: React.FC = () => {
           newSet.add(payload.userId);
         } else {
           newSet.delete(payload.userId);
+          // عند تسجيل الخروج، قم بتحديث آخر ظهور للمستخدم
+          setLastSeenData(prevLastSeen => {
+            const newLastSeen = new Map(prevLastSeen);
+            newLastSeen.set(payload.userId, new Date());
+            return newLastSeen;
+          });
         }
         return newSet;
       });
+    });
+    
+    // استقبال تحديثات حالة المستخدمين (للتحديث التلقائي)
+    s.on('userStatusChange', (data: { 
+      userId: string; 
+      isActive: boolean; 
+      lastSeen?: string;
+    }) => {
+      console.log('🔄 تحديث حالة المستخدم عبر Socket:', data);
+      
+      setOnlineUsers(prev => {
+        const newSet = new Set(prev);
+        if (data.isActive) {
+          newSet.add(data.userId);
+        } else {
+          newSet.delete(data.userId);
+        }
+        return newSet;
+      });
+      
+      // تحديث آخر ظهور إذا توفر
+      if (data.lastSeen) {
+        setLastSeenData(prevLastSeen => {
+          const newLastSeen = new Map(prevLastSeen);
+          newLastSeen.set(data.userId, new Date(data.lastSeen!));
+          return newLastSeen;
+        });
+      }
     });
 
     s.on('typing', (payload: { from: string; to?: string; group?: string }) => {

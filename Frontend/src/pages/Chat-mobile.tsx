@@ -4,7 +4,7 @@ import { API_URL } from "../config";
 import Avatar from "../components/Avatar";
 import { getUserGender } from "../hooks/useAvatar";
 
-// دالة تنسيق آخر ظهور بالعربية
+// دالة تنسيق آخر ظهور بصيغة "منذ..." 
 const formatLastSeen = (lastSeen?: string | Date): string => {
   if (!lastSeen) return 'غير محدد';
   
@@ -12,21 +12,42 @@ const formatLastSeen = (lastSeen?: string | Date): string => {
   const lastSeenDate = new Date(lastSeen);
   const diffMs = now.getTime() - lastSeenDate.getTime();
   
-  // تحويل إلى دقائق وساعات وأيام
+  // تحويل إلى وحدات مختلفة
+  const diffSeconds = Math.floor(diffMs / 1000);
   const diffMinutes = Math.floor(diffMs / (1000 * 60));
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const diffWeeks = Math.floor(diffDays / 7);
+  const diffMonths = Math.floor(diffDays / 30);
   
-  if (diffMinutes < 1) return 'منذ لحظات';
-  if (diffMinutes === 1) return 'قبل دقيقة';
-  if (diffMinutes < 60) return `قبل ${diffMinutes} دقيقة`;
-  if (diffHours === 1) return 'قبل ساعة';
-  if (diffHours < 24) return `قبل ${diffHours} ساعة`;
-  if (diffDays === 1) return 'قبل يوم';
-  if (diffDays < 30) return `قبل ${diffDays} يوم`;
-  if (diffDays < 365) {
-    const diffMonths = Math.floor(diffDays / 30);
-    return diffMonths === 1 ? 'قبل شهر' : `قبل ${diffMonths} شهر`;
+  // إذا كان أقل من دقيقة
+  if (diffSeconds < 60) {
+    return "منذ لحظات";
+  }
+  
+  // إذا كان أقل من ساعة
+  if (diffMinutes < 60) {
+    return diffMinutes === 1 ? "منذ دقيقة" : `منذ ${diffMinutes} دقيقة`;
+  }
+  
+  // إذا كان أقل من يوم (24 ساعة)
+  if (diffHours < 24) {
+    return diffHours === 1 ? "منذ ساعة" : `منذ ${diffHours} ساعة`;
+  }
+  
+  // إذا كان أقل من أسبوع
+  if (diffDays < 7) {
+    return diffDays === 1 ? "منذ يوم" : `منذ ${diffDays} أيام`;
+  }
+  
+  // إذا كان أقل من شهر
+  if (diffWeeks < 4) {
+    return diffWeeks === 1 ? "منذ أسبوع" : `منذ ${diffWeeks} أسابيع`;
+  }
+  
+  // إذا كان أقل من سنة
+  if (diffMonths < 12) {
+    return diffMonths === 1 ? "منذ شهر" : `منذ ${diffMonths} أشهر`;
   }
   const diffYears = Math.floor(diffDays / 365);
   return diffYears === 1 ? 'قبل سنة' : `قبل ${diffYears} سنة`;
@@ -149,7 +170,7 @@ const Chat: React.FC = () => {
         if ((authHeader as any).Authorization)
           headers.Authorization = (authHeader as any).Authorization as string;
 
-        const response = await fetch(`${API_URL}/user-status/last-seen`, { headers });
+        const response = await fetch(`${API_URL}/users/last-seen`, { headers });
         
         if (response.ok) {
           const data = await response.json();

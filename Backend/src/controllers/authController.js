@@ -839,6 +839,15 @@ exports.logout = async (req, res) => {
       }
     }
 
+    // إرسال إشعار Socket بتغيير حالة المستخدم (إذا كان هناك Socket.IO متاح)
+    if (req.app && req.app.get('io')) {
+      req.app.get('io').emit('userStatusChange', {
+        userId: userId,
+        isActive: false,
+        lastSeen: updatedUser?.lastSeen?.toISOString() || new Date().toISOString()
+      });
+    }
+
     res.status(200).json({
       success: true,
       message: "تم تسجيل الخروج بنجاح",

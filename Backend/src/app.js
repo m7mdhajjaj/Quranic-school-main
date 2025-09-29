@@ -130,6 +130,9 @@ const io = new Server(server, {
   },
 });
 
+// Make io available to routes
+app.set('io', io);
+
 // Store online users
 const onlineUsers = new Map();
 
@@ -187,6 +190,14 @@ io.on("connection", (socket) => {
       
       if (updateResult) {
         console.log(`✅ User ${firstName} (${userId}) logged in successfully as ${role}`);
+        
+        // إرسال إشعار لجميع العملاء بتغيير حالة المستخدم إلى متصل
+        io.emit('userStatusChange', {
+          userId: userId,
+          isActive: true,
+          lastSeen: updateResult?.lastSeen?.toISOString() || new Date().toISOString()
+        });
+        
       } else {
         console.warn(`⚠️  User ${userId} not found in ${role} collection`);
       }
@@ -515,6 +526,14 @@ io.on("connection", (socket) => {
           }
           
           console.log(`✅ User ${firstName} (${userId}) marked as inactive`);
+          
+          // إرسال إشعار لجميع العملاء بتغيير حالة المستخدم
+          io.emit('userStatusChange', {
+            userId: userId,
+            isActive: false,
+            lastSeen: updateResult?.lastSeen?.toISOString() || new Date().toISOString()
+          });
+          
         } catch (error) {
           console.error(`❌ Error setting isActive=false for user ${userId}:`, error.message);
         }
