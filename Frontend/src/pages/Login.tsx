@@ -610,7 +610,7 @@ const Login = () => {
                 className="block text-sm font-medium text-gray-700 mb-2"
                 htmlFor="userId">
                 {roleTab === "student"
-                  ? "رقم الطالب أو رقم الهوية"
+                  ? "رقم الطالب   "
                   : roleTab === "teacher"
                   ? "رقم المعلم"
                   : "رقم الإداري"}
@@ -624,7 +624,7 @@ const Login = () => {
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-right placeholder-gray-400"
                 placeholder={
                   roleTab === "student"
-                    ? "أدخل رقم الطالب أو رقم الهوية"
+                    ? " رقم الطالب   "
                     : roleTab === "teacher"
                     ? "أدخل رقم المعلم"
                     : "أدخل رقم الإداري"
