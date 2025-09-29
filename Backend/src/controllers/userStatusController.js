@@ -35,8 +35,16 @@ exports.getUserStatus = async (req, res) => {
     // Check if user is online (in memory)
     const isOnline = global.onlineUsers ? global.onlineUsers.has(userId) : false;
 
+    // استجابة متوافقة للخلف وللأمام: حقول عليا + كائن data مفصل
     res.status(200).json({
       success: true,
+      // حقول عليا مطلوبة من الواجهة الحالية
+      userId: user._id,
+      isActive: user.isActive || false,
+      isOnline: isOnline,
+      userType: userType,
+      lastSeen: user.updatedAt,
+      // كائن data المفصل للاستخدام المستقبلي
       data: {
         userId: user._id,
         isActive: user.isActive || false,
