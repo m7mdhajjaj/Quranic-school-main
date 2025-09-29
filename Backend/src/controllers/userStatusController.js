@@ -173,17 +173,17 @@ exports.getAllLastSeen = async (req, res) => {
     const lastSeenData = [
       ...students.map(s => ({ 
         _id: s._id, 
-        lastSeen: s.lastSeen || new Date(),
+        lastSeen: s.lastSeen || null,
         isActive: s.isActive || false
       })),
       ...teachers.map(t => ({ 
         _id: t._id, 
-        lastSeen: t.lastSeen || new Date(),
+        lastSeen: t.lastSeen || null,
         isActive: t.isActive || false
       })),
       ...admins.map(a => ({ 
         _id: a._id, 
-        lastSeen: a.lastSeen || new Date(),
+        lastSeen: a.lastSeen || null,
         isActive: a.isActive || false
       }))
     ];

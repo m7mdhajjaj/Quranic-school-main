@@ -5,33 +5,6 @@ import Avatar from '../components/Avatar';
 import { getUserGender, useAvatar } from '../hooks/useAvatar';
 import { useAuth } from '../hooks/useAuth';
 
-// دالة تنسيق آخر ظهور بالعربية
-const formatLastSeen = (lastSeen?: string | Date): string => {
-  if (!lastSeen) return 'غير محدد';
-  
-  const now = new Date();
-  const lastSeenDate = new Date(lastSeen);
-  const diffMs = now.getTime() - lastSeenDate.getTime();
-  
-  // تحويل إلى دقائق وساعات وأيام
-  const diffMinutes = Math.floor(diffMs / (1000 * 60));
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  
-  if (diffMinutes < 1) return 'منذ لحظات';
-  if (diffMinutes === 1) return 'قبل دقيقة';
-  if (diffMinutes < 60) return `قبل ${diffMinutes} دقيقة`;
-  if (diffHours === 1) return 'قبل ساعة';
-  if (diffHours < 24) return `قبل ${diffHours} ساعة`;
-  if (diffDays === 1) return 'قبل يوم';
-  if (diffDays < 30) return `قبل ${diffDays} يوم`;
-  if (diffDays < 365) {
-    const diffMonths = Math.floor(diffDays / 30);
-    return diffMonths === 1 ? 'قبل شهر' : `قبل ${diffMonths} شهر`;
-  }
-  const diffYears = Math.floor(diffDays / 365);
-  return diffYears === 1 ? 'قبل سنة' : `قبل ${diffYears} سنة`;
-};
 
 type AttachmentType = 'image' | 'file' | 'audio';
 
@@ -163,11 +136,9 @@ const Chat: React.FC = () => {
   // Presence
   const [isTyping, setIsTyping] = useState(false);
   const [peerTyping, setPeerTyping] = useState(false);
-  const [peerOnline, setPeerOnline] = useState(false);
   
   // User Status & Last Seen
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
-  const [lastSeenData, setLastSeenData] = useState<Map<string, string>>(new Map());
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const socketRef = useRef<Socket | null>(null);
@@ -286,56 +257,7 @@ const Chat: React.FC = () => {
     })();
   }, [currentUser]);
 
-  // ----- Load last seen data -----
-  useEffect(() => {
-    const loadLastSeenData = async () => {
-      if (!currentUser) return;
-      try {
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-          ...(getAuthHeaders() as any),
-        };
-        const response = await fetch(`${API_URL}/user-status/last-seen`, { headers });
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Last seen data from API:', data);
-          const formattedMap = new Map<string, string>();
-          const activeUsers = new Set<string>();
-          
-          data.forEach((user: any) => {
-            console.log('Processing user:', user._id, 'isActive:', user.isActive, 'lastSeen:', user.lastSeen);
-            // حفظ حالة النشاط
-            if (user.isActive) {
-              activeUsers.add(user._id);
-            }
-            // حفظ آخر ظهور لجميع المستخدمين
-            if (user.lastSeen) {
-              const formatted = formatLastSeen(user.lastSeen);
-              console.log('Formatted last seen for user', user._id, ':', formatted);
-              formattedMap.set(user._id, formatted);
-            }
-          });
-          
-          console.log('Active users:', [...activeUsers]);
-          console.log('Last seen map:', [...formattedMap.entries()]);
-          
-          setOnlineUsers(activeUsers);
-          setLastSeenData(formattedMap);
-        }
-      } catch (error) {
-        console.error('Error loading last seen data:', error);
-      }
-    };
 
-    if (contacts.length > 0) {
-      loadLastSeenData();
-      
-      // تحديث دوري كل 30 ثانية
-      const interval = setInterval(loadLastSeenData, 30000);
-      return () => clearInterval(interval);
-    }
-  }, [contacts, currentUser, getAuthHeaders]);
 
   // ----- Load conversation -----
   const loadConversation = async () => {
@@ -420,9 +342,15 @@ const Chat: React.FC = () => {
 
     // Presence
     s.on('presence:update', (payload: { userId: string; online: boolean }) => {
-      if (selectedContact && payload.userId === selectedId) {
-        setPeerOnline(payload.online);
-      }
+      setOnlineUsers(prev => {
+        const newSet = new Set(prev);
+        if (payload.online) {
+          newSet.add(payload.userId);
+        } else {
+          newSet.delete(payload.userId);
+        }
+        return newSet;
+      });
     });
 
     s.on('typing', (payload: { from: string; to?: string; group?: string }) => {
@@ -1122,8 +1050,8 @@ const Chat: React.FC = () => {
                               </div>
                               <div className="text-xs text-gray-500">
                                 {onlineUsers.has(c._id) 
-                                  ? "نشط الآن" 
-                                  : lastSeenData.get(c._id) || "غير محدد"
+                                  ? "متصل" 
+                                  : "غير متصل"
                                 }
                               </div>
                               {c.group && (
@@ -1172,8 +1100,8 @@ const Chat: React.FC = () => {
                     ? peerTyping
                       ? 'يكتب الآن…'
                       : onlineUsers.has(selectedContact._id)
-                        ? 'نشط الآن'
-                        : lastSeenData.get(selectedContact._id) || 'غير محدد'
+                        ? 'متصل'
+                        : 'غير متصل'
                     : 'اختر محادثة لبدء التواصل'}
                 </div>
               </div>
