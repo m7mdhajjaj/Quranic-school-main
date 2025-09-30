@@ -188,6 +188,15 @@ const Chat: React.FC = () => {
   // User Status & Last Seen
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   const [lastSeenData, setLastSeenData] = useState<Map<string, Date>>(new Map());
+  
+  // Message Status Tracking
+  const [messageStatusMap, setMessageStatusMap] = useState<Map<string, {
+    delivered: boolean;
+    read: boolean;
+    deliveredAt?: string;
+    readAt?: string;
+    recipientOnline?: boolean;
+  }>>(new Map());
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const socketRef = useRef<Socket | null>(null);
@@ -430,6 +439,14 @@ const Chat: React.FC = () => {
 
   useEffect(() => {
     loadConversation();
+    
+    // إشعار فتح المحادثة عند تحديد محادثة جديدة
+    if (selectedContact && socketRef.current?.connected) {
+      socketRef.current.emit('chatOpened', {
+        userId: currentUserId,
+        chatWith: selectedContact._id
+      });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedContact, currentUser]);
 
@@ -491,6 +508,15 @@ const Chat: React.FC = () => {
         return newSet;
       });
       
+      // تحديث قائمة جهات الاتصال مباشرة
+      setContacts(prevContacts => 
+        prevContacts.map(contact => 
+          contact._id === data.userId 
+            ? { ...contact, isActive: data.isActive }
+            : contact
+        )
+      );
+      
       // تحديث آخر ظهور إذا توفر
       if (data.lastSeen) {
         setLastSeenData(prevLastSeen => {
@@ -522,17 +548,41 @@ const Chat: React.FC = () => {
         text: msg.text || '',
         createdAt: msg.createdAt || new Date().toISOString(),
         read: msg.read ?? false,
+        delivered: true, // الرسالة وصلت فعلاً
+        deliveredAt: new Date().toISOString(),
         attachments: msg.attachments || undefined,
-        replyTo: msg.replyTo || undefined, // إضافة معلومات الرد
+        replyTo: msg.replyTo || undefined,
       };
+      
       const belongsToThisChat = isGroupChat
         ? msg.isGroupMessage && msg.group === selectedContact?._id
         : !msg.isGroupMessage &&
-          (incoming.sender === selectedId || incoming.sender === currentUserId); // basic check
+          (incoming.sender === selectedId || incoming.sender === currentUserId);
+          
       if (selectedContact && belongsToThisChat) {
         setMessages((prev) => [...prev, incoming]);
+        
+        // إرسال إشعار فوري بالتوصيل للمرسل
+        if (incoming.sender !== currentUserId) {
+          s.emit('messageDeliveredConfirm', {
+            messageId: incoming._id,
+            recipientId: currentUserId,
+            deliveredAt: new Date().toISOString()
+          });
+        }
+        
         // mark as read soon after render
-        window.setTimeout(markVisibleAsRead, 300);
+        window.setTimeout(() => {
+          markVisibleAsRead();
+          // إرسال إشعار القراءة
+          if (incoming.sender !== currentUserId) {
+            s.emit('messageReadConfirm', {
+              messageId: incoming._id,
+              recipientId: currentUserId,
+              readAt: new Date().toISOString()
+            });
+          }
+        }, 300);
       } else {
         // bump unread for corresponding contact
         setContacts((prev) =>
@@ -622,44 +672,84 @@ const Chat: React.FC = () => {
       setMessages((prev) => prev.filter((m) => m._id !== messageId));
     });
 
-    // حدث توصيل الرسالة
-    s.on(
-      'messageDelivered',
-      ({
-        messageId,
-        recipientOnline,
-      }: {
-        messageId: string;
-        recipientOnline: boolean;
-      }) => {
-        setMessages((prev) =>
-          prev.map((m) =>
-            m._id === messageId
-              ? {
-                  ...m,
-                  delivered: true,
-                  deliveredAt: new Date().toISOString(),
-                  recipientOnline,
-                }
-              : m
-          )
-        );
-      }
-    );
-
-    // حدث قراءة الرسالة
-    s.on('messageRead', ({ messageId }: { messageId: string }) => {
+    // حدث توصيل الرسالة المحدث
+    s.on('messageDelivered', (data: {
+      messageId: string;
+      recipientOnline: boolean;
+      deliveredAt?: string;
+    }) => {
+      console.log('📬 تأكيد توصيل الرسالة:', data);
       setMessages((prev) =>
         prev.map((m) =>
-          m._id === messageId
+          m._id === data.messageId
             ? {
                 ...m,
-                read: true,
-                readAt: new Date().toISOString(),
+                delivered: true,
+                deliveredAt: data.deliveredAt || new Date().toISOString(),
+                recipientOnline: data.recipientOnline,
               }
             : m
         )
       );
+      
+      // تحديث خريطة حالة الرسائل
+      setMessageStatusMap(prev => {
+        const newMap = new Map(prev);
+        newMap.set(data.messageId, {
+          ...newMap.get(data.messageId),
+          delivered: true,
+          deliveredAt: data.deliveredAt || new Date().toISOString(),
+          recipientOnline: data.recipientOnline
+        });
+        return newMap;
+      });
+    });
+
+    // حدث قراءة الرسالة المحدث
+    s.on('messageRead', (data: {
+      messageId: string;
+      readAt?: string;
+    }) => {
+      console.log('👁️ تأكيد قراءة الرسالة:', data);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m._id === data.messageId
+            ? {
+                ...m,
+                read: true,
+                readAt: data.readAt || new Date().toISOString(),
+              }
+            : m
+        )
+      );
+      
+      // تحديث خريطة حالة الرسائل
+      setMessageStatusMap(prev => {
+        const newMap = new Map(prev);
+        newMap.set(data.messageId, {
+          ...newMap.get(data.messageId),
+          read: true,
+          readAt: data.readAt || new Date().toISOString()
+        });
+        return newMap;
+      });
+    });
+    
+    // مستمع جديد لتحديثات فورية عند فتح الدردشة
+    s.on('chatOpened', (data: {
+      userId: string;
+      chatWith: string;
+    }) => {
+      // إذا فتح شخص الدردشة معي، قم بتحديث حالة رسائلي إليه
+      if (data.chatWith === currentUserId) {
+        setMessages(prev => 
+          prev.map(msg => 
+            msg.sender === currentUserId && !msg.delivered
+              ? { ...msg, delivered: true, deliveredAt: new Date().toISOString() }
+              : msg
+          )
+        );
+      }
     });
 
     return () => {
@@ -1082,31 +1172,68 @@ const Chat: React.FC = () => {
 
   // دالة لعرض حالة الرسائل بالألوان المطلوبة
   const renderMessageStatus = (message: ChatMessage) => {
+    // عدم عرض حالة للرسائل التي لم أرسلها أنا
+    const senderId = typeof message.sender === 'object' ? message.sender._id : message.sender;
+    if (senderId !== currentUserId) return null;
+
     if (message.__error) {
-      return <span className="text-red-500 text-sm">⚠️</span>;
+      return (
+        <div className="flex items-center gap-1" title="فشل في الإرسال">
+          <span className="text-red-500 text-sm">⚠️</span>
+          <span className="text-xs text-red-400">فشل</span>
+        </div>
+      );
     }
 
     if (message.__pending) {
-      return <span className="text-yellow-500 text-sm">⏳</span>;
+      return (
+        <div className="flex items-center gap-1" title="جاري الإرسال">
+          <span className="text-yellow-500 text-sm animate-pulse">⏳</span>
+          <span className="text-xs text-yellow-400">جاري الإرسال</span>
+        </div>
+      );
     }
 
     // إذا كانت مقروءة - صحين أزرق فاتح
     if (message.read) {
-      return <span className="text-blue-400 text-sm font-bold">✓✓</span>;
+      const readTime = message.readAt ? new Date(message.readAt) : null;
+      return (
+        <div className="flex items-center gap-1" title={`قُرئت ${readTime ? `في ${readTime.toLocaleTimeString('ar-SA')}` : ''}`}>
+          <span className="text-blue-500 text-sm font-bold">✓✓</span>
+          <span className="text-xs text-blue-400">مقروءة</span>
+        </div>
+      );
     }
 
     // إذا وصلت والمستلم متصل - صح واحد أخضر
     if (message.delivered && message.recipientOnline) {
-      return <span className="text-green-500 text-sm font-bold">✓</span>;
+      const deliveredTime = message.deliveredAt ? new Date(message.deliveredAt) : null;
+      return (
+        <div className="flex items-center gap-1" title={`وُصلت ${deliveredTime ? `في ${deliveredTime.toLocaleTimeString('ar-SA')}` : ''}`}>
+          <span className="text-green-500 text-sm font-bold">✓</span>
+          <span className="text-xs text-green-400">وُصلت</span>
+        </div>
+      );
     }
 
     // إذا وصلت والمستلم غير متصل - صح واحد برتقالي
     if (message.delivered) {
-      return <span className="text-orange-400 text-sm font-bold">✓</span>;
+      const deliveredTime = message.deliveredAt ? new Date(message.deliveredAt) : null;
+      return (
+        <div className="flex items-center gap-1" title={`وُصلت (المستقبل غير متصل) ${deliveredTime ? `في ${deliveredTime.toLocaleTimeString('ar-SA')}` : ''}`}>
+          <span className="text-orange-400 text-sm font-bold">✓</span>
+          <span className="text-xs text-orange-300">وُصلت</span>
+        </div>
+      );
     }
 
     // مرسلة فقط - صح واحد رمادي فاتح
-    return <span className="text-gray-300 text-sm font-bold">✓</span>;
+    return (
+      <div className="flex items-center gap-1" title="مُرسلة">
+        <span className="text-gray-300 text-sm font-bold">✓</span>
+        <span className="text-xs text-gray-400">مُرسلة</span>
+      </div>
+    );
   };
 
   return (

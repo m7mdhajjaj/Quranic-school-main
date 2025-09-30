@@ -491,6 +491,95 @@ io.on("connection", (socket) => {
     }
   });
 
+  // Handle chat opened event
+  socket.on("chatOpened", async (data) => {
+    const { userId, chatWith } = data;
+    console.log(`📖 User ${userId} opened chat with ${chatWith}`);
+    
+    // إشعار الطرف الآخر بفتح المحادثة
+    const otherUserData = onlineUsers.get(chatWith);
+    if (otherUserData) {
+      io.to(otherUserData.socketId).emit("chatOpened", {
+        userId: userId,
+        chatWith: chatWith
+      });
+    }
+
+    // تحديث حالة الرسائل إلى "تم التوصيل" للرسائل غير المقروءة
+    try {
+      await Chat.updateMany(
+        { 
+          sender: chatWith,
+          recipient: userId,
+          delivered: { $ne: true }
+        },
+        { 
+          delivered: true, 
+          deliveredAt: new Date() 
+        }
+      );
+    } catch (error) {
+      console.error("Error updating message delivery status:", error);
+    }
+  });
+
+  // Handle message delivered confirmation
+  socket.on("messageDeliveredConfirm", async (data) => {
+    const { messageId, recipientId, deliveredAt } = data;
+    console.log(`✅ Message ${messageId} delivered to ${recipientId}`);
+    
+    try {
+      // تحديث قاعدة البيانات
+      await Chat.findByIdAndUpdate(messageId, {
+        delivered: true,
+        deliveredAt: new Date(deliveredAt)
+      });
+
+      // إشعار المرسل بالتوصيل
+      for (const [userId, userData] of onlineUsers.entries()) {
+        const message = await Chat.findById(messageId).populate('sender');
+        if (message && message.sender._id.toString() === userId) {
+          io.to(userData.socketId).emit("messageDelivered", {
+            messageId: messageId,
+            recipientOnline: true,
+            deliveredAt: deliveredAt
+          });
+          break;
+        }
+      }
+    } catch (error) {
+      console.error("Error confirming message delivery:", error);
+    }
+  });
+
+  // Handle message read confirmation
+  socket.on("messageReadConfirm", async (data) => {
+    const { messageId, recipientId, readAt } = data;
+    console.log(`👁️ Message ${messageId} read by ${recipientId}`);
+    
+    try {
+      // تحديث قاعدة البيانات
+      await Chat.findByIdAndUpdate(messageId, {
+        read: true,
+        readAt: new Date(readAt)
+      });
+
+      // إشعار المرسل بالقراءة
+      for (const [userId, userData] of onlineUsers.entries()) {
+        const message = await Chat.findById(messageId).populate('sender');
+        if (message && message.sender._id.toString() === userId) {
+          io.to(userData.socketId).emit("messageRead", {
+            messageId: messageId,
+            readAt: readAt
+          });
+          break;
+        }
+      }
+    } catch (error) {
+      console.error("Error confirming message read:", error);
+    }
+  });
+
   // Handle disconnect with improved cleanup
   socket.on("disconnect", async (reason) => {
     console.log(`🔌 Socket disconnected: ${socket.id} (reason: ${reason})`);
