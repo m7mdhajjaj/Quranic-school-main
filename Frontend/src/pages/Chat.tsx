@@ -981,6 +981,17 @@ const Chat: React.FC = () => {
     };
     setMessages((prev) => [...prev, temp]);
     
+    // مؤقت لتحويل الرسالة لخطأ بعد 15 ثانية إذا لم تُرسل
+    setTimeout(() => {
+      setMessages((prevMessages) => 
+        prevMessages.map((msg) => 
+          msg._id === temp._id && msg.__pending
+            ? { ...msg, __pending: false, __error: true }
+            : msg
+        )
+      );
+    }, 15000); // 15 ثانية
+    
     // تحديث آخر وقت محادثة عند الإرسال
     if (selectedContact) {
       setLastMessageTimes((prevTimes) => {
@@ -1226,61 +1237,62 @@ const Chat: React.FC = () => {
     const senderId = typeof message.sender === 'object' ? message.sender._id : message.sender;
     if (senderId !== currentUserId) return null;
 
+    // حالة خطأ - علامة حمراء
     if (message.__error) {
       return (
         <div className="flex items-center gap-1" title="فشل في الإرسال">
-          <span className="text-red-500 text-sm">⚠️</span>
-          <span className="text-xs text-red-400">فشل</span>
+          <span className="text-red-500 text-sm font-bold">⚠️</span>
+          <span className="text-xs text-red-400">خطأ</span>
         </div>
       );
     }
 
+    // حالة الإرسال - لودنغ أسود صغير لمدة 15 ثانية
     if (message.__pending) {
       return (
         <div className="flex items-center gap-1" title="جاري الإرسال">
-          <span className="text-yellow-500 text-sm animate-pulse">⏳</span>
-          <span className="text-xs text-yellow-400">جاري الإرسال</span>
+          <span className="text-black text-sm animate-spin">⚫</span>
+          <span className="text-xs text-gray-500">جاري الإرسال</span>
         </div>
       );
     }
 
-    // إذا كانت مقروءة - صحين أزرق فاتح
+    // 3️⃣ مقروءة - صحين أزرق غامق
     if (message.read) {
       const readTime = message.readAt ? new Date(message.readAt) : null;
       return (
-        <div className="flex items-center gap-1" title={`قُرئت ${readTime ? `في ${readTime.toLocaleTimeString('ar-SA')}` : ''}`}>
-          <span className="text-blue-500 text-sm font-bold">✓✓</span>
-          <span className="text-xs text-blue-400">مقروءة</span>
+        <div className="flex items-center gap-1" title={`مقروءة${readTime ? ` في ${readTime.toLocaleTimeString('ar-SA')}` : ''}`}>
+          <span className="text-blue-800 text-sm font-bold">✓✓</span>
+          <span className="text-xs text-blue-600">مقروءة</span>
         </div>
       );
     }
 
-    // إذا وصلت والمستلم متصل - صح واحد أخضر
-    if (message.delivered && message.recipientOnline) {
-      const deliveredTime = message.deliveredAt ? new Date(message.deliveredAt) : null;
-      return (
-        <div className="flex items-center gap-1" title={`وُصلت ${deliveredTime ? `في ${deliveredTime.toLocaleTimeString('ar-SA')}` : ''}`}>
-          <span className="text-green-500 text-sm font-bold">✓</span>
-          <span className="text-xs text-green-400">وُصلت</span>
-        </div>
-      );
-    }
-
-    // إذا وصلت والمستلم غير متصل - صح واحد برتقالي
+    // 2️⃣ وُصلت (المستلم أونلاين أو أوفلاين) - صحين سكني غامق
     if (message.delivered) {
       const deliveredTime = message.deliveredAt ? new Date(message.deliveredAt) : null;
+      // إذا المستلم أونلاين (active) ولم يقرأ بعد: صحين سكني غامق
+      if (message.recipientOnline) {
+        return (
+          <div className="flex items-center gap-1" title={`وُصلت (فاتح الحساب لكن لم يقرأها بعد)${deliveredTime ? ` في ${deliveredTime.toLocaleTimeString('ar-SA')}` : ''}`}>
+            <span className="text-slate-600 text-sm font-bold">✓✓</span>
+            <span className="text-xs text-slate-500">وُصلت</span>
+          </div>
+        );
+      }
+      // إذا المستلم أوفلاين: صح واحد سكني غامق
       return (
-        <div className="flex items-center gap-1" title={`وُصلت (المستقبل غير متصل) ${deliveredTime ? `في ${deliveredTime.toLocaleTimeString('ar-SA')}` : ''}`}>
-          <span className="text-orange-400 text-sm font-bold">✓</span>
-          <span className="text-xs text-orange-300">وُصلت</span>
+        <div className="flex items-center gap-1" title={`وُصلت (غير متصل)${deliveredTime ? ` في ${deliveredTime.toLocaleTimeString('ar-SA')}` : ''}`}>
+          <span className="text-slate-600 text-sm font-bold">✓</span>
+          <span className="text-xs text-slate-500">وُصلت</span>
         </div>
       );
     }
 
-    // مرسلة فقط - صح واحد رمادي فاتح
+    // 1️⃣ مُرسلة - صح واحد رمادي (لم تُسلّم بعد)
     return (
-      <div className="flex items-center gap-1" title="مُرسلة">
-        <span className="text-gray-300 text-sm font-bold">✓</span>
+      <div className="flex items-center gap-1" title="مُرسلة (لم تُسلّم بعد)">
+        <span className="text-gray-400 text-sm font-bold">✓</span>
         <span className="text-xs text-gray-400">مُرسلة</span>
       </div>
     );
