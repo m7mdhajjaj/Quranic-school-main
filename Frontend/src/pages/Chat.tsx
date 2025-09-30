@@ -197,6 +197,9 @@ const Chat: React.FC = () => {
     readAt?: string;
     recipientOnline?: boolean;
   }>>(new Map());
+  
+  // Chat Order Tracking - لتتبع ترتيب المحادثات حسب آخر رسالة
+  const [lastMessageTimes, setLastMessageTimes] = useState<Map<string, Date>>(new Map());
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const socketRef = useRef<Socket | null>(null);
@@ -428,6 +431,26 @@ const Chat: React.FC = () => {
             }))
           : [];
         setMessages(list);
+        
+        // تحديث آخر وقت محادثة من آخر رسالة في المحادثة
+        if (list.length > 0 && selectedContact) {
+          const lastMessage = list[list.length - 1];
+          setLastMessageTimes((prevTimes) => {
+            const newTimes = new Map(prevTimes);
+            newTimes.set(selectedContact._id, new Date(lastMessage.createdAt));
+            return newTimes;
+          });
+        }
+        
+        // تحديث آخر وقت محادثة من آخر رسالة في المحادثة
+        if (list.length > 0 && selectedContact) {
+          const lastMessage = list[list.length - 1];
+          setLastMessageTimes((prevTimes) => {
+            const newTimes = new Map(prevTimes);
+            newTimes.set(selectedContact._id, new Date(lastMessage.createdAt));
+            return newTimes;
+          });
+        }
       }
       scrollToBottomSmooth();
       // mark visible messages as read (only those not sent by me)
@@ -562,6 +585,15 @@ const Chat: React.FC = () => {
       if (selectedContact && belongsToThisChat) {
         setMessages((prev) => [...prev, incoming]);
         
+        // تحديث آخر وقت محادثة
+        setLastMessageTimes((prevTimes) => {
+          const newTimes = new Map(prevTimes);
+          const senderId = typeof incoming.sender === 'string' ? incoming.sender : incoming.sender._id;
+          const contactId = senderId !== currentUserId ? senderId : selectedContact._id;
+          newTimes.set(contactId, new Date(incoming.createdAt));
+          return newTimes;
+        });
+        
         // إرسال إشعار فوري بالتوصيل للمرسل
         if (incoming.sender !== currentUserId) {
           s.emit('messageDeliveredConfirm', {
@@ -584,7 +616,7 @@ const Chat: React.FC = () => {
           }
         }, 300);
       } else {
-        // bump unread for corresponding contact
+        // bump unread for corresponding contact وتحديث آخر وقت محادثة
         setContacts((prev) =>
           prev.map((c) =>
             c._id === incoming.sender
@@ -592,6 +624,14 @@ const Chat: React.FC = () => {
               : c
           )
         );
+        
+        // تحديث آخر وقت محادثة حتى لو لم تكن المحادثة مفتوحة
+        setLastMessageTimes((prevTimes) => {
+          const newTimes = new Map(prevTimes);
+          const senderId = typeof incoming.sender === 'string' ? incoming.sender : incoming.sender._id;
+          newTimes.set(senderId, new Date(incoming.createdAt));
+          return newTimes;
+        });
       }
       scrollToBottomSmooth();
     });
@@ -940,6 +980,16 @@ const Chat: React.FC = () => {
       __pending: true,
     };
     setMessages((prev) => [...prev, temp]);
+    
+    // تحديث آخر وقت محادثة عند الإرسال
+    if (selectedContact) {
+      setLastMessageTimes((prevTimes) => {
+        const newTimes = new Map(prevTimes);
+        newTimes.set(selectedContact._id, new Date());
+        return newTimes;
+      });
+    }
+    
     setMessageInput('');
     setAttachments([]);
     setReplyTo(null); // إلغاء الرد بعد الإرسال
@@ -1291,12 +1341,26 @@ const Chat: React.FC = () => {
                 <>
                   <ul className="h-[500px] overflow-y-auto">
                     {[...contacts]
-                      .sort((a, b) =>
-                        `${a.firstName} ${a.lastName}`.localeCompare(
+                      .sort((a, b) => {
+                        // الترتيب الأول: حسب آخر وقت محادثة (الأحدث أولاً)
+                        const timeA = lastMessageTimes.get(a._id);
+                        const timeB = lastMessageTimes.get(b._id);
+                        
+                        // إذا كان لدى أحدهما وقت محادثة والآخر لا
+                        if (timeA && !timeB) return -1;
+                        if (!timeA && timeB) return 1;
+                        
+                        // إذا كان لدى كلاهما أوقات محادثة، رتب حسب الأحدث
+                        if (timeA && timeB) {
+                          return timeB.getTime() - timeA.getTime();
+                        }
+                        
+                        // الترتيب الثانوي: حسب الاسم أبجدياً للذين لا يوجد لديهم محادثات
+                        return `${a.firstName} ${a.lastName}`.localeCompare(
                           `${b.firstName} ${b.lastName}`,
                           'ar'
-                        )
-                      )
+                        );
+                      })
                       .map((c) => (
                         <li
                           key={c._id}
@@ -1319,11 +1383,21 @@ const Chat: React.FC = () => {
                                 isActive={c.isActive}
                               />
                             </div>
-                            <div>
-                              <div className="font-medium">
-                                {c.firstName} {c.lastName || ''}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <div className="font-medium truncate">
+                                  {c.firstName} {c.lastName || ''}
+                                </div>
+                                {lastMessageTimes.has(c._id) && (
+                                  <div className="text-xs text-gray-400 ml-1 flex-shrink-0">
+                                    {lastMessageTimes.get(c._id)!.toLocaleTimeString('ar-SA', { 
+                                      hour: '2-digit', 
+                                      minute: '2-digit' 
+                                    })}
+                                  </div>
+                                )}
                               </div>
-                              <div className="text-xs text-gray-500">
+                              <div className="text-xs text-gray-500 truncate">
                                 {onlineUsers.has(c._id) 
                                   ? "متصل" 
                                   : lastSeenData.has(c._id)
@@ -1332,7 +1406,7 @@ const Chat: React.FC = () => {
                                 }
                               </div>
                               {c.group && (
-                                <div className="text-xs text-gray-400">
+                                <div className="text-xs text-gray-400 truncate">
                                   {c.group}
                                 </div>
                               )}
