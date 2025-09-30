@@ -1,11 +1,9 @@
 import React, { useState } from "react";
-import axios from "axios";
-import { API_BASE_URL } from "../config";
 
 interface AddGroupFormProps {
   onClose: () => void;
-  onSuccess: () => void;
-  group?: any; // For editing mode
+  onSuccess: (groupData?: any) => void;
+  group?: any; // في حال التعديل
 }
 
 const AddGroupForm: React.FC<AddGroupFormProps> = ({
@@ -13,22 +11,25 @@ const AddGroupForm: React.FC<AddGroupFormProps> = ({
   onSuccess,
   group,
 }) => {
+  // قائمة المعلمين (تقدر تجيبها لاحقًا من API أو من الأب)
+  const teachersList = [
+    "أ. محمد أحمد",
+    "أ. خالد يوسف",
+    "أ. علي محمود",
+    "أ. عمر حسن",
+    "أ. أحمد إبراهيم",
+  ];
+
   const [formData, setFormData] = useState({
     name: group?.name || "",
     teacher: group?.teacher || "",
-    description: group?.description || "",
-    level: group?.level || "",
     capacity: group?.capacity?.toString() || "",
-    schedule: group?.schedule || "",
   });
 
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -37,198 +38,150 @@ const AddGroupForm: React.FC<AddGroupFormProps> = ({
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+
+    if (!formData.name || !formData.teacher) {
+      setError("الرجاء تعبئة اسم الحلقة واختيار اسم المعلم (*)");
+      return;
+    }
+
     setError("");
 
-    try {
-      const token = localStorage.getItem("token");
-      const submitData = {
-        ...formData,
-        capacity: formData.capacity ? parseInt(formData.capacity) : undefined,
-      };
+    const groupData = {
+      ...formData,
+      capacity: formData.capacity ? parseInt(formData.capacity) : undefined,
+    };
 
-      const url = group
-        ? `${API_BASE_URL}/api/groups/${group._id}`
-        : `${API_BASE_URL}/api/groups`;
-      const method = group ? "put" : "post";
-
-      const response = await axios[method](url, submitData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (response.data.success) {
-        onSuccess();
-        onClose();
-      }
-    } catch (err: any) {
-      console.error("Error saving group:", err);
-      setError(
-        err.response?.data?.message ||
-          `حدث خطأ أثناء ${group ? "تعديل" : "إضافة"} الحلقة`
-      );
-    } finally {
-      setLoading(false);
-    }
+    console.log("Group Data:", groupData);
+    onSuccess(groupData);
+    onClose();
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">
-              {group ? "تعديل بيانات الحلقة" : "إضافة حلقة جديدة"}
-            </h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 text-2xl">
-              ×
-            </button>
+    <div className="fixed inset-0 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-8 mx-4">
+        {/* رأس الفورم */}
+        <div className="flex justify-between items-center mb-6 border-b pb-3">
+          <h2 className="text-2xl font-bold text-gray-900">
+            {group ? "تعديل بيانات الحلقة" : "إضافة حلقة جديدة"}
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 text-2xl font-bold">
+            ×
+          </button>
+        </div>
+
+        {/* رسالة الخطأ */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
+        )}
+
+        {/* النموذج */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* معلومات الحلقة */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              معلومات الحلقة
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* اسم الحلقة */}
+              <Input
+                label="اسم الحلقة *"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+                placeholder="مثال: حلقة الأولى"
+              />
+
+              {/* اختيار المعلم */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  اسم المعلم *
+                </label>
+                <select
+                  name="teacher"
+                  value={formData.teacher}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="">اختر المعلم</option>
+                  {teachersList.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* السعة القصوى */}
+              <Input
+                label="السعة القصوى"
+                name="capacity"
+                type="number"
+                value={formData.capacity}
+                onChange={handleChange}
+                placeholder="عدد الطلاب الأقصى"
+              />
+            </div>
           </div>
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* معلومات الحلقة الأساسية */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                معلومات الحلقة الأساسية
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    اسم الحلقة *
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                    placeholder="مثال: حلقة الأولى"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    اسم المعلم *
-                  </label>
-                  <input
-                    type="text"
-                    name="teacher"
-                    value={formData.teacher}
-                    onChange={handleChange}
-                    required
-                    placeholder="اسم المعلم المسؤول"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    المستوى
-                  </label>
-                  <select
-                    name="level"
-                    value={formData.level}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="">اختر المستوى</option>
-                    <option value="مبتدئ">مبتدئ</option>
-                    <option value="متوسط">متوسط</option>
-                    <option value="متقدم">متقدم</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    السعة القصوى
-                  </label>
-                  <input
-                    type="number"
-                    name="capacity"
-                    value={formData.capacity}
-                    onChange={handleChange}
-                    min="1"
-                    placeholder="عدد الطلاب الأقصى"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* معلومات إضافية */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                معلومات إضافية
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    الجدول الزمني
-                  </label>
-                  <input
-                    type="text"
-                    name="schedule"
-                    value={formData.schedule}
-                    onChange={handleChange}
-                    placeholder="مثال: السبت والأحد 9:00-11:00 ص"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    وصف الحلقة
-                  </label>
-                  <textarea
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
-                    rows={3}
-                    placeholder="وصف تفصيلي للحلقة وأهدافها"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* أزرار التحكم */}
-            <div className="flex justify-end space-x-4 pt-6 border-t">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500">
-                إلغاء
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
-                {loading
-                  ? group
-                    ? "جاري التعديل..."
-                    : "جاري الإضافة..."
-                  : group
-                  ? "تعديل الحلقة"
-                  : "إضافة الحلقة"}
-              </button>
-            </div>
-          </form>
-        </div>
+          {/* أزرار التحكم */}
+          <div className="flex justify-end gap-4 pt-4 border-t">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100">
+              إلغاء
+            </button>
+            <button
+              type="submit"
+              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+              {group ? "تعديل الحلقة" : "إضافة الحلقة"}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
 };
+
+// 🔹 مكوّن إدخال عام
+const Input = ({
+  label,
+  name,
+  value,
+  onChange,
+  type = "text",
+  required = false,
+  placeholder = "",
+}: {
+  label: string;
+  name: string;
+  value: string;
+  onChange: any;
+  type?: string;
+  required?: boolean;
+  placeholder?: string;
+}) => (
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      {label}
+    </label>
+    <input
+      type={type}
+      name={name}
+      value={value}
+      onChange={onChange}
+      required={required}
+      placeholder={placeholder}
+      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+    />
+  </div>
+);
 
 export default AddGroupForm;
