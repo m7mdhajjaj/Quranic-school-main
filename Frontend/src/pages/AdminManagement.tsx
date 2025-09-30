@@ -21,6 +21,7 @@ const AdminManagement: React.FC = () => {
   const [teacherSearch, setTeacherSearch] = useState("");
   const [studentSearch, setStudentSearch] = useState("");
   const [groupSearch, setGroupSearch] = useState("");
+  const [studentGroupFilter, setStudentGroupFilter] = useState(""); // ✅ فلتر الحلقة
 
   // Dummy data
   const [teachers, setTeachers] = useState([
@@ -132,11 +133,14 @@ const AdminManagement: React.FC = () => {
       .includes(teacherSearch.toLowerCase())
   );
 
-  const filteredStudents = students.filter((s) =>
-    `${s.firstName} ${s.lastName}`
+  const filteredStudents = students.filter((s) => {
+    const matchesName = `${s.firstName} ${s.lastName}`
       .toLowerCase()
-      .includes(studentSearch.toLowerCase())
-  );
+      .includes(studentSearch.toLowerCase());
+    const matchesGroup =
+      studentGroupFilter === "" || s.group === studentGroupFilter;
+    return matchesName && matchesGroup;
+  });
 
   const filteredGroups = allGroups.filter((g) =>
     g.name.toLowerCase().includes(groupSearch.toLowerCase())
@@ -144,10 +148,10 @@ const AdminManagement: React.FC = () => {
 
   return (
     <div className="admin-management">
-      <div className="bg-gray-50 min-h-screen">
+      <div className="bg-[#F5F8FA] min-h-screen">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
+            <h2 className="text-2xl font-bold text-[#009C5C] mb-6 text-center">
               إدارة النظام
             </h2>
 
@@ -214,6 +218,24 @@ const AdminManagement: React.FC = () => {
                 onAdd={() => setShowAddStudentForm(true)}
                 searchValue={studentSearch}
                 onSearchChange={setStudentSearch}>
+                {/* ✅ فلتر الحلقة */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    فلترة حسب الحلقة:
+                  </label>
+                  <select
+                    value={studentGroupFilter}
+                    onChange={(e) => setStudentGroupFilter(e.target.value)}
+                    className="w-full md:w-1/3 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#009C5C] focus:border-transparent">
+                    <option value="">كل الحلقات</option>
+                    {allGroups.map((g) => (
+                      <option key={g._id} value={g.name}>
+                        {g.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <Table
                   headers={[
                     "رقم الطالب",
@@ -325,8 +347,8 @@ const TabButton = ({
     onClick={onClick}
     className={`py-2 px-4 border-b-2 font-medium text-sm ${
       active
-        ? "border-blue-500 text-blue-600"
-        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+        ? "border-[#009C5C] text-[#009C5C]"
+        : "border-transparent text-gray-500 hover:text-[#009C5C] hover:border-[#00B26F]"
     }`}>
     {label}
   </button>
@@ -342,9 +364,9 @@ const Section = ({
 }: any) => (
   <div>
     <div className="flex justify-between items-center mb-6">
-      <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+      <h3 className="text-lg font-semibold text-[#009C5C]">{title}</h3>
       <button
-        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+        className="bg-[#009C5C] text-white px-4 py-2 rounded-lg hover:bg-[#00B26F] transition-colors"
         onClick={onAdd}>
         {buttonLabel}
       </button>
@@ -355,7 +377,7 @@ const Section = ({
         placeholder="ابحث هنا..."
         value={searchValue}
         onChange={(e) => onSearchChange(e.target.value)}
-        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#009C5C] focus:border-transparent"
       />
     </div>
     {children}
@@ -363,26 +385,30 @@ const Section = ({
 );
 
 const Table = ({ headers, rows }: any) => (
-  <div className="overflow-x-auto">
-    <table className="min-w-full divide-y divide-gray-200 text-right">
-      <thead className="bg-gray-50">
+  <div className="overflow-x-auto rounded-lg shadow-sm border border-gray-200">
+    <table className="min-w-full text-right">
+      <thead className="bg-[#E6F4EF]">
         <tr>
           {headers.map((h: string, i: number) => (
             <th
               key={i}
-              className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+              className="px-6 py-3 text-xs font-semibold text-[#009C5C] uppercase tracking-wider border-b border-gray-200">
               {h}
             </th>
           ))}
         </tr>
       </thead>
-      <tbody className="bg-white divide-y divide-gray-200">
+      <tbody>
         {rows.map((row: any[], i: number) => (
-          <tr key={i}>
+          <tr
+            key={i}
+            className={`transition-colors ${
+              i % 2 === 0 ? "bg-white" : "bg-[#F9FBFA]"
+            } hover:bg-[#F3F9F6]`}>
             {row.map((cell: any, j: number) => (
               <td
                 key={j}
-                className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 border-b border-gray-100">
                 {cell}
               </td>
             ))}
@@ -395,7 +421,9 @@ const Table = ({ headers, rows }: any) => (
 
 const Actions = ({ onEdit, onDelete }: any) => (
   <div>
-    <button onClick={onEdit} className="text-blue-600 hover:text-blue-900 mr-3">
+    <button
+      onClick={onEdit}
+      className="text-[#009C5C] hover:text-[#00B26F] mr-3">
       تعديل
     </button>
     <button onClick={onDelete} className="text-red-600 hover:text-red-900">
