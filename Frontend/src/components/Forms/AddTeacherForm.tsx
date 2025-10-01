@@ -3,9 +3,9 @@ import {
   validateTeacherWithYup, 
   validateTeacherFieldWithYup, 
   formatBirthDateForBackend 
-} from "../Validation/teacherValidation";
-import type { TeacherFormData } from "../Validation/teacherValidation";
-import { createTeacher, updateTeacher, type Teacher } from "../Api/teacherApi";
+} from "../../Validation/teacherValidation";
+import type { TeacherFormData } from "../../Validation/teacherValidation";
+import { createTeacher, updateTeacher, type Teacher } from "../../Api/teacherApi";
 
 interface AddTeacherFormProps {
   onClose: () => void;

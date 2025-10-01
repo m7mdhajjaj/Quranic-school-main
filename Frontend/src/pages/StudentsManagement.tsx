@@ -7,7 +7,7 @@ import {
 } from 'react-icons/fa';
 import { useAuth } from '../hooks/useAuth';
 import api from '../Api/api';
-import AddStudentFormWithYup from '../components/AddStudentForm';
+import AddStudentFormWithYup from '../components/Forms/AddStudentForm';
 import Swal from 'sweetalert2';
 import '../styles/sweetalert.css';
 

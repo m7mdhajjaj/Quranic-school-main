@@ -4,10 +4,10 @@
 
 import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { AlertCircle, X, Loader2, Check, User, School, Phone, Calendar, MapPin, Mail, CreditCard, Users, ChevronRight, ChevronLeft } from "lucide-react";
-import { validateStudentWithYup, type StudentFormData } from "../Validation/studentValidation";
-import { createStudent, updateStudent, type Student } from "../Api/studentApi";
-import { getAllTeachers, type Teacher } from "../Api/teacherApi";
-import { getAllGroups, type Group } from "../Api/groupApi";
+import { validateStudentWithYup, type StudentFormData } from "../../Validation/studentValidation";
+import { createStudent, updateStudent, type Student } from "../../Api/studentApi";
+import { getAllTeachers, type Teacher } from "../../Api/teacherApi";
+import { getAllGroups, type Group } from "../../Api/groupApi";
 
 // Using centralized validation from studentValidation.ts
 

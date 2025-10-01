@@ -836,32 +836,32 @@ const Header = () => {
         }`}
         dir="rtl"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16 sm:h-18 md:h-20">
             
-            <Link to="/" className="flex items-center gap-4 hover:opacity-90 transition-opacity duration-200 group">
-              <div className={`relative w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl transition-all duration-500 transform hover:scale-110 hover:rotate-6 ${
+            <Link to="/" className="flex items-center gap-2 sm:gap-3 md:gap-4 hover:opacity-90 transition-opacity duration-200 group">
+              <div className={`relative w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-xl transition-all duration-500 transform hover:scale-110 hover:rotate-6 ${
                 scrolled ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : 'bg-white'
               }`}>
-                {!logoLoaded && <ImageSkeleton className="w-10 h-10 rounded-full absolute" variant="logo" />}
+                {!logoLoaded && <ImageSkeleton className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-full absolute" variant="logo" />}
                 <img
                   src="/src/images/logo.jpg"
                   alt="Logo"
-                  className={`w-10 h-10 rounded-full object-cover transition-all duration-500 ${
+                  className={`w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-full object-cover transition-all duration-500 ${
                     logoLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
                   }`}
                   onLoad={() => setLogoLoaded(true)}
                   onError={() => setLogoLoaded(true)}
                 />
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full animate-ping"></div>
+                <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full animate-ping"></div>
               </div>
-              <div className="hidden md:block">
-                <h1 className={`text-xl md:text-2xl font-bold transition-colors duration-500 ${
+              <div className="header-text min-w-0 flex-1">
+                <h1 className={`text-sm sm:text-base md:text-xl lg:text-2xl font-bold transition-colors duration-500 leading-tight truncate ${
                   scrolled ? 'bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent' : 'text-white'
                 }`}>
                   مدرسة القرآن الكريم
                 </h1>
-                <p className={`text-sm transition-colors duration-500 ${
+                <p className={`text-xs sm:text-sm transition-colors duration-500 leading-tight truncate ${
                   scrolled ? 'text-gray-600' : 'text-white/90'
                 }`}>
                   أكاديمية مدرسة الهجرة للقرآن الكريم
@@ -902,9 +902,9 @@ const Header = () => {
               ))}
             </nav>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
               
-              <div className="hidden lg:block relative" ref={searchRef}>
+              <div className="hidden md:block relative" ref={searchRef}>
                 {searchOpen ? (
                   <div className="flex items-center gap-2 animate-slide-in-right">
                     <input
@@ -912,7 +912,7 @@ const Header = () => {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="ابحث هنا..."
-                      className={`w-64 px-4 py-2 rounded-xl border-2 focus:outline-none transition-all duration-300 ${
+                      className={`w-48 md:w-64 px-3 md:px-4 py-2 text-sm rounded-xl border-2 focus:outline-none transition-all duration-300 ${
                         scrolled
                           ? 'border-emerald-300 focus:border-emerald-500 bg-white text-gray-800'
                           : 'border-white/30 focus:border-white bg-white/20 text-white placeholder-white/70'
@@ -945,7 +945,7 @@ const Header = () => {
               </div>
 
               {currentUser && (
-                <div className={`p-2.5 rounded-xl transition-all duration-300 transform hover:scale-110 ${
+                <div className={`p-1.5 sm:p-2 md:p-2.5 rounded-lg md:rounded-xl transition-all duration-300 transform hover:scale-110 ${
                   scrolled ? 'bg-gray-100 hover:bg-gray-200' : 'bg-white/20 hover:bg-white/30'
                 }`}>
                   <NotificationHeader userId={currentUser._id} socket={socket} apiUrl={API_BASE_URL} />
@@ -955,24 +955,24 @@ const Header = () => {
               <div className="relative" ref={profileMenuRef}>
                 <button
                   onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-300 transform hover:scale-105 ${
+                  className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-2.5 rounded-lg md:rounded-xl transition-all duration-300 transform hover:scale-105 ${
                     scrolled 
                       ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg' 
                       : 'bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/30'
                   }`}
                 >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
+                  <div className={`w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm ${
                     scrolled ? 'bg-white text-emerald-600' : 'bg-white/20 text-white'
                   }`}>
                     {currentUser?.firstName?.[0] || 'م'}
                   </div>
-                  <span className="text-sm font-semibold hidden md:block">
+                  <span className="text-xs sm:text-sm font-semibold hidden lg:block truncate max-w-24">
                     {currentUser?.firstName && currentUser?.lastName
                       ? `${currentUser.firstName} ${currentUser.lastName}`
                       : currentUser?.firstName || 'المستخدم'}
                   </span>
                   <svg
-                    className={`w-4 h-4 transition-transform duration-300 ${profileMenuOpen ? 'rotate-180' : ''}`}
+                    className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform duration-300 hidden sm:block ${profileMenuOpen ? 'rotate-180' : ''}`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -1052,11 +1052,11 @@ const Header = () => {
 
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className={`lg:hidden p-2.5 rounded-xl transition-all duration-300 ${
+                className={`md:hidden p-1.5 sm:p-2 md:p-2.5 rounded-lg md:rounded-xl transition-all duration-300 ${
                   scrolled ? 'bg-gray-100 text-gray-700' : 'bg-white/20 text-white'
                 }`}
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   {isMenuOpen ? (
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   ) : (
@@ -1107,7 +1107,7 @@ const Header = () => {
       <div className="h-32"></div>
 
       {isMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-40">
+        <div className="md:hidden fixed inset-0 z-40">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsMenuOpen(false)} />
           <div className="fixed right-0 top-0 h-full w-80 max-w-[90vw] bg-gradient-to-b from-emerald-600 via-emerald-700 to-emerald-800 shadow-2xl overflow-y-auto animate-slide-in-right">
             <div className="p-6">
@@ -1235,6 +1235,20 @@ const Header = () => {
         }
         .overflow-x-auto::-webkit-scrollbar-thumb:hover {
           background: rgba(255, 255, 255, 0.5);
+        }
+        
+        /* Hide text on very small screens */
+        @media (max-width: 639px) {
+          .header-text {
+            display: none;
+          }
+        }
+        
+        /* Show text on small screens and above */
+        @media (min-width: 640px) {
+          .header-text {
+            display: block;
+          }
         }
       `}</style>
     </>

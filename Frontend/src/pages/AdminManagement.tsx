@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import EnhancedStudentForm from "../components/AddStudentForm";
-import AddTeacherForm from "../components/AddTeacherForm";
-import AddGroupForm from "../components/AddGroupForm";
+import EnhancedStudentForm from "../components/Forms/AddStudentForm";
+import AddTeacherForm from "../components/Forms/AddTeacherForm";
+import AddGroupForm from "../components/Forms/AddGroupForm";
 import { getAllTeachers, deleteTeacher, type Teacher } from "../Api/teacherApi";
 import { getAllStudents, deleteStudent, type Student } from "../Api/studentApi";
 
