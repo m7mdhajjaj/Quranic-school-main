@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import Avatar from './Avatar';
-import { useAvatar, getUserGender } from '../hooks/useAvatar';
 import { useAuth } from '../hooks/useAuth';
 
 const AdminHeader: React.FC = () => {
@@ -9,20 +7,15 @@ const AdminHeader: React.FC = () => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [notifications, setNotifications] = useState<number>(0);
   const [showNotifications, setShowNotifications] = useState(false);
 
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const notificationMenuRef = useRef<HTMLDivElement>(null);
+
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { avatarUrl, avatarLoading } = useAvatar({
-    userId: currentUser?._id,
-    userRole: currentUser?.role,
-  });
 
-  const userGender = getUserGender(currentUser);
 
   // Handle scroll effect for header shadow/background
   useEffect(() => {
@@ -276,18 +269,11 @@ const AdminHeader: React.FC = () => {
                 className="flex items-center gap-2 cursor-pointer p-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all duration-300 hover:shadow-lg hover:scale-105"
                 onClick={() => setProfileMenuOpen((v) => !v)}
                 aria-haspopup="menu"
-                aria-expanded={profileMenuOpen}
+                {...(profileMenuOpen && { 'aria-expanded': true })}
                 aria-controls="profile-menu"
               >
-                <Avatar
-                  src={avatarUrl}
-                  userName={currentUser?.firstName || currentUser?.name}
-                  gender={userGender}
-                  loading={avatarLoading}
-                  size="sm"
-                />
                 {currentUser && (
-                  <span className="hidden md:block text-sm font-semibold text-white max-w-32 truncate drop-shadow-sm">
+                  <span className="text-sm font-semibold text-white truncate drop-shadow-sm">
                     {currentUser.firstName && currentUser.lastName
                       ? `${currentUser.firstName} ${currentUser.lastName}`
                       : currentUser.firstName || currentUser.name || ''}
@@ -318,28 +304,16 @@ const AdminHeader: React.FC = () => {
                   className="absolute left-1/2 transform -translate-x-1/2 top-full mt-3 w-52 bg-white/96 backdrop-blur-2xl rounded-2xl shadow-2xl border border-emerald-100/50 py-1 z-[100] animate-in slide-in-from-top-5 duration-200"
                 >
                   <div className="px-3 py-2.5 border-b border-emerald-100/60 bg-gradient-to-r from-emerald-50/80 to-teal-50/80 rounded-t-2xl">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7">
-                        <Avatar
-                          src={avatarUrl}
-                          userName={currentUser?.firstName || currentUser?.name}
-                          gender={userGender}
-                          loading={avatarLoading}
-                          size="sm"
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="block text-emerald-800 font-bold text-sm truncate">
+                    <div className="flex items-center justify-center">
+                      <div className="text-center">
+                        <span className="block text-emerald-800 font-bold text-sm">
                           {currentUser?.firstName && currentUser?.lastName
                             ? `${currentUser.firstName} ${currentUser.lastName}`
                             : currentUser?.firstName || currentUser?.name}
                         </span>
-                        <span className="block text-emerald-600 text-xs mt-0.5 font-medium">
-                          مدير
-                        </span>
                         {currentUser?.email && (
                           <span
-                            className="block text-emerald-500/80 text-xs mt-0.5 truncate"
+                            className="block text-emerald-500/80 text-xs mt-0.5"
                             title={currentUser.email}
                           >
                             {currentUser.email}

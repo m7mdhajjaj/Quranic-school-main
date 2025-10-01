@@ -80,28 +80,34 @@ const AdminDashboard = () => {
       try {
         const token = localStorage.getItem("token");
 
-        const studentsResponse = await fetch("/api/students", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const studentsData = await studentsResponse.json();
+        // Helper function to make API calls with better error handling
+        const fetchWithErrorHandling = async (url: string) => {
+          const response = await fetch(url, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status} for ${url}`);
+          }
+          
+          const contentType = response.headers.get('content-type');
+          if (!contentType || !contentType.includes('application/json')) {
+            throw new Error(`Expected JSON but received ${contentType} for ${url}`);
+          }
+          
+          return await response.json();
+        };
+
+        const studentsData = await fetchWithErrorHandling("/api/students");
         const studentsCount = Array.isArray(studentsData) ? studentsData.length : 0;
 
-        const teachersResponse = await fetch("/api/teachers", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const teachersData = await teachersResponse.json();
+        const teachersData = await fetchWithErrorHandling("/api/teachers");
         const teachersCount = teachersData.success && Array.isArray(teachersData.data) ? teachersData.data.length : 0;
 
-        const examsResponse = await fetch("/api/exams", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const examsData = await examsResponse.json();
+        const examsData = await fetchWithErrorHandling("/api/exams");
         const examsCount = Array.isArray(examsData) ? examsData.length : 0;
 
-        const groupsResponse = await fetch("/api/groups", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const groupsData = await groupsResponse.json();
+        const groupsData = await fetchWithErrorHandling("/api/groups");
         const groupsCount = groupsData.success && Array.isArray(groupsData.data) ? groupsData.data.length : 0;
 
         const averageMarks = 85;
@@ -119,6 +125,18 @@ const AdminDashboard = () => {
         });
       } catch (error) {
         console.error("Error fetching statistics:", error);
+        // Set default stats on error to prevent UI from breaking
+        setStats({
+          totalStudents: 0,
+          totalTeachers: 0,
+          totalExams: 0,
+          totalGroups: 0,
+          averageMarks: 0,
+          activeStudents: 0,
+          attendanceRate: 0,
+          upcomingExams: 0,
+          totalActivities: 0,
+        });
       }
     };
 

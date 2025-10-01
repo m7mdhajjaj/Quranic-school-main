@@ -30,6 +30,7 @@ export default defineConfig({
   
   // تحسين الخادم المحلي
   server: {
+    port: 5173,
     hmr: {
       // تحسين Hot Module Replacement
       overlay: false
@@ -37,6 +38,14 @@ export default defineConfig({
     // تحسين استجابة الخادم
     fs: {
       strict: false
+    },
+    // إعداد البروكسي لتوجيه طلبات API إلى الباك اند
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5005',
+        changeOrigin: true,
+        secure: false,
+      }
     }
   },
   
