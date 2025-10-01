@@ -8,6 +8,7 @@ const studentSchema = new mongoose.Schema(
       type: String,
       required: [true, 'رقم الهوية مطلوب'],
       unique: true,
+      match: [/^\d{9}$/, 'رقم الهوية يجب أن يتكون من 9 أرقام فقط'],
     },
 
     // لا تخزن كلمة المرور نصًا عاديًا
@@ -32,24 +33,34 @@ const studentSchema = new mongoose.Schema(
       type: String,
       enum: {
         values: ['ذكر', 'انثى', 'أنثى', 'male', 'female', 'Male', 'Female'],
-        message: 'الجنس يجب أن يكون ذكر أو أنثى (Arabic) or male/female (English)',
+        message:
+          'الجنس يجب أن يكون ذكر أو أنثى (Arabic) or male/female (English)',
       },
       required: [true, 'الجنس مطلوب'],
       // تطبيع تسوية تلقائية للقيم
-      set: function(value) {
+      set: function (value) {
         if (!value) return value;
         const normalized = value.toString().toLowerCase().trim();
         if (normalized === 'male' || normalized === 'ذكر') return 'ذكر';
-        if (normalized === 'female' || normalized === 'أنثى' || normalized === 'انثى') return 'أنثى';
+        if (
+          normalized === 'female' ||
+          normalized === 'أنثى' ||
+          normalized === 'انثى'
+        )
+          return 'أنثى';
         return value;
-      }
+      },
     },
 
     residence: { type: String, required: [true, 'مكان السكن مطلوب'] },
     teacher: { type: String, required: [true, 'اسم المعلم مطلوب'] },
     group: { type: String, required: [true, 'اسم الحلقة مطلوب'] },
 
-    email: { type: String, required: false },
+    email: {
+      type: String,
+      required: false,
+      match: [/\S+@\S+\.\S+/, 'البريد الإلكتروني غير صالح'],
+    },
     phoneNumber: {
       type: String,
       required: [true, 'رقم الهاتف مطلوب'],

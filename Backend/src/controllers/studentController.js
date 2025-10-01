@@ -253,39 +253,63 @@ exports.updateStudent = async (req, res) => {
     
     const updatedData = { ...req.body };
     
-    // Handle password validation properly
+    // Always run validation, but handle password field specially
     if (!updatedData.password || updatedData.password.trim() === '') {
-      // If no password provided, remove it from update and use runValidators: false only for this case
+      // If no password provided, remove it from update data
       delete updatedData.password;
-      
-      const updatedStudent = await Student.findByIdAndUpdate(
-        req.params.id,
-        updatedData,
-        { new: true, runValidators: false }, // Only skip validation when password is not being updated
-      );
-      
-      if (!updatedStudent) {
-        return res.status(404).json({ message: "Student not found" });
-      }
-      
-      res.json({ success: true, data: updatedStudent });
-    } else {
-      // If password is being updated, run full validation
-      const updatedStudent = await Student.findByIdAndUpdate(
-        req.params.id,
-        updatedData,
-        { new: true, runValidators: true }, // Enable validation when password is being updated
-      );
-      
-      if (!updatedStudent) {
-        return res.status(404).json({ message: "Student not found" });
-      }
-      
-      res.json({ success: true, data: updatedStudent });
     }
+    
+    const updatedStudent = await Student.findByIdAndUpdate(
+      req.params.id,
+      updatedData,
+      { 
+        new: true, 
+        runValidators: true, // ✅ Always run validation to match Student.js
+        context: 'query' // Required for some validators to work properly
+      }
+    );
+    
+    if (!updatedStudent) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "الطالب غير موجود" 
+      });
+    }
+    
+    res.json({ success: true, data: updatedStudent });
+    
   } catch (error) {
     console.error("Error updating student:", error);
-    res.status(400).json({ message: error.message });
+    
+    // Handle validation errors (same as createStudent)
+    if (error.name === "ValidationError") {
+      const validationErrors = Object.keys(error.errors)
+        .map((field) => `${field}: ${error.errors[field].message}`)
+        .join(", ");
+
+      return res.status(400).json({
+        success: false,
+        message: `خطأ في التحقق من البيانات: ${validationErrors}`,
+        error: validationErrors,
+      });
+    }
+
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      return res.status(400).json({
+        success: false,
+        message: `قيمة ${field} موجودة بالفعل`,
+        error: `Duplicate ${field}`,
+      });
+    }
+
+    // Generic error handling
+    res.status(400).json({ 
+      success: false, 
+      message: "حدث خطأ أثناء تحديث بيانات الطالب",
+      error: error.message 
+    });
   }
 };
 

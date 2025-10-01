@@ -1,9 +1,17 @@
 import React, { useState } from "react";
+import { 
+  validateStudent, 
+  normalizeGender, 
+  calculateAge,
+  getFieldError,
+  type StudentFormData,
+  type ValidationError 
+} from "../utils/studentValidation";
 
 interface AddStudentFormProps {
   onClose: () => void;
-  onSuccess: (studentData?: any) => void;
-  student?: any;
+  onSuccess: (studentData: StudentFormData) => void;
+  student?: Partial<StudentFormData>;
 }
 
 const AddStudentForm: React.FC<AddStudentFormProps> = ({
@@ -11,7 +19,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
   onSuccess,
   student,
 }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<StudentFormData>({
     firstName: student?.firstName || "",
     fatherName: student?.fatherName || "",
     grandFatherName: student?.grandFatherName || "",
@@ -27,62 +35,75 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
     phoneNumber: student?.phoneNumber || "",
   });
 
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState<ValidationError[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    
+    let processedValue = value;
+    
+    // تطبيع الجنس تلقائياً
+    if (name === 'gender') {
+      processedValue = normalizeGender(value);
+    }
+    
+    const updatedData = {
+      ...formData,
+      [name]: processedValue,
+      // حساب العمر تلقائياً عند تغيير تاريخ الميلاد
+      ...(name === 'birthDate' && value ? { age: calculateAge(value) } : {})
+    };
+    
+    setFormData(updatedData);
+    
+    // إزالة أخطاء الحقل الحالي عند التعديل
+    setErrors(prev => prev.filter(error => error.field !== name));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
-    // تحقق من الحقول المطلوبة
-    const requiredFields = [
-      "firstName",
-      "fatherName",
-      "grandFatherName",
-      "motherName",
-      "lastName",
-      "idNumber",
-      "birthDate",
-      "gender",
-      "residence",
-      "teacher",
-      "group",
-      "phoneNumber",
-    ];
-
-    for (const field of requiredFields) {
-      if (!formData[field as keyof typeof formData]) {
-        setError("الرجاء تعبئة جميع الحقول المطلوبة (*)");
-        return;
-      }
-    }
-
-    setError("");
-
-    // رقم الطالب التلقائي (تقدر تعدله حسب نظامك)
-    const randomId = Math.floor(Math.random() * 1000) + 2001;
-
-    // كلمة المرور = رقم الهوية
-    const password = formData.idNumber;
-
-    const dataToSave = {
+    // إضافة كلمة المرور = رقم الهوية للطلاب الجدد
+    const dataToValidate: StudentFormData = {
       ...formData,
-      studentId: randomId,
-      password,
+      password: !student ? formData.idNumber : undefined, // فقط للطلاب الجدد
+      age: calculateAge(formData.birthDate),
     };
 
-    console.log("Student data to save:", dataToSave);
+    // تشغيل الـ validation
+    const validationResult = validateStudent(dataToValidate);
 
-    onSuccess(dataToSave);
-    onClose();
+    if (!validationResult.isValid) {
+      setErrors(validationResult.errors);
+      setIsSubmitting(false);
+      return;
+    }
+
+    // تنظيف الأخطاء عند نجاح الـ validation
+    setErrors([]);
+
+    // تحضير البيانات للإرسال
+    const finalData = {
+      ...formData,
+      gender: normalizeGender(formData.gender),
+      age: calculateAge(formData.birthDate),
+      password: !student ? formData.idNumber : undefined, // كلمة المرور = رقم الهوية للطلاب الجدد
+    };
+
+    console.log("Student data to save:", finalData);
+
+    try {
+      await onSuccess(finalData);
+      onClose();
+    } catch (error) {
+      console.error("Error saving student:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -99,9 +120,14 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
           </button>
         </div>
 
-        {error && (
+        {errors.length > 0 && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
+            <div className="text-sm font-medium mb-2">يرجى إصلاح الأخطاء التالية:</div>
+            <ul className="list-disc list-inside space-y-1">
+              {errors.map((error, index) => (
+                <li key={index} className="text-sm">{error.message}</li>
+              ))}
+            </ul>
           </div>
         )}
 
@@ -117,6 +143,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
                 value={formData.firstName}
                 onChange={handleChange}
                 required
+                error={getFieldError(errors, 'firstName')}
               />
               <Input
                 label="اسم الأب *"
@@ -124,6 +151,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
                 value={formData.fatherName}
                 onChange={handleChange}
                 required
+                error={getFieldError(errors, 'fatherName')}
               />
               <Input
                 label="اسم الجد *"
@@ -131,6 +159,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
                 value={formData.grandFatherName}
                 onChange={handleChange}
                 required
+                error={getFieldError(errors, 'grandFatherName')}
               />
               <Input
                 label="اسم الأم *"
@@ -138,6 +167,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
                 value={formData.motherName}
                 onChange={handleChange}
                 required
+                error={getFieldError(errors, 'motherName')}
               />
               <Input
                 label="اسم العائلة *"
@@ -145,6 +175,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
                 value={formData.lastName}
                 onChange={handleChange}
                 required
+                error={getFieldError(errors, 'lastName')}
               />
               <Input
                 label="رقم الهوية *"
@@ -152,6 +183,8 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
                 value={formData.idNumber}
                 onChange={handleChange}
                 required
+                placeholder="9 أرقام"
+                error={getFieldError(errors, 'idNumber')}
               />
               <Input
                 label="تاريخ الميلاد *"
@@ -160,6 +193,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
                 value={formData.birthDate}
                 onChange={handleChange}
                 required
+                error={getFieldError(errors, 'birthDate')}
               />
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -170,11 +204,19 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
                   value={formData.gender}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  title="اختيار الجنس"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                    getFieldError(errors, 'gender') 
+                      ? 'border-red-300 focus:ring-red-500' 
+                      : 'border-gray-300 focus:ring-blue-500'
+                  }`}>
                   <option value="">اختر الجنس</option>
                   <option value="ذكر">ذكر</option>
                   <option value="أنثى">أنثى</option>
                 </select>
+                {getFieldError(errors, 'gender') && (
+                  <p className="mt-1 text-sm text-red-600">{getFieldError(errors, 'gender')}</p>
+                )}
               </div>
               <Input
                 label="مكان السكن *"
@@ -182,6 +224,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
                 value={formData.residence}
                 onChange={handleChange}
                 required
+                error={getFieldError(errors, 'residence')}
               />
             </div>
           </Section>
@@ -195,6 +238,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
                 value={formData.teacher}
                 onChange={handleChange}
                 required
+                error={getFieldError(errors, 'teacher')}
               />
               <Input
                 label="اسم الحلقة *"
@@ -202,6 +246,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
                 value={formData.group}
                 onChange={handleChange}
                 required
+                error={getFieldError(errors, 'group')}
               />
             </div>
           </Section>
@@ -217,13 +262,15 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
                 onChange={handleChange}
                 required
                 placeholder="05xxxxxxxx"
+                error={getFieldError(errors, 'phoneNumber')}
               />
               <Input
                 label="البريد الإلكتروني (اختياري)"
                 type="email"
                 name="email"
-                value={formData.email}
+                value={formData.email || ""}
                 onChange={handleChange}
+                error={getFieldError(errors, 'email')}
               />
             </div>
           </Section>
@@ -238,8 +285,16 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
             </button>
             <button
               type="submit"
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-              {student ? "تعديل الطالب" : "إضافة الطالب"}
+              disabled={isSubmitting}
+              className={`px-6 py-2 text-white rounded-md transition-colors ${
+                isSubmitting 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}>
+              {isSubmitting 
+                ? 'جاري الحفظ...' 
+                : (student ? "تعديل الطالب" : "إضافة الطالب")
+              }
             </button>
           </div>
         </form>
@@ -257,14 +312,16 @@ const Input = ({
   type = "text",
   required = false,
   placeholder = "",
+  error,
 }: {
   label: string;
   name: string;
   value: string;
-  onChange: any;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   type?: string;
   required?: boolean;
   placeholder?: string;
+  error?: string;
 }) => (
   <div>
     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -277,8 +334,15 @@ const Input = ({
       onChange={onChange}
       required={required}
       placeholder={placeholder}
-      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+        error 
+          ? 'border-red-300 focus:ring-red-500' 
+          : 'border-gray-300 focus:ring-blue-500'
+      }`}
     />
+    {error && (
+      <p className="mt-1 text-sm text-red-600">{error}</p>
+    )}
   </div>
 );
 

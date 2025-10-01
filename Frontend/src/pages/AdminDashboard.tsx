@@ -32,7 +32,6 @@
 //     activeStudents: 0,
 //     attendanceRate: 0,
 //     upcomingExams: 0,
-//     newStudentsThisMonth: 0,
 //     totalActivities: 0,
 //   });
 
@@ -116,7 +115,6 @@
 //           activeStudents: 42, // Dummy data
 //           attendanceRate: 87, // Dummy data
 //           upcomingExams: 5, // Dummy data
-//           newStudentsThisMonth: 8, // Dummy data
 //           totalActivities: 23, // Dummy data
 //         });
 //       } catch (error) {
@@ -342,14 +340,7 @@
 //                       />
 //                     </svg>
 //                   </div>
-//                   <div className="mr-4">
-//                     <p className="text-sm font-medium text-gray-600">
-//                       طلاب جدد هذا الشهر
-//                     </p>
-//                     <p className="text-2xl font-bold text-gray-900">
-//                       {stats.newStudentsThisMonth}
-//                     </p>
-//                   </div>
+
 //                 </div>
 //               </div>
 
@@ -636,7 +627,6 @@ interface Stats {
   activeStudents: number;
   attendanceRate: number;
   upcomingExams: number;
-  newStudentsThisMonth: number;
   totalActivities: number;
 }
 
@@ -668,12 +658,7 @@ interface PieChartProps {
   colors: string[];
 }
 
-interface LineChartProps {
-  data: number[][];
-  labels: string[];
-  colors: string[];
-  dataLabels: string[];
-}
+
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState<Stats>({
@@ -685,7 +670,6 @@ const AdminDashboard = () => {
     activeStudents: 0,
     attendanceRate: 0,
     upcomingExams: 0,
-    newStudentsThisMonth: 0,
     totalActivities: 0,
   });
 
@@ -704,11 +688,7 @@ const AdminDashboard = () => {
     female: 35,
   });
 
-  const [monthlyProgress] = useState({
-    labels: ["يناير", "فبراير", "مارس", "ابريل", "مايو", "يونيو"],
-    students: [50, 55, 60, 65, 70, 75],
-    marks: [75, 78, 80, 82, 85, 87],
-  });
+
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -750,7 +730,6 @@ const AdminDashboard = () => {
           activeStudents: 42,
           attendanceRate: 87,
           upcomingExams: 5,
-          newStudentsThisMonth: 8,
           totalActivities: 23,
         });
       } catch (error) {
@@ -862,75 +841,7 @@ const AdminDashboard = () => {
     );
   };
 
-  const LineChart: React.FC<LineChartProps> = ({ data, labels, colors, dataLabels }) => {
-    const maxValue = Math.max(...data.flatMap((d: number[]) => d));
-    const points = data.map((dataset: number[], dataIndex: number) =>
-      dataset.map((value: number, i: number) => ({
-        x: (i / (dataset.length - 1)) * 100,
-        y: 100 - (value / maxValue) * 90,
-        value,
-        color: colors[dataIndex],
-      }))
-    );
 
-    const colorClasses = [
-      { border: 'border-emerald-500', bg: 'bg-emerald-500' },
-      { border: 'border-blue-500', bg: 'bg-blue-500' },
-      { border: 'border-purple-500', bg: 'bg-purple-500' },
-    ];
-
-    return (
-      <div className="h-full flex flex-col">
-        <div className="flex-1 relative px-8 py-4">
-          <svg viewBox="0 0 100 100" className="w-full h-full">
-            <defs>
-              {colors.map((color: string, i: number) => (
-                <linearGradient key={i} id={`gradient-${i}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor={color} stopOpacity={0.3} />
-                  <stop offset="100%" stopColor={color} stopOpacity={0} />
-                </linearGradient>
-              ))}
-            </defs>
-
-            {points.map((pointSet: {x: number, y: number, value: number, color: string}[], dataIndex: number) => {
-              const pathData = pointSet.map((p: {x: number, y: number}, i: number) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-              const areaData = `${pathData} L ${pointSet[pointSet.length - 1].x} 100 L ${pointSet[0].x} 100 Z`;
-
-              return (
-                <g key={dataIndex}>
-                  <path d={areaData} fill={`url(#gradient-${dataIndex})`} />
-                  <path d={pathData} fill="none" stroke={colors[dataIndex]} strokeWidth="0.5" />
-                  {pointSet.map((point: {x: number, y: number}, i: number) => (
-                    <circle
-                      key={i}
-                      cx={point.x}
-                      cy={point.y}
-                      r="1.5"
-                      fill={colors[dataIndex]}
-                      className="hover:r-2 transition-all cursor-pointer"
-                    />
-                  ))}
-                </g>
-              );
-            })}
-          </svg>
-          <div className="absolute bottom-0 left-0 right-0 flex justify-around px-8">
-            {labels.map((label: string, i: number) => (
-              <span key={i} className="text-xs text-gray-500">{label}</span>
-            ))}
-          </div>
-        </div>
-        <div className="flex justify-center gap-6 mt-4">
-          {dataLabels.map((label: string, i: number) => (
-            <div key={i} className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${colorClasses[i]?.bg || 'bg-gray-500'}`}></div>
-              <span className="text-xs text-gray-600">{label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-green-50">
@@ -1015,17 +926,7 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-teal-50 to-teal-100 p-6 rounded-xl border-2 border-teal-200 hover:shadow-lg transition-all duration-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-teal-700 mb-1">طلاب جدد</p>
-                <p className="text-3xl font-bold text-teal-900">{stats.newStudentsThisMonth}</p>
-              </div>
-              <div className="p-3 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl">
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
-              </div>
-            </div>
-          </div>
+
 
           <div className="bg-gradient-to-br from-pink-50 to-pink-100 p-6 rounded-xl border-2 border-pink-200 hover:shadow-lg transition-all duration-300">
             <div className="flex items-center justify-between">
@@ -1116,22 +1017,7 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        <div className="flex justify-center">
-          <div className="w-full lg:w-3/4 xl:w-2/3 bg-white p-6 rounded-xl shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300">
-            <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center justify-center">
-              <span className="w-2 h-8 bg-gradient-to-b from-indigo-500 to-indigo-600 rounded-full ml-3"></span>
-              التقدم الشهري
-            </h3>
-            <div className="h-80">
-              <LineChart
-                data={[monthlyProgress.students, monthlyProgress.marks]}
-                labels={monthlyProgress.labels}
-                colors={["#3b82f6", "#22c55e"]}
-                dataLabels={["عدد الطلاب", "متوسط العلامات"]}
-              />
-            </div>
-          </div>
-        </div>
+
       </div>
     </div>
   );
