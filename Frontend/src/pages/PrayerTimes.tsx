@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 
 interface PrayerTime {
   name: string;
@@ -286,6 +287,7 @@ const PrayerTimes = () => {
             <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
               🕌 مواقيت الصلاة
             </h1>
+           
             <p className="text-xl text-green-600 font-semibold mb-2">
               نابلس - فلسطين
             </p>
@@ -323,8 +325,7 @@ const PrayerTimes = () => {
                 nextPrayer?.name === prayer.name
                   ? "ring-2 ring-green-400 bg-green-50"
                   : ""
-              }`}
-            >
+              }`}>
               <div className="text-center">
                 <div className="text-4xl mb-3">{prayer.icon}</div>
                 <h3 className="text-2xl font-bold text-gray-800 mb-2">
@@ -335,8 +336,7 @@ const PrayerTimes = () => {
                     nextPrayer?.name === prayer.name
                       ? "text-green-600"
                       : "text-gray-700"
-                  }`}
-                >
+                  }`}>
                   {prayer.time}
                 </p>
                 {nextPrayer?.name === prayer.name && (
@@ -383,8 +383,7 @@ const PrayerTimes = () => {
                     style={{
                       transform: `translate(-50%, -100%) rotate(${getQiblaArrowRotation()}deg)`,
                       transformOrigin: "bottom center",
-                    }}
-                  >
+                    }}>
                     {/* Arrow head */}
                     <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-2 border-r-2 border-b-4 border-l-transparent border-r-transparent border-b-green-500"></div>
                   </div>
@@ -424,8 +423,7 @@ const PrayerTimes = () => {
                     </p>
                     <button
                       onClick={requestCompassPermission}
-                      className="mt-2 bg-green-600 text-white px-4 py-2 rounded-full text-xs hover:bg-green-700 transition-colors"
-                    >
+                      className="mt-2 bg-green-600 text-white px-4 py-2 rounded-full text-xs hover:bg-green-700 transition-colors">
                       إعادة المحاولة
                     </button>
                   </div>
@@ -436,8 +434,7 @@ const PrayerTimes = () => {
                     </p>
                     <button
                       onClick={requestCompassPermission}
-                      className="mt-2 bg-green-600 text-white px-4 py-2 rounded-full text-xs hover:bg-green-700 transition-colors"
-                    >
+                      className="mt-2 bg-green-600 text-white px-4 py-2 rounded-full text-xs hover:bg-green-700 transition-colors">
                       تفعيل البوصلة
                     </button>
                   </div>
@@ -505,8 +502,7 @@ const PrayerTimes = () => {
         <div className="text-center mt-8">
           <button
             onClick={fetchPrayerTimes}
-            className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 text-lg font-medium"
-          >
+            className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 text-lg font-medium">
             🔄 تحديث المواقيت
           </button>
         </div>
