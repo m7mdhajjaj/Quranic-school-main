@@ -324,15 +324,15 @@ const StudentsManagement: React.FC = () => {
         {/* Students Table */}
         {!isLoading && filteredStudents.length > 0 && (
           <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <div className="overflow-x-auto" dir="rtl">
+              <table className="w-full" dir="rtl">
                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                   <tr>
                     <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">رقم الطالب</th>
                     <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">الاسم الكامل</th>
                     <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">رقم الهوية</th>
-                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">العمر</th>
                     <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">المعلم</th>
+                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">العمر</th>
                     <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">الحلقة</th>
                     <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">الإجراءات</th>
                   </tr>
@@ -344,19 +344,12 @@ const StudentsManagement: React.FC = () => {
                         {student.studentId}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="h-10 w-10 flex-shrink-0">
-                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white font-semibold">
-                              {student.firstName.charAt(0)}
-                            </div>
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {student.firstName} {student.lastName}
                           </div>
-                          <div className="mr-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {student.firstName} {student.lastName}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {student.fatherName}
-                            </div>
+                          <div className="text-xs text-gray-500">
+                            {student.fatherName}
                           </div>
                         </div>
                       </td>
@@ -364,10 +357,10 @@ const StudentsManagement: React.FC = () => {
                         {student.idNumber}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {student.age} سنة
+                        {student.teacher}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {student.teacher}
+                        {student.age} سنة
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {student.group}
@@ -376,7 +369,7 @@ const StudentsManagement: React.FC = () => {
                         <button
                           onClick={() => handleEdit(student)}
                           title="تعديل"
-                          className="text-blue-600 hover:text-blue-900 ml-4 transition-colors">
+                          className="text-blue-600 hover:text-blue-900 mr-4 transition-colors">
                           <FaEdit className="w-4 h-4" />
                         </button>
                         <button
