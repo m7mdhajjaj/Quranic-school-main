@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import LoadingSkeleton from "../components/LoadingSkeleton";
 import { useDashboardStats } from "../hooks/useDashboardStats";
 import "../styles/dashboard.css";
@@ -11,6 +12,7 @@ interface StatCardProps {
   bgColor: string;
   borderColor: string;
   trend?: string;
+  onClick?: () => void;
 }
 
 interface ChartData {
@@ -32,7 +34,13 @@ interface PieChartProps {
 }
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const { stats, isLoading, error, lastUpdated, refreshing, fetchStats } = useDashboardStats();
+
+  // Navigation handlers for statistics cards
+  const handleTeachersClick = () => {
+    navigate('/admin/teachers');
+  };
 
   const [groupDistribution] = useState<ChartData>({
     labels: ["حلقة الأطفال", "حلقة المبتدئين", "حلقة المتوسطين", "حلقة المتقدمين"],
@@ -81,8 +89,11 @@ const AdminDashboard = () => {
     );
   }
 
-  const StatCard: React.FC<StatCardProps> = ({ icon, title, value, color, bgColor, borderColor, trend }) => (
-    <div className={`${bgColor} p-6 rounded-xl border-2 ${borderColor} transition-all duration-300 hover:shadow-lg hover:-translate-y-1`}>
+  const StatCard: React.FC<StatCardProps> = ({ icon, title, value, color, bgColor, borderColor, trend, onClick }) => (
+    <div 
+      className={`${bgColor} p-6 rounded-xl border-2 ${borderColor} transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${onClick ? 'cursor-pointer hover:scale-105' : ''}`}
+      onClick={onClick}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4 space-x-reverse">
           <div className={`p-3 ${color} rounded-xl shadow-md`}>
@@ -230,6 +241,7 @@ const AdminDashboard = () => {
             bgColor="bg-green-50"
             borderColor="border-green-200"
             trend="+8% هذا الشهر"
+            onClick={handleTeachersClick}
           />
 
           <StatCard
