@@ -277,7 +277,7 @@ const AdminHeader: React.FC = () => {
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`group relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                className={`group relative px-5 py-2.5 rounded-lg text-base font-medium transition-all duration-200 ${
                   isActive(item.path)
                     ? "bg-white text-[#009C5C] shadow-md scale-105"
                     : "text-white hover:bg-white/10"
@@ -297,7 +297,7 @@ const AdminHeader: React.FC = () => {
           <div className="flex items-center space-x-3 rtl:space-x-reverse">
             {/* Search Button (Desktop only) */}
             <button
-              className="hidden lg:flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-200 text-white"
+              className="hidden lg:flex items-center justify-center w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-200 text-white"
               aria-label="بحث">
               <svg
                 className="w-5 h-5"
@@ -317,7 +317,7 @@ const AdminHeader: React.FC = () => {
             <div className="relative" ref={notificationMenuRef}>
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="relative flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-200 text-white"
+                className="relative flex items-center justify-center w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-200 text-white"
                 aria-label="الإشعارات">
                 <svg
                   className="w-5 h-5"
@@ -393,20 +393,20 @@ const AdminHeader: React.FC = () => {
             <div className="relative" ref={profileMenuRef}>
               <button
                 onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                className="flex items-center space-x-2 rtl:space-x-reverse bg-white/10 hover:bg-white/20 rounded-full px-3 py-1.5 transition-all duration-200"
+                className="flex items-center space-x-3 rtl:space-x-reverse bg-white/10 hover:bg-white/20 rounded-full px-4 py-2 transition-all duration-200"
                 aria-label="القائمة الشخصية">
                 <Avatar
                   src={avatarUrl}
                   userName={currentUser?.firstName || currentUser?.name}
                   gender={userGender}
                   loading={avatarLoading}
-                  size="sm"
+                  size="md"
                 />
                 <div className="hidden md:block text-right">
-                  <p className="text-sm font-medium text-white">
+                  <p className="text-base font-medium text-white">
                     {currentUser?.firstName} {currentUser?.lastName}
                   </p>
-                  <p className="text-xs text-white/70">مدير النظام</p>
+                  <p className="text-sm text-white/70">مدير النظام</p>
                 </div>
                 <svg
                   className={`w-4 h-4 text-white transition-transform duration-200 ${
