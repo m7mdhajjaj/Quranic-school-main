@@ -497,10 +497,10 @@ exports.changePassword = async (req, res) => {
 
     console.log("Searching for user with ID:", userId, "Type:", userType);
     // البحث عن المستخدم حسب النوع
-    if (userType === "teacher" || userType === "admin") {
-      user = await Teacher.findById(userId);
-    } else if (userType === "admin") {
+    if (userType === "admin") {
       user = await Admin.findById(userId);
+    } else if (userType === "teacher") {
+      user = await Teacher.findById(userId);
     } else {
       user = await Student.findById(userId);
     }
@@ -517,8 +517,8 @@ exports.changePassword = async (req, res) => {
     // التحقق من كلمة المرور الحالية
     let isCurrentPasswordValid = false;
 
-    if (userType === "teacher" || userType === "admin") {
-      // للمعلمين، التحقق من كلمة المرور المشفرة
+    if (userType === "admin" || userType === "teacher") {
+      // للأدمن والمعلمين، التحقق من كلمة المرور المشفرة
       isCurrentPasswordValid = await bcrypt.compare(
         currentPassword,
         user.password
@@ -559,16 +559,16 @@ exports.changePassword = async (req, res) => {
     const hashedNewPassword = await bcrypt.hash(newPassword, salt);
 
     // تحديث كلمة المرور في قاعدة البيانات
-    if (userType === "teacher" || userType === "admin") {
-      await Teacher.findByIdAndUpdate(userId, {
-        password: hashedNewPassword,
-      });
-    } else if (userType === "admin") {
+    if (userType === "admin") {
       await Admin.findByIdAndUpdate(userId, {
         password: hashedNewPassword,
       });
+    } else if (userType === "teacher") {
+      await Teacher.findByIdAndUpdate(userId, {
+        password: hashedNewPassword,
+      });
     } else {
-      await Student.findByIdAndUpdate(userId, {
+      await Student.freezeByIdAndUpdate(userId, {
         password: hashedNewPassword,
       });
     }

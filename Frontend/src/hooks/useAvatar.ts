@@ -35,7 +35,7 @@ export const useAvatar = ({
 
       const startTime = Date.now();
       const token = localStorage.getItem('token');
-      const endpoint = role === 'student' ? 'students' : 'teachers';
+      const endpoint = role === 'student' ? 'students' : role === 'admin' ? 'admins' : 'teachers';
       
       // تقليل cache busting - كل 30 دقيقة بدلاً من كل دقيقة
       const cacheKey = Math.floor(Date.now() / 1800000); // 30 minutes
@@ -130,7 +130,7 @@ export const useAvatar = ({
  * Utility function to fetch avatar as blob URL (for profile pages)
  */
 export async function fetchAvatarBlobUrl(
-  endpoint: 'students' | 'teachers',
+  endpoint: 'students' | 'teachers' | 'admins',
   id: string
 ): Promise<string> {
   try {

@@ -58,7 +58,7 @@ interface UserBase {
   teacher?: string;
 }
 
-type Endpoint = "students" | "teachers";
+type Endpoint = "students" | "teachers" | "admins";
 
 type FetchState =
   | { status: "idle" }
@@ -189,10 +189,27 @@ const Profile: React.FC = () => {
     setFetchState({ status: "loading" });
 
     try {
+      // إذا كان أدمن، جرّب الأدمن أولاً
+      if (userRole === "admin") {
+        try {
+          const u: UserBase = await fetchJson(`/admins/${id}`);
+          setUser({ ...u, role: u.role ?? "admin" });
+          setEndpoint("admins");
+          const url = await fetchAvatarBlobUrl("admins", u._id);
+          setAvatarUrl((prev) => {
+            if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+            return url;
+          });
+          setFetchState({ status: "ok" });
+          return;
+        } catch (e: any) {
+          if (e?.response?.status !== 404) throw e;
+        }
+      }
+
       // إذا كان النوع معروف من localStorage، جرّبه أولاً
       if (
         userRole === "teacher" ||
-        userRole?.includes("admin") ||
         userRole?.includes("teacher")
       ) {
         try {

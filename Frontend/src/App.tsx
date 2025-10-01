@@ -28,41 +28,43 @@ import ExamSchedule from "./pages/ExamSchedule";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminManagement from "./pages/AdminManagement";
 import AdminHeader from "./components/AdminHeader";
+// إزالة AdminOnly و AdminRedirect - سنستخدم نهج Routes منفصلة
 import Loading from "./components/Loading";
 import { AuthProvider } from "./contexts/AuthContext";
 import { useAuth } from "./hooks/useAuth";
 import { UserStatusProvider } from "./contexts/UserStatusContext";
 
-function AppContent() {
+// مكون للمسارات الخاصة بالأدمن
+const AdminRoutes: React.FC = () => {
+  return (
+    <>
+      <AdminHeader />
+      <Routes>
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/management" element={<AdminManagement />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/change-password" element={<ChangePass />} />
+        <Route path="/login" element={<Login />} />
+        {/* إعادة توجيه أي مسار آخر للداشبورد */}
+        <Route path="*" element={<AdminDashboard />} />
+      </Routes>
+      {/* لا نعرض Footer للأدمن */}
+    </>
+  );
+};
+
+// مكون للمسارات الخاصة بالمعلمين والطلاب
+const UserRoutes: React.FC = () => {
   const location = useLocation();
-  const { isLoading, isAuthenticated } = useAuth();
-  
   const isLoginPage = location.pathname === "/login";
   const isChatPage = location.pathname === "/chat";
   const isQuranPage =
     location.pathname === "/quran" || location.pathname === "/quran-audio";
-  const isAdminPage = location.pathname.startsWith("/admin");
-
-  // عرض Loading أثناء تحميل بيانات المصادقة
-  if (isLoading) {
-    return <Loading fullscreen message="جاري تحميل بيانات المستخدم..." />;
-  }
-
-  // إعادة التوجه للمسارات المحمية إذا لم يكن مسجلاً دخوله
-  if (!isAuthenticated && !isLoginPage) {
-    return (
-      <>
-        <Routes>
-          <Route path="*" element={<Login />} />
-        </Routes>
-      </>
-    );
-  }
 
   return (
     <>
-      {isAdminPage && <AdminHeader />}
-      {!isLoginPage && !isAdminPage && <Header />}
+      {!isLoginPage && <Header />}
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
@@ -84,18 +86,38 @@ function AppContent() {
         <Route path="/quran-audio" element={<QuranAudio />} />
         <Route path="/change-password" element={<ChangePass />} />
         <Route path="/profile" element={<Profile />} />
-        {/* Admin Routes - Protected */}
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/admin/management" element={<AdminManagement />} />
-        {/* Redirect /admin to /admin/dashboard */}
-        <Route path="/admin" element={<AdminDashboard />} />
+        {/* منع الوصول للمسارات الإدارية */}
+        <Route path="/admin/*" element={<NotFound />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
-      {!isLoginPage && !isChatPage && !isQuranPage && !isAdminPage && (
-        <Footer />
-      )}
+      {!isLoginPage && !isChatPage && !isQuranPage && <Footer />}
     </>
   );
+};
+
+function AppContent() {
+  const { isLoading, isAuthenticated, user } = useAuth();
+
+  // عرض Loading أثناء تحميل بيانات المصادقة
+  if (isLoading) {
+    return <Loading fullscreen message="جاري تحميل بيانات المستخدم..." />;
+  }
+
+  // إعادة التوجه لصفحة تسجيل الدخول إذا لم يكن مصدقاً
+  if (!isAuthenticated) {
+    return (
+      <Routes>
+        <Route path="*" element={<Login />} />
+      </Routes>
+    );
+  }
+
+  // عرض المسارات حسب دور المستخدم
+  if (user?.role === 'admin') {
+    return <AdminRoutes />;
+  } else {
+    return <UserRoutes />;
+  }
 }
 
 function App() {

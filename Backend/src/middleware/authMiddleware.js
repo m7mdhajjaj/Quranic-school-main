@@ -166,3 +166,27 @@ exports.adminProtect = async (req, res, next) => {
       });
   }
 };
+
+// وسيط لمنع الأدمن من الوصول لصفحات المعلم والطالب
+exports.restrictAdmin = async (req, res, next) => {
+  try {
+    // استخدام وسيط الحماية أولاً
+    await exports.protect(req, res, () => {
+      // التحقق من أن المستخدم ليس مديراً
+      if (req.user.role === "admin") {
+        return res.status(403).json({
+          success: false,
+          message: "هذه الصفحة غير متاحة للمديرين. الرجاء استخدام صفحة الإدارة الخاصة بك.",
+        });
+      }
+
+      next();
+    });
+  } catch (error) {
+    console.error("Restrict admin middleware error:", error);
+    res.status(401).json({
+      success: false,
+      message: "خطأ في التحقق من الصلاحيات",
+    });
+  }
+};

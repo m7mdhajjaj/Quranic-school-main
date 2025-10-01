@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const newsController = require("../controllers/newsController");
+const { restrictAdmin } = require("../middleware/authMiddleware");
 
 // Create directories for uploads if they don't exist
 const path = require("path");
@@ -13,11 +14,11 @@ if (!fs.existsSync(uploadDir)) {
   console.log("Uploads directory exists:", uploadDir);
 }
 
-// Get all news
-router.get("/", newsController.getAllNews);
+// Get all news - منع الأدمن من الوصول
+router.get("/", restrictAdmin, newsController.getAllNews);
 
-// Get news by ID
-router.get("/:id", newsController.getNewsById);
+// Get news by ID - منع الأدمن من الوصول
+router.get("/:id", restrictAdmin, newsController.getNewsById);
 
 // Create news (with image upload)
 router.post("/", newsController.uploadNewsImage, newsController.createNews);
