@@ -22,11 +22,6 @@ const teacherSchema = new mongoose.Schema(
 
     // هوية/تواصل
     idNumber: { type: String },
-    email: {
-      type: String,
-      required: [true, 'البريد الإلكتروني مطلوب'],
-      unique: true,
-    },
     phoneNumber: {
       type: String,
       required: [true, 'رقم الهاتف مطلوب'],
@@ -34,25 +29,47 @@ const teacherSchema = new mongoose.Schema(
       unique: true,
     },
 
+    // 👇 kept as String, but with regex check to ensure format (YYYY-MM-DD for example)
+    birthDate: {
+      type: String,
+      required: [true, 'تاريخ الميلاد مطلوب'],
+      match: [/^\d{4}-\d{2}-\d{2}$/, 'صيغة التاريخ يجب أن تكون YYYY-MM-DD'],
+    },
+
+    email: {
+      type: String,
+      required: [true, 'البريد الإلكتروني مطلوب'],
+      unique: true,
+      match: [
+        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+        'صيغة البريد الإلكتروني غير صحيحة',
+      ],
+    },
+
     // معلومات شخصية
-    birthDate: { type: String }, // أبقيناها String لتوافق الكود لديك
 
     age: { type: Number, min: [0, 'العمر يجب أن يكون رقماً موجباً'] },
     gender: {
       type: String,
       enum: {
         values: ['ذكر', 'انثى', 'أنثى', 'male', 'female', 'Male', 'Female'],
-        message: 'الجنس يجب أن يكون ذكر أو أنثى (Arabic) or male/female (English)',
+        message:
+          'الجنس يجب أن يكون ذكر أو أنثى (Arabic) or male/female (English)',
       },
       required: false,
       // تطبيق تسوية تلقائية للقيم
-      set: function(value) {
+      set: function (value) {
         if (!value) return value;
         const normalized = value.toString().toLowerCase().trim();
         if (normalized === 'male' || normalized === 'ذكر') return 'ذكر';
-        if (normalized === 'female' || normalized === 'أنثى' || normalized === 'انثى') return 'أنثى';
+        if (
+          normalized === 'female' ||
+          normalized === 'أنثى' ||
+          normalized === 'انثى'
+        )
+          return 'أنثى';
         return value;
-      }
+      },
     },
 
     residence: { type: String },
@@ -62,7 +79,7 @@ const teacherSchema = new mongoose.Schema(
     groupName: { type: String }, // يستخدمه الكونترولر لتعبئة groups
 
     // خبرة/دور
-    role: { type: String, enum: ['teacher', 'admin'], default: 'teacher' },
+    role: { type: String, enum: ['teacher'], default: 'teacher' },
 
     // الصورة
     avatar: { data: Buffer, contentType: String },
@@ -75,4 +92,3 @@ const teacherSchema = new mongoose.Schema(
 
 const Teacher = mongoose.model('Teacher', teacherSchema);
 module.exports = Teacher;
-

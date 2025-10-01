@@ -138,12 +138,11 @@
 
 // export default AdminHeader;
 
-
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import Avatar from "./Avatar";
-import { useAvatar, getUserGender } from "../hooks/useAvatar";
-import { useAuth } from "../hooks/useAuth";
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import Avatar from './Avatar';
+import { useAvatar, getUserGender } from '../hooks/useAvatar';
+import { useAuth } from '../hooks/useAuth';
 
 const AdminHeader: React.FC = () => {
   const { user: currentUser, logout: authLogout } = useAuth();
@@ -170,13 +169,13 @@ const AdminHeader: React.FC = () => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 10);
     };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   // Handle logout with confirmation dialog
   const handleLogout = useCallback(() => {
-    const confirmLogout = window.confirm("هل أنت متأكد من تسجيل الخروج؟");
+    const confirmLogout = window.confirm('هل أنت متأكد من تسجيل الخروج؟');
     if (confirmLogout) {
       setProfileMenuOpen(false);
       setMobileMenuOpen(false);
@@ -187,7 +186,7 @@ const AdminHeader: React.FC = () => {
   // Redirect to login if user is not authenticated
   useEffect(() => {
     if (!currentUser) {
-      navigate("/login", { replace: true });
+      navigate('/login', { replace: true });
     }
   }, [currentUser, navigate]);
 
@@ -208,8 +207,8 @@ const AdminHeader: React.FC = () => {
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   // Close mobile menu when route changes
@@ -220,15 +219,15 @@ const AdminHeader: React.FC = () => {
   // Handle ESC key to close all menus
   useEffect(() => {
     const handleEscKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
+      if (event.key === 'Escape') {
         setProfileMenuOpen(false);
         setShowNotifications(false);
         setMobileMenuOpen(false);
       }
     };
 
-    document.addEventListener("keydown", handleEscKey);
-    return () => document.removeEventListener("keydown", handleEscKey);
+    document.addEventListener('keydown', handleEscKey);
+    return () => document.removeEventListener('keydown', handleEscKey);
   }, []);
 
   // Check if current route is active
@@ -236,26 +235,37 @@ const AdminHeader: React.FC = () => {
 
   // Navigation items configuration
   const navItems = [
-    { path: "/admin/dashboard", label: "الإحصائيات", icon: "📊" },
-    { path: "/admin/management", label: "الإدارة", icon: "⚙️" },
-    { path: "/admin/reports", label: "التقارير", icon: "📈" },
-    { path: "/admin/settings", label: "الإعدادات", icon: "🔧" },
+    { path: '/admin/dashboard', label: 'الإحصائيات', icon: '📊' },
+    { path: '/admin/management', label: 'الإدارة', icon: '⚙️' },
+    { path: '/admin/reports', label: 'التقارير', icon: '📈' },
+    { path: '/admin/settings', label: 'الإعدادات', icon: '🔧' },
   ];
 
   // Mock notifications (replace with real API call)
   const mockNotifications = [
-    { id: 1, message: "طالب جديد تم تسجيله", time: "منذ 5 دقائق", unread: true },
-    { id: 2, message: "تحديث في النظام", time: "منذ ساعة", unread: true },
-    { id: 3, message: "طلب تغيير كلمة مرور", time: "منذ ساعتين", unread: false },
+    {
+      id: 1,
+      message: 'طالب جديد تم تسجيله',
+      time: 'منذ 5 دقائق',
+      unread: true,
+    },
+    { id: 2, message: 'تحديث في النظام', time: 'منذ ساعة', unread: true },
+    {
+      id: 3,
+      message: 'طلب تغيير كلمة مرور',
+      time: 'منذ ساعتين',
+      unread: false,
+    },
   ];
 
   return (
     <header
       className={`sticky top-0 z-50 transition-all duration-300 ${
         scrolled
-          ? "bg-[#009C5C] shadow-lg"
-          : "bg-gradient-to-r from-[#009C5C] to-[#00B26F]"
-      }`}>
+          ? 'bg-[#009C5C] shadow-lg'
+          : 'bg-gradient-to-r from-[#009C5C] to-[#00B26F]'
+      }`}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           {/* ✅ Logo Section */}
@@ -267,7 +277,9 @@ const AdminHeader: React.FC = () => {
               <h1 className="text-xl md:text-2xl font-bold text-white">
                 لوحة تحكم الإدارة
               </h1>
-              <p className="text-sm text-white/80">نظام إدارة المدرسة القرآنية</p>
+              <p className="text-sm text-white/80">
+                نظام إدارة المدرسة القرآنية
+              </p>
             </div>
           </div>
 
@@ -279,9 +291,10 @@ const AdminHeader: React.FC = () => {
                 onClick={() => navigate(item.path)}
                 className={`group relative px-5 py-2.5 rounded-lg text-base font-medium transition-all duration-200 ${
                   isActive(item.path)
-                    ? "bg-white text-[#009C5C] shadow-md scale-105"
-                    : "text-white hover:bg-white/10"
-                }`}>
+                    ? 'bg-white text-[#009C5C] shadow-md scale-105'
+                    : 'text-white hover:bg-white/10'
+                }`}
+              >
                 <span className="flex items-center space-x-2 rtl:space-x-reverse">
                   <span>{item.icon}</span>
                   <span>{item.label}</span>
@@ -298,12 +311,14 @@ const AdminHeader: React.FC = () => {
             {/* Search Button (Desktop only) */}
             <button
               className="hidden lg:flex items-center justify-center w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-200 text-white"
-              aria-label="بحث">
+              aria-label="بحث"
+            >
               <svg
                 className="w-5 h-5"
                 fill="none"
                 stroke="currentColor"
-                viewBox="0 0 24 24">
+                viewBox="0 0 24 24"
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -318,12 +333,14 @@ const AdminHeader: React.FC = () => {
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
                 className="relative flex items-center justify-center w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-200 text-white"
-                aria-label="الإشعارات">
+                aria-label="الإشعارات"
+              >
                 <svg
                   className="w-5 h-5"
                   fill="none"
                   stroke="currentColor"
-                  viewBox="0 0 24 24">
+                  viewBox="0 0 24 24"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -352,9 +369,10 @@ const AdminHeader: React.FC = () => {
                         key={notification.id}
                         className={`px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors border-r-4 ${
                           notification.unread
-                            ? "border-[#009C5C] bg-green-50/50"
-                            : "border-transparent"
-                        }`}>
+                            ? 'border-[#009C5C] bg-green-50/50'
+                            : 'border-transparent'
+                        }`}
+                      >
                         <p className="text-sm text-gray-800 font-medium">
                           {notification.message}
                         </p>
@@ -369,7 +387,8 @@ const AdminHeader: React.FC = () => {
                         className="w-12 h-12 mx-auto mb-2 text-gray-400"
                         fill="none"
                         stroke="currentColor"
-                        viewBox="0 0 24 24">
+                        viewBox="0 0 24 24"
+                      >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -394,7 +413,8 @@ const AdminHeader: React.FC = () => {
               <button
                 onClick={() => setProfileMenuOpen(!profileMenuOpen)}
                 className="flex items-center space-x-3 rtl:space-x-reverse bg-white/10 hover:bg-white/20 rounded-full px-4 py-2 transition-all duration-200"
-                aria-label="القائمة الشخصية">
+                aria-label="القائمة الشخصية"
+              >
                 <Avatar
                   src={avatarUrl}
                   userName={currentUser?.firstName || currentUser?.name}
@@ -410,11 +430,12 @@ const AdminHeader: React.FC = () => {
                 </div>
                 <svg
                   className={`w-4 h-4 text-white transition-transform duration-200 ${
-                    profileMenuOpen ? "rotate-180" : ""
+                    profileMenuOpen ? 'rotate-180' : ''
                   }`}
                   fill="none"
                   stroke="currentColor"
-                  viewBox="0 0 24 24">
+                  viewBox="0 0 24 24"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -432,21 +453,23 @@ const AdminHeader: React.FC = () => {
                       {currentUser?.firstName} {currentUser?.lastName}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      {currentUser?.email || "admin@school.com"}
+                      {currentUser?.email || 'admin@school.com'}
                     </p>
                   </div>
 
                   <button
                     onClick={() => {
-                      navigate("/profile");
+                      navigate('/profile');
                       setProfileMenuOpen(false);
                     }}
-                    className="flex items-center w-full text-right px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                    className="flex items-center w-full text-right px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
                     <svg
                       className="w-5 h-5 ml-3 text-gray-400"
                       fill="none"
                       stroke="currentColor"
-                      viewBox="0 0 24 24">
+                      viewBox="0 0 24 24"
+                    >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -459,15 +482,17 @@ const AdminHeader: React.FC = () => {
 
                   <button
                     onClick={() => {
-                      navigate("/change-password");
+                      navigate('/change-password');
                       setProfileMenuOpen(false);
                     }}
-                    className="flex items-center w-full text-right px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                    className="flex items-center w-full text-right px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
                     <svg
                       className="w-5 h-5 ml-3 text-gray-400"
                       fill="none"
                       stroke="currentColor"
-                      viewBox="0 0 24 24">
+                      viewBox="0 0 24 24"
+                    >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -480,15 +505,17 @@ const AdminHeader: React.FC = () => {
 
                   <button
                     onClick={() => {
-                      navigate("/admin/settings");
+                      navigate('/admin/settings');
                       setProfileMenuOpen(false);
                     }}
-                    className="flex items-center w-full text-right px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                    className="flex items-center w-full text-right px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
                     <svg
                       className="w-5 h-5 ml-3 text-gray-400"
                       fill="none"
                       stroke="currentColor"
-                      viewBox="0 0 24 24">
+                      viewBox="0 0 24 24"
+                    >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -508,12 +535,14 @@ const AdminHeader: React.FC = () => {
                   <div className="border-t border-gray-200 mt-2 pt-2">
                     <button
                       onClick={handleLogout}
-                      className="flex items-center w-full text-right px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors font-medium">
+                      className="flex items-center w-full text-right px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors font-medium"
+                    >
                       <svg
                         className="w-5 h-5 ml-3"
                         fill="none"
                         stroke="currentColor"
-                        viewBox="0 0 24 24">
+                        viewBox="0 0 24 24"
+                      >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -532,12 +561,14 @@ const AdminHeader: React.FC = () => {
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="lg:hidden flex items-center justify-center w-10 h-10 rounded-lg bg-white/10 hover:bg-white/20 transition-colors duration-200 text-white"
-              aria-label="القائمة">
+              aria-label="القائمة"
+            >
               <svg
                 className="w-6 h-6"
                 fill="none"
                 stroke="currentColor"
-                viewBox="0 0 24 24">
+                viewBox="0 0 24 24"
+              >
                 {mobileMenuOpen ? (
                   <path
                     strokeLinecap="round"
@@ -568,9 +599,10 @@ const AdminHeader: React.FC = () => {
                   onClick={() => navigate(item.path)}
                   className={`w-full text-right px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                     isActive(item.path)
-                      ? "bg-white text-[#009C5C] shadow-md"
-                      : "text-white hover:bg-white/10"
-                  }`}>
+                      ? 'bg-white text-[#009C5C] shadow-md'
+                      : 'text-white hover:bg-white/10'
+                  }`}
+                >
                   <span className="flex items-center space-x-2 rtl:space-x-reverse">
                     <span>{item.icon}</span>
                     <span>{item.label}</span>
