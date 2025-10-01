@@ -74,6 +74,7 @@ import QuranAudio from "./pages/QuranAudio";
 // ============================================================================
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminManagement from "./pages/AdminManagement";
+import StudentsManagement from "./pages/StudentsManagement";
 
 // ============================================================================
 // Other Components
@@ -113,6 +114,7 @@ const AdminRoutes: React.FC = () => {
         {/* ====== Admin Dashboard Routes ====== */}
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/management" element={<AdminManagement />} />
+        <Route path="/admin/students" element={<StudentsManagement />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/" element={<AdminDashboard />} />
         
