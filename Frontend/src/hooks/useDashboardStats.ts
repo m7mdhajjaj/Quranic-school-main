@@ -38,10 +38,6 @@ const INITIAL_STATS: Stats = {
   recentMarksCount: 0,
 };
 
-const CACHE_KEY = 'dashboard_stats_cache';
-const CACHE_TIMESTAMP = 'dashboard_stats_timestamp';
-const CACHE_DURATION = 5 * 60 * 1000; // 5 دقائق
-
 export const useDashboardStats = (): UseDashboardStatsReturn => {
   const [stats, setStats] = useState<Stats>(INITIAL_STATS);
   const [isLoading, setIsLoading] = useState(true);
@@ -50,27 +46,8 @@ export const useDashboardStats = (): UseDashboardStatsReturn => {
   const [refreshing, setRefreshing] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
-  const fetchStats = useCallback(async (force = false) => {
+  const fetchStats = useCallback(async () => {
     try {
-      // تحقق من cache إذا لم يكن force refresh
-      if (!force) {
-        const cachedData = localStorage.getItem(CACHE_KEY);
-        const cachedTime = localStorage.getItem(CACHE_TIMESTAMP);
-        
-        if (cachedData && cachedTime) {
-          const timeDiff = Date.now() - parseInt(cachedTime);
-          if (timeDiff < CACHE_DURATION) {
-            console.log('🚀 استخدام البيانات المحفوظة');
-            const parsedData = JSON.parse(cachedData);
-            setStats(parsedData);
-            setLastUpdated(new Date(parseInt(cachedTime)));
-            setIsLoading(false);
-            setInitialized(true);
-            return;
-          }
-        }
-      }
-      
       setRefreshing(true);
       setError(null);
       
@@ -81,10 +58,6 @@ export const useDashboardStats = (): UseDashboardStatsReturn => {
       if (response.data.success) {
         const statsData = response.data.data;
         const now = Date.now();
-        
-        // حفظ في cache
-        localStorage.setItem(CACHE_KEY, JSON.stringify(statsData));
-        localStorage.setItem(CACHE_TIMESTAMP, now.toString());
         
         setStats(statsData);
         setLastUpdated(new Date(now));
@@ -122,7 +95,7 @@ export const useDashboardStats = (): UseDashboardStatsReturn => {
     if (!initialized) return;
     
     const interval = setInterval(() => {
-      fetchStats(false);
+      fetchStats();
     }, 10 * 60 * 1000); // 10 دقائق
 
     return () => clearInterval(interval);

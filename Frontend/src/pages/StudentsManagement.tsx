@@ -68,6 +68,7 @@ const StudentsManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('all');
   const [selectedGender, setSelectedGender] = useState('all');
+  const [selectedTeacher, setSelectedTeacher] = useState('all');
   const [ageRange, setAgeRange] = useState<[number, number]>([0, 100]);
   const [showFilters, setShowFilters] = useState(false);
 
@@ -114,8 +115,6 @@ const StudentsManagement: React.FC = () => {
 
   // Fetch students
   const fetchStudents = useCallback(async (retryAttempt = 0) => {
-    if (!hasPermission) return;
-
     setIsLoading(true);
     setError(null);
     setRetryCount(retryAttempt);
@@ -146,8 +145,9 @@ const StudentsManagement: React.FC = () => {
       let errorMessage = 'حدث خطأ في تحميل البيانات';
       
       if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          errorMessage = 'انتهت مهلة تحميل البيانات';
+        if (error.name === 'AbortError' || error.message === 'canceled') {
+          console.log('🔄 تم إلغاء الطلب السابق');
+          return; // Don't update state for cancelled requests
         } else {
           errorMessage = error.message || 'خطأ غير محدد';
         }
@@ -159,11 +159,13 @@ const StudentsManagement: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [hasPermission]);
+  }, []);
 
   useEffect(() => {
+    if (!hasPermission) return;
+    
     fetchStudents();
-  }, [fetchStudents]);
+  }, [hasPermission, fetchStudents]);
 
   // Handle sorting
   const handleSort = (field: SortField) => {
@@ -184,13 +186,16 @@ const StudentsManagement: React.FC = () => {
         student.lastName.toLowerCase().includes(searchLower) ||
         student.fatherName.toLowerCase().includes(searchLower) ||
         student.idNumber.includes(searchLower) ||
-        student.studentId.toString().includes(searchLower);
+        student.studentId.toString().includes(searchLower) ||
+        student.teacher.toLowerCase().includes(searchLower) ||
+        student.group.toLowerCase().includes(searchLower);
 
       const matchesGroup = selectedGroup === 'all' || student.group === selectedGroup;
       const matchesGender = selectedGender === 'all' || student.gender === selectedGender;
+      const matchesTeacher = selectedTeacher === 'all' || student.teacher === selectedTeacher;
       const matchesAge = student.age >= ageRange[0] && student.age <= ageRange[1];
 
-      return matchesSearch && matchesGroup && matchesGender && matchesAge;
+      return matchesSearch && matchesGroup && matchesGender && matchesTeacher && matchesAge;
     });
 
     // Sort
@@ -211,7 +216,7 @@ const StudentsManagement: React.FC = () => {
     });
 
     return filtered;
-  }, [students, searchTerm, selectedGroup, selectedGender, ageRange, sortField, sortOrder]);
+  }, [students, searchTerm, selectedGroup, selectedGender, selectedTeacher, ageRange, sortField, sortOrder]);
 
   // Pagination
   const indexOfLastStudent = currentPage * studentsPerPage;
@@ -323,6 +328,7 @@ const StudentsManagement: React.FC = () => {
     setSearchTerm('');
     setSelectedGroup('all');
     setSelectedGender('all');
+    setSelectedTeacher('all');
     setAgeRange([0, 100]);
     setCurrentPage(1);
   };
@@ -422,7 +428,7 @@ const StudentsManagement: React.FC = () => {
               <div className="relative md:col-span-6">
                 <input
                   type="text"
-                  placeholder="ابحث عن طالب (الاسم، رقم الهوية، رقم الطالب...)"
+                  placeholder="ابحث عن طالب (الاسم، رقم الهوية، رقم الطالب، المعلم، الحلقة...)"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-right"
@@ -467,7 +473,7 @@ const StudentsManagement: React.FC = () => {
             {/* Extended Filters */}
             {showFilters && (
               <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 animate-fadeIn">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">الجنس</label>
                     <select
@@ -478,6 +484,20 @@ const StudentsManagement: React.FC = () => {
                       <option value="all">الكل</option>
                       <option value="ذكر">ذكر</option>
                       <option value="انثى">أنثى</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">المعلم</label>
+                    <select
+                      value={selectedTeacher}
+                      onChange={(e) => setSelectedTeacher(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="all">جميع المعلمين ({teachers.length})</option>
+                      {teachers.map(teacher => (
+                        <option key={teacher} value={teacher}>{teacher}</option>
+                      ))}
                     </select>
                   </div>
                   
@@ -597,6 +617,85 @@ const StudentsManagement: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Active Filters Display */}
+        {(selectedTeacher !== 'all' || selectedGroup !== 'all' || selectedGender !== 'all' || ageRange[0] !== 0 || ageRange[1] !== 100 || searchTerm) && (
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex flex-wrap gap-2">
+                <span className="text-blue-700 font-medium">الفلاتر المطبقة:</span>
+                {selectedTeacher !== 'all' && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                    👨‍🏫 {selectedTeacher}
+                    <button
+                      onClick={() => setSelectedTeacher('all')}
+                      className="ml-1 hover:bg-blue-200 rounded-full p-0.5"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </span>
+                )}
+                {selectedGroup !== 'all' && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full">
+                    📚 {selectedGroup}
+                    <button
+                      onClick={() => setSelectedGroup('all')}
+                      className="ml-1 hover:bg-green-200 rounded-full p-0.5"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </span>
+                )}
+                {selectedGender !== 'all' && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-full">
+                    {selectedGender === 'ذكر' ? '👦' : '👧'} {selectedGender}
+                    <button
+                      onClick={() => setSelectedGender('all')}
+                      className="ml-1 hover:bg-purple-200 rounded-full p-0.5"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </span>
+                )}
+                {(ageRange[0] !== 0 || ageRange[1] !== 100) && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-100 text-amber-800 text-sm rounded-full">
+                    🎂 {ageRange[0]}-{ageRange[1]} سنة
+                    <button
+                      onClick={() => setAgeRange([0, 100])}
+                      className="ml-1 hover:bg-amber-200 rounded-full p-0.5"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </span>
+                )}
+                {searchTerm && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-800 text-sm rounded-full">
+                    🔍 "{searchTerm}"
+                    <button
+                      onClick={() => setSearchTerm('')}
+                      className="ml-1 hover:bg-gray-200 rounded-full p-0.5"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </span>
+                )}
+              </div>
+              <span className="text-blue-600 text-sm font-medium">
+                {filteredAndSortedStudents.length} من {students.length} طالب
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Bulk Actions */}
         {selectedStudents.size > 0 && (
