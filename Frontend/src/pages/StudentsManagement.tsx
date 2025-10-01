@@ -4,6 +4,8 @@ import { FaEdit, FaTrash, FaPlus, FaSearch } from 'react-icons/fa';
 import { useAuth } from '../hooks/useAuth';
 import api from '../api';
 import AddStudentFormWithYup from '../components/AddStudentForm';
+import Swal from 'sweetalert2';
+import '../styles/sweetalert.css';
 
 // Form data interface for student creation
 interface StudentFormData {
@@ -117,7 +119,23 @@ const StudentsManagement: React.FC = () => {
 
   // Handle delete student
   const handleDelete = async (studentId: string | number) => {
-    if (window.confirm('هل أنت متأكد من حذف هذا الطالب؟')) {
+    const result = await Swal.fire({
+      title: 'تأكيد حذف الطالب',
+      text: 'هل أنت متأكد من حذف هذا الطالب؟ لا يمكن التراجع عن هذا الإجراء!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'نعم، احذف',
+      cancelButtonText: 'إلغاء',
+      reverseButtons: true,
+      customClass: {
+        popup: 'rtl-popup',
+        title: 'rtl-title'
+      }
+    });
+
+    if (result.isConfirmed) {
       try {
         // Delete from database if it has _id (from API)
         if (typeof studentId === 'string' && studentId.length > 10) {
@@ -132,10 +150,31 @@ const StudentsManagement: React.FC = () => {
           )
         );
 
-        alert('تم حذف الطالب بنجاح');
+        // Success message
+        await Swal.fire({
+          title: 'تم الحذف!',
+          text: 'تم حذف الطالب بنجاح',
+          icon: 'success',
+          confirmButtonText: 'موافق',
+          customClass: {
+            popup: 'rtl-popup',
+            title: 'rtl-title'
+          }
+        });
       } catch (error) {
         console.error('Error deleting student:', error);
-        alert('حدث خطأ أثناء حذف الطالب. يرجى المحاولة مرة أخرى.');
+        
+        // Error message
+        await Swal.fire({
+          title: 'خطأ!',
+          text: 'حدث خطأ أثناء حذف الطالب. يرجى المحاولة مرة أخرى.',
+          icon: 'error',
+          confirmButtonText: 'موافق',
+          customClass: {
+            popup: 'rtl-popup',
+            title: 'rtl-title'
+          }
+        });
       }
     }
   };
