@@ -3,6 +3,7 @@ import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { API_BASE_URL } from '../config';
 import { io, Socket } from 'socket.io-client';
+import api from '../api';
 
 // تعريف الواجهات والأنواع
 export interface UserStatusState {
@@ -37,35 +38,19 @@ export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     if (!token || !userId) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/users/${userId}/status`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await api.get(`/users/${userId}/status`);
+      const data = response.data;
+      
+      const status: UserStatusState = {
+        isActive: data.isActive !== false,
+        lastSeen: data.lastSeen ? new Date(data.lastSeen) : undefined,
+        isLoading: false,
+      };
 
-      if (response.ok) {
-        const data = await response.json();
-        const status: UserStatusState = {
-          isActive: data.isActive !== false,
-          lastSeen: data.lastSeen ? new Date(data.lastSeen) : undefined,
-          isLoading: false,
-        };
-
-        setUserStatuses(prev => ({
-          ...prev,
-          [userId]: status,
-        }));
-      } else {
-        // Fallback للحالة الافتراضية
-        setUserStatuses(prev => ({
-          ...prev,
-          [userId]: {
-            isActive: !!user && !!token,
-            isLoading: false,
-          },
-        }));
-      }
+      setUserStatuses(prev => ({
+        ...prev,
+        [userId]: status,
+      }));
     } catch (error) {
       console.error('خطأ في جلب حالة المستخدم:', error);
       setUserStatuses(prev => ({

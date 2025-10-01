@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { FaEdit, FaTrash, FaPlus, FaSearch, FaTimes } from "react-icons/fa";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-
-// API base URL
-const API_URL = "http://localhost:5005/api";
+import api from "../api";
 
 // Define Student Type
 interface Student {
@@ -123,7 +120,7 @@ const StudentsManagement: React.FC = () => {
       try {
         // Delete from database if it has _id (from API)
         if (typeof studentId === "string" && studentId.length > 10) {
-          await axios.delete(`${API_URL}/students/${studentId}`);
+          await api.delete(`/students/${studentId}`);
         }
 
         // Remove from local state
@@ -168,7 +165,7 @@ const StudentsManagement: React.FC = () => {
     if (hasPermission) {
       const fetchStudents = async () => {
         try {
-          const response = await axios.get(`${API_URL}/students`);
+          const response = await api.get('/students');
           setStudents(response.data);
         } catch (error) {
           console.error("Error refreshing students:", error);

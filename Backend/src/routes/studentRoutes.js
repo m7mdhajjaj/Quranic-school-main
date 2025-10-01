@@ -126,7 +126,7 @@ const multer = require("multer");
 
 const Student = require("../models/Student");
 const studentController = require("../controllers/studentController");
-const { restrictAdmin } = require("../middleware/authMiddleware");
+const { protect } = require("../middleware/authMiddleware");
 
 // in-memory upload
 const studentAvatarUpload = multer({
@@ -173,10 +173,10 @@ router.get("/:id/avatar", async (req, res) => {
   }
 });
 
-// CRUD routes - منع الأدمن من الوصول
-router.get("/", restrictAdmin, studentController.getStudents);
-router.get("/group/:group", restrictAdmin, studentController.getStudentsByGroup);
-router.get("/:id", restrictAdmin, studentController.getStudentById);
+// CRUD routes - require authentication (admins and teachers can access)
+router.get("/", protect, studentController.getStudents);
+router.get("/group/:group", protect, studentController.getStudentsByGroup);
+router.get("/:id", protect, studentController.getStudentById);
 router.post("/", studentController.createStudent);
 router.put("/:id", studentController.updateStudent);
 router.delete("/:id", studentController.deleteStudent);

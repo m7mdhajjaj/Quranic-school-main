@@ -2,6 +2,7 @@
 
 
 import { useState, useEffect } from "react";
+import api from "../api";
 
 interface Stats {
   totalStudents: number;
@@ -78,37 +79,18 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const token = localStorage.getItem("token");
+        // Use api instance for proper authentication and base URL
+        const [studentsResponse, teachersResponse, examsResponse, groupsResponse] = await Promise.all([
+          api.get('/students'),
+          api.get('/teachers'),
+          api.get('/exams'),
+          api.get('/groups')
+        ]);
 
-        // Helper function to make API calls with better error handling
-        const fetchWithErrorHandling = async (url: string) => {
-          const response = await fetch(url, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status} for ${url}`);
-          }
-          
-          const contentType = response.headers.get('content-type');
-          if (!contentType || !contentType.includes('application/json')) {
-            throw new Error(`Expected JSON but received ${contentType} for ${url}`);
-          }
-          
-          return await response.json();
-        };
-
-        const studentsData = await fetchWithErrorHandling("/api/students");
-        const studentsCount = Array.isArray(studentsData) ? studentsData.length : 0;
-
-        const teachersData = await fetchWithErrorHandling("/api/teachers");
-        const teachersCount = teachersData.success && Array.isArray(teachersData.data) ? teachersData.data.length : 0;
-
-        const examsData = await fetchWithErrorHandling("/api/exams");
-        const examsCount = Array.isArray(examsData) ? examsData.length : 0;
-
-        const groupsData = await fetchWithErrorHandling("/api/groups");
-        const groupsCount = groupsData.success && Array.isArray(groupsData.data) ? groupsData.data.length : 0;
+        const studentsCount = Array.isArray(studentsResponse.data) ? studentsResponse.data.length : 0;
+        const teachersCount = teachersResponse.data.success && Array.isArray(teachersResponse.data.data) ? teachersResponse.data.data.length : 0;
+        const examsCount = Array.isArray(examsResponse.data) ? examsResponse.data.length : 0;
+        const groupsCount = groupsResponse.data.success && Array.isArray(groupsResponse.data.data) ? groupsResponse.data.data.length : 0;
 
         const averageMarks = 85;
 

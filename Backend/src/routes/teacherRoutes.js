@@ -88,6 +88,7 @@ const multer = require("multer");
 const Teacher = require("../models/Teacher");
 const Student = require("../models/Student"); // for /for-student
 const controller = require("../controllers/teacherController");
+const { protect } = require("../middleware/authMiddleware");
 
 // ========== Multer in-memory (لا ملفات على الهارد) ==========
 const teacherAvatarUpload = multer({
@@ -135,8 +136,8 @@ router.get("/:id/avatar", async (req, res) => {
 });
 
 // ========== باقي المسارات ==========
-router.get("/", controller.getAllTeachers);
-router.get("/stats/summary/all", controller.getTeacherStats);
+router.get("/", protect, controller.getAllTeachers);
+router.get("/stats/summary/all", protect, controller.getTeacherStats);
 
 router.get("/for-student/:studentId", async (req, res) => {
   try {

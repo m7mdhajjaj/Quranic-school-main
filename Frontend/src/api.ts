@@ -27,14 +27,18 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Clear local storage on 401 error
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      localStorage.removeItem('userId');
-      localStorage.removeItem('savedCredentials');
+      // Don't auto-redirect on verify endpoints or if already on login
+      const isVerifyEndpoint = error.config?.url?.includes('/auth/verify');
+      const isOnLogin = window.location.pathname.includes('/login');
       
-      // Redirect to login page if not already there
-      if (!window.location.pathname.includes('/login')) {
+      if (!isVerifyEndpoint && !isOnLogin) {
+        // Clear local storage on 401 error
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('savedCredentials');
+        
+        // Redirect to login page
         window.location.href = '/login';
       }
     }

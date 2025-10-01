@@ -50,6 +50,25 @@ exports.protect = async (req, res, next) => {
       await Student.findByIdAndUpdate(decoded.id, { 
         isActive: true 
       });
+    } else if (decoded.role === "admin") {
+      // البحث عن المدير في قاعدة البيانات
+      const currentAdmin = await Admin.findById(decoded.id);
+
+      if (!currentAdmin) {
+        return res.status(401).json({
+          success: false,
+          message: "المدير المرتبط بهذا الرمز غير موجود",
+        });
+      }
+
+      // إضافة بيانات المدير إلى الطلب
+      req.user = currentAdmin;
+      req.user.role = "admin";
+      
+      // تحديث حالة النشاط فقط (بدون تغيير lastSeen)
+      await Admin.findByIdAndUpdate(decoded.id, { 
+        isActive: true 
+      });
     } else {
       // البحث عن المعلم في قاعدة البيانات
       const currentTeacher = await Teacher.findById(decoded.id);
@@ -63,18 +82,12 @@ exports.protect = async (req, res, next) => {
 
       // إضافة بيانات المعلم إلى الطلب
       req.user = currentTeacher;
-      req.user.role = currentTeacher.role;
+      req.user.role = "teacher";
       
       // تحديث حالة النشاط فقط (بدون تغيير lastSeen)
-      if (currentTeacher.role === "admin") {
-        await Admin.findByIdAndUpdate(decoded.id, { 
-          isActive: true 
-        });
-      } else {
-        await Teacher.findByIdAndUpdate(decoded.id, { 
-          isActive: true 
-        });
-      }
+      await Teacher.findByIdAndUpdate(decoded.id, { 
+        isActive: true 
+      });
     }
 
     next();

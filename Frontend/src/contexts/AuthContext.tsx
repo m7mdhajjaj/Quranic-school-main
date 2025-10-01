@@ -104,20 +104,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (savedUser && savedToken) {
           const parsedUser = JSON.parse(savedUser);
           
-          // تحقق من صحة التوكن قبل المتابعة
+          // استخدم البيانات المحفوظة فوراً لتجنب إعادة التوجيه
+          setUser(parsedUser);
+          setToken(savedToken);
+          axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
+          
+          // تحقق من صحة التوكن في الخلفية
           try {
             const response = await axios.get(`${API_BASE_URL}/api/auth/verify`, {
               headers: { 'Authorization': `Bearer ${savedToken}` },
-              timeout: 3000 // 3 ثواني فقط
+              timeout: 3000
             });
             
             if (response.data.success) {
-              setUser(parsedUser);
-              setToken(savedToken);
-              
-              // Ensure axios sends Authorization header by default
-              axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
-              
               // Connect socket and emit login with delay
               if (socketRef.current) {
                 socketRef.current.connect();
@@ -134,17 +133,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 }, 500);
               }
               
-              console.log('✅ تم استرداد بيانات معتمدة للمستخدم:', parsedUser.firstName || parsedUser.name);
+              console.log('✅ تم تأكيد صحة بيانات المستخدم:', parsedUser.firstName || parsedUser.name);
             } else {
-              throw new Error('توكن غير صالح');
+              console.warn('⚠️ فشل في التحقق من التوكن');
             }
-          } catch {
-            console.warn('⚠️  فشل في التحقق من التوكن, مسح البيانات');
-            // مسح البيانات القديمة/غير الصالحة
-            localStorage.removeItem('user');
-            localStorage.removeItem('token');
-            localStorage.removeItem('userId');
-            delete axios.defaults.headers.common['Authorization'];
+          } catch (verifyError) {
+            console.warn('⚠️  فشل في التحقق من التوكن:', verifyError);
+            
+            // استخدم البيانات المحفوظة مؤقتاً حتى لو فشل التحقق
+            // هذا يمنع إعادة التوجيه المستمر إذا كان الخادم غير متاح
+            console.log('🔄 سيتم استخدام البيانات المحفوظة مؤقتاً');
+            setUser(parsedUser);
+            setToken(savedToken);
+            axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
+            
+            // إذا كان التوكن غير صالح فعلياً، ستظهر الأخطاء في الـ API calls وسيتم التعامل معها
           }
         }
       } catch (error) {
@@ -209,7 +212,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             method: 'POST',
             headers 
           });
-        } catch (apiError) {
+        } catch {
           // تجاهل أخطاء API - المهم هو تنظيف البيانات المحلية
         }
       }
