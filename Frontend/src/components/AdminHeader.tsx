@@ -128,6 +128,7 @@ const AdminHeader: React.FC = () => {
           ? 'bg-[#009C5C] shadow-lg'
           : 'bg-gradient-to-r from-[#009C5C] to-[#00B26F]'
       }`}
+      dir="rtl"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
@@ -212,7 +213,7 @@ const AdminHeader: React.FC = () => {
                   />
                 </svg>
                 {mockNotifications.filter((n) => n.unread).length > 0 && (
-                  <span className="absolute top-0 right-0 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold animate-pulse">
+                  <span className="absolute top-0 left-0 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold animate-pulse">
                     {mockNotifications.filter((n) => n.unread).length}
                   </span>
                 )}
@@ -220,7 +221,7 @@ const AdminHeader: React.FC = () => {
 
               {/* Notifications Dropdown Menu */}
               {showNotifications && (
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-2xl py-2 z-50 border border-gray-200 max-h-96 overflow-y-auto animate-fadeIn">
+                <div className="absolute left-0 mt-2 w-80 bg-white rounded-lg shadow-2xl py-2 z-50 border border-gray-200 max-h-96 overflow-y-auto animate-fadeIn">
                   <div className="px-4 py-3 border-b border-gray-200">
                     <h3 className="text-sm font-bold text-gray-800">
                       الإشعارات
@@ -230,7 +231,7 @@ const AdminHeader: React.FC = () => {
                     mockNotifications.map((notification) => (
                       <div
                         key={notification.id}
-                        className={`px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors border-r-4 ${
+                        className={`px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors border-l-4 ${
                           notification.unread
                             ? 'border-[#009C5C] bg-green-50/50'
                             : 'border-transparent'
@@ -310,7 +311,7 @@ const AdminHeader: React.FC = () => {
               {profileMenuOpen && (
                 <div
                   id="profile-menu"
-                  className="absolute left-1/2 transform -translate-x-1/2 top-full mt-3 w-52 bg-white/96 backdrop-blur-2xl rounded-2xl shadow-2xl border border-emerald-100/50 py-1 z-[100] animate-in slide-in-from-top-5 duration-200"
+                  className="absolute right-1/2 transform translate-x-1/2 top-full mt-3 w-52 bg-white/96 backdrop-blur-2xl rounded-2xl shadow-2xl border border-emerald-100/50 py-1 z-[100] animate-in slide-in-from-top-5 duration-200"
                 >
                   <div className="px-3 py-2.5 border-b border-emerald-100/60 bg-gradient-to-r from-emerald-50/80 to-teal-50/80 rounded-t-2xl">
                     <div className="flex items-center justify-center">
@@ -338,7 +339,7 @@ const AdminHeader: React.FC = () => {
                         setProfileMenuOpen(false);
                         navigate('/profile');
                       }}
-                      className="w-full text-right py-2 px-3 text-gray-700 hover:bg-emerald-50/80 hover:text-emerald-700 transition-all duration-200 flex items-center gap-2 group"
+                      className="w-full text-right py-2 px-3 text-gray-700 hover:bg-emerald-50/80 hover:text-emerald-700 transition-all duration-200 flex items-center justify-start gap-2 group"
                     >
                       <div className="p-1 rounded-lg bg-emerald-100 group-hover:bg-emerald-200 transition-colors">
                         <svg
@@ -392,7 +393,7 @@ const AdminHeader: React.FC = () => {
                         setProfileMenuOpen(false);
                         handleLogout();
                       }}
-                      className="w-full text-right py-2 px-3 text-red-600 hover:bg-red-50/80 hover:text-red-700 transition-all duration-200 flex items-center gap-2 group"
+                      className="w-full text-right py-2 px-3 text-red-600 hover:bg-red-50/80 hover:text-red-700 transition-all duration-200 flex items-center justify-start gap-2 group"
                     >
                       <div className="p-1 rounded-lg bg-red-100 group-hover:bg-red-200 transition-colors">
                         <svg
@@ -456,7 +457,7 @@ const AdminHeader: React.FC = () => {
                 <button
                   key={item.path}
                   onClick={() => navigate(item.path)}
-                  className={`w-full text-right px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  className={`w-full text-right px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-start ${
                     isActive(item.path)
                       ? 'bg-white text-[#009C5C] shadow-md'
                       : 'text-white hover:bg-white/10'

@@ -183,15 +183,15 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-green-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-green-50" dir="rtl">
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div>
+          <div className="text-right">
             <h1 className="text-4xl font-bold text-gray-900 mb-2">لوحة الإحصائيات</h1>
             <p className="text-gray-600">نظرة شاملة على أداء المنصة</p>
           </div>
           <div className="mt-4 sm:mt-0">
-            <div className="flex flex-col items-end gap-2">
+            <div className="flex flex-col items-start gap-2">
               <button
                 onClick={() => fetchStats(true)}
                 disabled={refreshing}
@@ -203,7 +203,7 @@ const AdminDashboard = () => {
                 {refreshing ? 'جاري التحديث...' : 'تحديث البيانات'}
               </button>
               {lastUpdated && (
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 text-right">
                   آخر تحديث: {lastUpdated.toLocaleTimeString('ar-SA')}
                 </p>
               )}
@@ -263,8 +263,8 @@ const AdminDashboard = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300">
-            <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-              <span className="w-2 h-8 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full ml-3"></span>
+            <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center text-right">
+              <span className="w-2 h-8 bg-gradient-to-b from-blue-500 to-blue-600 rounded-full mr-3"></span>
               إحصائيات المستخدمين
             </h3>
             <div className="h-72">
@@ -277,8 +277,8 @@ const AdminDashboard = () => {
           </div>
 
           <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300">
-            <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-              <span className="w-2 h-8 bg-gradient-to-b from-green-500 to-green-600 rounded-full ml-3"></span>
+            <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center text-right">
+              <span className="w-2 h-8 bg-gradient-to-b from-green-500 to-green-600 rounded-full mr-3"></span>
               توزيع الطلاب حسب الحلقات
             </h3>
             <div className="h-72">
@@ -291,8 +291,8 @@ const AdminDashboard = () => {
           </div>
 
           <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300">
-            <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-              <span className="w-2 h-8 bg-gradient-to-b from-purple-500 to-purple-600 rounded-full ml-3"></span>
+            <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center text-right">
+              <span className="w-2 h-8 bg-gradient-to-b from-purple-500 to-purple-600 rounded-full mr-3"></span>
               الدرجات حسب الحلقات
             </h3>
             <div className="h-72">
@@ -308,7 +308,7 @@ const AdminDashboard = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">معدل الحضور</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-6 text-right">معدل الحضور</h3>
             <div className="flex items-center justify-center h-32">
               <div className="text-center">
                 <div className="text-4xl font-bold text-green-600 mb-2">{stats.attendanceRate}%</div>
@@ -318,7 +318,7 @@ const AdminDashboard = () => {
           </div>
 
           <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">الطلاب النشطون</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-6 text-right">الطلاب النشطون</h3>
             <div className="flex items-center justify-center h-32">
               <div className="text-center">
                 <div className="text-4xl font-bold text-blue-600 mb-2">{stats.activeStudents}</div>
