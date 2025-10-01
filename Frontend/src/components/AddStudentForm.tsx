@@ -1,17 +1,32 @@
 import React, { useState } from "react";
 import { 
-  validateStudent, 
+  validateStudentWithYup, 
   normalizeGender, 
   calculateAge,
-  getFieldError,
-  type StudentFormData,
-  type ValidationError 
-} from "../utils/studentValidation";
+  type StudentFormData
+} from "../utils/studentValidationYup";
+
+// Interface for form data (simpler than full StudentFormData)
+interface FormData {
+  firstName: string;
+  fatherName: string;
+  grandFatherName: string;
+  motherName: string;
+  lastName: string;
+  idNumber: string;
+  birthDate: string;
+  gender: "ذكر" | "أنثى" | "male" | "female" | "Male" | "Female" | "";
+  residence: string;
+  teacher: string;
+  group: string;
+  email: string;
+  phoneNumber: string;
+}
 
 interface AddStudentFormProps {
   onClose: () => void;
   onSuccess: (studentData: StudentFormData) => void;
-  student?: Partial<StudentFormData>;
+  student?: Partial<FormData>;
 }
 
 const AddStudentForm: React.FC<AddStudentFormProps> = ({
@@ -19,7 +34,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
   onSuccess,
   student,
 }) => {
-  const [formData, setFormData] = useState<StudentFormData>({
+  const [formData, setFormData] = useState<FormData>({
     firstName: student?.firstName || "",
     fatherName: student?.fatherName || "",
     grandFatherName: student?.grandFatherName || "",
@@ -35,8 +50,13 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
     phoneNumber: student?.phoneNumber || "",
   });
 
-  const [errors, setErrors] = useState<ValidationError[]>([]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // دالة للحصول على خطأ المجال
+  const getFieldError = (fieldName: string): string => {
+    return errors[fieldName] || "";
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -60,8 +80,16 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
     setFormData(updatedData);
     
     // إزالة أخطاء الحقل الحالي عند التعديل
-    setErrors(prev => prev.filter(error => error.field !== name));
+    if (errors[name]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
   };
+
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,10 +100,14 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
       ...formData,
       password: !student ? formData.idNumber : undefined, // فقط للطلاب الجدد
       age: calculateAge(formData.birthDate),
+      gender: normalizeGender(formData.gender) as "ذكر" | "أنثى",
+      avatar: null,
+      isActive: true,
+      lastSeen: new Date(),
     };
 
-    // تشغيل الـ validation
-    const validationResult = validateStudent(dataToValidate);
+    // تشغيل Yup validation
+    const validationResult = await validateStudentWithYup(dataToValidate, !student);
 
     if (!validationResult.isValid) {
       setErrors(validationResult.errors);
@@ -84,15 +116,10 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
     }
 
     // تنظيف الأخطاء عند نجاح الـ validation
-    setErrors([]);
+    setErrors({});
 
-    // تحضير البيانات للإرسال
-    const finalData = {
-      ...formData,
-      gender: normalizeGender(formData.gender),
-      age: calculateAge(formData.birthDate),
-      password: !student ? formData.idNumber : undefined, // كلمة المرور = رقم الهوية للطلاب الجدد
-    };
+    // استخدام البيانات المتحققة من Yup
+    const finalData = validationResult.data!;
 
     console.log("Student data to save:", finalData);
 
@@ -120,12 +147,12 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
           </button>
         </div>
 
-        {errors.length > 0 && (
+        {Object.keys(errors).length > 0 && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
             <div className="text-sm font-medium mb-2">يرجى إصلاح الأخطاء التالية:</div>
             <ul className="list-disc list-inside space-y-1">
-              {errors.map((error, index) => (
-                <li key={index} className="text-sm">{error.message}</li>
+              {Object.entries(errors).map(([field, message]) => (
+                <li key={field} className="text-sm">{message}</li>
               ))}
             </ul>
           </div>
@@ -143,7 +170,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
                 value={formData.firstName}
                 onChange={handleChange}
                 required
-                error={getFieldError(errors, 'firstName')}
+                error={getFieldError('firstName')}
               />
               <Input
                 label="اسم الأب *"
@@ -151,7 +178,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
                 value={formData.fatherName}
                 onChange={handleChange}
                 required
-                error={getFieldError(errors, 'fatherName')}
+                error={getFieldError('fatherName')}
               />
               <Input
                 label="اسم الجد *"
@@ -159,7 +186,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
                 value={formData.grandFatherName}
                 onChange={handleChange}
                 required
-                error={getFieldError(errors, 'grandFatherName')}
+                error={getFieldError('grandFatherName')}
               />
               <Input
                 label="اسم الأم *"
@@ -167,7 +194,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
                 value={formData.motherName}
                 onChange={handleChange}
                 required
-                error={getFieldError(errors, 'motherName')}
+                error={getFieldError('motherName')}
               />
               <Input
                 label="اسم العائلة *"
@@ -175,7 +202,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
                 value={formData.lastName}
                 onChange={handleChange}
                 required
-                error={getFieldError(errors, 'lastName')}
+                error={getFieldError('lastName')}
               />
               <Input
                 label="رقم الهوية *"
@@ -184,7 +211,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
                 onChange={handleChange}
                 required
                 placeholder="9 أرقام"
-                error={getFieldError(errors, 'idNumber')}
+                error={getFieldError('idNumber')}
               />
               <Input
                 label="تاريخ الميلاد *"
@@ -193,7 +220,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
                 value={formData.birthDate}
                 onChange={handleChange}
                 required
-                error={getFieldError(errors, 'birthDate')}
+                error={getFieldError('birthDate')}
               />
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -206,7 +233,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
                   required
                   title="اختيار الجنس"
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                    getFieldError(errors, 'gender') 
+                    getFieldError('gender') 
                       ? 'border-red-300 focus:ring-red-500' 
                       : 'border-gray-300 focus:ring-blue-500'
                   }`}>
@@ -214,8 +241,8 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
                   <option value="ذكر">ذكر</option>
                   <option value="أنثى">أنثى</option>
                 </select>
-                {getFieldError(errors, 'gender') && (
-                  <p className="mt-1 text-sm text-red-600">{getFieldError(errors, 'gender')}</p>
+                {getFieldError('gender') && (
+                  <p className="mt-1 text-sm text-red-600">{getFieldError('gender')}</p>
                 )}
               </div>
               <Input
@@ -224,7 +251,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
                 value={formData.residence}
                 onChange={handleChange}
                 required
-                error={getFieldError(errors, 'residence')}
+                error={getFieldError('residence')}
               />
             </div>
           </Section>
@@ -238,7 +265,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
                 value={formData.teacher}
                 onChange={handleChange}
                 required
-                error={getFieldError(errors, 'teacher')}
+                error={getFieldError('teacher')}
               />
               <Input
                 label="اسم الحلقة *"
@@ -246,7 +273,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
                 value={formData.group}
                 onChange={handleChange}
                 required
-                error={getFieldError(errors, 'group')}
+                error={getFieldError('group')}
               />
             </div>
           </Section>
@@ -262,7 +289,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
                 onChange={handleChange}
                 required
                 placeholder="05xxxxxxxx"
-                error={getFieldError(errors, 'phoneNumber')}
+                error={getFieldError('phoneNumber')}
               />
               <Input
                 label="البريد الإلكتروني (اختياري)"
@@ -270,7 +297,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({
                 name="email"
                 value={formData.email || ""}
                 onChange={handleChange}
-                error={getFieldError(errors, 'email')}
+                error={getFieldError('email')}
               />
             </div>
           </Section>

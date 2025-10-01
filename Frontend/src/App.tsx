@@ -53,7 +53,7 @@ import Timetable from "./pages/Timetable";
 // Page Components - Communication & Activities
 // ============================================================================
 import News from "./pages/news";
-import Chat from "./pages/Chat";
+// import Chat from "./pages/Chat";
 import Activities from "./pages/Activities";
 
 // ============================================================================
@@ -168,7 +168,7 @@ const TeacherRoutes: React.FC = () => {
         
         {/* ====== Communication & Activities ====== */}
         <Route path="/news" element={<News />} />
-        <Route path="/chat" element={<Chat />} />
+        {/* <Route path="/chat" element={<Chat />} /> */}
         <Route path="/activities" element={<Activities />} />
         
         {/* ====== Attendance & Management - Teacher Features ====== */}
@@ -237,7 +237,7 @@ const StudentRoutes: React.FC = () => {
         
         {/* ====== Communication & Activities ====== */}
         <Route path="/news" element={<News />} />
-        <Route path="/chat" element={<Chat />} />
+        {/* <Route path="/chat" element={<Chat />} /> */}
         <Route path="/activities" element={<Activities />} />
         
         {/* ====== Attendance - View Only ====== */}

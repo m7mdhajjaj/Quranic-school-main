@@ -82,7 +82,7 @@ export const studentValidationSchema = yup.object({
     .string()
     .required('رقم الهوية مطلوب')
     .matches(/^\d{9}$/, 'رقم الهوية يجب أن يتكون من 9 أرقام فقط')
-    .test('unique-id', 'رقم الهوية موجود بالفعل', function(_value) {
+    .test('unique-id', 'رقم الهوية موجود بالفعل', function() {
       // هذا التحقق يتم في الباك اند - unique constraint
       return true;
     }),
@@ -121,7 +121,7 @@ export const studentValidationSchema = yup.object({
     .string()
     .required('رقم الهاتف مطلوب')
     .matches(/^05\d{8}$/, 'الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام')
-    .test('unique-phone', 'رقم الهاتف موجود بالفعل', function(_value) {
+    .test('unique-phone', 'رقم الهاتف موجود بالفعل', function() {
       // هذا التحقق يتم في الباك اند - unique constraint
       return true;
     }),
