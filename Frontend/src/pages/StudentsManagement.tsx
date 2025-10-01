@@ -75,7 +75,7 @@ const StudentsManagement: React.FC = () => {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await axios.get(`${API_URL}/students`);
+        const response = await api.get('/students');
         setStudents(response.data);
 
         // Extract unique groups from students
