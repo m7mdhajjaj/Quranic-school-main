@@ -39,6 +39,15 @@ const API_URL = "http://localhost:5005/api/exams";
 const STUDENTS_URL = "http://localhost:5005/api/students";
 const EXAM_MARKS_URL = "http://localhost:5005/api/exam-marks";
 
+// حصول على توكن المستخدم
+const getAuthHeaders = () => {
+  const token = localStorage.getItem("token");
+  return {
+    Authorization: token ? `Bearer ${token}` : "",
+    "Content-Type": "application/json",
+  };
+};
+
 // =========================
 // الأنواع (Types)
 // =========================
@@ -93,6 +102,15 @@ const safeExamId = (ex: Exam | null | undefined): string | null => {
   const val = ex._id ?? ex.id;
   if (val === undefined || val === null) return null;
   return String(val);
+};
+
+// وظيفة للتعامل مع الأخطاء
+const handleFetchError = (error: any, message: string) => {
+  console.error(`${message}:`, error);
+  if (error.response?.status === 401) {
+    // خطأ في المصادقة
+    console.warn("Authentication error, redirecting to login...");
+  }
 };
 
 const getUserRole = (): "student" | "teacher" | "admin" => {
@@ -416,12 +434,23 @@ const ExamSchedule: React.FC = () => {
     setLoadingExams(true);
     (async () => {
       try {
-        const res = await fetch(API_URL);
-        const data: Exam[] = await res.json();
+        const res = await fetch(API_URL, {
+          headers: getAuthHeaders(),
+        });
+
+        if (!res.ok) {
+          console.error("Server responded with error:", res.status);
+          setExams([]);
+          return;
+        }
+
+        const data = await res.json();
         const list = Array.isArray(data) ? data : [];
+        console.log("Fetched exams:", list.length); // لتتبع عدد الامتحانات
         setExams(list);
         await refreshAllAverages(list);
-      } catch {
+      } catch (error) {
+        handleFetchError(error, "Error fetching exams");
         setExams([]);
         setExamAverages({});
       } finally {
@@ -433,28 +462,62 @@ const ExamSchedule: React.FC = () => {
   // ——— الطالب: جلب علاماته الشخصية
   useEffect(() => {
     if (role !== "student") return;
+    if (!exams.length) return; // لا داعي للتنفيذ إذا لم تكن هناك امتحانات
+
     try {
       const raw = localStorage.getItem("user");
       if (!raw) return;
-      const sid = JSON.parse(raw)?._id;
-      if (!sid) return;
+      let userData;
+      try {
+        userData = JSON.parse(raw);
+      } catch (e) {
+        console.error("Failed to parse user data:", e);
+        return;
+      }
+
+      const sid = userData?._id;
+      if (!sid) {
+        console.error("No student ID found in user data");
+        return;
+      }
+
+      console.log("Fetching marks for student:", sid);
 
       (async () => {
         try {
-          const res = await fetch(`${EXAM_MARKS_URL}/student/${sid}`);
-          const rows: MarkRow[] = await res.json();
+          const res = await fetch(`${EXAM_MARKS_URL}/student/${sid}`, {
+            headers: getAuthHeaders(),
+          });
+
+          if (!res.ok) {
+            console.error("Error fetching student marks:", res.status);
+            return;
+          }
+
+          const data = await res.json();
+          console.log("Student marks data received:", typeof data);
+
+          const rows = Array.isArray(data) ? data : [];
           const map: Record<string, string> = {};
+
           rows.forEach((r) => {
             const exId = String((r.exam as any)?._id ?? (r as any).exam ?? "");
-            if (exId) map[exId] = String(r.mark ?? "");
+            if (exId) {
+              map[exId] = String(r.mark ?? "");
+              console.log(`Mark for exam ${exId}: ${map[exId]}`);
+            }
           });
+
           setStudentMarks(map);
-        } catch {
+        } catch (error) {
+          handleFetchError(error, "Error processing student marks");
           setStudentMarks({});
         }
       })();
-    } catch {}
-  }, [role]);
+    } catch (error) {
+      console.error("Error in student marks effect:", error);
+    }
+  }, [role, exams]); // تنفيذ عندما تتغير الامتحانات
 
   // ——— تصفية/فرز
   const filteredSortedExams = useMemo(() => {
