@@ -236,7 +236,7 @@ const StudentRoutes: React.FC = () => {
         <Route path="/exam-schedule" element={<ExamSchedule />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/timetable" element={<Timetable />} />
-        
+        <Route path="/test" element={<Test />} />
         {/* ====== Communication & Activities ====== */}
         <Route path="/news" element={<News />} />
         {/* <Route path="/chat" element={<Chat />} /> */}
