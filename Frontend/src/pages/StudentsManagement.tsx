@@ -88,11 +88,11 @@ const StudentsManagement: React.FC = () => {
 
   // Extract unique groups and teachers
   const groups = useMemo(() => {
-    return [...new Set(students.map(s => s.group))].sort();
+    return [...new Set(students.map(s => s.group).filter(Boolean))].sort();
   }, [students]);
 
   const teachers = useMemo(() => {
-    return [...new Set(students.map(s => s.teacher))].sort();
+    return [...new Set(students.map(s => s.teacher).filter(Boolean))].sort();
   }, [students]);
 
   // Statistics
@@ -100,7 +100,7 @@ const StudentsManagement: React.FC = () => {
     const maleCount = students.filter(s => s.gender === 'ذكر').length;
     const femaleCount = students.filter(s => s.gender === 'انثى').length;
     const avgAge = students.length > 0 
-      ? (students.reduce((sum, s) => sum + s.age, 0) / students.length).toFixed(1)
+      ? (students.reduce((sum, s) => sum + (s.age || 0), 0) / students.length).toFixed(1)
       : 0;
     
     return {
@@ -131,8 +131,21 @@ const StudentsManagement: React.FC = () => {
       clearTimeout(timeoutId);
       
       if (response.data && Array.isArray(response.data)) {
-        console.log(`✅ تم تحميل ${response.data.length} طالب بنجاح`);
-        setStudents(response.data);
+        // Validate and clean student data
+        const cleanedStudents = response.data.map(student => ({
+          ...student,
+          firstName: student.firstName || '',
+          lastName: student.lastName || '',
+          fatherName: student.fatherName || '',
+          idNumber: student.idNumber || '',
+          teacher: student.teacher || 'غير محدد',
+          group: student.group || 'غير محدد',
+          gender: student.gender || 'غير محدد',
+          age: student.age || 0
+        }));
+        
+        console.log(`✅ تم تحميل ${cleanedStudents.length} طالب بنجاح`);
+        setStudents(cleanedStudents);
         setError(null);
         setRetryCount(0);
       } else {
@@ -182,13 +195,13 @@ const StudentsManagement: React.FC = () => {
     const filtered = students.filter((student) => {
       const searchLower = searchTerm.toLowerCase();
       const matchesSearch =
-        student.firstName.toLowerCase().includes(searchLower) ||
-        student.lastName.toLowerCase().includes(searchLower) ||
-        student.fatherName.toLowerCase().includes(searchLower) ||
-        student.idNumber.includes(searchLower) ||
+        (student.firstName || '').toLowerCase().includes(searchLower) ||
+        (student.lastName || '').toLowerCase().includes(searchLower) ||
+        (student.fatherName || '').toLowerCase().includes(searchLower) ||
+        (student.idNumber || '').includes(searchLower) ||
         student.studentId.toString().includes(searchLower) ||
-        student.teacher.toLowerCase().includes(searchLower) ||
-        student.group.toLowerCase().includes(searchLower);
+        (student.teacher || '').toLowerCase().includes(searchLower) ||
+        (student.group || '').toLowerCase().includes(searchLower);
 
       const matchesGroup = selectedGroup === 'all' || student.group === selectedGroup;
       const matchesGender = selectedGender === 'all' || student.gender === selectedGender;
