@@ -8,6 +8,7 @@ import { useAvatar, getUserGender } from '../hooks/useAvatar';
 import { useAuth } from '../hooks/useAuth';
 import { io, Socket } from 'socket.io-client';
 import axios from 'axios';
+import { showLogoutConfirmation } from '../utils/logoutUtils';
 import { API_BASE_URL, API_URL } from '../config';
 
 // استخدم User type من AuthContext
@@ -57,14 +58,23 @@ const Header = () => {
 
   const toggleMenu = () => setIsMenuOpen((v) => !v);
 
-  const handleLogout = useCallback(() => {
-    socket?.disconnect();
-    setSocket(null);
-    setIsMenuOpen(false);
-    setProfileMenuOpen(false);
+  const handleLogout = useCallback(async () => {
+    const confirmed = await showLogoutConfirmation({
+      userType: 'user',
+      onConfirm: () => {
+        // تنفيذ عملية logout
+        socket?.disconnect();
+        setSocket(null);
+        setIsMenuOpen(false);
+        setProfileMenuOpen(false);
+        authLogout();
+      }
+    });
     
-    // استخدام authLogout من useAuth
-    authLogout();
+    if (!confirmed) {
+      // تم الإلغاء - لا نفعل شيء
+      console.log('تم إلغاء تسجيل الخروج');
+    }
   }, [socket, authLogout]);
 
   // Avatar loading is now handled by useAvatar hook

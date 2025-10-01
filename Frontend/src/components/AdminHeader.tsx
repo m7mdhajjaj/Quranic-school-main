@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { showLogoutConfirmation } from '../utils/logoutUtils';
 
 const AdminHeader: React.FC = () => {
   const { user: currentUser, logout: authLogout } = useAuth();
@@ -27,12 +28,20 @@ const AdminHeader: React.FC = () => {
   }, []);
 
   // Handle logout with confirmation dialog
-  const handleLogout = useCallback(() => {
-    const confirmLogout = window.confirm('هل أنت متأكد من تسجيل الخروج؟');
-    if (confirmLogout) {
-      setProfileMenuOpen(false);
-      setMobileMenuOpen(false);
-      authLogout();
+  const handleLogout = useCallback(async () => {
+    const confirmed = await showLogoutConfirmation({
+      userType: 'admin',
+      onConfirm: () => {
+        // تنفيذ عملية logout
+        setProfileMenuOpen(false);
+        setMobileMenuOpen(false);
+        authLogout();
+      }
+    });
+    
+    if (!confirmed) {
+      // تم الإلغاء - لا نفعل شيء
+      console.log('تم إلغاء تسجيل الخروج من الأدمن');
     }
   }, [authLogout]);
 
