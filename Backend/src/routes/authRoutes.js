@@ -12,6 +12,18 @@ const { protect } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
+// Test endpoint to check if server is working
+router.get("/test", (req, res) => {
+  res.json({
+    success: true,
+    message: "Auth API is working",
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV,
+    jwt_secret: process.env.JWT_SECRET ? "Set" : "Not Set",
+    mongodb_uri: process.env.MONGODB_URI ? "Set" : "Not Set"
+  });
+});
+
 // مسار تسجيل الدخول للطلاب والمعلمين
 router.post("/login", login);
 

@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api";
+import api from "../Api/api";
 
 // ================== الإعدادات العامة ==================
 // API_URL is now handled by the api instance

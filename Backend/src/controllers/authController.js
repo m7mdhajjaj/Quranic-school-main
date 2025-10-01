@@ -112,11 +112,21 @@ exports.login = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Login error:", error);
+    console.error("=== Login Error Details ===");
+    console.error("Error name:", error.name);
+    console.error("Error message:", error.message);
+    console.error("Error stack:", error.stack);
+    console.error("Request body:", req.body);
+    console.error("========================");
+    
     res.status(500).json({
       success: false,
       message: "حدث خطأ أثناء تسجيل الدخول",
-      error: process.env.NODE_ENV === "production" ? undefined : error.message,
+      error: process.env.NODE_ENV === "production" ? undefined : {
+        name: error.name,
+        message: error.message,
+        details: error.toString()
+      },
     });
   }
 };

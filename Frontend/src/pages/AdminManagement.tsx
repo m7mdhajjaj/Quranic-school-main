@@ -1,7 +1,9 @@
-import React, { useState } from "react";
-import AddStudentForm from "../components/AddStudentForm";
+import React, { useState, useEffect } from "react";
+import EnhancedStudentForm from "../components/AddStudentForm";
 import AddTeacherForm from "../components/AddTeacherForm";
 import AddGroupForm from "../components/AddGroupForm";
+import { getAllTeachers, deleteTeacher, type Teacher } from "../Api/teacherApi";
+import { getAllStudents, deleteStudent, type Student } from "../Api/studentApi";
 
 const AdminManagement: React.FC = () => {
   const [activeSection, setActiveSection] = useState<
@@ -13,8 +15,8 @@ const AdminManagement: React.FC = () => {
   const [showAddGroupForm, setShowAddGroupForm] = useState(false);
 
   // Editing states
-  const [editingStudent, setEditingStudent] = useState<any>(null);
-  const [editingTeacher, setEditingTeacher] = useState<any>(null);
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
   const [editingGroup, setEditingGroup] = useState<any>(null);
 
   // Search states
@@ -23,54 +25,57 @@ const AdminManagement: React.FC = () => {
   const [groupSearch, setGroupSearch] = useState("");
   const [studentGroupFilter, setStudentGroupFilter] = useState(""); // ✅ فلتر الحلقة
 
-  // Dummy data
-  const [teachers, setTeachers] = useState([
-    {
-      _id: "1",
-      firstName: "أحمد",
-      lastName: "محمد",
-      idNumber: "123456789",
-      gender: "ذكر",
-      phoneNumber: "0501234567",
-      residence: "نابلس",
-      email: "ahmed@example.com",
-    },
-    {
-      _id: "2",
-      firstName: "فاطمة",
-      lastName: "علي",
-      idNumber: "987654321",
-      gender: "أنثى",
-      phoneNumber: "0507654321",
-      residence: "جنين",
-      email: "fatima@example.com",
-    },
-  ]);
+  // Loading and error states
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [students, setStudents] = useState([
-    {
-      _id: "1",
-      studentId: 1001,
-      firstName: "علي",
-      lastName: "أحمد",
-      idNumber: "111222333",
-      gender: "ذكر",
-      teacher: "أحمد محمد",
-      group: "حلقة الأطفال",
-      phoneNumber: "0501111111",
-    },
-    {
-      _id: "2",
-      studentId: 1002,
-      firstName: "مريم",
-      lastName: "محمد",
-      idNumber: "444555666",
-      gender: "أنثى",
-      teacher: "فاطمة علي",
-      group: "حلقة البنات",
-      phoneNumber: "0502222222",
-    },
-  ]);
+  // Data states
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+
+  // Load teachers data on component mount
+  useEffect(() => {
+    const loadTeachers = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await getAllTeachers();
+        if (result.success && result.data) {
+          setTeachers(result.data);
+        } else {
+          setError(result.message || 'حدث خطأ في جلب المعلمين');
+        }
+      } catch (err) {
+        setError('حدث خطأ غير متوقع');
+        console.error('Error loading teachers:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTeachers();
+  }, []);
+
+  const [students, setStudents] = useState<Student[]>([]);
+
+  // Load students data on component mount
+  useEffect(() => {
+    const loadStudents = async () => {
+      if (activeSection === 'students') {
+        try {
+          const result = await getAllStudents();
+          if (result.success && result.data) {
+            setStudents(result.data);
+          } else {
+            console.error('Error loading students:', result.message);
+          }
+        } catch (err) {
+          console.error('Error loading students:', err);
+        }
+      }
+    };
+
+    loadStudents();
+  }, [activeSection]);
 
   const [allGroups, setAllGroups] = useState([
     {
@@ -87,17 +92,30 @@ const AdminManagement: React.FC = () => {
     },
   ]);
 
-  const handleAddSuccess = () => {
-    console.log("تمت العملية بنجاح ✅");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleAddSuccess = async (data?: any) => {
+    console.log('تمت العملية بنجاح ✅', data);
+    // إعادة تحميل القوائم حسب القسم النشط
+    if (activeSection === 'teachers') {
+      const result = await getAllTeachers();
+      if (result.success && result.data) {
+        setTeachers(result.data);
+      }
+    } else if (activeSection === 'students') {
+      const result = await getAllStudents();
+      if (result.success && result.data) {
+        setStudents(result.data);
+      }
+    }
   };
 
   // Edit handlers
-  const handleEditTeacher = (teacher: any) => {
+  const handleEditTeacher = (teacher: Teacher) => {
     setEditingTeacher(teacher);
     setShowAddTeacherForm(true);
   };
 
-  const handleEditStudent = (student: any) => {
+  const handleEditStudent = (student: Student) => {
     setEditingStudent(student);
     setShowAddStudentForm(true);
   };
@@ -108,15 +126,37 @@ const AdminManagement: React.FC = () => {
   };
 
   // Delete handlers
-  const handleDeleteTeacher = (teacherId: string) => {
-    if (window.confirm("هل أنت متأكد من حذف هذا المعلم؟")) {
-      setTeachers(teachers.filter((t) => t._id !== teacherId));
+  const handleDeleteTeacher = async (teacherId: string) => {
+    if (window.confirm('هل أنت متأكد من حذف هذا المعلم؟')) {
+      try {
+        const result = await deleteTeacher(teacherId);
+        if (result.success) {
+          setTeachers(teachers.filter((t) => t._id !== teacherId));
+          console.log('تم حذف المعلم بنجاح');
+        } else {
+          alert(result.message || 'حدث خطأ أثناء حذف المعلم');
+        }
+      } catch (error) {
+        console.error('Error deleting teacher:', error);
+        alert('حدث خطأ غير متوقع');
+      }
     }
   };
 
-  const handleDeleteStudent = (studentId: string) => {
-    if (window.confirm("هل أنت متأكد من حذف هذا الطالب؟")) {
-      setStudents(students.filter((s) => s._id !== studentId));
+  const handleDeleteStudent = async (studentId: string) => {
+    if (window.confirm('هل أنت متأكد من حذف هذا الطالب؟')) {
+      try {
+        const result = await deleteStudent(studentId);
+        if (result.success) {
+          setStudents(students.filter((s) => s._id !== studentId));
+          console.log('تم حذف الطالب بنجاح');
+        } else {
+          alert(result.message || 'حدث خطأ أثناء حذف الطالب');
+        }
+      } catch (error) {
+        console.error('Error deleting student:', error);
+        alert('حدث خطأ غير متوقع');
+      }
     }
   };
 
@@ -224,6 +264,7 @@ const AdminManagement: React.FC = () => {
                     فلترة حسب الحلقة:
                   </label>
                   <select
+                    title="فلترة حسب الحلقة"
                     value={studentGroupFilter}
                     onChange={(e) => setStudentGroupFilter(e.target.value)}
                     className="w-full md:w-1/3 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#009C5C] focus:border-transparent">
@@ -303,12 +344,12 @@ const AdminManagement: React.FC = () => {
             setEditingTeacher(null);
           }}
           onSuccess={handleAddSuccess}
-          teacher={editingTeacher}
+          teacher={editingTeacher || undefined}
         />
       )}
 
       {showAddStudentForm && (
-        <AddStudentForm
+        <EnhancedStudentForm
           onClose={() => {
             setShowAddStudentForm(false);
             setEditingStudent(null);

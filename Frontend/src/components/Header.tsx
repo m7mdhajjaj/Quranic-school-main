@@ -1,5 +1,909 @@
 
 
+// import { NavLink, useNavigate, Link } from 'react-router-dom';
+// import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+// import NotificationHeader from './NotificationHeader';
+// import Avatar from './Avatar';
+// import { useAvatar, getUserGender } from '../hooks/useAvatar';
+// import { useAuth } from '../hooks/useAuth';
+// import { io, Socket } from 'socket.io-client';
+// import axios from 'axios';
+// import { showLogoutConfirmation } from '../utils/logoutUtils';
+// import { API_BASE_URL, API_URL } from '../config';
+
+// // استخدم User type من AuthContext
+
+// /** Axios instance */
+// const api = axios.create({
+//   baseURL: API_URL,
+//   withCredentials: false,
+// });
+
+// /** Attach token automatically */
+// api.interceptors.request.use((config) => {
+//   const token = localStorage.getItem('token');
+//   if (token) {
+//     config.headers = config.headers ?? {};
+//     config.headers.Authorization = `Bearer ${token}`;
+//   }
+//   return config;
+// });
+
+// const Header = () => {
+//   // ---------- استخدام useAuth ----------
+//   const { user: currentUser, logout: authLogout, isAuthenticated, token } = useAuth();
+  
+//   // ---------- state ----------
+//   const [isMenuOpen, setIsMenuOpen] = useState(false);
+//   const [socket, setSocket] = useState<Socket | null>(null);
+//   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+//   // Avatar state is now handled by useAvatar hook
+//   const [logoLoaded, setLogoLoaded] = useState(false);
+//   const [officialPhotoLoaded, setOfficialPhotoLoaded] = useState(false);
+
+//   const profileMenuRef = useRef<HTMLDivElement>(null);
+//   const navigate = useNavigate();
+
+//   // ---------- helpers ----------
+//   const isTeacherOrAdmin =
+//     currentUser?.role === 'teacher' || currentUser?.role === 'admin';
+
+//   const userGender = getUserGender(currentUser);
+
+//   // Avatar hook مع memoization لمنع re-fetching المتكرر
+//   const { avatarUrl, avatarLoading } = useAvatar({
+//     userId: currentUser?._id,
+//     userRole: currentUser?.role,
+//   });
+
+//   const toggleMenu = () => setIsMenuOpen((v) => !v);
+
+//   const handleLogout = useCallback(async () => {
+//     const confirmed = await showLogoutConfirmation({
+//       userType: 'user',
+//       onConfirm: () => {
+//         // تنفيذ عملية logout
+//         socket?.disconnect();
+//         setSocket(null);
+//         setIsMenuOpen(false);
+//         setProfileMenuOpen(false);
+//         authLogout();
+//       }
+//     });
+    
+//     if (!confirmed) {
+//       // تم الإلغاء - لا نفعل شيء
+//       console.log('تم إلغاء تسجيل الخروج');
+//     }
+//   }, [socket, authLogout]);
+
+//   // Avatar loading is now handled by useAvatar hook
+
+//   // المستخدم يتم تحميله تلقائياً من useAuth
+//   // إعادة التوجه إذا لم يكن مسجلاً دخوله
+//   useEffect(() => {
+//     if (!isAuthenticated && !currentUser) {
+//       navigate('/login', { replace: true });
+//     }
+//   }, [isAuthenticated, currentUser, navigate]);
+
+//   // ---------- init socket (always) to ensure NotificationHeader renders ----------
+//   useEffect(() => {
+
+//     const s = io(API_BASE_URL, {
+//       transports: ['polling'],
+//       upgrade: false,
+//       auth: token ? { token } : undefined,
+//       reconnection: true,
+//       reconnectionAttempts: Infinity,
+//       reconnectionDelay: 1000,
+//       reconnectionDelayMax: 5000,
+//       path: '/socket.io',
+//     });
+
+//     const onConnect = () => setSocket(s);
+//     const onDisconnect = () => setSocket(null);
+//     const onError = (e: Error) => {
+//       if (import.meta.env.MODE !== 'production')
+//         console.error('socket error', e);
+//       setSocket(s); // نبقي المرجع موجودًا حتى لو لم يتصل بعد
+//     };
+
+//     s.on('connect', onConnect);
+//     s.on('disconnect', onDisconnect);
+//     s.on('connect_error', onError);
+//     s.on('error', onError);
+
+//     return () => {
+//       s.off('connect', onConnect);
+//       s.off('disconnect', onDisconnect);
+//       s.off('connect_error', onError);
+//       s.off('error', onError);
+//       s.disconnect();
+//     };
+//   }, [token]);
+
+//   // ---------- close profile menu on outside click / esc ----------
+//   useEffect(() => {
+//     if (!profileMenuOpen) return;
+//     const onDown = (e: MouseEvent) => {
+//       if (
+//         profileMenuRef.current &&
+//         !profileMenuRef.current.contains(e.target as Node)
+//       )
+//         setProfileMenuOpen(false);
+//     };
+//     const onKey = (e: KeyboardEvent) =>
+//       e.key === 'Escape' && setProfileMenuOpen(false);
+
+//     document.addEventListener('mousedown', onDown);
+//     document.addEventListener('keydown', onKey);
+//     return () => {
+//       document.removeEventListener('mousedown', onDown);
+//       document.removeEventListener('keydown', onKey);
+//     };
+//   }, [profileMenuOpen]);
+
+//   // ---------- nav items ----------
+//   const primaryNavItems = useMemo(
+//     () => [
+//       {
+//         to: '/',
+//         label: 'الصفحة الرئيسية',
+//         icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
+//         stroke: true,
+//       },
+//       {
+//         to: '/news',
+//         label: 'الأخبار',
+//         icon: 'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5a2.5 2.5 0 00-2.5-2.5H15',
+//         stroke: true,
+//       },
+//       {
+//         to: '/goals',
+//         label: 'الأهداف',
+//         icon: 'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z',
+//         stroke: true,
+//       },
+//       {
+//         to: '/daily-marks',
+//         label: 'العلامات اليومية',
+//         icon: 'M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4',
+//         stroke: true,
+//       },
+//       {
+//         to: '/test',
+//         label: 'الاختبارات',
+//         icon: 'M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01',
+//         stroke: true,
+//       },
+//       {
+//         to: '/exam-schedule',
+//         label: 'جدول الامتحانات',
+//         icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
+//         stroke: true,
+//       },
+//       {
+//         to: '/prayer-times',
+//         label: 'مواقيت الصلاة',
+//         icon: 'M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z',
+//         stroke: true,
+//       },
+//     ],
+//     []
+//   );
+
+//   const secondaryNavItems = useMemo(() => {
+//     const base = [
+//       {
+//         to: '/quran',
+//         label: 'القرآن الكريم',
+//         icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
+//         stroke: true,
+//       },
+//       {
+//         to: '/quran-audio',
+//         label: 'القرآن الصوتي',
+//         icon: 'M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M9 9v6l6-3-6-3z',
+//         stroke: true,
+//       },
+//       {
+//         to: '/arrangement',
+//         label: 'الترتيب',
+//         icon: 'M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 113 0v1m0 0V11m0-5.5a1.5 1.5 0 113 0v3m-3-3a1.5 1.5 0 113 0v3m-3-3a1.5 1.5 0 113 0v3',
+//         stroke: true,
+//       },
+//       {
+//         to: '/activities',
+//         label: 'الأنشطة',
+//         icon: 'M19 11H5m14-7H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zM9 10h6m-6 4h6m-6 4h6',
+//         stroke: true,
+//       },
+//       {
+//         to: '/absence',
+//         label: 'الحضور والغياب',
+//         icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z',
+//         stroke: true,
+//       },
+//       {
+//         to: '/reports',
+//         label: 'التقارير',
+//         icon: 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+//         stroke: true,
+//       },
+//       {
+//         to: '/chat',
+//         label: 'تواصل مع المعلم',
+//         icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
+//         stroke: true,
+//       },
+//       {
+//         to: '/timetable',
+//         label: 'جدول الحصص',
+//         icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+//         stroke: true,
+//       },
+//     ] as const;
+
+//     if (!isTeacherOrAdmin) return base;
+//     return [
+//       ...base.slice(0, 7),
+//       {
+//         to: '/managment',
+//         label: 'الإدارة',
+//         icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zm4.675 7.683a3 3 0 11-6 0 3 3 0 016 0z',
+//         stroke: true,
+//       },
+//       ...base.slice(7),
+//     ];
+//   }, [isTeacherOrAdmin]);
+
+//   // ---------- ui helpers ----------
+//   const renderIcon = (d: string, stroke = false) => (
+//     <svg
+//       className="w-4 h-4 lg:w-5 lg:h-5"
+//       fill={stroke ? 'none' : 'currentColor'}
+//       stroke={stroke ? 'currentColor' : undefined}
+//       viewBox="0 0 24 24"
+//       aria-hidden="true"
+//     >
+//       <path
+//         strokeLinecap={stroke ? 'round' : undefined}
+//         strokeLinejoin={stroke ? 'round' : undefined}
+//         strokeWidth={stroke ? 2 : undefined}
+//         fillRule={!stroke ? 'evenodd' : undefined}
+//         clipRule={!stroke ? 'evenodd' : undefined}
+//         d={d}
+//       />
+//     </svg>
+//   );
+
+//   // Generic Image Skeleton Component
+//   const ImageSkeleton = ({
+//     className,
+//     variant = 'default',
+//   }: {
+//     className: string;
+//     variant?: 'default' | 'avatar' | 'logo';
+//   }) => (
+//     <div
+//       className={`${className} relative overflow-hidden flex items-center justify-center ${
+//         variant === 'logo'
+//           ? 'bg-gradient-to-br from-blue-200/80 to-indigo-300/80 dark:from-blue-600/80 dark:to-indigo-700/80'
+//           : variant === 'avatar'
+//             ? 'bg-gradient-to-br from-emerald-200/80 to-teal-300/80 dark:from-emerald-600/80 dark:to-teal-700/80'
+//             : 'bg-gradient-to-br from-gray-200/80 to-gray-300/80 dark:from-gray-600/80 dark:to-gray-700/80'
+//       } backdrop-blur-sm`}
+//       aria-label="جاري تحميل الصورة"
+//     >
+//       {/* Multiple shimmer layers for depth */}
+//       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 dark:via-gray-300/50 to-transparent animate-[shimmer_2s_ease-in-out_infinite]" />
+//       <div className="absolute inset-0 bg-gradient-to-l from-transparent via-white/30 dark:via-gray-400/30 to-transparent animate-[shimmer_2.5s_ease-in-out_infinite] animation-delay-500" />
+
+//       {/* Pulsing background with breathing effect */}
+//       <div className="absolute inset-0 bg-white/30 dark:bg-gray-400/30 animate-[pulse-slow_3s_ease-in-out_infinite]" />
+
+//       {/* Subtle border shimmer */}
+//       <div className="absolute inset-0 border border-white/40 dark:border-gray-300/40 animate-pulse rounded-[inherit]" />
+
+//       {/* Loading dots */}
+//       <div className="absolute inset-0 flex items-center justify-center z-10">
+//         <div className="flex space-x-0.5">
+//           <div className="w-1 h-1 bg-gray-500/80 dark:bg-gray-400/80 rounded-full animate-[bounce_1.4s_ease-in-out_infinite] animation-delay-0"></div>
+//           <div className="w-1 h-1 bg-gray-500/80 dark:bg-gray-400/80 rounded-full animate-[bounce_1.4s_ease-in-out_infinite] animation-delay-200"></div>
+//           <div className="w-1 h-1 bg-gray-500/80 dark:bg-gray-400/80 rounded-full animate-[bounce_1.4s_ease-in-out_infinite] animation-delay-400"></div>
+//         </div>
+//       </div>
+//     </div>
+//   );
+
+
+
+//   const renderUserAvatar = () => (
+//     <Avatar
+//       src={avatarUrl}
+//       userName={currentUser?.firstName || currentUser?.name}
+//       gender={userGender}
+//       loading={avatarLoading}
+//       size="md"
+//       clickable={true}
+//       showStatus={true} // إظهار نقطة الحالة
+//       onClick={() => {
+//         // Retry loading avatar if it failed and not currently loading
+//         if (
+//           !avatarUrl &&
+//           !avatarLoading &&
+//           currentUser?._id &&
+//           currentUser?.role
+//         ) {
+//           // Trigger refetch if needed
+//           window.location.reload();
+//         }
+//       }}
+//     />
+//   );
+
+//   // ---------- render ----------
+//   return (
+//     <>
+//       {/* Main Header */}
+//       <header
+//         className="sticky top-0 z-50 bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-500 text-white shadow-2xl border-b border-emerald-400/20"
+//         dir="rtl"
+//       >
+
+
+//         <div className="container mx-auto px-1 sm:px-2 md:px-3 lg:px-4 xl:px-6 relative">
+//           {/* الصف الرئيسي */}
+//           <div className="flex items-center justify-between py-1.5 sm:py-2 lg:py-3 gap-1 sm:gap-2 md:gap-3">
+//             {/* RIGHT: Logo + Academy Name */}
+//             <Link 
+//               to="/" 
+//               className="flex items-center justify-start gap-1.5 sm:gap-2 md:gap-3 hover:opacity-90 transition-opacity duration-200 cursor-pointer group"
+//               title="العودة إلى الصفحة الرئيسية"
+//             >
+//               <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 rounded-full bg-white/20 backdrop-blur-md border-2 border-white/30 flex items-center justify-center shadow-lg relative overflow-hidden flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
+//                 {!logoLoaded && (
+//                   <ImageSkeleton
+//                     className="w-6 h-6 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full absolute inset-0 m-auto"
+//                     variant="logo"
+//                   />
+//                 )}
+//                 <img
+//                   src="/src/images/logo.jpg"
+//                   alt="لوغو الأكاديمية"
+//                   className={`w-6 h-6 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full object-cover transition-all duration-500 ${
+//                     logoLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+//                   }`}
+//                   onLoad={() => setLogoLoaded(true)}
+//                   onError={(e) => {
+//                     setLogoLoaded(true);
+//                     (e.target as HTMLImageElement).style.display = 'none';
+//                   }}
+//                 />
+//               </div>
+//               <div className="flex-shrink min-w-0">
+//                 <h1 className="text-sm sm:text-base md:text-lg lg:text-2xl xl:text-3xl font-bold bg-gradient-to-l from-white via-emerald-100 to-white bg-clip-text text-transparent drop-shadow-sm truncate group-hover:text-emerald-100 transition-colors duration-200">
+//                   مدرسة القرآن الكريم
+//                 </h1>
+//                 <p className="text-xs md:text-sm lg:text-base text-emerald-100/80 font-medium hidden sm:block truncate group-hover:text-emerald-100 transition-colors duration-200">
+//                   أكاديمية مدرسة الهجرة للقرآن الكريم وعلومه
+//                 </p>
+//               </div>
+//             </Link>
+
+//             {/* CENTER: Desktop Nav */}
+//             <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
+//               {primaryNavItems.map((item) => (
+//                 <NavLink
+//                   key={item.to}
+//                   to={item.to}
+//                   className={({ isActive }) =>
+//                     `px-2 lg:px-3 py-2 rounded-xl text-xs lg:text-sm font-medium transition-all duration-300 flex items-center gap-1.5 lg:gap-2 backdrop-blur-sm ${
+//                       isActive
+//                         ? 'bg-white/25 text-white shadow-lg border border-white/30 scale-105'
+//                         : 'text-emerald-100 hover:bg-white/15 hover:text-white hover:scale-105 border border-transparent hover:border-white/20'
+//                     }`
+//                   }
+//                 >
+//                   {renderIcon(item.icon, item.stroke)}
+//                   <span className="whitespace-nowrap">{item.label}</span>
+//                 </NavLink>
+//               ))}
+//             </nav>
+
+//             {/* LEFT: Profile + Notifications Mobile + Mobile Button */}
+//             <div className="flex items-center gap-2 lg:gap-3">
+//               {/* زر الإشعارات للجوال */}
+//               {currentUser && (
+//                 <div className="md:hidden flex-shrink-0">
+//                   <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-full p-1 hover:bg-white/20 transition-all duration-300">
+//                     <NotificationHeader
+//                       userId={currentUser._id}
+//                       socket={socket}
+//                       apiUrl={API_BASE_URL}
+//                     />
+//                   </div>
+//                 </div>
+//               )}
+
+//               {/* Profile */}
+//               <div
+//                 className="hidden md:flex items-center relative flex-shrink min-w-0"
+//                 ref={profileMenuRef}
+//               >
+//                 <button
+//                   type="button"
+//                   className="flex items-center gap-1 md:gap-2 lg:gap-3 cursor-pointer p-1.5 md:p-2 lg:p-3 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all duration-300 hover:shadow-lg hover:scale-105 min-w-0"
+//                   onClick={() => setProfileMenuOpen((v) => !v)}
+//                   aria-haspopup="menu"
+//                   aria-expanded={profileMenuOpen ? 'true' : 'false'}
+//                   aria-controls="profile-menu"
+//                 >
+//                   {renderUserAvatar()}
+//                   {currentUser && (
+//                     <span className="hidden lg:block text-xs lg:text-sm xl:text-base font-semibold text-white max-w-20 lg:max-w-24 xl:max-w-32 truncate drop-shadow-sm">
+//                       {currentUser.firstName && currentUser.lastName
+//                         ? `${currentUser.firstName} ${currentUser.lastName}`
+//                         : currentUser.firstName || currentUser.name || ''}
+//                     </span>
+//                   )}
+//                   <svg
+//                     xmlns="http://www.w3.org/2000/svg"
+//                     className={`h-3 w-3 lg:h-4 lg:w-4 text-white transition-transform duration-300 ${
+//                       profileMenuOpen ? 'rotate-180' : ''
+//                     }`}
+//                     fill="none"
+//                     viewBox="0 0 24 24"
+//                     stroke="currentColor"
+//                   >
+//                     <path
+//                       strokeLinecap="round"
+//                       strokeLinejoin="round"
+//                       strokeWidth={2}
+//                       d="M19 9l-7 7-7-7"
+//                     />
+//                   </svg>
+//                 </button>
+
+//                 {profileMenuOpen && (
+//                   <div
+//                     id="profile-menu"
+//                     className="absolute left-1/2 transform -translate-x-1/2 top-full mt-3 w-56 bg-white/96 backdrop-blur-2xl rounded-2xl shadow-2xl border border-emerald-100/50 py-1 z-[100] animate-in slide-in-from-top-5 duration-200"
+//                   >
+//                     <div className="px-4 py-3 border-b border-emerald-100/60 bg-gradient-to-r from-emerald-50/80 to-teal-50/80 rounded-t-2xl">
+//                       <div className="flex items-center gap-2.5">
+//                         <div className="w-8 h-8">
+//                           {renderUserAvatar()}
+//                         </div>
+//                         <div className="flex-1 min-w-0">
+//                           <span className="block text-emerald-800 font-bold text-base truncate">
+//                             {currentUser?.firstName && currentUser?.lastName
+//                               ? `${currentUser.firstName} ${currentUser.lastName}`
+//                               : currentUser?.firstName || currentUser?.name}
+//                           </span>
+//                           <span className="block text-emerald-600 text-xs mt-0.5 font-medium">
+//                             {currentUser?.role === 'teacher'
+//                               ? 'معلم'
+//                               : currentUser?.role === 'admin'
+//                                 ? 'مدير'
+//                                 : 'طالب'}
+//                           </span>
+//                           {currentUser?.email && (
+//                             <span className="block text-emerald-500/80 text-xs mt-0.5 truncate" title={currentUser.email}>
+//                               {currentUser.email}
+//                             </span>
+//                           )}
+//                         </div>
+//                       </div>
+//                     </div>
+
+//                     <div className="py-1">
+//                       <button
+//                         onClick={() => {
+//                           setProfileMenuOpen(false);
+//                           navigate('/profile');
+//                         }}
+//                         className="w-full text-right py-2.5 px-4 text-gray-700 hover:bg-emerald-50/80 hover:text-emerald-700 transition-all duration-200 flex items-center gap-2.5 group"
+//                       >
+//                         <div className="p-1 rounded-lg bg-emerald-100 group-hover:bg-emerald-200 transition-colors">
+//                           <svg
+//                             className="w-3.5 h-3.5 text-emerald-600"
+//                             fill="none"
+//                             stroke="currentColor"
+//                             viewBox="0 0 24 24"
+//                           >
+//                             <path
+//                               strokeLinecap="round"
+//                               strokeLinejoin="round"
+//                               strokeWidth={2}
+//                               d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+//                             />
+//                           </svg>
+//                         </div>
+//                         <span className="font-medium text-sm">الملف الشخصي</span>
+//                       </button>
+
+//                       <button
+//                         onClick={() => {
+//                           setProfileMenuOpen(false);
+//                           navigate('/change-password');
+//                         }}
+//                         className="w-full text-right py-2.5 px-4 text-gray-700 hover:bg-blue-50/80 hover:text-blue-700 transition-all duration-200 flex items-center gap-2.5 group"
+//                       >
+//                         <div className="p-1 rounded-lg bg-blue-100 group-hover:bg-blue-200 transition-colors">
+//                           <svg
+//                             className="w-3.5 h-3.5 text-blue-600"
+//                             fill="none"
+//                             stroke="currentColor"
+//                             viewBox="0 0 24 24"
+//                           >
+//                             <path
+//                               strokeLinecap="round"
+//                               strokeLinejoin="round"
+//                               strokeWidth={2}
+//                               d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1 1 21 9z"
+//                             />
+//                           </svg>
+//                         </div>
+//                         <span className="font-medium text-sm">تغيير كلمة المرور</span>
+//                       </button>
+
+//                       <div className="border-t border-gray-100 my-1.5" />
+
+//                       <button
+//                         onClick={() => {
+//                           setProfileMenuOpen(false);
+//                           handleLogout();
+//                         }}
+//                         className="w-full text-right py-2.5 px-4 text-red-600 hover:bg-red-50/80 hover:text-red-700 transition-all duration-200 flex items-center gap-2.5 group"
+//                       >
+//                         <div className="p-1 rounded-lg bg-red-100 group-hover:bg-red-200 transition-colors">
+//                           <svg
+//                             className="w-3.5 h-3.5 text-red-600"
+//                             fill="none"
+//                             stroke="currentColor"
+//                             viewBox="0 0 24 24"
+//                           >
+//                             <path
+//                               strokeLinecap="round"
+//                               strokeLinejoin="round"
+//                               strokeWidth={2}
+//                               d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+//                             />
+//                           </svg>
+//                         </div>
+//                         <span className="font-medium text-sm">تسجيل الخروج</span>
+//                       </button>
+//                     </div>
+//                   </div>
+//                 )}
+//               </div>
+
+//               {/* Mobile menu button */}
+//               <div className="md:hidden">
+//                 <button
+//                   onClick={toggleMenu}
+//                   className="p-1.5 sm:p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-all duration-300 backdrop-blur-md border border-white/20 hover:scale-105 flex-shrink-0"
+//                   aria-label="فتح القائمة"
+//                   aria-expanded={isMenuOpen ? 'true' : 'false'}
+//                 >
+//                   <svg
+//                     className="w-4 h-4 sm:w-5 sm:h-5"
+//                     fill="none"
+//                     stroke="currentColor"
+//                     viewBox="0 0 24 24"
+//                   >
+//                     {isMenuOpen ? (
+//                       <path
+//                         strokeLinecap="round"
+//                         strokeLinejoin="round"
+//                         strokeWidth={2}
+//                         d="M6 18L18 6M6 6l12 12"
+//                       />
+//                     ) : (
+//                       <path
+//                         strokeLinecap="round"
+//                         strokeLinejoin="round"
+//                         strokeWidth={2}
+//                         d="M4 6h16M4 12h16M4 18h16"
+//                       />
+//                     )}
+//                   </svg>
+//                 </button>
+//               </div>
+//             </div>
+//           </div>
+
+//           {/* Secondary Navigation Bar and Notification Header Row - Desktop */}
+//           <div className="hidden md:flex items-center justify-between border-top border-emerald-400/30 pt-3 pb-3 gap-4">
+//             {/* Expanded Secondary Navigation */}
+//             <div className="flex-1 max-w-6xl mx-auto">
+//               <div className="bg-white/10 backdrop-blur-md rounded-2xl px-4 lg:px-6 py-2.5 border border-white/20 shadow-lg">
+//                 <nav className="flex items-center justify-center gap-1 lg:gap-2 overflow-x-auto scrollbar-hide">
+//                   {secondaryNavItems.map((item) => (
+//                     <NavLink
+//                       key={item.to}
+//                       to={item.to}
+//                       className={({ isActive }) =>
+//                         `px-2.5 lg:px-3 py-2 lg:py-2.5 rounded-xl text-xs lg:text-sm font-medium transition-all duration-300 flex items-center gap-1.5 lg:gap-2 whitespace-nowrap flex-shrink-0 ${
+//                           isActive
+//                             ? 'bg-white/25 text-white shadow-lg border border-white/40 scale-105 font-semibold'
+//                             : 'text-emerald-100 hover:bg-white/20 hover:text-white hover:scale-105 border border-transparent hover:border-white/25'
+//                         }`
+//                       }
+//                     >
+//                       {renderIcon(item.icon, item.stroke)}
+//                       <span className="text-xs lg:text-sm">
+//                         {item.label}
+//                       </span>
+//                     </NavLink>
+//                   ))}
+//                 </nav>
+//               </div>
+//             </div>
+
+//             {/* Desktop Notification Header */}
+//             {currentUser && (
+//               <div className="flex-shrink-0 ml-2 md:ml-3 lg:ml-4">
+//                 <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-1.5 md:p-2 lg:p-2.5 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 hover:bg-white/15">
+//                   <NotificationHeader
+//                     userId={currentUser._id}
+//                     socket={socket}
+//                     apiUrl={API_BASE_URL}
+//                   />
+//                 </div>
+//               </div>
+//             )}
+//           </div>
+//         </div>
+//       </header>
+
+//       {/* Mobile Drawer */}
+//       {isMenuOpen && (
+//         <div className="md:hidden fixed inset-0 z-40">
+//           <div
+//             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+//             onClick={toggleMenu}
+//           />
+//           <div
+//             className="fixed right-0 top-0 h-full w-80 max-w-[90vw] bg-gradient-to-b from-emerald-600 via-emerald-700 to-emerald-800 shadow-2xl overflow-y-auto"
+//             dir="rtl"
+//           >
+//             <div className="p-6">
+//               {/* mobile header */}
+//               <div className="flex items-center justify-between mb-6 pb-4 border-b border-emerald-500/30">
+//                 <Link 
+//                   to="/" 
+//                   className="flex items-center gap-2 sm:gap-3 min-w-0 hover:opacity-90 transition-opacity duration-200 cursor-pointer group"
+//                   onClick={toggleMenu} // إغلاق القائمة عند النقر على اللوغو
+//                   title="العودة إلى الصفحة الرئيسية"
+//                 >
+//                   <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/20 backdrop-blur-md border-2 border-white/30 flex items-center justify-center relative overflow-hidden flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
+//                     {!officialPhotoLoaded && (
+//                       <ImageSkeleton
+//                         className="w-6 h-6 sm:w-7 sm:h-7 rounded-full absolute inset-0 m-auto"
+//                         variant="avatar"
+//                       />
+//                     )}
+//                     <img
+//                       src="/src/images/officialPhoto.jpg"
+//                       alt="Logo"
+//                       className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full object-cover transition-all duration-500 ${
+//                         officialPhotoLoaded
+//                           ? 'opacity-100 scale-100'
+//                           : 'opacity-0 scale-95'
+//                       }`}
+//                       onLoad={() => setOfficialPhotoLoaded(true)}
+//                       onError={(e) => {
+//                         setOfficialPhotoLoaded(true);
+//                         (e.target as HTMLImageElement).style.display = 'none';
+//                       }}
+//                     />
+//                   </div>
+//                   <div className="min-w-0 flex-1">
+//                     <h2 className="text-base sm:text-lg font-bold text-white truncate group-hover:text-emerald-100 transition-colors duration-200">
+//                       القائمة الرئيسية
+//                     </h2>
+//                     <p className="text-emerald-200 text-xs sm:text-sm truncate group-hover:text-emerald-100 transition-colors duration-200">
+//                       مدرسة القرآن الكريم
+//                     </p>
+//                   </div>
+//                 </Link>
+//                 <button
+//                   onClick={toggleMenu}
+//                   className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors backdrop-blur-md border border-white/20"
+//                   aria-label="إغلاق القائمة"
+//                 >
+//                   <svg
+//                     className="w-6 h-6 text-white"
+//                     fill="none"
+//                     stroke="currentColor"
+//                     viewBox="0 0 24 24"
+//                   >
+//                     <path
+//                       strokeLinecap="round"
+//                       strokeLinejoin="round"
+//                       strokeWidth={2}
+//                       d="M6 18L18 6M6 6l12 12"
+//                     />
+//                   </svg>
+//                 </button>
+//               </div>
+
+//               {/* mobile profile */}
+//               {currentUser && (
+//                 <div className="flex items-center gap-4 mb-6 p-4 bg-white/10 rounded-2xl backdrop-blur-md border border-white/20">
+//                   {renderUserAvatar()}
+//                   <div className="flex-1">
+//                     <div className="text-white font-semibold text-lg">
+//                       {currentUser.firstName && currentUser.lastName
+//                         ? `${currentUser.firstName} ${currentUser.lastName}`
+//                         : currentUser.firstName || currentUser.name || ''}
+//                     </div>
+//                     <div className="text-emerald-200 text-sm">
+//                       {currentUser.role === 'teacher'
+//                         ? 'معلم'
+//                         : currentUser.role === 'admin'
+//                           ? 'مدير'
+//                           : 'طالب'}
+//                     </div>
+//                   </div>
+//                 </div>
+//               )}
+
+//               {/* nav */}
+//               <div className="space-y-1">
+//                 {[...primaryNavItems, ...secondaryNavItems].map((item) => (
+//                   <NavLink
+//                     key={item.to}
+//                     to={item.to}
+//                     onClick={() => setIsMenuOpen(false)}
+//                     className={({ isActive }) =>
+//                       `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group ${
+//                         isActive
+//                           ? 'bg-white/20 text-white shadow-lg border border-white/30'
+//                           : 'text-emerald-100 hover:bg-white/15 hover:text-white hover:translate-x-1'
+//                       }`
+//                     }
+//                   >
+//                     <div className="p-2 rounded-lg bg-white/10 group-hover:bg-white/20 transition-colors">
+//                       {renderIcon(item.icon, item.stroke)}
+//                     </div>
+//                     <span className="font-medium flex-1">{item.label}</span>
+//                     <svg
+//                       className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity"
+//                       fill="none"
+//                       stroke="currentColor"
+//                       viewBox="0 0 24 24"
+//                     >
+//                       <path
+//                         strokeLinecap="round"
+//                         strokeLinejoin="round"
+//                         strokeWidth={2}
+//                         d="M9 5l7 7-7 7"
+//                       />
+//                     </svg>
+//                   </NavLink>
+//                 ))}
+//               </div>
+
+//               {/* actions */}
+//               {currentUser ? (
+//                 <div className="space-y-2 border-top border-emerald-500/30 pt-4 mt-6">
+//                   <button
+//                     onClick={() => {
+//                       setIsMenuOpen(false);
+//                       navigate('/profile');
+//                     }}
+//                     className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-emerald-100 hover:bg-white/15 hover:text-white transition-all duration-300 group hover:translate-x-1"
+//                   >
+//                     <div className="p-2 rounded-lg bg-emerald-500/20 group-hover:bg-emerald-500/30 transition-colors">
+//                       <svg
+//                         className="w-4 h-4"
+//                         fill="none"
+//                         stroke="currentColor"
+//                         viewBox="0 0 24 24"
+//                       >
+//                         <path
+//                           strokeLinecap="round"
+//                           strokeLinejoin="round"
+//                           strokeWidth={2}
+//                           d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+//                         />
+//                       </svg>
+//                     </div>
+//                     <span className="font-medium flex-1">الملف الشخصي</span>
+//                   </button>
+
+//                   <button
+//                     onClick={() => {
+//                       setIsMenuOpen(false);
+//                       navigate('/change-password');
+//                     }}
+//                     className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-emerald-100 hover:bg-white/15 hover:text-white transition-all duration-300 group hover:translate-x-1"
+//                   >
+//                     <div className="p-2 rounded-lg bg-blue-500/20 group-hover:bg-blue-500/30 transition-colors">
+//                       <svg
+//                         className="w-4 h-4"
+//                         fill="none"
+//                         stroke="currentColor"
+//                         viewBox="0 0 24 24"
+//                       >
+//                         <path
+//                           strokeLinecap="round"
+//                           strokeLinejoin="round"
+//                           strokeWidth={2}
+//                           d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1 1 21 9z"
+//                         />
+//                       </svg>
+//                     </div>
+//                     <span className="font-medium flex-1">
+//                       تغيير كلمة المرور
+//                     </span>
+//                   </button>
+
+//                   <button
+//                     onClick={() => {
+//                       setIsMenuOpen(false);
+//                       handleLogout();
+//                     }}
+//                     className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-300 hover:bg-red-500/20 hover:text-red-100 transition-all duration-300 group hover:translate-x-1"
+//                   >
+//                     <div className="p-2 rounded-lg bg-red-500/20 group-hover:bg-red-500/30 transition-colors">
+//                       <svg
+//                         className="w-4 h-4"
+//                         fill="none"
+//                         stroke="currentColor"
+//                         viewBox="0 0 24 24"
+//                       >
+//                         <path
+//                           strokeLinecap="round"
+//                           strokeLinejoin="round"
+//                           strokeWidth={2}
+//                           d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+//                         />
+//                       </svg>
+//                     </div>
+//                     <span className="font-medium flex-1">تسجيل الخروج</span>
+//                   </button>
+//                 </div>
+//               ) : (
+//                 <div className="border-t border-emerald-500/30 pt-4 mt-6">
+//                   <button
+//                     onClick={() => {
+//                       setIsMenuOpen(false);
+//                       navigate('/login');
+//                     }}
+//                     className="w-full flex items-center justify-center gap-3 px-4 py-4 rounded-xl font-medium transition-all duration-300 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg hover:shadow-xl hover:scale-105"
+//                   >
+//                     <svg
+//                       className="w-5 h-5"
+//                       fill="none"
+//                       stroke="currentColor"
+//                       viewBox="0 0 24 24"
+//                     >
+//                       <path
+//                         strokeLinecap="round"
+//                         strokeLinejoin="round"
+//                         strokeWidth={2}
+//                         d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+//                       />
+//                     </svg>
+//                     تسجيل الدخول
+//                   </button>
+//                 </div>
+//               )}
+//             </div>
+//           </div>
+//         </div>
+//       )}
+//     </>
+//   );
+// };
+
+// export default Header;
+
 import { NavLink, useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import NotificationHeader from './NotificationHeader';
@@ -11,15 +915,11 @@ import axios from 'axios';
 import { showLogoutConfirmation } from '../utils/logoutUtils';
 import { API_BASE_URL, API_URL } from '../config';
 
-// استخدم User type من AuthContext
-
-/** Axios instance */
 const api = axios.create({
   baseURL: API_URL,
   withCredentials: false,
 });
 
-/** Attach token automatically */
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -30,39 +930,41 @@ api.interceptors.request.use((config) => {
 });
 
 const Header = () => {
-  // ---------- استخدام useAuth ----------
   const { user: currentUser, logout: authLogout, isAuthenticated, token } = useAuth();
   
-  // ---------- state ----------
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [socket, setSocket] = useState<Socket | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  // Avatar state is now handled by useAvatar hook
   const [logoLoaded, setLogoLoaded] = useState(false);
-  const [officialPhotoLoaded, setOfficialPhotoLoaded] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const profileMenuRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  // ---------- helpers ----------
-  const isTeacherOrAdmin =
-    currentUser?.role === 'teacher' || currentUser?.role === 'admin';
-
+  const isTeacherOrAdmin = currentUser?.role === 'teacher' || currentUser?.role === 'admin';
   const userGender = getUserGender(currentUser);
 
-  // Avatar hook مع memoization لمنع re-fetching المتكرر
   const { avatarUrl, avatarLoading } = useAvatar({
     userId: currentUser?._id,
     userRole: currentUser?.role,
   });
 
-  const toggleMenu = () => setIsMenuOpen((v) => !v);
+  // Handle scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleLogout = useCallback(async () => {
     const confirmed = await showLogoutConfirmation({
       userType: 'user',
       onConfirm: () => {
-        // تنفيذ عملية logout
         socket?.disconnect();
         setSocket(null);
         setIsMenuOpen(false);
@@ -72,24 +974,18 @@ const Header = () => {
     });
     
     if (!confirmed) {
-      // تم الإلغاء - لا نفعل شيء
       console.log('تم إلغاء تسجيل الخروج');
     }
   }, [socket, authLogout]);
 
-  // Avatar loading is now handled by useAvatar hook
-
-  // المستخدم يتم تحميله تلقائياً من useAuth
-  // إعادة التوجه إذا لم يكن مسجلاً دخوله
   useEffect(() => {
     if (!isAuthenticated && !currentUser) {
       navigate('/login', { replace: true });
     }
   }, [isAuthenticated, currentUser, navigate]);
 
-  // ---------- init socket (always) to ensure NotificationHeader renders ----------
+  // Socket initialization
   useEffect(() => {
-
     const s = io(API_BASE_URL, {
       transports: ['polling'],
       upgrade: false,
@@ -104,9 +1000,8 @@ const Header = () => {
     const onConnect = () => setSocket(s);
     const onDisconnect = () => setSocket(null);
     const onError = (e: Error) => {
-      if (import.meta.env.MODE !== 'production')
-        console.error('socket error', e);
-      setSocket(s); // نبقي المرجع موجودًا حتى لو لم يتصل بعد
+      if (import.meta.env.MODE !== 'production') console.error('socket error', e);
+      setSocket(s);
     };
 
     s.on('connect', onConnect);
@@ -123,201 +1018,77 @@ const Header = () => {
     };
   }, [token]);
 
-  // ---------- close profile menu on outside click / esc ----------
+  // Click outside handlers
   useEffect(() => {
-    if (!profileMenuOpen) return;
-    const onDown = (e: MouseEvent) => {
-      if (
-        profileMenuRef.current &&
-        !profileMenuRef.current.contains(e.target as Node)
-      )
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
         setProfileMenuOpen(false);
+      }
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setSearchOpen(false);
+      }
     };
-    const onKey = (e: KeyboardEvent) =>
-      e.key === 'Escape' && setProfileMenuOpen(false);
 
-    document.addEventListener('mousedown', onDown);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDown);
-      document.removeEventListener('keydown', onKey);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // ESC key handler
+  useEffect(() => {
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setProfileMenuOpen(false);
+        setIsMenuOpen(false);
+        setSearchOpen(false);
+      }
     };
-  }, [profileMenuOpen]);
 
-  // ---------- nav items ----------
-  const primaryNavItems = useMemo(
-    () => [
-      {
-        to: '/',
-        label: 'الصفحة الرئيسية',
-        icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
-        stroke: true,
-      },
-      {
-        to: '/news',
-        label: 'الأخبار',
-        icon: 'M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5a2.5 2.5 0 00-2.5-2.5H15',
-        stroke: true,
-      },
-      {
-        to: '/goals',
-        label: 'الأهداف',
-        icon: 'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z',
-        stroke: true,
-      },
-      {
-        to: '/daily-marks',
-        label: 'العلامات اليومية',
-        icon: 'M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4',
-        stroke: true,
-      },
-      {
-        to: '/test',
-        label: 'الاختبارات',
-        icon: 'M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01',
-        stroke: true,
-      },
-      {
-        to: '/exam-schedule',
-        label: 'جدول الامتحانات',
-        icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
-        stroke: true,
-      },
-      {
-        to: '/prayer-times',
-        label: 'مواقيت الصلاة',
-        icon: 'M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z',
-        stroke: true,
-      },
-    ],
-    []
-  );
+    document.addEventListener('keydown', handleEscKey);
+    return () => document.removeEventListener('keydown', handleEscKey);
+  }, []);
+
+  const primaryNavItems = useMemo(() => [
+    { to: '/', label: 'الرئيسية', icon: '🏠', gradient: 'from-blue-500 to-cyan-500' },
+    { to: '/news', label: 'الأخبار', icon: '📰', gradient: 'from-purple-500 to-pink-500' },
+    { to: '/goals', label: 'الأهداف', icon: '🎯', gradient: 'from-green-500 to-emerald-500' },
+    { to: '/daily-marks', label: 'العلامات', icon: '✓', gradient: 'from-orange-500 to-red-500' },
+    { to: '/test', label: 'الاختبارات', icon: '📝', gradient: 'from-indigo-500 to-purple-500' },
+  ], []);
 
   const secondaryNavItems = useMemo(() => {
     const base = [
-      {
-        to: '/quran',
-        label: 'القرآن الكريم',
-        icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253',
-        stroke: true,
-      },
-      {
-        to: '/quran-audio',
-        label: 'القرآن الصوتي',
-        icon: 'M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M9 9v6l6-3-6-3z',
-        stroke: true,
-      },
-      {
-        to: '/arrangement',
-        label: 'الترتيب',
-        icon: 'M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 113 0v1m0 0V11m0-5.5a1.5 1.5 0 113 0v3m-3-3a1.5 1.5 0 113 0v3m-3-3a1.5 1.5 0 113 0v3',
-        stroke: true,
-      },
-      {
-        to: '/activities',
-        label: 'الأنشطة',
-        icon: 'M19 11H5m14-7H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zM9 10h6m-6 4h6m-6 4h6',
-        stroke: true,
-      },
-      {
-        to: '/absence',
-        label: 'الحضور والغياب',
-        icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z',
-        stroke: true,
-      },
-      {
-        to: '/reports',
-        label: 'التقارير',
-        icon: 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-        stroke: true,
-      },
-      {
-        to: '/chat',
-        label: 'تواصل مع المعلم',
-        icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
-        stroke: true,
-      },
-      {
-        to: '/timetable',
-        label: 'جدول الحصص',
-        icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
-        stroke: true,
-      },
-    ] as const;
+      { to: '/quran', label: 'القرآن', icon: '📖', gradient: 'from-teal-500 to-cyan-500' },
+      { to: '/quran-audio', label: 'القرآن الصوتي', icon: '🎧', gradient: 'from-blue-500 to-indigo-500' },
+      { to: '/arrangement', label: 'الترتيب', icon: '🏆', gradient: 'from-yellow-500 to-orange-500' },
+      { to: '/activities', label: 'الأنشطة', icon: '🎨', gradient: 'from-pink-500 to-rose-500' },
+      { to: '/absence', label: 'الحضور', icon: '📋', gradient: 'from-red-500 to-pink-500' },
+      { to: '/reports', label: 'التقارير', icon: '📊', gradient: 'from-purple-500 to-indigo-500' },
+      { to: '/chat', label: 'المحادثات', icon: '💬', gradient: 'from-green-500 to-teal-500' },
+    ];
 
     if (!isTeacherOrAdmin) return base;
     return [
-      ...base.slice(0, 7),
-      {
-        to: '/managment',
-        label: 'الإدارة',
-        icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zm4.675 7.683a3 3 0 11-6 0 3 3 0 016 0z',
-        stroke: true,
-      },
-      ...base.slice(7),
+      ...base,
+      { to: '/managment', label: 'الإدارة', icon: '⚙️', gradient: 'from-gray-500 to-slate-500' },
     ];
   }, [isTeacherOrAdmin]);
 
-  // ---------- ui helpers ----------
-  const renderIcon = (d: string, stroke = false) => (
-    <svg
-      className="w-4 h-4 lg:w-5 lg:h-5"
-      fill={stroke ? 'none' : 'currentColor'}
-      stroke={stroke ? 'currentColor' : undefined}
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path
-        strokeLinecap={stroke ? 'round' : undefined}
-        strokeLinejoin={stroke ? 'round' : undefined}
-        strokeWidth={stroke ? 2 : undefined}
-        fillRule={!stroke ? 'evenodd' : undefined}
-        clipRule={!stroke ? 'evenodd' : undefined}
-        d={d}
-      />
-    </svg>
-  );
-
-  // Generic Image Skeleton Component
-  const ImageSkeleton = ({
-    className,
-    variant = 'default',
-  }: {
-    className: string;
-    variant?: 'default' | 'avatar' | 'logo';
-  }) => (
-    <div
-      className={`${className} relative overflow-hidden flex items-center justify-center ${
-        variant === 'logo'
-          ? 'bg-gradient-to-br from-blue-200/80 to-indigo-300/80 dark:from-blue-600/80 dark:to-indigo-700/80'
-          : variant === 'avatar'
-            ? 'bg-gradient-to-br from-emerald-200/80 to-teal-300/80 dark:from-emerald-600/80 dark:to-teal-700/80'
-            : 'bg-gradient-to-br from-gray-200/80 to-gray-300/80 dark:from-gray-600/80 dark:to-gray-700/80'
-      } backdrop-blur-sm`}
-      aria-label="جاري تحميل الصورة"
-    >
-      {/* Multiple shimmer layers for depth */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 dark:via-gray-300/50 to-transparent animate-[shimmer_2s_ease-in-out_infinite]" />
-      <div className="absolute inset-0 bg-gradient-to-l from-transparent via-white/30 dark:via-gray-400/30 to-transparent animate-[shimmer_2.5s_ease-in-out_infinite] animation-delay-500" />
-
-      {/* Pulsing background with breathing effect */}
-      <div className="absolute inset-0 bg-white/30 dark:bg-gray-400/30 animate-[pulse-slow_3s_ease-in-out_infinite]" />
-
-      {/* Subtle border shimmer */}
-      <div className="absolute inset-0 border border-white/40 dark:border-gray-300/40 animate-pulse rounded-[inherit]" />
-
-      {/* Loading dots */}
-      <div className="absolute inset-0 flex items-center justify-center z-10">
-        <div className="flex space-x-0.5">
-          <div className="w-1 h-1 bg-gray-500/80 dark:bg-gray-400/80 rounded-full animate-[bounce_1.4s_ease-in-out_infinite] animation-delay-0"></div>
-          <div className="w-1 h-1 bg-gray-500/80 dark:bg-gray-400/80 rounded-full animate-[bounce_1.4s_ease-in-out_infinite] animation-delay-200"></div>
-          <div className="w-1 h-1 bg-gray-500/80 dark:bg-gray-400/80 rounded-full animate-[bounce_1.4s_ease-in-out_infinite] animation-delay-400"></div>
+  const ImageSkeleton = ({ className, variant = 'default' }: { className: string; variant?: 'default' | 'avatar' | 'logo' }) => (
+    <div className={`${className} relative overflow-hidden flex items-center justify-center ${
+      variant === 'logo' ? 'bg-gradient-to-br from-emerald-200 to-teal-300' :
+      variant === 'avatar' ? 'bg-gradient-to-br from-blue-200 to-indigo-300' :
+      'bg-gradient-to-br from-gray-200 to-gray-300'
+    }`}>
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-shimmer" />
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="flex gap-1">
+          <div className="w-1 h-1 bg-gray-500/80 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+          <div className="w-1 h-1 bg-gray-500/80 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+          <div className="w-1 h-1 bg-gray-500/80 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
         </div>
       </div>
     </div>
   );
-
-
 
   const renderUserAvatar = () => (
     <Avatar
@@ -327,201 +1098,205 @@ const Header = () => {
       loading={avatarLoading}
       size="md"
       clickable={true}
-      showStatus={true} // إظهار نقطة الحالة
-      onClick={() => {
-        // Retry loading avatar if it failed and not currently loading
-        if (
-          !avatarUrl &&
-          !avatarLoading &&
-          currentUser?._id &&
-          currentUser?.role
-        ) {
-          // Trigger refetch if needed
-          window.location.reload();
-        }
-      }}
+      showStatus={true}
     />
   );
 
-  // ---------- render ----------
   return (
     <>
-      {/* Main Header */}
       <header
-        className="sticky top-0 z-50 bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-500 text-white shadow-2xl border-b border-emerald-400/20"
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+          scrolled
+            ? 'bg-white/95 backdrop-blur-xl shadow-2xl border-b border-gray-200'
+            : 'bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600'
+        }`}
         dir="rtl"
       >
-
-
-        <div className="container mx-auto px-1 sm:px-2 md:px-3 lg:px-4 xl:px-6 relative">
-          {/* الصف الرئيسي */}
-          <div className="flex items-center justify-between py-1.5 sm:py-2 lg:py-3 gap-1 sm:gap-2 md:gap-3">
-            {/* RIGHT: Logo + Academy Name */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-20">
+            
+            {/* Logo Section */}
             <Link 
               to="/" 
-              className="flex items-center justify-start gap-1.5 sm:gap-2 md:gap-3 hover:opacity-90 transition-opacity duration-200 cursor-pointer group"
-              title="العودة إلى الصفحة الرئيسية"
+              className="flex items-center gap-4 hover:opacity-90 transition-opacity duration-200 group"
             >
-              <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 rounded-full bg-white/20 backdrop-blur-md border-2 border-white/30 flex items-center justify-center shadow-lg relative overflow-hidden flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
-                {!logoLoaded && (
-                  <ImageSkeleton
-                    className="w-6 h-6 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full absolute inset-0 m-auto"
-                    variant="logo"
-                  />
-                )}
+              <div className={`relative w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl transition-all duration-500 transform hover:scale-110 hover:rotate-6 ${
+                scrolled ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : 'bg-white'
+              }`}>
+                {!logoLoaded && <ImageSkeleton className="w-10 h-10 rounded-full absolute" variant="logo" />}
                 <img
                   src="/src/images/logo.jpg"
-                  alt="لوغو الأكاديمية"
-                  className={`w-6 h-6 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full object-cover transition-all duration-500 ${
+                  alt="Logo"
+                  className={`w-10 h-10 rounded-full object-cover transition-all duration-500 ${
                     logoLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
                   }`}
                   onLoad={() => setLogoLoaded(true)}
-                  onError={(e) => {
-                    setLogoLoaded(true);
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
+                  onError={() => setLogoLoaded(true)}
                 />
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full animate-ping"></div>
               </div>
-              <div className="flex-shrink min-w-0">
-                <h1 className="text-sm sm:text-base md:text-lg lg:text-2xl xl:text-3xl font-bold bg-gradient-to-l from-white via-emerald-100 to-white bg-clip-text text-transparent drop-shadow-sm truncate group-hover:text-emerald-100 transition-colors duration-200">
+              <div className="hidden md:block">
+                <h1 className={`text-xl md:text-2xl font-bold transition-colors duration-500 ${
+                  scrolled ? 'bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent' : 'text-white'
+                }`}>
                   مدرسة القرآن الكريم
                 </h1>
-                <p className="text-xs md:text-sm lg:text-base text-emerald-100/80 font-medium hidden sm:block truncate group-hover:text-emerald-100 transition-colors duration-200">
-                  أكاديمية مدرسة الهجرة للقرآن الكريم وعلومه
+                <p className={`text-sm transition-colors duration-500 ${
+                  scrolled ? 'text-gray-600' : 'text-white/90'
+                }`}>
+                  أكاديمية مدرسة الهجرة للقرآن الكريم
                 </p>
               </div>
             </Link>
 
-            {/* CENTER: Desktop Nav */}
-            <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
-              {primaryNavItems.map((item) => (
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex items-center gap-2">
+              {primaryNavItems.map((item, index) => (
                 <NavLink
                   key={item.to}
                   to={item.to}
                   className={({ isActive }) =>
-                    `px-2 lg:px-3 py-2 rounded-xl text-xs lg:text-sm font-medium transition-all duration-300 flex items-center gap-1.5 lg:gap-2 backdrop-blur-sm ${
+                    `group relative px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
                       isActive
-                        ? 'bg-white/25 text-white shadow-lg border border-white/30 scale-105'
-                        : 'text-emerald-100 hover:bg-white/15 hover:text-white hover:scale-105 border border-transparent hover:border-white/20'
+                        ? scrolled
+                          ? `bg-gradient-to-r ${item.gradient} text-white shadow-lg`
+                          : 'bg-white text-emerald-600 shadow-lg'
+                        : scrolled
+                        ? 'text-gray-700 hover:bg-gray-100'
+                        : 'text-white hover:bg-white/20'
                     }`
                   }
+                  style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  {renderIcon(item.icon, item.stroke)}
-                  <span className="whitespace-nowrap">{item.label}</span>
+                  <span className="flex items-center gap-2">
+                    <span className="text-lg transition-transform duration-300 group-hover:scale-125">{item.icon}</span>
+                    <span>{item.label}</span>
+                  </span>
                 </NavLink>
               ))}
             </nav>
 
-            {/* LEFT: Profile + Notifications Mobile + Mobile Button */}
-            <div className="flex items-center gap-2 lg:gap-3">
-              {/* زر الإشعارات للجوال */}
-              {currentUser && (
-                <div className="md:hidden flex-shrink-0">
-                  <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-full p-1 hover:bg-white/20 transition-all duration-300">
-                    <NotificationHeader
-                      userId={currentUser._id}
-                      socket={socket}
-                      apiUrl={API_BASE_URL}
+            {/* Right Section */}
+            <div className="flex items-center gap-3">
+              
+              {/* Search */}
+              <div className="hidden lg:block relative" ref={searchRef}>
+                {searchOpen ? (
+                  <div className="flex items-center gap-2 animate-slide-in-right">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="ابحث هنا..."
+                      className={`w-64 px-4 py-2 rounded-xl border-2 focus:outline-none transition-all duration-300 ${
+                        scrolled
+                          ? 'border-emerald-300 focus:border-emerald-500 bg-white'
+                          : 'border-white/30 focus:border-white bg-white/20 text-white placeholder-white/70'
+                      }`}
+                      autoFocus
                     />
+                    <button
+                      onClick={() => setSearchOpen(false)}
+                      className={`p-2 rounded-xl transition-all duration-300 ${
+                        scrolled ? 'hover:bg-gray-100' : 'hover:bg-white/20'
+                      }`}
+                    >
+                      <svg className={`w-5 h-5 ${scrolled ? 'text-gray-600' : 'text-white'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   </div>
+                ) : (
+                  <button
+                    onClick={() => setSearchOpen(true)}
+                    className={`p-2.5 rounded-xl transition-all duration-300 transform hover:scale-110 ${
+                      scrolled ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white/20 text-white hover:bg-white/30'
+                    }`}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+
+              {/* Notifications */}
+              {currentUser && (
+                <div className={`p-2.5 rounded-xl transition-all duration-300 transform hover:scale-110 ${
+                  scrolled ? 'bg-gray-100 hover:bg-gray-200' : 'bg-white/20 hover:bg-white/30'
+                }`}>
+                  <NotificationHeader
+                    userId={currentUser._id}
+                    socket={socket}
+                    apiUrl={API_BASE_URL}
+                  />
                 </div>
               )}
 
-              {/* Profile */}
-              <div
-                className="hidden md:flex items-center relative flex-shrink min-w-0"
-                ref={profileMenuRef}
-              >
+              {/* Profile Menu */}
+              <div className="relative" ref={profileMenuRef}>
                 <button
-                  type="button"
-                  className="flex items-center gap-1 md:gap-2 lg:gap-3 cursor-pointer p-1.5 md:p-2 lg:p-3 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all duration-300 hover:shadow-lg hover:scale-105 min-w-0"
-                  onClick={() => setProfileMenuOpen((v) => !v)}
-                  aria-haspopup="menu"
-                  aria-expanded={profileMenuOpen ? 'true' : 'false'}
-                  aria-controls="profile-menu"
+                  onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-300 transform hover:scale-105 ${
+                    scrolled 
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg' 
+                      : 'bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/30'
+                  }`}
                 >
-                  {renderUserAvatar()}
-                  {currentUser && (
-                    <span className="hidden lg:block text-xs lg:text-sm xl:text-base font-semibold text-white max-w-20 lg:max-w-24 xl:max-w-32 truncate drop-shadow-sm">
-                      {currentUser.firstName && currentUser.lastName
-                        ? `${currentUser.firstName} ${currentUser.lastName}`
-                        : currentUser.firstName || currentUser.name || ''}
-                    </span>
-                  )}
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
+                    scrolled ? 'bg-white text-emerald-600' : 'bg-white/20 text-white'
+                  }`}>
+                    {currentUser?.firstName?.[0] || 'م'}
+                  </div>
+                  <span className="text-sm font-semibold hidden md:block">
+                    {currentUser?.firstName && currentUser?.lastName
+                      ? `${currentUser.firstName} ${currentUser.lastName}`
+                      : currentUser?.firstName || 'المستخدم'}
+                  </span>
                   <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className={`h-3 w-3 lg:h-4 lg:w-4 text-white transition-transform duration-300 ${
-                      profileMenuOpen ? 'rotate-180' : ''
-                    }`}
+                    className={`w-4 h-4 transition-transform duration-300 ${profileMenuOpen ? 'rotate-180' : ''}`}
                     fill="none"
-                    viewBox="0 0 24 24"
                     stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
-                    />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
 
                 {profileMenuOpen && (
-                  <div
-                    id="profile-menu"
-                    className="absolute left-1/2 transform -translate-x-1/2 top-full mt-3 w-56 bg-white/96 backdrop-blur-2xl rounded-2xl shadow-2xl border border-emerald-100/50 py-1 z-[100] animate-in slide-in-from-top-5 duration-200"
-                  >
-                    <div className="px-4 py-3 border-b border-emerald-100/60 bg-gradient-to-r from-emerald-50/80 to-teal-50/80 rounded-t-2xl">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8">
-                          {renderUserAvatar()}
+                  <div className="absolute left-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-scale-in z-50">
+                    <div className="bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-emerald-600 font-bold text-lg shadow-lg">
+                          {currentUser?.firstName?.[0] || 'م'}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <span className="block text-emerald-800 font-bold text-base truncate">
+                          <p className="text-white font-bold text-sm truncate">
                             {currentUser?.firstName && currentUser?.lastName
                               ? `${currentUser.firstName} ${currentUser.lastName}`
-                              : currentUser?.firstName || currentUser?.name}
-                          </span>
-                          <span className="block text-emerald-600 text-xs mt-0.5 font-medium">
-                            {currentUser?.role === 'teacher'
-                              ? 'معلم'
-                              : currentUser?.role === 'admin'
-                                ? 'مدير'
-                                : 'طالب'}
-                          </span>
+                              : currentUser?.firstName || 'المستخدم'}
+                          </p>
                           {currentUser?.email && (
-                            <span className="block text-emerald-500/80 text-xs mt-0.5 truncate" title={currentUser.email}>
-                              {currentUser.email}
-                            </span>
+                            <p className="text-white/80 text-xs truncate">{currentUser.email}</p>
                           )}
                         </div>
                       </div>
                     </div>
 
-                    <div className="py-1">
+                    <div className="py-2">
                       <button
                         onClick={() => {
                           setProfileMenuOpen(false);
                           navigate('/profile');
                         }}
-                        className="w-full text-right py-2.5 px-4 text-gray-700 hover:bg-emerald-50/80 hover:text-emerald-700 transition-all duration-200 flex items-center gap-2.5 group"
+                        className="w-full px-6 py-3 text-right flex items-center gap-3 text-gray-700 hover:bg-emerald-50 transition-all duration-200 group"
                       >
-                        <div className="p-1 rounded-lg bg-emerald-100 group-hover:bg-emerald-200 transition-colors">
-                          <svg
-                            className="w-3.5 h-3.5 text-emerald-600"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                            />
+                        <div className="w-10 h-10 rounded-xl bg-emerald-100 group-hover:bg-emerald-200 flex items-center justify-center transition-colors">
+                          <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                           </svg>
                         </div>
-                        <span className="font-medium text-sm">الملف الشخصي</span>
+                        <span className="font-medium">الملف الشخصي</span>
                       </button>
 
                       <button
@@ -529,211 +1304,103 @@ const Header = () => {
                           setProfileMenuOpen(false);
                           navigate('/change-password');
                         }}
-                        className="w-full text-right py-2.5 px-4 text-gray-700 hover:bg-blue-50/80 hover:text-blue-700 transition-all duration-200 flex items-center gap-2.5 group"
+                        className="w-full px-6 py-3 text-right flex items-center gap-3 text-gray-700 hover:bg-blue-50 transition-all duration-200 group"
                       >
-                        <div className="p-1 rounded-lg bg-blue-100 group-hover:bg-blue-200 transition-colors">
-                          <svg
-                            className="w-3.5 h-3.5 text-blue-600"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1 1 21 9z"
-                            />
+                        <div className="w-10 h-10 rounded-xl bg-blue-100 group-hover:bg-blue-200 flex items-center justify-center transition-colors">
+                          <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                           </svg>
                         </div>
-                        <span className="font-medium text-sm">تغيير كلمة المرور</span>
+                        <span className="font-medium">تغيير كلمة المرور</span>
                       </button>
 
-                      <div className="border-t border-gray-100 my-1.5" />
+                      <div className="h-px bg-gray-200 my-2 mx-4"></div>
 
                       <button
-                        onClick={() => {
-                          setProfileMenuOpen(false);
-                          handleLogout();
-                        }}
-                        className="w-full text-right py-2.5 px-4 text-red-600 hover:bg-red-50/80 hover:text-red-700 transition-all duration-200 flex items-center gap-2.5 group"
+                        onClick={handleLogout}
+                        className="w-full px-6 py-3 text-right flex items-center gap-3 text-red-600 hover:bg-red-50 transition-all duration-200 group"
                       >
-                        <div className="p-1 rounded-lg bg-red-100 group-hover:bg-red-200 transition-colors">
-                          <svg
-                            className="w-3.5 h-3.5 text-red-600"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                            />
+                        <div className="w-10 h-10 rounded-xl bg-red-100 group-hover:bg-red-200 flex items-center justify-center transition-colors">
+                          <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                           </svg>
                         </div>
-                        <span className="font-medium text-sm">تسجيل الخروج</span>
+                        <span className="font-medium">تسجيل الخروج</span>
                       </button>
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Mobile menu button */}
-              <div className="md:hidden">
-                <button
-                  onClick={toggleMenu}
-                  className="p-1.5 sm:p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-all duration-300 backdrop-blur-md border border-white/20 hover:scale-105 flex-shrink-0"
-                  aria-label="فتح القائمة"
-                  aria-expanded={isMenuOpen ? 'true' : 'false'}
-                >
-                  <svg
-                    className="w-4 h-4 sm:w-5 sm:h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    {isMenuOpen ? (
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    ) : (
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 6h16M4 12h16M4 18h16"
-                      />
-                    )}
-                  </svg>
-                </button>
-              </div>
+              {/* Mobile Menu Button */}
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className={`lg:hidden p-2.5 rounded-xl transition-all duration-300 ${
+                  scrolled ? 'bg-gray-100 text-gray-700' : 'bg-white/20 text-white'
+                }`}
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {isMenuOpen ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  )}
+                </svg>
+              </button>
             </div>
           </div>
 
-          {/* Secondary Navigation Bar and Notification Header Row - Desktop */}
-          <div className="hidden md:flex items-center justify-between border-top border-emerald-400/30 pt-3 pb-3 gap-4">
-            {/* Expanded Secondary Navigation */}
-            <div className="flex-1 max-w-6xl mx-auto">
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl px-4 lg:px-6 py-2.5 border border-white/20 shadow-lg">
-                <nav className="flex items-center justify-center gap-1 lg:gap-2 overflow-x-auto scrollbar-hide">
+          {/* Secondary Navigation - Desktop */}
+          <div className="hidden lg:flex items-center justify-between border-t border-white/20 pt-3 pb-3">
+            <div className="flex-1">
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl px-6 py-2.5 border border-white/20">
+                <nav className="flex items-center justify-center gap-2 overflow-x-auto">
                   {secondaryNavItems.map((item) => (
                     <NavLink
                       key={item.to}
                       to={item.to}
                       className={({ isActive }) =>
-                        `px-2.5 lg:px-3 py-2 lg:py-2.5 rounded-xl text-xs lg:text-sm font-medium transition-all duration-300 flex items-center gap-1.5 lg:gap-2 whitespace-nowrap flex-shrink-0 ${
+                        `px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 flex items-center gap-2 whitespace-nowrap ${
                           isActive
-                            ? 'bg-white/25 text-white shadow-lg border border-white/40 scale-105 font-semibold'
-                            : 'text-emerald-100 hover:bg-white/20 hover:text-white hover:scale-105 border border-transparent hover:border-white/25'
+                            ? 'bg-white/25 text-white shadow-lg border border-white/40 scale-105'
+                            : 'text-emerald-100 hover:bg-white/20 hover:text-white hover:scale-105'
                         }`
                       }
                     >
-                      {renderIcon(item.icon, item.stroke)}
-                      <span className="text-xs lg:text-sm">
-                        {item.label}
-                      </span>
+                      <span className="text-lg">{item.icon}</span>
+                      <span>{item.label}</span>
                     </NavLink>
                   ))}
                 </nav>
               </div>
             </div>
-
-            {/* Desktop Notification Header */}
-            {currentUser && (
-              <div className="flex-shrink-0 ml-2 md:ml-3 lg:ml-4">
-                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-1.5 md:p-2 lg:p-2.5 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 hover:bg-white/15">
-                  <NotificationHeader
-                    userId={currentUser._id}
-                    socket={socket}
-                    apiUrl={API_BASE_URL}
-                  />
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </header>
 
-      {/* Mobile Drawer */}
+      {/* Spacer */}
+      <div className="h-32"></div>
+
+      {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-40">
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={toggleMenu}
-          />
-          <div
-            className="fixed right-0 top-0 h-full w-80 max-w-[90vw] bg-gradient-to-b from-emerald-600 via-emerald-700 to-emerald-800 shadow-2xl overflow-y-auto"
-            dir="rtl"
-          >
+        <div className="lg:hidden fixed inset-0 z-40">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsMenuOpen(false)} />
+          <div className="fixed right-0 top-0 h-full w-80 max-w-[90vw] bg-gradient-to-b from-emerald-600 via-emerald-700 to-emerald-800 shadow-2xl overflow-y-auto animate-slide-in-right">
             <div className="p-6">
-              {/* mobile header */}
               <div className="flex items-center justify-between mb-6 pb-4 border-b border-emerald-500/30">
-                <Link 
-                  to="/" 
-                  className="flex items-center gap-2 sm:gap-3 min-w-0 hover:opacity-90 transition-opacity duration-200 cursor-pointer group"
-                  onClick={toggleMenu} // إغلاق القائمة عند النقر على اللوغو
-                  title="العودة إلى الصفحة الرئيسية"
-                >
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/20 backdrop-blur-md border-2 border-white/30 flex items-center justify-center relative overflow-hidden flex-shrink-0 group-hover:scale-105 transition-transform duration-200">
-                    {!officialPhotoLoaded && (
-                      <ImageSkeleton
-                        className="w-6 h-6 sm:w-7 sm:h-7 rounded-full absolute inset-0 m-auto"
-                        variant="avatar"
-                      />
-                    )}
-                    <img
-                      src="/src/images/officialPhoto.jpg"
-                      alt="Logo"
-                      className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full object-cover transition-all duration-500 ${
-                        officialPhotoLoaded
-                          ? 'opacity-100 scale-100'
-                          : 'opacity-0 scale-95'
-                      }`}
-                      onLoad={() => setOfficialPhotoLoaded(true)}
-                      onError={(e) => {
-                        setOfficialPhotoLoaded(true);
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h2 className="text-base sm:text-lg font-bold text-white truncate group-hover:text-emerald-100 transition-colors duration-200">
-                      القائمة الرئيسية
-                    </h2>
-                    <p className="text-emerald-200 text-xs sm:text-sm truncate group-hover:text-emerald-100 transition-colors duration-200">
-                      مدرسة القرآن الكريم
-                    </p>
-                  </div>
-                </Link>
+                <h2 className="text-lg font-bold text-white">القائمة الرئيسية</h2>
                 <button
-                  onClick={toggleMenu}
-                  className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors backdrop-blur-md border border-white/20"
-                  aria-label="إغلاق القائمة"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
                 >
-                  <svg
-                    className="w-6 h-6 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
 
-              {/* mobile profile */}
               {currentUser && (
-                <div className="flex items-center gap-4 mb-6 p-4 bg-white/10 rounded-2xl backdrop-blur-md border border-white/20">
+                <div className="flex items-center gap-4 mb-6 p-4 bg-white/10 rounded-2xl">
                   {renderUserAvatar()}
                   <div className="flex-1">
                     <div className="text-white font-semibold text-lg">
@@ -742,17 +1409,13 @@ const Header = () => {
                         : currentUser.firstName || currentUser.name || ''}
                     </div>
                     <div className="text-emerald-200 text-sm">
-                      {currentUser.role === 'teacher'
-                        ? 'معلم'
-                        : currentUser.role === 'admin'
-                          ? 'مدير'
-                          : 'طالب'}
+                      {currentUser.role === 'teacher' ? 'معلم' :
+                       currentUser.role === 'admin' ? 'مدير' : 'طالب'}
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* nav */}
               <div className="space-y-1">
                 {[...primaryNavItems, ...secondaryNavItems].map((item) => (
                   <NavLink
@@ -762,142 +1425,113 @@ const Header = () => {
                     className={({ isActive }) =>
                       `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group ${
                         isActive
-                          ? 'bg-white/20 text-white shadow-lg border border-white/30'
-                          : 'text-emerald-100 hover:bg-white/15 hover:text-white hover:translate-x-1'
+                          ? 'bg-white/20 text-white shadow-lg'
+                          : 'text-emerald-100 hover:bg-white/15 hover:text-white'
                       }`
                     }
                   >
-                    <div className="p-2 rounded-lg bg-white/10 group-hover:bg-white/20 transition-colors">
-                      {renderIcon(item.icon, item.stroke)}
-                    </div>
+                    <span className="text-xl">{item.icon}</span>
                     <span className="font-medium flex-1">{item.label}</span>
-                    <svg
-                      className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
                   </NavLink>
                 ))}
               </div>
 
-              {/* actions */}
-              {currentUser ? (
-                <div className="space-y-2 border-top border-emerald-500/30 pt-4 mt-6">
-                  <button
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      navigate('/profile');
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-emerald-100 hover:bg-white/15 hover:text-white transition-all duration-300 group hover:translate-x-1"
-                  >
-                    <div className="p-2 rounded-lg bg-emerald-500/20 group-hover:bg-emerald-500/30 transition-colors">
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                        />
-                      </svg>
-                    </div>
-                    <span className="font-medium flex-1">الملف الشخصي</span>
-                  </button>
+              <div className="space-y-2 border-t border-emerald-500/30 pt-4 mt-6">
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    navigate('/profile');
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-emerald-100 hover:bg-white/15 hover:text-white transition-all"
+                >
+                  <span className="text-lg">👤</span>
+                  <span className="font-medium flex-1">الملف الشخصي</span>
+                </button>
 
-                  <button
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      navigate('/change-password');
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-emerald-100 hover:bg-white/15 hover:text-white transition-all duration-300 group hover:translate-x-1"
-                  >
-                    <div className="p-2 rounded-lg bg-blue-500/20 group-hover:bg-blue-500/30 transition-colors">
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1 1 21 9z"
-                        />
-                      </svg>
-                    </div>
-                    <span className="font-medium flex-1">
-                      تغيير كلمة المرور
-                    </span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      handleLogout();
-                    }}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-300 hover:bg-red-500/20 hover:text-red-100 transition-all duration-300 group hover:translate-x-1"
-                  >
-                    <div className="p-2 rounded-lg bg-red-500/20 group-hover:bg-red-500/30 transition-colors">
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                        />
-                      </svg>
-                    </div>
-                    <span className="font-medium flex-1">تسجيل الخروج</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="border-t border-emerald-500/30 pt-4 mt-6">
-                  <button
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      navigate('/login');
-                    }}
-                    className="w-full flex items-center justify-center gap-3 px-4 py-4 rounded-xl font-medium transition-all duration-300 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg hover:shadow-xl hover:scale-105"
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
-                      />
-                    </svg>
-                    تسجيل الدخول
-                  </button>
-                </div>
-              )}
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    handleLogout();
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-300 hover:bg-red-500/20 hover:text-red-100 transition-all"
+                >
+                  <span className="text-lg">🚪</span>
+                  <span className="font-medium flex-1">تسجيل الخروج</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
+
+      <style>{`
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+
+        @keyframes slide-in-right {
+          from {
+            transform: translateX(-20px);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+
+        @keyframes scale-in {
+          from {
+            transform: scale(0.95) translateY(-10px);
+            opacity: 0;
+          }
+          to {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+          }
+        }
+
+        .animate-shimmer {
+          animation: shimmer 2s ease-in-out infinite;
+        }
+
+        .animate-slide-in-right {
+          animation: slide-in-right 0.3s ease-out;
+        }
+
+        .animate-scale-in {
+          animation: scale-in 0.3s ease-out;
+        }
+
+        .animate-ping {
+          animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+
+        @keyframes ping {
+          75%, 100% {
+            transform: scale(2);
+            opacity: 0;
+          }
+        }
+
+        .overflow-x-auto::-webkit-scrollbar {
+          height: 4px;
+        }
+
+        .overflow-x-auto::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        .overflow-x-auto::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.3);
+          border-radius: 2px;
+        }
+
+        .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.5);
+        }
+      `}</style>
     </>
   );
 };

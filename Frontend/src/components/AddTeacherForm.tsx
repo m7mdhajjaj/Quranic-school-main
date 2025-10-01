@@ -1,9 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
+import { 
+  validateTeacherWithYup, 
+  validateTeacherFieldWithYup, 
+  formatBirthDateForBackend 
+} from "../Validation/teacherValidation";
+import type { TeacherFormData } from "../Validation/teacherValidation";
+import { createTeacher, updateTeacher, type Teacher } from "../Api/teacherApi";
 
 interface AddTeacherFormProps {
   onClose: () => void;
-  onSuccess: (teacherData?: any) => void;
-  teacher?: any; // وضع التعديل إن وجد
+  onSuccess: (teacherData?: Teacher | TeacherFormData) => void;
+  teacher?: Teacher;
 }
 
 const AddTeacherForm: React.FC<AddTeacherFormProps> = ({
@@ -21,14 +28,18 @@ const AddTeacherForm: React.FC<AddTeacherFormProps> = ({
     email: teacher?.email || "",
     phoneNumber: teacher?.phoneNumber || "",
     birthDate: teacher?.birthDate || "",
-    age: teacher?.age || "",
+    age: teacher?.age?.toString() || "",
     gender: teacher?.gender || "",
     residence: teacher?.residence || "",
+    groupName: teacher?.groupName || "",
+    password: "",
   });
 
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
 
-  const handleChange = (
+  const handleChange = useCallback((
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
@@ -36,38 +47,91 @@ const AddTeacherForm: React.FC<AddTeacherFormProps> = ({
       ...prev,
       [name]: value,
     }));
+
+    // Clear error for this field when user starts typing
+    if (errors[name]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  }, [errors]);
+
+  const handleBlur = useCallback(async (fieldName: string) => {
+    setTouchedFields(prev => new Set(prev).add(fieldName));
+    
+    // Validate field on blur
+    const fieldError = await validateTeacherFieldWithYup(
+      fieldName, 
+      formData[fieldName as keyof typeof formData], 
+      formData,
+      !teacher // isNewTeacher
+    );
+    
+    if (fieldError) {
+      setErrors(prev => ({ ...prev, [fieldName]: fieldError }));
+    }
+  }, [formData, teacher]);
+
+  const getFieldError = (fieldName: string): string | null => {
+    return touchedFields.has(fieldName) ? errors[fieldName] || null : null;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
-    if (
-      !formData.firstName ||
-      !formData.lastName ||
-      !formData.idNumber ||
-      !formData.phoneNumber
-    ) {
-      setError("الرجاء تعبئة جميع الحقول المطلوبة (*)");
-      return;
+    try {
+      // Prepare form data for validation
+      const dataToValidate = {
+        ...formData,
+        age: formData.age ? parseInt(formData.age) : null,
+        // Format birthDate for backend if provided
+        birthDate: formData.birthDate ? formatBirthDateForBackend(formData.birthDate) : null,
+      };
+
+      // Validate all fields
+      const validationResult = await validateTeacherWithYup(
+        dataToValidate,
+        !teacher // isNewTeacher
+      );
+
+      if (!validationResult.isValid) {
+        setErrors(validationResult.errors);
+        // Mark all fields with errors as touched
+        setTouchedFields(new Set(Object.keys(validationResult.errors)));
+        setIsSubmitting(false);
+        return;
+      }
+
+      // If validation passes, prepare final data and call API
+      const teacherData: TeacherFormData = validationResult.data!;
+      
+      let result;
+      if (teacher) {
+        // Update existing teacher
+        result = await updateTeacher(teacher._id, teacherData);
+      } else {
+        // Create new teacher
+        result = await createTeacher(teacherData);
+      }
+
+      if (!result.success) {
+        setErrors({ general: result.message || 'حدث خطأ أثناء حفظ البيانات' });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      console.log("Teacher saved successfully:", result.data);
+      onSuccess(result.data);
+      onClose();
+    } catch (error) {
+      console.error('Validation error:', error);
+      setErrors({ general: 'حدث خطأ في التحقق من البيانات' });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setError("");
-
-    // كلمة المرور = رقم الهوية
-    const password = formData.idNumber;
-
-    // رقم المعلم التلقائي
-    const teacherId = Math.floor(Math.random() * 1000) + 1002;
-
-    const teacherData = {
-      ...formData,
-      teacherId,
-      password,
-    };
-
-    console.log("Teacher Data:", teacherData);
-    onSuccess(teacherData);
-    onClose();
   };
 
   return (
@@ -84,9 +148,9 @@ const AddTeacherForm: React.FC<AddTeacherFormProps> = ({
           </button>
         </div>
 
-        {error && (
+        {errors.general && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
+            {errors.general}
           </div>
         )}
 
@@ -96,58 +160,76 @@ const AddTeacherForm: React.FC<AddTeacherFormProps> = ({
           {/* المعلومات الشخصية */}
           <Section title="المعلومات الشخصية">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input
+              <InputWithValidation
                 label="الاسم الأول *"
                 name="firstName"
                 value={formData.firstName}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                error={getFieldError("firstName")}
                 required
               />
-              <Input
+              <InputWithValidation
                 label="اسم العائلة *"
                 name="lastName"
                 value={formData.lastName}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                error={getFieldError("lastName")}
                 required
               />
-              <Input
+              <InputWithValidation
                 label="اسم الأب"
                 name="fatherName"
                 value={formData.fatherName}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                error={getFieldError("fatherName")}
               />
-              <Input
+              <InputWithValidation
                 label="اسم الجد"
                 name="grandFatherName"
                 value={formData.grandFatherName}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                error={getFieldError("grandFatherName")}
               />
-              <Input
+              <InputWithValidation
                 label="اسم الأم"
                 name="motherName"
                 value={formData.motherName}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                error={getFieldError("motherName")}
               />
-              <Input
-                label="رقم الهوية *"
+              <InputWithValidation
+                label="رقم الهوية"
                 name="idNumber"
                 value={formData.idNumber}
                 onChange={handleChange}
-                required
+                onBlur={handleBlur}
+                error={getFieldError("idNumber")}
+                placeholder="9 أرقام"
               />
-              <Input
-                label="تاريخ الميلاد"
+              <InputWithValidation
+                label="تاريخ الميلاد *"
                 type="date"
                 name="birthDate"
                 value={formData.birthDate}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                error={getFieldError("birthDate")}
+                required
               />
-              <Input
+              <InputWithValidation
                 label="العمر"
                 type="number"
                 name="age"
                 value={formData.age}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                error={getFieldError("age")}
+                placeholder="يتم حسابه تلقائياً"
               />
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -157,17 +239,30 @@ const AddTeacherForm: React.FC<AddTeacherFormProps> = ({
                   name="gender"
                   value={formData.gender}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  onBlur={() => handleBlur("gender")}
+                  title="اختر الجنس"
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                    getFieldError("gender")
+                      ? 'border-red-300 focus:ring-red-500 bg-red-50'
+                      : 'border-gray-300 focus:ring-blue-500'
+                  }`}>
                   <option value="">اختر الجنس</option>
                   <option value="ذكر">ذكر</option>
                   <option value="أنثى">أنثى</option>
                 </select>
+                {getFieldError("gender") && (
+                  <div className="text-red-600 text-xs mt-1">
+                    {getFieldError("gender")}
+                  </div>
+                )}
               </div>
-              <Input
+              <InputWithValidation
                 label="مكان السكن"
                 name="residence"
                 value={formData.residence}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                error={getFieldError("residence")}
               />
             </div>
           </Section>
@@ -175,18 +270,24 @@ const AddTeacherForm: React.FC<AddTeacherFormProps> = ({
           {/* معلومات التواصل */}
           <Section title="معلومات التواصل">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input
-                label="البريد الإلكتروني (اختياري)"
+              <InputWithValidation
+                label="البريد الإلكتروني *"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                error={getFieldError("email")}
                 type="email"
+                required
+                placeholder="example@email.com"
               />
-              <Input
+              <InputWithValidation
                 label="رقم الهاتف *"
                 name="phoneNumber"
                 value={formData.phoneNumber}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                error={getFieldError("phoneNumber")}
                 required
                 placeholder="05xxxxxxxx"
               />
@@ -198,12 +299,17 @@ const AddTeacherForm: React.FC<AddTeacherFormProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100">
+              disabled={isSubmitting}
+              className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 disabled:opacity-50">
               إلغاء
             </button>
             <button
               type="submit"
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+              disabled={isSubmitting}
+              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
+              {isSubmitting && (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              )}
               {teacher ? "تعديل المعلم" : "إضافة المعلم"}
             </button>
           </div>
@@ -213,12 +319,14 @@ const AddTeacherForm: React.FC<AddTeacherFormProps> = ({
   );
 };
 
-// 🔹 مكوّن إدخال
-const Input = ({
+// 🔹 مكوّن إدخال مع التحقق
+const InputWithValidation = ({
   label,
   name,
   value,
   onChange,
+  onBlur,
+  error,
   type = "text",
   required = false,
   placeholder = "",
@@ -226,7 +334,9 @@ const Input = ({
   label: string;
   name: string;
   value: string;
-  onChange: any;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onBlur: (fieldName: string) => void;
+  error: string | null;
   type?: string;
   required?: boolean;
   placeholder?: string;
@@ -240,10 +350,21 @@ const Input = ({
       name={name}
       value={value}
       onChange={onChange}
+      onBlur={() => onBlur(name)}
       required={required}
       placeholder={placeholder}
-      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 transition-all ${
+        error
+          ? 'border-red-300 focus:ring-red-500 bg-red-50'
+          : 'border-gray-300 focus:ring-blue-500'
+      }`}
     />
+    {error && (
+      <div className="text-red-600 text-xs mt-1 flex items-center gap-1">
+        <span>⚠️</span>
+        {error}
+      </div>
+    )}
   </div>
 );
 

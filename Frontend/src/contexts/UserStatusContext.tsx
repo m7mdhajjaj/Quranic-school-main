@@ -3,7 +3,7 @@ import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { API_BASE_URL } from '../config';
 import { io, Socket } from 'socket.io-client';
-import api from '../api';
+import api from '../Api/api';
 
 // تعريف الواجهات والأنواع
 export interface UserStatusState {

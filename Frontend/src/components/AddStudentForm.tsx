@@ -2,29 +2,14 @@
 
 
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { AlertCircle, X, Loader2, Check, User, School, Phone, Calendar, MapPin, Mail, CreditCard, Users, ChevronRight, ChevronLeft } from "lucide-react";
+import { validateStudentWithYup, type StudentFormData } from "../Validation/studentValidation";
+import { createStudent, updateStudent, type Student } from "../Api/studentApi";
+import { getAllTeachers, type Teacher } from "../Api/teacherApi";
+import { getAllGroups, type Group } from "../Api/groupApi";
 
-const validateStudentWithYup = async (data: any, isNew: boolean) => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  const errors: Record<string, string> = {};
-  
-  if (data.firstName?.length < 2) errors.firstName = "الاسم الأول يجب أن يكون حرفين على الأقل";
-  if (data.idNumber?.length !== 9) errors.idNumber = "رقم الهوية يجب أن يكون 9 أرقام";
-  if (data.phoneNumber && !/^05\d{8}$/.test(data.phoneNumber)) {
-    errors.phoneNumber = "رقم الهاتف يجب أن يبدأ بـ 05 ويتكون من 10 أرقام";
-  }
-  if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
-    errors.email = "البريد الإلكتروني غير صحيح";
-  }
-  
-  return {
-    isValid: Object.keys(errors).length === 0,
-    errors,
-    data: Object.keys(errors).length === 0 ? data : null
-  };
-};
+// Using centralized validation from studentValidation.ts
 
 const normalizeGender = (value: string) => {
   const normalized = value.trim();
@@ -44,39 +29,22 @@ const calculateAge = (birthDate: string) => {
   return age;
 };
 
-interface StudentFormData {
-  firstName: string;
-  fatherName: string;
-  grandFatherName: string;
-  motherName: string;
-  lastName: string;
-  idNumber: string;
-  birthDate: string;
-  gender: string;
-  residence: string;
-  teacher: string;
-  group: string;
-  email?: string;
-  phoneNumber: string;
-  age?: number;
-}
-
 interface Props {
   onClose: () => void;
-  onSuccess: (studentData: StudentFormData) => void;
-  student?: Partial<StudentFormData>;
+  onSuccess: (studentData: Student | StudentFormData) => void;
+  student?: Student;
 }
 
 const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<StudentFormData>({
+  const [formData, setFormData] = useState({
     firstName: student?.firstName || "",
     fatherName: student?.fatherName || "",
     grandFatherName: student?.grandFatherName || "",
     motherName: student?.motherName || "",
     lastName: student?.lastName || "",
     idNumber: student?.idNumber || "",
-    birthDate: student?.birthDate || "",
+    birthDate: student?.birthDate ? (typeof student.birthDate === 'string' ? student.birthDate : student.birthDate.toISOString().split('T')[0]) : "",
     gender: student?.gender || "",
     residence: student?.residence || "",
     teacher: student?.teacher || "",
@@ -89,22 +57,79 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  
+  // States for dropdowns
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [filteredGroups, setFilteredGroups] = useState<Group[]>([]);
+  const [loadingTeachers, setLoadingTeachers] = useState(false);
+  const [loadingGroups, setLoadingGroups] = useState(false);
 
   const calculatedAge = useMemo(() => {
     return formData.birthDate ? calculateAge(formData.birthDate) : null;
   }, [formData.birthDate]);
+
+  // Fetch teachers on component mount
+  useEffect(() => {
+    const fetchTeachers = async () => {
+      setLoadingTeachers(true);
+      try {
+        const result = await getAllTeachers();
+        if (result.success && result.data) {
+          setTeachers(result.data);
+        }
+      } catch (error) {
+        console.error('Error fetching teachers:', error);
+      } finally {
+        setLoadingTeachers(false);
+      }
+    };
+
+    const fetchGroups = async () => {
+      setLoadingGroups(true);
+      try {
+        const result = await getAllGroups();
+        if (result.success && result.data) {
+          setGroups(result.data);
+          setFilteredGroups(result.data);
+        }
+      } catch (error) {
+        console.error('Error fetching groups:', error);
+      } finally {
+        setLoadingGroups(false);
+      }
+    };
+
+    fetchTeachers();
+    fetchGroups();
+  }, []);
+
+  // Filter groups when teacher is selected
+  useEffect(() => {
+    if (formData.teacher) {
+      const teacherGroups = groups.filter(group => group.teacher === formData.teacher);
+      setFilteredGroups(teacherGroups);
+      
+      // Clear group selection if it's not available for the selected teacher
+      if (formData.group && !teacherGroups.some(group => group.name === formData.group)) {
+        setFormData(prev => ({...prev, group: ''}));
+      }
+    } else {
+      setFilteredGroups(groups);
+    }
+  }, [formData.teacher, groups, formData.group]);
 
   const isStep1Valid = useMemo(() => {
     const step1Fields = [
       'firstName', 'fatherName', 'grandFatherName', 'motherName', 
       'lastName', 'idNumber', 'birthDate', 'gender', 'residence'
     ];
-    return step1Fields.every(field => formData[field as keyof StudentFormData]?.toString().trim());
+    return step1Fields.every(field => formData[field as keyof typeof formData]?.toString().trim());
   }, [formData]);
 
   const isStep2Valid = useMemo(() => {
     const step2Fields = ['teacher', 'group', 'phoneNumber'];
-    return step2Fields.every(field => formData[field as keyof StudentFormData]?.toString().trim());
+    return step2Fields.every(field => formData[field as keyof typeof formData]?.toString().trim());
   }, [formData]);
 
   const handleChange = useCallback((
@@ -170,18 +195,35 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
     setIsSubmitting(true);
 
     try {
-      const result = await validateStudentWithYup(
-        {
-          ...formData,
-          age: calculatedAge,
-          password: !student ? formData.idNumber : undefined,
-        },
-        !student
-      );
+      // Validate form data first
+      const dataToValidate = {
+        ...formData,
+        age: calculatedAge,
+        password: !student ? formData.idNumber : undefined,
+      };
+
+      const result = await validateStudentWithYup(dataToValidate, !student);
 
       if (!result.isValid) {
         setErrors(result.errors);
         setTouchedFields(new Set(Object.keys(formData)));
+        setIsSubmitting(false);
+        return;
+      }
+
+      // If validation passes, call API
+      let apiResult;
+      if (student && student._id) {
+        // Update existing student
+        apiResult = await updateStudent(student._id, result.data!);
+      } else {
+        // Create new student
+        apiResult = await createStudent(result.data!);
+      }
+
+      if (!apiResult.success) {
+        setErrors({ general: apiResult.message || 'حدث خطأ أثناء حفظ البيانات' });
+        setIsSubmitting(false);
         return;
       }
 
@@ -190,13 +232,12 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
       
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      await onSuccess(result.data!);
+      await onSuccess(apiResult.data!);
       setTimeout(onClose, 300);
       
     } catch (error) {
-      console.error("Error validating student:", error);
-      setErrors({ general: "حدث خطأ أثناء التحقق من البيانات" });
-    } finally {
+      console.error("Error saving student:", error);
+      setErrors({ general: "حدث خطأ أثناء حفظ البيانات" });
       setIsSubmitting(false);
     }
   };
@@ -314,6 +355,7 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                       value={formData.firstName || ""}
                       onChange={handleChange}
                       onBlur={() => handleBlur("firstName")}
+                      placeholder="أدخل الاسم الأول"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("firstName")
                           ? 'border-red-300 focus:ring-red-500 bg-red-50' 
@@ -338,6 +380,7 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                       value={formData.fatherName || ""}
                       onChange={handleChange}
                       onBlur={() => handleBlur("fatherName")}
+                      placeholder="أدخل اسم الأب"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("fatherName")
                           ? 'border-red-300 focus:ring-red-500 bg-red-50' 
@@ -362,6 +405,7 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                       value={formData.grandFatherName || ""}
                       onChange={handleChange}
                       onBlur={() => handleBlur("grandFatherName")}
+                      placeholder="أدخل اسم الجد"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("grandFatherName")
                           ? 'border-red-300 focus:ring-red-500 bg-red-50' 
@@ -386,6 +430,7 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                       value={formData.motherName || ""}
                       onChange={handleChange}
                       onBlur={() => handleBlur("motherName")}
+                      placeholder="أدخل اسم الأم"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("motherName")
                           ? 'border-red-300 focus:ring-red-500 bg-red-50' 
@@ -410,6 +455,7 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                       value={formData.lastName || ""}
                       onChange={handleChange}
                       onBlur={() => handleBlur("lastName")}
+                      placeholder="أدخل الكنية"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("lastName")
                           ? 'border-red-300 focus:ring-red-500 bg-red-50' 
@@ -470,6 +516,7 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                       onChange={handleChange}
                       onBlur={() => handleBlur("birthDate")}
                       max={new Date().toISOString().split('T')[0]}
+                      placeholder="اختر تاريخ الميلاد"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("birthDate")
                           ? 'border-red-300 focus:ring-red-500 bg-red-50' 
@@ -493,6 +540,7 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                       value={formData.gender}
                       onChange={handleChange}
                       onBlur={() => handleBlur('gender')}
+                      title="اختر الجنس"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError('gender')
                           ? 'border-red-300 focus:ring-red-500 bg-red-50'
@@ -542,6 +590,7 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                       value={formData.residence || ""}
                       onChange={handleChange}
                       onBlur={() => handleBlur("residence")}
+                      placeholder="أدخل مكان السكن"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("residence")
                           ? 'border-red-300 focus:ring-red-500 bg-red-50' 
@@ -574,9 +623,8 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                       <User size={14} className="text-gray-500" />
                       اسم المعلم <span className="text-red-500">*</span>
                     </label>
-                    <input
+                    <select
                       name="teacher"
-                      type="text"
                       value={formData.teacher || ""}
                       onChange={handleChange}
                       onBlur={() => handleBlur("teacher")}
@@ -585,7 +633,19 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                           ? 'border-red-300 focus:ring-red-500 bg-red-50' 
                           : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                       }`}
-                    />
+                      title="اختر المعلم"
+                    >
+                      <option value="">اختر المعلم...</option>
+                      {loadingTeachers ? (
+                        <option value="" disabled>جاري التحميل...</option>
+                      ) : (
+                        teachers.map((teacher) => (
+                          <option key={teacher._id} value={`${teacher.firstName} ${teacher.lastName}`}>
+                            {teacher.firstName} {teacher.lastName}
+                          </option>
+                        ))
+                      )}
+                    </select>
                     {getFieldError("teacher") && (
                       <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
                         <AlertCircle size={12} />
@@ -598,9 +658,8 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                       <Users size={14} className="text-gray-500" />
                       اسم الحلقة <span className="text-red-500">*</span>
                     </label>
-                    <input
+                    <select
                       name="group"
-                      type="text"
                       value={formData.group || ""}
                       onChange={handleChange}
                       onBlur={() => handleBlur("group")}
@@ -609,7 +668,22 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                           ? 'border-red-300 focus:ring-red-500 bg-red-50' 
                           : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                       }`}
-                    />
+                      title="اختر الحلقة"
+                      disabled={!formData.teacher}
+                    >
+                      <option value="">
+                        {!formData.teacher ? "اختر المعلم أولاً..." : "اختر الحلقة..."}
+                      </option>
+                      {loadingGroups ? (
+                        <option value="" disabled>جاري التحميل...</option>
+                      ) : (
+                        filteredGroups.map((group) => (
+                          <option key={group._id} value={group.name}>
+                            {group.name}
+                          </option>
+                        ))
+                      )}
+                    </select>
                     {getFieldError("group") && (
                       <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
                         <AlertCircle size={12} />
