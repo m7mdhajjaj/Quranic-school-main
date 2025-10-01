@@ -411,30 +411,35 @@ const AdminHeader: React.FC = () => {
             {/* ✅ Profile Menu */}
             <div className="relative" ref={profileMenuRef}>
               <button
-                onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                className="flex items-center space-x-3 rtl:space-x-reverse bg-white/10 hover:bg-white/20 rounded-full px-4 py-2 transition-all duration-200"
-                aria-label="القائمة الشخصية"
+                type="button"
+                className="flex items-center gap-2 cursor-pointer p-2 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all duration-300 hover:shadow-lg hover:scale-105"
+                onClick={() => setProfileMenuOpen((v) => !v)}
+                aria-haspopup="menu"
+                aria-expanded={profileMenuOpen}
+                aria-controls="profile-menu"
               >
                 <Avatar
                   src={avatarUrl}
                   userName={currentUser?.firstName || currentUser?.name}
                   gender={userGender}
                   loading={avatarLoading}
-                  size="md"
+                  size="sm"
                 />
-                <div className="hidden md:block text-right">
-                  <p className="text-base font-medium text-white">
-                    {currentUser?.firstName} {currentUser?.lastName}
-                  </p>
-                  <p className="text-sm text-white/70">مدير النظام</p>
-                </div>
+                {currentUser && (
+                  <span className="hidden md:block text-sm font-semibold text-white max-w-32 truncate drop-shadow-sm">
+                    {currentUser.firstName && currentUser.lastName
+                      ? `${currentUser.firstName} ${currentUser.lastName}`
+                      : currentUser.firstName || currentUser.name || ''}
+                  </span>
+                )}
                 <svg
-                  className={`w-4 h-4 text-white transition-transform duration-200 ${
+                  xmlns="http://www.w3.org/2000/svg"
+                  className={`h-3 w-3 text-white transition-transform duration-300 ${
                     profileMenuOpen ? 'rotate-180' : ''
                   }`}
                   fill="none"
-                  stroke="currentColor"
                   viewBox="0 0 24 24"
+                  stroke="currentColor"
                 >
                   <path
                     strokeLinecap="round"
@@ -447,110 +452,115 @@ const AdminHeader: React.FC = () => {
 
               {/* Profile Dropdown Menu */}
               {profileMenuOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-2xl py-2 z-50 border border-gray-200 animate-fadeIn">
-                  <div className="px-4 py-3 border-b border-gray-200">
-                    <p className="text-sm font-semibold text-gray-800">
-                      {currentUser?.firstName} {currentUser?.lastName}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {currentUser?.email || 'admin@school.com'}
-                    </p>
+                <div
+                  id="profile-menu"
+                  className="absolute left-1/2 transform -translate-x-1/2 top-full mt-3 w-52 bg-white/96 backdrop-blur-2xl rounded-2xl shadow-2xl border border-emerald-100/50 py-1 z-[100] animate-in slide-in-from-top-5 duration-200"
+                >
+                  <div className="px-3 py-2.5 border-b border-emerald-100/60 bg-gradient-to-r from-emerald-50/80 to-teal-50/80 rounded-t-2xl">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7">
+                        <Avatar
+                          src={avatarUrl}
+                          userName={currentUser?.firstName || currentUser?.name}
+                          gender={userGender}
+                          loading={avatarLoading}
+                          size="sm"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="block text-emerald-800 font-bold text-sm truncate">
+                          {currentUser?.firstName && currentUser?.lastName
+                            ? `${currentUser.firstName} ${currentUser.lastName}`
+                            : currentUser?.firstName || currentUser?.name}
+                        </span>
+                        <span className="block text-emerald-600 text-xs mt-0.5 font-medium">
+                          مدير
+                        </span>
+                        {currentUser?.email && (
+                          <span className="block text-emerald-500/80 text-xs mt-0.5 truncate" title={currentUser.email}>
+                            {currentUser.email}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
-                  <button
-                    onClick={() => {
-                      navigate('/profile');
-                      setProfileMenuOpen(false);
-                    }}
-                    className="flex items-center w-full text-right px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    <svg
-                      className="w-5 h-5 ml-3 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                      />
-                    </svg>
-                    الملف الشخصي
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      navigate('/change-password');
-                      setProfileMenuOpen(false);
-                    }}
-                    className="flex items-center w-full text-right px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    <svg
-                      className="w-5 h-5 ml-3 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-                      />
-                    </svg>
-                    تغيير كلمة المرور
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      navigate('/admin/settings');
-                      setProfileMenuOpen(false);
-                    }}
-                    className="flex items-center w-full text-right px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    <svg
-                      className="w-5 h-5 ml-3 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                    </svg>
-                    الإعدادات
-                  </button>
-
-                  <div className="border-t border-gray-200 mt-2 pt-2">
+                  <div className="py-1">
                     <button
-                      onClick={handleLogout}
-                      className="flex items-center w-full text-right px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors font-medium"
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        navigate('/profile');
+                      }}
+                      className="w-full text-right py-2 px-3 text-gray-700 hover:bg-emerald-50/80 hover:text-emerald-700 transition-all duration-200 flex items-center gap-2 group"
                     >
-                      <svg
-                        className="w-5 h-5 ml-3"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                        />
-                      </svg>
-                      تسجيل الخروج
+                      <div className="p-1 rounded-lg bg-emerald-100 group-hover:bg-emerald-200 transition-colors">
+                        <svg
+                          className="w-3 h-3 text-emerald-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                          />
+                        </svg>
+                      </div>
+                      <span className="font-medium text-sm">الملف الشخصي</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        navigate('/change-password');
+                      }}
+                      className="w-full text-right py-2 px-3 text-gray-700 hover:bg-blue-50/80 hover:text-blue-700 transition-all duration-200 flex items-center gap-2 group"
+                    >
+                      <div className="p-1 rounded-lg bg-blue-100 group-hover:bg-blue-200 transition-colors">
+                        <svg
+                          className="w-3 h-3 text-blue-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1 1 21 9z"
+                          />
+                        </svg>
+                      </div>
+                      <span className="font-medium text-sm">تغيير كلمة المرور</span>
+                    </button>
+
+                    <div className="border-t border-gray-100 my-1.5" />
+
+                    <button
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        handleLogout();
+                      }}
+                      className="w-full text-right py-2 px-3 text-red-600 hover:bg-red-50/80 hover:text-red-700 transition-all duration-200 flex items-center gap-2 group"
+                    >
+                      <div className="p-1 rounded-lg bg-red-100 group-hover:bg-red-200 transition-colors">
+                        <svg
+                          className="w-3 h-3 text-red-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                          />
+                        </svg>
+                      </div>
+                      <span className="font-medium text-sm">تسجيل الخروج</span>
                     </button>
                   </div>
                 </div>

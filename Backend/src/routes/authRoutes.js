@@ -42,7 +42,8 @@ router.get("/verify", protect, (req, res) => {
       _id: req.user.id || req.user._id,
       role: req.user.role,
       firstName: req.user.firstName,
-      lastName: req.user.lastName
+      lastName: req.user.lastName,
+      email: req.user.email
     }
   });
 });

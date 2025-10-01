@@ -466,8 +466,8 @@ const Header = () => {
                         <div className="w-8 h-8">
                           {renderUserAvatar()}
                         </div>
-                        <div>
-                          <span className="block text-emerald-800 font-bold text-base">
+                        <div className="flex-1 min-w-0">
+                          <span className="block text-emerald-800 font-bold text-base truncate">
                             {currentUser?.firstName && currentUser?.lastName
                               ? `${currentUser.firstName} ${currentUser.lastName}`
                               : currentUser?.firstName || currentUser?.name}
@@ -479,6 +479,11 @@ const Header = () => {
                                 ? 'مدير'
                                 : 'طالب'}
                           </span>
+                          {currentUser?.email && (
+                            <span className="block text-emerald-500/80 text-xs mt-0.5 truncate" title={currentUser.email}>
+                              {currentUser.email}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
