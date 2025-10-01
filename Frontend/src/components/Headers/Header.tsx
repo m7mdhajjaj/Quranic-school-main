@@ -637,14 +637,14 @@
 
 import { NavLink, useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import NotificationHeader from './NotificationHeader';
-import Avatar from './Avatar';
-import { useAvatar, getUserGender } from '../hooks/useAvatar';
-import { useAuth } from '../hooks/useAuth';
+import NotificationHeader from '../NotificationHeader';
+import Avatar from '../Avatar';
+import { useAvatar, getUserGender } from '../../hooks/useAvatar';
+import { useAuth } from '../../hooks/useAuth';
 import { io, Socket } from 'socket.io-client';
 import axios from 'axios';
-import { showLogoutConfirmation } from '../utils/logoutUtils';
-import { API_BASE_URL, API_URL } from '../config';
+import { showLogoutConfirmation } from '../../utils/logoutUtils';
+import { API_BASE_URL, API_URL } from '../../config';
 
 const api = axios.create({
   baseURL: API_URL,

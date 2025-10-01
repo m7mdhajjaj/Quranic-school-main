@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import "./NotificationHeader.css";
+import "../styles/NotificationHeader.css";
 
 interface Notification {
   _id: string;

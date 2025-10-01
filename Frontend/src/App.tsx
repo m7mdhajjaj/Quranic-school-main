@@ -24,8 +24,8 @@ import { useAuth } from "./hooks/useAuth";
 // ============================================================================
 // Layout Components
 // ============================================================================
-import Header from "./components/Header";
-import AdminHeader from "./components/AdminHeader";
+import Header from "./components/Headers/Header";
+import AdminHeader from "./components/Headers/AdminHeader";
 import Footer from "./components/Footer";
 import Loading from "./components/Loading";
 

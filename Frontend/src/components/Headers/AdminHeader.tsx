@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
-import { showLogoutConfirmation } from '../utils/logoutUtils';
+import { useAuth } from '../../hooks/useAuth';
+import { showLogoutConfirmation } from '../../utils/logoutUtils';
 
 const AdminHeader: React.FC = () => {
   const { user: currentUser, logout: authLogout } = useAuth();
@@ -183,7 +183,7 @@ const AdminHeader: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             {/* Logo Section */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 cursor-pointer hover:opacity-90 transition-opacity duration-300" onClick={() => navigate('/admin/dashboard')}>
               <div
                 className={`relative w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl transition-all duration-500 transform hover:scale-110 hover:rotate-6 ${
                   scrolled
