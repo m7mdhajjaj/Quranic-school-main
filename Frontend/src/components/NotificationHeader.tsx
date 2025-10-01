@@ -100,7 +100,8 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
           closeOnClick: true,
           pauseOnHover: true,
           draggable: true,
-          className: "prayer-toast",
+          className: "prayer-toast center-toast",
+          style: { top: "40%", transform: "translateY(-50%)", zIndex: 9999 },
         }
       );
       playNotificationSound();
