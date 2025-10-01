@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const activityController = require("../controllers/activityController");
+const { restrictAdmin } = require("../middleware/authMiddleware");
 
 // Create directories for uploads if they don't exist
 const path = require("path");
@@ -13,11 +14,11 @@ if (!fs.existsSync(uploadDir)) {
   console.log("Activities uploads directory exists:", uploadDir);
 }
 
-// Get all activities
-router.get("/", activityController.getAllActivities);
+// Get all activities - منع الأدمن من الوصول
+router.get("/", restrictAdmin, activityController.getAllActivities);
 
-// Get activity by ID
-router.get("/:id", activityController.getActivityById);
+// Get activity by ID - منع الأدمن من الوصول
+router.get("/:id", restrictAdmin, activityController.getActivityById);
 
 // Create activity (with image upload)
 router.post(

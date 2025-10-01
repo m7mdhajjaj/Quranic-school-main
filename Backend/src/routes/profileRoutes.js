@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const Student = require('../models/Student');
 const Teacher = require('../models/Teacher');
+const Admin = require('../models/Admin');
 const jwt = require('jsonwebtoken');
 
 // Middleware to verify JWT token
@@ -69,6 +70,8 @@ router.get('/me', authenticateToken, async (req, res) => {
     let user;
     if (userType === 'student') {
       user = await Student.findById(userId).select('-password');
+    } else if (userType === 'admin') {
+      user = await Admin.findById(userId).select('-password');
     } else {
       user = await Teacher.findById(userId).select('-password');
     }
@@ -105,10 +108,17 @@ router.put('/me', authenticateToken, async (req, res) => {
     delete updateData._id;
     delete updateData.studentId;
     delete updateData.teacherId;
+    delete updateData.adminId;
 
     let updatedUser;
     if (userType === 'student') {
       updatedUser = await Student.findByIdAndUpdate(
+        userId, 
+        updateData, 
+        { new: true, runValidators: true }
+      ).select('-password');
+    } else if (userType === 'admin') {
+      updatedUser = await Admin.findByIdAndUpdate(
         userId, 
         updateData, 
         { new: true, runValidators: true }
@@ -182,6 +192,23 @@ router.post('/avatar', authenticateToken, upload.single('avatar'), async (req, r
         { avatar: avatarFileName },
         { new: true }
       ).select('-password');
+    } else if (userType === 'admin') {
+      // For admin, store in database as binary (consistent with adminRoutes.js)
+      user = await Admin.findByIdAndUpdate(
+        userId,
+        { 
+          avatar: { 
+            data: req.file.buffer, 
+            contentType: req.file.mimetype 
+          } 
+        },
+        { new: true }
+      ).select('-password');
+      
+      // Clean up the uploaded file since admin uses DB storage
+      if (fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
     } else {
       // Remove old avatar if exists
       const existingUser = await Teacher.findById(userId);
@@ -240,6 +267,13 @@ router.delete('/avatar', authenticateToken, async (req, res) => {
       }
 
       user = await Student.findByIdAndUpdate(
+        userId,
+        { $unset: { avatar: 1 } },
+        { new: true }
+      ).select('-password');
+    } else if (userType === 'admin') {
+      // For admin, just remove from database
+      user = await Admin.findByIdAndUpdate(
         userId,
         { $unset: { avatar: 1 } },
         { new: true }
