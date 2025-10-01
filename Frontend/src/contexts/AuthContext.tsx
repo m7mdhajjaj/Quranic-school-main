@@ -60,18 +60,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     socketRef.current = io(API_BASE_URL, {
       autoConnect: false,
-      // Prefer polling to avoid websocket pre-connect close errors
-      transports: ['polling'],
-      upgrade: false,
+      // Start with polling, allow upgrade to websocket
+      transports: ['polling', 'websocket'],
+      upgrade: true,
       path: '/socket.io',
       reconnection: true,
-      reconnectionAttempts: Infinity,
+      reconnectionAttempts: 5,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
+      timeout: 20000,
+      forceNew: true, // Force new connection each time
     });
 
     return () => {
       if (socketRef.current) {
+        // Remove all event listeners
+        socketRef.current.off('connect');
+        socketRef.current.off('connect_error');
         socketRef.current.disconnect();
       }
     };
@@ -182,8 +187,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('userId', userData._id);
 
       // Connect socket and emit login
-      if (socketRef.current) {
+      if (socketRef.current && !socketRef.current.connected) {
         socketRef.current.connect();
+        
+        // Wait for connection before emitting login
+        socketRef.current.on('connect', () => {
+          console.log('🔌 Socket متصل');
+          socketRef.current?.emit('login', {
+            userId: userData._id,
+            role: userData.role,
+            firstName: userData.firstName || userData.name
+          });
+        });
+
+        // Handle connection errors
+        socketRef.current.on('connect_error', (error) => {
+          console.warn('⚠️ خطأ في اتصال Socket:', error.message);
+        });
+      } else if (socketRef.current && socketRef.current.connected) {
+        // Already connected, just emit login
         socketRef.current.emit('login', {
           userId: userData._id,
           role: userData.role,
@@ -215,6 +237,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } catch {
           // تجاهل أخطاء API - المهم هو تنظيف البيانات المحلية
         }
+      }
+
+      // قطع اتصال Socket
+      if (socketRef.current && socketRef.current.connected) {
+        socketRef.current.disconnect();
+        console.log('🔌 تم قطع اتصال Socket');
       }
 
       // مسح البيانات من الحالة المحلية
