@@ -48,6 +48,7 @@ export const useDashboardStats = (): UseDashboardStatsReturn => {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [initialized, setInitialized] = useState(false);
 
   const fetchStats = useCallback(async (force = false) => {
     try {
@@ -64,15 +65,13 @@ export const useDashboardStats = (): UseDashboardStatsReturn => {
             setStats(parsedData);
             setLastUpdated(new Date(parseInt(cachedTime)));
             setIsLoading(false);
+            setInitialized(true);
             return;
           }
         }
       }
       
       setRefreshing(true);
-      if (!lastUpdated) {
-        setIsLoading(true);
-      }
       setError(null);
       
       console.log('📊 جلب إحصائيات لوحة التحكم...');
@@ -89,6 +88,7 @@ export const useDashboardStats = (): UseDashboardStatsReturn => {
         
         setStats(statsData);
         setLastUpdated(new Date(now));
+        setInitialized(true);
         console.log('✅ تم جلب الإحصائيات بنجاح:', statsData);
       } else {
         throw new Error(response.data.message || 'فشل في جلب الإحصائيات');
@@ -99,30 +99,34 @@ export const useDashboardStats = (): UseDashboardStatsReturn => {
       const errorMessage = error instanceof Error ? error.message : 'خطأ في جلب الإحصائيات';
       setError(errorMessage);
       
-      // استخدام البيانات الافتراضية عند الخطأ إذا لم تكن هناك بيانات محفوظة
-      if (!lastUpdated) {
+      // استخدام البيانات الافتراضية عند الخطأ
+      if (!initialized) {
         setStats(INITIAL_STATS);
+        setInitialized(true);
       }
     } finally {
       setIsLoading(false);
       setRefreshing(false);
     }
-  }, [lastUpdated]);
+  }, [initialized]);
 
+  // تحميل البيانات عند أول استخدام فقط
   useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
+    if (!initialized) {
+      fetchStats();
+    }
+  }, [fetchStats, initialized]);
 
   // Auto refresh كل 10 دقائق
   useEffect(() => {
+    if (!initialized) return;
+    
     const interval = setInterval(() => {
-      if (!refreshing && !isLoading) {
-        fetchStats();
-      }
+      fetchStats(false);
     }, 10 * 60 * 1000); // 10 دقائق
 
     return () => clearInterval(interval);
-  }, [fetchStats, refreshing, isLoading]);
+  }, [initialized, fetchStats]);
 
   return {
     stats,
