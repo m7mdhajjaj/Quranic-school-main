@@ -98,6 +98,7 @@ app.use("/api/exam-marks", require("./routes/examMarkRoutes"));
 app.use("/api/sessions", require("./routes/sessionRoutes"));
 app.use("/api/groups", require("./routes/groupRoutes"));
 app.use("/api/users", require("./routes/userStatusRoutes"));
+app.use("/api/dashboard", require("./routes/dashboardRoutes"));
 app.use("/api", require("./routes/profileRoutes"));
 
 // Error handling middleware

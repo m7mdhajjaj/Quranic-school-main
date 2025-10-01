@@ -1,0 +1,21 @@
+/* Dashboard Charts Styles */
+.bar-chart-item[data-height="0"] {
+  height: 0% !important;
+}
+
+.bar-chart-item[data-height] {
+  height: calc(var(--height-percent) * 1%);
+}
+
+@keyframes pulse-chart {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.chart-loading {
+  animation: pulse-chart 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
