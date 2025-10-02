@@ -1,5 +1,5 @@
 // models/Admin.js
-import { Schema, model } from 'mongoose';
+const mongoose = require('mongoose');
 
 /* ----------------------- Regex Patterns ----------------------- */
 // Email pattern عام، بدون مسافات
@@ -7,7 +7,7 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 // رقم يبدأ بـ05 ويتكوّن من 10 أرقام
 const phoneRegex = /^05\d{8}$/;
 
-const adminSchema = new Schema(
+const adminSchema = new mongoose.Schema(
   {
     adminId: {
       type: Number,
@@ -146,5 +146,5 @@ adminSchema.methods.touchLastSeen = function () {
   return this.save({ validateBeforeSave: false });
 };
 
-const Admin = model('Admin', adminSchema);
-export default Admin;
+const Admin = mongoose.model('Admin', adminSchema);
+module.exports = Admin;
