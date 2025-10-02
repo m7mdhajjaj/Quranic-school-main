@@ -7,7 +7,6 @@ import {
   Calendar,
   MapPin,
   Users,
-
   Lock,
   Save,
   X,
@@ -184,7 +183,6 @@ const Profile: React.FC = () => {
 
   // ظهور أنيق على التحميل
 
-
   // عرض الاسم الكامل + العمر ديناميكي
   const fullName = useMemo(
     () =>
@@ -307,9 +305,6 @@ const Profile: React.FC = () => {
 
   useEffect(() => {
     loadUser();
-    useEffect(() => {
-    // Component mounted - animations ready
-  }, []);
     return () => {
       if (avatarUrl && avatarUrl.startsWith("blob:"))
         URL.revokeObjectURL(avatarUrl);
@@ -459,7 +454,9 @@ const Profile: React.FC = () => {
   // const remainingGender = canEditFieldLocal("gender", user._id).remaining;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50" dir="rtl">
+    <div
+      className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50"
+      dir="rtl">
       {/* خلفية ديكوريتف */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-emerald-400/20 to-teal-400/20 rounded-full blur-3xl animate-pulse"></div>
@@ -477,14 +474,18 @@ const Profile: React.FC = () => {
                 <div className="relative">
                   <Avatar
                     src={avatarUrl}
-                    previewSrc={avatarFile ? URL.createObjectURL(avatarFile) : null}
+                    previewSrc={
+                      avatarFile ? URL.createObjectURL(avatarFile) : null
+                    }
                     userName={user.firstName}
                     gender={getUserGender(user)}
                     size="3xl"
                     border="ring"
                     showStatus={true}
                     showEditButton={isEditing}
-                    onEditClick={() => document.getElementById("avatar")?.click()}
+                    onEditClick={() =>
+                      document.getElementById("avatar")?.click()
+                    }
                     fallbackIcon={
                       <UserIcon className="w-12 h-12 text-emerald-600" />
                     }
@@ -504,7 +505,7 @@ const Profile: React.FC = () => {
                   />
                 )}
               </div>
-              
+
               {/* اسم المستخدم ومعلومات إضافية */}
               <div className="mb-6">
                 <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">
@@ -513,7 +514,11 @@ const Profile: React.FC = () => {
                 {user.role && (
                   <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-white font-medium">
                     <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                    {user.role === "student" ? "طالب" : user.role === "teacher" ? "معلم" : "مدير"}
+                    {user.role === "student"
+                      ? "طالب"
+                      : user.role === "teacher"
+                      ? "معلم"
+                      : "مدير"}
                   </div>
                 )}
                 {age && (
@@ -565,10 +570,12 @@ const Profile: React.FC = () => {
       {/* قسم البطاقات المحسن */}
       <div className="relative container mx-auto px-6 py-8">
         <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">المعلومات الشخصية</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            المعلومات الشخصية
+          </h2>
           <div className="w-24 h-1 bg-gradient-to-r from-emerald-500 to-teal-500 mx-auto rounded-full"></div>
         </div>
-        
+
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* الاسم الكامل */}
           {shouldShow(Boolean(fullName)) && (
@@ -801,13 +808,11 @@ const InfoCard: React.FC<{
     {/* تأثير ديكوري خلفي */}
     <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-400/5 to-transparent rounded-full blur-3xl group-hover:from-emerald-400/10 transition-all duration-500"></div>
     <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-teal-400/5 to-transparent rounded-full blur-2xl group-hover:from-teal-400/10 transition-all duration-500"></div>
-    
+
     <div className="relative">
       <div className="flex items-center gap-4 mb-4">
         <div className="bg-gradient-to-br from-emerald-50 to-teal-50 p-3 rounded-2xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-sm border border-emerald-100/30">
-          <div className="text-emerald-600">
-            {icon}
-          </div>
+          <div className="text-emerald-600">{icon}</div>
         </div>
         <div className="font-bold text-gray-800 group-hover:text-emerald-700 transition-colors duration-300 text-lg">
           {title}
