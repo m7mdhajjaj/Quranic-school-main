@@ -7,7 +7,7 @@ import {
   Calendar,
   MapPin,
   Users,
-  BookOpen,
+
   Lock,
   Save,
   X,
@@ -169,7 +169,7 @@ const recordEditLocal = (field: "birthDate" | "gender", userId: string) => {
 // ============================
 const Profile: React.FC = () => {
   const navigate = useNavigate();
-  const { user: authUser, token } = useAuth();
+  const { user: authUser } = useAuth();
 
   const [user, setUser] = useState<UserBase | null>(null);
   const [endpoint, setEndpoint] = useState<Endpoint>("students");
@@ -180,10 +180,10 @@ const Profile: React.FC = () => {
 
   // للأفاتار
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarUrl, setAvatarUrl] = useState<string>("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>("");
 
   // ظهور أنيق على التحميل
-  const [mounted, setMounted] = useState(false);
+
 
   // عرض الاسم الكامل + العمر ديناميكي
   const fullName = useMemo(
@@ -307,7 +307,9 @@ const Profile: React.FC = () => {
 
   useEffect(() => {
     loadUser();
-    setTimeout(() => setMounted(true), 10); // لتفعيل انتقالات Tailwind
+    useEffect(() => {
+    // Component mounted - animations ready
+  }, []);
     return () => {
       if (avatarUrl && avatarUrl.startsWith("blob:"))
         URL.revokeObjectURL(avatarUrl);
@@ -399,17 +401,18 @@ const Profile: React.FC = () => {
     }
   };
 
-  const changePassword = async (oldPass: string, newPass: string) => {
-    try {
-      await api.put(`/${endpoint}/${user?._id}/password`, {
-        oldPassword: oldPass,
-        newPassword: newPass,
-      });
-      toast.success("تم تغيير كلمة المرور");
-    } catch (e: any) {
-      toast.error(e?.response?.data?.message || "تعذّر تغيير كلمة المرور");
-    }
-  };
+  // تغيير كلمة المرور - للاستخدام المستقبلي
+  // const changePassword = async (oldPass: string, newPass: string) => {
+  //   try {
+  //     await api.put(`/${endpoint}/${user?._id}/password`, {
+  //       oldPassword: oldPass,
+  //       newPassword: newPass,
+  //     });
+  //     toast.success("تم تغيير كلمة المرور");
+  //   } catch (e: any) {
+  //     toast.error(e?.response?.data?.message || "تعذّر تغيير كلمة المرور");
+  //   }
+  // };
 
   // منطق إظهار/إخفاء بطاقة:
   // - إذا الدور Student & ليست في وضع التعديل & لا توجد بيانات: نخفي البطاقة
@@ -453,115 +456,120 @@ const Profile: React.FC = () => {
   if (!user) return null;
 
   const remainingBirth = canEditFieldLocal("birthDate", user._id).remaining;
-  const remainingGender = canEditFieldLocal("gender", user._id).remaining;
+  // const remainingGender = canEditFieldLocal("gender", user._id).remaining;
 
   return (
-    <div
-      className={`p-4 md:p-6 transition-all duration-500 ${
-        mounted ? "opacity-100" : "opacity-0"
-      }`}
-      dir="rtl">
-      <div className="mx-auto max-w-6xl space-y-6">
-        {/* الهيدر */}
-        <div
-          className={`relative rounded-3xl p-5 md:p-6 shadow-md overflow-hidden
-          bg-gradient-to-br from-emerald-600 via-emerald-600 to-emerald-700
-          ring-1 ring-emerald-500/20`}>
-          {/* طبقة زجاجية خفيفة */}
-          <div className="absolute inset-0 bg-white/5 -[2px] pointer-events-none" />
-          <div className="relative flex items-start justify-between gap-4">
-            <div
-              className={`transition-all ${
-                mounted
-                  ? "translate-y-0 opacity-100"
-                  : "translate-y-2 opacity-0"
-              } duration-500`}>
-              <div className="text-2xl md:text-3xl font-extrabold text-white drop-shadow-sm">
-                {fullName || "الملف الشخصي"}
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50" dir="rtl">
+      {/* خلفية ديكوريتف */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-emerald-400/20 to-teal-400/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse"></div>
+      </div>
+
+      {/* قسم الهيدر المحسن */}
+      <div className="relative">
+        <div className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-b-[3rem] shadow-2xl shadow-emerald-500/25">
+          <div className="container mx-auto px-6 py-12">
+            {/* الصورة الشخصية والمعلومات الأساسية */}
+            <div className="flex items-center flex-col text-center">
+              <div className="relative mb-6 group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-white/30 to-white/10 rounded-full blur opacity-75 group-hover:opacity-100 transition duration-1000"></div>
+                <div className="relative">
+                  <Avatar
+                    src={avatarUrl}
+                    previewSrc={avatarFile ? URL.createObjectURL(avatarFile) : null}
+                    userName={user.firstName}
+                    gender={getUserGender(user)}
+                    size="3xl"
+                    border="ring"
+                    showStatus={true}
+                    showEditButton={isEditing}
+                    onEditClick={() => document.getElementById("avatar")?.click()}
+                    fallbackIcon={
+                      <UserIcon className="w-12 h-12 text-emerald-600" />
+                    }
+                  />
+                </div>
+                {isEditing && (
+                  <input
+                    id="avatar"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    aria-label="تغيير صورة الملف الشخصي"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0] || null;
+                      setAvatarFile(f);
+                    }}
+                  />
+                )}
               </div>
-              <div className="mt-2 inline-flex items-center gap-2 bg-white/15 text-white px-3 py-1 rounded-full text-sm shadow-sm">
-                <BookOpen className="w-4 h-4" />
-                {user.role === "teacher"
-                  ? "معلّم"
-                  : user.role === "student"
-                  ? "طالب"
-                  : "مستخدم"}
+              
+              {/* اسم المستخدم ومعلومات إضافية */}
+              <div className="mb-6">
+                <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">
+                  {fullName || "مرحباً بك"}
+                </h1>
+                {user.role && (
+                  <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full text-white font-medium">
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                    {user.role === "student" ? "طالب" : user.role === "teacher" ? "معلم" : "مدير"}
+                  </div>
+                )}
+                {age && (
+                  <div className="mt-2 text-white/80 text-sm">
+                    العمر: {age} سنة
+                  </div>
+                )}
+              </div>
+
+              {/* أزرار محسنة */}
+              <div className="flex flex-wrap gap-4 justify-center">
+                {!isEditing ? (
+                  <>
+                    <button
+                      onClick={beginEdit}
+                      className="group inline-flex items-center gap-3 bg-white text-emerald-700 font-bold px-6 py-3 rounded-2xl hover:bg-emerald-50 hover:scale-105 active:scale-95 transition-all duration-300 shadow-lg hover:shadow-xl">
+                      <Edit className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
+                      تعديل المعلومات الشخصية
+                    </button>
+                    <button
+                      onClick={() => navigate("/change-password")}
+                      className="group inline-flex items-center gap-3 bg-white/10 backdrop-blur-sm border border-white/20 text-white font-bold px-6 py-3 rounded-2xl hover:bg-white/20 hover:scale-105 active:scale-95 transition-all duration-300">
+                      <Lock className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
+                      تغيير كلمة المرور
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={saveProfile}
+                      className="group inline-flex items-center gap-3 bg-white text-emerald-700 font-bold px-6 py-3 rounded-2xl hover:bg-emerald-50 hover:scale-105 active:scale-95 transition-all duration-300 shadow-lg hover:shadow-xl">
+                      <Save className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
+                      حفظ التعديلات
+                    </button>
+                    <button
+                      onClick={cancelEdit}
+                      className="group inline-flex items-center gap-3 bg-red-500/20 backdrop-blur-sm border border-red-300/30 text-white font-bold px-6 py-3 rounded-2xl hover:bg-red-500/30 hover:scale-105 active:scale-95 transition-all duration-300">
+                      <X className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
+                      إلغاء
+                    </button>
+                  </>
+                )}
               </div>
             </div>
-
-            {/* الأفاتار */}
-            <div
-              className={`relative group ${
-                mounted ? "opacity-100 scale-100" : "opacity-0 scale-95"
-              } transition-all duration-500`}>
-              <Avatar
-                src={avatarUrl}
-                previewSrc={avatarFile ? URL.createObjectURL(avatarFile) : null}
-                userName={user.firstName}
-                gender={getUserGender(user)}
-                size="3xl"
-                border="ring"
-                showStatus={true} // إظهار نقطة الحالة
-                showEditButton={isEditing}
-                onEditClick={() => document.getElementById("avatar")?.click()}
-                fallbackIcon={
-                  <UserIcon className="w-12 h-12 text-emerald-600" />
-                }
-              />
-              {isEditing && (
-                <input
-                  id="avatar"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  aria-label="تغيير صورة الملف الشخصي"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0] || null;
-                    setAvatarFile(f);
-                  }}
-                />
-              )}
-            </div>
-          </div>
-
-          {/* أزرار */}
-          <div className="mt-4 flex flex-wrap gap-3">
-            {!isEditing ? (
-              <>
-                <button
-                  onClick={beginEdit}
-                  className="inline-flex items-center gap-2 bg-white text-emerald-700 font-semibold px-4 py-2 rounded-xl hover:bg-emerald-50 active:scale-[.99] transition">
-                  <Edit className="w-4 h-4" />
-                  تعديل المعلومات الشخصية
-                </button>
-                <button
-                  onClick={() => navigate("/change-password")}
-                  className="inline-flex items-center gap-2 bg-white/20 text-white font-semibold px-4 py-2 rounded-xl hover:bg-white/30 active:scale-[.99] transition">
-                  <Lock className="w-4 h-4" />
-                  تغيير كلمة المرور
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={saveProfile}
-                  className="inline-flex items-center gap-2 bg-white text-emerald-700 font-extrabold px-4 py-2 rounded-xl hover:bg-emerald-50 active:scale-[.99] transition motion-safe:animate-none">
-                  <Save className="w-4 h-4" />
-                  حفظ
-                </button>
-                <button
-                  onClick={cancelEdit}
-                  className="inline-flex items-center gap-2 bg-white/20 text-white font-semibold px-4 py-2 rounded-xl hover:bg-white/30 active:scale-[.99] transition">
-                  <X className="w-4 h-4" />
-                  إلغاء
-                </button>
-              </>
-            )}
           </div>
         </div>
+      </div>
 
-        {/* البطاقات */}
-        <div className="grid md:grid-cols-3 gap-4">
+      {/* قسم البطاقات المحسن */}
+      <div className="relative container mx-auto px-6 py-8">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">المعلومات الشخصية</h2>
+          <div className="w-24 h-1 bg-gradient-to-r from-emerald-500 to-teal-500 mx-auto rounded-full"></div>
+        </div>
+        
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* الاسم الكامل */}
           {shouldShow(Boolean(fullName)) && (
             <InfoCard
@@ -789,12 +797,26 @@ const InfoCard: React.FC<{
   title: string;
   value: React.ReactNode;
 }> = ({ icon, title, value }) => (
-  <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
-    <div className="flex items-center gap-3 mb-2">
-      <div className="bg-slate-50 p-2 rounded-xl">{icon}</div>
-      <div className="font-semibold text-slate-800">{title}</div>
+  <div className="group relative bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg border border-gray-100/50 p-6 transition-all duration-500 hover:shadow-2xl hover:shadow-emerald-500/10 hover:-translate-y-2 hover:bg-white/95 overflow-hidden">
+    {/* تأثير ديكوري خلفي */}
+    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-400/5 to-transparent rounded-full blur-3xl group-hover:from-emerald-400/10 transition-all duration-500"></div>
+    <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-teal-400/5 to-transparent rounded-full blur-2xl group-hover:from-teal-400/10 transition-all duration-500"></div>
+    
+    <div className="relative">
+      <div className="flex items-center gap-4 mb-4">
+        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 p-3 rounded-2xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-sm border border-emerald-100/30">
+          <div className="text-emerald-600">
+            {icon}
+          </div>
+        </div>
+        <div className="font-bold text-gray-800 group-hover:text-emerald-700 transition-colors duration-300 text-lg">
+          {title}
+        </div>
+      </div>
+      <div className="text-gray-700 leading-relaxed font-medium text-base">
+        {value}
+      </div>
     </div>
-    <div className="text-slate-700 leading-relaxed">{value}</div>
   </div>
 );
 
@@ -809,7 +831,7 @@ const TextInput: React.FC<{
     value={value}
     onChange={(e) => onChange(e.target.value)}
     placeholder={placeholder}
-    className="w-full border rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-300 transition"
+    className="w-full border-2 border-gray-200/60 rounded-2xl px-4 py-3 bg-white/60 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 hover:border-emerald-300 transition-all duration-300 text-gray-700 placeholder-gray-400 shadow-sm hover:shadow-md"
   />
 );
 
