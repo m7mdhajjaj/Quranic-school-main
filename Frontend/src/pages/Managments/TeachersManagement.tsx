@@ -1,8 +1,19 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { 
-  FaEdit, FaTrash, FaPlus, FaSearch, FaChevronLeft, FaChevronRight,
-  FaDownload, FaFilter, FaSortAmountDown, FaSortAmountUp,
-  FaUserTie, FaBook, FaChartBar, FaUsers
+import {
+  FaEdit,
+  FaTrash,
+  FaPlus,
+  FaSearch,
+  FaChevronLeft,
+  FaChevronRight,
+  FaDownload,
+  FaFilter,
+  FaSortAmountDown,
+  FaSortAmountUp,
+  FaUserTie,
+  FaBook,
+  FaChartBar,
+  FaUserFriends,
 } from 'react-icons/fa';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../Api/api';
@@ -46,11 +57,11 @@ const TeachersManagement: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [teachersPerPage, setTeachersPerPage] = useState(10);
 
-
-
   // Selected Teachers for Bulk Actions
-  const [selectedTeachers, setSelectedTeachers] = useState<Set<string>>(new Set());
-  
+  const [selectedTeachers, setSelectedTeachers] = useState<Set<string>>(
+    new Set()
+  );
+
   // Students count state with caching
   const [studentsCount, setStudentsCount] = useState<number>(0);
   const [studentsLoading, setStudentsLoading] = useState<boolean>(false);
@@ -59,19 +70,22 @@ const TeachersManagement: React.FC = () => {
 
   // Extract unique groups
   const groups = useMemo(() => {
-    const allGroups = teachers.flatMap(t => t.groups || []);
+    const allGroups = teachers.flatMap((t) => t.groups || []);
     return [...new Set(allGroups)].sort();
   }, [teachers]);
 
   // Statistics
   const stats = useMemo(() => {
-    const maleCount = teachers.filter(t => t.gender === 'ذكر').length;
-    const femaleCount = teachers.filter(t => t.gender === 'أنثى').length;
-    const activeCount = teachers.filter(t => t.isActive).length;
-    const avgAge = teachers.length > 0 
-      ? (teachers.reduce((sum, t) => sum + (t.age || 0), 0) / teachers.length).toFixed(1)
-      : 0;
-    
+    const maleCount = teachers.filter((t) => t.gender === 'ذكر').length;
+    const femaleCount = teachers.filter((t) => t.gender === 'أنثى').length;
+    const activeCount = teachers.filter((t) => t.isActive).length;
+    const avgAge =
+      teachers.length > 0
+        ? (
+            teachers.reduce((sum, t) => sum + (t.age || 0), 0) / teachers.length
+          ).toFixed(1)
+        : 0;
+
     return {
       total: teachers.length,
       active: activeCount,
@@ -80,115 +94,134 @@ const TeachersManagement: React.FC = () => {
       female: femaleCount,
       avgAge,
       groups: groups.length,
-      students: studentsCount
+      students: studentsCount,
     };
   }, [teachers, groups.length, studentsCount]);
 
   // Fetch students count (optimized with caching)
-  const fetchStudentsCount = useCallback(async (force = false) => {
-    // Cache for 30 seconds to avoid repeated API calls
-    const now = Date.now();
-    if (!force && studentsLastFetch && (now - studentsLastFetch) < 30000) {
-      console.log('⚡ استخدام عدد الطلاب المحفوظ');
-      return;
-    }
-    
-    setStudentsLoading(true);
-    setStudentsError(false);
-    
-    const startTime = performance.now(); // قياس الأداء
-    
-    try {
-      // Try stats endpoint first for richer data, fallback to count
-      let response;
-      try {
-        response = await api.get('/students/stats', { 
-          timeout: 2000,
-          headers: {
-            'Cache-Control': 'no-cache',
-            'Accept': 'application/json'
-          }
-        });
-        
-        // If stats endpoint works, use the total from stats
-        if (response.data && response.data.success && response.data.stats?.total !== undefined) {
-          const endTime = performance.now();
-          const duration = (endTime - startTime).toFixed(2);
-          
-          setStudentsCount(response.data.stats.total);
-          setStudentsLastFetch(now);
-          setStudentsError(false);
-          console.log(`📊 تم تحميل إحصائيات الطلاب: ${response.data.stats.total} (${response.data.stats.male} ذكور، ${response.data.stats.female} إناث) في ${duration}ms`);
-          return; // Success, no need for fallbacks
-        }
-      } catch {
-        console.log('📊 Stats endpoint not available, trying count endpoint...');
+  const fetchStudentsCount = useCallback(
+    async (force = false) => {
+      // Cache for 30 seconds to avoid repeated API calls
+      const now = Date.now();
+      if (!force && studentsLastFetch && now - studentsLastFetch < 30000) {
+        console.log('⚡ استخدام عدد الطلاب المحفوظ');
+        return;
       }
 
-      // Fallback to count endpoint  
-      response = await api.get('/students/count', { 
-        timeout: 2000, // Super fast timeout for optimized endpoint
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Accept': 'application/json'
+      setStudentsLoading(true);
+      setStudentsError(false);
+
+      const startTime = performance.now(); // قياس الأداء
+
+      try {
+        // Try stats endpoint first for richer data, fallback to count
+        let response;
+        try {
+          response = await api.get('/students/stats', {
+            timeout: 2000,
+            headers: {
+              'Cache-Control': 'no-cache',
+              Accept: 'application/json',
+            },
+          });
+
+          // If stats endpoint works, use the total from stats
+          if (
+            response.data &&
+            response.data.success &&
+            response.data.stats?.total !== undefined
+          ) {
+            const endTime = performance.now();
+            const duration = (endTime - startTime).toFixed(2);
+
+            setStudentsCount(response.data.stats.total);
+            setStudentsLastFetch(now);
+            setStudentsError(false);
+            console.log(
+              `📊 تم تحميل إحصائيات الطلاب: ${response.data.stats.total} (${response.data.stats.male} ذكور، ${response.data.stats.female} إناث) في ${duration}ms`
+            );
+            return; // Success, no need for fallbacks
+          }
+        } catch {
+          console.log(
+            '📊 Stats endpoint not available, trying count endpoint...'
+          );
         }
-      });
-      
-      const endTime = performance.now();
-      const duration = (endTime - startTime).toFixed(2);
-      
-      if (response.data && response.data.success && typeof response.data.count === 'number') {
-        setStudentsCount(response.data.count);
-        setStudentsLastFetch(now);
-        setStudentsError(false);
-        console.log(`🚀 تم تحميل عدد الطلاب بسرعة البرق: ${response.data.count} في ${duration}ms`);
-      } else {
-        // Fallback to full students list if count endpoint fails
-        console.log('📡 Fallback إلى الـ endpoint الكامل...');
-        const fullResponse = await api.get('/students', { 
-          timeout: 5000,
+
+        // Fallback to count endpoint
+        response = await api.get('/students/count', {
+          timeout: 2000, // Super fast timeout for optimized endpoint
+          headers: {
+            'Cache-Control': 'no-cache',
+            Accept: 'application/json',
+          },
         });
-        
-        if (fullResponse.data && Array.isArray(fullResponse.data)) {
-          setStudentsCount(fullResponse.data.length);
+
+        const endTime = performance.now();
+        const duration = (endTime - startTime).toFixed(2);
+
+        if (
+          response.data &&
+          response.data.success &&
+          typeof response.data.count === 'number'
+        ) {
+          setStudentsCount(response.data.count);
           setStudentsLastFetch(now);
           setStudentsError(false);
-          console.log(`⚡ تم تحميل عدد الطلاب بنجاح (fallback): ${fullResponse.data.length}`);
+          console.log(
+            `🚀 تم تحميل عدد الطلاب بسرعة البرق: ${response.data.count} في ${duration}ms`
+          );
         } else {
-          console.warn('البيانات المستلمة غير صحيحة:', fullResponse.data);
-          setStudentsCount(0);
-          setStudentsError(true);
+          // Fallback to full students list if count endpoint fails
+          console.log('📡 Fallback إلى الـ endpoint الكامل...');
+          const fullResponse = await api.get('/students', {
+            timeout: 5000,
+          });
+
+          if (fullResponse.data && Array.isArray(fullResponse.data)) {
+            setStudentsCount(fullResponse.data.length);
+            setStudentsLastFetch(now);
+            setStudentsError(false);
+            console.log(
+              `⚡ تم تحميل عدد الطلاب بنجاح (fallback): ${fullResponse.data.length}`
+            );
+          } else {
+            console.warn('البيانات المستلمة غير صحيحة:', fullResponse.data);
+            setStudentsCount(0);
+            setStudentsError(true);
+          }
         }
-      }
-    } catch (error) {
-      console.error('خطأ في تحميل عدد الطلاب:', error);
-      
-      // Handle different types of errors
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as {response?: {status?: number}};
-        if (axiosError.response?.status === 500) {
-          console.log('💡 خطأ في الخادم - سيتم المحاولة مرة أخرى لاحقاً');
-        } else if (axiosError.response?.status === 404) {
-          console.log('💡 نقطة النهاية غير موجودة - قد تحتاج للتحديث');
+      } catch (error) {
+        console.error('خطأ في تحميل عدد الطلاب:', error);
+
+        // Handle different types of errors
+        if (error && typeof error === 'object' && 'response' in error) {
+          const axiosError = error as { response?: { status?: number } };
+          if (axiosError.response?.status === 500) {
+            console.log('💡 خطأ في الخادم - سيتم المحاولة مرة أخرى لاحقاً');
+          } else if (axiosError.response?.status === 404) {
+            console.log('💡 نقطة النهاية غير موجودة - قد تحتاج للتحديث');
+          }
         }
+
+        setStudentsCount(0);
+        setStudentsError(true);
+      } finally {
+        setStudentsLoading(false);
       }
-      
-      setStudentsCount(0);
-      setStudentsError(true);
-    } finally {
-      setStudentsLoading(false);
-    }
-  }, [studentsLastFetch]);
+    },
+    [studentsLastFetch]
+  );
 
   // Fetch teachers
   const fetchTeachers = useCallback(async (retryAttempt = 0) => {
     setIsLoading(true);
     setError(null);
     setRetryCount(retryAttempt);
-    
+
     try {
       const result = await getAllTeachers();
-      
+
       if (result.success && result.data) {
         console.log(`✅ تم تحميل ${result.data.length} معلم بنجاح`);
         setTeachers(result.data);
@@ -197,16 +230,15 @@ const TeachersManagement: React.FC = () => {
       } else {
         throw new Error(result.message || 'فشل في تحميل بيانات المعلمين');
       }
-      
     } catch (error: unknown) {
       console.error('خطأ في تحميل المعلمين:', error);
-      
+
       let errorMessage = 'حدث خطأ في تحميل البيانات';
-      
+
       if (error instanceof Error) {
         errorMessage = error.message || 'خطأ غير محدد';
       }
-      
+
       setError(errorMessage);
       setTeachers([]);
       console.log('❌ فشل في تحميل بيانات المعلمين:', errorMessage);
@@ -228,14 +260,14 @@ const TeachersManagement: React.FC = () => {
         console.log('🔄 إعادة محاولة تحميل عدد الطلاب...');
         fetchStudentsCount(true);
       }, 10000);
-      
+
       return () => clearTimeout(retryTimer);
     }
   }, [studentsError, studentsLoading, fetchStudentsCount]);
 
   useEffect(() => {
     if (!hasPermission) return;
-    
+
     fetchTeachers();
   }, [hasPermission, fetchTeachers]);
 
@@ -262,22 +294,32 @@ const TeachersManagement: React.FC = () => {
         (teacher.email || '').toLowerCase().includes(searchLower) ||
         (teacher.phoneNumber || '').includes(searchLower);
 
-      const matchesGroup = selectedGroup === 'all' || 
+      const matchesGroup =
+        selectedGroup === 'all' ||
         (teacher.groups && teacher.groups.includes(selectedGroup));
-      const matchesGender = selectedGender === 'all' || teacher.gender === selectedGender;
-      const matchesStatus = selectedStatus === 'all' || 
+      const matchesGender =
+        selectedGender === 'all' || teacher.gender === selectedGender;
+      const matchesStatus =
+        selectedStatus === 'all' ||
         (selectedStatus === 'active' && teacher.isActive) ||
         (selectedStatus === 'inactive' && !teacher.isActive);
-      const matchesAge = teacher.age ? 
-        teacher.age >= ageRange[0] && teacher.age <= ageRange[1] : true;
+      const matchesAge = teacher.age
+        ? teacher.age >= ageRange[0] && teacher.age <= ageRange[1]
+        : true;
 
-      return matchesSearch && matchesGroup && matchesGender && matchesStatus && matchesAge;
+      return (
+        matchesSearch &&
+        matchesGroup &&
+        matchesGender &&
+        matchesStatus &&
+        matchesAge
+      );
     });
 
     // Sort
     filtered.sort((a, b) => {
       let compareResult = 0;
-      
+
       if (sortField === 'teacherId') {
         compareResult = a.teacherId - b.teacherId;
       } else if (sortField === 'firstName') {
@@ -292,7 +334,16 @@ const TeachersManagement: React.FC = () => {
     });
 
     return filtered;
-  }, [teachers, searchTerm, selectedGroup, selectedGender, selectedStatus, ageRange, sortField, sortOrder]);
+  }, [
+    teachers,
+    searchTerm,
+    selectedGroup,
+    selectedGender,
+    selectedStatus,
+    ageRange,
+    sortField,
+    sortOrder,
+  ]);
 
   // Pagination
   const indexOfLastTeacher = currentPage * teachersPerPage;
@@ -301,7 +352,9 @@ const TeachersManagement: React.FC = () => {
     indexOfFirstTeacher,
     indexOfLastTeacher
   );
-  const totalPages = Math.ceil(filteredAndSortedTeachers.length / teachersPerPage);
+  const totalPages = Math.ceil(
+    filteredAndSortedTeachers.length / teachersPerPage
+  );
 
   // Handle delete
   const handleDelete = async (teacherId: string) => {
@@ -317,16 +370,16 @@ const TeachersManagement: React.FC = () => {
       reverseButtons: true,
       customClass: {
         popup: 'rtl-popup',
-        title: 'rtl-title'
-      }
+        title: 'rtl-title',
+      },
     });
 
     if (result.isConfirmed) {
       try {
         await api.delete(`/teachers/${teacherId}`);
-        
-        setTeachers(prevTeachers =>
-          prevTeachers.filter(t => t._id !== teacherId)
+
+        setTeachers((prevTeachers) =>
+          prevTeachers.filter((t) => t._id !== teacherId)
         );
 
         await Swal.fire({
@@ -334,7 +387,7 @@ const TeachersManagement: React.FC = () => {
           text: 'تم حذف المعلم بنجاح',
           icon: 'success',
           confirmButtonText: 'موافق',
-          customClass: { popup: 'rtl-popup', title: 'rtl-title' }
+          customClass: { popup: 'rtl-popup', title: 'rtl-title' },
         });
       } catch (deleteError) {
         console.error('❌ فشل في حذف المعلم:', deleteError);
@@ -343,7 +396,7 @@ const TeachersManagement: React.FC = () => {
           text: 'حدث خطأ أثناء حذف المعلم',
           icon: 'error',
           confirmButtonText: 'موافق',
-          customClass: { popup: 'rtl-popup', title: 'rtl-title' }
+          customClass: { popup: 'rtl-popup', title: 'rtl-title' },
         });
       }
     }
@@ -360,15 +413,19 @@ const TeachersManagement: React.FC = () => {
   const handleAddSuccess = (teacherData?: Teacher | TeacherFormData) => {
     if (teacherData) {
       if (isEditMode && selectedTeacher) {
-        setTeachers(prev => prev.map(t => 
-          t._id === selectedTeacher._id ? { ...t, ...teacherData } as Teacher : t
-        ));
+        setTeachers((prev) =>
+          prev.map((t) =>
+            t._id === selectedTeacher._id
+              ? ({ ...t, ...teacherData } as Teacher)
+              : t
+          )
+        );
       } else {
         // للطلاب الجدد سيتم إضافتهم بواسطة الـ API
         fetchTeachers(); // إعادة تحميل القائمة
       }
     }
-    
+
     setIsFormVisible(false);
     setIsEditMode(false);
     setSelectedTeacher(null);
@@ -376,17 +433,36 @@ const TeachersManagement: React.FC = () => {
 
   // Export to CSV
   const handleExport = () => {
-    const headers = ['رقم المعلم', 'الاسم الأول', 'اسم الأب', 'اسم العائلة', 'البريد الإلكتروني', 'رقم الهاتف', 'العمر', 'الجنس', 'الحالة'];
-    const rows = filteredAndSortedTeachers.map(t => [
-      t.teacherId, t.firstName, t.fatherName || '', t.lastName, 
-      t.email, t.phoneNumber, t.age || '', t.gender || '', t.isActive ? 'نشط' : 'غير نشط'
+    const headers = [
+      'رقم المعلم',
+      'الاسم الأول',
+      'اسم الأب',
+      'اسم العائلة',
+      'البريد الإلكتروني',
+      'رقم الهاتف',
+      'العمر',
+      'الجنس',
+      'الحالة',
+    ];
+    const rows = filteredAndSortedTeachers.map((t) => [
+      t.teacherId,
+      t.firstName,
+      t.fatherName || '',
+      t.lastName,
+      t.email,
+      t.phoneNumber,
+      t.age || '',
+      t.gender || '',
+      t.isActive ? 'نشط' : 'غير نشط',
     ]);
-    
+
     const csvContent = [headers, ...rows]
-      .map(row => row.join(','))
+      .map((row) => row.join(','))
       .join('\n');
-    
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+
+    const blob = new Blob(['\ufeff' + csvContent], {
+      type: 'text/csv;charset=utf-8;',
+    });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = `teachers_${new Date().toISOString().split('T')[0]}.csv`;
@@ -421,12 +497,14 @@ const TeachersManagement: React.FC = () => {
     if (result.isConfirmed) {
       try {
         await Promise.all(
-          Array.from(selectedTeachers).map(id => api.delete(`/teachers/${id}`))
+          Array.from(selectedTeachers).map((id) =>
+            api.delete(`/teachers/${id}`)
+          )
         );
-        
-        setTeachers(prev => prev.filter(t => !selectedTeachers.has(t._id)));
+
+        setTeachers((prev) => prev.filter((t) => !selectedTeachers.has(t._id)));
         setSelectedTeachers(new Set());
-        
+
         await Swal.fire('تم الحذف!', 'تم حذف المعلمين بنجاح', 'success');
       } catch (bulkDeleteError) {
         console.error('❌ فشل في حذف المعلمين:', bulkDeleteError);
@@ -436,9 +514,11 @@ const TeachersManagement: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4 md:p-6" dir="rtl">
+    <div
+      className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4 md:p-6"
+      dir="rtl"
+    >
       <div className="max-w-7xl mx-auto">
-        
         {/* Header Section */}
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border border-gray-100">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6 text-right">
@@ -451,11 +531,13 @@ const TeachersManagement: React.FC = () => {
                   <h1 className="text-3xl font-bold text-gray-900">
                     إدارة المعلمين
                   </h1>
-                  <p className="text-gray-600 text-sm mt-1">نظام متكامل لإدارة بيانات المعلمين</p>
+                  <p className="text-gray-600 text-sm mt-1">
+                    نظام متكامل لإدارة بيانات المعلمين
+                  </p>
                 </div>
               </div>
             </div>
-            
+
             <div className="flex flex-wrap items-center gap-3">
               <button
                 onClick={() => {
@@ -464,17 +546,27 @@ const TeachersManagement: React.FC = () => {
                 }}
                 disabled={isLoading}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg ${
-                  isLoading 
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                  isLoading
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700'
                 }`}
               >
-                <svg className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                <svg
+                  className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
                 </svg>
                 {isLoading ? 'جاري التحديث...' : 'تحديث البيانات'}
               </button>
-              
+
               <button
                 onClick={handleExport}
                 className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl hover:from-purple-600 hover:to-pink-700 transition-all duration-200 shadow-md hover:shadow-lg"
@@ -482,7 +574,7 @@ const TeachersManagement: React.FC = () => {
                 <FaDownload className="w-4 h-4" />
                 تصدير
               </button>
-              
+
               <button
                 onClick={() => {
                   setIsEditMode(false);
@@ -510,37 +602,49 @@ const TeachersManagement: React.FC = () => {
                 />
                 <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               </div>
-              
+
               <select
                 value={selectedGroup}
                 onChange={(e) => setSelectedGroup(e.target.value)}
                 className="md:col-span-3 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="all">جميع الحلقات ({groups.length})</option>
-                {groups.map(group => (
-                  <option key={group} value={group}>{group}</option>
+                {groups.map((group) => (
+                  <option key={group} value={group}>
+                    {group}
+                  </option>
                 ))}
               </select>
-              
+
               <button
                 onClick={() => setShowFilters(!showFilters)}
                 className={`md:col-span-2 flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-xl transition-all ${
-                  showFilters 
-                    ? 'border-blue-500 bg-blue-50 text-blue-600' 
+                  showFilters
+                    ? 'border-blue-500 bg-blue-50 text-blue-600'
                     : 'border-gray-300 hover:border-blue-400'
                 }`}
               >
                 <FaFilter className="w-4 h-4" />
                 فلاتر
               </button>
-              
+
               <button
                 onClick={resetFilters}
                 className="md:col-span-1 px-4 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all"
                 title="إعادة تعيين الفلاتر"
               >
-                <svg className="w-5 h-5 text-gray-600 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="w-5 h-5 text-gray-600 mx-auto"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
@@ -550,7 +654,9 @@ const TeachersManagement: React.FC = () => {
               <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 animate-fadeIn">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">الجنس</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      الجنس
+                    </label>
                     <select
                       value={selectedGender}
                       onChange={(e) => setSelectedGender(e.target.value)}
@@ -561,9 +667,11 @@ const TeachersManagement: React.FC = () => {
                       <option value="أنثى">أنثى</option>
                     </select>
                   </div>
-                  
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">الحالة</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      الحالة
+                    </label>
                     <select
                       value={selectedStatus}
                       onChange={(e) => setSelectedStatus(e.target.value)}
@@ -574,7 +682,7 @@ const TeachersManagement: React.FC = () => {
                       <option value="inactive">غير نشط</option>
                     </select>
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       العمر: {ageRange[0]} - {ageRange[1]} سنة
@@ -584,13 +692,17 @@ const TeachersManagement: React.FC = () => {
                       min="0"
                       max="100"
                       value={ageRange[1]}
-                      onChange={(e) => setAgeRange([ageRange[0], parseInt(e.target.value)])}
+                      onChange={(e) =>
+                        setAgeRange([ageRange[0], parseInt(e.target.value)])
+                      }
                       className="w-full"
                     />
                   </div>
-                  
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">عرض</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      عرض
+                    </label>
                     <select
                       value={teachersPerPage}
                       onChange={(e) => {
@@ -614,114 +726,161 @@ const TeachersManagement: React.FC = () => {
         {/* Statistics Cards */}
         {!isLoading && (
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-6">
-            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-blue-500 hover:shadow-xl transition-shadow">
+            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-blue-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <FaUserTie className="w-5 h-5 text-blue-600" />
+                <div className="p-3 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl shadow-md">
+                  <FaUserTie className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-600">إجمالي</p>
-                  <p className="text-xl font-bold text-gray-900">{stats.total}</p>
+                  <p className="text-xs text-gray-600 font-medium">إجمالي</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {stats.total}
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-green-500 hover:shadow-xl transition-shadow">
+            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-green-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <FaUsers className="w-5 h-5 text-green-600" />
+                <div className="p-3 bg-gradient-to-br from-green-400 to-emerald-600 rounded-xl shadow-md">
+                  <svg
+                    className="w-6 h-6 text-white"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-600">نشط</p>
-                  <p className="text-xl font-bold text-gray-900">{stats.active}</p>
+                  <p className="text-xs text-gray-600 font-medium">نشط</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {stats.active}
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-red-500 hover:shadow-xl transition-shadow">
+            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-red-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-100 rounded-lg">
-                  <FaUsers className="w-5 h-5 text-red-600" />
+                <div className="p-3 bg-gradient-to-br from-red-400 to-red-600 rounded-xl shadow-md">
+                  <svg
+                    className="w-6 h-6 text-white"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-600">غير نشط</p>
-                  <p className="text-xl font-bold text-gray-900">{stats.inactive}</p>
+                  <p className="text-xs text-gray-600 font-medium">غير نشط</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {stats.inactive}
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-cyan-500 hover:shadow-xl transition-shadow">
+            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-cyan-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-cyan-100 rounded-lg">
-                  <svg className="w-5 h-5 text-cyan-600" fill="currentColor" viewBox="0 0 20 20">
+                <div className="p-3 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-xl shadow-md">
+                  <svg
+                    className="w-6 h-6 text-white"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
                     <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
                   </svg>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-600">ذكور</p>
-                  <p className="text-xl font-bold text-gray-900">{stats.male}</p>
+                  <p className="text-xs text-gray-600 font-medium">ذكور</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {stats.male}
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-pink-500 hover:shadow-xl transition-shadow">
+            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-pink-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-pink-100 rounded-lg">
-                  <svg className="w-5 h-5 text-pink-600" fill="currentColor" viewBox="0 0 20 20">
+                <div className="p-3 bg-gradient-to-br from-pink-400 to-pink-600 rounded-xl shadow-md">
+                  <svg
+                    className="w-6 h-6 text-white"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
                     <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
                   </svg>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-600">إناث</p>
-                  <p className="text-xl font-bold text-gray-900">{stats.female}</p>
+                  <p className="text-xs text-gray-600 font-medium">إناث</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {stats.female}
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-purple-500 hover:shadow-xl transition-shadow">
+            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-purple-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <FaBook className="w-5 h-5 text-purple-600" />
+                <div className="p-3 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl shadow-md">
+                  <FaBook className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-600">الحلقات</p>
-                  <p className="text-xl font-bold text-gray-900">{stats.groups}</p>
+                  <p className="text-xs text-gray-600 font-medium">الحلقات</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {stats.groups}
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-lg border-r-4 border-amber-500 hover:shadow-xl transition-shadow">
+            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-amber-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-amber-100 rounded-lg">
-                  <FaChartBar className="w-5 h-5 text-amber-600" />
+                <div className="p-3 bg-gradient-to-br from-amber-400 to-amber-600 rounded-xl shadow-md">
+                  <FaChartBar className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-600">متوسط العمر</p>
-                  <p className="text-xl font-bold text-gray-900">{stats.avgAge}</p>
+                  <p className="text-xs text-gray-600 font-medium">
+                    متوسط العمر
+                  </p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {stats.avgAge}
+                  </p>
                 </div>
               </div>
             </div>
 
             {/* New eighth card - Students Count */}
-            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-indigo-500 hover:shadow-xl transition-shadow">
+            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-indigo-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-indigo-100 rounded-lg">
+                <div className="p-3 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-xl shadow-md">
                   {studentsLoading ? (
-                    <div className="w-5 h-5 bg-indigo-300 rounded animate-pulse"></div>
+                    <div className="w-6 h-6 bg-indigo-300 rounded animate-pulse"></div>
                   ) : (
-                    <svg className="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M12 14l9-5-9-5-9 5 9 5z" />
-                      <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                    </svg>
+                    <FaUserFriends className="w-6 h-6 text-white" />
                   )}
                 </div>
                 <div>
-                  <p className="text-xs text-gray-600">عدد الطلاب</p>
+                  <p className="text-xs text-gray-600 font-medium">
+                    عدد الطلاب
+                  </p>
                   <p className="text-xl font-bold text-gray-900">
                     {studentsLoading ? (
                       <span className="inline-block w-8 h-6 bg-gray-200 rounded animate-pulse"></span>
                     ) : studentsError ? (
-                      <span className="text-red-400 text-sm cursor-pointer" onClick={() => fetchStudentsCount(true)} title="اضغط للمحاولة مرة أخرى">
+                      <span
+                        className="text-red-400 text-sm cursor-pointer"
+                        onClick={() => fetchStudentsCount(true)}
+                        title="اضغط للمحاولة مرة أخرى"
+                      >
                         خطأ ⚠️
                       </span>
                     ) : stats.students > 0 ? (
@@ -756,18 +915,38 @@ const TeachersManagement: React.FC = () => {
         {error && !isLoading && (
           <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6 mb-6 animate-fadeIn">
             <div className="flex items-start">
-              <svg className="w-6 h-6 text-red-600 ml-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              <svg
+                className="w-6 h-6 text-red-600 ml-3 mt-0.5 flex-shrink-0"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
               </svg>
               <div className="flex-1">
-                <h3 className="font-semibold text-red-900 mb-2">مشكلة في تحميل البيانات</h3>
+                <h3 className="font-semibold text-red-900 mb-2">
+                  مشكلة في تحميل البيانات
+                </h3>
                 <p className="text-red-700 mb-4">{error}</p>
                 <button
                   onClick={() => fetchTeachers(retryCount)}
                   className="inline-flex items-center gap-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors text-sm font-medium"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
                   </svg>
                   المحاولة مرة أخرى
                 </button>
@@ -897,7 +1076,7 @@ const TeachersManagement: React.FC = () => {
                     <div className="h-10 w-24 bg-gray-200 rounded animate-pulse"></div>
                   </div>
                 </div>
-                
+
                 {/* Search and Filter Skeleton */}
                 <div className="flex flex-col lg:flex-row gap-4">
                   <div className="flex-1 h-10 bg-gray-200 rounded animate-pulse"></div>
@@ -953,7 +1132,7 @@ const TeachersManagement: React.FC = () => {
                       </th>
                     </tr>
                   </thead>
-                  
+
                   {/* Table Rows Skeleton */}
                   <tbody>
                     {Array.from({ length: 8 }, (_, index) => (
@@ -1033,7 +1212,9 @@ const TeachersManagement: React.FC = () => {
                         type="checkbox"
                         onChange={(e) => {
                           if (e.target.checked) {
-                            setSelectedTeachers(new Set(currentTeachers.map(t => t._id)));
+                            setSelectedTeachers(
+                              new Set(currentTeachers.map((t) => t._id))
+                            );
                           } else {
                             setSelectedTeachers(new Set());
                           }
@@ -1041,57 +1222,83 @@ const TeachersManagement: React.FC = () => {
                         className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                       />
                     </th>
-                    <th 
+                    <th
                       className="px-6 py-4 text-right text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors"
                       onClick={() => handleSort('teacherId')}
                     >
                       <div className="flex items-center gap-2">
                         رقم المعلم
-                        {sortField === 'teacherId' && (
-                          sortOrder === 'asc' ? <FaSortAmountUp className="w-3 h-3" /> : <FaSortAmountDown className="w-3 h-3" />
-                        )}
+                        {sortField === 'teacherId' &&
+                          (sortOrder === 'asc' ? (
+                            <FaSortAmountUp className="w-3 h-3" />
+                          ) : (
+                            <FaSortAmountDown className="w-3 h-3" />
+                          ))}
                       </div>
                     </th>
-                    <th 
+                    <th
                       className="px-6 py-4 text-right text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors"
                       onClick={() => handleSort('firstName')}
                     >
                       <div className="flex items-center gap-2">
                         الاسم الكامل
-                        {sortField === 'firstName' && (
-                          sortOrder === 'asc' ? <FaSortAmountUp className="w-3 h-3" /> : <FaSortAmountDown className="w-3 h-3" />
-                        )}
+                        {sortField === 'firstName' &&
+                          (sortOrder === 'asc' ? (
+                            <FaSortAmountUp className="w-3 h-3" />
+                          ) : (
+                            <FaSortAmountDown className="w-3 h-3" />
+                          ))}
                       </div>
                     </th>
-                    <th 
+                    <th
                       className="px-6 py-4 text-right text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors"
                       onClick={() => handleSort('email')}
                     >
                       <div className="flex items-center gap-2">
                         البريد الإلكتروني
-                        {sortField === 'email' && (
-                          sortOrder === 'asc' ? <FaSortAmountUp className="w-3 h-3" /> : <FaSortAmountDown className="w-3 h-3" />
-                        )}
+                        {sortField === 'email' &&
+                          (sortOrder === 'asc' ? (
+                            <FaSortAmountUp className="w-3 h-3" />
+                          ) : (
+                            <FaSortAmountDown className="w-3 h-3" />
+                          ))}
                       </div>
                     </th>
-                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">رقم الهاتف</th>
-                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">رقم الهوية</th>
-                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">الجنس</th>
-                    <th 
+                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
+                      رقم الهاتف
+                    </th>
+                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
+                      رقم الهوية
+                    </th>
+                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
+                      الجنس
+                    </th>
+                    <th
                       className="px-6 py-4 text-right text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors"
                       onClick={() => handleSort('age')}
                     >
                       <div className="flex items-center gap-2">
                         العمر
-                        {sortField === 'age' && (
-                          sortOrder === 'asc' ? <FaSortAmountUp className="w-3 h-3" /> : <FaSortAmountDown className="w-3 h-3" />
-                        )}
+                        {sortField === 'age' &&
+                          (sortOrder === 'asc' ? (
+                            <FaSortAmountUp className="w-3 h-3" />
+                          ) : (
+                            <FaSortAmountDown className="w-3 h-3" />
+                          ))}
                       </div>
                     </th>
-                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">الحلقة الخاصة</th>
-                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">مكان السكن</th>
-                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">الحالة</th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">الإجراءات</th>
+                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
+                      الحلقة الخاصة
+                    </th>
+                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
+                      مكان السكن
+                    </th>
+                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
+                      الحالة
+                    </th>
+                    <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
+                      الإجراءات
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -1138,15 +1345,19 @@ const TeachersManagement: React.FC = () => {
                         {teacher.phoneNumber}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
-                        {teacher.idNumber || <span className="text-gray-400">-</span>}
+                        {teacher.idNumber || (
+                          <span className="text-gray-400">-</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {teacher.gender ? (
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            teacher.gender === 'ذكر' 
-                              ? 'bg-cyan-100 text-cyan-800' 
-                              : 'bg-pink-100 text-pink-800'
-                          }`}>
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              teacher.gender === 'ذكر'
+                                ? 'bg-cyan-100 text-cyan-800'
+                                : 'bg-pink-100 text-pink-800'
+                            }`}
+                          >
                             {teacher.gender}
                           </span>
                         ) : (
@@ -1172,14 +1383,18 @@ const TeachersManagement: React.FC = () => {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {teacher.residence || teacher.address || <span className="text-gray-400">-</span>}
+                        {teacher.residence || teacher.address || (
+                          <span className="text-gray-400">-</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          teacher.isActive 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            teacher.isActive
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}
+                        >
                           {teacher.isActive ? 'نشط' : 'غير نشط'}
                         </span>
                       </td>
@@ -1215,7 +1430,9 @@ const TeachersManagement: React.FC = () => {
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gray-100 mb-6">
               <FaUserTie className="w-10 h-10 text-gray-400" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">لا يوجد معلمين</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              لا يوجد معلمين
+            </h3>
             <p className="text-gray-600 mb-6">
               {searchTerm || selectedGroup !== 'all'
                 ? 'لم يتم العثور على نتائج مطابقة للبحث'
@@ -1234,100 +1451,118 @@ const TeachersManagement: React.FC = () => {
         )}
 
         {/* Enhanced Pagination - Always show if teachers exist */}
-        {!isLoading && filteredAndSortedTeachers.length > 0 && totalPages >= 1 && (
-          <div className="bg-white rounded-2xl shadow-xl px-6 py-4 mt-6" dir="rtl">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="text-sm text-gray-700">
-                عرض <span className="font-semibold">{indexOfFirstTeacher + 1}</span> إلى{' '}
-                <span className="font-semibold">
-                  {Math.min(indexOfLastTeacher, filteredAndSortedTeachers.length)}
-                </span>{' '}
-                من <span className="font-semibold">{filteredAndSortedTeachers.length}</span> معلم
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setCurrentPage(1)}
-                  disabled={currentPage === 1}
-                  className={`px-3 py-2 border rounded-lg text-sm font-medium transition-all ${
-                    currentPage === 1
-                      ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
-                  }`}
-                >
-                  الأولى
-                </button>
-                
-                <button
-                  onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
-                  disabled={currentPage === 1}
-                  className={`flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium transition-all ${
-                    currentPage === 1
-                      ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
-                  }`}
-                >
-                  <FaChevronRight className="w-3 h-3" />
-                  السابق
-                </button>
-
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-                    
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => setCurrentPage(pageNum)}
-                        className={`w-10 h-10 rounded-lg text-sm font-medium transition-all ${
-                          currentPage === pageNum
-                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
-                            : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
-                        }`}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
+        {!isLoading &&
+          filteredAndSortedTeachers.length > 0 &&
+          totalPages >= 1 && (
+            <div
+              className="bg-white rounded-2xl shadow-xl px-6 py-4 mt-6"
+              dir="rtl"
+            >
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="text-sm text-gray-700">
+                  عرض{' '}
+                  <span className="font-semibold">
+                    {indexOfFirstTeacher + 1}
+                  </span>{' '}
+                  إلى{' '}
+                  <span className="font-semibold">
+                    {Math.min(
+                      indexOfLastTeacher,
+                      filteredAndSortedTeachers.length
+                    )}
+                  </span>{' '}
+                  من{' '}
+                  <span className="font-semibold">
+                    {filteredAndSortedTeachers.length}
+                  </span>{' '}
+                  معلم
                 </div>
 
-                <button
-                  onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className={`flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium transition-all ${
-                    currentPage === totalPages
-                      ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
-                  }`}
-                >
-                  التالي
-                  <FaChevronLeft className="w-3 h-3" />
-                </button>
-                
-                <button
-                  onClick={() => setCurrentPage(totalPages)}
-                  disabled={currentPage === totalPages}
-                  className={`px-3 py-2 border rounded-lg text-sm font-medium transition-all ${
-                    currentPage === totalPages
-                      ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
-                  }`}
-                >
-                  الأخيرة
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(1)}
+                    disabled={currentPage === 1}
+                    className={`px-3 py-2 border rounded-lg text-sm font-medium transition-all ${
+                      currentPage === 1
+                        ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                        : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
+                    }`}
+                  >
+                    الأولى
+                  </button>
+
+                  <button
+                    onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
+                    disabled={currentPage === 1}
+                    className={`flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium transition-all ${
+                      currentPage === 1
+                        ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                        : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
+                    }`}
+                  >
+                    <FaChevronRight className="w-3 h-3" />
+                    السابق
+                  </button>
+
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`w-10 h-10 rounded-lg text-sm font-medium transition-all ${
+                            currentPage === pageNum
+                              ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
+                              : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    onClick={() =>
+                      setCurrentPage(Math.min(currentPage + 1, totalPages))
+                    }
+                    disabled={currentPage === totalPages}
+                    className={`flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium transition-all ${
+                      currentPage === totalPages
+                        ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                        : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
+                    }`}
+                  >
+                    التالي
+                    <FaChevronLeft className="w-3 h-3" />
+                  </button>
+
+                  <button
+                    onClick={() => setCurrentPage(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className={`px-3 py-2 border rounded-lg text-sm font-medium transition-all ${
+                      currentPage === totalPages
+                        ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                        : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
+                    }`}
+                  >
+                    الأخيرة
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
       </div>
 
       {/* Teacher Form Modal */}

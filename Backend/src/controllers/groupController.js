@@ -40,7 +40,10 @@ exports.createGroup = async (req, res) => {
 // الحصول على جميع الحلقات
 exports.getAllGroups = async (req, res) => {
   try {
-    const groups = await Group.find({ isActive: true }).sort({ createdAt: -1 });
+    // جلب جميع الحلقات (حتى غير النشطة) لعرضها في لوحة التحكم
+    const groups = await Group.find().sort({ createdAt: -1 });
+
+    console.log(`✓ تم جلب ${groups.length} حلقة من قاعدة البيانات`);
 
     res.status(200).json({
       success: true,

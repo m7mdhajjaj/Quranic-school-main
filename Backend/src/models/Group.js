@@ -10,9 +10,13 @@ const groupSchema = new mongoose.Schema(
       index: true, // فهرس لتحسين البحث
     },
     teacher: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Teacher',
-      required: [true, 'اسم المعلم مطلوب'],
+      type: mongoose.Schema.Types.Mixed, // يدعم ObjectId أو String
+      required: false, // اختياري لدعم البيانات القديمة
+    },
+    teacherName: {
+      type: String,
+      trim: true,
+      // حقل مؤقت لدعم البيانات القديمة
     },
     description: {
       type: String,

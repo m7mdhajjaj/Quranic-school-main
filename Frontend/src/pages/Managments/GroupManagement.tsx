@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   FaEdit, FaTrash, FaPlus, FaSearch, FaChevronLeft, FaChevronRight,
   FaDownload, FaFilter, FaSortAmountDown, FaSortAmountUp,
-  FaUsers, FaChalkboardTeacher, FaTh, FaList, FaCalendar
+  FaUsers, FaChalkboardTeacher, FaTh, FaList, FaCalendar, FaBook, FaUserFriends
 } from 'react-icons/fa';
 import { useAuth } from '../../hooks/useAuth';
 import AddGroupForm from '../../components/Forms/AddGroupForm';
@@ -86,10 +86,11 @@ const GroupManagement: React.FC = () => {
       const duration = (endTime - startTime).toFixed(2);
       
       if (result.success && result.data) {
-        const cleanedGroups = result.data.map((group: Group) => ({
+        const cleanedGroups = result.data.map((group: Group & { teacherName?: string }) => ({
           ...group,
           name: group.name || '',
-          teacher: group.teacher || 'غير محدد',
+          // دعم البيانات القديمة: استخدم teacherName إذا كان teacher غير موجود
+          teacher: group.teacher || group.teacherName || 'غير محدد',
           capacity: group.capacity || 20,
           description: group.description || '',
           schedule: group.schedule || 'غير محدد',
@@ -97,6 +98,7 @@ const GroupManagement: React.FC = () => {
         }));
         
         console.log(`✅ تم تحميل ${cleanedGroups.length} حلقة بنجاح في ${duration}ms`);
+        console.log('📊 بيانات الحلقات:', cleanedGroups);
         setGroups(cleanedGroups);
         setError(null);
       } else {
@@ -531,51 +533,51 @@ const GroupManagement: React.FC = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-blue-500 hover:shadow-xl transition-shadow">
+            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-blue-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <FaUsers className="w-5 h-5 text-blue-600" />
+                <div className="p-3 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl shadow-md">
+                  <FaBook className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-600">إجمالي الحلقات</p>
+                  <p className="text-xs text-gray-600 font-medium">إجمالي الحلقات</p>
                   <p className="text-xl font-bold text-gray-900">{stats.total}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-green-500 hover:shadow-xl transition-shadow">
+            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-green-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                <div className="p-3 bg-gradient-to-br from-green-400 to-emerald-600 rounded-xl shadow-md">
+                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-600">الحلقات النشطة</p>
+                  <p className="text-xs text-gray-600 font-medium">الحلقات النشطة</p>
                   <p className="text-xl font-bold text-gray-900">{stats.active}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-purple-500 hover:shadow-xl transition-shadow">
+            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-purple-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <FaUsers className="w-5 h-5 text-purple-600" />
+                <div className="p-3 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl shadow-md">
+                  <FaUserFriends className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-600">إجمالي السعة</p>
+                  <p className="text-xs text-gray-600 font-medium">إجمالي السعة</p>
                   <p className="text-xl font-bold text-gray-900">{stats.totalCapacity}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-orange-500 hover:shadow-xl transition-shadow">
+            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-orange-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <FaChalkboardTeacher className="w-5 h-5 text-orange-600" />
+                <div className="p-3 bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl shadow-md">
+                  <FaChalkboardTeacher className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-600">عدد المعلمين</p>
+                  <p className="text-xs text-gray-600 font-medium">عدد المعلمين</p>
                   <p className="text-xl font-bold text-gray-900">{stats.teachers}</p>
                 </div>
               </div>

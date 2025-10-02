@@ -27,7 +27,7 @@ import { useAuth } from "./hooks/useAuth";
 import Header from "./components/Headers/Header";
 import AdminHeader from "./components/Headers/AdminHeader";
 import Footer from "./components/Footer";
-import Loading from "./components/Loading";
+import Loading from "./components/Loading/Loading";
 
 // ============================================================================
 // Page Components - General
