@@ -150,16 +150,46 @@ const Test = () => {
     setLoading(false);
   };
 
-  // توليد الأسئلة
+  // توليد الأسئلة مع ضمان عدم تكرار الآيات
   const generateQuestions = async (
     ayahsData: (Ayah & { surahNumber: number })[]
   ) => {
     const generatedQuestions: Question[] = [];
     const numberOfQuestions = Math.min(10, ayahsData.length); // حد أقصى 10 أسئلة
+    const usedAyahs = new Set<number>(); // لتتبع الآيات المستخدمة
 
-    for (let i = 0; i < numberOfQuestions; i++) {
-      const randomAyahIndex = Math.floor(Math.random() * ayahsData.length);
-      const ayah = ayahsData[randomAyahIndex];
+    // إنشاء نسخة مخلوطة من الآيات لضمان التنوع
+    const shuffledAyahs = [...ayahsData].sort(() => Math.random() - 0.5);
+
+    let ayahIndex = 0;
+    let attempts = 0;
+    const maxAttempts = numberOfQuestions * 3; // حد أقصى للمحاولات لتجنب اللف اللانهائي
+
+    for (
+      let i = 0;
+      i < numberOfQuestions &&
+      ayahIndex < shuffledAyahs.length &&
+      attempts < maxAttempts;
+      i++
+    ) {
+      attempts++;
+      // البحث عن آية لم تُستخدم بعد
+      let ayah = shuffledAyahs[ayahIndex];
+      while (
+        usedAyahs.has(ayah.number) &&
+        ayahIndex < shuffledAyahs.length - 1
+      ) {
+        ayahIndex++;
+        ayah = shuffledAyahs[ayahIndex];
+      }
+
+      // إذا كانت هذه الآية مستخدمة أيضاً، نتخطى هذه الدورة
+      if (usedAyahs.has(ayah.number)) {
+        continue;
+      }
+
+      // تسجيل الآية كمستخدمة
+      usedAyahs.add(ayah.number);
 
       // نوع السؤال عشوائي
       const questionTypes: Question["type"][] = [
@@ -172,60 +202,136 @@ const Test = () => {
 
       let question: Question;
 
-      switch (randomType) {
-        case "hidden-word":
-          question = await generateHiddenWordQuestion(ayah, i + 1);
-          break;
-        case "next-ayah-start":
-          question = await generateNextAyahStartQuestion(
-            ayah,
-            ayahsData,
-            i + 1
+      try {
+        switch (randomType) {
+          case "hidden-word":
+            question = await generateHiddenWordQuestion(ayah, i + 1);
+            break;
+          case "next-ayah-start":
+            question = await generateNextAyahStartQuestion(
+              ayah,
+              ayahsData,
+              i + 1
+            );
+            break;
+          case "ayah-ending":
+            question = await generateAyahEndingQuestion(ayah, ayahsData, i + 1);
+            break;
+          default:
+            question = await generateHiddenWordQuestion(ayah, i + 1);
+        }
+
+        // التحقق الشامل من جودة السؤال
+        const isValidQuestion =
+          question &&
+          question.options &&
+          question.options.length === 4 &&
+          question.correctAnswer >= 0 &&
+          question.correctAnswer < question.options.length &&
+          question.options[question.correctAnswer] && // التأكد من وجود الإجابة الصحيحة
+          question.options.every(
+            (option) => option && option.trim().length > 0
+          ) && // كل الخيارات صالحة
+          new Set(question.options.map(normalizeText)).size === 4; // كل الخيارات مختلفة
+
+        if (isValidQuestion) {
+          generatedQuestions.push(question);
+        } else {
+          // إذا لم يكن السؤال جيد، نقلل من العداد لنحاول مرة أخرى
+          console.log(
+            `سؤال غير صالح تم تجاهله: ${question?.question || "سؤال غير محدد"}`
           );
-          break;
-        case "ayah-ending":
-          question = await generateAyahEndingQuestion(ayah, ayahsData, i + 1);
-          break;
-        default:
-          question = await generateHiddenWordQuestion(ayah, i + 1);
+          i--;
+        }
+      } catch (error) {
+        // في حالة حدوث خطأ، نتجاهل هذا السؤال ونحاول مرة أخرى
+        console.log(`خطأ في توليد السؤال: ${error}`);
+        i--;
       }
 
-      generatedQuestions.push(question);
+      ayahIndex++;
+    }
+
+    // التأكد من توليد عدد مناسب من الأسئلة
+    if (generatedQuestions.length < 3) {
+      alert(
+        "عذراً، لم نتمكن من توليد عدد كافٍ من الأسئلة الصالحة. يرجى المحاولة مع سور أخرى أو أكثر."
+      );
+      setLoading(false);
+      return;
     }
 
     setQuestions(generatedQuestions);
     setUserAnswers(new Array(generatedQuestions.length).fill(null)); // تهيئة مصفوفة الإجابات
   };
 
-  // توليد سؤال الكلمة المخفية
+  // توليد سؤال الكلمة المخفية - محسن لضمان وجود الإجابة الصحيحة
   const generateHiddenWordQuestion = async (
     ayah: Ayah & { surahNumber: number },
     questionId: number
   ): Promise<Question> => {
-    const words = ayah.text.split(" ").filter((word) => word.length > 2);
+    // التأكد من وجود الآية ونصها
+    if (!ayah || !ayah.text || ayah.text.trim().length === 0) {
+      throw new Error("الآية غير صالحة لإنشاء السؤال");
+    }
+
+    const words = ayah.text.split(" ").filter((word) => word.trim().length > 2);
+
+    // التأكد من وجود كلمات كافية
+    if (words.length === 0) {
+      throw new Error("لا توجد كلمات صالحة في الآية");
+    }
+
     const randomWordIndex = Math.floor(Math.random() * words.length);
     const hiddenWord = words[randomWordIndex];
+
+    // التأكد من أن الكلمة المخفية صالحة
+    if (!hiddenWord || hiddenWord.trim().length === 0) {
+      throw new Error("الكلمة المختارة غير صالحة");
+    }
 
     const questionText = ayah.text.replace(hiddenWord, "____");
 
     // توليد خيارات خاطئة
     const wrongOptions = await generateWrongWordOptions(hiddenWord, ayah.text);
 
-    // إزالة التكرارات والتأكد من عدم تكرار الإجابة الصحيحة
-    const uniqueWrongOptions = wrongOptions
-      .filter(
-        (option, index, arr) =>
-          arr.indexOf(option) === index && // إزالة التكرارات
-          option !== hiddenWord && // التأكد من أن الخيار الخاطئ ليس مطابقاً للصحيح
-          option.trim() !== hiddenWord.trim() // التأكد من عدم التطابق حتى مع المسافات
-      )
-      .slice(0, 3); // أخذ أول 3 خيارات فقط
+    // التأكد من وجود خيارات خاطئة كافية
+    const validWrongOptions = wrongOptions
+      .filter((option) => !isDuplicate(option, hiddenWord))
+      .slice(0, 3);
 
-    const allOptions = [hiddenWord, ...uniqueWrongOptions];
+    // التأكد من وجود خيارات كافية للسؤال (على الأقل خيارين خاطئين)
+    if (validWrongOptions.length < 2) {
+      // إضافة خيارات احتياطية
+      const backupOptions = [
+        "الرَّحْمَنِ",
+        "الرَّحِيمِ",
+        "الْعَلِيمِ",
+        "الْحَكِيمِ",
+        "الْعَزِيزِ",
+        "الْغَفُورِ",
+        "يُؤْمِنُونَ",
+        "يَعْمَلُونَ",
+        "الْمُؤْمِنِينَ",
+        "الْكَافِرِينَ",
+      ].filter((option) => !isDuplicate(option, hiddenWord));
+
+      validWrongOptions.push(
+        ...backupOptions.slice(0, 3 - validWrongOptions.length)
+      );
+    }
+
+    // إنشاء قائمة الخيارات النهائية
+    const allOptions = [hiddenWord, ...validWrongOptions.slice(0, 3)];
 
     // خلط الخيارات مع الاحتفاظ بمؤشر الإجابة الصحيحة
     const shuffledOptions = [...allOptions].sort(() => Math.random() - 0.5);
     const finalCorrectIndex = shuffledOptions.indexOf(hiddenWord);
+
+    // التأكد من أن الإجابة الصحيحة موجودة في الخيارات
+    if (finalCorrectIndex === -1) {
+      throw new Error("الإجابة الصحيحة غير موجودة في الخيارات");
+    }
 
     return {
       id: questionId,
@@ -241,50 +347,73 @@ const Test = () => {
     };
   };
 
-  // توليد سؤال بداية الآية التالية
+  // توليد سؤال بداية الآية التالية - محسن لضمان وجود الإجابة الصحيحة
   const generateNextAyahStartQuestion = async (
     ayah: Ayah & { surahNumber: number },
     ayahsData: (Ayah & { surahNumber: number })[],
     questionId: number
   ): Promise<Question> => {
-    // البحث عن الآيات من نفس السورة فقط
-    const sameSurahAyahs = ayahsData.filter(
-      (a) => a.surahNumber === ayah.surahNumber
-    );
+    // البحث عن الآيات من نفس السورة فقط وترتيبها حسب numberInSurah
+    const sameSurahAyahs = ayahsData
+      .filter((a) => a.surahNumber === ayah.surahNumber)
+      .sort((a, b) => a.numberInSurah - b.numberInSurah);
+
     const currentIndex = sameSurahAyahs.findIndex(
-      (a) => a.number === ayah.number
+      (a) => a.numberInSurah === ayah.numberInSurah
     );
 
-    if (currentIndex === -1 || currentIndex === sameSurahAyahs.length - 1) {
-      // إذا كانت الآية الأخيرة في السورة، نعيد سؤال كلمة مخفية
+    // التحقق من وجود آية تالية
+    if (currentIndex === -1 || currentIndex >= sameSurahAyahs.length - 1) {
+      // إذا كانت الآية الأخيرة في السورة أو لم نجدها، نعيد سؤال كلمة مخفية
       return await generateHiddenWordQuestion(ayah, questionId);
     }
 
     const nextAyah = sameSurahAyahs[currentIndex + 1];
-    const nextAyahWords = nextAyah.text.split(" ");
+
+    // التأكد من وجود الآية التالية وأن لديها نص
+    if (!nextAyah || !nextAyah.text || nextAyah.text.trim().length === 0) {
+      return await generateHiddenWordQuestion(ayah, questionId);
+    }
+
+    const nextAyahWords = nextAyah.text
+      .split(" ")
+      .filter((word) => word.trim().length > 0);
+
+    // التأكد من وجود كلمات كافية في الآية التالية
+    if (nextAyahWords.length < 3) {
+      return await generateHiddenWordQuestion(ayah, questionId);
+    }
+
     const firstThreeWords = nextAyahWords.slice(0, 3).join(" ");
 
-    // توليد خيارات خاطئة من آيات أخرى (من نفس السورة ومن سور أخرى)
+    // توليد خيارات خاطئة من آيات أخرى
     const wrongOptions = await generateWrongAyahStartOptions(
       firstThreeWords,
       ayahsData
     );
 
-    // إزالة التكرارات والتأكد من عدم تكرار الإجابة الصحيحة
-    const uniqueWrongOptions = wrongOptions
-      .filter(
-        (option, index, arr) =>
-          arr.indexOf(option) === index && // إزالة التكرارات
-          option !== firstThreeWords && // التأكد من أن الخيار الخاطئ ليس مطابقاً للصحيح
-          option.trim() !== firstThreeWords.trim() // التأكد من عدم التطابق حتى مع المسافات
-      )
-      .slice(0, 3); // أخذ أول 3 خيارات فقط
+    // التأكد من وجود خيارات خاطئة كافية
+    const validWrongOptions = wrongOptions
+      .filter((option) => !isDuplicate(option, firstThreeWords))
+      .slice(0, 3);
 
-    const allOptions = [firstThreeWords, ...uniqueWrongOptions];
+    // التأكد من وجود خيارات كافية للسؤال
+    if (validWrongOptions.length < 2) {
+      // إذا لم نحصل على خيارات كافية، نعيد سؤال كلمة مخفية
+      return await generateHiddenWordQuestion(ayah, questionId);
+    }
+
+    // إنشاء قائمة الخيارات النهائية
+    const allOptions = [firstThreeWords, ...validWrongOptions];
 
     // خلط الخيارات مع الاحتفاظ بمؤشر الإجابة الصحيحة
     const shuffledOptions = [...allOptions].sort(() => Math.random() - 0.5);
     const finalCorrectIndex = shuffledOptions.indexOf(firstThreeWords);
+
+    // التأكد من أن الإجابة الصحيحة موجودة في الخيارات
+    if (finalCorrectIndex === -1) {
+      return await generateHiddenWordQuestion(ayah, questionId);
+    }
 
     return {
       id: questionId,
@@ -298,18 +427,34 @@ const Test = () => {
       correctAnswer: finalCorrectIndex,
       ayahNumber: ayah.numberInSurah,
       ayah: ayah.text,
-      context: `الآية: "${ayah.text}"`,
+      context: `الآية الحالية: "${ayah.text}"`,
     };
   };
 
-  // توليد سؤال ختام الآية
+  // توليد سؤال ختام الآية - محسن لضمان وجود الإجابة الصحيحة
   const generateAyahEndingQuestion = async (
     ayah: Ayah & { surahNumber: number },
     ayahsData: (Ayah & { surahNumber: number })[],
     questionId: number
   ): Promise<Question> => {
-    const words = ayah.text.split(" ");
+    // التأكد من وجود الآية ونصها
+    if (!ayah || !ayah.text || ayah.text.trim().length === 0) {
+      return await generateHiddenWordQuestion(ayah, questionId);
+    }
+
+    const words = ayah.text.split(" ").filter((word) => word.trim().length > 0);
+
+    // التأكد من وجود كلمات كافية في الآية
+    if (words.length < 6) {
+      return await generateHiddenWordQuestion(ayah, questionId);
+    }
+
     const lastThreeWords = words.slice(-3).join(" ");
+
+    // التأكد من أن النهاية ليست فارغة
+    if (!lastThreeWords || lastThreeWords.trim().length === 0) {
+      return await generateHiddenWordQuestion(ayah, questionId);
+    }
 
     // عرض جزء من الآية (أول 5-8 كلمات) + علامة "____"
     const firstPart = words.slice(0, Math.min(8, words.length - 3)).join(" ");
@@ -321,21 +466,27 @@ const Test = () => {
       ayahsData
     );
 
-    // إزالة التكرارات والتأكد من عدم تكرار الإجابة الصحيحة
-    const uniqueWrongOptions = wrongOptions
-      .filter(
-        (option, index, arr) =>
-          arr.indexOf(option) === index && // إزالة التكرارات
-          option !== lastThreeWords && // التأكد من أن الخيار الخاطئ ليس مطابقاً للصحيح
-          option.trim() !== lastThreeWords.trim() // التأكد من عدم التطابق حتى مع المسافات
-      )
-      .slice(0, 3); // أخذ أول 3 خيارات فقط
+    // التأكد من وجود خيارات خاطئة كافية
+    const validWrongOptions = wrongOptions
+      .filter((option) => !isDuplicate(option, lastThreeWords))
+      .slice(0, 3);
 
-    const allOptions = [lastThreeWords, ...uniqueWrongOptions];
+    // التأكد من وجود خيارات كافية للسؤال
+    if (validWrongOptions.length < 2) {
+      return await generateHiddenWordQuestion(ayah, questionId);
+    }
+
+    // إنشاء قائمة الخيارات النهائية
+    const allOptions = [lastThreeWords, ...validWrongOptions];
 
     // خلط الخيارات مع الاحتفاظ بمؤشر الإجابة الصحيحة
     const shuffledOptions = [...allOptions].sort(() => Math.random() - 0.5);
     const finalCorrectIndex = shuffledOptions.indexOf(lastThreeWords);
+
+    // التأكد من أن الإجابة الصحيحة موجودة في الخيارات
+    if (finalCorrectIndex === -1) {
+      return await generateHiddenWordQuestion(ayah, questionId);
+    }
 
     return {
       id: questionId,
@@ -351,57 +502,21 @@ const Test = () => {
     };
   };
 
-  // دالة مساعدة لتوليد كلمات مشابهة في التركيب
-  const generateSimilarWords = (originalWord: string): string[] => {
-    const similarWords = [
-      // أسماء الله الحسنى
-      "الْعَلِيمُ",
-      "الْحَكِيمُ",
-      "الرَّحْمَنُ",
-      "الرَّحِيمُ",
-      "الْعَزِيزُ",
-      "الْغَفُورُ",
-      "الصَّبُورُ",
-      "الشَّكُورُ",
-      "الْحَلِيمُ",
-      "الْكَرِيمُ",
-      "الْعَظِيمُ",
-
-      // كلمات إيمانية
-      "الْمُؤْمِنُونَ",
-      "الْمُسْلِمُونَ",
-      "الْمُتَّقُونَ",
-      "الصَّالِحُونَ",
-      "الْمُفْلِحُونَ",
-
-      // أفعال قرآنية
-      "يُؤْمِنُونَ",
-      "يَعْقِلُونَ",
-      "يَتَفَكَّرُونَ",
-      "يَذْكُرُونَ",
-      "يَشْكُرُونَ",
-
-      // مفاهيم قرآنية
-      "الْجَنَّةُ",
-      "النَّارُ",
-      "الْآخِرَةُ",
-      "الدُّنْيَا",
-      "الْهُدَى",
-      "الضَّلَالُ",
-    ];
-
-    // فلترة الكلمات المشابهة حسب الطول والحروف الأولى
-    return similarWords
-      .filter(
-        (word) =>
-          word !== originalWord &&
-          Math.abs(word.length - originalWord.length) <= 2 &&
-          word.charAt(0) === originalWord.charAt(0)
-      )
-      .slice(0, 2);
+  // دالة لإزالة التشكيل وتطبيع النص للمقارنة
+  const normalizeText = (text: string): string => {
+    return text
+      .replace(/[\u064B-\u0652]/g, "") // إزالة التشكيل
+      .replace(/\s+/g, " ") // توحيد المسافات
+      .trim()
+      .toLowerCase(); // تحويل لأحرف صغيرة للمقارنة
   };
 
-  // توليد خيارات خاطئة للكلمات - محسّنة لتكون أكثر صعوبة
+  // دالة للتحقق من التكرار الذكي
+  const isDuplicate = (option1: string, option2: string): boolean => {
+    return normalizeText(option1) === normalizeText(option2);
+  };
+
+  // توليد خيارات خاطئة للكلمات - محسّنة لمنع التكرار
   const generateWrongWordOptions = async (
     correctWord: string,
     _ayahText: string // إضافة underscore لتجنب التحذير
@@ -474,14 +589,14 @@ const Test = () => {
     const getWordCategory = (
       word: string
     ): keyof typeof commonWords | "general" => {
-      const cleanWord = word.replace(/[\u064B-\u0652]/g, ""); // إزالة التشكيل
+      const cleanWord = normalizeText(word);
 
       for (const [category, words] of Object.entries(commonWords)) {
         if (
           words.some(
             (w) =>
-              cleanWord.includes(w.replace(/[\u064B-\u0652]/g, "")) ||
-              w.replace(/[\u064B-\u0652]/g, "").includes(cleanWord)
+              cleanWord.includes(normalizeText(w)) ||
+              normalizeText(w).includes(cleanWord)
           )
         ) {
           return category as keyof typeof commonWords;
@@ -491,170 +606,115 @@ const Test = () => {
     };
 
     const category = getWordCategory(correctWord);
-    let wrongOptions: string[] = [];
+    const wrongOptions: string[] = [];
 
     // إضافة كلمات من نفس التصنيف
     if (category !== "general") {
       const categoryWords = commonWords[category]
-        .filter(
-          (word) =>
-            !correctWord.includes(word.replace(/[\u064B-\u0652]/g, "")) &&
-            !word
-              .replace(/[\u064B-\u0652]/g, "")
-              .includes(correctWord.replace(/[\u064B-\u0652]/g, ""))
-        )
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 2);
-      wrongOptions.push(...categoryWords);
-    }
+        .filter((word) => !isDuplicate(word, correctWord))
+        .sort(() => Math.random() - 0.5);
 
-    // محاولة جلب كلمات مشابهة من سور أخرى
-    try {
-      const response = await fetch(
-        "https://api.alquran.cloud/v1/search/" +
-          correctWord.replace(/[\u064B-\u0652]/g, "") +
-          "/all/ar"
-      );
-      if (response.ok) {
-        const searchData = await response.json();
-        if (searchData.data && searchData.data.matches) {
-          const similarWords = searchData.data.matches
-            .flatMap((match: any) => match.text.split(" "))
-            .filter(
-              (word: string) =>
-                word !== correctWord &&
-                word.length > 2 &&
-                word
-                  .replace(/[\u064B-\u0652]/g, "")
-                  .includes(
-                    correctWord.replace(/[\u064B-\u0652]/g, "").substring(0, 3)
-                  )
-            )
-            .slice(0, 2);
-          wrongOptions.push(...similarWords);
+      for (const word of categoryWords) {
+        if (wrongOptions.length >= 3) break;
+        if (!wrongOptions.some((option) => isDuplicate(option, word))) {
+          wrongOptions.push(word);
         }
       }
-    } catch (error) {
-      console.log("خطأ في البحث عن كلمات مشابهة:", error);
     }
 
-    // إضافة كلمات مع تشكيل مشابه
-    if (wrongOptions.length < 3) {
-      const similarWords = generateSimilarWords(correctWord);
-      wrongOptions.push(...similarWords.slice(0, 3 - wrongOptions.length));
-    }
-
-    // إضافة كلمات عامة كاحتياط أخير
+    // إضافة كلمات عامة كاحتياط
     if (wrongOptions.length < 3) {
       const allCommonWords = Object.values(commonWords)
         .flat()
-        .filter(
-          (word) =>
-            !correctWord.includes(word.replace(/[\u064B-\u0652]/g, "")) &&
-            !wrongOptions.includes(word) // تجنب التكرار
-        )
+        .filter((word) => !isDuplicate(word, correctWord))
         .sort(() => Math.random() - 0.5);
-      wrongOptions.push(...allCommonWords.slice(0, 3 - wrongOptions.length));
+
+      for (const word of allCommonWords) {
+        if (wrongOptions.length >= 3) break;
+        if (!wrongOptions.some((option) => isDuplicate(option, word))) {
+          wrongOptions.push(word);
+        }
+      }
     }
 
-    // إزالة أي تكرارات نهائية وإرجاع خيارات فريدة
-    const uniqueOptions = wrongOptions.filter(
-      (option, index, arr) =>
-        arr.indexOf(option) === index && // إزالة التكرارات
-        option !== correctWord && // التأكد من عدم تطابق مع الإجابة الصحيحة
-        option.trim() !== correctWord.trim()
-    );
-
-    return uniqueOptions.slice(0, 3);
+    // التأكد من وجود 3 خيارات فقط
+    return wrongOptions.slice(0, 3);
   };
 
-  // توليد خيارات خاطئة لبداية الآيات - محسّنة
+  // توليد خيارات خاطئة لبداية الآيات - محسّنة لمنع التكرار
   const generateWrongAyahStartOptions = async (
     correctStart: string,
     ayahsData: (Ayah & { surahNumber: number })[]
   ): Promise<string[]> => {
-    const wrongStarts: string[] = [];
+    const wrongOptions: string[] = [];
 
-    // جلب بدايات من نفس السورة
-    const localStarts = ayahsData
+    // جلب بدايات من آيات أخرى (من نفس السورة ومن سور أخرى)
+    const allStarts = ayahsData
       .map((ayah) => ayah.text.split(" ").slice(0, 3).join(" "))
-      .filter((start) => start !== correctStart)
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 2);
+      .filter((start) => !isDuplicate(start, correctStart))
+      .sort(() => Math.random() - 0.5);
 
-    wrongStarts.push(...localStarts);
-
-    // محاولة جلب بدايات مشابهة من سور أخرى
-    try {
-      const firstWord = correctStart.split(" ")[0];
-      const response = await fetch(
-        `https://api.alquran.cloud/v1/search/${firstWord}/all/ar`
-      );
-      if (response.ok) {
-        const searchData = await response.json();
-        if (searchData.data && searchData.data.matches) {
-          const similarStarts = searchData.data.matches
-            .map((match: any) => match.text.split(" ").slice(0, 3).join(" "))
-            .filter(
-              (start: string) =>
-                start !== correctStart && !wrongStarts.includes(start)
-            )
-            .slice(0, 1);
-          wrongStarts.push(...similarStarts);
-        }
+    // إضافة البدايات المتاحة
+    for (const start of allStarts) {
+      if (wrongOptions.length >= 3) break;
+      if (!wrongOptions.some((option) => isDuplicate(option, start))) {
+        wrongOptions.push(start);
       }
-    } catch (error) {
-      console.log("خطأ في البحث:", error);
     }
 
     // بدايات شائعة في القرآن كخيارات احتياطية
     const commonStarts = [
       "وَالَّذِينَ آمَنُوا وَعَمِلُوا",
       "يَا أَيُّهَا الَّذِينَ",
-      "قُل لَّا أَجِدُ",
+      "قُلْ أَعُوذُ بِرَبِّ",
       "إِنَّ الَّذِينَ كَفَرُوا",
       "وَمَا كَانَ لِمُؤْمِنٍ",
       "وَلَقَدْ أَرْسَلْنَا إِلَىٰ",
+      "الَّذِينَ آمَنُوا وَعَمِلُوا",
+      "فَأَمَّا الَّذِينَ آمَنُوا",
+      "وَمِنَ النَّاسِ مَن",
+      "فَإِذَا قُضِيَتِ الصَّلَاةُ",
     ];
 
     // إضافة خيارات احتياطية إذا لم نحصل على ما يكفي
-    if (wrongStarts.length < 3) {
-      const backupOptions = commonStarts
-        .filter(
-          (start) => !wrongStarts.includes(start) && start !== correctStart
-        )
-        .slice(0, 3 - wrongStarts.length);
-      wrongStarts.push(...backupOptions);
+    if (wrongOptions.length < 3) {
+      for (const start of commonStarts) {
+        if (wrongOptions.length >= 3) break;
+        if (
+          !isDuplicate(start, correctStart) &&
+          !wrongOptions.some((option) => isDuplicate(option, start))
+        ) {
+          wrongOptions.push(start);
+        }
+      }
     }
 
-    // إزالة أي تكرارات نهائية وإرجاع خيارات فريدة
-    const uniqueOptions = wrongStarts.filter(
-      (option, index, arr) =>
-        arr.indexOf(option) === index && // إزالة التكرارات
-        option !== correctStart && // التأكد من عدم تطابق مع الإجابة الصحيحة
-        option.trim() !== correctStart.trim()
-    );
-
-    return uniqueOptions.slice(0, 3);
+    // التأكد من وجود 3 خيارات فقط
+    return wrongOptions.slice(0, 3);
   };
 
-  // توليد خيارات خاطئة لنهاية الآيات - محسّنة
+  // توليد خيارات خاطئة لنهاية الآيات - محسّنة لمنع التكرار
   const generateWrongEndingOptions = async (
     correctEnding: string,
     ayahsData: (Ayah & { surahNumber: number })[]
   ): Promise<string[]> => {
-    const wrongEndings: string[] = [];
+    const wrongOptions: string[] = [];
 
-    // جلب نهايات من آيات أخرى في نفس السورة
-    const localEndings = ayahsData
+    // جلب نهايات من آيات أخرى
+    const allEndings = ayahsData
       .map((ayah) => ayah.text.split(" ").slice(-3).join(" "))
-      .filter((ending) => ending !== correctEnding)
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 2);
+      .filter((ending) => !isDuplicate(ending, correctEnding))
+      .sort(() => Math.random() - 0.5);
 
-    wrongEndings.push(...localEndings);
+    // إضافة النهايات المتاحة
+    for (const ending of allEndings) {
+      if (wrongOptions.length >= 3) break;
+      if (!wrongOptions.some((option) => isDuplicate(option, ending))) {
+        wrongOptions.push(ending);
+      }
+    }
 
-    // نهايات شائعة في القرآن الكريم
+    // نهايات شائعة في القرآن الكريم كخيارات احتياطية
     const commonEndings = [
       "وَاللَّهُ عَلِيمٌ حَكِيمٌ",
       "وَاللَّهُ غَفُورٌ رَّحِيمٌ",
@@ -666,27 +726,26 @@ const Test = () => {
       "لَعَلَّكُمْ تَشْكُرُونَ",
       "وَمَا أَنتُم بِمُعْجِزِينَ",
       "فِي عَذَابٍ مُّهِينٍ",
+      "إِنَّ اللَّهَ عَلَىٰ كُلِّ",
+      "وَاللَّهُ لَا يُحِبُّ الظَّالِمِينَ",
+      "وَاللَّهُ بِكُلِّ شَيْءٍ عَلِيمٌ",
     ];
 
-    // إضافة نهايات شائعة كخيارات إضافية
-    if (wrongEndings.length < 3) {
-      const additionalOptions = commonEndings
-        .filter(
-          (ending) => !wrongEndings.includes(ending) && ending !== correctEnding
-        )
-        .slice(0, 3 - wrongEndings.length);
-      wrongEndings.push(...additionalOptions);
+    // إضافة نهايات احتياطية إذا لم نحصل على ما يكفي
+    if (wrongOptions.length < 3) {
+      for (const ending of commonEndings) {
+        if (wrongOptions.length >= 3) break;
+        if (
+          !isDuplicate(ending, correctEnding) &&
+          !wrongOptions.some((option) => isDuplicate(option, ending))
+        ) {
+          wrongOptions.push(ending);
+        }
+      }
     }
 
-    // إزالة أي تكرارات نهائية وإرجاع خيارات فريدة
-    const uniqueOptions = wrongEndings.filter(
-      (option, index, arr) =>
-        arr.indexOf(option) === index && // إزالة التكرارات
-        option !== correctEnding && // التأكد من عدم تطابق مع الإجابة الصحيحة
-        option.trim() !== correctEnding.trim()
-    );
-
-    return uniqueOptions.slice(0, 3);
+    // التأكد من وجود 3 خيارات فقط
+    return wrongOptions.slice(0, 3);
   };
 
   // بدء الاختبار
@@ -914,6 +973,14 @@ const Test = () => {
                   </p>
                 </div>
               )}
+
+              {/* تنبيه لضمان دقة السؤال */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                <p className="text-blue-700 text-sm text-center">
+                  💡 تأكد من قراءة السؤال جيداً. الإجابة الصحيحة موجودة دائماً
+                  في الخيارات المعروضة
+                </p>
+              </div>
             </div>
 
             {/* زر بدء الاختبار فقط في السؤال الأول */}
