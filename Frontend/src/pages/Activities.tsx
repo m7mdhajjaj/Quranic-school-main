@@ -301,8 +301,37 @@ const Activities = () => {
         </div>
 
         {loading ? (
-          <div className="flex justify-center items-center py-16">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-600"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="bg-white rounded-xl shadow-md overflow-hidden">
+                {/* Image Skeleton */}
+                <div className="h-80 bg-gray-200 animate-pulse"></div>
+                
+                {/* Content Skeleton */}
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="h-6 bg-gray-200 rounded animate-pulse w-40"></div>
+                    <div className="flex gap-2">
+                      <div className="h-5 w-5 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-5 w-5 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                  </div>
+                  
+                  {/* Description Skeleton */}
+                  <div className="space-y-2 mb-4">
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-full"></div>
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2"></div>
+                  </div>
+                  
+                  {/* Date Skeleton */}
+                  <div className="flex items-center">
+                    <div className="h-5 w-5 bg-gray-200 rounded animate-pulse ml-1"></div>
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
