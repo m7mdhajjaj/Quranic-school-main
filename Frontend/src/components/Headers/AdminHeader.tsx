@@ -110,9 +110,9 @@ const AdminHeader: React.FC = () => {
       gradient: 'from-green-500 to-emerald-500',
     },
     {
-      path: '/admin/reports',
+      path: '/admin/groups',
       label: 'الحلقات',
-      icon: '📈',
+      icon: '�',
       gradient: 'from-orange-500 to-red-500',
     },
     {

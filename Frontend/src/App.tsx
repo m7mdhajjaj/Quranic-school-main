@@ -73,9 +73,10 @@ import QuranAudio from "./pages/QuranAudio";
 // Page Components - Admin
 // ============================================================================
 import AdminDashboard from "./pages/AdminDashboard";
-import AdminManagement from "./pages/Managments/AdminManagement";
+// import AdminManagement from "./pages/Managments/AdminManagement";
 import StudentsManagement from "./pages/Managments/StudentsManagement";
 import TeachersManagement from "./pages/Managments/TeachersManagement";
+import GroupManagement from "./pages/Managments/GroupManagement";
 
 // ============================================================================
 // Other Components
@@ -122,9 +123,10 @@ const AdminRoutes: React.FC = () => {
       <Routes>
         {/* ====== Admin Dashboard Routes ====== */}
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/admin/management" element={<AdminManagement />} />
+        {/* <Route path="/admin/management" element={<AdminManagement />} /> */}
         <Route path="/admin/students" element={<StudentsManagement />} />
         <Route path="/admin/teachers" element={<TeachersManagement />} />
+        <Route path="/admin/groups" element={<GroupManagement />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/" element={<AdminDashboard />} />
         
@@ -357,3 +359,4 @@ function App() {
 }
 
 export default App;
+

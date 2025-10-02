@@ -7,7 +7,6 @@ export interface Group {
   name: string;
   teacher: string;
   description?: string;
-  level?: string;
   capacity?: number;
   schedule?: string;
   isActive: boolean;
@@ -19,9 +18,9 @@ export interface GroupFormData {
   name: string;
   teacher: string;
   description?: string;
-  level?: string;
   capacity?: number;
   schedule?: string;
+  isActive?: boolean;
 }
 
 // Get all groups

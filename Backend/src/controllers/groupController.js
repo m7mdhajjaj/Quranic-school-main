@@ -3,7 +3,7 @@ const Group = require("../models/Group");
 // إنشاء حلقة جديدة
 exports.createGroup = async (req, res) => {
   try {
-    const { name, teacher, description, level, capacity, schedule } = req.body;
+    const { name, teacher, description, capacity, schedule } = req.body;
 
     // التحقق من وجود الحلقة بنفس الاسم
     const existingGroup = await Group.findOne({ name });
@@ -19,7 +19,6 @@ exports.createGroup = async (req, res) => {
       name,
       teacher,
       description,
-      level,
       capacity,
       schedule,
     });
