@@ -13,7 +13,6 @@ import {
   FaUserTie,
   FaBook,
   FaChartBar,
-  FaUserFriends,
 } from 'react-icons/fa';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../Api/api';
@@ -62,12 +61,6 @@ const TeachersManagement: React.FC = () => {
     new Set()
   );
 
-  // Students count state with caching
-  const [studentsCount, setStudentsCount] = useState<number>(0);
-  const [studentsLoading, setStudentsLoading] = useState<boolean>(false);
-  const [studentsLastFetch, setStudentsLastFetch] = useState<number>(0);
-  const [studentsError, setStudentsError] = useState<boolean>(false);
-
   // Extract unique groups
   const groups = useMemo(() => {
     const allGroups = teachers.flatMap((t) => t.groups || []);
@@ -94,124 +87,9 @@ const TeachersManagement: React.FC = () => {
       female: femaleCount,
       avgAge,
       groups: groups.length,
-      students: studentsCount,
     };
-  }, [teachers, groups.length, studentsCount]);
+  }, [teachers, groups.length]);
 
-  // Fetch students count (optimized with caching)
-  const fetchStudentsCount = useCallback(
-    async (force = false) => {
-      // Cache for 30 seconds to avoid repeated API calls
-      const now = Date.now();
-      if (!force && studentsLastFetch && now - studentsLastFetch < 30000) {
-        console.log('⚡ استخدام عدد الطلاب المحفوظ');
-        return;
-      }
-
-      setStudentsLoading(true);
-      setStudentsError(false);
-
-      const startTime = performance.now(); // قياس الأداء
-
-      try {
-        // Try stats endpoint first for richer data, fallback to count
-        let response;
-        try {
-          response = await api.get('/students/stats', {
-            timeout: 2000,
-            headers: {
-              'Cache-Control': 'no-cache',
-              Accept: 'application/json',
-            },
-          });
-
-          // If stats endpoint works, use the total from stats
-          if (
-            response.data &&
-            response.data.success &&
-            response.data.stats?.total !== undefined
-          ) {
-            const endTime = performance.now();
-            const duration = (endTime - startTime).toFixed(2);
-
-            setStudentsCount(response.data.stats.total);
-            setStudentsLastFetch(now);
-            setStudentsError(false);
-            console.log(
-              `📊 تم تحميل إحصائيات الطلاب: ${response.data.stats.total} (${response.data.stats.male} ذكور، ${response.data.stats.female} إناث) في ${duration}ms`
-            );
-            return; // Success, no need for fallbacks
-          }
-        } catch {
-          console.log(
-            '📊 Stats endpoint not available, trying count endpoint...'
-          );
-        }
-
-        // Fallback to count endpoint
-        response = await api.get('/students/count', {
-          timeout: 2000, // Super fast timeout for optimized endpoint
-          headers: {
-            'Cache-Control': 'no-cache',
-            Accept: 'application/json',
-          },
-        });
-
-        const endTime = performance.now();
-        const duration = (endTime - startTime).toFixed(2);
-
-        if (
-          response.data &&
-          response.data.success &&
-          typeof response.data.count === 'number'
-        ) {
-          setStudentsCount(response.data.count);
-          setStudentsLastFetch(now);
-          setStudentsError(false);
-          console.log(
-            `🚀 تم تحميل عدد الطلاب بسرعة البرق: ${response.data.count} في ${duration}ms`
-          );
-        } else {
-          // Fallback to full students list if count endpoint fails
-          console.log('📡 Fallback إلى الـ endpoint الكامل...');
-          const fullResponse = await api.get('/students', {
-            timeout: 5000,
-          });
-
-          if (fullResponse.data && Array.isArray(fullResponse.data)) {
-            setStudentsCount(fullResponse.data.length);
-            setStudentsLastFetch(now);
-            setStudentsError(false);
-            console.log(
-              `⚡ تم تحميل عدد الطلاب بنجاح (fallback): ${fullResponse.data.length}`
-            );
-          } else {
-            console.warn('البيانات المستلمة غير صحيحة:', fullResponse.data);
-            setStudentsCount(0);
-            setStudentsError(true);
-          }
-        }
-      } catch (error) {
-        console.error('خطأ في تحميل عدد الطلاب:', error);
-
-        // Handle different types of errors
-        if (error && typeof error === 'object' && 'response' in error) {
-          const axiosError = error as { response?: { status?: number } };
-          if (axiosError.response?.status === 500) {
-            console.log('💡 خطأ في الخادم - سيتم المحاولة مرة أخرى لاحقاً');
-          } else if (axiosError.response?.status === 404) {
-            console.log('💡 نقطة النهاية غير موجودة - قد تحتاج للتحديث');
-          }
-        }
-
-        setStudentsCount(0);
-        setStudentsError(true);
-      } finally {
-        setStudentsLoading(false);
-      }
-    },
-    [studentsLastFetch]
-  );
 
   // Fetch teachers
   const fetchTeachers = useCallback(async (retryAttempt = 0) => {
@@ -247,23 +125,7 @@ const TeachersManagement: React.FC = () => {
     }
   }, []);
 
-  // Load students count immediately on mount
-  useEffect(() => {
-    fetchStudentsCount(); // Load students count immediately, regardless of permission
-  }, [fetchStudentsCount]);
 
-  // Auto retry on error after 10 seconds
-  useEffect(() => {
-    if (studentsError && !studentsLoading) {
-      console.log('🔄 سيتم المحاولة مرة أخرى بعد 10 ثوان...');
-      const retryTimer = setTimeout(() => {
-        console.log('🔄 إعادة محاولة تحميل عدد الطلاب...');
-        fetchStudentsCount(true);
-      }, 10000);
-
-      return () => clearTimeout(retryTimer);
-    }
-  }, [studentsError, studentsLoading, fetchStudentsCount]);
 
   useEffect(() => {
     if (!hasPermission) return;
@@ -542,7 +404,6 @@ const TeachersManagement: React.FC = () => {
               <button
                 onClick={() => {
                   fetchTeachers();
-                  fetchStudentsCount(true); // Force refresh
                 }}
                 disabled={isLoading}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg ${
@@ -853,41 +714,6 @@ const TeachersManagement: React.FC = () => {
                   </p>
                   <p className="text-xl font-bold text-gray-900">
                     {stats.avgAge}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* New eighth card - Students Count */}
-            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-indigo-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-xl shadow-md">
-                  {studentsLoading ? (
-                    <div className="w-6 h-6 bg-indigo-300 rounded animate-pulse"></div>
-                  ) : (
-                    <FaUserFriends className="w-6 h-6 text-white" />
-                  )}
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600 font-medium">
-                    عدد الطلاب
-                  </p>
-                  <p className="text-xl font-bold text-gray-900">
-                    {studentsLoading ? (
-                      <span className="inline-block w-8 h-6 bg-gray-200 rounded animate-pulse"></span>
-                    ) : studentsError ? (
-                      <span
-                        className="text-red-400 text-sm cursor-pointer"
-                        onClick={() => fetchStudentsCount(true)}
-                        title="اضغط للمحاولة مرة أخرى"
-                      >
-                        خطأ ⚠️
-                      </span>
-                    ) : stats.students > 0 ? (
-                      <span className="text-indigo-600">{stats.students}</span>
-                    ) : (
-                      <span className="text-gray-400 text-sm">غير متاح</span>
-                    )}
                   </p>
                 </div>
               </div>

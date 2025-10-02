@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { DailyMarksSkeleton } from "../components/LoadingSkeleton";
+import { DailyMarksSkeleton } from "../components/Loading/LoadingSkeleton";
 
 // Backend API URL
 const API_URL = "http://localhost:5005/api";

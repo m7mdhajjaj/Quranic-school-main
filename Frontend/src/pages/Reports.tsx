@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import MarksBarChart from "../components/MarksBarChart";
-import { ReportsSkeleton } from "../components/LoadingSkeleton";
+import { ReportsSkeleton } from "../components/Loading/LoadingSkeleton";
 
 const Reports = () => {
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);

@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { TestSkeleton } from "../components/LoadingSkeleton";
+import { TestSkeleton } from "../components/Loading/LoadingSkeleton";
 
 interface Surah {
   number: number;
