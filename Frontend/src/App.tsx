@@ -73,14 +73,14 @@ import QuranAudio from "./pages/QuranAudio";
 // Page Components - Admin
 // ============================================================================
 import AdminDashboard from "./pages/AdminDashboard";
-import AdminManagement from "./pages/AdminManagement";
+import AdminManagement from "./pages/Managments/AdminManagement";
 import StudentsManagement from "./pages/Managments/StudentsManagement";
 import TeachersManagement from "./pages/Managments/TeachersManagement";
 
 // ============================================================================
 // Other Components
 // ============================================================================
-// import Soon from "./components/Soon";
+import Soon from "./components/Soon";
 
 // ============================================================================
 // Route Configurations
@@ -105,12 +105,20 @@ const shouldHideFooter = (pathname: string): boolean => {
  * Handles all routing for admin users
  * - Shows AdminHeader instead of regular Header
  * - Provides access to admin dashboard and management pages
- * - No Footer is displayed for admin pages
+ * - Footer is now displayed for admin pages
  */
 const AdminRoutes: React.FC = () => {
+  const location = useLocation();
+  
+  // Determine layout visibility based on current route
+  const isLoginPage = location.pathname === "/login";
+  const shouldShowFooter = !shouldHideFooter(location.pathname);
+
   return (
     <>
-      <AdminHeader />
+      {/* Header - Hidden only on login page */}
+      {!isLoginPage && <AdminHeader />}
+      
       <Routes>
         {/* ====== Admin Dashboard Routes ====== */}
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
@@ -130,6 +138,9 @@ const AdminRoutes: React.FC = () => {
         {/* ====== Fallback - Redirect to Dashboard ====== */}
         <Route path="*" element={<AdminDashboard />} />
       </Routes>
+      
+      {/* Footer - Hidden on login and specific pages */}
+      {shouldShowFooter && <Footer />}
     </>
   );
 };

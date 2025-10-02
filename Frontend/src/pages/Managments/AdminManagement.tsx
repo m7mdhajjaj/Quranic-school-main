@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import EnhancedStudentForm from "../components/Forms/AddStudentForm";
-import AddTeacherForm from "../components/Forms/AddTeacherForm";
-import AddGroupForm from "../components/Forms/AddGroupForm";
-import { getAllTeachers, deleteTeacher, type Teacher } from "../Api/teacherApi";
-import { getAllStudents, deleteStudent, type Student } from "../Api/studentApi";
+import EnhancedStudentForm from "../../components/Forms/AddStudentForm";
+import AddTeacherForm from "../../components/Forms/AddTeacherForm";
+import AddGroupForm from "../../components/Forms/AddGroupForm";
+import { getAllTeachers, deleteTeacher, type Teacher } from "../../Api/teacherApi";
+import { getAllStudents, deleteStudent, type Student } from "../../Api/studentApi";
 
 const AdminManagement: React.FC = () => {
   const [activeSection, setActiveSection] = useState<

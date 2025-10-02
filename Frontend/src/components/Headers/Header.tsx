@@ -159,7 +159,7 @@
 //       { to: '/arrangement', label: 'الترتيب', icon: '🏆', gradient: 'from-yellow-500 to-orange-500' },
 //       { to: '/activities', label: 'الأنشطة', icon: '🎨', gradient: 'from-pink-500 to-rose-500' },
 //       { to: '/absence', label: 'الحضور', icon: '📋', gradient: 'from-red-500 to-pink-500' },
-//       { to: '/reports', label: 'التقارير', icon: '📊', gradient: 'from-purple-500 to-indigo-500' },
+//       { to: '/reports', label: 'الحلقات', icon: '📊', gradient: 'from-purple-500 to-indigo-500' },
 //       { to: '/chat', label: 'المحادثات', icon: '💬', gradient: 'from-green-500 to-teal-500' },
 //     ];
 
@@ -789,7 +789,7 @@ const Header = () => {
       { to: '/arrangement', label: 'الترتيب', icon: '🏆', gradient: 'from-yellow-500 to-orange-500' },
       { to: '/activities', label: 'الأنشطة', icon: '🎨', gradient: 'from-pink-500 to-rose-500' },
       { to: '/absence', label: 'الحضور', icon: '📋', gradient: 'from-red-500 to-pink-500' },
-      { to: '/reports', label: 'التقارير', icon: '📊', gradient: 'from-purple-500 to-indigo-500' },
+      { to: '/reports', label: 'الحلقات', icon: '📊', gradient: 'from-purple-500 to-indigo-500' },
       { to: '/chat', label: 'المحادثات', icon: '💬', gradient: 'from-green-500 to-teal-500' },
     ];
 

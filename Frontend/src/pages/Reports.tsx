@@ -20,7 +20,7 @@ const Reports = () => {
 ///aaxas
   return (
     <div className="container mx-auto py-8" dir="rtl">
-      <h1 className="text-2xl font-bold mb-6 text-center">التقارير</h1>
+      <h1 className="text-2xl font-bold mb-6 text-center">الحلقات</h1>
       <div className="bg-white rounded-xl shadow-md p-4 mb-8 max-w-md mx-auto">
         <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">
           فلترة حسب الشهر والسنة

@@ -9,12 +9,9 @@ const AdminHeader: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
 
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const notificationMenuRef = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLDivElement>(null);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -66,12 +63,6 @@ const AdminHeader: React.FC = () => {
       ) {
         setShowNotifications(false);
       }
-      if (
-        searchRef.current &&
-        !searchRef.current.contains(event.target as Node)
-      ) {
-        setSearchOpen(false);
-      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -90,7 +81,6 @@ const AdminHeader: React.FC = () => {
         setProfileMenuOpen(false);
         setShowNotifications(false);
         setMobileMenuOpen(false);
-        setSearchOpen(false);
       }
     };
 
@@ -121,7 +111,7 @@ const AdminHeader: React.FC = () => {
     },
     {
       path: '/admin/reports',
-      label: 'التقارير',
+      label: 'الحلقات',
       icon: '📈',
       gradient: 'from-orange-500 to-red-500',
     },
@@ -180,23 +170,23 @@ const AdminHeader: React.FC = () => {
         }`}
         dir="rtl"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-            {/* Logo Section */}
-            <div className="flex items-center gap-4 cursor-pointer hover:opacity-90 transition-opacity duration-300" onClick={() => navigate('/admin/dashboard')}>
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16 sm:h-18 md:h-20">
+            {/* Right Section - Logo and Text */}
+            <div className="flex items-center gap-2 sm:gap-3 md:gap-4 cursor-pointer hover:opacity-90 transition-opacity duration-300" onClick={() => navigate('/admin/dashboard')}>
               <div
-                className={`relative w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl transition-all duration-500 transform hover:scale-110 hover:rotate-6 ${
+                className={`relative w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg sm:shadow-xl transition-all duration-500 transform hover:scale-110 hover:rotate-6 ${
                   scrolled
                     ? 'bg-gradient-to-br from-emerald-500 to-teal-600'
                     : 'bg-white'
                 }`}
               >
-                <span className="text-3xl animate-bounce-slow">🎓</span>
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full animate-ping"></div>
+                <span className="text-xl sm:text-2xl md:text-3xl animate-bounce-slow">🎓</span>
+                <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full animate-ping"></div>
               </div>
-              <div className="hidden md:block">
+              <div className="hidden sm:block">
                 <h1
-                  className={`text-xl md:text-2xl font-bold transition-colors duration-500 ${
+                  className={`text-base sm:text-lg md:text-xl lg:text-2xl font-bold transition-colors duration-500 ${
                     scrolled
                       ? 'bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent'
                       : 'text-white'
@@ -205,7 +195,7 @@ const AdminHeader: React.FC = () => {
                   لوحة تحكم الإدارة
                 </h1>
                 <p
-                  className={`text-sm transition-colors duration-500 ${
+                  className={`text-xs sm:text-sm transition-colors duration-500 hidden md:block ${
                     scrolled ? 'text-gray-600' : 'text-white/90'
                   }`}
                 >
@@ -215,12 +205,12 @@ const AdminHeader: React.FC = () => {
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-2">
+            <nav className="hidden md:flex items-center gap-1 lg:gap-2">
               {navItems.map((item, index) => (
                 <button
                   key={item.path}
                   onClick={() => navigate(item.path)}
-                  className={`group relative px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
+                  className={`group relative px-2 sm:px-3 lg:px-5 py-2 lg:py-2.5 rounded-lg lg:rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
                     isActive(item.path)
                       ? scrolled
                         ? `bg-gradient-to-r ${item.gradient} text-white shadow-lg`
@@ -231,98 +221,35 @@ const AdminHeader: React.FC = () => {
                   }`}
                   data-animation-index={index}
                 >
-                  <span className="flex items-center gap-2">
-                    <span className="text-lg transition-transform duration-300 group-hover:scale-125">
+                  <span className="flex items-center gap-1 lg:gap-2">
+                    <span className="text-sm lg:text-lg transition-transform duration-300 group-hover:scale-125">
                       {item.icon}
                     </span>
-                    <span>{item.label}</span>
+                    <span className="hidden lg:inline">{item.label}</span>
                   </span>
                   {isActive(item.path) && (
                     <span
-                      className={`absolute bottom-0 left-0 right-0 h-1 rounded-t-lg bg-gradient-to-r ${item.gradient} animate-slide-in`}
+                      className={`absolute bottom-0 left-0 right-0 h-0.5 lg:h-1 rounded-t-lg bg-gradient-to-r ${item.gradient} animate-slide-in`}
                     ></span>
                   )}
                 </button>
               ))}
             </nav>
 
-            {/* Right Section */}
-            <div className="flex items-center gap-3">
-              {/* Search */}
-              <div className="hidden lg:block relative" ref={searchRef}>
-                {searchOpen ? (
-                  <div className="flex items-center gap-2 animate-slide-in-right">
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="ابحث هنا..."
-                      className={`w-64 px-4 py-2 rounded-xl border-2 focus:outline-none transition-all duration-300 ${
-                        scrolled
-                          ? 'border-emerald-300 focus:border-emerald-500 bg-white'
-                          : 'border-white/30 focus:border-white bg-white/20 text-white placeholder-white/70'
-                      }`}
-                      autoFocus
-                    />
-                    <button
-                      onClick={() => setSearchOpen(false)}
-                      className={`p-2 rounded-xl transition-all duration-300 ${
-                        scrolled ? 'hover:bg-gray-100' : 'hover:bg-white/20'
-                      }`}
-                    >
-                      <svg
-                        className={`w-5 h-5 ${scrolled ? 'text-gray-600' : 'text-white'}`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setSearchOpen(true)}
-                    className={`p-2.5 rounded-xl transition-all duration-300 transform hover:scale-110 ${
-                      scrolled
-                        ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        : 'bg-white/20 text-white hover:bg-white/30'
-                    }`}
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      />
-                    </svg>
-                  </button>
-                )}
-              </div>
-
+            {/* Left Section - Profile and Actions */}
+            <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
               {/* Notifications */}
               <div className="relative" ref={notificationMenuRef}>
                 <button
                   onClick={() => setShowNotifications(!showNotifications)}
-                  className={`relative p-2.5 rounded-xl transition-all duration-300 transform hover:scale-110 ${
+                  className={`relative p-2 sm:p-2.5 rounded-lg sm:rounded-xl transition-all duration-300 transform hover:scale-110 ${
                     scrolled
                       ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       : 'bg-white/20 text-white hover:bg-white/30'
                   }`}
                 >
                   <svg
-                    className="w-5 h-5"
+                    className="w-4 h-4 sm:w-5 sm:h-5"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -335,7 +262,7 @@ const AdminHeader: React.FC = () => {
                     />
                   </svg>
                   {unreadCount > 0 && (
-                    <span className="absolute -top-1 -left-1 w-5 h-5 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs rounded-full flex items-center justify-center font-bold animate-bounce-slow shadow-lg">
+                    <span className="absolute -top-0.5 -left-0.5 sm:-top-1 sm:-left-1 w-4 h-4 sm:w-5 sm:h-5 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs rounded-full flex items-center justify-center font-bold animate-bounce-slow shadow-lg">
                       {unreadCount}
                     </span>
                   )}
@@ -403,18 +330,21 @@ const AdminHeader: React.FC = () => {
                 )}
               </div>
 
+              {/* Spacer */}
+              <div className="w-4"></div>
+
               {/* Profile Menu */}
               <div className="relative" ref={profileMenuRef}>
                 <button
                   onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-300 transform hover:scale-105 ${
+                  className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl transition-all duration-300 transform hover:scale-105 ${
                     scrolled
                       ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'
                       : 'bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/30'
                   }`}
                 >
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
+                    className={`w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm ${
                       scrolled
                         ? 'bg-white text-emerald-600'
                         : 'bg-white/20 text-white'
@@ -422,7 +352,7 @@ const AdminHeader: React.FC = () => {
                   >
                     {currentUser?.firstName?.[0] || 'A'}
                   </div>
-                  <span className="text-sm font-semibold hidden md:block">
+                  <span className="text-xs sm:text-sm font-semibold hidden lg:block">
                     {currentUser?.firstName && currentUser?.lastName
                       ? `${currentUser.firstName} ${currentUser.lastName}`
                       : currentUser?.firstName || 'المستخدم'}
@@ -546,14 +476,14 @@ const AdminHeader: React.FC = () => {
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className={`lg:hidden p-2.5 rounded-xl transition-all duration-300 ${
+                className={`md:hidden p-2 sm:p-2.5 rounded-lg sm:rounded-xl transition-all duration-300 ${
                   scrolled
                     ? 'bg-gray-100 text-gray-700'
                     : 'bg-white/20 text-white'
                 }`}
               >
                 <svg
-                  className="w-6 h-6"
+                  className="w-5 h-5 sm:w-6 sm:h-6"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
