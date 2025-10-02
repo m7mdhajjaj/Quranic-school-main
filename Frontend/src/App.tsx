@@ -96,7 +96,7 @@ const ROUTES_WITHOUT_FOOTER = ["/login", "/chat", "/quran", "/quran-audio"];
  * Check if current path should hide footer
  */
 const shouldHideFooter = (pathname: string): boolean => {
-  return ROUTES_WITHOUT_FOOTER.some(route => pathname === route);
+  return ROUTES_WITHOUT_FOOTER.some((route) => pathname === route);
 };
 
 // ============================================================================
@@ -110,40 +110,42 @@ const shouldHideFooter = (pathname: string): boolean => {
  */
 const AdminRoutes: React.FC = () => {
   const location = useLocation();
-  
+
   // Determine layout visibility based on current route
   const isLoginPage = location.pathname === "/login";
   const shouldShowFooter = !shouldHideFooter(location.pathname);
 
   return (
-    <>
+    <div className="app-content">
       {/* Header - Hidden only on login page */}
       {!isLoginPage && <AdminHeader />}
-      
-      <Routes>
-        {/* ====== Admin Dashboard Routes ====== */}
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        {/* <Route path="/admin/management" element={<AdminManagement />} /> */}
-        <Route path="/admin/students" element={<StudentsManagement />} />
-        <Route path="/admin/teachers" element={<TeachersManagement />} />
-        <Route path="/admin/groups" element={<GroupManagement />} />
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/" element={<AdminDashboard />} />
-        
-        {/* ====== Admin - User Settings ====== */}
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/change-password" element={<ChangePass />} />
-        
-        {/* ====== Admin - Authentication ====== */}
-        <Route path="/login" element={<Login />} />
-        
-        {/* ====== Fallback - Redirect to Dashboard ====== */}
-        <Route path="*" element={<AdminDashboard />} />
-      </Routes>
-      
+
+      <main className="main-content">
+        <Routes>
+          {/* ====== Admin Dashboard Routes ====== */}
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          {/* <Route path="/admin/management" element={<AdminManagement />} /> */}
+          <Route path="/admin/students" element={<StudentsManagement />} />
+          <Route path="/admin/teachers" element={<TeachersManagement />} />
+          <Route path="/admin/groups" element={<GroupManagement />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/" element={<AdminDashboard />} />
+
+          {/* ====== Admin - User Settings ====== */}
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/change-password" element={<ChangePass />} />
+
+          {/* ====== Admin - Authentication ====== */}
+          <Route path="/login" element={<Login />} />
+
+          {/* ====== Fallback - Redirect to Dashboard ====== */}
+          <Route path="*" element={<AdminDashboard />} />
+        </Routes>
+      </main>
+
       {/* Footer - Hidden on login and specific pages */}
       {shouldShowFooter && <Footer />}
-    </>
+    </div>
   );
 };
 
@@ -159,61 +161,63 @@ const AdminRoutes: React.FC = () => {
  */
 const TeacherRoutes: React.FC = () => {
   const location = useLocation();
-  
+
   // Determine layout visibility based on current route
   const isLoginPage = location.pathname === "/login";
   const shouldShowFooter = !shouldHideFooter(location.pathname);
 
   return (
-    <>
+    <div className="app-content">
       {/* Header - Hidden only on login page */}
       {!isLoginPage && <Header />}
-      
-      <Routes>
-        {/* ====== Home & Authentication ====== */}
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        
-        {/* ====== Academic Pages - Teacher Access ====== */}
-        <Route path="/goals" element={<Goals />} />
-        <Route path="/daily-marks" element={<DailyMarks />} />
-        <Route path="/arrangement" element={<Arrangement />} />
-        <Route path="/test" element={<Test />} />
-        <Route path="/exam-schedule" element={<ExamSchedule />} />
-        <Route path="/reports" element={<Reports />} />
-        <Route path="/timetable" element={<Timetable />} />
-        
-        {/* ====== Communication & Activities ====== */}
-        <Route path="/news" element={<News />} />
-        {/* <Route path="/chat" element={<Chat />} /> */}
-        <Route path="/activities" element={<Activities />} />
-        
-        {/* ====== Attendance & Management - Teacher Features ====== */}
-        <Route path="/absence" element={<Absence />} />
-        <Route path="/managment" element={<Managment />} />
-        
-        {/* ====== Islamic Resources ====== */}
-        <Route path="/prayer-times" element={<PrayerTimes />} />
-        <Route path="/quran" element={<QuranPage />} />
-        <Route path="/quran-audio" element={<QuranAudio />} />
-        
-        {/* ====== User Settings ====== */}
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/change-password" element={<ChangePass />} />
-        
-        {/* ====== Special Pages ====== */}
-        <Route path="/soon" element={<Soon />} />
-        
-        {/* ====== Protected & Fallback Routes ====== */}
-        {/* Block access to admin routes */}
-        <Route path="/admin/*" element={<NotFound />} />
-        {/* 404 page for undefined routes */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-      
+
+      <main className="main-content">
+        <Routes>
+          {/* ====== Home & Authentication ====== */}
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+
+          {/* ====== Academic Pages - Teacher Access ====== */}
+          <Route path="/goals" element={<Goals />} />
+          <Route path="/daily-marks" element={<DailyMarks />} />
+          <Route path="/arrangement" element={<Arrangement />} />
+          <Route path="/test" element={<Test />} />
+          <Route path="/exam-schedule" element={<ExamSchedule />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/timetable" element={<Timetable />} />
+
+          {/* ====== Communication & Activities ====== */}
+          <Route path="/news" element={<News />} />
+          {/* <Route path="/chat" element={<Chat />} /> */}
+          <Route path="/activities" element={<Activities />} />
+
+          {/* ====== Attendance & Management - Teacher Features ====== */}
+          <Route path="/absence" element={<Absence />} />
+          <Route path="/managment" element={<Managment />} />
+
+          {/* ====== Islamic Resources ====== */}
+          <Route path="/prayer-times" element={<PrayerTimes />} />
+          <Route path="/quran" element={<QuranPage />} />
+          <Route path="/quran-audio" element={<QuranAudio />} />
+
+          {/* ====== User Settings ====== */}
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/change-password" element={<ChangePass />} />
+
+          {/* ====== Special Pages ====== */}
+          <Route path="/soon" element={<Soon />} />
+
+          {/* ====== Protected & Fallback Routes ====== */}
+          {/* Block access to admin routes */}
+          <Route path="/admin/*" element={<NotFound />} />
+          {/* 404 page for undefined routes */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
+
       {/* Footer - Hidden on login, chat, and Quran pages */}
       {shouldShowFooter && <Footer />}
-    </>
+    </div>
   );
 };
 
@@ -229,62 +233,64 @@ const TeacherRoutes: React.FC = () => {
  */
 const StudentRoutes: React.FC = () => {
   const location = useLocation();
-  
+
   // Determine layout visibility based on current route
   const isLoginPage = location.pathname === "/login";
   const shouldShowFooter = !shouldHideFooter(location.pathname);
 
   return (
-    <>
+    <div className="app-content">
       {/* Header - Hidden only on login page */}
       {!isLoginPage && <Header />}
-      
-      <Routes>
-        {/* ====== Home & Authentication ====== */}
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        
-        {/* ====== Academic Pages - Student View Only ====== */}
-        <Route path="/goals" element={<Goals />} />
-        <Route path="/daily-marks" element={<DailyMarks />} />
-        <Route path="/arrangement" element={<Arrangement />} />
-        <Route path="/exam-schedule" element={<ExamSchedule />} />
-        <Route path="/reports" element={<Reports />} />
-        <Route path="/timetable" element={<Timetable />} />
-        <Route path="/test" element={<Test />} />
-        {/* ====== Communication & Activities ====== */}
-        <Route path="/news" element={<News />} />
-        {/* <Route path="/chat" element={<Chat />} /> */}
-        <Route path="/activities" element={<Activities />} />
-        
-        {/* ====== Attendance - View Only ====== */}
-        <Route path="/absence" element={<Absence />} />
-        
-        {/* ====== Islamic Resources ====== */}
-        <Route path="/prayer-times" element={<PrayerTimes />} />
-        <Route path="/quran" element={<QuranPage />} />
-        <Route path="/quran-audio" element={<QuranAudio />} />
-        
-        {/* ====== User Settings ====== */}
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/change-password" element={<ChangePass />} />
-        
-        {/* ====== Special Pages ====== */}
-        <Route path="/soon" element={<Soon />} />
-        
-        {/* ====== Protected & Fallback Routes ====== */}
-        {/* Block access to management features (teacher-only) */}
-        <Route path="/managment" element={<NotFound />} />
-        <Route path="/test" element={<NotFound />} />
-        {/* Block access to admin routes */}
-        <Route path="/admin/*" element={<NotFound />} />
-        {/* 404 page for undefined routes */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-      
+
+      <main className="main-content">
+        <Routes>
+          {/* ====== Home & Authentication ====== */}
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+
+          {/* ====== Academic Pages - Student View Only ====== */}
+          <Route path="/goals" element={<Goals />} />
+          <Route path="/daily-marks" element={<DailyMarks />} />
+          <Route path="/arrangement" element={<Arrangement />} />
+          <Route path="/exam-schedule" element={<ExamSchedule />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/timetable" element={<Timetable />} />
+          <Route path="/test" element={<Test />} />
+          {/* ====== Communication & Activities ====== */}
+          <Route path="/news" element={<News />} />
+          {/* <Route path="/chat" element={<Chat />} /> */}
+          <Route path="/activities" element={<Activities />} />
+
+          {/* ====== Attendance - View Only ====== */}
+          <Route path="/absence" element={<Absence />} />
+
+          {/* ====== Islamic Resources ====== */}
+          <Route path="/prayer-times" element={<PrayerTimes />} />
+          <Route path="/quran" element={<QuranPage />} />
+          <Route path="/quran-audio" element={<QuranAudio />} />
+
+          {/* ====== User Settings ====== */}
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/change-password" element={<ChangePass />} />
+
+          {/* ====== Special Pages ====== */}
+          <Route path="/soon" element={<Soon />} />
+
+          {/* ====== Protected & Fallback Routes ====== */}
+          {/* Block access to management features (teacher-only) */}
+          <Route path="/managment" element={<NotFound />} />
+          <Route path="/test" element={<NotFound />} />
+          {/* Block access to admin routes */}
+          <Route path="/admin/*" element={<NotFound />} />
+          {/* 404 page for undefined routes */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
+
       {/* Footer - Hidden on login, chat, and Quran pages */}
       {shouldShowFooter && <Footer />}
-    </>
+    </div>
   );
 };
 
@@ -320,11 +326,11 @@ function AppContent() {
   // ====== Authenticated State - Role-Based Routing ======
   // Route to appropriate component based on user role
   switch (user?.role) {
-    case 'admin':
+    case "admin":
       return <AdminRoutes />;
-    case 'teacher':
+    case "teacher":
       return <TeacherRoutes />;
-    case 'student':
+    case "student":
       return <StudentRoutes />;
     default:
       // Fallback to login if role is undefined or invalid
@@ -359,4 +365,3 @@ function App() {
 }
 
 export default App;
-

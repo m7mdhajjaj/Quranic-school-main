@@ -264,7 +264,7 @@ const Header = () => {
                   مدرسة القرآن الكريم
                 </h1>
                 <p className="text-xs md:text-sm text-emerald-100/90 font-medium">
-                  أكاديمية مدرسة الهجرة
+                  أكاديمية مدرسة المهاجرين
                 </p>
               </div>
             </Link>

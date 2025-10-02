@@ -1,5 +1,35 @@
 @import "tailwindcss";
 
+/* ============================================================================ */
+/* Main Layout - Sticky Footer Solution */
+/* ============================================================================ */
+/* Ensures the footer sticks to the bottom of the viewport */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Main content should grow to fill available space */
+.app-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1;
+}
+
+/* ============================================================================ */
+/* Arabic Fonts and Typography */
+/* ============================================================================ */
 /* Arabic font for Quran */
 .font-arabic {
   font-family: "Amiri", "Times New Roman", serif;
