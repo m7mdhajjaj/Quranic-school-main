@@ -11,7 +11,7 @@ import { type GroupFormData } from '../../Validation/groupValidation';
 import Swal from 'sweetalert2';
 import '../../styles/sweetalert.css';
 
-type SortField = 'name' | 'teacher' | 'capacity' | 'createdAt';
+type SortField = 'name' | 'teacher' | 'capacity';
 type SortOrder = 'asc' | 'desc';
 
 const GroupManagement: React.FC = () => {
@@ -91,13 +91,13 @@ const GroupManagement: React.FC = () => {
     };
   }, [groups, teachers.length]);
 
-  // Fetch groups with optimized loading
+  // Fetch groups with optimized loading and student count
   const fetchGroups = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      console.log('🚀 بدء تحميل بيانات الحلقات...');
+      console.log('🚀 بدء تحميل بيانات الحلقات مع عدد الطلاب المحسن...');
       const startTime = performance.now();
       
       const result = await getAllGroups();
@@ -118,8 +118,16 @@ const GroupManagement: React.FC = () => {
           currentStudents: group.currentStudents || 0 // عدد الطلاب المشتركين
         }));
         
-        console.log(`✅ تم تحميل ${cleanedGroups.length} حلقة بنجاح في ${duration}ms`);
-        console.log('📊 بيانات الحلقات:', cleanedGroups);
+        const totalStudents = cleanedGroups.reduce((sum, g) => sum + (g.currentStudents || 0), 0);
+        
+        console.log(`✅ تم تحميل ${cleanedGroups.length} حلقة مع ${totalStudents} طالب مشترك في ${duration}ms`);
+        console.log(`⚡ سرعة التحميل: ${(cleanedGroups.length / parseFloat(duration) * 1000).toFixed(0)} حلقة/ثانية`);
+        console.log('📊 إحصائيات سريعة:', {
+          totalGroups: cleanedGroups.length,
+          totalStudents,
+          avgStudentsPerGroup: (totalStudents / cleanedGroups.length).toFixed(1)
+        });
+        
         setGroups(cleanedGroups);
         setError(null);
       } else {
@@ -184,8 +192,6 @@ const GroupManagement: React.FC = () => {
         compareResult = (a.teacher || '').localeCompare(b.teacher || '', 'ar');
       } else if (sortField === 'capacity') {
         compareResult = (a.capacity || 0) - (b.capacity || 0);
-      } else if (sortField === 'createdAt') {
-        compareResult = new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
       }
 
       return sortOrder === 'asc' ? compareResult : -compareResult;
@@ -267,10 +273,10 @@ const GroupManagement: React.FC = () => {
 
   // Export to CSV
   const handleExport = () => {
-    const headers = ['اسم الحلقة', 'المعلم', 'السعة', 'الطلاب المشتركين', 'الجدول', 'الوصف', 'تاريخ الإنشاء'];
+    const headers = ['اسم الحلقة', 'المعلم', 'السعة', 'الطلاب المشتركين', 'المواعيد', 'الوصف'];
     const rows = filteredAndSortedGroups.map(g => [
       g.name, g.teacher, g.capacity, g.currentStudents || 0, g.schedule || '', 
-      g.description || '', new Date(g.createdAt || '').toLocaleDateString('ar-SA')
+      g.description || ''
     ]);
     
     const csvContent = [headers, ...rows]
@@ -404,7 +410,7 @@ const GroupManagement: React.FC = () => {
               <div className="relative md:col-span-6">
                 <input
                   type="text"
-                  placeholder="ابحث عن حلقة (الاسم، المعلم، الجدول الزمني...)"
+                  placeholder="ابحث عن حلقة (الاسم، المعلم، المواعيد...)"
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
@@ -740,25 +746,15 @@ const GroupManagement: React.FC = () => {
                       </div>
                     </th>
                     <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">الطلاب المشتركين</th>
-                    <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">الجدول</th>
+                    <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">المواعيد</th>
                     <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">الوصف</th>
-                    <th
-                      className="px-6 py-4 text-right text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors"
-                      onClick={() => handleSort('createdAt')}>
-                      <div className="flex items-center gap-2">
-                        <span>تاريخ الإنشاء</span>
-                        {sortField === 'createdAt' && (
-                          sortOrder === 'asc' ? <FaSortAmountUp /> : <FaSortAmountDown />
-                        )}
-                      </div>
-                    </th>
                     <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">الإجراءات</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {currentGroups.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="px-6 py-12 text-center">
+                      <td colSpan={7} className="px-6 py-12 text-center">
                         <FaUsers className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                         <p className="text-gray-500 font-medium">لا توجد حلقات</p>
                       </td>
@@ -817,9 +813,6 @@ const GroupManagement: React.FC = () => {
                           <div className="text-sm text-gray-600 max-w-xs truncate">
                             {group.description || '-'}
                           </div>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">
-                          {new Date(group.createdAt || '').toLocaleDateString('ar-SA')}
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
