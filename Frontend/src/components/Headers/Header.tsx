@@ -638,8 +638,6 @@
 import { NavLink, useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import NotificationHeader from '../NotificationHeader';
-import Avatar from '../Avatar';
-import { useAvatar, getUserGender } from '../../hooks/useAvatar';
 import { useAuth } from '../../hooks/useAuth';
 import { io, Socket } from 'socket.io-client';
 import axios from 'axios';
@@ -676,12 +674,6 @@ const Header = () => {
   const navigate = useNavigate();
 
   const isTeacherOrAdmin = currentUser?.role === 'teacher' || currentUser?.role === 'admin';
-  const userGender = getUserGender(currentUser);
-
-  const { avatarUrl, avatarLoading } = useAvatar({
-    userId: currentUser?._id,
-    userRole: currentUser?.role,
-  });
 
   useEffect(() => {
     const handleScroll = () => {
@@ -814,17 +806,7 @@ const Header = () => {
     </div>
   );
 
-  const renderUserAvatar = () => (
-    <Avatar
-      src={avatarUrl}
-      userName={currentUser?.firstName || currentUser?.name}
-      gender={userGender}
-      loading={avatarLoading}
-      size="md"
-      clickable={true}
-      showStatus={true}
-    />
-  );
+
 
   return (
     <>
@@ -837,31 +819,31 @@ const Header = () => {
         dir="rtl"
       >
         <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16 sm:h-18 md:h-20">
+          <div className="flex justify-between items-center h-14 sm:h-16 md:h-18 lg:h-20">
             
-            <Link to="/" className="flex items-center gap-2 sm:gap-3 md:gap-4 hover:opacity-90 transition-opacity duration-200 group">
-              <div className={`relative w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-xl transition-all duration-500 transform hover:scale-110 hover:rotate-6 ${
+            <Link to="/" className="flex items-center gap-1 sm:gap-2 md:gap-3 lg:gap-4 hover:opacity-90 transition-opacity duration-200 group">
+              <div className={`relative w-8 h-8 xs:w-9 xs:h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 rounded-lg sm:rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg sm:shadow-xl transition-all duration-500 transform hover:scale-110 hover:rotate-6 ${
                 scrolled ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : 'bg-white'
               }`}>
-                {!logoLoaded && <ImageSkeleton className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-full absolute" variant="logo" />}
+                {!logoLoaded && <ImageSkeleton className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-10 lg:h-10 rounded-full absolute" variant="logo" />}
                 <img
                   src="/src/images/logo.jpg"
                   alt="Logo"
-                  className={`w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-full object-cover transition-all duration-500 ${
+                  className={`w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-10 lg:h-10 rounded-full object-cover transition-all duration-500 ${
                     logoLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
                   }`}
                   onLoad={() => setLogoLoaded(true)}
                   onError={() => setLogoLoaded(true)}
                 />
-                <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full animate-ping"></div>
+                <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2 h-2 xs:w-2.5 xs:h-2.5 sm:w-3 sm:h-3 md:w-4 md:h-4 bg-green-500 rounded-full animate-ping"></div>
               </div>
               <div className="header-text min-w-0 flex-1">
-                <h1 className={`text-sm sm:text-base md:text-xl lg:text-2xl font-bold transition-colors duration-500 leading-tight truncate ${
+                <h1 className={`text-xs xs:text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl font-bold transition-colors duration-500 leading-tight truncate ${
                   scrolled ? 'bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent' : 'text-white'
                 }`}>
                   مدرسة القرآن الكريم
                 </h1>
-                <p className={`text-xs sm:text-sm transition-colors duration-500 leading-tight truncate ${
+                <p className={`text-xs xs:text-xs sm:text-sm md:text-sm transition-colors duration-500 leading-tight truncate ${
                   scrolled ? 'text-gray-600' : 'text-white/90'
                 }`}>
                   أكاديمية مدرسة الهجرة للقرآن الكريم
@@ -945,7 +927,7 @@ const Header = () => {
               </div>
 
               {currentUser && (
-                <div className={`p-1.5 sm:p-2 md:p-2.5 rounded-lg md:rounded-xl transition-all duration-300 transform hover:scale-110 ${
+                <div className={`p-1 xs:p-1.5 sm:p-2 md:p-2.5 rounded-lg md:rounded-xl transition-all duration-300 transform hover:scale-110 ${
                   scrolled ? 'bg-gray-100 hover:bg-gray-200' : 'bg-white/20 hover:bg-white/30'
                 }`}>
                   <NotificationHeader userId={currentUser._id} socket={socket} apiUrl={API_BASE_URL} />
@@ -955,24 +937,24 @@ const Header = () => {
               <div className="relative" ref={profileMenuRef}>
                 <button
                   onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                  className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-2.5 rounded-lg md:rounded-xl transition-all duration-300 transform hover:scale-105 ${
+                  className={`flex items-center gap-1 xs:gap-1.5 sm:gap-2 px-1.5 xs:px-2 sm:px-3 md:px-4 py-1 xs:py-1.5 sm:py-2 md:py-2.5 rounded-md sm:rounded-lg md:rounded-xl transition-all duration-300 transform hover:scale-105 ${
                     scrolled 
                       ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg' 
                       : 'bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/30'
                   }`}
                 >
-                  <div className={`w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm ${
+                  <div className={`w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center font-bold text-xs xs:text-xs sm:text-sm ${
                     scrolled ? 'bg-white text-emerald-600' : 'bg-white/20 text-white'
                   }`}>
                     {currentUser?.firstName?.[0] || 'م'}
                   </div>
-                  <span className="text-xs sm:text-sm font-semibold hidden lg:block truncate max-w-24">
+                  <span className="text-xs xs:text-xs sm:text-sm font-semibold hidden md:block lg:block truncate max-w-16 sm:max-w-20 md:max-w-24">
                     {currentUser?.firstName && currentUser?.lastName
                       ? `${currentUser.firstName} ${currentUser.lastName}`
                       : currentUser?.firstName || 'المستخدم'}
                   </span>
                   <svg
-                    className={`w-3 h-3 sm:w-4 sm:h-4 transition-transform duration-300 hidden sm:block ${profileMenuOpen ? 'rotate-180' : ''}`}
+                    className={`w-3 h-3 xs:w-3.5 xs:h-3.5 sm:w-4 sm:h-4 transition-transform duration-300 hidden xs:block ${profileMenuOpen ? 'rotate-180' : ''}`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -1125,7 +1107,9 @@ const Header = () => {
 
               {currentUser && (
                 <div className="flex items-center gap-4 mb-6 p-4 bg-white/10 rounded-2xl">
-                  {renderUserAvatar()}
+                  <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-emerald-600 font-bold text-lg shadow-lg">
+                    {currentUser?.firstName?.[0] || 'م'}
+                  </div>
                   <div className="flex-1">
                     <div className="text-white font-semibold text-lg">
                       {currentUser.firstName && currentUser.lastName

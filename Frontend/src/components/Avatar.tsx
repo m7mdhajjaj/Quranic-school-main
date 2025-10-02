@@ -1,6 +1,5 @@
 import React from 'react';
 import { User as UserIcon } from 'lucide-react';
-import { useUserStatus } from '../hooks/useUserStatus';
 
 export interface AvatarProps {
   /** Avatar image URL */
@@ -123,45 +122,26 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
   statusSize = 'md',
   forceStatus,
 }) => {
-  // جلب حالة المستخدم من قاعدة البيانات
-  const { isActive } = useUserStatus(userId);
   const displaySrc = previewSrc || src;
   const initials = userName ? userName.charAt(0).toUpperCase() : '';
 
-  // تحديد حالة المستخدم مع منطق محسن
-  const userIsOnline = (() => {
-    if (forceStatus === 'online') return true;
-    if (forceStatus === 'offline') return false;
-    
-    // اعتماد على isActive فقط
-    if (isActive !== undefined) {
-      return isActive;
-    }
-    
-    // fallback للحالة الافتراضية (متصل)
-    return isActive !== false;
-  })();
+  // Simple status logic without external dependencies
+  const userIsOnline = forceStatus === 'online' || (!forceStatus && showStatus);
 
-  // تحديد نص التلميح حسب حالة المستخدم
   const getStatusTitle = () => {
     if (forceStatus)
       return forceStatus === 'online' ? 'نشط (مفروض)' : 'غير نشط (مفروض)';
-    
-    if (isActive) return 'نشط';
-    return 'غير نشط';
+    return userIsOnline ? 'نشط' : 'غير نشط';
   };
 
-  // دوال من PresenceIndicator المدمجة
   const getStatusColor = () => {
-    if (loading || !isActive) return 'bg-gray-400';
-    if (isActive) return 'bg-green-500';
-    return 'bg-gray-400';
+    if (loading) return 'bg-gray-400';
+    return userIsOnline ? 'bg-green-500' : 'bg-gray-400';
   };
 
   const getStatusText = () => {
-    if (loading || !isActive) return 'غير نشط';
-    if (isActive) return 'نشط الآن';
-    return 'غير نشط';
+    if (loading) return 'غير نشط';
+    return userIsOnline ? 'نشط الآن' : 'غير نشط';
   };
 
   const getStatusDotSize = () => {

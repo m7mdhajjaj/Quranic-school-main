@@ -10,7 +10,11 @@ import {
   FaPhone,
 } from "react-icons/fa";
 import Avatar from './Avatar';
-import { getUserGender } from '../hooks/useAvatar';
+
+// Local helper function
+const getUserGender = (user: any) => {
+  return user?.gender || 'male';
+};
 
 interface UserInfoModalProps {
   user: {

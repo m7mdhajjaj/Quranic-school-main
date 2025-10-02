@@ -18,8 +18,24 @@ import {
 } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import Avatar from "../components/Avatar";
-import { fetchAvatarBlobUrl, getUserGender } from "../hooks/useAvatar";
 import { useAuth } from "../hooks/useAuth";
+
+// Local helper functions
+const getUserGender = (user: any) => {
+  return user?.gender || 'male';
+};
+
+const fetchAvatarBlobUrl = async (endpoint: string, userId: string) => {
+  try {
+    const response = await api.get(`/${endpoint}/${userId}/avatar`, {
+      responseType: 'blob'
+    });
+    return URL.createObjectURL(response.data);
+  } catch (error) {
+    console.error('Error fetching avatar:', error);
+    return null;
+  }
+};
 import "react-toastify/dist/ReactToastify.css";
 
 // ============================
@@ -138,7 +154,7 @@ const recordEditLocal = (field: "birthDate" | "gender", userId: string) => {
   localStorage.setItem(keyFor(field, userId), JSON.stringify(updated));
 };
 
-// fetchAvatarBlobUrl is now imported from useAvatar hook
+// fetchAvatarBlobUrl is now defined locally above
 
 // ============================
 // Component
