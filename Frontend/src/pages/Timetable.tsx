@@ -185,7 +185,7 @@ const Timetable = () => {
   };
 
   return (
-    <div className="p-4 md:p-6" dir="rtl" lang="ar">
+    <div className="p-2 md:p-6" dir="rtl" lang="ar">
       <div className="max-w-6xl mx-auto">
         <div className="mb-5 text-center">
           <h2 className="text-2xl md:text-3xl font-extrabold text-emerald-700">
@@ -208,17 +208,17 @@ const Timetable = () => {
 
         {/* بطاقة الجدول */}
         <div className="bg-white/90 backdrop-blur rounded-2xl border border-emerald-100 shadow-[0_10px_30px_rgba(16,185,129,0.08)] overflow-hidden">
-          <div className="overflow-auto">
-            <table className="min-w-full text-center border-separate border-spacing-0">
+          <div className="overflow-x-auto w-full">
+            <table className="min-w-max w-full text-center border-separate border-spacing-0 text-[13px] md:text-base">
               <thead className="sticky top-0 z-10">
                 <tr className="bg-gradient-to-l from-emerald-600 to-emerald-500 text-white">
-                  <th className="sticky right-0 bg-emerald-600/95 px-4 py-3 text-sm font-bold border-l border-emerald-500">
+                  <th className="sticky right-0 bg-emerald-600/95 px-2 md:px-4 py-2 md:py-3 text-sm md:text-base font-bold border-l border-emerald-500">
                     اليوم / الوقت
                   </th>
                   {hours.map((h) => (
                     <th
                       key={`h-${h}`}
-                      className="px-3 py-3 text-[11px] md:text-xs font-semibold border-l border-emerald-500/30"
+                      className="px-2 md:px-3 py-2 md:py-3 text-[10px] md:text-xs font-semibold border-l border-emerald-500/30 whitespace-nowrap"
                       title={h}>
                       {h}
                     </th>
@@ -231,7 +231,7 @@ const Timetable = () => {
                   <tr
                     key={day}
                     className={r % 2 ? "bg-emerald-50/20" : "bg-white"}>
-                    <td className="sticky right-0 bg-emerald-50/90 backdrop-blur px-4 py-3 font-bold text-emerald-800 border-t border-b border-emerald-100">
+                    <td className="sticky right-0 bg-emerald-50/90 backdrop-blur px-2 md:px-4 py-2 md:py-3 font-bold text-emerald-800 border-t border-b border-emerald-100 text-[13px] md:text-base">
                       {day}
                     </td>
                     {renderDayRowCells(day)}
