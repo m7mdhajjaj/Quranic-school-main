@@ -3,6 +3,7 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { ArrangementSkeleton } from "../components/LoadingSkeleton";
 
 // Backend API URL
 const API_URL = "http://localhost:5005/api";
@@ -93,7 +94,7 @@ const Arrangement = () => {
 
   // State for modal type (top3 or general or update)
   const [modalType, setModalType] = useState<"top3" | "general" | "update">(
-    "general",
+    "general"
   );
 
   // State for student selection
@@ -150,7 +151,7 @@ const Arrangement = () => {
 
           // Find current month/year in available periods
           const currentPeriod = periodsResponse.data.data.find(
-            (p: Period) => p.month === currentMonth && p.year === currentYear,
+            (p: Period) => p.month === currentMonth && p.year === currentYear
           );
 
           // If current month not found, use the most recent one
@@ -158,7 +159,7 @@ const Arrangement = () => {
 
           // Fetch current ranking
           const rankingResponse = await axios.get(
-            `${API_URL}/rankings/current`,
+            `${API_URL}/rankings/current`
           );
           if (rankingResponse.data.success) {
             setCurrentRanking(rankingResponse.data.data);
@@ -194,7 +195,7 @@ const Arrangement = () => {
       setLoading(true);
       try {
         const response = await axios.get(
-          `${API_URL}/rankings/${selectedPeriod.month}/${selectedPeriod.year}`,
+          `${API_URL}/rankings/${selectedPeriod.month}/${selectedPeriod.year}`
         );
 
         if (response.data.success) {
@@ -244,7 +245,7 @@ const Arrangement = () => {
   // Function to open the modal for adding a student
   const openAddModal = (
     type: "top3" | "general" | "update" = "general",
-    student?: RankingStudent,
+    student?: RankingStudent
   ) => {
     setModalType(type);
 
@@ -376,7 +377,7 @@ const Arrangement = () => {
           topTen = topTen.map((item) =>
             item.studentId === newRankingEntry._id
               ? { ...item, score: newRankingEntry.score }
-              : item,
+              : item
           );
         } else {
           // Add new entry
@@ -401,7 +402,7 @@ const Arrangement = () => {
         ) {
           // Remove this student from top3 if already exists
           topThree = topThree.filter(
-            (item) => item.studentId !== newRankingEntry._id,
+            (item) => item.studentId !== newRankingEntry._id
           );
 
           // Add to top3
@@ -429,7 +430,7 @@ const Arrangement = () => {
       if (response.data.success) {
         // Refresh ranking data
         const refreshResponse = await axios.get(
-          `${API_URL}/rankings/${selectedPeriod.month}/${selectedPeriod.year}`,
+          `${API_URL}/rankings/${selectedPeriod.month}/${selectedPeriod.year}`
         );
 
         if (refreshResponse.data.success) {
@@ -438,7 +439,7 @@ const Arrangement = () => {
 
           // Refresh available periods
           const periodsResponse = await axios.get(
-            `${API_URL}/rankings/periods`,
+            `${API_URL}/rankings/periods`
           );
           if (periodsResponse.data.success) {
             setAvailablePeriods(periodsResponse.data.data);
@@ -497,8 +498,7 @@ const Arrangement = () => {
   return (
     <div
       className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 py-12 px-4"
-      dir="rtl"
-    >
+      dir="rtl">
       <div className="container mx-auto">
         <div className="text-center mb-16" data-aos="fade-down">
           <h1 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
@@ -520,14 +520,12 @@ const Arrangement = () => {
                     : ""
                 }
                 onChange={handlePeriodChange}
-                className="w-40 px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              >
+                className="w-40 px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 <option value="">اختر الشهر/السنة</option>
                 {availablePeriods.map((period) => (
                   <option
                     key={`${period.month}-${period.year}`}
-                    value={`${period.month}/${period.year}`}
-                  >
+                    value={`${period.month}/${period.year}`}>
                     {getMonthName(period.month)} {period.year}
                   </option>
                 ))}
@@ -536,11 +534,10 @@ const Arrangement = () => {
                   !availablePeriods.some(
                     (p) =>
                       p.month === selectedPeriod.month &&
-                      p.year === selectedPeriod.year,
+                      p.year === selectedPeriod.year
                   ) && (
                     <option
-                      value={`${selectedPeriod.month}/${selectedPeriod.year}`}
-                    >
+                      value={`${selectedPeriod.month}/${selectedPeriod.year}`}>
                       {getMonthName(selectedPeriod.month)} {selectedPeriod.year}
                     </option>
                   )}
@@ -551,14 +548,12 @@ const Arrangement = () => {
               <>
                 <button
                   onClick={() => openAddModal("top3")}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition shadow-md flex items-center"
-                >
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition shadow-md flex items-center">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-5 w-5 mr-2"
                     viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
+                    fill="currentColor">
                     <path
                       fillRule="evenodd"
                       d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
@@ -569,14 +564,12 @@ const Arrangement = () => {
                 </button>
                 <button
                   onClick={() => openAddModal("general")}
-                  className="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition shadow-md flex items-center"
-                >
+                  className="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg transition shadow-md flex items-center">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-5 w-5 mr-2"
                     viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
+                    fill="currentColor">
                     <path
                       fillRule="evenodd"
                       d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
@@ -599,18 +592,13 @@ const Arrangement = () => {
         </div>
 
         {/* Loading indicator */}
-        {loading && (
-          <div className="flex justify-center items-center py-16">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-emerald-600"></div>
-          </div>
-        )}
+        {loading && <ArrangementSkeleton />}
 
         {/* Error message */}
         {!loading && error && (
           <div
             className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-8"
-            role="alert"
-          >
+            role="alert">
             <span className="block sm:inline">{error}</span>
           </div>
         )}
@@ -625,8 +613,7 @@ const Arrangement = () => {
                 <div
                   className="w-1/4 flex flex-col items-center mx-2"
                   data-aos="fade-up"
-                  data-aos-delay="200"
-                >
+                  data-aos-delay="200">
                   <div className="relative">
                     <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-[#e9f5f2] border-4 border-[#a0a0a0] mb-4 flex items-center justify-center">
                       <div className="text-[#1f6357] font-bold text-4xl">2</div>
@@ -652,8 +639,7 @@ const Arrangement = () => {
                 <div
                   className="w-1/3 flex flex-col items-center mx-2 -mt-10"
                   data-aos="fade-up"
-                  data-aos-delay="100"
-                >
+                  data-aos-delay="100">
                   <div className="relative">
                     <div className="w-28 h-28 md:w-36 md:h-36 rounded-full bg-[#e9f5f2] border-4 border-[#FFD700] mb-4 flex items-center justify-center">
                       <div className="text-[#1f6357] font-bold text-5xl">1</div>
@@ -665,8 +651,7 @@ const Arrangement = () => {
                       <svg
                         className="w-10 h-10 text-[#FFD700]"
                         fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
+                        viewBox="0 0 20 20">
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                       </svg>
                     </div>
@@ -688,8 +673,7 @@ const Arrangement = () => {
                 <div
                   className="w-1/4 flex flex-col items-center mx-2"
                   data-aos="fade-up"
-                  data-aos-delay="300"
-                >
+                  data-aos-delay="300">
                   <div className="relative">
                     <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-[#e9f5f2] border-4 border-[#CD7F32] mb-4 flex items-center justify-center">
                       <div className="text-[#1f6357] font-bold text-4xl">3</div>
@@ -718,8 +702,7 @@ const Arrangement = () => {
             <div
               className="bg-white rounded-xl shadow-lg overflow-hidden mb-8"
               data-aos="fade-up"
-              data-aos-delay="400"
-            >
+              data-aos-delay="400">
               <div className="bg-gradient-to-r from-emerald-600 to-teal-500 py-4 px-6">
                 <h2 className="text-xl font-bold text-white">أفضل 10 طلاب</h2>
               </div>
@@ -752,8 +735,7 @@ const Arrangement = () => {
                         key={student.studentId._id}
                         className={`hover:bg-gray-50 ${
                           index < 3 ? "bg-emerald-50/50" : ""
-                        }`}
-                      >
+                        }`}>
                         <td className="py-4 px-6">
                           <div className="flex items-center">
                             {index === 0 && (
@@ -795,8 +777,9 @@ const Arrangement = () => {
                         </td>
                         <td className="py-4 px-6 font-semibold">
                           <span
-                            className={`${index < 3 ? "text-emerald-700" : ""}`}
-                          >
+                            className={`${
+                              index < 3 ? "text-emerald-700" : ""
+                            }`}>
                             {student.score} درجة
                           </span>
                         </td>
@@ -804,15 +787,13 @@ const Arrangement = () => {
                           {isTeacherOrAdmin ? (
                             <button
                               onClick={() => openAddModal("update", student)}
-                              className="bg-amber-500 hover:bg-amber-600 text-white font-medium py-1 px-3 rounded transition-colors duration-200 flex items-center text-sm"
-                            >
+                              className="bg-amber-500 hover:bg-amber-600 text-white font-medium py-1 px-3 rounded transition-colors duration-200 flex items-center text-sm">
                               <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 className="h-4 w-4 mr-1"
                                 fill="none"
                                 viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
+                                stroke="currentColor">
                                 <path
                                   strokeLinecap="round"
                                   strokeLinejoin="round"
@@ -861,16 +842,14 @@ const Arrangement = () => {
         <div
           className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12"
           data-aos="fade-up"
-          data-aos-delay="500"
-        >
+          data-aos-delay="500">
           <div className="bg-white p-6 rounded-xl shadow-md">
             <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mb-4 mx-auto">
               <svg
                 className="w-8 h-8 text-emerald-600"
                 fill="none"
                 stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+                viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -892,8 +871,7 @@ const Arrangement = () => {
                 className="w-8 h-8 text-emerald-600"
                 fill="none"
                 stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+                viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -915,8 +893,7 @@ const Arrangement = () => {
                 className="w-8 h-8 text-emerald-600"
                 fill="none"
                 stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+                viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -939,15 +916,13 @@ const Arrangement = () => {
             <div className="bg-white rounded-lg shadow-lg p-6 max-w-md mx-auto relative">
               <button
                 onClick={closeModal}
-                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-              >
+                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-6 w-6"
                   fill="none"
                   viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
+                  stroke="currentColor">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -960,15 +935,14 @@ const Arrangement = () => {
                 {modalType === "top3"
                   ? "إضافة طالب للمراكز الثلاثة الأولى"
                   : modalType === "update"
-                    ? "تعديل درجة الطالب"
-                    : "إضافة طالب للقائمة"}
+                  ? "تعديل درجة الطالب"
+                  : "إضافة طالب للقائمة"}
               </h2>
 
               <div className="mb-4">
                 <label
                   className="block text-gray-700 text-sm font-bold mb-2"
-                  htmlFor="student"
-                >
+                  htmlFor="student">
                   {modalType === "update" ? "الطالب" : "اختر الطالب"}
                 </label>
                 {modalType === "update" ? (
@@ -984,8 +958,7 @@ const Arrangement = () => {
                     value={selectedStudent}
                     onChange={handleStudentSelect}
                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    required
-                  >
+                    required>
                     <option value="">-- اختر الطالب --</option>
                     {allDbStudents.map((student) => (
                       <option key={student._id} value={student._id}>
@@ -999,8 +972,7 @@ const Arrangement = () => {
               <div className="mb-6">
                 <label
                   className="block text-gray-700 text-sm font-bold mb-2"
-                  htmlFor="score"
-                >
+                  htmlFor="score">
                   الدرجة
                 </label>
                 <input
@@ -1019,14 +991,12 @@ const Arrangement = () => {
                 <button
                   onClick={saveRanking}
                   className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center"
-                  disabled={!selectedStudent || newRankingEntry.score <= 0}
-                >
+                  disabled={!selectedStudent || newRankingEntry.score <= 0}>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-5 w-5 mr-2"
                     viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
+                    fill="currentColor">
                     <path
                       fillRule="evenodd"
                       d="M10 2a1 1 0 011 1v6h6a1 1 0 110 2h-6v6a1 1 0 11-2 0v-6H3a1 1 0 110-2h5V3a1 1 0 011-1z"
@@ -1037,15 +1007,13 @@ const Arrangement = () => {
                 </button>
                 <button
                   onClick={closeModal}
-                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center"
-                >
+                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-5 w-5 mr-2"
                     fill="none"
                     viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
+                    stroke="currentColor">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
