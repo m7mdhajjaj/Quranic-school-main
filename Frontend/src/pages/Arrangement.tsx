@@ -65,7 +65,7 @@ interface User {
 }
 
 const Arrangement = () => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate(); // Reserved for future use
 
   // State for user role
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -82,6 +82,15 @@ const Arrangement = () => {
 
   // State for selected period
   const [selectedPeriod, setSelectedPeriod] = useState<Period | null>(null);
+
+  // State for year and month selectors
+  const [selectedYear, setSelectedYear] = useState<number>(
+    new Date().getFullYear()
+  );
+  const [selectedMonth, setSelectedMonth] = useState<number>(
+    new Date().getMonth() + 1
+  );
+  const [availableYears, setAvailableYears] = useState<number[]>([]);
 
   // State for loading
   const [loading, setLoading] = useState<boolean>(true);
@@ -144,10 +153,20 @@ const Arrangement = () => {
         ) {
           setAvailablePeriods(periodsResponse.data.data);
 
-          // Set current date as default selected period
+          // Extract unique years from periods
+          const years = [
+            ...new Set(periodsResponse.data.data.map((p: Period) => p.year)),
+          ] as number[];
+          const sortedYears = years.sort((a: number, b: number) => b - a);
+          setAvailableYears(sortedYears);
+
+          // Set current date as default
           const today = new Date();
           const currentMonth = today.getMonth() + 1;
           const currentYear = today.getFullYear();
+
+          setSelectedMonth(currentMonth);
+          setSelectedYear(currentYear);
 
           // Find current month/year in available periods
           const currentPeriod = periodsResponse.data.data.find(
@@ -155,7 +174,14 @@ const Arrangement = () => {
           );
 
           // If current month not found, use the most recent one
-          setSelectedPeriod(currentPeriod || periodsResponse.data.data[0]);
+          if (currentPeriod) {
+            setSelectedPeriod(currentPeriod);
+          } else {
+            const mostRecent = periodsResponse.data.data[0];
+            setSelectedPeriod(mostRecent);
+            setSelectedMonth(mostRecent.month);
+            setSelectedYear(mostRecent.year);
+          }
 
           // Fetch current ranking
           const rankingResponse = await axios.get(
@@ -169,6 +195,10 @@ const Arrangement = () => {
           const today = new Date();
           const currentMonth = today.getMonth() + 1;
           const currentYear = today.getFullYear();
+
+          setSelectedMonth(currentMonth);
+          setSelectedYear(currentYear);
+          setAvailableYears([currentYear, currentYear - 1, currentYear + 1]); // Add some default years
 
           setSelectedPeriod({
             month: currentMonth,
@@ -186,6 +216,15 @@ const Arrangement = () => {
 
     fetchData();
   }, []);
+
+  // Update selected period when month or year changes
+  useEffect(() => {
+    setSelectedPeriod({
+      month: selectedMonth,
+      year: selectedYear,
+      label: `${selectedMonth}/${selectedYear}`,
+    });
+  }, [selectedMonth, selectedYear]);
 
   // Fetch ranking when selected period changes
   useEffect(() => {
@@ -229,18 +268,19 @@ const Arrangement = () => {
     });
   }, []);
 
-  // Function to handle period change
-  const handlePeriodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    if (!value) return;
-
-    const [month, year] = value.split("/");
-    setSelectedPeriod({
-      month: parseInt(month),
-      year: parseInt(year),
-      label: value,
-    });
+  // Function to handle year change
+  const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const year = parseInt(e.target.value);
+    setSelectedYear(year);
   };
+
+  // Function to handle month change
+  const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const month = parseInt(e.target.value);
+    setSelectedMonth(month);
+  };
+
+  // Function to handle period change (removed - using separate month/year handlers now)
 
   // Function to open the modal for adding a student
   const openAddModal = (
@@ -510,37 +550,38 @@ const Arrangement = () => {
             نكرم المتميزين في الحفظ والتلاوة والأداء
           </p>
 
-          <div className="flex flex-wrap justify-center items-center gap-4 mt-8">
-            {/* Month/Year selector */}
+          <div className="flex flex-wrap justify-center items-center gap-6 mt-8">
+            {/* Year selector */}
             <div className="relative">
+              <label className="block text-sm font-medium text-gray-700 mb-2 text-center">
+                السنة
+              </label>
               <select
-                value={
-                  selectedPeriod
-                    ? `${selectedPeriod.month}/${selectedPeriod.year}`
-                    : ""
-                }
-                onChange={handlePeriodChange}
-                className="w-40 px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                <option value="">اختر الشهر/السنة</option>
-                {availablePeriods.map((period) => (
-                  <option
-                    key={`${period.month}-${period.year}`}
-                    value={`${period.month}/${period.year}`}>
-                    {getMonthName(period.month)} {period.year}
+                value={selectedYear}
+                onChange={handleYearChange}
+                className="w-32 px-4 py-3 bg-white border-2 border-emerald-200 rounded-xl shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-300 font-semibold text-center">
+                {availableYears.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
                   </option>
                 ))}
-                {/* Add current month if not already in list */}
-                {selectedPeriod &&
-                  !availablePeriods.some(
-                    (p) =>
-                      p.month === selectedPeriod.month &&
-                      p.year === selectedPeriod.year
-                  ) && (
-                    <option
-                      value={`${selectedPeriod.month}/${selectedPeriod.year}`}>
-                      {getMonthName(selectedPeriod.month)} {selectedPeriod.year}
-                    </option>
-                  )}
+              </select>
+            </div>
+
+            {/* Month selector */}
+            <div className="relative">
+              <label className="block text-sm font-medium text-gray-700 mb-2 text-center">
+                الشهر
+              </label>
+              <select
+                value={selectedMonth}
+                onChange={handleMonthChange}
+                className="w-40 px-4 py-3 bg-white border-2 border-emerald-200 rounded-xl shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-300 font-semibold text-center">
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+                  <option key={month} value={month}>
+                    {getMonthName(month)}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -584,11 +625,16 @@ const Arrangement = () => {
           <br />
 
           {/* Show current month/year title */}
-          {selectedPeriod && (
-            <h2 className="text-xl font-semibold mt-4 my-20">
-              تصنيف {getMonthName(selectedPeriod.month)} {selectedPeriod.year}
-            </h2>
-          )}
+          <div className="mt-8 mb-12">
+            <div className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-8 py-4 rounded-2xl shadow-lg inline-block">
+              <h2 className="text-2xl font-bold text-center">
+                🏆 ترتيب {getMonthName(selectedMonth)} {selectedYear}
+              </h2>
+              <p className="text-center text-emerald-100 mt-1">
+                الطلاب المتميزين في حفظ القرآن الكريم
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Loading indicator */}
