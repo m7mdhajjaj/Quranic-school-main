@@ -115,7 +115,7 @@ const QuranAudio: React.FC = () => {
     try {
       // Fetch Arabic text for display
       const textResponse = await fetch(
-        `https://api.alquran.cloud/v1/surah/${surahNumber}`,
+        `https://api.alquran.cloud/v1/surah/${surahNumber}`
       );
       const textData = await textResponse.json();
 
@@ -141,7 +141,7 @@ const QuranAudio: React.FC = () => {
         } else {
           console.error("No audio URL available for this reciter");
           setAudioError(
-            `لا يمكن العثور على تسجيل صوتي للقارئ ${selectedReciter.name}`,
+            `لا يمكن العثور على تسجيل صوتي للقارئ ${selectedReciter.name}`
           );
         }
       }
@@ -152,7 +152,7 @@ const QuranAudio: React.FC = () => {
         numberInSurah: ayah.numberInSurah,
         text: ayah.text.replace(
           /^بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِیمِ\s*/,
-          "",
+          ""
         ), // Remove bismillah
       }));
 
@@ -258,8 +258,7 @@ const QuranAudio: React.FC = () => {
                   reciter === r.code
                     ? "border-emerald-500 bg-emerald-50 text-emerald-700"
                     : "border-gray-200 bg-gray-50 text-gray-700 hover:border-emerald-300"
-                }`}
-              >
+                }`}>
                 <div className="text-lg font-semibold">{r.name}</div>
               </button>
             ))}
@@ -281,8 +280,7 @@ const QuranAudio: React.FC = () => {
           ) : (
             <div
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-96 overflow-y-auto"
-              dir="rtl"
-            >
+              dir="rtl">
               {surahs.map((surah) => (
                 <button
                   key={surah.number}
@@ -291,8 +289,7 @@ const QuranAudio: React.FC = () => {
                     selectedSurah?.number === surah.number
                       ? "border-emerald-500 bg-emerald-50 text-emerald-700"
                       : "border-gray-200 bg-gray-50 text-gray-700 hover:border-emerald-300"
-                  }`}
-                >
+                  }`}>
                   <div className="flex justify-between items-center">
                     <div>
                       <div className="font-semibold text-lg">{surah.name}</div>
@@ -334,13 +331,11 @@ const QuranAudio: React.FC = () => {
                 <button
                   onClick={playFullSurah}
                   disabled={!selectedSurah}
-                  className="bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-8 py-3 rounded-lg text-lg font-semibold transition-colors duration-200 flex items-center gap-2"
-                >
+                  className="bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-8 py-3 rounded-lg text-lg font-semibold transition-colors duration-200 flex items-center gap-2">
                   <svg
                     className="w-6 h-6"
                     fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
+                    viewBox="0 0 20 20">
                     <path
                       fillRule="evenodd"
                       d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
@@ -352,13 +347,11 @@ const QuranAudio: React.FC = () => {
               ) : (
                 <button
                   onClick={pauseAudio}
-                  className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-lg text-lg font-semibold transition-colors duration-200 flex items-center gap-2"
-                >
+                  className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-lg text-lg font-semibold transition-colors duration-200 flex items-center gap-2">
                   <svg
                     className="w-6 h-6"
                     fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
+                    viewBox="0 0 20 20">
                     <path
                       fillRule="evenodd"
                       d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z"
@@ -382,8 +375,7 @@ const QuranAudio: React.FC = () => {
               {ayahs.map((ayah) => (
                 <div
                   key={ayah.number}
-                  className="border-b border-gray-100 pb-4 last:border-b-0"
-                >
+                  className="border-b border-gray-100 pb-4 last:border-b-0">
                   <div className="flex items-start gap-4">
                     <div className="bg-emerald-100 text-emerald-600 rounded-full min-w-[40px] h-10 flex items-center justify-center font-bold text-sm">
                       {ayah.numberInSurah}

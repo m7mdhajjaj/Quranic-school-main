@@ -131,7 +131,7 @@ const Test = () => {
       // جلب آيات من كل السور المختارة مع حفظ رقم السورة
       for (const surahNumber of surahNumbers) {
         const response = await fetch(
-          `https://api.alquran.cloud/v1/surah/${surahNumber}`,
+          `https://api.alquran.cloud/v1/surah/${surahNumber}`
         );
         const data = await response.json();
         const ayahsWithSurah = data.data.ayahs.map((ayah: Ayah) => ({
@@ -152,7 +152,7 @@ const Test = () => {
 
   // توليد الأسئلة
   const generateQuestions = async (
-    ayahsData: (Ayah & { surahNumber: number })[],
+    ayahsData: (Ayah & { surahNumber: number })[]
   ) => {
     const generatedQuestions: Question[] = [];
     const numberOfQuestions = Math.min(10, ayahsData.length); // حد أقصى 10 أسئلة
@@ -180,7 +180,7 @@ const Test = () => {
           question = await generateNextAyahStartQuestion(
             ayah,
             ayahsData,
-            i + 1,
+            i + 1
           );
           break;
         case "ayah-ending":
@@ -200,7 +200,7 @@ const Test = () => {
   // توليد سؤال الكلمة المخفية
   const generateHiddenWordQuestion = async (
     ayah: Ayah & { surahNumber: number },
-    questionId: number,
+    questionId: number
   ): Promise<Question> => {
     const words = ayah.text.split(" ").filter((word) => word.length > 2);
     const randomWordIndex = Math.floor(Math.random() * words.length);
@@ -217,7 +217,7 @@ const Test = () => {
         (option, index, arr) =>
           arr.indexOf(option) === index && // إزالة التكرارات
           option !== hiddenWord && // التأكد من أن الخيار الخاطئ ليس مطابقاً للصحيح
-          option.trim() !== hiddenWord.trim(), // التأكد من عدم التطابق حتى مع المسافات
+          option.trim() !== hiddenWord.trim() // التأكد من عدم التطابق حتى مع المسافات
       )
       .slice(0, 3); // أخذ أول 3 خيارات فقط
 
@@ -245,14 +245,14 @@ const Test = () => {
   const generateNextAyahStartQuestion = async (
     ayah: Ayah & { surahNumber: number },
     ayahsData: (Ayah & { surahNumber: number })[],
-    questionId: number,
+    questionId: number
   ): Promise<Question> => {
     // البحث عن الآيات من نفس السورة فقط
     const sameSurahAyahs = ayahsData.filter(
-      (a) => a.surahNumber === ayah.surahNumber,
+      (a) => a.surahNumber === ayah.surahNumber
     );
     const currentIndex = sameSurahAyahs.findIndex(
-      (a) => a.number === ayah.number,
+      (a) => a.number === ayah.number
     );
 
     if (currentIndex === -1 || currentIndex === sameSurahAyahs.length - 1) {
@@ -267,7 +267,7 @@ const Test = () => {
     // توليد خيارات خاطئة من آيات أخرى (من نفس السورة ومن سور أخرى)
     const wrongOptions = await generateWrongAyahStartOptions(
       firstThreeWords,
-      ayahsData,
+      ayahsData
     );
 
     // إزالة التكرارات والتأكد من عدم تكرار الإجابة الصحيحة
@@ -276,7 +276,7 @@ const Test = () => {
         (option, index, arr) =>
           arr.indexOf(option) === index && // إزالة التكرارات
           option !== firstThreeWords && // التأكد من أن الخيار الخاطئ ليس مطابقاً للصحيح
-          option.trim() !== firstThreeWords.trim(), // التأكد من عدم التطابق حتى مع المسافات
+          option.trim() !== firstThreeWords.trim() // التأكد من عدم التطابق حتى مع المسافات
       )
       .slice(0, 3); // أخذ أول 3 خيارات فقط
 
@@ -306,7 +306,7 @@ const Test = () => {
   const generateAyahEndingQuestion = async (
     ayah: Ayah & { surahNumber: number },
     ayahsData: (Ayah & { surahNumber: number })[],
-    questionId: number,
+    questionId: number
   ): Promise<Question> => {
     const words = ayah.text.split(" ");
     const lastThreeWords = words.slice(-3).join(" ");
@@ -318,7 +318,7 @@ const Test = () => {
     // توليد خيارات خاطئة
     const wrongOptions = await generateWrongEndingOptions(
       lastThreeWords,
-      ayahsData,
+      ayahsData
     );
 
     // إزالة التكرارات والتأكد من عدم تكرار الإجابة الصحيحة
@@ -327,7 +327,7 @@ const Test = () => {
         (option, index, arr) =>
           arr.indexOf(option) === index && // إزالة التكرارات
           option !== lastThreeWords && // التأكد من أن الخيار الخاطئ ليس مطابقاً للصحيح
-          option.trim() !== lastThreeWords.trim(), // التأكد من عدم التطابق حتى مع المسافات
+          option.trim() !== lastThreeWords.trim() // التأكد من عدم التطابق حتى مع المسافات
       )
       .slice(0, 3); // أخذ أول 3 خيارات فقط
 
@@ -396,7 +396,7 @@ const Test = () => {
         (word) =>
           word !== originalWord &&
           Math.abs(word.length - originalWord.length) <= 2 &&
-          word.charAt(0) === originalWord.charAt(0),
+          word.charAt(0) === originalWord.charAt(0)
       )
       .slice(0, 2);
   };
@@ -404,7 +404,7 @@ const Test = () => {
   // توليد خيارات خاطئة للكلمات - محسّنة لتكون أكثر صعوبة
   const generateWrongWordOptions = async (
     correctWord: string,
-    _ayahText: string, // إضافة underscore لتجنب التحذير
+    _ayahText: string // إضافة underscore لتجنب التحذير
   ): Promise<string[]> => {
     // كلمات قرآنية شائعة مصنفة حسب النوع لتكون مشابهة للكلمة الصحيحة
     const commonWords = {
@@ -472,7 +472,7 @@ const Test = () => {
 
     // تحديد نوع الكلمة الصحيحة
     const getWordCategory = (
-      word: string,
+      word: string
     ): keyof typeof commonWords | "general" => {
       const cleanWord = word.replace(/[\u064B-\u0652]/g, ""); // إزالة التشكيل
 
@@ -481,7 +481,7 @@ const Test = () => {
           words.some(
             (w) =>
               cleanWord.includes(w.replace(/[\u064B-\u0652]/g, "")) ||
-              w.replace(/[\u064B-\u0652]/g, "").includes(cleanWord),
+              w.replace(/[\u064B-\u0652]/g, "").includes(cleanWord)
           )
         ) {
           return category as keyof typeof commonWords;
@@ -501,7 +501,7 @@ const Test = () => {
             !correctWord.includes(word.replace(/[\u064B-\u0652]/g, "")) &&
             !word
               .replace(/[\u064B-\u0652]/g, "")
-              .includes(correctWord.replace(/[\u064B-\u0652]/g, "")),
+              .includes(correctWord.replace(/[\u064B-\u0652]/g, ""))
         )
         .sort(() => Math.random() - 0.5)
         .slice(0, 2);
@@ -513,7 +513,7 @@ const Test = () => {
       const response = await fetch(
         "https://api.alquran.cloud/v1/search/" +
           correctWord.replace(/[\u064B-\u0652]/g, "") +
-          "/all/ar",
+          "/all/ar"
       );
       if (response.ok) {
         const searchData = await response.json();
@@ -527,8 +527,8 @@ const Test = () => {
                 word
                   .replace(/[\u064B-\u0652]/g, "")
                   .includes(
-                    correctWord.replace(/[\u064B-\u0652]/g, "").substring(0, 3),
-                  ),
+                    correctWord.replace(/[\u064B-\u0652]/g, "").substring(0, 3)
+                  )
             )
             .slice(0, 2);
           wrongOptions.push(...similarWords);
@@ -551,7 +551,7 @@ const Test = () => {
         .filter(
           (word) =>
             !correctWord.includes(word.replace(/[\u064B-\u0652]/g, "")) &&
-            !wrongOptions.includes(word), // تجنب التكرار
+            !wrongOptions.includes(word) // تجنب التكرار
         )
         .sort(() => Math.random() - 0.5);
       wrongOptions.push(...allCommonWords.slice(0, 3 - wrongOptions.length));
@@ -562,7 +562,7 @@ const Test = () => {
       (option, index, arr) =>
         arr.indexOf(option) === index && // إزالة التكرارات
         option !== correctWord && // التأكد من عدم تطابق مع الإجابة الصحيحة
-        option.trim() !== correctWord.trim(),
+        option.trim() !== correctWord.trim()
     );
 
     return uniqueOptions.slice(0, 3);
@@ -571,7 +571,7 @@ const Test = () => {
   // توليد خيارات خاطئة لبداية الآيات - محسّنة
   const generateWrongAyahStartOptions = async (
     correctStart: string,
-    ayahsData: (Ayah & { surahNumber: number })[],
+    ayahsData: (Ayah & { surahNumber: number })[]
   ): Promise<string[]> => {
     const wrongStarts: string[] = [];
 
@@ -588,7 +588,7 @@ const Test = () => {
     try {
       const firstWord = correctStart.split(" ")[0];
       const response = await fetch(
-        `https://api.alquran.cloud/v1/search/${firstWord}/all/ar`,
+        `https://api.alquran.cloud/v1/search/${firstWord}/all/ar`
       );
       if (response.ok) {
         const searchData = await response.json();
@@ -597,7 +597,7 @@ const Test = () => {
             .map((match: any) => match.text.split(" ").slice(0, 3).join(" "))
             .filter(
               (start: string) =>
-                start !== correctStart && !wrongStarts.includes(start),
+                start !== correctStart && !wrongStarts.includes(start)
             )
             .slice(0, 1);
           wrongStarts.push(...similarStarts);
@@ -621,7 +621,7 @@ const Test = () => {
     if (wrongStarts.length < 3) {
       const backupOptions = commonStarts
         .filter(
-          (start) => !wrongStarts.includes(start) && start !== correctStart,
+          (start) => !wrongStarts.includes(start) && start !== correctStart
         )
         .slice(0, 3 - wrongStarts.length);
       wrongStarts.push(...backupOptions);
@@ -632,7 +632,7 @@ const Test = () => {
       (option, index, arr) =>
         arr.indexOf(option) === index && // إزالة التكرارات
         option !== correctStart && // التأكد من عدم تطابق مع الإجابة الصحيحة
-        option.trim() !== correctStart.trim(),
+        option.trim() !== correctStart.trim()
     );
 
     return uniqueOptions.slice(0, 3);
@@ -641,7 +641,7 @@ const Test = () => {
   // توليد خيارات خاطئة لنهاية الآيات - محسّنة
   const generateWrongEndingOptions = async (
     correctEnding: string,
-    ayahsData: (Ayah & { surahNumber: number })[],
+    ayahsData: (Ayah & { surahNumber: number })[]
   ): Promise<string[]> => {
     const wrongEndings: string[] = [];
 
@@ -672,8 +672,7 @@ const Test = () => {
     if (wrongEndings.length < 3) {
       const additionalOptions = commonEndings
         .filter(
-          (ending) =>
-            !wrongEndings.includes(ending) && ending !== correctEnding,
+          (ending) => !wrongEndings.includes(ending) && ending !== correctEnding
         )
         .slice(0, 3 - wrongEndings.length);
       wrongEndings.push(...additionalOptions);
@@ -684,7 +683,7 @@ const Test = () => {
       (option, index, arr) =>
         arr.indexOf(option) === index && // إزالة التكرارات
         option !== correctEnding && // التأكد من عدم تطابق مع الإجابة الصحيحة
-        option.trim() !== correctEnding.trim(),
+        option.trim() !== correctEnding.trim()
     );
 
     return uniqueOptions.slice(0, 3);
@@ -785,10 +784,9 @@ const Test = () => {
                   percentage >= 70
                     ? "text-green-600"
                     : percentage >= 50
-                      ? "text-yellow-600"
-                      : "text-red-600"
-                }`}
-              >
+                    ? "text-yellow-600"
+                    : "text-red-600"
+                }`}>
                 {percentage.toFixed(0)}%
               </div>
               <h2 className="text-2xl font-bold text-gray-800 mb-2">
@@ -804,22 +802,20 @@ const Test = () => {
                 percentage >= 70
                   ? "bg-green-100 text-green-800"
                   : percentage >= 50
-                    ? "bg-yellow-100 text-yellow-800"
-                    : "bg-red-100 text-red-800"
-              }`}
-            >
+                  ? "bg-yellow-100 text-yellow-800"
+                  : "bg-red-100 text-red-800"
+              }`}>
               {percentage >= 70
                 ? "🎉 ممتاز! استمر في المراجعة"
                 : percentage >= 50
-                  ? "👍 جيد! تحتاج لمزيد من المراجعة"
-                  : "📚 يجب عليك مراجعة السورة أكثر"}
+                ? "👍 جيد! تحتاج لمزيد من المراجعة"
+                : "📚 يجب عليك مراجعة السورة أكثر"}
             </div>
 
             <div className="space-y-3">
               <button
                 onClick={() => window.location.reload()}
-                className="w-full bg-gray-200 text-gray-700 py-3 px-6 rounded-xl hover:bg-gray-300 transition-colors font-medium"
-              >
+                className="w-full bg-gray-200 text-gray-700 py-3 px-6 rounded-xl hover:bg-gray-300 transition-colors font-medium">
                 اختبار سورة أخرى
               </button>
             </div>
@@ -846,16 +842,14 @@ const Test = () => {
                     questionTimer <= 5
                       ? "text-red-600 animate-pulse"
                       : questionTimer <= 10
-                        ? "text-yellow-600"
-                        : "text-green-600"
-                  }`}
-                >
+                      ? "text-yellow-600"
+                      : "text-green-600"
+                  }`}>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-5 w-5"
                     viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
+                    fill="currentColor">
                     <path
                       fillRule="evenodd"
                       d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
@@ -876,8 +870,7 @@ const Test = () => {
                     width: `${
                       ((currentQuestionIndex + 1) / questions.length) * 100
                     }%`,
-                  }}
-                ></div>
+                  }}></div>
               </div>
             </div>
             {/* شريط المؤقت */}
@@ -887,13 +880,12 @@ const Test = () => {
                   questionTimer <= 5
                     ? "bg-red-500"
                     : questionTimer <= 10
-                      ? "bg-yellow-500"
-                      : "bg-blue-500"
+                    ? "bg-yellow-500"
+                    : "bg-blue-500"
                 }`}
                 style={{
                   width: `${(questionTimer / 20) * 100}%`,
-                }}
-              ></div>
+                }}></div>
             </div>
           </div>
 
@@ -917,8 +909,7 @@ const Test = () => {
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
                   <p
                     className="text-gray-700 leading-relaxed"
-                    style={{ direction: "rtl", textAlign: "right" }}
-                  >
+                    style={{ direction: "rtl", textAlign: "right" }}>
                     {currentQuestion.context}
                   </p>
                 </div>
@@ -942,8 +933,7 @@ const Test = () => {
                   </div>
                   <button
                     onClick={startQuestionTimer}
-                    className="bg-green-600 text-white px-8 py-3 rounded-xl hover:bg-green-700 transition-colors font-bold text-lg"
-                  >
+                    className="bg-green-600 text-white px-8 py-3 rounded-xl hover:bg-green-700 transition-colors font-bold text-lg">
                     🚀 بدء الاختبار
                   </button>
                 </div>
@@ -994,8 +984,7 @@ const Test = () => {
                     key={index}
                     onClick={() => !hasAnswered && setSelectedAnswer(index)}
                     disabled={isDisabled}
-                    className={`w-full p-4 text-right rounded-xl border-2 transition-all duration-200 ${buttonClass}`}
-                  >
+                    className={`w-full p-4 text-right rounded-xl border-2 transition-all duration-200 ${buttonClass}`}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
                         <span className="font-medium mr-2">
@@ -1087,15 +1076,13 @@ const Test = () => {
                   (currentQuestionIndex > 0 || isTimerActive)
                     ? "bg-blue-600 text-white hover:bg-blue-700"
                     : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                }`}
-              >
+                }`}>
                 تأكيد الإجابة
               </button>
             ) : (
               <button
                 onClick={goToNextQuestion}
-                className="w-full py-3 px-6 rounded-xl font-medium transition-colors bg-green-600 text-white hover:bg-green-700"
-              >
+                className="w-full py-3 px-6 rounded-xl font-medium transition-colors bg-green-600 text-white hover:bg-green-700">
                 {currentQuestionIndex < questions.length - 1
                   ? "السؤال التالي"
                   : "إنهاء الاختبار"}
@@ -1133,15 +1120,13 @@ const Test = () => {
               <button
                 type="button"
                 onClick={() => setSelectedSurahs(surahs.map((s) => s.number))}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
-              >
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
                 تحديد الكل
               </button>
               <button
                 type="button"
                 onClick={() => setSelectedSurahs([])}
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm"
-              >
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm">
                 إلغاء الكل
               </button>
             </div>
@@ -1149,8 +1134,7 @@ const Test = () => {
               {surahs.map((surah) => (
                 <label
                   key={surah.number}
-                  className="flex items-center p-2 hover:bg-gray-50 rounded-lg cursor-pointer"
-                >
+                  className="flex items-center p-2 hover:bg-gray-50 rounded-lg cursor-pointer">
                   <input
                     type="checkbox"
                     checked={selectedSurahs.includes(surah.number)}
@@ -1159,7 +1143,7 @@ const Test = () => {
                         setSelectedSurahs([...selectedSurahs, surah.number]);
                       } else {
                         setSelectedSurahs(
-                          selectedSurahs.filter((id) => id !== surah.number),
+                          selectedSurahs.filter((id) => id !== surah.number)
                         );
                       }
                     }}
@@ -1194,8 +1178,7 @@ const Test = () => {
                       {selectedSurahs.slice(0, 4).map((id) => (
                         <span
                           key={id}
-                          className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full"
-                        >
+                          className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
                           {surahs.find((s) => s.number === id)?.name}
                         </span>
                       ))}
@@ -1242,8 +1225,7 @@ const Test = () => {
               selectedSurahs.length > 0
                 ? "bg-green-600 text-white hover:bg-green-700"
                 : "bg-gray-300 text-gray-500 cursor-not-allowed"
-            }`}
-          >
+            }`}>
             بدء الاختبار
           </button>
         </div>

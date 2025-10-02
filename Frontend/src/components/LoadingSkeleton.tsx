@@ -20,23 +20,25 @@ const TestSkeleton: React.FC = () => {
           {/* Surah Selection Section Skeleton */}
           <div className="mb-6">
             <div className="h-6 bg-gray-200 rounded animate-pulse w-48 mb-3"></div>
-            
+
             {/* Action Buttons Skeleton */}
             <div className="mb-3 flex gap-2">
               <div className="h-9 bg-gray-200 rounded-lg animate-pulse w-20"></div>
               <div className="h-9 bg-gray-200 rounded-lg animate-pulse w-20"></div>
             </div>
-            
+
             {/* Surah List Container Skeleton */}
             <div className="max-h-60 overflow-y-auto border-2 border-gray-300 rounded-xl p-4 space-y-2">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((i) => (
-                <div key={i} className="flex items-center p-2 hover:bg-gray-50 rounded-lg">
+                <div
+                  key={i}
+                  className="flex items-center p-2 hover:bg-gray-50 rounded-lg">
                   <div className="w-4 h-4 bg-gray-200 rounded animate-pulse ml-3"></div>
                   <div className="h-5 bg-gray-200 rounded animate-pulse w-64"></div>
                 </div>
               ))}
             </div>
-            
+
             {/* Selected Surahs Info Skeleton */}
             <div className="mt-3 p-4 bg-gray-50 border border-gray-200 rounded-lg">
               <div className="flex items-center justify-between mb-3">
@@ -45,7 +47,9 @@ const TestSkeleton: React.FC = () => {
               </div>
               <div className="flex flex-wrap gap-1">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-6 bg-gray-200 rounded-full animate-pulse w-20"></div>
+                  <div
+                    key={i}
+                    className="h-6 bg-gray-200 rounded-full animate-pulse w-20"></div>
                 ))}
                 <div className="h-6 bg-gray-200 rounded-full animate-pulse w-24"></div>
               </div>
@@ -103,7 +107,7 @@ const TestQuestionSkeleton: React.FC = () => {
           <div className="mb-6">
             <div className="h-6 bg-gray-200 rounded-full animate-pulse w-24 mb-4"></div>
             <div className="h-6 bg-gray-200 rounded animate-pulse w-full mb-4"></div>
-            
+
             {/* Context Box Skeleton */}
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
               <div className="space-y-2">
@@ -116,7 +120,9 @@ const TestQuestionSkeleton: React.FC = () => {
           {/* Answer Options Skeleton */}
           <div className="space-y-3 mb-8">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="w-full p-4 border-2 border-gray-200 rounded-xl bg-gray-50">
+              <div
+                key={i}
+                className="w-full p-4 border-2 border-gray-200 rounded-xl bg-gray-50">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center">
                     <div className="h-5 bg-gray-200 rounded animate-pulse w-4 mr-2"></div>
@@ -141,7 +147,7 @@ const ReportsSkeleton: React.FC = () => {
     <div className="container mx-auto py-8" dir="rtl">
       {/* Header Skeleton */}
       <div className="h-8 bg-gray-200 rounded-lg animate-pulse mb-6 w-32 mx-auto"></div>
-      
+
       {/* Filter Section Skeleton */}
       <div className="bg-white rounded-xl shadow-md p-4 mb-8 max-w-md mx-auto">
         <div className="h-6 bg-gray-200 rounded animate-pulse mb-4 w-48 mx-auto"></div>
@@ -160,23 +166,22 @@ const ReportsSkeleton: React.FC = () => {
       {/* Chart Section Skeleton */}
       <div className="bg-white rounded-xl shadow-md p-6 max-w-2xl mx-auto mt-8">
         <div className="h-6 bg-gray-200 rounded animate-pulse mb-4 w-48 mx-auto"></div>
-        
+
         {/* Chart Area Skeleton */}
         <div className="h-80 bg-gray-100 rounded-lg animate-pulse mb-4 relative overflow-hidden">
           {/* Chart bars simulation */}
           <div className="absolute bottom-0 left-0 right-0 flex items-end justify-around p-4">
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div key={i} className="flex flex-col items-center">
-                <div 
-                  className="bg-gray-300 animate-pulse w-8 rounded-t" 
-                  style={{ height: `${Math.random() * 120 + 40}px` }}
-                ></div>
+                <div
+                  className="bg-gray-300 animate-pulse w-8 rounded-t"
+                  style={{ height: `${Math.random() * 120 + 40}px` }}></div>
                 <div className="h-3 bg-gray-200 rounded animate-pulse w-12 mt-2"></div>
               </div>
             ))}
           </div>
         </div>
-        
+
         {/* Description Skeleton */}
         <div className="text-center mt-4">
           <div className="h-4 bg-gray-200 rounded animate-pulse w-80 mx-auto"></div>
@@ -202,7 +207,9 @@ const QuranAudioSkeleton: React.FC = () => {
           <div className="h-8 bg-gray-200 rounded animate-pulse mb-4 w-32"></div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4, 5, 6, 7].map((i) => (
-              <div key={i} className="p-4 rounded-lg border-2 border-gray-200 bg-gray-50">
+              <div
+                key={i}
+                className="p-4 rounded-lg border-2 border-gray-200 bg-gray-50">
                 <div className="h-6 bg-gray-200 rounded animate-pulse w-32"></div>
               </div>
             ))}
@@ -213,17 +220,21 @@ const QuranAudioSkeleton: React.FC = () => {
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="h-8 bg-gray-200 rounded animate-pulse mb-4 w-32"></div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-96 overflow-y-auto">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].map((i) => (
-              <div key={i} className="p-4 rounded-lg border border-gray-200 bg-gray-50">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="h-5 bg-gray-200 rounded animate-pulse w-20 mb-1"></div>
-                    <div className="h-4 bg-gray-100 rounded animate-pulse w-16"></div>
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].map(
+              (i) => (
+                <div
+                  key={i}
+                  className="p-4 rounded-lg border border-gray-200 bg-gray-50">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="h-5 bg-gray-200 rounded animate-pulse w-20 mb-1"></div>
+                      <div className="h-4 bg-gray-100 rounded animate-pulse w-16"></div>
+                    </div>
+                    <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
                   </div>
-                  <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
                 </div>
-              </div>
-            ))}
+              )
+            )}
           </div>
         </div>
 
@@ -243,7 +254,9 @@ const QuranAudioSkeleton: React.FC = () => {
           <div className="h-8 bg-gray-200 rounded animate-pulse w-24 mx-auto mb-6"></div>
           <div className="space-y-4">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <div key={i} className="border-b border-gray-100 pb-4 last:border-b-0">
+              <div
+                key={i}
+                className="border-b border-gray-100 pb-4 last:border-b-0">
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse flex-shrink-0"></div>
                   <div className="flex-1 space-y-2">
@@ -279,9 +292,13 @@ const QuranPageSkeleton: React.FC = () => {
           </div>
 
           {/* Surahs Grid Skeleton */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" dir="rtl">
+          <div
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+            dir="rtl">
             {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((i) => (
-              <div key={i} className="bg-white rounded-lg shadow-md p-4 border-r-4 border-gray-300">
+              <div
+                key={i}
+                className="bg-white rounded-lg shadow-md p-4 border-r-4 border-gray-300">
                 <div className="text-right">
                   <div className="h-6 bg-gray-200 rounded animate-pulse w-32 mb-2"></div>
                   <div className="h-4 bg-gray-100 rounded animate-pulse w-24 mb-1"></div>
@@ -333,7 +350,9 @@ const QuranReadingSkeleton: React.FC = () => {
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <div className="space-y-4">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
-                <div key={i} className="border-b border-gray-100 pb-4 last:border-b-0">
+                <div
+                  key={i}
+                  className="border-b border-gray-100 pb-4 last:border-b-0">
                   <div className="text-right mb-2">
                     <div className="flex items-end justify-between">
                       <div className="w-6 h-6 bg-gray-200 rounded-full animate-pulse flex-shrink-0"></div>
@@ -364,7 +383,9 @@ const QuranReadingSkeleton: React.FC = () => {
 // Daily Marks Page Skeleton
 const DailyMarksSkeleton: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 py-12 px-4" dir="rtl">
+    <div
+      className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 py-12 px-4"
+      dir="rtl">
       <div className="container mx-auto">
         {/* Header Section Skeleton */}
         <div className="text-center mb-10">
@@ -486,7 +507,9 @@ const DailyMarksSkeleton: React.FC = () => {
                 <div className="h-6 bg-gray-200 rounded animate-pulse w-48 mx-auto mb-4"></div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="bg-white rounded-lg p-4 shadow-sm border-r-4 border-gray-300">
+                    <div
+                      key={i}
+                      className="bg-white rounded-lg p-4 shadow-sm border-r-4 border-gray-300">
                       <div className="h-4 bg-gray-200 rounded animate-pulse w-20 mb-1"></div>
                       <div className="h-8 bg-gray-200 rounded animate-pulse w-16 mb-2"></div>
                       <div className="h-3 bg-gray-100 rounded animate-pulse w-24"></div>

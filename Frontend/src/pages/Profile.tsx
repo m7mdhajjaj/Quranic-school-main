@@ -22,17 +22,17 @@ import { useAuth } from "../hooks/useAuth";
 
 // Local helper functions
 const getUserGender = (user: any) => {
-  return user?.gender || 'male';
+  return user?.gender || "male";
 };
 
 const fetchAvatarBlobUrl = async (endpoint: string, userId: string) => {
   try {
     const response = await api.get(`/${endpoint}/${userId}/avatar`, {
-      responseType: 'blob'
+      responseType: "blob",
     });
     return URL.createObjectURL(response.data);
   } catch (error) {
-    console.error('Error fetching avatar:', error);
+    console.error("Error fetching avatar:", error);
     return null;
   }
 };
@@ -45,7 +45,15 @@ import { API_URL } from "../config";
 
 // Axios مع التوكن
 const api = axios.create({ baseURL: API_URL });
-// سيتم تحديثه لاستخدام useAuth
+
+// إضافة التوكن للـ requests
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 // ============================
 // Types
@@ -192,13 +200,18 @@ const Profile: React.FC = () => {
     const userId = authUser?._id || "";
     const userRole = authUser?.role;
 
+    // تتبع المشكلة
+    console.log("Profile - getUserInfo:", { userId, userRole, authUser });
+
     return { userId, userRole };
   };
 
   // تحميل البيانات
   const loadUser = async () => {
     const { userId: id, userRole } = getUserInfo();
+    console.log("Profile - loadUser called:", { id, userRole });
     if (!id) {
+      console.log("Profile - No user ID found, setting error state");
       setFetchState({ status: "error", message: "لا يوجد مستخدم مسجّل." });
       return;
     }
@@ -224,10 +237,7 @@ const Profile: React.FC = () => {
       }
 
       // إذا كان النوع معروف من localStorage، جرّبه أولاً
-      if (
-        userRole === "teacher" ||
-        userRole?.includes("teacher")
-      ) {
+      if (userRole === "teacher" || userRole?.includes("teacher")) {
         try {
           const u: UserBase = await fetchJson(`/teachers/${id}`);
           setUser({ ...u, role: u.role ?? "teacher" });
@@ -277,6 +287,17 @@ const Profile: React.FC = () => {
         setFetchState({ status: "ok" });
       }
     } catch (e: any) {
+      console.log("Profile - Error in loadUser:", e);
+
+      // إذا كان خطأ 401 (Unauthorized), أعد توجيه للـ login
+      if (e?.response?.status === 401) {
+        console.log("Profile - 401 error, redirecting to login");
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        navigate("/login");
+        return;
+      }
+
       setFetchState({
         status: "error",
         message: e?.response?.data?.message || "فشل تحميل البيانات",

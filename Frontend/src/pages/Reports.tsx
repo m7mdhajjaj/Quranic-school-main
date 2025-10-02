@@ -18,7 +18,7 @@ const Reports = () => {
         setUserRole("teacher");
       }
     }
-    
+
     // محاكاة تحميل البيانات
     const timer = setTimeout(() => {
       setLoading(false);
