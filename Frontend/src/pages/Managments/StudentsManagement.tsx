@@ -673,7 +673,7 @@ const StudentsManagement: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-lg border-r-4 border-amber-500 hover:shadow-xl transition-shadow">
+            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-amber-500 hover:shadow-xl transition-shadow">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-amber-100 rounded-lg">
                   <FaChartBar className="w-5 h-5 text-amber-600" />

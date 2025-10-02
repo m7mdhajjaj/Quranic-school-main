@@ -258,7 +258,7 @@ const Loading: React.FC<LoadingProps> = ({
         <div className="relative">
           {/* Decorative circles */}
           <div className="absolute -top-20 -right-20 w-40 h-40 bg-emerald-200/30 rounded-full blur-3xl animate-pulse-slow" />
-          <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-teal-200/30 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }} />
+          <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-teal-200/30 rounded-full blur-3xl animate-pulse-slow-delayed" />
           
           <LoadingContent />
         </div>
@@ -328,6 +328,11 @@ const styles = `
 
 .animate-pulse-slow {
   animation: pulse-slow 2s ease-in-out infinite;
+}
+
+.animate-pulse-slow-delayed {
+  animation: pulse-slow 2s ease-in-out infinite;
+  animation-delay: 1s;
 }
 
 .animate-bar {
