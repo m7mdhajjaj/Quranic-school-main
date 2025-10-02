@@ -37,14 +37,98 @@ exports.createGroup = async (req, res) => {
   }
 };
 
+// Cache بسيط للنتائج (يمكن استبداله بـ Redis في الإنتاج)
+let studentCountsCache = {
+  data: {},
+  timestamp: 0,
+  ttl: 60000 // مهلة انتهاء الصلاحية: دقيقة واحدة
+};
+
+// دالة محسّنة لحساب عدد الطلاب لجميع الحلقات في استعلام واحد مع caching
+const getStudentCountsForAllGroups = async () => {
+  const Student = require('../models/Student');
+  
+  try {
+    // فحص الـ cache أولاً
+    const now = Date.now();
+    if (studentCountsCache.timestamp + studentCountsCache.ttl > now) {
+      console.log('📋 استخدام البيانات المحفوظة (cache) لعدد الطلاب');
+      return studentCountsCache.data;
+    }
+
+    console.log('🔄 تحديث إحصائيات الطلاب من قاعدة البيانات...');
+    
+    // استخدام aggregation pipeline للحصول على عدد الطلاب لكل حلقة في استعلام واحد
+    const studentCounts = await Student.aggregate([
+      {
+        $match: {
+          group: { $exists: true, $ne: null, $ne: "" }
+          // يمكن إضافة شروط إضافية مثل: isActive: { $ne: false }
+        }
+      },
+      {
+        $group: {
+          _id: "$group", // تجميع حسب اسم الحلقة
+          count: { $sum: 1 } // عد الطلاب
+        }
+      }
+    ]);
+
+    // تحويل النتيجة إلى object للبحث السريع
+    const countMap = {};
+    studentCounts.forEach(item => {
+      countMap[item._id] = item.count;
+    });
+
+    // حفظ في الـ cache
+    studentCountsCache = {
+      data: countMap,
+      timestamp: now,
+      ttl: 60000
+    };
+
+    console.log(`✅ تم تحديث إحصائيات ${studentCounts.length} حلقة`);
+    return countMap;
+  } catch (error) {
+    console.error('خطأ في حساب عدد الطلاب:', error);
+    return {};
+  }
+};
+
+// دالة لإبطال cache عدد الطلاب (يتم استدعاؤها عند تعديل بيانات الطلاب)
+const invalidateStudentCountsCache = () => {
+  console.log('🗑️ إبطال cache عدد الطلاب');
+  studentCountsCache.timestamp = 0;
+};
+
+// تصدير الدالة للاستخدام في controllers أخرى
+exports.invalidateStudentCountsCache = invalidateStudentCountsCache;
+
 // الحصول على جميع الحلقات
 exports.getAllGroups = async (req, res) => {
   try {
-    const groups = await Group.find({ isActive: true }).sort({ createdAt: -1 });
+    const startTime = Date.now();
+    
+    // جلب جميع الحلقات و عدد الطلاب بشكل متوازي للسرعة
+    const [groups, studentCountMap] = await Promise.all([
+      Group.find().sort({ createdAt: -1 }),
+      getStudentCountsForAllGroups()
+    ]);
+
+    // إضافة عدد الطلاب لكل حلقة باستخدام البحث السريع
+    const groupsWithStudentCount = groups.map(group => ({
+      ...group.toObject(),
+      currentStudents: studentCountMap[group.name] || 0
+    }));
+
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+    
+    console.log(`✓ تم جلب ${groupsWithStudentCount.length} حلقة مع عدد الطلاب في ${duration}ms`);
 
     res.status(200).json({
       success: true,
-      data: groups,
+      data: groupsWithStudentCount,
     });
   } catch (error) {
     console.error("Error fetching groups:", error);
@@ -58,6 +142,7 @@ exports.getAllGroups = async (req, res) => {
 // الحصول على حلقة بالمعرف
 exports.getGroupById = async (req, res) => {
   try {
+    const Student = require('../models/Student');
     const { id } = req.params;
     const group = await Group.findById(id);
 
@@ -68,9 +153,17 @@ exports.getGroupById = async (req, res) => {
       });
     }
 
+    // إضافة عدد الطلاب المشتركين في الحلقة
+    const currentStudents = await Student.countDocuments({ 
+      group: group.name 
+    });
+
     res.status(200).json({
       success: true,
-      data: group,
+      data: {
+        ...group.toObject(),
+        currentStudents
+      },
     });
   } catch (error) {
     console.error("Error fetching group:", error);
@@ -144,18 +237,67 @@ exports.deleteGroup = async (req, res) => {
   }
 };
 
+// دالة محسّنة لحساب عدد الطلاب لمعلم محدد
+const getStudentCountsForTeacher = async (teacherName) => {
+  const Student = require('../models/Student');
+  
+  try {
+    const studentCounts = await Student.aggregate([
+      {
+        $match: {
+          teacher: teacherName,
+          group: { $exists: true, $ne: null, $ne: "" }
+        }
+      },
+      {
+        $group: {
+          _id: "$group",
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const countMap = {};
+    studentCounts.forEach(item => {
+      countMap[item._id] = item.count;
+    });
+
+    return countMap;
+  } catch (error) {
+    console.error('خطأ في حساب عدد طلاب المعلم:', error);
+    return {};
+  }
+};
+
 // الحصول على الحلقات حسب المعلم
 exports.getGroupsByTeacher = async (req, res) => {
   try {
     const { teacher } = req.params;
-    const groups = await Group.find({
-      teacher,
-      isActive: true,
-    }).sort({ createdAt: -1 });
+    const startTime = Date.now();
+
+    // جلب الحلقات وعدد الطلاب بشكل متوازي
+    const [groups, studentCountMap] = await Promise.all([
+      Group.find({
+        teacher,
+        isActive: true,
+      }).sort({ createdAt: -1 }),
+      getStudentCountsForTeacher(teacher)
+    ]);
+
+    // إضافة عدد الطلاب باستخدام البحث السريع
+    const groupsWithStudentCount = groups.map(group => ({
+      ...group.toObject(),
+      currentStudents: studentCountMap[group.name] || 0
+    }));
+
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+    
+    console.log(`✓ تم جلب ${groupsWithStudentCount.length} حلقة للمعلم "${teacher}" مع عدد الطلاب في ${duration}ms`);
 
     res.status(200).json({
       success: true,
-      data: groups,
+      data: groupsWithStudentCount,
     });
   } catch (error) {
     console.error("Error fetching groups by teacher:", error);

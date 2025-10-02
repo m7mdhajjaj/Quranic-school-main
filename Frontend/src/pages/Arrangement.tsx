@@ -3,7 +3,7 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { ArrangementSkeleton } from "../components/LoadingSkeleton";
+import { ArrangementSkeleton } from "../components/Loading/LoadingSkeleton";
 
 // Backend API URL
 const API_URL = "http://localhost:5005/api";

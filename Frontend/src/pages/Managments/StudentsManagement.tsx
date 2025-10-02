@@ -2,8 +2,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   FaEdit, FaTrash, FaPlus, FaSearch, FaChevronLeft, FaChevronRight,
-  FaDownload, FaUpload, FaFilter, FaSortAmountDown, FaSortAmountUp,
-  FaEye, FaUserGraduate, FaBook, FaChartBar
+  FaDownload, FaFilter, FaSortAmountDown, FaSortAmountUp,
+  FaUserGraduate, FaChartBar
 } from 'react-icons/fa';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../Api/api';
@@ -111,11 +111,9 @@ const StudentsManagement: React.FC = () => {
       female: femaleCount,
       active: activeCount,
       inactive: inactiveCount,
-      avgAge,
-      groups: groups.length,
-      teachers: teachers.length
+      avgAge
     };
-  }, [students, groups.length, teachers.length]);
+  }, [students]);
 
   // Fetch students with optimized loading
   const fetchStudents = useCallback(async (retryAttempt = 0) => {
@@ -562,125 +560,103 @@ const StudentsManagement: React.FC = () => {
         {/* Statistics Cards */}
         {isLoading ? (
           /* Skeleton Loading for Cards */
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-8 gap-4 mb-6">
-            {Array.from({ length: 8 }, (_, index) => (
-              <div key={index} className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-gray-300 animate-pulse">
-                <div className="flex items-center gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 xl:grid-cols-6 gap-4 mb-6">
+            {Array.from({ length: 6 }, (_, index) => (
+              <div key={index} className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-gray-300 animate-pulse">
+                <div className="flex items-center gap-2">
                   <div className="p-2 bg-gray-200 rounded-lg">
                     <div className="w-5 h-5 bg-gray-300 rounded"></div>
                   </div>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <div className="h-3 w-12 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-6 w-8 bg-gray-300 rounded"></div>
+                    <div className="h-5 w-8 bg-gray-300 rounded"></div>
                   </div>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-8 gap-4 mb-6">
-            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-blue-500 hover:shadow-xl transition-shadow">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <FaUserGraduate className="w-5 h-5 text-blue-600" />
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 xl:grid-cols-6 gap-4 mb-6">
+            <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-blue-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg shadow-md">
+                  <FaUserGraduate className="w-5 h-5 text-white" />
                 </div>
-                <div>
-                  <p className="text-xs text-gray-600">إجمالي</p>
-                  <p className="text-xl font-bold text-gray-900">{stats.total}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-gray-600 font-medium truncate">إجمالي</p>
+                  <p className="text-lg font-bold text-gray-900">{stats.total}</p>
                 </div>
               </div>
             </div>
 
-          <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-cyan-500 hover:shadow-xl transition-shadow">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-cyan-100 rounded-lg">
-                <svg className="w-5 h-5 text-cyan-600" fill="currentColor" viewBox="0 0 20 20">
+          <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-cyan-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-lg shadow-md">
+                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
                 </svg>
               </div>
-              <div>
-                <p className="text-xs text-gray-600">ذكور</p>
-                <p className="text-xl font-bold text-gray-900">{stats.male}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-gray-600 font-medium truncate">ذكور</p>
+                <p className="text-lg font-bold text-gray-900">{stats.male}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-pink-500 hover:shadow-xl transition-shadow">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-pink-100 rounded-lg">
-                <svg className="w-5 h-5 text-pink-600" fill="currentColor" viewBox="0 0 20 20">
+          <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-pink-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-gradient-to-br from-pink-400 to-pink-600 rounded-lg shadow-md">
+                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
                 </svg>
               </div>
-              <div>
-                <p className="text-xs text-gray-600">إناث</p>
-                <p className="text-xl font-bold text-gray-900">{stats.female}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-gray-600 font-medium truncate">إناث</p>
+                <p className="text-lg font-bold text-gray-900">{stats.female}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-green-500 hover:shadow-xl transition-shadow">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <FaBook className="w-5 h-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-xs text-gray-600">الحلقات</p>
-                <p className="text-xl font-bold text-gray-900">{stats.groups}</p>
-              </div>
-            </div>
-          </div>
 
-          <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-purple-500 hover:shadow-xl transition-shadow">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <svg className="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-xs text-gray-600">معلمين</p>
-                <p className="text-xl font-bold text-gray-900">{stats.teachers}</p>
-              </div>
-            </div>
-          </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-emerald-500 hover:shadow-xl transition-shadow">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-emerald-100 rounded-lg">
-                  <svg className="w-5 h-5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+
+
+            <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-emerald-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-lg shadow-md">
+                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                 </div>
-                <div>
-                  <p className="text-xs text-gray-600">نشطين</p>
-                  <p className="text-xl font-bold text-gray-900">{stats.active}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-gray-600 font-medium truncate">نشطين</p>
+                  <p className="text-lg font-bold text-gray-900">{stats.active}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-red-500 hover:shadow-xl transition-shadow">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-100 rounded-lg">
-                  <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+            <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-red-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-gradient-to-br from-red-400 to-red-600 rounded-lg shadow-md">
+                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                   </svg>
                 </div>
-                <div>
-                  <p className="text-xs text-gray-600">غير نشطين</p>
-                  <p className="text-xl font-bold text-gray-900">{stats.inactive}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-gray-600 font-medium truncate">غير نشطين</p>
+                  <p className="text-lg font-bold text-gray-900">{stats.inactive}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-amber-500 hover:shadow-xl transition-shadow">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-amber-100 rounded-lg">
-                  <FaChartBar className="w-5 h-5 text-amber-600" />
+            <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-amber-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-gradient-to-br from-amber-400 to-amber-600 rounded-lg shadow-md">
+                  <FaChartBar className="w-5 h-5 text-white" />
                 </div>
-                <div>
-                  <p className="text-xs text-gray-600">متوسط العمر</p>
-                  <p className="text-xl font-bold text-gray-900">{stats.avgAge}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-gray-600 font-medium truncate">متوسط العمر</p>
+                  <p className="text-lg font-bold text-gray-900">{stats.avgAge}</p>
                 </div>
               </div>
             </div>

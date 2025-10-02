@@ -10,6 +10,7 @@ export interface Group {
   capacity?: number;
   schedule?: string;
   isActive: boolean;
+  currentStudents?: number; // عدد الطلاب المشتركين في الحلقة
   createdAt: Date;
   updatedAt: Date;
 }

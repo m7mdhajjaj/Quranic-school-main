@@ -5,7 +5,7 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { NewsSkeleton } from "../components/LoadingSkeleton";
+import { NewsSkeleton } from "../components/Loading/LoadingSkeleton";
 
 const API_URL = "http://localhost:5005/api";
 

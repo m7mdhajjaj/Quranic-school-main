@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import {
   QuranPageSkeleton,
   QuranReadingSkeleton,
-} from "../components/LoadingSkeleton";
+} from "../components/Loading/LoadingSkeleton";
 
 interface Surah {
   number: number;

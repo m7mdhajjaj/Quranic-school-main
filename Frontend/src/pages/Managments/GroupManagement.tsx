@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   FaEdit, FaTrash, FaPlus, FaSearch, FaChevronLeft, FaChevronRight,
   FaDownload, FaFilter, FaSortAmountDown, FaSortAmountUp,
-  FaUsers, FaChalkboardTeacher, FaTh, FaList, FaCalendar
+  FaUsers, FaChalkboardTeacher, FaTh, FaList, FaCalendar, FaBook, FaUserFriends
 } from 'react-icons/fa';
 import { useAuth } from '../../hooks/useAuth';
 import AddGroupForm from '../../components/Forms/AddGroupForm';
@@ -11,7 +11,7 @@ import { type GroupFormData } from '../../Validation/groupValidation';
 import Swal from 'sweetalert2';
 import '../../styles/sweetalert.css';
 
-type SortField = 'name' | 'teacher' | 'capacity' | 'createdAt';
+type SortField = 'name' | 'teacher' | 'capacity';
 type SortOrder = 'asc' | 'desc';
 
 const GroupManagement: React.FC = () => {
@@ -57,6 +57,22 @@ const GroupManagement: React.FC = () => {
     const activeCount = groups.filter(g => g.isActive !== false).length;
     const inactiveCount = groups.filter(g => g.isActive === false).length;
     const totalCapacity = groups.reduce((sum, g) => sum + (g.capacity || 0), 0);
+    const totalCurrentStudents = groups.reduce((sum, g) => sum + (g.currentStudents || 0), 0);
+    
+    // حلقات ممتلئة (وصلت للحد الأقصى)
+    const fullGroups = groups.filter(g => (g.currentStudents || 0) >= (g.capacity || 30)).length;
+    
+    // حلقات قريبة من الامتلاء (80% أو أكثر)
+    const nearFullGroups = groups.filter(g => 
+      (g.currentStudents || 0) >= (g.capacity || 30) * 0.8 && 
+      (g.currentStudents || 0) < (g.capacity || 30)
+    ).length;
+    
+    // نسبة الامتلاء العامة
+    const occupancyRate = totalCapacity > 0 
+      ? ((totalCurrentStudents / totalCapacity) * 100).toFixed(1)
+      : '0';
+      
     const avgCapacity = groups.length > 0 
       ? (totalCapacity / groups.length).toFixed(1)
       : 0;
@@ -66,18 +82,22 @@ const GroupManagement: React.FC = () => {
       active: activeCount,
       inactive: inactiveCount,
       totalCapacity,
+      totalCurrentStudents,
+      fullGroups, // عدد الحلقات الممتلئة
+      nearFullGroups, // عدد الحلقات القريبة من الامتلاء
+      occupancyRate, // نسبة الامتلاء العامة
       avgCapacity,
       teachers: teachers.length
     };
   }, [groups, teachers.length]);
 
-  // Fetch groups with optimized loading
+  // Fetch groups with optimized loading and student count
   const fetchGroups = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     
     try {
-      console.log('🚀 بدء تحميل بيانات الحلقات...');
+      console.log('🚀 بدء تحميل بيانات الحلقات مع عدد الطلاب المحسن...');
       const startTime = performance.now();
       
       const result = await getAllGroups();
@@ -86,17 +106,28 @@ const GroupManagement: React.FC = () => {
       const duration = (endTime - startTime).toFixed(2);
       
       if (result.success && result.data) {
-        const cleanedGroups = result.data.map((group: Group) => ({
+        const cleanedGroups = result.data.map((group: Group & { teacherName?: string }) => ({
           ...group,
           name: group.name || '',
-          teacher: group.teacher || 'غير محدد',
-          capacity: group.capacity || 20,
+          // دعم البيانات القديمة: استخدم teacherName إذا كان teacher غير موجود
+          teacher: group.teacher || group.teacherName || 'غير محدد',
+          capacity: group.capacity || 30,
           description: group.description || '',
           schedule: group.schedule || 'غير محدد',
-          isActive: group.isActive !== false
+          isActive: group.isActive !== false,
+          currentStudents: group.currentStudents || 0 // عدد الطلاب المشتركين
         }));
         
-        console.log(`✅ تم تحميل ${cleanedGroups.length} حلقة بنجاح في ${duration}ms`);
+        const totalStudents = cleanedGroups.reduce((sum, g) => sum + (g.currentStudents || 0), 0);
+        
+        console.log(`✅ تم تحميل ${cleanedGroups.length} حلقة مع ${totalStudents} طالب مشترك في ${duration}ms`);
+        console.log(`⚡ سرعة التحميل: ${(cleanedGroups.length / parseFloat(duration) * 1000).toFixed(0)} حلقة/ثانية`);
+        console.log('📊 إحصائيات سريعة:', {
+          totalGroups: cleanedGroups.length,
+          totalStudents,
+          avgStudentsPerGroup: (totalStudents / cleanedGroups.length).toFixed(1)
+        });
+        
         setGroups(cleanedGroups);
         setError(null);
       } else {
@@ -161,8 +192,6 @@ const GroupManagement: React.FC = () => {
         compareResult = (a.teacher || '').localeCompare(b.teacher || '', 'ar');
       } else if (sortField === 'capacity') {
         compareResult = (a.capacity || 0) - (b.capacity || 0);
-      } else if (sortField === 'createdAt') {
-        compareResult = new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
       }
 
       return sortOrder === 'asc' ? compareResult : -compareResult;
@@ -244,10 +273,10 @@ const GroupManagement: React.FC = () => {
 
   // Export to CSV
   const handleExport = () => {
-    const headers = ['اسم الحلقة', 'المعلم', 'السعة', 'الجدول', 'الوصف', 'تاريخ الإنشاء'];
+    const headers = ['اسم الحلقة', 'المعلم', 'السعة', 'الطلاب المشتركين', 'المواعيد', 'الوصف'];
     const rows = filteredAndSortedGroups.map(g => [
-      g.name, g.teacher, g.capacity, g.schedule || '', 
-      g.description || '', new Date(g.createdAt || '').toLocaleDateString('ar-SA')
+      g.name, g.teacher, g.capacity, g.currentStudents || 0, g.schedule || '', 
+      g.description || ''
     ]);
     
     const csvContent = [headers, ...rows]
@@ -381,7 +410,7 @@ const GroupManagement: React.FC = () => {
               <div className="relative md:col-span-6">
                 <input
                   type="text"
-                  placeholder="ابحث عن حلقة (الاسم، المعلم، الجدول الزمني...)"
+                  placeholder="ابحث عن حلقة (الاسم، المعلم، المواعيد...)"
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
@@ -514,80 +543,144 @@ const GroupManagement: React.FC = () => {
         {/* Statistics Cards */}
         {isLoading ? (
           /* Skeleton Loading for Cards */
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
-            {Array.from({ length: 4 }, (_, index) => (
-              <div key={index} className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-gray-300 animate-pulse">
-                <div className="flex items-center gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mb-6">
+            {Array.from({ length: 2 }, (_, index) => (
+              <div key={index} className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-gray-300 animate-pulse">
+                <div className="flex items-center gap-2">
                   <div className="p-2 bg-gray-200 rounded-lg">
                     <div className="w-5 h-5 bg-gray-300 rounded"></div>
                   </div>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <div className="h-3 w-12 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-6 w-8 bg-gray-300 rounded"></div>
+                    <div className="h-5 w-8 bg-gray-300 rounded"></div>
                   </div>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-blue-500 hover:shadow-xl transition-shadow">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <FaUsers className="w-5 h-5 text-blue-600" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mb-6">
+            <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-blue-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg shadow-md">
+                  <FaBook className="w-5 h-5 text-white" />
                 </div>
-                <div>
-                  <p className="text-xs text-gray-600">إجمالي الحلقات</p>
-                  <p className="text-xl font-bold text-gray-900">{stats.total}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-green-500 hover:shadow-xl transition-shadow">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600">الحلقات النشطة</p>
-                  <p className="text-xl font-bold text-gray-900">{stats.active}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-gray-600 font-medium truncate">إجمالي الحلقات</p>
+                  <p className="text-lg font-bold text-gray-900">{stats.total}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-purple-500 hover:shadow-xl transition-shadow">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <FaUsers className="w-5 h-5 text-purple-600" />
+            <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-purple-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg shadow-md">
+                  <FaUserFriends className="w-5 h-5 text-white" />
                 </div>
-                <div>
-                  <p className="text-xs text-gray-600">إجمالي السعة</p>
-                  <p className="text-xl font-bold text-gray-900">{stats.totalCapacity}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-orange-500 hover:shadow-xl transition-shadow">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <FaChalkboardTeacher className="w-5 h-5 text-orange-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600">عدد المعلمين</p>
-                  <p className="text-xl font-bold text-gray-900">{stats.teachers}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-gray-600 font-medium truncate">الطلاب المشتركين</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-lg font-bold text-gray-900">{stats.totalCurrentStudents}</p>
+                    <span className="text-xs text-gray-500">/ {stats.totalCapacity}</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Loading State */}
+        {/* Loading State - Table Skeleton */}
         {isLoading && (
-          <div className="bg-white rounded-2xl shadow-xl p-12 text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 font-medium">جاري تحميل الحلقات...</p>
+          <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+                  <tr>
+                    <th className="px-6 py-4 text-right">
+                      <div className="w-4 h-4 bg-gray-200 rounded animate-pulse"></div>
+                    </th>
+                    <th className="px-6 py-4 text-right">
+                      <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+                    </th>
+                    <th className="px-6 py-4 text-right">
+                      <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
+                    </th>
+                    <th className="px-6 py-4 text-right">
+                      <div className="h-4 w-12 bg-gray-200 rounded animate-pulse"></div>
+                    </th>
+                    <th className="px-6 py-4 text-right">
+                      <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+                    </th>
+                    <th className="px-6 py-4 text-right">
+                      <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
+                    </th>
+                    <th className="px-6 py-4 text-right">
+                      <div className="h-4 w-14 bg-gray-200 rounded animate-pulse"></div>
+                    </th>
+                    <th className="px-6 py-4 text-right">
+                      <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+                    </th>
+                    <th className="px-6 py-4 text-right">
+                      <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {Array.from({ length: groupsPerPage }, (_, index) => (
+                    <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      <td className="px-6 py-4">
+                        <div className="w-4 h-4 bg-gray-200 rounded animate-pulse"></div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="h-6 w-20 bg-gray-200 rounded-full animate-pulse"></div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="h-6 w-16 bg-gray-200 rounded-full animate-pulse"></div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="h-6 w-20 bg-gray-200 rounded-full animate-pulse"></div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="h-4 w-18 bg-gray-200 rounded animate-pulse"></div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+                          <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            
+            {/* Pagination Skeleton */}
+            <div className="bg-white rounded-2xl shadow-xl px-6 py-4 mt-6">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                <div className="flex items-center gap-2">
+                  <div className="w-12 h-8 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="w-16 h-8 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: 3 }, (_, i) => (
+                      <div key={i} className="w-10 h-10 bg-gray-200 rounded animate-pulse"></div>
+                    ))}
+                  </div>
+                  <div className="w-16 h-8 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="w-12 h-8 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -646,31 +739,22 @@ const GroupManagement: React.FC = () => {
                       className="px-6 py-4 text-right text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors"
                       onClick={() => handleSort('capacity')}>
                       <div className="flex items-center gap-2">
-                        <span>السعة</span>
+                        <span>السعة القصوى</span>
                         {sortField === 'capacity' && (
                           sortOrder === 'asc' ? <FaSortAmountUp /> : <FaSortAmountDown />
                         )}
                       </div>
                     </th>
-                    <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">الجدول</th>
+                    <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">الطلاب المشتركين</th>
+                    <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">المواعيد</th>
                     <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">الوصف</th>
-                    <th
-                      className="px-6 py-4 text-right text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors"
-                      onClick={() => handleSort('createdAt')}>
-                      <div className="flex items-center gap-2">
-                        <span>تاريخ الإنشاء</span>
-                        {sortField === 'createdAt' && (
-                          sortOrder === 'asc' ? <FaSortAmountUp /> : <FaSortAmountDown />
-                        )}
-                      </div>
-                    </th>
                     <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">الإجراءات</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {currentGroups.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="px-6 py-12 text-center">
+                      <td colSpan={7} className="px-6 py-12 text-center">
                         <FaUsers className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                         <p className="text-gray-500 font-medium">لا توجد حلقات</p>
                       </td>
@@ -706,6 +790,20 @@ const GroupManagement: React.FC = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
+                              (group.currentStudents || 0) >= (group.capacity || 30) 
+                                ? 'bg-red-100 text-red-700' 
+                                : (group.currentStudents || 0) >= (group.capacity || 30) * 0.8 
+                                ? 'bg-yellow-100 text-yellow-700' 
+                                : 'bg-green-100 text-green-700'
+                            }`}>
+                              <FaUserFriends className="w-3 h-3" />
+                              {group.currentStudents || 0}/{group.capacity || 30}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
                           <span className="inline-flex items-center gap-1 text-gray-600 text-sm">
                             <FaCalendar className="w-3 h-3" />
                             {group.schedule || 'غير محدد'}
@@ -715,9 +813,6 @@ const GroupManagement: React.FC = () => {
                           <div className="text-sm text-gray-600 max-w-xs truncate">
                             {group.description || '-'}
                           </div>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">
-                          {new Date(group.createdAt || '').toLocaleDateString('ar-SA')}
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
@@ -741,6 +836,41 @@ const GroupManagement: React.FC = () => {
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+
+        {/* Grid View Loading Skeleton */}
+        {isLoading && viewMode === 'grid' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: groupsPerPage }, (_, index) => (
+              <div key={index} className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gray-200 rounded-xl animate-pulse"></div>
+                    <div>
+                      <div className="h-5 w-24 bg-gray-200 rounded animate-pulse mb-2"></div>
+                      <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                  </div>
+                  <div className="w-4 h-4 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+
+                <div className="space-y-2 mb-4">
+                  <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="space-y-1">
+                    <div className="h-4 w-full bg-gray-200 rounded animate-pulse"></div>
+                    <div className="w-full bg-gray-200 rounded-full h-2 animate-pulse"></div>
+                  </div>
+                  <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-8 w-full bg-gray-200 rounded animate-pulse"></div>
+                </div>
+
+                <div className="flex gap-2 pt-4 border-t border-gray-200">
+                  <div className="flex-1 h-10 bg-gray-200 rounded-lg animate-pulse"></div>
+                  <div className="flex-1 h-10 bg-gray-200 rounded-lg animate-pulse"></div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
@@ -778,10 +908,41 @@ const GroupManagement: React.FC = () => {
                   <div className="space-y-2 mb-4">
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <FaUsers className="w-4 h-4 text-purple-500" />
-                      <span>السعة: {group.capacity} طالب</span>
+                      <span>السعة القصوى: {group.capacity} طالب</span>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <FaUserFriends className="w-4 h-4 text-green-500" />
+                          <span className="text-gray-600">الطلاب المشتركين</span>
+                        </div>
+                        <span className={`font-medium ${
+                          (group.currentStudents || 0) >= (group.capacity || 30) 
+                            ? 'text-red-600' 
+                            : (group.currentStudents || 0) >= (group.capacity || 30) * 0.8 
+                            ? 'text-yellow-600' 
+                            : 'text-green-600'
+                        }`}>
+                          {group.currentStudents || 0}/{group.capacity || 30}
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className={`h-2 rounded-full transition-all ${
+                            (group.currentStudents || 0) >= (group.capacity || 30) 
+                              ? 'bg-red-500' 
+                              : (group.currentStudents || 0) >= (group.capacity || 30) * 0.8 
+                              ? 'bg-yellow-500' 
+                              : 'bg-green-500'
+                          }`}
+                          style={{ 
+                            width: `${Math.min(((group.currentStudents || 0) / (group.capacity || 30)) * 100, 100)}%` 
+                          }}
+                        ></div>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <FaCalendar className="w-4 h-4 text-green-500" />
+                      <FaCalendar className="w-4 h-4 text-blue-500" />
                       <span>{group.schedule || 'غير محدد'}</span>
                     </div>
                     {group.description && (
@@ -809,53 +970,101 @@ const GroupManagement: React.FC = () => {
           </div>
         )}
 
-        {/* Pagination */}
-        {!isLoading && !error && totalPages > 1 && (
-          <div className="bg-white rounded-2xl shadow-xl p-6 mt-6 border border-gray-100">
-            <div className="flex items-center justify-between">
-              <button
-                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
-                <FaChevronRight className="w-4 h-4" />
-                <span>السابق</span>
-              </button>
-
-              <div className="flex gap-2">
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNum;
-                  if (totalPages <= 5) {
-                    pageNum = i + 1;
-                  } else if (currentPage <= 3) {
-                    pageNum = i + 1;
-                  } else if (currentPage >= totalPages - 2) {
-                    pageNum = totalPages - 4 + i;
-                  } else {
-                    pageNum = currentPage - 2 + i;
-                  }
-
-                  return (
-                    <button
-                      key={pageNum}
-                      onClick={() => setCurrentPage(pageNum)}
-                      className={`w-10 h-10 rounded-lg font-medium transition-all ${
-                        currentPage === pageNum
-                          ? 'bg-blue-600 text-white shadow-lg'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}>
-                      {pageNum}
-                    </button>
-                  );
-                })}
+        {/* Enhanced Pagination - Always show if groups exist */}
+        {!isLoading && !error && filteredAndSortedGroups.length > 0 && totalPages >= 1 && (
+          <div className="bg-white rounded-2xl shadow-xl px-6 py-4 mt-6" dir="rtl">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="text-sm text-gray-700">
+                عرض{' '}
+                <span className="font-semibold">
+                  {indexOfFirstGroup + 1}
+                </span>{' '}
+                إلى{' '}
+                <span className="font-semibold">
+                  {Math.min(indexOfLastGroup, filteredAndSortedGroups.length)}
+                </span>{' '}
+                من{' '}
+                <span className="font-semibold">
+                  {filteredAndSortedGroups.length}
+                </span>{' '}
+                حلقة
               </div>
 
-              <button
-                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                disabled={currentPage === totalPages}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
-                <span>التالي</span>
-                <FaChevronLeft className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className={`px-3 py-2 border rounded-lg text-sm font-medium transition-all ${
+                    currentPage === 1
+                      ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
+                  }`}>
+                  الأولى
+                </button>
+
+                <button
+                  onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
+                  disabled={currentPage === 1}
+                  className={`flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium transition-all ${
+                    currentPage === 1
+                      ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
+                  }`}>
+                  <FaChevronRight className="w-3 h-3" />
+                  السابق
+                </button>
+
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`w-10 h-10 rounded-lg text-sm font-medium transition-all ${
+                          currentPage === pageNum
+                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
+                            : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                        }`}>
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className={`flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium transition-all ${
+                    currentPage === totalPages
+                      ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
+                  }`}>
+                  التالي
+                  <FaChevronLeft className="w-3 h-3" />
+                </button>
+
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className={`px-3 py-2 border rounded-lg text-sm font-medium transition-all ${
+                    currentPage === totalPages
+                      ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
+                  }`}>
+                  الأخيرة
+                </button>
+              </div>
             </div>
           </div>
         )}

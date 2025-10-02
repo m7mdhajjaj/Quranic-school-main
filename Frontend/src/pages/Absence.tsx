@@ -9,7 +9,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../Api/api";
-import { AbsenceSkeleton } from "../components/LoadingSkeleton";
+import { AbsenceSkeleton } from "../components/Loading/LoadingSkeleton";
 
 // ================== الإعدادات العامة ==================
 // API_URL is now handled by the api instance

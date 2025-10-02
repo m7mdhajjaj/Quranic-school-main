@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import LoadingSkeleton from "../components/LoadingSkeleton";
+import LoadingSkeleton from "../components/Loading/LoadingSkeleton";
 import { useDashboardStats } from "../hooks/useDashboardStats";
 import "../styles/dashboard.css";
 

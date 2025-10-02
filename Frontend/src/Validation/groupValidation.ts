@@ -54,6 +54,7 @@ export interface GroupFormData {
   capacity?: number;
   schedule?: string;
   isActive?: boolean;
+  currentStudents?: number; // عدد الطلاب المشتركين (للعرض فقط)
 }
 
 export interface GroupValidationResult {
@@ -103,10 +104,9 @@ export const groupValidationSchema = yup.object({
     .number()
     .optional()
     .nullable()
-    .positive('السعة يجب أن تكون رقماً موجباً')
+    .min(0, 'السعة يجب أن تكون 0 أو أكثر')
     .integer('السعة يجب أن تكون رقماً صحيحاً')
-    .min(1, 'السعة يجب أن تكون على الأقل 1')
-    .max(50, 'السعة يجب ألا تتجاوز 50')
+    .max(200, 'السعة يجب ألا تتجاوز 200 طالب')
     .transform((value) => {
       if (value === null || value === undefined || value === '') return 20; // القيمة الافتراضية
       return Number(value);

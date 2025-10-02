@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { QuranAudioSkeleton } from "../components/LoadingSkeleton";
+import { QuranAudioSkeleton } from "../components/Loading/LoadingSkeleton";
 
 interface Surah {
   number: number;
