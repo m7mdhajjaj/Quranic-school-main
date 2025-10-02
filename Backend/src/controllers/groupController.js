@@ -40,14 +40,32 @@ exports.createGroup = async (req, res) => {
 // الحصول على جميع الحلقات
 exports.getAllGroups = async (req, res) => {
   try {
+    const Student = require('../models/Student');
+    
     // جلب جميع الحلقات (حتى غير النشطة) لعرضها في لوحة التحكم
     const groups = await Group.find().sort({ createdAt: -1 });
 
-    console.log(`✓ تم جلب ${groups.length} حلقة من قاعدة البيانات`);
+    // إضافة عدد الطلاب المشتركين لكل حلقة
+    const groupsWithStudentCount = await Promise.all(
+      groups.map(async (group) => {
+        const currentStudents = await Student.countDocuments({ 
+          group: group.name,
+          // عد الطلاب النشطين فقط (إذا كان هناك حقل isActive في نموذج Student)
+          // isActive: { $ne: false }
+        });
+        
+        return {
+          ...group.toObject(),
+          currentStudents
+        };
+      })
+    );
+
+    console.log(`✓ تم جلب ${groupsWithStudentCount.length} حلقة من قاعدة البيانات مع عدد الطلاب`);
 
     res.status(200).json({
       success: true,
-      data: groups,
+      data: groupsWithStudentCount,
     });
   } catch (error) {
     console.error("Error fetching groups:", error);
@@ -61,6 +79,7 @@ exports.getAllGroups = async (req, res) => {
 // الحصول على حلقة بالمعرف
 exports.getGroupById = async (req, res) => {
   try {
+    const Student = require('../models/Student');
     const { id } = req.params;
     const group = await Group.findById(id);
 
@@ -71,9 +90,17 @@ exports.getGroupById = async (req, res) => {
       });
     }
 
+    // إضافة عدد الطلاب المشتركين في الحلقة
+    const currentStudents = await Student.countDocuments({ 
+      group: group.name 
+    });
+
     res.status(200).json({
       success: true,
-      data: group,
+      data: {
+        ...group.toObject(),
+        currentStudents
+      },
     });
   } catch (error) {
     console.error("Error fetching group:", error);
@@ -150,15 +177,31 @@ exports.deleteGroup = async (req, res) => {
 // الحصول على الحلقات حسب المعلم
 exports.getGroupsByTeacher = async (req, res) => {
   try {
+    const Student = require('../models/Student');
     const { teacher } = req.params;
     const groups = await Group.find({
       teacher,
       isActive: true,
     }).sort({ createdAt: -1 });
 
+    // إضافة عدد الطلاب لكل حلقة
+    const groupsWithStudentCount = await Promise.all(
+      groups.map(async (group) => {
+        const currentStudents = await Student.countDocuments({ 
+          group: group.name,
+          teacher: teacher // للتأكد من أن الطلاب تابعين لنفس المعلم
+        });
+        
+        return {
+          ...group.toObject(),
+          currentStudents
+        };
+      })
+    );
+
     res.status(200).json({
       success: true,
-      data: groups,
+      data: groupsWithStudentCount,
     });
   } catch (error) {
     console.error("Error fetching groups by teacher:", error);

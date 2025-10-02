@@ -28,9 +28,9 @@ const groupSchema = new mongoose.Schema(
    
     capacity: {
       type: Number,
-      min: [1, 'السعة يجب أن تكون على الأقل 1'],
-      max: [50, 'السعة يجب ألا تتجاوز 50'],
-      default: 20,
+      min: [0, 'السعة يجب أن تكون 0 أو أكثر'],
+      max: [200, 'السعة يجب ألا تتجاوز 200 طالب'],
+      default: 30,
     },
 
     schedule: {

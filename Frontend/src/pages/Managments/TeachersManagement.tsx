@@ -44,7 +44,6 @@ const TeachersManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('all');
   const [selectedGender, setSelectedGender] = useState('all');
-  const [selectedStatus, setSelectedStatus] = useState('all');
   const [ageRange, setAgeRange] = useState<[number, number]>([0, 100]);
   const [showFilters, setShowFilters] = useState(false);
 
@@ -161,10 +160,7 @@ const TeachersManagement: React.FC = () => {
         (teacher.groups && teacher.groups.includes(selectedGroup));
       const matchesGender =
         selectedGender === 'all' || teacher.gender === selectedGender;
-      const matchesStatus =
-        selectedStatus === 'all' ||
-        (selectedStatus === 'active' && teacher.isActive) ||
-        (selectedStatus === 'inactive' && !teacher.isActive);
+
       const matchesAge = teacher.age
         ? teacher.age >= ageRange[0] && teacher.age <= ageRange[1]
         : true;
@@ -173,7 +169,6 @@ const TeachersManagement: React.FC = () => {
         matchesSearch &&
         matchesGroup &&
         matchesGender &&
-        matchesStatus &&
         matchesAge
       );
     });
@@ -201,7 +196,6 @@ const TeachersManagement: React.FC = () => {
     searchTerm,
     selectedGroup,
     selectedGender,
-    selectedStatus,
     ageRange,
     sortField,
     sortOrder,
@@ -304,7 +298,6 @@ const TeachersManagement: React.FC = () => {
       'رقم الهاتف',
       'العمر',
       'الجنس',
-      'الحالة',
     ];
     const rows = filteredAndSortedTeachers.map((t) => [
       t.teacherId,
@@ -315,7 +308,6 @@ const TeachersManagement: React.FC = () => {
       t.phoneNumber,
       t.age || '',
       t.gender || '',
-      t.isActive ? 'نشط' : 'غير نشط',
     ]);
 
     const csvContent = [headers, ...rows]
@@ -336,7 +328,6 @@ const TeachersManagement: React.FC = () => {
     setSearchTerm('');
     setSelectedGroup('all');
     setSelectedGender('all');
-    setSelectedStatus('all');
     setAgeRange([0, 100]);
     setCurrentPage(1);
   };
@@ -529,20 +520,7 @@ const TeachersManagement: React.FC = () => {
                     </select>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      الحالة
-                    </label>
-                    <select
-                      value={selectedStatus}
-                      onChange={(e) => setSelectedStatus(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="all">الكل</option>
-                      <option value="active">نشط</option>
-                      <option value="inactive">غير نشط</option>
-                    </select>
-                  </div>
+
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -586,26 +564,26 @@ const TeachersManagement: React.FC = () => {
 
         {/* Statistics Cards */}
         {!isLoading && (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-6">
-            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-blue-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl shadow-md">
-                  <FaUserTie className="w-6 h-6 text-white" />
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 xl:grid-cols-7 gap-4 mb-6">
+            <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-blue-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg shadow-md">
+                  <FaUserTie className="w-5 h-5 text-white" />
                 </div>
-                <div>
-                  <p className="text-xs text-gray-600 font-medium">إجمالي</p>
-                  <p className="text-xl font-bold text-gray-900">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-gray-600 font-medium truncate">إجمالي</p>
+                  <p className="text-lg font-bold text-gray-900">
                     {stats.total}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-green-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-gradient-to-br from-green-400 to-emerald-600 rounded-xl shadow-md">
+            <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-green-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-gradient-to-br from-green-400 to-emerald-600 rounded-lg shadow-md">
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -616,20 +594,20 @@ const TeachersManagement: React.FC = () => {
                     />
                   </svg>
                 </div>
-                <div>
-                  <p className="text-xs text-gray-600 font-medium">نشط</p>
-                  <p className="text-xl font-bold text-gray-900">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-gray-600 font-medium truncate">نشط</p>
+                  <p className="text-lg font-bold text-gray-900">
                     {stats.active}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-red-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-gradient-to-br from-red-400 to-red-600 rounded-xl shadow-md">
+            <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-red-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-gradient-to-br from-red-400 to-red-600 rounded-lg shadow-md">
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -640,79 +618,79 @@ const TeachersManagement: React.FC = () => {
                     />
                   </svg>
                 </div>
-                <div>
-                  <p className="text-xs text-gray-600 font-medium">غير نشط</p>
-                  <p className="text-xl font-bold text-gray-900">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-gray-600 font-medium truncate">غير نشط</p>
+                  <p className="text-lg font-bold text-gray-900">
                     {stats.inactive}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-cyan-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-xl shadow-md">
+            <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-cyan-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-lg shadow-md">
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
                     <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
                   </svg>
                 </div>
-                <div>
-                  <p className="text-xs text-gray-600 font-medium">ذكور</p>
-                  <p className="text-xl font-bold text-gray-900">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-gray-600 font-medium truncate">ذكور</p>
+                  <p className="text-lg font-bold text-gray-900">
                     {stats.male}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-pink-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-gradient-to-br from-pink-400 to-pink-600 rounded-xl shadow-md">
+            <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-pink-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-gradient-to-br from-pink-400 to-pink-600 rounded-lg shadow-md">
                   <svg
-                    className="w-6 h-6 text-white"
+                    className="w-5 h-5 text-white"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
                     <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
                   </svg>
                 </div>
-                <div>
-                  <p className="text-xs text-gray-600 font-medium">إناث</p>
-                  <p className="text-xl font-bold text-gray-900">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-gray-600 font-medium truncate">إناث</p>
+                  <p className="text-lg font-bold text-gray-900">
                     {stats.female}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-purple-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl shadow-md">
-                  <FaBook className="w-6 h-6 text-white" />
+            <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-purple-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg shadow-md">
+                  <FaBook className="w-5 h-5 text-white" />
                 </div>
-                <div>
-                  <p className="text-xs text-gray-600 font-medium">الحلقات</p>
-                  <p className="text-xl font-bold text-gray-900">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-gray-600 font-medium truncate">الحلقات</p>
+                  <p className="text-lg font-bold text-gray-900">
                     {stats.groups}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-amber-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-gradient-to-br from-amber-400 to-amber-600 rounded-xl shadow-md">
-                  <FaChartBar className="w-6 h-6 text-white" />
+            <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-amber-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-gradient-to-br from-amber-400 to-amber-600 rounded-lg shadow-md">
+                  <FaChartBar className="w-5 h-5 text-white" />
                 </div>
-                <div>
-                  <p className="text-xs text-gray-600 font-medium">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-gray-600 font-medium truncate">
                     متوسط العمر
                   </p>
-                  <p className="text-xl font-bold text-gray-900">
+                  <p className="text-lg font-bold text-gray-900">
                     {stats.avgAge}
                   </p>
                 </div>
@@ -785,107 +763,94 @@ const TeachersManagement: React.FC = () => {
         {isLoading && (
           <>
             {/* Statistics Cards Skeleton */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 xl:grid-cols-7 gap-4 mb-6">
               {/* Total Teachers Skeleton */}
-              <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-gray-300 hover:shadow-xl transition-shadow animate-pulse">
-                <div className="flex items-center gap-3">
+              <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-gray-300 hover:shadow-xl transition-shadow animate-pulse">
+                <div className="flex items-center gap-2">
                   <div className="p-2 bg-gray-200 rounded-lg">
                     <div className="w-5 h-5 bg-gray-300 rounded"></div>
                   </div>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <div className="h-3 w-8 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-6 w-10 bg-gray-300 rounded"></div>
+                    <div className="h-5 w-10 bg-gray-300 rounded"></div>
                   </div>
                 </div>
               </div>
 
               {/* Active Teachers Skeleton */}
-              <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-gray-300 hover:shadow-xl transition-shadow animate-pulse">
-                <div className="flex items-center gap-3">
+              <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-gray-300 hover:shadow-xl transition-shadow animate-pulse">
+                <div className="flex items-center gap-2">
                   <div className="p-2 bg-gray-200 rounded-lg">
                     <div className="w-5 h-5 bg-gray-300 rounded"></div>
                   </div>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <div className="h-3 w-6 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-6 w-8 bg-gray-300 rounded"></div>
+                    <div className="h-5 w-8 bg-gray-300 rounded"></div>
                   </div>
                 </div>
               </div>
 
               {/* Inactive Teachers Skeleton */}
-              <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-gray-300 hover:shadow-xl transition-shadow animate-pulse">
-                <div className="flex items-center gap-3">
+              <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-gray-300 hover:shadow-xl transition-shadow animate-pulse">
+                <div className="flex items-center gap-2">
                   <div className="p-2 bg-gray-200 rounded-lg">
                     <div className="w-5 h-5 bg-gray-300 rounded"></div>
                   </div>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <div className="h-3 w-12 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-6 w-8 bg-gray-300 rounded"></div>
+                    <div className="h-5 w-8 bg-gray-300 rounded"></div>
                   </div>
                 </div>
               </div>
 
               {/* Male Teachers Skeleton */}
-              <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-gray-300 hover:shadow-xl transition-shadow animate-pulse">
-                <div className="flex items-center gap-3">
+              <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-gray-300 hover:shadow-xl transition-shadow animate-pulse">
+                <div className="flex items-center gap-2">
                   <div className="p-2 bg-gray-200 rounded-lg">
                     <div className="w-5 h-5 bg-gray-300 rounded"></div>
                   </div>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <div className="h-3 w-6 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-6 w-8 bg-gray-300 rounded"></div>
+                    <div className="h-5 w-8 bg-gray-300 rounded"></div>
                   </div>
                 </div>
               </div>
 
               {/* Female Teachers Skeleton */}
-              <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-gray-300 hover:shadow-xl transition-shadow animate-pulse">
-                <div className="flex items-center gap-3">
+              <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-gray-300 hover:shadow-xl transition-shadow animate-pulse">
+                <div className="flex items-center gap-2">
                   <div className="p-2 bg-gray-200 rounded-lg">
                     <div className="w-5 h-5 bg-gray-300 rounded"></div>
                   </div>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <div className="h-3 w-6 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-6 w-8 bg-gray-300 rounded"></div>
+                    <div className="h-5 w-8 bg-gray-300 rounded"></div>
                   </div>
                 </div>
               </div>
 
               {/* Groups Skeleton */}
-              <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-gray-300 hover:shadow-xl transition-shadow animate-pulse">
-                <div className="flex items-center gap-3">
+              <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-gray-300 hover:shadow-xl transition-shadow animate-pulse">
+                <div className="flex items-center gap-2">
                   <div className="p-2 bg-gray-200 rounded-lg">
                     <div className="w-5 h-5 bg-gray-300 rounded"></div>
                   </div>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <div className="h-3 w-10 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-6 w-6 bg-gray-300 rounded"></div>
+                    <div className="h-5 w-6 bg-gray-300 rounded"></div>
                   </div>
                 </div>
               </div>
 
               {/* Average Age Skeleton */}
-              <div className="bg-white p-4 rounded-xl shadow-lg border-r-4 border-gray-300 hover:shadow-xl transition-shadow animate-pulse">
-                <div className="flex items-center gap-3">
+              <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-gray-300 hover:shadow-xl transition-shadow animate-pulse">
+                <div className="flex items-center gap-2">
                   <div className="p-2 bg-gray-200 rounded-lg">
                     <div className="w-5 h-5 bg-gray-300 rounded"></div>
                   </div>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <div className="h-3 w-12 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-6 w-10 bg-gray-300 rounded"></div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Eighth Card Skeleton - Students Count */}
-              <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-gray-300 hover:shadow-xl transition-shadow animate-pulse">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gray-200 rounded-lg">
-                    <div className="w-5 h-5 bg-gray-300 rounded"></div>
-                  </div>
-                  <div>
-                    <div className="h-3 w-16 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-6 w-10 bg-gray-300 rounded"></div>
+                    <div className="h-5 w-10 bg-gray-300 rounded"></div>
                   </div>
                 </div>
               </div>
@@ -950,9 +915,6 @@ const TeachersManagement: React.FC = () => {
                       <th className="px-4 py-4 text-right">
                         <div className="h-4 w-20 bg-gray-300 rounded animate-pulse"></div>
                       </th>
-                      <th className="px-4 py-4 text-right">
-                        <div className="h-4 w-14 bg-gray-300 rounded animate-pulse"></div>
-                      </th>
                       <th className="px-4 py-4 text-center">
                         <div className="h-4 w-16 bg-gray-300 rounded mx-auto animate-pulse"></div>
                       </th>
@@ -995,9 +957,6 @@ const TeachersManagement: React.FC = () => {
                         </td>
                         <td className="px-4 py-4">
                           <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
-                        </td>
-                        <td className="px-4 py-4">
-                          <div className="h-6 w-16 bg-gray-200 rounded-full animate-pulse"></div>
                         </td>
                         <td className="px-4 py-4">
                           <div className="flex space-x-2 rtl:space-x-reverse justify-center">
@@ -1119,9 +1078,6 @@ const TeachersManagement: React.FC = () => {
                     <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
                       مكان السكن
                     </th>
-                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
-                      الحالة
-                    </th>
                     <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
                       الإجراءات
                     </th>
@@ -1212,17 +1168,6 @@ const TeachersManagement: React.FC = () => {
                         {teacher.residence || teacher.address || (
                           <span className="text-gray-400">-</span>
                         )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            teacher.isActive
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}
-                        >
-                          {teacher.isActive ? 'نشط' : 'غير نشط'}
-                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         <div className="flex items-center justify-center gap-2">
