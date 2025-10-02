@@ -134,12 +134,26 @@
 
 const Student = require("../models/Student");
 
-// Get all students
+// Get all students - OPTIMIZED for performance
 exports.getStudents = async (req, res) => {
   try {
-    const students = await Student.find();
+    console.log('🚀 تحميل بيانات الطلاب...');
+    const startTime = Date.now();
+    
+    // Optimized query: exclude heavy fields like avatar
+    const students = await Student.find()
+      .select('-avatar') // استبعاد الصور لتسريع التحميل
+      .lean() // استخدام lean() لتحسين الأداء
+      .sort({ createdAt: -1 }) // ترتيب حسب الأحدث
+      .limit(1000); // حد أقصى 1000 طالب
+    
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+    
+    console.log(`✅ تم تحميل ${students.length} طالب في ${duration}ms`);
     res.json(students);
   } catch (error) {
+    console.error('❌ خطأ في تحميل الطلاب:', error);
     res.status(500).json({ message: error.message });
   }
 };

@@ -173,6 +173,97 @@ router.get("/:id/avatar", async (req, res) => {
   }
 });
 
+// Fast endpoint for students count only - no authentication needed for count
+router.get("/count", async (req, res) => {
+  try {
+    console.log('⚡ تحميل عدد الطلاب بسرعة...');
+    const startTime = Date.now();
+    
+    const count = await Student.countDocuments();
+    
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+    
+    console.log(`✅ تم تحميل عدد الطلاب في ${duration}ms`);
+    res.json({ 
+      success: true, 
+      count: count,
+      queryTime: `${duration}ms`,
+      message: `تم العثور على ${count} طالب`
+    });
+  } catch (error) {
+    console.error('❌ Error getting students count:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'خطأ في الحصول على عدد الطلاب',
+      count: 0 
+    });
+  }
+});
+
+// Fast endpoint for students statistics - minimal data for dashboards
+router.get("/stats", async (req, res) => {
+  try {
+    console.log('📊 تحميل إحصائيات الطلاب...');
+    const startTime = Date.now();
+    
+    const [
+      totalCount,
+      maleCount,
+      femaleCount,
+      activeCount,
+      teachersCount,
+      avgAge
+    ] = await Promise.all([
+      Student.countDocuments(),
+      Student.countDocuments({ gender: 'ذكر' }),
+      Student.countDocuments({ gender: 'انثى' }),
+      Student.countDocuments({ isActive: { $ne: false } }), // النشطين (افتراضياً نشطين)
+      Student.distinct('teacher').then(teachers => 
+        teachers.filter(teacher => teacher && teacher.trim() !== '').length
+      ),
+      Student.aggregate([
+        { $group: { _id: null, avgAge: { $avg: '$age' } } }
+      ]).then(result => result.length > 0 ? Math.round(result[0].avgAge || 0) : 0)
+    ]);
+
+    // Get unique groups count efficiently
+    const groupsCount = await Student.distinct('group').then(groups => 
+      groups.filter(group => group && group.trim() !== '').length
+    );
+
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+
+    const stats = {
+      total: totalCount,
+      male: maleCount,
+      female: femaleCount,
+      active: activeCount,
+      inactive: totalCount - activeCount,
+      groups: groupsCount,
+      teachers: teachersCount,
+      avgAge: avgAge
+    };
+
+    console.log(`✅ تم تحميل الإحصائيات في ${duration}ms:`, stats);
+    
+    res.json({ 
+      success: true, 
+      stats: stats,
+      queryTime: `${duration}ms`,
+      message: `إحصائيات ${totalCount} طالب`
+    });
+  } catch (error) {
+    console.error('❌ Error getting students stats:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'خطأ في الحصول على إحصائيات الطلاب',
+      stats: { total: 0, male: 0, female: 0, active: 0, inactive: 0, groups: 0, teachers: 0, avgAge: 0 }
+    });
+  }
+});
+
 // CRUD routes - require authentication (admins and teachers can access)
 router.get("/", protect, studentController.getStudents);
 router.get("/group/:group", protect, studentController.getStudentsByGroup);

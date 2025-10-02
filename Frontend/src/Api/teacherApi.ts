@@ -18,6 +18,8 @@ export interface Teacher {
   age?: number;
   gender?: string;
   residence?: string;
+  address?: string; // مكان السكن
+  specialCircle?: string; // الحلقة الخاصة
   groups?: string[];
   groupName?: string;
   role: string;

@@ -99,6 +99,8 @@ const StudentsManagement: React.FC = () => {
   const stats = useMemo(() => {
     const maleCount = students.filter(s => s.gender === 'ذكر').length;
     const femaleCount = students.filter(s => s.gender === 'انثى').length;
+    const activeCount = students.filter(s => s.isActive !== false).length; // اعتبار الطلاب نشطين بشكل افتراضي
+    const inactiveCount = students.filter(s => s.isActive === false).length;
     const avgAge = students.length > 0 
       ? (students.reduce((sum, s) => sum + (s.age || 0), 0) / students.length).toFixed(1)
       : 0;
@@ -107,32 +109,39 @@ const StudentsManagement: React.FC = () => {
       total: students.length,
       male: maleCount,
       female: femaleCount,
+      active: activeCount,
+      inactive: inactiveCount,
       avgAge,
       groups: groups.length,
       teachers: teachers.length
     };
   }, [students, groups.length, teachers.length]);
 
-  // Fetch students
+  // Fetch students with optimized loading
   const fetchStudents = useCallback(async (retryAttempt = 0) => {
     setIsLoading(true);
     setError(null);
     setRetryCount(retryAttempt);
     
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      console.log('🚀 بدء تحميل بيانات الطلاب بشكل محسن...');
+      const startTime = performance.now();
       
-      const response = await api.get('/students', {
-        signal: controller.signal,
-        timeout: 15000
+      // Load students data with optimized settings
+      const studentsResponse = await api.get('/students', {
+        timeout: 8000, // معقول للبيانات الكاملة
+        headers: {
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache'
+        }
       });
       
-      clearTimeout(timeoutId);
+      const endTime = performance.now();
+      const duration = (endTime - startTime).toFixed(2);
       
-      if (response.data && Array.isArray(response.data)) {
+      if (studentsResponse?.data && Array.isArray(studentsResponse.data)) {
         // Validate and clean student data
-        const cleanedStudents = response.data.map(student => ({
+        const cleanedStudents = studentsResponse.data.map(student => ({
           ...student,
           firstName: student.firstName || '',
           lastName: student.lastName || '',
@@ -144,7 +153,7 @@ const StudentsManagement: React.FC = () => {
           age: student.age || 0
         }));
         
-        console.log(`✅ تم تحميل ${cleanedStudents.length} طالب بنجاح`);
+        console.log(`✅ تم تحميل ${cleanedStudents.length} طالب بنجاح في ${duration}ms`);
         setStudents(cleanedStudents);
         setError(null);
         setRetryCount(0);
@@ -153,7 +162,7 @@ const StudentsManagement: React.FC = () => {
       }
       
     } catch (error: unknown) {
-      console.error('خطأ في تحميل الطلاب:', error);
+      console.error(`❌ خطأ في تحميل الطلاب:`, error);
       
       let errorMessage = 'حدث خطأ في تحميل البيانات';
       
@@ -551,18 +560,36 @@ const StudentsManagement: React.FC = () => {
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-          <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-blue-500 hover:shadow-xl transition-shadow">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <FaUserGraduate className="w-5 h-5 text-blue-600" />
+        {isLoading ? (
+          /* Skeleton Loading for Cards */
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-8 gap-4 mb-6">
+            {Array.from({ length: 8 }, (_, index) => (
+              <div key={index} className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-gray-300 animate-pulse">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-gray-200 rounded-lg">
+                    <div className="w-5 h-5 bg-gray-300 rounded"></div>
+                  </div>
+                  <div>
+                    <div className="h-3 w-12 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-6 w-8 bg-gray-300 rounded"></div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-gray-600">إجمالي</p>
-                <p className="text-xl font-bold text-gray-900">{stats.total}</p>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-8 gap-4 mb-6">
+            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-blue-500 hover:shadow-xl transition-shadow">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <FaUserGraduate className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600">إجمالي</p>
+                  <p className="text-xl font-bold text-gray-900">{stats.total}</p>
+                </div>
               </div>
             </div>
-          </div>
 
           <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-cyan-500 hover:shadow-xl transition-shadow">
             <div className="flex items-center gap-3">
@@ -618,18 +645,47 @@ const StudentsManagement: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-xl shadow-lg border-r-4 border-amber-500 hover:shadow-xl transition-shadow">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-100 rounded-lg">
-                <FaChartBar className="w-5 h-5 text-amber-600" />
+            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-emerald-500 hover:shadow-xl transition-shadow">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-emerald-100 rounded-lg">
+                  <svg className="w-5 h-5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600">نشطين</p>
+                  <p className="text-xl font-bold text-gray-900">{stats.active}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-gray-600">متوسط العمر</p>
-                <p className="text-xl font-bold text-gray-900">{stats.avgAge}</p>
+            </div>
+
+            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-red-500 hover:shadow-xl transition-shadow">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-red-100 rounded-lg">
+                  <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600">غير نشطين</p>
+                  <p className="text-xl font-bold text-gray-900">{stats.inactive}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-xl shadow-lg border-r-4 border-amber-500 hover:shadow-xl transition-shadow">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-amber-100 rounded-lg">
+                  <FaChartBar className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600">متوسط العمر</p>
+                  <p className="text-xl font-bold text-gray-900">{stats.avgAge}</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Active Filters Display */}
         {(selectedTeacher !== 'all' || selectedGroup !== 'all' || selectedGender !== 'all' || ageRange[0] !== 0 || ageRange[1] !== 100 || searchTerm) && (
@@ -750,18 +806,109 @@ const StudentsManagement: React.FC = () => {
           </div>
         )}
 
-        {/* Loading State */}
+        {/* Skeleton Loading for Table */}
         {isLoading && (
-          <div className="bg-white rounded-2xl shadow-xl p-12">
-            <div className="text-center">
-              <div className="relative inline-block mb-6">
-                <div className="animate-spin rounded-full h-20 w-20 border-4 border-blue-200 border-t-blue-600"></div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-10 h-10 bg-blue-600 rounded-full animate-pulse"></div>
+          <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+            <div className="overflow-x-auto" dir="rtl">
+              <table className="w-full" dir="rtl">
+                {/* Table Header Skeleton */}
+                <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+                  <tr>
+                    <th className="px-4 py-4 text-center">
+                      <div className="h-4 w-4 bg-gray-300 rounded mx-auto animate-pulse"></div>
+                    </th>
+                    <th className="px-4 py-4 text-right">
+                      <div className="h-4 w-16 bg-gray-300 rounded animate-pulse"></div>
+                    </th>
+                    <th className="px-4 py-4 text-right">
+                      <div className="h-4 w-20 bg-gray-300 rounded animate-pulse"></div>
+                    </th>
+                    <th className="px-4 py-4 text-right">
+                      <div className="h-4 w-24 bg-gray-300 rounded animate-pulse"></div>
+                    </th>
+                    <th className="px-4 py-4 text-right">
+                      <div className="h-4 w-20 bg-gray-300 rounded animate-pulse"></div>
+                    </th>
+                    <th className="px-4 py-4 text-right">
+                      <div className="h-4 w-12 bg-gray-300 rounded animate-pulse"></div>
+                    </th>
+                    <th className="px-4 py-4 text-right">
+                      <div className="h-4 w-14 bg-gray-300 rounded animate-pulse"></div>
+                    </th>
+                    <th className="px-4 py-4 text-right">
+                      <div className="h-4 w-12 bg-gray-300 rounded animate-pulse"></div>
+                    </th>
+                    <th className="px-4 py-4 text-right">
+                      <div className="h-4 w-16 bg-gray-300 rounded animate-pulse"></div>
+                    </th>
+                    <th className="px-4 py-4 text-right">
+                      <div className="h-4 w-12 bg-gray-300 rounded animate-pulse"></div>
+                    </th>
+                    <th className="px-4 py-4 text-center">
+                      <div className="h-4 w-16 bg-gray-300 rounded mx-auto animate-pulse"></div>
+                    </th>
+                  </tr>
+                </thead>
+                
+                {/* Table Rows Skeleton */}
+                <tbody>
+                  {Array.from({ length: 6 }, (_, index) => (
+                    <tr key={index} className="border-b border-gray-100">
+                      <td className="px-4 py-4 text-center">
+                        <div className="h-4 w-4 bg-gray-200 rounded mx-auto animate-pulse"></div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="h-6 w-16 bg-gray-200 rounded-full animate-pulse"></div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="space-y-2">
+                          <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+                          <div className="h-3 w-16 bg-gray-200 rounded animate-pulse"></div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="h-6 w-12 bg-gray-200 rounded-full animate-pulse"></div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="h-6 w-14 bg-gray-200 rounded-full animate-pulse"></div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="h-6 w-14 bg-gray-200 rounded-full animate-pulse"></div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="h-6 w-16 bg-gray-200 rounded-full animate-pulse"></div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="flex space-x-2 rtl:space-x-reverse justify-center">
+                          <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+                          <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination Skeleton */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                <div className="flex space-x-2 rtl:space-x-reverse">
+                  <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
                 </div>
               </div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">جاري تحميل بيانات الطلاب</h3>
-              <p className="text-gray-600">الرجاء الانتظار...</p>
             </div>
           </div>
         )}
@@ -885,8 +1032,14 @@ const StudentsManagement: React.FC = () => {
                           {student.gender}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {student.age} سنة
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {student.age ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                            {student.age}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {student.teacher}

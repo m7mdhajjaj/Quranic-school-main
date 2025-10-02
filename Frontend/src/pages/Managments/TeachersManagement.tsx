@@ -50,6 +50,12 @@ const TeachersManagement: React.FC = () => {
 
   // Selected Teachers for Bulk Actions
   const [selectedTeachers, setSelectedTeachers] = useState<Set<string>>(new Set());
+  
+  // Students count state with caching
+  const [studentsCount, setStudentsCount] = useState<number>(0);
+  const [studentsLoading, setStudentsLoading] = useState<boolean>(false);
+  const [studentsLastFetch, setStudentsLastFetch] = useState<number>(0);
+  const [studentsError, setStudentsError] = useState<boolean>(false);
 
   // Extract unique groups
   const groups = useMemo(() => {
@@ -73,9 +79,106 @@ const TeachersManagement: React.FC = () => {
       male: maleCount,
       female: femaleCount,
       avgAge,
-      groups: groups.length
+      groups: groups.length,
+      students: studentsCount
     };
-  }, [teachers, groups.length]);
+  }, [teachers, groups.length, studentsCount]);
+
+  // Fetch students count (optimized with caching)
+  const fetchStudentsCount = useCallback(async (force = false) => {
+    // Cache for 30 seconds to avoid repeated API calls
+    const now = Date.now();
+    if (!force && studentsLastFetch && (now - studentsLastFetch) < 30000) {
+      console.log('⚡ استخدام عدد الطلاب المحفوظ');
+      return;
+    }
+    
+    setStudentsLoading(true);
+    setStudentsError(false);
+    
+    const startTime = performance.now(); // قياس الأداء
+    
+    try {
+      // Try stats endpoint first for richer data, fallback to count
+      let response;
+      try {
+        response = await api.get('/students/stats', { 
+          timeout: 2000,
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Accept': 'application/json'
+          }
+        });
+        
+        // If stats endpoint works, use the total from stats
+        if (response.data && response.data.success && response.data.stats?.total !== undefined) {
+          const endTime = performance.now();
+          const duration = (endTime - startTime).toFixed(2);
+          
+          setStudentsCount(response.data.stats.total);
+          setStudentsLastFetch(now);
+          setStudentsError(false);
+          console.log(`📊 تم تحميل إحصائيات الطلاب: ${response.data.stats.total} (${response.data.stats.male} ذكور، ${response.data.stats.female} إناث) في ${duration}ms`);
+          return; // Success, no need for fallbacks
+        }
+      } catch {
+        console.log('📊 Stats endpoint not available, trying count endpoint...');
+      }
+
+      // Fallback to count endpoint  
+      response = await api.get('/students/count', { 
+        timeout: 2000, // Super fast timeout for optimized endpoint
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Accept': 'application/json'
+        }
+      });
+      
+      const endTime = performance.now();
+      const duration = (endTime - startTime).toFixed(2);
+      
+      if (response.data && response.data.success && typeof response.data.count === 'number') {
+        setStudentsCount(response.data.count);
+        setStudentsLastFetch(now);
+        setStudentsError(false);
+        console.log(`🚀 تم تحميل عدد الطلاب بسرعة البرق: ${response.data.count} في ${duration}ms`);
+      } else {
+        // Fallback to full students list if count endpoint fails
+        console.log('📡 Fallback إلى الـ endpoint الكامل...');
+        const fullResponse = await api.get('/students', { 
+          timeout: 5000,
+        });
+        
+        if (fullResponse.data && Array.isArray(fullResponse.data)) {
+          setStudentsCount(fullResponse.data.length);
+          setStudentsLastFetch(now);
+          setStudentsError(false);
+          console.log(`⚡ تم تحميل عدد الطلاب بنجاح (fallback): ${fullResponse.data.length}`);
+        } else {
+          console.warn('البيانات المستلمة غير صحيحة:', fullResponse.data);
+          setStudentsCount(0);
+          setStudentsError(true);
+        }
+      }
+    } catch (error) {
+      console.error('خطأ في تحميل عدد الطلاب:', error);
+      
+      // Handle different types of errors
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as {response?: {status?: number}};
+        if (axiosError.response?.status === 500) {
+          console.log('💡 خطأ في الخادم - سيتم المحاولة مرة أخرى لاحقاً');
+        } else if (axiosError.response?.status === 404) {
+          console.log('💡 نقطة النهاية غير موجودة - قد تحتاج للتحديث');
+        }
+      }
+      
+      setStudentsCount(0);
+      setStudentsError(true);
+    } finally {
+      setStudentsLoading(false);
+    }
+  }, [studentsLastFetch]);
 
   // Fetch teachers
   const fetchTeachers = useCallback(async (retryAttempt = 0) => {
@@ -111,6 +214,24 @@ const TeachersManagement: React.FC = () => {
       setIsLoading(false);
     }
   }, []);
+
+  // Load students count immediately on mount
+  useEffect(() => {
+    fetchStudentsCount(); // Load students count immediately, regardless of permission
+  }, [fetchStudentsCount]);
+
+  // Auto retry on error after 10 seconds
+  useEffect(() => {
+    if (studentsError && !studentsLoading) {
+      console.log('🔄 سيتم المحاولة مرة أخرى بعد 10 ثوان...');
+      const retryTimer = setTimeout(() => {
+        console.log('🔄 إعادة محاولة تحميل عدد الطلاب...');
+        fetchStudentsCount(true);
+      }, 10000);
+      
+      return () => clearTimeout(retryTimer);
+    }
+  }, [studentsError, studentsLoading, fetchStudentsCount]);
 
   useEffect(() => {
     if (!hasPermission) return;
@@ -327,7 +448,14 @@ const TeachersManagement: React.FC = () => {
                   <FaUserTie className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">إدارة المعلمين</h1>
+                  <h1 className="text-3xl font-bold text-gray-900">
+                    إدارة المعلمين 
+                    {!isLoading && (
+                      <span className="text-lg font-medium text-blue-600 mr-2">
+                        ({stats.total} معلم)
+                      </span>
+                    )}
+                  </h1>
                   <p className="text-gray-600 text-sm mt-1">نظام متكامل لإدارة بيانات المعلمين</p>
                 </div>
               </div>
@@ -335,7 +463,10 @@ const TeachersManagement: React.FC = () => {
             
             <div className="flex flex-wrap items-center gap-3">
               <button
-                onClick={() => fetchTeachers()}
+                onClick={() => {
+                  fetchTeachers();
+                  fetchStudentsCount(true); // Force refresh
+                }}
                 disabled={isLoading}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg ${
                   isLoading 
@@ -346,7 +477,7 @@ const TeachersManagement: React.FC = () => {
                 <svg className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
-                {isLoading ? 'جاري التحديث...' : 'تحديث'}
+                {isLoading ? 'جاري التحديث...' : 'تحديث البيانات'}
               </button>
               
               <button
@@ -487,7 +618,7 @@ const TeachersManagement: React.FC = () => {
 
         {/* Statistics Cards */}
         {!isLoading && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-6">
             <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-blue-500 hover:shadow-xl transition-shadow">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-100 rounded-lg">
@@ -575,6 +706,38 @@ const TeachersManagement: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* New eighth card - Students Count */}
+            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-indigo-500 hover:shadow-xl transition-shadow">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-indigo-100 rounded-lg">
+                  {studentsLoading ? (
+                    <div className="w-5 h-5 bg-indigo-300 rounded animate-pulse"></div>
+                  ) : (
+                    <svg className="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M12 14l9-5-9-5-9 5 9 5z" />
+                      <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                    </svg>
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600">عدد الطلاب</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {studentsLoading ? (
+                      <span className="inline-block w-8 h-6 bg-gray-200 rounded animate-pulse"></span>
+                    ) : studentsError ? (
+                      <span className="text-red-400 text-sm cursor-pointer" onClick={() => fetchStudentsCount(true)} title="اضغط للمحاولة مرة أخرى">
+                        خطأ ⚠️
+                      </span>
+                    ) : stats.students > 0 ? (
+                      <span className="text-indigo-600">{stats.students}</span>
+                    ) : (
+                      <span className="text-gray-400 text-sm">غير متاح</span>
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -622,7 +785,7 @@ const TeachersManagement: React.FC = () => {
         {isLoading && (
           <>
             {/* Statistics Cards Skeleton */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-6">
               {/* Total Teachers Skeleton */}
               <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-gray-300 hover:shadow-xl transition-shadow animate-pulse">
                 <div className="flex items-center gap-3">
@@ -713,6 +876,19 @@ const TeachersManagement: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Eighth Card Skeleton - Students Count */}
+              <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-gray-300 hover:shadow-xl transition-shadow animate-pulse">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-gray-200 rounded-lg">
+                    <div className="w-5 h-5 bg-gray-300 rounded"></div>
+                  </div>
+                  <div>
+                    <div className="h-3 w-16 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-6 w-10 bg-gray-300 rounded"></div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Main Content Skeleton */}
@@ -760,7 +936,19 @@ const TeachersManagement: React.FC = () => {
                         <div className="h-4 w-20 bg-gray-300 rounded animate-pulse"></div>
                       </th>
                       <th className="px-4 py-4 text-right">
+                        <div className="h-4 w-20 bg-gray-300 rounded animate-pulse"></div>
+                      </th>
+                      <th className="px-4 py-4 text-right">
                         <div className="h-4 w-12 bg-gray-300 rounded animate-pulse"></div>
+                      </th>
+                      <th className="px-4 py-4 text-right">
+                        <div className="h-4 w-12 bg-gray-300 rounded animate-pulse"></div>
+                      </th>
+                      <th className="px-4 py-4 text-right">
+                        <div className="h-4 w-16 bg-gray-300 rounded animate-pulse"></div>
+                      </th>
+                      <th className="px-4 py-4 text-right">
+                        <div className="h-4 w-20 bg-gray-300 rounded animate-pulse"></div>
                       </th>
                       <th className="px-4 py-4 text-right">
                         <div className="h-4 w-14 bg-gray-300 rounded animate-pulse"></div>
@@ -794,7 +982,19 @@ const TeachersManagement: React.FC = () => {
                           <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
                         </td>
                         <td className="px-4 py-4">
+                          <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+                        </td>
+                        <td className="px-4 py-4">
                           <div className="h-6 w-12 bg-gray-200 rounded-full animate-pulse"></div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="h-6 w-14 bg-gray-200 rounded-full animate-pulse"></div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
                         </td>
                         <td className="px-4 py-4">
                           <div className="h-6 w-16 bg-gray-200 rounded-full animate-pulse"></div>
@@ -883,7 +1083,21 @@ const TeachersManagement: React.FC = () => {
                       </div>
                     </th>
                     <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">رقم الهاتف</th>
+                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">رقم الهوية</th>
                     <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">الجنس</th>
+                    <th 
+                      className="px-6 py-4 text-right text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors"
+                      onClick={() => handleSort('age')}
+                    >
+                      <div className="flex items-center gap-2">
+                        العمر
+                        {sortField === 'age' && (
+                          sortOrder === 'asc' ? <FaSortAmountUp className="w-3 h-3" /> : <FaSortAmountDown className="w-3 h-3" />
+                        )}
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">الحلقة الخاصة</th>
+                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">مكان السكن</th>
                     <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">الحالة</th>
                     <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">الإجراءات</th>
                   </tr>
@@ -931,6 +1145,9 @@ const TeachersManagement: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
                         {teacher.phoneNumber}
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+                        {teacher.idNumber || <span className="text-gray-400">-</span>}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {teacher.gender ? (
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -943,6 +1160,27 @@ const TeachersManagement: React.FC = () => {
                         ) : (
                           <span className="text-gray-400">-</span>
                         )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {teacher.age ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                            {teacher.age}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {teacher.specialCircle ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            {teacher.specialCircle}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {teacher.residence || teacher.address || <span className="text-gray-400">-</span>}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
