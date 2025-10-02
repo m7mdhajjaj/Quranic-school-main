@@ -238,6 +238,7 @@ const ExamSchedule: React.FC = () => {
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
 
   const [students, setStudents] = useState<StudentDoc[]>([]);
+  const [loadingStudents, setLoadingStudents] = useState(false);
   const [marks, setMarks] = useState<
     Record<string, { mark: string; detail: string }>
   >({});
@@ -362,7 +363,7 @@ const ExamSchedule: React.FC = () => {
     const marksArr = students.map((s) => ({
       student: s._id,
       mark: marks[s._id]?.mark ?? "",
-      detail: marks[s._id]?.detail ?? "",
+      detail: "",
     }));
     try {
       const examId = String(selectedExam._id ?? selectedExam.id);
@@ -405,24 +406,51 @@ const ExamSchedule: React.FC = () => {
 
     (async () => {
       try {
+        setLoadingStudents(true);
         const examId = String(selectedExam._id ?? selectedExam.id);
 
         // 1) الطلاب
-        const sRes = await fetch(STUDENTS_URL, { signal: ac.signal });
+        console.log("Fetching students from:", STUDENTS_URL);
+        const sRes = await fetch(STUDENTS_URL, {
+          signal: ac.signal,
+          headers: getAuthHeaders(),
+        });
+        console.log("Students response status:", sRes.status);
+
+        if (!sRes.ok) {
+          console.error(
+            "Failed to fetch students:",
+            sRes.status,
+            sRes.statusText
+          );
+          if (!ac.signal.aborted) setStudents([]);
+          return;
+        }
+
         const sData: StudentDoc[] = await sRes.json();
+        console.log("Students data received:", sData);
+        console.log(
+          "Number of students:",
+          Array.isArray(sData) ? sData.length : "Not an array"
+        );
+
         if (!ac.signal.aborted) setStudents(Array.isArray(sData) ? sData : []);
 
         // 2) العلامات الحالية
         const mRes = await fetch(`${EXAM_MARKS_URL}/${examId}`, {
           signal: ac.signal,
+          headers: getAuthHeaders(),
         });
         if (mRes.ok) {
           const mData: MarkRow[] = await mRes.json();
           if (!ac.signal.aborted && Array.isArray(mData))
             fillMarksFromApi(mData);
         }
-      } catch {
-        // تجاهل الأخطاء (إغلاق مفاجئ مثلًا)
+      } catch (error) {
+        console.error("Error fetching students or marks:", error);
+        if (!ac.signal.aborted) setStudents([]);
+      } finally {
+        if (!ac.signal.aborted) setLoadingStudents(false);
       }
     })();
 
@@ -938,39 +966,48 @@ const ExamSchedule: React.FC = () => {
       <TransparentModal
         open={showMarkModal && !!selectedExam}
         onClose={() => setShowMarkModal(false)}
-        maxWidth="max-w-3xl"
+        maxWidth="max-w-4xl"
         ariaLabel="إضافة علامات الطلاب للامتحان">
-        <h3 className="text-xl font-bold mb-6 text-center text-blue-700 border-b pb-3">
-          إضافة علامات الطلاب للامتحان
+        <h3 className="text-2xl font-bold mb-6 text-center text-emerald-700 border-b pb-4">
+          إضافة علامات للامتحان: {selectedExam?.name}
         </h3>
 
-        <div className="fixed inset-0 bg-emerald-100/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white/95 rounded-2xl shadow-2xl p-6 w-full max-w-md border border-emerald-200 overflow-y-auto max-h-[80vh]">
-            <h3 className="text-xl font-bold mb-4 text-center text-emerald-700">
-              إضافة علامة للامتحان
-            </h3>
-            <form onSubmit={handleAddMark} className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {students.map((student) => {
-                  const sid = student._id;
-                  const fullName =
-                    student.name ??
-                    `${student.firstName ?? ""} ${
-                      student.lastName ?? ""
-                    }`.trim();
-                  return (
-                    <div
-                      key={sid}
-                      className="border rounded-xl p-4 bg-emerald-50/80 shadow-sm">
-                      <div className="font-bold mb-2 text-emerald-700 text-lg">
-                        {fullName || "طالب"}
-                      </div>
+        {loadingStudents ? (
+          <div className="text-center py-8 text-emerald-600">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto mb-4"></div>
+            جاري تحميل الطلاب...
+          </div>
+        ) : students.length === 0 ? (
+          <div className="text-center py-8 text-emerald-600">
+            <div className="text-xl mb-2">📋</div>
+            لا يوجد طلاب مسجلين في النظام حالياً
+          </div>
+        ) : (
+          <form onSubmit={handleAddMark} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
+              {students.map((student) => {
+                const sid = student._id;
+                const fullName =
+                  student.name ??
+                  `${student.firstName ?? ""} ${student.lastName ?? ""}`.trim();
+                return (
+                  <div
+                    key={sid}
+                    className="border rounded-xl p-4 bg-emerald-50/80 shadow-sm">
+                    <div className="font-bold mb-3 text-emerald-700 text-center">
+                      {fullName || "طالب"}
+                    </div>
 
-                      <Field label="العلامة">
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-emerald-700 mb-1">
+                          العلامة
+                        </label>
                         <input
-                          className="w-full border border-emerald-300 rounded-lg px-3 py-2 mb-2 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-lg bg-white placeholder:text-emerald-400"
-                          type="text"
-                          inputMode="decimal"
+                          className="w-full border border-emerald-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white"
+                          type="number"
+                          min="0"
+                          max="100"
                           value={marks[sid]?.mark ?? ""}
                           onChange={(e) =>
                             setMarks((m) => ({
@@ -981,87 +1018,79 @@ const ExamSchedule: React.FC = () => {
                               },
                             }))
                           }
-                          placeholder="مثلاً 85"
+                          placeholder="0-100"
                         />
-                      </Field>
-
-                      <Field label="تفاصيل / ملاحظة">
-                        <input
-                          className="w-full border border-emerald-300 rounded-lg px-3 py-2 mb-2 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-lg bg-white placeholder:text-emerald-400"
-                          type="text"
-                          value={marks[sid]?.detail ?? ""}
-                          onChange={(e) =>
-                            setMarks((m) => ({
-                              ...m,
-                              [sid]: {
-                                ...(m[sid] ?? { mark: "", detail: "" }),
-                                detail: e.target.value,
-                              },
-                            }))
-                          }
-                          placeholder="اختياري"
-                        />
-                      </Field>
-
-                      <div className="flex gap-2 mt-2">
-                        <PillButton
-                          variant="warn"
-                          type="button"
-                          onClick={async () => {
-                            if (!selectedExam) return;
-                            const examId = safeExamId(selectedExam);
-                            if (!examId) return;
-                            const newMark = marks[sid]?.mark ?? "";
-                            const newDetail = marks[sid]?.detail ?? "";
-                            try {
-                              await fetch(
-                                `${EXAM_MARKS_URL}/${examId}/${sid}`,
-                                {
-                                  method: "PUT",
-                                  headers: {
-                                    "Content-Type": "application/json",
-                                  },
-                                  body: JSON.stringify({
-                                    mark: newMark,
-                                    detail: newDetail,
-                                  }),
-                                }
-                              );
-                              refreshAverageForExam(examId);
-                            } catch {}
-                          }}>
-                          تعديل سريع
-                        </PillButton>
-
-                        <PillButton
-                          variant="danger"
-                          type="button"
-                          onClick={() => {
-                            if (!selectedExam) return;
-                            const examId = safeExamId(selectedExam);
-                            if (!examId) return;
-                            handleDeleteMark(examId, sid);
-                          }}>
-                          حذف العلامة
-                        </PillButton>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
 
-              <div className="flex justify-between mt-4">
-                <PillButton type="submit">حفظ جميع العلامات</PillButton>
-                <PillButton
-                  type="button"
-                  variant="neutral"
-                  onClick={() => setShowMarkModal(false)}>
-                  إلغاء
-                </PillButton>
-              </div>
-            </form>
-          </div>
-        </div>
+                      {marks[sid]?.mark && (
+                        <div className="flex gap-2">
+                          <PillButton
+                            variant="warn"
+                            type="button"
+                            className="text-xs flex-1"
+                            onClick={async () => {
+                              if (!selectedExam) return;
+                              const examId = safeExamId(selectedExam);
+                              if (!examId) return;
+                              const newMark = marks[sid]?.mark ?? "";
+                              try {
+                                await fetch(
+                                  `${EXAM_MARKS_URL}/${examId}/${sid}`,
+                                  {
+                                    method: "PUT",
+                                    headers: {
+                                      "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify({
+                                      mark: newMark,
+                                      detail: "",
+                                    }),
+                                  }
+                                );
+                                refreshAverageForExam(examId);
+                              } catch {}
+                            }}>
+                            حفظ فردي
+                          </PillButton>
+
+                          <PillButton
+                            variant="danger"
+                            type="button"
+                            className="text-xs flex-1"
+                            onClick={() => {
+                              if (!selectedExam) return;
+                              const examId = safeExamId(selectedExam);
+                              if (!examId) return;
+                              handleDeleteMark(examId, sid);
+                            }}>
+                            حذف
+                          </PillButton>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-between items-center pt-4 border-t">
+              <PillButton type="submit" className="text-lg px-6 py-3">
+                حفظ جميع العلامات
+              </PillButton>
+              <PillButton
+                type="button"
+                variant="neutral"
+                className="text-lg px-6 py-3"
+                onClick={() => {
+                  setShowMarkModal(false);
+                  setMarks({});
+                  setSelectedExam(null);
+                }}>
+                إلغاء
+              </PillButton>
+            </div>
+          </form>
+        )}
       </TransparentModal>
     </div>
   );
