@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import MarksBarChart from "../components/MarksBarChart";
+import { ReportsSkeleton } from "../components/LoadingSkeleton";
 
 const Reports = () => {
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [userRole, setUserRole] = useState<string>("teacher");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const userJson = localStorage.getItem("user");
@@ -16,8 +18,19 @@ const Reports = () => {
         setUserRole("teacher");
       }
     }
+
+    // محاكاة تحميل البيانات
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 1500);
+
+    return () => clearTimeout(timer);
   }, []);
-///aaxas
+
+  if (loading) {
+    return <ReportsSkeleton />;
+  }
+
   return (
     <div className="container mx-auto py-8" dir="rtl">
       <h1 className="text-2xl font-bold mb-6 text-center">الحلقات</h1>

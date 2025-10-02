@@ -1,4 +1,8 @@
 import { useState, useEffect } from "react";
+import {
+  QuranPageSkeleton,
+  QuranReadingSkeleton,
+} from "../components/LoadingSkeleton";
 
 interface Surah {
   number: number;
@@ -72,7 +76,7 @@ const QuranPage = () => {
       setLoading(true);
       setError("");
       const response = await fetch(
-        `https://api.alquran.cloud/v1/surah/${surahNumber}`,
+        `https://api.alquran.cloud/v1/surah/${surahNumber}`
       );
 
       if (!response.ok) {
@@ -96,7 +100,7 @@ const QuranPage = () => {
     (surah) =>
       surah.name.includes(searchTerm) ||
       surah.englishName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      surah.number.toString().includes(searchTerm),
+      surah.number.toString().includes(searchTerm)
   );
 
   // Function to remove Bismillah from ayah text
@@ -209,16 +213,7 @@ const QuranPage = () => {
   };
 
   if (surahsLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-green-700 font-medium">
-            جاري تحميل قائمة السور...
-          </p>
-        </div>
-      </div>
-    );
+    return <QuranPageSkeleton />;
   }
 
   return (
@@ -258,14 +253,12 @@ const QuranPage = () => {
             {/* Surahs Grid */}
             <div
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-              dir="rtl"
-            >
+              dir="rtl">
               {filteredSurahs.map((surah) => (
                 <div
                   key={surah.number}
                   onClick={() => fetchSurah(surah.number)}
-                  className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow cursor-pointer border-r-4 border-green-500"
-                >
+                  className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow cursor-pointer border-r-4 border-green-500">
                   <div className="text-right">
                     <h3 className="text-xl font-bold text-green-800 mb-2">
                       {surah.number}. {surah.name}
@@ -290,8 +283,7 @@ const QuranPage = () => {
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <button
                   onClick={backToSurahList}
-                  className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
-                >
+                  className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors">
                   ← العودة للسور
                 </button>
 
@@ -322,10 +314,7 @@ const QuranPage = () => {
             </div>
 
             {loading ? (
-              <div className="bg-white rounded-lg shadow-md p-8 text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-                <p className="text-green-700">جاري تحميل السورة...</p>
-              </div>
+              <QuranReadingSkeleton />
             ) : selectedSurah ? (
               <div className="space-y-6">
                 {/* Bismillah */}
@@ -345,8 +334,7 @@ const QuranPage = () => {
                     {getCurrentPageAyahs().map((ayah) => (
                       <div
                         key={ayah.number}
-                        className="border-b border-green-100 pb-4 last:border-b-0"
-                      >
+                        className="border-b border-green-100 pb-4 last:border-b-0">
                         <div className="text-right mb-2">
                           <div className="flex items-end justify-between">
                             <span className="inline-flex items-center justify-center w-6 h-6 bg-green-100 text-green-700 rounded-full text-sm font-bold flex-shrink-0">
@@ -354,11 +342,10 @@ const QuranPage = () => {
                             </span>
                             <p
                               className="text-green-900 font-medium leading-relaxed flex-1 mr-2"
-                              style={{ fontSize: fontSize, lineHeight: "2.2" }}
-                            >
+                              style={{ fontSize: fontSize, lineHeight: "2.2" }}>
                               {removeBismillah(
                                 ayah.text,
-                                ayah.numberInSurah === 1,
+                                ayah.numberInSurah === 1
                               )}
                             </p>
                           </div>
@@ -377,8 +364,7 @@ const QuranPage = () => {
                       currentPage === 1
                         ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                         : "bg-green-600 text-white hover:bg-green-700"
-                    }`}
-                  >
+                    }`}>
                     ← السابق
                   </button>
 
@@ -393,8 +379,7 @@ const QuranPage = () => {
                       currentPage === getTotalPages()
                         ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                         : "bg-green-600 text-white hover:bg-green-700"
-                    }`}
-                  >
+                    }`}>
                     التالي →
                   </button>
                 </div>

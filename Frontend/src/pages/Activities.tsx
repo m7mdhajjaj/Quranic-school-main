@@ -129,7 +129,7 @@ const Activities = () => {
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
+    >
   ) => {
     const { name, value } = e.target;
     setCurrentActivity({ ...currentActivity, [name]: value });
@@ -196,14 +196,14 @@ const Activities = () => {
         // Edit mode
         response = await axios.put(
           `${API_URL}/${currentActivity._id}`,
-          formData,
+          formData
         );
         setActivities(
           activities.map((activity) =>
             activity._id === currentActivity._id
               ? response.data.activity
-              : activity,
-          ),
+              : activity
+          )
         );
       }
 
@@ -248,8 +248,7 @@ const Activities = () => {
   return (
     <div
       className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 py-12 px-4"
-      dir="rtl"
-    >
+      dir="rtl">
       <div className="container mx-auto">
         <div className="text-center mb-16" data-aos="fade-down">
           <h1 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
@@ -264,14 +263,12 @@ const Activities = () => {
             <div className="flex flex-wrap justify-center gap-4 mt-8">
               <button
                 onClick={openAddModal}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition shadow-md flex items-center"
-              >
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition shadow-md flex items-center">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-5 w-5 mr-2"
                   viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
+                  fill="currentColor">
                   <path
                     fillRule="evenodd"
                     d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
@@ -293,16 +290,46 @@ const Activities = () => {
                   ? "bg-emerald-600 text-white"
                   : "bg-white text-slate-700 hover:bg-slate-100"
               }`}
-              onClick={() => setFilter(category)}
-            >
+              onClick={() => setFilter(category)}>
               {category}
             </button>
           ))}
         </div>
 
         {loading ? (
-          <div className="flex justify-center items-center py-16">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-600"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div
+                key={i}
+                className="bg-white rounded-xl shadow-md overflow-hidden">
+                {/* Image Skeleton */}
+                <div className="h-80 bg-gray-200 animate-pulse"></div>
+
+                {/* Content Skeleton */}
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="h-6 bg-gray-200 rounded animate-pulse w-40"></div>
+                    <div className="flex gap-2">
+                      <div className="h-5 w-5 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-5 w-5 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                  </div>
+
+                  {/* Description Skeleton */}
+                  <div className="space-y-2 mb-4">
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-full"></div>
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2"></div>
+                  </div>
+
+                  {/* Date Skeleton */}
+                  <div className="flex items-center">
+                    <div className="h-5 w-5 bg-gray-200 rounded animate-pulse ml-1"></div>
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -310,8 +337,7 @@ const Activities = () => {
               <div
                 key={activity._id}
                 className="bg-white rounded-xl shadow-md overflow-hidden transition-transform hover:-translate-y-1 hover:shadow-lg"
-                data-aos="fade-up"
-              >
+                data-aos="fade-up">
                 <div className="h-80 relative overflow-hidden">
                   <img
                     src={
@@ -338,15 +364,13 @@ const Activities = () => {
                       <div className="flex gap-2">
                         <button
                           onClick={() => openEditModal(activity)}
-                          className="text-blue-500 hover:text-blue-700"
-                        >
+                          className="text-blue-500 hover:text-blue-700">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             className="h-5 w-5"
                             fill="none"
                             viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
+                            stroke="currentColor">
                             <path
                               strokeLinecap="round"
                               strokeLinejoin="round"
@@ -357,15 +381,13 @@ const Activities = () => {
                         </button>
                         <button
                           onClick={() => deleteActivity(activity._id)}
-                          className="text-red-500 hover:text-red-700"
-                        >
+                          className="text-red-500 hover:text-red-700">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             className="h-5 w-5"
                             fill="none"
                             viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
+                            stroke="currentColor">
                             <path
                               strokeLinecap="round"
                               strokeLinejoin="round"
@@ -388,8 +410,7 @@ const Activities = () => {
                       className="h-5 w-5 ml-1"
                       fill="none"
                       viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
+                      stroke="currentColor">
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -412,8 +433,7 @@ const Activities = () => {
               className="h-16 w-16 mx-auto text-slate-300"
               fill="none"
               viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
+              stroke="currentColor">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -435,8 +455,7 @@ const Activities = () => {
         {error && (
           <div
             className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mt-4"
-            role="alert"
-          >
+            role="alert">
             <strong className="font-bold">خطأ! </strong>
             <span className="block sm:inline">{error}</span>
           </div>
@@ -447,20 +466,17 @@ const Activities = () => {
           <div className="fixed inset-0 flex items-center justify-center z-50">
             <div
               className="bg-black opacity-50 absolute inset-0"
-              onClick={closeModal}
-            ></div>
+              onClick={closeModal}></div>
             <div className="bg-white rounded-lg shadow-lg p-5 max-w-md mx-auto relative z-10 w-full">
               <button
                 onClick={closeModal}
-                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-              >
+                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-6 w-6"
                   fill="none"
                   viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
+                  stroke="currentColor">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -478,8 +494,7 @@ const Activities = () => {
                 <div>
                   <label
                     className="block text-gray-700 text-sm font-bold mb-1"
-                    htmlFor="title"
-                  >
+                    htmlFor="title">
                     عنوان النشاط
                   </label>
                   <input
@@ -497,8 +512,7 @@ const Activities = () => {
                   <div>
                     <label
                       className="block text-gray-700 text-sm font-bold mb-1"
-                      htmlFor="category"
-                    >
+                      htmlFor="category">
                       التصنيف
                     </label>
                     <select
@@ -506,8 +520,7 @@ const Activities = () => {
                       name="category"
                       value={currentActivity.category}
                       onChange={handleInputChange}
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    >
+                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                       <option value="درس">درس</option>
                       <option value="رحلة">رحلة</option>
                       <option value="مسابقة">مسابقة</option>
@@ -519,8 +532,7 @@ const Activities = () => {
                   <div>
                     <label
                       className="block text-gray-700 text-sm font-bold mb-1"
-                      htmlFor="date"
-                    >
+                      htmlFor="date">
                       تاريخ النشاط
                     </label>
                     <input
@@ -537,8 +549,7 @@ const Activities = () => {
                 <div>
                   <label
                     className="block text-gray-700 text-sm font-bold mb-1"
-                    htmlFor="description"
-                  >
+                    htmlFor="description">
                     وصف النشاط
                   </label>
                   <textarea
@@ -548,15 +559,13 @@ const Activities = () => {
                     onChange={handleInputChange}
                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                     placeholder="وصف النشاط"
-                    rows={3}
-                  ></textarea>
+                    rows={3}></textarea>
                 </div>
 
                 <div>
                   <label
                     className="block text-gray-700 text-sm font-bold mb-1"
-                    htmlFor="image"
-                  >
+                    htmlFor="image">
                     صورة النشاط
                   </label>
                   <input
@@ -588,8 +597,7 @@ const Activities = () => {
                           className="h-8 w-8 mx-auto mb-1"
                           fill="none"
                           viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
+                          stroke="currentColor">
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -606,14 +614,12 @@ const Activities = () => {
                 <div className="flex gap-3 mt-2">
                   <button
                     onClick={handleSubmit}
-                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center"
-                  >
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       className="h-5 w-5 ml-1"
                       viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
+                      fill="currentColor">
                       <path
                         fillRule="evenodd"
                         d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
@@ -624,15 +630,13 @@ const Activities = () => {
                   </button>
                   <button
                     onClick={closeModal}
-                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center"
-                  >
+                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       className="h-5 w-5 ml-1"
                       fill="none"
                       viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
+                      stroke="currentColor">
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
