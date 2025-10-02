@@ -7,6 +7,7 @@
  */
 
 import { useState, useEffect } from "react";
+import { TestSkeleton } from "../components/LoadingSkeleton";
 
 interface Surah {
   number: number;
@@ -49,15 +50,21 @@ const Test = () => {
   const [questionsGenerated, setQuestionsGenerated] = useState(false); // حالة اكتمال تحضير الأسئلة
   const [hasAnswered, setHasAnswered] = useState(false); // هل أجاب المستخدم على السؤال
 
+  // حالة تحميل السور
+  const [surahsLoading, setSurahsLoading] = useState(true);
+
   // جلب قائمة السور
   useEffect(() => {
     const fetchSurahs = async () => {
+      setSurahsLoading(true);
       try {
         const response = await fetch("https://api.alquran.cloud/v1/surah");
         const data = await response.json();
         setSurahs(data.data);
       } catch (error) {
         console.error("خطأ في جلب السور:", error);
+      } finally {
+        setSurahsLoading(false);
       }
     };
 
@@ -763,14 +770,7 @@ const Test = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-lg text-gray-600">جاري تحضير الاختبار...</p>
-        </div>
-      </div>
-    );
+    return <TestSkeleton />;
   }
 
   if (showResult) {
@@ -1105,6 +1105,11 @@ const Test = () => {
         </div>
       </div>
     );
+  }
+
+  // عرض سكلتون عند تحميل السور
+  if (surahsLoading) {
+    return <TestSkeleton />;
   }
 
   return (

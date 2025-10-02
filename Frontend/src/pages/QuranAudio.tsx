@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { QuranAudioSkeleton } from "../components/LoadingSkeleton";
 
 interface Surah {
   number: number;
@@ -270,7 +271,9 @@ const QuranAudio: React.FC = () => {
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">
             اختر السورة
           </h2>
-          {loading ? (
+          {loading && surahs.length === 0 ? (
+            <QuranAudioSkeleton />
+          ) : loading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto"></div>
               <p className="text-gray-600 mt-4">جاري التحميل...</p>

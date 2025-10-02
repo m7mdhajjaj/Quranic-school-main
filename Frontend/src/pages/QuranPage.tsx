@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { QuranPageSkeleton, QuranReadingSkeleton } from "../components/LoadingSkeleton";
 
 interface Surah {
   number: number;
@@ -209,16 +210,7 @@ const QuranPage = () => {
   };
 
   if (surahsLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-green-700 font-medium">
-            جاري تحميل قائمة السور...
-          </p>
-        </div>
-      </div>
-    );
+    return <QuranPageSkeleton />;
   }
 
   return (
@@ -322,10 +314,7 @@ const QuranPage = () => {
             </div>
 
             {loading ? (
-              <div className="bg-white rounded-lg shadow-md p-8 text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-                <p className="text-green-700">جاري تحميل السورة...</p>
-              </div>
+              <QuranReadingSkeleton />
             ) : selectedSurah ? (
               <div className="space-y-6">
                 {/* Bismillah */}

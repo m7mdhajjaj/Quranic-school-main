@@ -4,7 +4,8 @@ import axios from "axios";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from "../hooks/useAuth";
+import { NewsSkeleton } from "../components/LoadingSkeleton";
 
 const API_URL = "http://localhost:5005/api";
 
@@ -36,9 +37,10 @@ const News = () => {
   const [editingNewsId, setEditingNewsId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Check if user is teacher or admin
-  const isTeacherOrAdmin = currentUser?.role === "teacher" || currentUser?.role === "admin";
+  const isTeacherOrAdmin =
+    currentUser?.role === "teacher" || currentUser?.role === "admin";
   const [newNews, setNewNews] = useState<Partial<INews>>({
     title: "",
     content: "",
@@ -147,7 +149,7 @@ const News = () => {
   };
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setNewNews((prev) => ({
@@ -181,7 +183,7 @@ const News = () => {
       formData.append("content", newNews.content || "محتوى الخبر");
       formData.append(
         "date",
-        newNews.date || new Date().toLocaleDateString("ar-SA"),
+        newNews.date || new Date().toLocaleDateString("ar-SA")
       );
 
       if (selectedFile) {
@@ -189,7 +191,7 @@ const News = () => {
           "Appending file to form data:",
           selectedFile.name,
           selectedFile.type,
-          selectedFile.size,
+          selectedFile.size
         );
         formData.append("image", selectedFile);
 
@@ -212,15 +214,15 @@ const News = () => {
             headers: {
               "Content-Type": "multipart/form-data",
             },
-          },
+          }
         );
 
         if (response.data) {
           // Update local state with the updated news
           setNewsItems(
             newsItems.map((item) =>
-              item._id === editingNewsId ? response.data : item,
-            ),
+              item._id === editingNewsId ? response.data : item
+            )
           );
         }
       } else {
@@ -279,8 +281,7 @@ const News = () => {
         <div className="flex justify-between items-center mb-8">
           <h1
             className="text-3xl md:text-4xl font-bold text-emerald-800"
-            data-aos="fade-down"
-          >
+            data-aos="fade-down">
             آخر الأخبار والفعاليات
           </h1>
 
@@ -288,15 +289,13 @@ const News = () => {
             <button
               onClick={handleOpenModal}
               className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition flex items-center gap-2 shadow-md"
-              data-aos="fade-left"
-            >
+              data-aos="fade-left">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-5 w-5"
                 fill="none"
                 viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
+                stroke="currentColor">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -312,166 +311,157 @@ const News = () => {
         <p
           className="text-lg mb-12 max-w-3xl text-gray-600"
           data-aos="fade-up"
-          data-aos-delay="100"
-        >
+          data-aos-delay="100">
           تابع أحدث أخبار وفعاليات مدرسة المهاجرين لتعليم القرآن الكريم، واطلع
           على الأنشطة والمسابقات القادمة
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {isLoading && newsItems.length === 0 ? (
-            <div className="col-span-2 flex flex-col items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-emerald-600 mb-4"></div>
-              <p className="text-emerald-800 text-lg">جاري تحميل الأخبار...</p>
-            </div>
-          ) : error && newsItems.length === 0 ? (
-            <div className="col-span-2 bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
-              <p className="text-center">{error}</p>
-              <button
-                onClick={fetchNews}
-                className="mx-auto mt-2 block px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
-              >
-                إعادة المحاولة
-              </button>
-            </div>
-          ) : newsItems.length === 0 ? (
-            <div className="col-span-2 bg-yellow-50 border border-yellow-200 text-yellow-700 p-4 rounded-lg">
-              <p className="text-center">لا توجد أخبار متاحة حالياً</p>
-            </div>
-          ) : (
-            newsItems.map((item, index) => (
-              <div
-                key={item._id}
-                className="bg-white rounded-lg shadow-lg overflow-hidden transition-transform hover:shadow-xl hover:-translate-y-1"
-                data-aos="fade-up"
-                data-aos-delay={index * 100}
-              >
-                <img
-                  src={item.image}
-                  alt={item.title}
-                  className="w-full h-64 object-contain bg-gray-50"
-                  onError={(e) => {
-                    console.log("Error loading image:", item.image);
-                    // Try to modify the URL if there's an issue
-                    const imgElement = e.target as HTMLImageElement;
-                    const originalSrc = item.image;
+        {isLoading && newsItems.length === 0 ? (
+          <NewsSkeleton />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {error && newsItems.length === 0 ? (
+              <div className="col-span-2 bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
+                <p className="text-center">{error}</p>
+                <button
+                  onClick={fetchNews}
+                  className="mx-auto mt-2 block px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition">
+                  إعادة المحاولة
+                </button>
+              </div>
+            ) : newsItems.length === 0 ? (
+              <div className="col-span-2 bg-yellow-50 border border-yellow-200 text-yellow-700 p-4 rounded-lg">
+                <p className="text-center">لا توجد أخبار متاحة حالياً</p>
+              </div>
+            ) : (
+              newsItems.map((item, index) => (
+                <div
+                  key={item._id}
+                  className="bg-white rounded-lg shadow-lg overflow-hidden transition-transform hover:shadow-xl hover:-translate-y-1"
+                  data-aos="fade-up"
+                  data-aos-delay={index * 100}>
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    className="w-full h-64 object-contain bg-gray-50"
+                    onError={(e) => {
+                      console.log("Error loading image:", item.image);
+                      // Try to modify the URL if there's an issue
+                      const imgElement = e.target as HTMLImageElement;
+                      const originalSrc = item.image;
 
-                    // If we're already using a placeholder, don't try again
-                    if (originalSrc.includes("placehold.co")) {
-                      return;
-                    }
-
-                    // Try different URL patterns
-                    if (originalSrc.includes("uploads/news/")) {
-                      // Try removing /api/ if present
-                      if (originalSrc.includes("/api/uploads/")) {
-                        imgElement.src = originalSrc.replace(
-                          "/api/uploads/",
-                          "/uploads/",
-                        );
-                        console.log("Trying fallback 1:", imgElement.src);
+                      // If we're already using a placeholder, don't try again
+                      if (originalSrc.includes("placehold.co")) {
                         return;
                       }
 
-                      // Try adding the full domain if it's a relative URL
-                      if (originalSrc.startsWith("uploads/")) {
-                        imgElement.src = `http://localhost:5005/${originalSrc}`;
-                        console.log("Trying fallback 2:", imgElement.src);
-                        return;
+                      // Try different URL patterns
+                      if (originalSrc.includes("uploads/news/")) {
+                        // Try removing /api/ if present
+                        if (originalSrc.includes("/api/uploads/")) {
+                          imgElement.src = originalSrc.replace(
+                            "/api/uploads/",
+                            "/uploads/"
+                          );
+                          console.log("Trying fallback 1:", imgElement.src);
+                          return;
+                        }
+
+                        // Try adding the full domain if it's a relative URL
+                        if (originalSrc.startsWith("uploads/")) {
+                          imgElement.src = `http://localhost:5005/${originalSrc}`;
+                          console.log("Trying fallback 2:", imgElement.src);
+                          return;
+                        }
                       }
-                    }
 
-                    // If all else fails, use a placeholder
-                    imgElement.src =
-                      "https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+الخبر";
-                    console.log("Using placeholder");
-                  }}
-                />
-                <div className="p-6">
-                  <div className="flex justify-between items-center mb-3">
-                    <h2 className="text-xl font-bold text-emerald-700">
-                      {item.title}
-                    </h2>
-                    <span className="text-sm bg-emerald-50 text-emerald-800 px-3 py-1 rounded-full">
-                      {item.date}
-                    </span>
-                  </div>
-                  <p className="text-gray-600">{item.content}</p>{" "}
-                  <div className="flex flex-wrap justify-between items-center mt-4 gap-2">
-                    <button className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition flex items-center gap-1">
-                      <span>اقرأ المزيد</span>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M13 7l5 5m0 0l-5 5m5-5H6"
-                        />
-                      </svg>
-                    </button>
+                      // If all else fails, use a placeholder
+                      imgElement.src =
+                        "https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+الخبر";
+                      console.log("Using placeholder");
+                    }}
+                  />
+                  <div className="p-6">
+                    <div className="flex justify-between items-center mb-3">
+                      <h2 className="text-xl font-bold text-emerald-700">
+                        {item.title}
+                      </h2>
+                      <span className="text-sm bg-emerald-50 text-emerald-800 px-3 py-1 rounded-full">
+                        {item.date}
+                      </span>
+                    </div>
+                    <p className="text-gray-600">{item.content}</p>{" "}
+                    <div className="flex flex-wrap justify-between items-center mt-4 gap-2">
+                      <button className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition flex items-center gap-1">
+                        <span>اقرأ المزيد</span>
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-5 w-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 7l5 5m0 0l-5 5m5-5H6"
+                          />
+                        </svg>
+                      </button>
 
-                    {isTeacherOrAdmin && (
-                      <div className="flex gap-2">
-                        <button
-                          className="px-3 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition flex items-center gap-1"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditNews(item);
-                          }}
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                            />
-                          </svg>
-                          <span>تعديل</span>
-                        </button>
-                        <button
-                          className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-1"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteNews(item._id);
-                          }}
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
-                          </svg>
-                          <span>حذف</span>
-                        </button>
-                      </div>
-                    )}
+                      {isTeacherOrAdmin && (
+                        <div className="flex gap-2">
+                          <button
+                            className="px-3 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition flex items-center gap-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditNews(item);
+                            }}>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-5 w-5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor">
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                              />
+                            </svg>
+                            <span>تعديل</span>
+                          </button>
+                          <button
+                            className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteNews(item._id);
+                            }}>
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-5 w-5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor">
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                            <span>حذف</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
-          )}
-        </div>
+              ))
+            )}
+          </div>
+        )}
       </section>
       {/* 
       <section
@@ -502,13 +492,11 @@ const News = () => {
       {isModalOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-          onClick={handleCloseModal}
-        >
+          onClick={handleCloseModal}>
           <div
             className="bg-white rounded-lg p-6 w-full max-w-lg"
             onClick={(e) => e.stopPropagation()}
-            data-aos="zoom-in"
-          >
+            data-aos="zoom-in">
             <h3 className="text-2xl font-bold text-emerald-800 mb-6 border-b pb-3">
               {isEditMode ? "تعديل الخبر" : "إضافة خبر جديد"}
             </h3>
@@ -517,8 +505,7 @@ const News = () => {
               <div className="mb-4">
                 <label
                   htmlFor="title"
-                  className="block mb-1 font-medium text-gray-700"
-                >
+                  className="block mb-1 font-medium text-gray-700">
                   عنوان الخبر
                 </label>
                 <input
@@ -536,8 +523,7 @@ const News = () => {
               <div className="mb-4">
                 <label
                   htmlFor="date"
-                  className="block mb-1 font-medium text-gray-700"
-                >
+                  className="block mb-1 font-medium text-gray-700">
                   تاريخ الخبر
                 </label>
                 <input
@@ -554,8 +540,7 @@ const News = () => {
               <div className="mb-4">
                 <label
                   htmlFor="image"
-                  className="block mb-1 font-medium text-gray-700"
-                >
+                  className="block mb-1 font-medium text-gray-700">
                   صورة الخبر
                 </label>
                 <div className="flex flex-col gap-4">
@@ -583,8 +568,7 @@ const News = () => {
               <div className="mb-4">
                 <label
                   htmlFor="content"
-                  className="block mb-1 font-medium text-gray-700"
-                >
+                  className="block mb-1 font-medium text-gray-700">
                   محتوى الخبر
                 </label>
                 <textarea
@@ -603,15 +587,13 @@ const News = () => {
                   type="button"
                   onClick={handleCloseModal}
                   className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition"
-                  disabled={isLoading}
-                >
+                  disabled={isLoading}>
                   إلغاء
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition flex items-center gap-2"
-                  disabled={isLoading}
-                >
+                  disabled={isLoading}>
                   {isLoading ? (
                     <>
                       <span className="animate-spin h-4 w-4 border-2 border-white rounded-full border-t-transparent"></span>

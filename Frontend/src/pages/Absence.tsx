@@ -9,6 +9,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../Api/api";
+import { AbsenceSkeleton } from "../components/LoadingSkeleton";
 
 // ================== الإعدادات العامة ==================
 // API_URL is now handled by the api instance
@@ -167,7 +168,7 @@ const Absence = () => {
       setError(null);
 
       // 1) جلب جميع الطلاب
-      const studentsRes = await api.get('/students');
+      const studentsRes = await api.get("/students");
       const rawStudents: Student[] = Array.isArray(studentsRes.data)
         ? studentsRes.data
         : [];
@@ -351,7 +352,7 @@ const Absence = () => {
         isPresent: s.isPresent,
       }));
 
-      await api.post('/attendance', {
+      await api.post("/attendance", {
         date,
         records: payload,
       });
@@ -448,9 +449,7 @@ const Absence = () => {
 
         {/* حالة التحميل/الخطأ */}
         {loading ? (
-          <div className="bg-white rounded-xl shadow-md p-8 text-center">
-            <p className="text-gray-500">جاري تحميل البيانات...</p>
-          </div>
+          <AbsenceSkeleton />
         ) : error ? (
           <div className="bg-white rounded-xl shadow-md p-8 text-center">
             <p className="text-red-500">{error}</p>

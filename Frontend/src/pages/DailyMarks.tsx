@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { DailyMarksSkeleton } from "../components/LoadingSkeleton";
 
 // Backend API URL
 const API_URL = "http://localhost:5005/api";
@@ -681,9 +682,7 @@ const DailyMarks = () => {
         </div>
 
         {loading ? (
-          <div className="bg-white rounded-xl shadow-md p-8 text-center">
-            <p className="text-gray-500">جاري تحميل البيانات...</p>
-          </div>
+          <DailyMarksSkeleton />
         ) : (
           <>
             {/* Teacher View */}
