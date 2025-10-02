@@ -37,6 +37,9 @@ import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import ChangePass from "./pages/ChangePass";
 import NotFound from "./pages/NotFound";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+import Contact from "./pages/Contact";
 
 // ============================================================================
 // Page Components - Academic
@@ -206,6 +209,9 @@ const TeacherRoutes: React.FC = () => {
 
           {/* ====== Special Pages ====== */}
           <Route path="/soon" element={<Soon />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/contact" element={<Contact />} />
 
           {/* ====== Protected & Fallback Routes ====== */}
           {/* Block access to admin routes */}

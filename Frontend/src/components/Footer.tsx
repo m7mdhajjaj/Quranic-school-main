@@ -64,7 +64,9 @@ const Footer = () => {
             </p>
             <div className="flex gap-3">
               <a
-                href="#"
+                href="https://www.facebook.com/profile.php?id=61564605862440"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-10 h-10 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110 hover:rotate-12"
                 aria-label="Facebook">
                 <FaFacebook className="w-5 h-5" />
@@ -171,11 +173,11 @@ const Footer = () => {
               <div className="flex items-center gap-2">
                 <span>جميع الحقوق محفوظة © {currentYear}</span>
                 <span className="hidden md:inline">•</span>
-                <span className="flex items-center gap-1">
+                {/* <span className="flex items-center gap-1">
                   صُنع بـ{" "}
                   <FaHeart className="w-4 h-4 text-red-400 animate-pulse" /> في
                   فلسطين
-                </span>
+                </span> */}
               </div>
               <div className="flex items-center gap-2 mt-1 md:mt-0 md:mr-4">
                 <FaCalendarAlt className="w-4 h-4 text-amber-400" />
