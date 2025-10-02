@@ -9,7 +9,7 @@ import api from '../../Api/api';
 import { getAllTeachers } from '../../Api/teacherApi';
 import type { Teacher } from '../../Api/teacherApi';
 import type { TeacherFormData } from '../../Validation/teacherValidation';
-import AddTeacherForm from '../../components/Forms/AddTeacherForm';
+import EnhancedTeacherForm from '../../components/Forms/AddTeacherForm';
 import Swal from 'sweetalert2';
 import '../../styles/sweetalert.css';
 
@@ -449,12 +449,7 @@ const TeachersManagement: React.FC = () => {
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900">
-                    إدارة المعلمين 
-                    {!isLoading && (
-                      <span className="text-lg font-medium text-blue-600 mr-2">
-                        ({stats.total} معلم)
-                      </span>
-                    )}
+                    إدارة المعلمين
                   </h1>
                   <p className="text-gray-600 text-sm mt-1">نظام متكامل لإدارة بيانات المعلمين</p>
                 </div>
@@ -1013,15 +1008,12 @@ const TeachersManagement: React.FC = () => {
 
               {/* Pagination Skeleton */}
               <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                <div className="flex justify-between items-center">
+                <div className="flex items-center justify-between">
                   <div className="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
                   <div className="flex space-x-2 rtl:space-x-reverse">
-                    {Array.from({ length: 5 }, (_, index) => (
-                      <div 
-                        key={index}
-                        className="w-8 h-8 bg-gray-200 rounded animate-pulse"
-                      ></div>
-                    ))}
+                    <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
                   </div>
                 </div>
               </div>
@@ -1241,8 +1233,8 @@ const TeachersManagement: React.FC = () => {
           </div>
         )}
 
-        {/* Enhanced Pagination */}
-        {!isLoading && filteredAndSortedTeachers.length > teachersPerPage && (
+        {/* Enhanced Pagination - Always show if teachers exist */}
+        {!isLoading && filteredAndSortedTeachers.length > 0 && totalPages >= 1 && (
           <div className="bg-white rounded-2xl shadow-xl px-6 py-4 mt-6" dir="rtl">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="text-sm text-gray-700">
@@ -1340,7 +1332,7 @@ const TeachersManagement: React.FC = () => {
 
       {/* Teacher Form Modal */}
       {isFormVisible && (
-        <AddTeacherForm
+        <EnhancedTeacherForm
           onClose={() => {
             setIsFormVisible(false);
             setIsEditMode(false);

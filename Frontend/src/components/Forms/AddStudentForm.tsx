@@ -11,6 +11,26 @@ import { getAllGroups, type Group } from "../../Api/groupApi";
 
 // Using centralized validation from studentValidation.ts
 
+// دالة لتحويل التاريخ من الخادم إلى تنسيق input[type="date"]
+const formatDateForInput = (dateValue?: string | Date): string => {
+  if (!dateValue) return "";
+  
+  try {
+    const date = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
+    if (isNaN(date.getTime())) return "";
+    
+    // تحويل التاريخ إلى تنسيق YYYY-MM-DD
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}`;
+  } catch (error) {
+    console.error('خطأ في تحويل التاريخ:', error);
+    return "";
+  }
+};
+
 const normalizeGender = (value: string) => {
   const normalized = value.trim();
   if (normalized === "ذكر" || normalized === "male") return "ذكر";
@@ -44,7 +64,7 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
     motherName: student?.motherName || "",
     lastName: student?.lastName || "",
     idNumber: student?.idNumber || "",
-    birthDate: student?.birthDate ? (typeof student.birthDate === 'string' ? student.birthDate : student.birthDate.toISOString().split('T')[0]) : "",
+    birthDate: formatDateForInput(student?.birthDate),
     gender: student?.gender || "",
     residence: student?.residence || "",
     teacher: student?.teacher || "",

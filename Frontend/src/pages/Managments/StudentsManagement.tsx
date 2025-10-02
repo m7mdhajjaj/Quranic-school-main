@@ -1100,7 +1100,7 @@ const StudentsManagement: React.FC = () => {
         )}
 
         {/* Enhanced Pagination */}
-        {!isLoading && filteredAndSortedStudents.length > studentsPerPage && (
+        {!isLoading && filteredAndSortedStudents.length > 0 && (
           <div className="bg-white rounded-2xl shadow-xl px-6 py-4 mt-6" dir="rtl">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="text-sm text-gray-700">

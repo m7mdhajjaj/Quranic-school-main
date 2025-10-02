@@ -80,7 +80,7 @@ import TeachersManagement from "./pages/Managments/TeachersManagement";
 // ============================================================================
 // Other Components
 // ============================================================================
-import Soon from "./components/Soon";
+// import Soon from "./components/Soon";
 
 // ============================================================================
 // Route Configurations

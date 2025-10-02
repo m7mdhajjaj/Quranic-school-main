@@ -1,43 +1,90 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
+import { AlertCircle, X, Loader2, Check, User, Phone, Calendar, MapPin, Mail, CreditCard, ChevronRight, ChevronLeft } from "lucide-react";
 import { 
   validateTeacherWithYup, 
-  validateTeacherFieldWithYup, 
-  formatBirthDateForBackend 
+  validateTeacherFieldWithYup
 } from "../../Validation/teacherValidation";
 import type { TeacherFormData } from "../../Validation/teacherValidation";
 import { createTeacher, updateTeacher, type Teacher } from "../../Api/teacherApi";
 
-interface AddTeacherFormProps {
+// دالة لتحويل التاريخ من الخادم إلى تنسيق input[type="date"]
+const formatDateForInput = (dateValue?: string | Date): string => {
+  if (!dateValue) return "";
+  
+  try {
+    const date = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
+    if (isNaN(date.getTime())) return "";
+    
+    // تحويل التاريخ إلى تنسيق YYYY-MM-DD
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}`;
+  } catch (error) {
+    console.error('خطأ في تحويل التاريخ:', error);
+    return "";
+  }
+};
+
+const calculateAge = (birthDate: string) => {
+  const today = new Date();
+  const birth = new Date(birthDate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
+};
+
+interface Props {
   onClose: () => void;
   onSuccess: (teacherData?: Teacher | TeacherFormData) => void;
   teacher?: Teacher;
 }
 
-const AddTeacherForm: React.FC<AddTeacherFormProps> = ({
-  onClose,
-  onSuccess,
-  teacher,
-}) => {
+const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) => {
+  const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     firstName: teacher?.firstName || "",
-    lastName: teacher?.lastName || "",
     fatherName: teacher?.fatherName || "",
     grandFatherName: teacher?.grandFatherName || "",
     motherName: teacher?.motherName || "",
+    lastName: teacher?.lastName || "",
     idNumber: teacher?.idNumber || "",
-    email: teacher?.email || "",
-    phoneNumber: teacher?.phoneNumber || "",
-    birthDate: teacher?.birthDate || "",
-    age: teacher?.age?.toString() || "",
+    birthDate: formatDateForInput(teacher?.birthDate),
     gender: teacher?.gender || "",
     residence: teacher?.residence || "",
+    email: teacher?.email || "",
+    phoneNumber: teacher?.phoneNumber || "",
     groupName: teacher?.groupName || "",
     password: "",
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  const calculatedAge = useMemo(() => {
+    return formData.birthDate ? calculateAge(formData.birthDate) : null;
+  }, [formData.birthDate]);
+
+  const isStep1Valid = useMemo(() => {
+    const step1Fields = [
+      'firstName', 'fatherName', 'grandFatherName', 'motherName', 
+      'lastName', 'idNumber', 'birthDate', 'gender', 'residence'
+    ];
+    return step1Fields.every(field => formData[field as keyof typeof formData]?.toString().trim());
+  }, [formData]);
+
+  const isStep2Valid = useMemo(() => {
+    const step2Fields = ['email', 'phoneNumber'];
+    const requiredValid = step2Fields.every(field => formData[field as keyof typeof formData]?.toString().trim());
+    const hasNoErrors = Object.keys(errors).length === 0;
+    return requiredValid && hasNoErrors;
+  }, [formData, errors]);
 
   const handleChange = useCallback((
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -74,312 +121,557 @@ const AddTeacherForm: React.FC<AddTeacherFormProps> = ({
     }
   }, [formData, teacher]);
 
-  const getFieldError = (fieldName: string): string | null => {
-    return touchedFields.has(fieldName) ? errors[fieldName] || null : null;
+  const getFieldError = (fieldName: string): string | undefined => {
+    return touchedFields.has(fieldName) ? errors[fieldName] : undefined;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleNextStep = () => {
+    if (!isStep1Valid) {
+      const step1Fields = [
+        'firstName', 'fatherName', 'grandFatherName', 'motherName', 
+        'lastName', 'idNumber', 'birthDate', 'gender', 'residence'
+      ];
+      setTouchedFields(prev => new Set([...prev, ...step1Fields]));
+    } else {
+      setCurrentStep(2);
+    }
+  };
+
+  const handlePrevStep = () => {
+    setCurrentStep(1);
+  };
+
+  const handleSubmit = async () => {
+    if (!isStep2Valid) {
+      const step2Fields = ['email', 'phoneNumber'];
+      setTouchedFields(prev => new Set([...prev, ...step2Fields]));
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      // Prepare form data for validation
+      // Validate form data first
       const dataToValidate = {
         ...formData,
-        age: formData.age ? parseInt(formData.age) : null,
-        // Format birthDate for backend if provided
-        birthDate: formData.birthDate ? formatBirthDateForBackend(formData.birthDate) : null,
+        age: calculatedAge,
+        password: !teacher ? formData.idNumber : undefined,
       };
 
-      // Validate all fields
-      const validationResult = await validateTeacherWithYup(
-        dataToValidate,
-        !teacher // isNewTeacher
-      );
+      const result = await validateTeacherWithYup(dataToValidate, !teacher);
 
-      if (!validationResult.isValid) {
-        setErrors(validationResult.errors);
-        // Mark all fields with errors as touched
-        setTouchedFields(new Set(Object.keys(validationResult.errors)));
+      if (!result.isValid) {
+        setErrors(result.errors);
+        setTouchedFields(new Set(Object.keys(formData)));
         setIsSubmitting(false);
         return;
       }
 
-      // If validation passes, prepare final data and call API
-      const teacherData: TeacherFormData = validationResult.data!;
-      
-      let result;
-      if (teacher) {
+      // If validation passes, call API
+      let apiResult;
+      if (teacher && teacher._id) {
         // Update existing teacher
-        result = await updateTeacher(teacher._id, teacherData);
+        apiResult = await updateTeacher(teacher._id, result.data!);
       } else {
         // Create new teacher
-        result = await createTeacher(teacherData);
+        apiResult = await createTeacher(result.data!);
       }
 
-      if (!result.success) {
-        setErrors({ general: result.message || 'حدث خطأ أثناء حفظ البيانات' });
+      if (!apiResult.success) {
+        setErrors({ general: apiResult.message || 'حدث خطأ أثناء حفظ البيانات' });
         setIsSubmitting(false);
         return;
       }
+
+      setErrors({});
+      setShowSuccess(true);
       
-      console.log("Teacher saved successfully:", result.data);
-      onSuccess(result.data);
-      onClose();
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      await onSuccess(apiResult.data!);
+      setTimeout(onClose, 300);
+      
     } catch (error) {
-      console.error('Validation error:', error);
-      setErrors({ general: 'حدث خطأ في التحقق من البيانات' });
-    } finally {
+      console.error("Error saving teacher:", error);
+      setErrors({ general: "حدث خطأ أثناء حفظ البيانات" });
       setIsSubmitting(false);
     }
   };
 
+  const steps = [
+    { number: 1, title: "المعلومات الشخصية", icon: User },
+    { number: 2, title: "التواصل والإعدادات", icon: Phone }
+  ];
+
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full p-8 mx-4">
-        <div className="flex justify-between items-center mb-6 border-b pb-3">
-          <h2 className="text-2xl font-bold text-gray-900">
-            {teacher ? "تعديل بيانات المعلم" : "إضافة معلم جديد"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl font-bold">
-            ×
-          </button>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fadeIn" dir="rtl">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        
+        <div className="p-6 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <User className="text-blue-600" size={28} />
+                {teacher ? "تعديل بيانات المعلم" : "إضافة معلم جديد"}
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">
+                {teacher ? "قم بتحديث معلومات المعلم" : "أدخل بيانات المعلم الكاملة"}
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-2 transition-all duration-200"
+              aria-label="إغلاق">
+              <X size={24} />
+            </button>
+          </div>
+
+          <div className="flex items-center justify-center gap-2">
+            {steps.map((step, index) => (
+              <React.Fragment key={step.number}>
+                <div className="flex items-center gap-2">
+                  <div className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-300 ${
+                    currentStep === step.number
+                      ? 'bg-blue-600 text-white shadow-lg'
+                      : currentStep > step.number
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-gray-100 text-gray-500'
+                  }`}>
+                    <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
+                      currentStep === step.number
+                        ? 'bg-white text-blue-600'
+                        : currentStep > step.number
+                        ? 'bg-green-600 text-white'
+                        : 'bg-gray-300 text-gray-600'
+                    }`}>
+                      {currentStep > step.number ? (
+                        <Check size={18} />
+                      ) : (
+                        <step.icon size={18} />
+                      )}
+                    </div>
+                    <span className="font-semibold text-sm hidden sm:block">{step.title}</span>
+                  </div>
+                </div>
+                {index < steps.length - 1 && (
+                  <ChevronLeft className={`${
+                    currentStep > step.number ? 'text-green-600' : 'text-gray-300'
+                  }`} size={20} />
+                )}
+              </React.Fragment>
+            ))}
+          </div>
         </div>
 
-        {errors.general && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-            {errors.general}
+        {showSuccess && (
+          <div className="mx-6 mt-4 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg flex items-center gap-2 animate-fadeIn">
+            <Check className="text-green-600" size={20} />
+            <span className="font-medium">تم حفظ البيانات بنجاح!</span>
           </div>
         )}
 
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-6 overflow-y-auto max-h-[70vh] pr-2">
-          {/* المعلومات الشخصية */}
-          <Section title="المعلومات الشخصية">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <InputWithValidation
-                label="الاسم الأول *"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={getFieldError("firstName")}
-                required
-              />
-              <InputWithValidation
-                label="اسم العائلة *"
-                name="lastName"
-                value={formData.lastName}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={getFieldError("lastName")}
-                required
-              />
-              <InputWithValidation
-                label="اسم الأب"
-                name="fatherName"
-                value={formData.fatherName}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={getFieldError("fatherName")}
-              />
-              <InputWithValidation
-                label="اسم الجد"
-                name="grandFatherName"
-                value={formData.grandFatherName}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={getFieldError("grandFatherName")}
-              />
-              <InputWithValidation
-                label="اسم الأم"
-                name="motherName"
-                value={formData.motherName}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={getFieldError("motherName")}
-              />
-              <InputWithValidation
-                label="رقم الهوية"
-                name="idNumber"
-                value={formData.idNumber}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={getFieldError("idNumber")}
-                placeholder="9 أرقام"
-              />
-              <InputWithValidation
-                label="تاريخ الميلاد *"
-                type="date"
-                name="birthDate"
-                value={formData.birthDate}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={getFieldError("birthDate")}
-                required
-              />
-              <InputWithValidation
-                label="العمر"
-                type="number"
-                name="age"
-                value={formData.age}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={getFieldError("age")}
-                placeholder="يتم حسابه تلقائياً"
-              />
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  الجنس
-                </label>
-                <select
-                  name="gender"
-                  value={formData.gender}
-                  onChange={handleChange}
-                  onBlur={() => handleBlur("gender")}
-                  title="اختر الجنس"
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                    getFieldError("gender")
-                      ? 'border-red-300 focus:ring-red-500 bg-red-50'
-                      : 'border-gray-300 focus:ring-blue-500'
-                  }`}>
-                  <option value="">اختر الجنس</option>
-                  <option value="ذكر">ذكر</option>
-                  <option value="أنثى">أنثى</option>
-                </select>
-                {getFieldError("gender") && (
-                  <div className="text-red-600 text-xs mt-1">
-                    {getFieldError("gender")}
+        {Object.keys(errors).length > 0 && !showSuccess && (
+          <div className="mx-6 mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg animate-fadeIn">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertCircle size={20} />
+              <span className="font-semibold">يرجى إصلاح الأخطاء التالية:</span>
+            </div>
+            <ul className="list-disc list-inside space-y-1 text-sm ml-6">
+              {Object.entries(errors).map(([field, message]) => (
+                <li key={field}>{message}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div className="flex-1 overflow-y-auto p-6">
+          {currentStep === 1 && (
+            <div className="space-y-6 animate-fadeIn">
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-6 rounded-xl border border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-5 flex items-center gap-2">
+                  <div className="w-1 h-6 bg-blue-500 rounded-full"></div>
+                  <User className="text-blue-600" size={20} />
+                  الاسم الكامل
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                      <User size={14} className="text-gray-500" />
+                      الاسم الأول <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      name="firstName"
+                      type="text"
+                      value={formData.firstName || ""}
+                      onChange={handleChange}
+                      onBlur={() => handleBlur("firstName")}
+                      placeholder="أدخل الاسم الأول"
+                      className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
+                        getFieldError("firstName")
+                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
+                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                      }`}
+                    />
+                    {getFieldError("firstName") && (
+                      <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
+                        <AlertCircle size={12} />
+                        <span>{getFieldError("firstName")}</span>
+                      </div>
+                    )}
                   </div>
-                )}
+                  <div className="space-y-1">
+                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                      <User size={14} className="text-gray-500" />
+                      اسم الأب <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      name="fatherName"
+                      type="text"
+                      value={formData.fatherName || ""}
+                      onChange={handleChange}
+                      onBlur={() => handleBlur("fatherName")}
+                      placeholder="أدخل اسم الأب"
+                      className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
+                        getFieldError("fatherName")
+                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
+                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                      }`}
+                    />
+                    {getFieldError("fatherName") && (
+                      <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
+                        <AlertCircle size={12} />
+                        <span>{getFieldError("fatherName")}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                      <User size={14} className="text-gray-500" />
+                      اسم الجد <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      name="grandFatherName"
+                      type="text"
+                      value={formData.grandFatherName || ""}
+                      onChange={handleChange}
+                      onBlur={() => handleBlur("grandFatherName")}
+                      placeholder="أدخل اسم الجد"
+                      className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
+                        getFieldError("grandFatherName")
+                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
+                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                      }`}
+                    />
+                    {getFieldError("grandFatherName") && (
+                      <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
+                        <AlertCircle size={12} />
+                        <span>{getFieldError("grandFatherName")}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                      <User size={14} className="text-gray-500" />
+                      اسم الأم <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      name="motherName"
+                      type="text"
+                      value={formData.motherName || ""}
+                      onChange={handleChange}
+                      onBlur={() => handleBlur("motherName")}
+                      placeholder="أدخل اسم الأم"
+                      className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
+                        getFieldError("motherName")
+                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
+                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                      }`}
+                    />
+                    {getFieldError("motherName") && (
+                      <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
+                        <AlertCircle size={12} />
+                        <span>{getFieldError("motherName")}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                      <User size={14} className="text-gray-500" />
+                      اسم العائلة <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      name="lastName"
+                      type="text"
+                      value={formData.lastName || ""}
+                      onChange={handleChange}
+                      onBlur={() => handleBlur("lastName")}
+                      placeholder="أدخل اسم العائلة"
+                      className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
+                        getFieldError("lastName")
+                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
+                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                      }`}
+                    />
+                    {getFieldError("lastName") && (
+                      <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
+                        <AlertCircle size={12} />
+                        <span>{getFieldError("lastName")}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-              <InputWithValidation
-                label="مكان السكن"
-                name="residence"
-                value={formData.residence}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={getFieldError("residence")}
-              />
-            </div>
-          </Section>
 
-          {/* معلومات التواصل */}
-          <Section title="معلومات التواصل">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <InputWithValidation
-                label="البريد الإلكتروني *"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={getFieldError("email")}
-                type="email"
-                required
-                placeholder="example@email.com"
-              />
-              <InputWithValidation
-                label="رقم الهاتف *"
-                name="phoneNumber"
-                value={formData.phoneNumber}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={getFieldError("phoneNumber")}
-                required
-                placeholder="05xxxxxxxx"
-              />
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-5 flex items-center gap-2">
+                  <div className="w-1 h-6 bg-blue-500 rounded-full"></div>
+                  <CreditCard className="text-blue-600" size={20} />
+                  المعلومات الشخصية
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                      <CreditCard size={14} className="text-gray-500" />
+                      رقم الهوية <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      name="idNumber"
+                      type="text"
+                      value={formData.idNumber || ""}
+                      onChange={handleChange}
+                      onBlur={() => handleBlur("idNumber")}
+                      placeholder="أدخل رقم الهوية"
+                      className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
+                        getFieldError("idNumber")
+                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
+                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                      }`}
+                    />
+                    {getFieldError("idNumber") && (
+                      <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
+                        <AlertCircle size={12} />
+                        <span>{getFieldError("idNumber")}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                      <Calendar size={14} className="text-gray-500" />
+                      تاريخ الميلاد <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      name="birthDate"
+                      type="date"
+                      value={formData.birthDate || ""}
+                      onChange={handleChange}
+                      onBlur={() => handleBlur("birthDate")}
+                      title="اختر تاريخ الميلاد"
+                      className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
+                        getFieldError("birthDate")
+                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
+                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                      }`}
+                    />
+                    {getFieldError("birthDate") && (
+                      <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
+                        <AlertCircle size={12} />
+                        <span>{getFieldError("birthDate")}</span>
+                      </div>
+                    )}
+                  </div>
+                  {calculatedAge && (
+                    <div className="space-y-1">
+                      <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                        <Calendar size={14} className="text-gray-500" />
+                        العمر
+                      </label>
+                      <div className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-700" title={`العمر المحسوب: ${calculatedAge} سنة`}>
+                        {calculatedAge} سنة
+                      </div>
+                    </div>
+                  )}
+                  <div className="space-y-1">
+                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                      <User size={14} className="text-gray-500" />
+                      الجنس <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="gender"
+                      value={formData.gender || ""}
+                      onChange={handleChange}
+                      onBlur={() => handleBlur("gender")}
+                      title="اختر الجنس"
+                      className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
+                        getFieldError("gender")
+                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
+                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                      }`}>
+                      <option value="">اختر الجنس</option>
+                      <option value="ذكر">ذكر</option>
+                      <option value="أنثى">أنثى</option>
+                    </select>
+                    {getFieldError("gender") && (
+                      <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
+                        <AlertCircle size={12} />
+                        <span>{getFieldError("gender")}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                      <MapPin size={14} className="text-gray-500" />
+                      مكان السكن <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      name="residence"
+                      type="text"
+                      value={formData.residence || ""}
+                      onChange={handleChange}
+                      onBlur={() => handleBlur("residence")}
+                      placeholder="أدخل مكان السكن"
+                      className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
+                        getFieldError("residence")
+                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
+                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                      }`}
+                    />
+                    {getFieldError("residence") && (
+                      <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
+                        <AlertCircle size={12} />
+                        <span>{getFieldError("residence")}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
-          </Section>
+          )}
 
-          {/* أزرار */}
-          <div className="flex justify-end gap-4 pt-4 border-t">
+          {currentStep === 2 && (
+            <div className="space-y-6 animate-fadeIn">
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-5 flex items-center gap-2">
+                  <div className="w-1 h-6 bg-green-500 rounded-full"></div>
+                  <Phone className="text-green-600" size={20} />
+                  معلومات التواصل
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                      <Mail size={14} className="text-gray-500" />
+                      البريد الإلكتروني <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      name="email"
+                      type="email"
+                      value={formData.email || ""}
+                      onChange={handleChange}
+                      onBlur={() => handleBlur("email")}
+                      placeholder="example@email.com"
+                      className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
+                        getFieldError("email")
+                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
+                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                      }`}
+                    />
+                    {getFieldError("email") && (
+                      <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
+                        <AlertCircle size={12} />
+                        <span>{getFieldError("email")}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                      <Phone size={14} className="text-gray-500" />
+                      رقم الهاتف <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      name="phoneNumber"
+                      type="tel"
+                      value={formData.phoneNumber || ""}
+                      onChange={handleChange}
+                      onBlur={() => handleBlur("phoneNumber")}
+                      placeholder="05xxxxxxxx"
+                      className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
+                        getFieldError("phoneNumber")
+                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
+                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                      }`}
+                    />
+                    {getFieldError("phoneNumber") && (
+                      <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
+                        <AlertCircle size={12} />
+                        <span>{getFieldError("phoneNumber")}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="p-6 border-t bg-gray-50 flex justify-between">
+          <div className="flex gap-2">
+            {currentStep > 1 && (
+              <button
+                type="button"
+                onClick={handlePrevStep}
+                disabled={isSubmitting}
+                className="flex items-center gap-2 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-all duration-200 disabled:opacity-50"
+              >
+                <ChevronRight size={18} />
+                <span>السابق</span>
+              </button>
+            )}
+          </div>
+          
+          <div className="flex gap-2">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100 disabled:opacity-50">
+              className="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-all duration-200 disabled:opacity-50"
+            >
               إلغاء
             </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2">
-              {isSubmitting && (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              )}
-              {teacher ? "تعديل المعلم" : "إضافة المعلم"}
-            </button>
+            
+            {currentStep < 2 ? (
+              <button
+                type="button"
+                onClick={handleNextStep}
+                disabled={!isStep1Valid}
+                className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span>التالي</span>
+                <ChevronLeft size={18} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={isSubmitting || !isStep2Valid}
+                className="flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="animate-spin" size={18} />
+                    <span>جاري الحفظ...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check size={18} />
+                    <span>{teacher ? "تعديل المعلم" : "إضافة المعلم"}</span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
 };
 
-// 🔹 مكوّن إدخال مع التحقق
-const InputWithValidation = ({
-  label,
-  name,
-  value,
-  onChange,
-  onBlur,
-  error,
-  type = "text",
-  required = false,
-  placeholder = "",
-}: {
-  label: string;
-  name: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onBlur: (fieldName: string) => void;
-  error: string | null;
-  type?: string;
-  required?: boolean;
-  placeholder?: string;
-}) => (
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1">
-      {label}
-    </label>
-    <input
-      type={type}
-      name={name}
-      value={value}
-      onChange={onChange}
-      onBlur={() => onBlur(name)}
-      required={required}
-      placeholder={placeholder}
-      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 transition-all ${
-        error
-          ? 'border-red-300 focus:ring-red-500 bg-red-50'
-          : 'border-gray-300 focus:ring-blue-500'
-      }`}
-    />
-    {error && (
-      <div className="text-red-600 text-xs mt-1 flex items-center gap-1">
-        <span>⚠️</span>
-        {error}
-      </div>
-    )}
-  </div>
-);
-
-// 🔹 مكوّن قسم
-const Section = ({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) => (
-  <div className="bg-gray-50 p-4 rounded-lg">
-    <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
-    {children}
-  </div>
-);
-
-export default AddTeacherForm;
+export default EnhancedTeacherForm;
