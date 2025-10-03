@@ -81,6 +81,15 @@ export const studentValidationSchema = yup.object({
   idNumber: yup
     .string()
     .required('رقم الهوية مطلوب')
+    .trim()
+    .test('only-numbers', 'رقم الهوية يجب أن يحتوي على أرقام فقط', function(value) {
+      if (!value) return false;
+      return /^\d+$/.test(value);
+    })
+    .test('exactly-nine-digits', 'رقم الهوية يجب أن يتكون من 9 أرقام بالضبط', function(value) {
+      if (!value) return false;
+      return value.length === 9;
+    })
     .matches(/^\d{9}$/, 'رقم الهوية يجب أن يتكون من 9 أرقام فقط')
     .test('unique-id', 'رقم الهوية موجود بالفعل', function() {
       // هذا التحقق يتم في الباك اند - unique constraint

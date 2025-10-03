@@ -148,8 +148,8 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       setIsConnected(false);
     });
 
-    socketInstance.on('connect_error', (error) => {
-      console.error('🚫 Socket connection error:', error);
+    socketInstance.on('connect_error', () => {
+      console.warn('🚫 Socket connection failed - Backend server may not be running on port 5005');
       setIsConnected(false);
     });
 

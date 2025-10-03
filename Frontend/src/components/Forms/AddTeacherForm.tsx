@@ -68,6 +68,7 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [hasRetryableError, setHasRetryableError] = useState(false);
 
   // State للحلقات المتاحة
   const [availableGroups, setAvailableGroups] = useState<Group[]>([]);
@@ -115,20 +116,58 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
+    
+    let processedValue = value;
+    
+    if (name === 'phoneNumber') {
+      processedValue = value.replace(/\D/g, '').slice(0, 10);
+    }
+    
+    if (name === 'idNumber') {
+      // السماح بالأرقام فقط وحد أقصى 9 أرقام
+      processedValue = value.replace(/\D/g, '').slice(0, 9);
+      
+      // التحقق الفوري من طول رقم الهوية
+      if (processedValue.length > 0 && processedValue.length < 9) {
+        setErrors(prev => ({
+          ...prev,
+          idNumber: `رقم الهوية يجب أن يتكون من 9 أرقام (${processedValue.length}/9)`
+        }));
+      } else if (processedValue.length === 9) {
+        // إزالة خطأ رقم الهوية إذا كان الطول صحيحاً
+        setErrors(prev => {
+          const newErrors = { ...prev };
+          if (newErrors.idNumber && newErrors.idNumber.includes('يجب أن يتكون من 9 أرقام')) {
+            delete newErrors.idNumber;
+          }
+          return newErrors;
+        });
+      }
+    }
+    
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: processedValue,
     }));
 
     // Clear error for this field when user starts typing
-    if (errors[name]) {
+    if (errors[name] && name !== 'idNumber') {
       setErrors(prev => {
         const newErrors = { ...prev };
         delete newErrors[name];
+        // إزالة الخطأ العام إذا تم تصحيح الحقل الخطأ
+        if (newErrors.general && (newErrors.general.includes('تصحيح') || newErrors.general.includes('المحاولة'))) {
+          delete newErrors.general;
+        }
         return newErrors;
       });
+      
+      // إعادة تعيين حالة الخطأ القابل للتصحيح
+      if (hasRetryableError) {
+        setHasRetryableError(false);
+      }
     }
-  }, [errors]);
+  }, [errors, hasRetryableError]);
 
   const handleBlur = useCallback(async (fieldName: string) => {
     setTouchedFields(prev => new Set(prev).add(fieldName));
@@ -217,21 +256,110 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
 
       // If validation passes, call API
       let apiResult;
-      if (teacher && teacher._id) {
-        // Update existing teacher
-        apiResult = await updateTeacher(teacher._id, result.data!);
-      } else {
-        // Create new teacher
-        apiResult = await createTeacher(result.data!);
+      try {
+        if (teacher && teacher._id) {
+          // Update existing teacher
+          apiResult = await updateTeacher(teacher._id, result.data!);
+        } else {
+          // Create new teacher
+          apiResult = await createTeacher(result.data!);
+        }
+      } catch (apiError: unknown) {
+        // معالجة أخطاء API بشكل مفصل
+        console.error("API Error:", apiError);
+        
+        const error = apiError as { response?: { data?: { message?: string } } };
+        if (error.response?.data?.message) {
+          const errorMessage = error.response.data.message;
+          
+          // معالجة أخطاء محددة (قابلة للتصحيح)
+          if (errorMessage.includes('رقم الهوية')) {
+            setErrors({ 
+              idNumber: 'رقم الهوية موجود بالفعل في النظام - يرجى تغييره',
+              general: 'يرجى تصحيح رقم الهوية والمحاولة مرة أخرى' 
+            });
+            setHasRetryableError(true);
+          }
+          // معالجة خطأ رقم الهاتف المكرر
+          else if (errorMessage.includes('phoneNumber') || errorMessage.includes('رقم الهاتف')) {
+            setErrors({ 
+              phoneNumber: 'رقم الهاتف موجود بالفعل في النظام - يرجى تغييره',
+              general: 'يرجى تصحيح رقم الهاتف والمحاولة مرة أخرى' 
+            });
+            setHasRetryableError(true);
+          }
+          // معالجة خطأ البريد الإلكتروني المكرر
+          else if (errorMessage.includes('email') || errorMessage.includes('البريد الإلكتروني')) {
+            setErrors({ 
+              email: 'البريد الإلكتروني موجود بالفعل في النظام - يرجى تغييره',
+              general: 'يرجى تصحيح البريد الإلكتروني والمحاولة مرة أخرى' 
+            });
+            setHasRetryableError(true);
+          }
+          // معالجة أخطاء التحقق من صحة البيانات
+          else if (errorMessage.includes('التحقق من البيانات')) {
+            const fieldErrors: Record<string, string> = {};
+            
+            // استخراج أخطاء الحقول الفردية من رسالة الخطأ
+            if (errorMessage.includes('رقم الهوية')) {
+              fieldErrors.idNumber = 'رقم الهوية يجب أن يتكون من 9 أرقام فقط';
+            }
+            if (errorMessage.includes('رقم الهاتف')) {
+              fieldErrors.phoneNumber = 'رقم الهاتف يجب أن يبدأ بـ 05 ويتكون من 10 أرقام';
+            }
+            if (errorMessage.includes('البريد الإلكتروني')) {
+              fieldErrors.email = 'البريد الإلكتروني غير صحيح';
+            }
+            
+            setErrors({ 
+              ...fieldErrors,
+              general: 'يرجى تصحيح الحقول المؤشرة والمحاولة مرة أخرى' 
+            });
+            setHasRetryableError(true);
+          }
+          else {
+            setErrors({ general: errorMessage });
+            setHasRetryableError(false);
+          }
+        } else {
+          setErrors({ general: "حدث خطأ في الاتصال مع الخادم" });
+          setHasRetryableError(false);
+        }
+        setIsSubmitting(false);
+        return;
       }
 
       if (!apiResult.success) {
-        setErrors({ general: apiResult.message || 'حدث خطأ أثناء حفظ البيانات' });
+        // التحقق من رسائل خطأ التوافق
+        const message = apiResult.message || 'حدث خطأ أثناء حفظ البيانات';
+        if (message.includes('idNumber') || message.includes('رقم الهوية')) {
+          setErrors({ 
+            idNumber: 'رقم الهوية موجود بالفعل في النظام - يرجى تغييره',
+            general: 'يرجى تصحيح رقم الهوية والمحاولة مرة أخرى' 
+          });
+          setHasRetryableError(true);
+        } else if (message.includes('phoneNumber') || message.includes('رقم الهاتف')) {
+          setErrors({ 
+            phoneNumber: 'رقم الهاتف موجود بالفعل في النظام - يرجى تغييره',
+            general: 'يرجى تصحيح رقم الهاتف والمحاولة مرة أخرى' 
+          });
+          setHasRetryableError(true);
+        } else if (message.includes('email') || message.includes('البريد الإلكتروني')) {
+          setErrors({ 
+            email: 'البريد الإلكتروني موجود بالفعل في النظام - يرجى تغييره',
+            general: 'يرجى تصحيح البريد الإلكتروني والمحاولة مرة أخرى' 
+          });
+          setHasRetryableError(true);
+        } else {
+          setErrors({ general: message });
+          setHasRetryableError(false);
+        }
         setIsSubmitting(false);
         return;
       }
 
       setErrors({});
+      setHasRetryableError(false);
       setShowSuccess(true);
       
       await new Promise(resolve => setTimeout(resolve, 800));
@@ -239,10 +367,25 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
       await onSuccess(apiResult.data!);
       setTimeout(onClose, 300);
       
-    } catch (error) {
-      console.error("Error saving teacher:", error);
-      setErrors({ general: "حدث خطأ أثناء حفظ البيانات" });
+    } catch (error: unknown) {
+      console.error("Unexpected error saving teacher:", error);
+      
+      // معالجة الأخطاء غير المتوقعة
+      let errorMessage = "حدث خطأ غير متوقع أثناء حفظ البيانات";
+      
+      if (error instanceof Error && error.message) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
+      setErrors({ general: errorMessage });
       setIsSubmitting(false);
+      
+      // عدم إغلاق النموذج إذا كان الخطأ قابلاً للتصحيح
+      if (!hasRetryableError) {
+        // يمكن إضافة منطق إضافي هنا للأخطاء غير القابلة للتصحيح
+      }
     }
   };
 
@@ -331,16 +474,29 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
         )}
 
         {Object.keys(errors).length > 0 && !showSuccess && (
-          <div className="mx-6 mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg animate-fadeIn">
+          <div className={`mx-6 mt-4 px-4 py-3 rounded-lg animate-fadeIn ${
+            hasRetryableError 
+              ? 'bg-orange-50 border border-orange-200 text-orange-700' 
+              : 'bg-red-50 border border-red-200 text-red-700'
+          }`}>
             <div className="flex items-center gap-2 mb-2">
               <AlertCircle size={20} />
-              <span className="font-semibold">يرجى إصلاح الأخطاء التالية:</span>
+              <span className="font-semibold">
+                {hasRetryableError 
+                  ? "يرجى تصحيح البيانات والمحاولة مرة أخرى:" 
+                  : "يرجى إصلاح الأخطاء التالية:"}
+              </span>
             </div>
             <ul className="list-disc list-inside space-y-1 text-sm ml-6">
               {Object.entries(errors).map(([field, message]) => (
                 <li key={field}>{message}</li>
               ))}
             </ul>
+            {hasRetryableError && (
+              <div className="mt-3 p-2 bg-orange-100 rounded text-sm">
+                💡 <strong>ملاحظة:</strong> يمكنك تعديل البيانات المطلوبة والضغط على "المحاولة مرة أخرى" دون فقدان باقي البيانات المدخلة.
+              </div>
+            )}
           </div>
         )}
 
@@ -799,11 +955,20 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                 type="button"
                 onClick={handleSubmit}
                 disabled={isSubmitting || !isStep2Valid}
-                className="flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                className={`flex items-center gap-2 px-6 py-2.5 text-white rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  hasRetryableError 
+                    ? 'bg-orange-600 hover:bg-orange-700' 
+                    : 'bg-green-600 hover:bg-green-700'
+                }`}>
                 {isSubmitting ? (
                   <>
                     <Loader2 className="animate-spin" size={18} />
                     <span>جاري الحفظ...</span>
+                  </>
+                ) : hasRetryableError ? (
+                  <>
+                    <AlertCircle size={18} />
+                    <span>المحاولة مرة أخرى</span>
                   </>
                 ) : (
                   <>

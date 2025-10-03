@@ -13,6 +13,7 @@ import {
 } from 'react-icons/fa';
 import { useAuth } from '../../hooks/useAuth';
 import { useSocket } from '../../hooks/useSocket';
+
 import api from '../../Api/api';
 import { getAllTeachers } from '../../Api/teacherApi';
 import type { Teacher } from '../../Api/teacherApi';
@@ -27,7 +28,8 @@ type SortOrder = 'asc' | 'desc';
 
 const TeachersManagement: React.FC = () => {
   const { user: currentUser } = useAuth();
-  const { socket, isConnected } = useSocket();
+  const { socket } = useSocket();
+
   const userRole = currentUser?.role || '';
   const hasPermission = userRole === 'admin';
 
@@ -106,8 +108,13 @@ const TeachersManagement: React.FC = () => {
 
       let errorMessage = 'حدث خطأ في تحميل البيانات';
 
+      // Check if it's a network error (backend not running)
       if (error instanceof Error) {
-        errorMessage = error.message || 'خطأ غير محدد';
+        if (error.message.includes('Network Error') || error.message.includes('ERR_CONNECTION_REFUSED')) {
+          errorMessage = 'لا يمكن الاتصال بالخادم. تأكد من تشغيل الخادم الخلفي على البورت 5005';
+        } else {
+          errorMessage = error.message || 'خطأ غير محدد';
+        }
       }
 
       setError(errorMessage);
@@ -194,9 +201,11 @@ const TeachersManagement: React.FC = () => {
 
     // Cleanup: remove event listeners
     return () => {
-      socket.off('teacherCreated');
-      socket.off('teacherUpdated');
-      socket.off('teacherDeleted');
+      if (socket) {
+        socket.off('teacherCreated');
+        socket.off('teacherUpdated');
+        socket.off('teacherDeleted');
+      }
     };
   }, [hasPermission, socket]);
 
@@ -545,22 +554,55 @@ const TeachersManagement: React.FC = () => {
           });
         }
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('خطأ في handleAddSuccess:', error);
+      
+      let errorMessage = "حدث خطأ أثناء معالجة بيانات المعلم";
+      let errorTitle = "حدث خطأ! ⚠️";
+      
+      // معالجة أخطاء API المحددة
+      if (error && typeof error === 'object') {
+        const apiError = error as { response?: { data?: { message?: string } } };
+        
+        if (apiError.response?.data?.message) {
+          const msg = apiError.response.data.message;
+          
+          if (msg.includes('رقم الهوية')) {
+            errorTitle = "رقم هوية مكرر! 🚫";
+            errorMessage = "رقم الهوية موجود بالفعل في النظام. يرجى استخدام رقم هوية مختلف.";
+          } else if (msg.includes('رقم الهاتف') || msg.includes('phoneNumber')) {
+            errorTitle = "رقم هاتف مكرر! 📱";
+            errorMessage = "رقم الهاتف موجود بالفعل في النظام. يرجى استخدام رقم هاتف مختلف.";
+          } else if (msg.includes('البريد الإلكتروني') || msg.includes('email')) {
+            errorTitle = "بريد إلكتروني مكرر! 📧";
+            errorMessage = "البريد الإلكتروني موجود بالفعل في النظام. يرجى استخدام بريد إلكتروني مختلف.";
+          } else if (msg.includes('التحقق من البيانات')) {
+            errorTitle = "خطأ في البيانات! 📝";
+            errorMessage = "هناك خطأ في تنسيق البيانات المدخلة. يرجى مراجعة جميع الحقول.";
+          } else {
+            errorMessage = msg;
+          }
+        }
+      }
+
       await Swal.fire({
-        title: 'حدث خطأ! \u26a0\ufe0f',
-        text: 'حدث خطأ أثناء معالجة البيانات',
+        title: errorTitle,
+        text: errorMessage,
         icon: 'error',
-        timer: 3000,
+        timer: 5000,
+        timerProgressBar: true,
         toast: true,
         position: 'top-end',
         showConfirmButton: false,
         customClass: {
-          popup: 'rtl-popup swal2-toast-rtl',
+          popup: 'rtl-popup swal2-toast-rtl swal2-error-toast',
           title: 'rtl-title',
           htmlContainer: 'rtl-content'
         }
       });
+
+      // إعادة فتح النموذج في حالة الخطأ
+      setIsFormVisible(true);
     } finally {
       setIsFormVisible(false);
       setIsEditMode(false);
@@ -688,19 +730,7 @@ const TeachersManagement: React.FC = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              {/* Socket Connection Status */}
-              <div
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${
-                  isConnected
-                    ? "bg-green-100 text-green-700 border border-green-200"
-                    : "bg-red-100 text-red-700 border border-red-200"
-                }`}>
-                <div
-                  className={`w-2 h-2 rounded-full ${
-                    isConnected ? "bg-green-500 animate-pulse" : "bg-red-500"
-                  }`}></div>
-                {isConnected ? "متصل - تحديث تلقائي" : "غير متصل"}
-              </div>
+
 
               <button
                 onClick={handleExport}

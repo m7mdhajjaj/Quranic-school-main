@@ -25,6 +25,23 @@ const teacherSchema = new mongoose.Schema(
       type: String,
       required: [true, 'رقم الهوية مطلوب'],
       unique: true,
+      trim: true,
+      validate: [
+        {
+          validator: function(value) {
+            // التحقق من أن القيمة تحتوي على أرقام فقط
+            return /^\d+$/.test(value);
+          },
+          message: 'رقم الهوية يجب أن يحتوي على أرقام فقط'
+        },
+        {
+          validator: function(value) {
+            // التحقق من أن الطول 9 أرقام بالضبط
+            return value && value.length === 9;
+          },
+          message: 'رقم الهوية يجب أن يتكون من 9 أرقام بالضبط'
+        }
+      ],
       match: [/^\d{9}$/, 'رقم الهوية يجب أن يتكون من 9 أرقام فقط']
     },
     phoneNumber: {

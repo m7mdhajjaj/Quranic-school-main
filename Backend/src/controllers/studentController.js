@@ -172,31 +172,86 @@ exports.createStudent = async (req, res) => {
   } catch (error) {
     console.error("Error creating student:", error);
 
-    // Handle validation errors
+    // التحقق من أخطاء التحقق من صحة البيانات
     if (error.name === "ValidationError") {
-      const validationErrors = Object.keys(error.errors)
-        .map((field) => `${field}: ${error.errors[field].message}`)
-        .join(", ");
+      const validationErrors = {};
+      const errorMessages = [];
+      
+      Object.keys(error.errors).forEach((field) => {
+        const fieldError = error.errors[field];
+        validationErrors[field] = fieldError.message;
+        
+        // رسائل خطأ مخصصة حسب نوع الحقل
+        if (field === 'idNumber') {
+          if (fieldError.message.includes('9 أرقام')) {
+            errorMessages.push('رقم الهوية يجب أن يتكون من 9 أرقام فقط');
+          } else {
+            errorMessages.push('رقم الهوية غير صحيح');
+          }
+        } else if (field === 'phoneNumber') {
+          errorMessages.push('رقم الهاتف يجب أن يبدأ بـ 05 ويتكون من 10 أرقام');
+        } else if (field === 'email') {
+          errorMessages.push('البريد الإلكتروني غير صحيح');
+        } else {
+          errorMessages.push(`${field}: ${fieldError.message}`);
+        }
+      });
 
       return res.status(400).json({
-        message: `خطأ في التحقق من البيانات: ${validationErrors}`,
-        error: validationErrors,
+        success: false,
+        message: `خطأ في التحقق من البيانات: ${errorMessages.join(', ')}`,
+        errors: validationErrors,
+        validationErrors: errorMessages
       });
     }
 
-    // Handle duplicate key errors
+    // معالجة أخطاء التكرار (Duplicate key errors)
     if (error.code === 11000) {
       const field = Object.keys(error.keyPattern)[0];
+      let arabicFieldName = field;
+      let specificMessage = '';
+      
+      switch (field) {
+        case 'idNumber':
+          arabicFieldName = 'رقم الهوية';
+          specificMessage = 'رقم الهوية موجود بالفعل في النظام. يرجى استخدام رقم هوية مختلف.';
+          break;
+        case 'phoneNumber':
+          arabicFieldName = 'رقم الهاتف';
+          specificMessage = 'رقم الهاتف موجود بالفعل في النظام. يرجى استخدام رقم هاتف مختلف.';
+          break;
+        case 'email':
+          arabicFieldName = 'البريد الإلكتروني';
+          specificMessage = 'البريد الإلكتروني موجود بالفعل في النظام.';
+          break;
+        default:
+          specificMessage = `${arabicFieldName} موجود بالفعل في النظام.`;
+      }
+      
       return res.status(400).json({
-        message: `قيمة ${field} موجودة بالفعل`,
+        success: false,
+        message: specificMessage,
         error: `Duplicate ${field}`,
+        field: field,
+        arabicField: arabicFieldName
       });
     }
 
-    // Generic error handling
+    // معالجة أخطاء أخرى محددة
+    if (error.message && error.message.includes('Cast to')) {
+      return res.status(400).json({
+        success: false,
+        message: "نوع البيانات المدخلة غير صحيح",
+        error: "Invalid data type"
+      });
+    }
+
+    // معالجة الأخطاء العامة
+    console.error('Unexpected error:', error);
     res.status(500).json({
-      message: "حدث خطأ أثناء حفظ بيانات الطالب",
-      error: error.message,
+      success: false,
+      message: "حدث خطأ غير متوقع أثناء حفظ بيانات الطالب",
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
     });
   }
 };
@@ -309,34 +364,86 @@ exports.updateStudent = async (req, res) => {
   } catch (error) {
     console.error("Error updating student:", error);
     
-    // Handle validation errors (same as createStudent)
+    // التحقق من أخطاء التحقق من صحة البيانات
     if (error.name === "ValidationError") {
-      const validationErrors = Object.keys(error.errors)
-        .map((field) => `${field}: ${error.errors[field].message}`)
-        .join(", ");
+      const validationErrors = {};
+      const errorMessages = [];
+      
+      Object.keys(error.errors).forEach((field) => {
+        const fieldError = error.errors[field];
+        validationErrors[field] = fieldError.message;
+        
+        // رسائل خطأ مخصصة حسب نوع الحقل
+        if (field === 'idNumber') {
+          if (fieldError.message.includes('9 أرقام')) {
+            errorMessages.push('رقم الهوية يجب أن يتكون من 9 أرقام فقط');
+          } else {
+            errorMessages.push('رقم الهوية غير صحيح');
+          }
+        } else if (field === 'phoneNumber') {
+          errorMessages.push('رقم الهاتف يجب أن يبدأ بـ 05 ويتكون من 10 أرقام');
+        } else if (field === 'email') {
+          errorMessages.push('البريد الإلكتروني غير صحيح');
+        } else {
+          errorMessages.push(`${field}: ${fieldError.message}`);
+        }
+      });
 
       return res.status(400).json({
         success: false,
-        message: `خطأ في التحقق من البيانات: ${validationErrors}`,
-        error: validationErrors,
+        message: `خطأ في التحقق من البيانات: ${errorMessages.join(', ')}`,
+        errors: validationErrors,
+        validationErrors: errorMessages
       });
     }
 
-    // Handle duplicate key errors
+    // معالجة أخطاء التكرار (Duplicate key errors)
     if (error.code === 11000) {
       const field = Object.keys(error.keyPattern)[0];
+      let arabicFieldName = field;
+      let specificMessage = '';
+      
+      switch (field) {
+        case 'idNumber':
+          arabicFieldName = 'رقم الهوية';
+          specificMessage = 'رقم الهوية موجود بالفعل في النظام. يرجى استخدام رقم هوية مختلف.';
+          break;
+        case 'phoneNumber':
+          arabicFieldName = 'رقم الهاتف';
+          specificMessage = 'رقم الهاتف موجود بالفعل في النظام. يرجى استخدام رقم هاتف مختلف.';
+          break;
+        case 'email':
+          arabicFieldName = 'البريد الإلكتروني';
+          specificMessage = 'البريد الإلكتروني موجود بالفعل في النظام.';
+          break;
+        default:
+          specificMessage = `${arabicFieldName} موجود بالفعل في النظام.`;
+      }
+      
       return res.status(400).json({
         success: false,
-        message: `قيمة ${field} موجودة بالفعل`,
+        message: specificMessage,
         error: `Duplicate ${field}`,
+        field: field,
+        arabicField: arabicFieldName
       });
     }
 
-    // Generic error handling
-    res.status(400).json({ 
+    // معالجة أخطاء أخرى محددة
+    if (error.message && error.message.includes('Cast to')) {
+      return res.status(400).json({
+        success: false,
+        message: "نوع البيانات المدخلة غير صحيح",
+        error: "Invalid data type"
+      });
+    }
+
+    // معالجة الأخطاء العامة
+    console.error('Unexpected error during update:', error);
+    res.status(500).json({ 
       success: false, 
-      message: "حدث خطأ أثناء تحديث بيانات الطالب",
-      error: error.message 
+      message: "حدث خطأ غير متوقع أثناء تحديث بيانات الطالب",
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 };

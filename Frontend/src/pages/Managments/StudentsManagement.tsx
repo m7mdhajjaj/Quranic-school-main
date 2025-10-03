@@ -60,7 +60,7 @@ type SortOrder = "asc" | "desc";
 
 const StudentsManagement: React.FC = () => {
   const { user: currentUser } = useAuth();
-  const { onStudentUpdate, offStudentUpdate, isConnected } = useSocket();
+  const { onStudentUpdate, offStudentUpdate } = useSocket();
   const userRole = currentUser?.role || "";
   const hasPermission = userRole === "teacher" || userRole === "admin";
 
@@ -573,14 +573,43 @@ const StudentsManagement: React.FC = () => {
           },
         });
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("خطأ في حفظ الطالب:", error);
+      
+      let errorMessage = "حدث خطأ أثناء معالجة بيانات الطالب";
+      let errorTitle = "حدث خطأ! ⚠️";
+      
+      // معالجة أخطاء API المحددة
+      if (error && typeof error === 'object') {
+        const apiError = error as { response?: { data?: { message?: string } } };
+        
+        if (apiError.response?.data?.message) {
+          const msg = apiError.response.data.message;
+          
+          if (msg.includes('رقم الهوية')) {
+            errorTitle = "رقم هوية مكرر! 🚫";
+            errorMessage = "رقم الهوية موجود بالفعل في النظام. يرجى استخدام رقم هوية مختلف.";
+          } else if (msg.includes('رقم الهاتف') || msg.includes('phoneNumber')) {
+            errorTitle = "رقم هاتف مكرر! 📱";
+            errorMessage = "رقم الهاتف موجود بالفعل في النظام. يرجى استخدام رقم هاتف مختلف.";
+          } else if (msg.includes('لا يطابق معلم الحلقة')) {
+            errorTitle = "تعارض في الحلقة والمعلم! 👨‍🏫";
+            errorMessage = "المعلم المختار لا يطابق معلم الحلقة المحددة. يرجى التأكد من المطابقة.";
+          } else if (msg.includes('التحقق من البيانات')) {
+            errorTitle = "خطأ في البيانات! 📝";
+            errorMessage = "هناك خطأ في تنسيق البيانات المدخلة. يرجى مراجعة جميع الحقول.";
+          } else {
+            errorMessage = msg;
+          }
+        }
+      }
 
       await Swal.fire({
-        title: "حدث خطأ! \u26a0\ufe0f",
-        text: "حدث خطأ أثناء معالجة بيانات الطالب",
+        title: errorTitle,
+        text: errorMessage,
         icon: "error",
-        timer: 3000,
+        timer: 5000,
+        timerProgressBar: true,
         toast: true,
         position: "top-end",
         showConfirmButton: false,
@@ -590,6 +619,9 @@ const StudentsManagement: React.FC = () => {
           htmlContainer: "rtl-content",
         },
       });
+
+      // إعادة فتح النموذج في حالة الخطأ
+      setIsFormVisible(true);
     }
   };
 
@@ -740,42 +772,6 @@ const StudentsManagement: React.FC = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              {/* Real-time Connection Status */}
-              <div
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all duration-300 ${
-                  isConnected
-                    ? "bg-green-50 border-green-200 text-green-800"
-                    : "bg-red-50 border-red-200 text-red-800"
-                }`}>
-                <div
-                  className={`w-3 h-3 rounded-full ${
-                    isConnected ? "bg-green-500 animate-pulse" : "bg-red-500"
-                  }`}></div>
-                <span className="text-sm font-medium">
-                  {isConnected ? "تحديث تلقائي" : "غير متصل"}
-                </span>
-              </div>
-
-              {/* Auto-update notification */}
-              {isConnected && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
-                  <svg
-                    className="w-4 h-4 text-blue-600 animate-pulse"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M13 10V3L4 14h7v7l9-11h-7z"
-                    />
-                  </svg>
-                  <span className="text-sm text-blue-800 font-medium">
-                    التحديث التلقائي مفعل
-                  </span>
-                </div>
-              )}
 
               <button
                 onClick={handleExport}

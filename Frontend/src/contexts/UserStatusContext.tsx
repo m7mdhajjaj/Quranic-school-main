@@ -51,8 +51,8 @@ export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         ...prev,
         [userId]: status,
       }));
-    } catch (error) {
-      console.error('خطأ في جلب حالة المستخدم:', error);
+    } catch {
+      // Silently fail if backend is not running, don't spam console
       setUserStatuses(prev => ({
         ...prev,
         [userId]: {
