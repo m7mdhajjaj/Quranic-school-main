@@ -91,13 +91,11 @@ app.use("/api/sections", require("./routes/sectionRoutes"));
 app.use("/api/marks", require("./routes/markRoutes"));
 app.use("/api/attendance", require("./routes/attendanceRoutes"));
 app.use("/api/chat", require("./routes/chatRoutes"));
-app.use("/api/settings", require("./routes/settingsRoutes"));
 app.use("/api/notifications", require("./routes/notificationRoutes"));
 app.use("/api/exams", require("./routes/examRoutes"));
 app.use("/api/exam-marks", require("./routes/examMarkRoutes"));
 app.use("/api/sessions", require("./routes/sessionRoutes"));
 app.use("/api/groups", require("./routes/groupRoutes"));
-app.use("/api/users", require("./routes/userStatusRoutes"));
 app.use("/api/dashboard", require("./routes/dashboardRoutes"));
 app.use("/api", require("./routes/profileRoutes"));
 

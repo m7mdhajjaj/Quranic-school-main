@@ -55,13 +55,11 @@ const studentSchema = new mongoose.Schema(
     residence: { type: String, required: [true, 'مكان السكن مطلوب'] },
     teacher: { 
       type: String, 
-      required: [true, 'اسم المعلم مطلوب'],
-      index: true // فهرس لتحسين البحث حسب المعلم
+      required: [true, 'اسم المعلم مطلوب']
     },
     group: { 
       type: String, 
-      required: [true, 'اسم الحلقة مطلوب'],
-      index: true // فهرس لتحسين البحث حسب الحلقة
+      required: [true, 'اسم الحلقة مطلوب']
     },
 
     email: {
@@ -85,7 +83,6 @@ const studentSchema = new mongoose.Schema(
 
 // إضافة فهارس مركبة لتحسين أداء البحث
 studentSchema.index({ teacher: 1, group: 1 }); // فهرس مركب للمعلم والحلقة
-studentSchema.index({ group: 1, teacher: 1 }); // فهرس مركب للحلقة والمعلم
 
 // مثال Virtual لعمر محسوب (اختياري)
 studentSchema.virtual('computedAge').get(function () {

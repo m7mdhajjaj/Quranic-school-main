@@ -13,7 +13,6 @@ const adminSchema = new mongoose.Schema(
       type: Number,
       required: [true, 'رقم المشرف مطلوب'],
       unique: true,
-      index: true,
       min: [1, 'رقم المشرف يجب أن يكون 1 فأكثر'],
     },
 
@@ -39,7 +38,6 @@ const adminSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
       match: [emailRegex, 'صيغة البريد الإلكتروني غير صحيحة'],
-      index: true,
     },
     phoneNumber: {
       type: String,
@@ -47,7 +45,6 @@ const adminSchema = new mongoose.Schema(
       unique: true,
       match: [phoneRegex, 'الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام'],
       trim: true,
-      index: true,
     },
 
     birthDate: { type: String },
@@ -91,9 +88,9 @@ const adminSchema = new mongoose.Schema(
 );
 
 /* ------------------- Unique Indexes ------------------- */
-adminSchema.index({ adminId: 1 }, { unique: true });
-adminSchema.index({ email: 1 }, { unique: true });
-adminSchema.index({ phoneNumber: 1 }, { unique: true });
+// Note: adminId, email, and phoneNumber already have unique: true in their field definitions
+// which automatically creates indexes, so no need for explicit index() calls
+
 // مثال اختياري: لو بدك idNumber يكون unique فقط إذا موجود
 adminSchema.index(
   { idNumber: 1 },

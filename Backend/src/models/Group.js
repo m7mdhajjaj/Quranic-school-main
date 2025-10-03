@@ -7,7 +7,6 @@ const groupSchema = new mongoose.Schema(
       required: [true, 'اسم الحلقة مطلوب'],
       unique: true,
       trim: true,
-      index: true, // فهرس لتحسين البحث
     },
     teacher: {
       type: mongoose.Schema.Types.Mixed, // يدعم ObjectId أو String
