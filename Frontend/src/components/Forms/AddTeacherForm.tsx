@@ -252,9 +252,10 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
   ];
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fadeIn" dir="rtl">
+    <div
+      className="fixed inset-0 bg-white/10 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn"
+      dir="rtl">
       <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        
         <div className="p-6 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
           <div className="flex justify-between items-start mb-4">
             <div>
@@ -263,7 +264,9 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                 {teacher ? "تعديل بيانات المعلم" : "إضافة معلم جديد"}
               </h2>
               <p className="text-sm text-gray-600 mt-1">
-                {teacher ? "قم بتحديث معلومات المعلم" : "أدخل بيانات المعلم الكاملة"}
+                {teacher
+                  ? "قم بتحديث معلومات المعلم"
+                  : "أدخل بيانات المعلم الكاملة"}
               </p>
             </div>
             <button
@@ -278,33 +281,42 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
             {steps.map((step, index) => (
               <React.Fragment key={step.number}>
                 <div className="flex items-center gap-2">
-                  <div className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-300 ${
-                    currentStep === step.number
-                      ? 'bg-blue-600 text-white shadow-lg'
-                      : currentStep > step.number
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-gray-100 text-gray-500'
-                  }`}>
-                    <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
+                  <div
+                    className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-300 ${
                       currentStep === step.number
-                        ? 'bg-white text-blue-600'
+                        ? "bg-blue-600 text-white shadow-lg"
                         : currentStep > step.number
-                        ? 'bg-green-600 text-white'
-                        : 'bg-gray-300 text-gray-600'
+                        ? "bg-green-100 text-green-700"
+                        : "bg-gray-100 text-gray-500"
                     }`}>
+                    <div
+                      className={`flex items-center justify-center w-8 h-8 rounded-full ${
+                        currentStep === step.number
+                          ? "bg-white text-blue-600"
+                          : currentStep > step.number
+                          ? "bg-green-600 text-white"
+                          : "bg-gray-300 text-gray-600"
+                      }`}>
                       {currentStep > step.number ? (
                         <Check size={18} />
                       ) : (
                         <step.icon size={18} />
                       )}
                     </div>
-                    <span className="font-semibold text-sm hidden sm:block">{step.title}</span>
+                    <span className="font-semibold text-sm hidden sm:block">
+                      {step.title}
+                    </span>
                   </div>
                 </div>
                 {index < steps.length - 1 && (
-                  <ChevronLeft className={`${
-                    currentStep > step.number ? 'text-green-600' : 'text-gray-300'
-                  }`} size={20} />
+                  <ChevronLeft
+                    className={`${
+                      currentStep > step.number
+                        ? "text-green-600"
+                        : "text-gray-300"
+                    }`}
+                    size={20}
+                  />
                 )}
               </React.Fragment>
             ))}
@@ -356,8 +368,8 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                       placeholder="أدخل الاسم الأول"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("firstName")
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
-                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                          ? "border-red-300 focus:ring-red-500 bg-red-50"
+                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                       }`}
                     />
                     {getFieldError("firstName") && (
@@ -381,8 +393,8 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                       placeholder="أدخل اسم الأب"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("fatherName")
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
-                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                          ? "border-red-300 focus:ring-red-500 bg-red-50"
+                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                       }`}
                     />
                     {getFieldError("fatherName") && (
@@ -406,8 +418,8 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                       placeholder="أدخل اسم الجد"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("grandFatherName")
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
-                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                          ? "border-red-300 focus:ring-red-500 bg-red-50"
+                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                       }`}
                     />
                     {getFieldError("grandFatherName") && (
@@ -431,8 +443,8 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                       placeholder="أدخل اسم الأم"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("motherName")
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
-                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                          ? "border-red-300 focus:ring-red-500 bg-red-50"
+                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                       }`}
                     />
                     {getFieldError("motherName") && (
@@ -456,8 +468,8 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                       placeholder="أدخل اسم العائلة"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("lastName")
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
-                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                          ? "border-red-300 focus:ring-red-500 bg-red-50"
+                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                       }`}
                     />
                     {getFieldError("lastName") && (
@@ -491,8 +503,8 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                       placeholder="أدخل رقم الهوية"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("idNumber")
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
-                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                          ? "border-red-300 focus:ring-red-500 bg-red-50"
+                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                       }`}
                     />
                     {getFieldError("idNumber") && (
@@ -516,8 +528,8 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                       title="اختر تاريخ الميلاد"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("birthDate")
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
-                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                          ? "border-red-300 focus:ring-red-500 bg-red-50"
+                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                       }`}
                     />
                     {getFieldError("birthDate") && (
@@ -533,7 +545,9 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                         <Calendar size={14} className="text-gray-500" />
                         العمر
                       </label>
-                      <div className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-700" title={`العمر المحسوب: ${calculatedAge} سنة`}>
+                      <div
+                        className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-700"
+                        title={`العمر المحسوب: ${calculatedAge} سنة`}>
                         {calculatedAge} سنة
                       </div>
                     </div>
@@ -551,8 +565,8 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                       title="اختر الجنس"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("gender")
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
-                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                          ? "border-red-300 focus:ring-red-500 bg-red-50"
+                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                       }`}>
                       <option value="">اختر الجنس</option>
                       <option value="ذكر">ذكر</option>
@@ -579,8 +593,8 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                       placeholder="أدخل مكان السكن"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("residence")
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
-                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                          ? "border-red-300 focus:ring-red-500 bg-red-50"
+                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                       }`}
                     />
                     {getFieldError("residence") && (
@@ -618,8 +632,8 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                       placeholder="example@email.com"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("email")
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
-                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                          ? "border-red-300 focus:ring-red-500 bg-red-50"
+                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                       }`}
                     />
                     {getFieldError("email") && (
@@ -643,8 +657,8 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                       placeholder="05xxxxxxxx"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("phoneNumber")
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
-                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                          ? "border-red-300 focus:ring-red-500 bg-red-50"
+                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                       }`}
                     />
                     {getFieldError("phoneNumber") && (
@@ -678,26 +692,32 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                     ) : (
                       <div className="border border-gray-300 rounded-lg bg-white max-h-48 overflow-y-auto">
                         {availableGroups.length === 0 ? (
-                          <div className="px-3 py-2.5 text-gray-500 text-center">لا توجد حلقات متاحة</div>
+                          <div className="px-3 py-2.5 text-gray-500 text-center">
+                            لا توجد حلقات متاحة
+                          </div>
                         ) : (
                           availableGroups.map((group) => (
                             <label
                               key={group._id}
-                              className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors"
-                            >
+                              className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors">
                               <input
                                 type="checkbox"
-                                checked={formData.groups?.includes(group._id) || false}
+                                checked={
+                                  formData.groups?.includes(group._id) || false
+                                }
                                 onChange={() => handleGroupsChange(group._id)}
                                 className="h-4 w-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 focus:ring-2"
                               />
                               <div className="flex-1">
-                                <div className="text-sm font-medium text-gray-900">{group.name}</div>
+                                <div className="text-sm font-medium text-gray-900">
+                                  {group.name}
+                                </div>
                                 {group.description && (
-                                  <div className="text-xs text-gray-500">{group.description}</div>
+                                  <div className="text-xs text-gray-500">
+                                    {group.description}
+                                  </div>
                                 )}
                               </div>
-
                             </label>
                           ))
                         )}
@@ -705,26 +725,29 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                     )}
                   </div>
                   <div className="text-xs text-gray-500 mt-2">
-                    يمكن للمعلم أن يكون مسؤولاً عن عدة حلقات أو لا يكون مسؤولاً عن أي حلقة
+                    يمكن للمعلم أن يكون مسؤولاً عن عدة حلقات أو لا يكون مسؤولاً
+                    عن أي حلقة
                   </div>
                   {formData.groups && formData.groups.length > 0 && (
                     <div className="mt-3">
-                      <div className="text-sm font-medium text-gray-700 mb-2">الحلقات المختارة:</div>
+                      <div className="text-sm font-medium text-gray-700 mb-2">
+                        الحلقات المختارة:
+                      </div>
                       <div className="flex flex-wrap gap-2">
                         {formData.groups.map((groupId) => {
-                          const group = availableGroups.find(g => g._id === groupId);
+                          const group = availableGroups.find(
+                            (g) => g._id === groupId
+                          );
                           return group ? (
                             <span
                               key={groupId}
-                              className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-md"
-                            >
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-md">
                               {group.name}
                               <button
                                 type="button"
                                 onClick={() => handleGroupsChange(groupId)}
                                 className="ml-1 text-purple-600 hover:text-purple-800 focus:outline-none"
-                                title={`إزالة ${group.name} من القائمة`}
-                              >
+                                title={`إزالة ${group.name} من القائمة`}>
                                 <X size={12} />
                               </button>
                             </span>
@@ -746,31 +769,28 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                 type="button"
                 onClick={handlePrevStep}
                 disabled={isSubmitting}
-                className="flex items-center gap-2 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-all duration-200 disabled:opacity-50"
-              >
+                className="flex items-center gap-2 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-all duration-200 disabled:opacity-50">
                 <ChevronRight size={18} />
                 <span>السابق</span>
               </button>
             )}
           </div>
-          
+
           <div className="flex gap-2">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-all duration-200 disabled:opacity-50"
-            >
+              className="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-all duration-200 disabled:opacity-50">
               إلغاء
             </button>
-            
+
             {currentStep < 2 ? (
               <button
                 type="button"
                 onClick={handleNextStep}
                 disabled={!isStep1Valid}
-                className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
+                className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
                 <span>التالي</span>
                 <ChevronLeft size={18} />
               </button>
@@ -779,8 +799,7 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                 type="button"
                 onClick={handleSubmit}
                 disabled={isSubmitting || !isStep2Valid}
-                className="flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
+                className="flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
                 {isSubmitting ? (
                   <>
                     <Loader2 className="animate-spin" size={18} />

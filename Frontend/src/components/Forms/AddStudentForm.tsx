@@ -328,9 +328,11 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
   ];
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fadeIn" dir="rtl">
+    <div
+      className="fixed inset-0 bg-gray-100/30 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn"
+      dir="rtl">
+      {" "}
       <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        
         <div className="p-6 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
           <div className="flex justify-between items-start mb-4">
             <div>
@@ -339,7 +341,9 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                 {student ? "تعديل بيانات الطالب" : "إضافة طالب جديد"}
               </h2>
               <p className="text-sm text-gray-600 mt-1">
-                {student ? "قم بتحديث معلومات الطالب" : "أدخل بيانات الطالب الكاملة"}
+                {student
+                  ? "قم بتحديث معلومات الطالب"
+                  : "أدخل بيانات الطالب الكاملة"}
               </p>
             </div>
             <button
@@ -354,33 +358,42 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
             {steps.map((step, index) => (
               <React.Fragment key={step.number}>
                 <div className="flex items-center gap-2">
-                  <div className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-300 ${
-                    currentStep === step.number
-                      ? 'bg-blue-600 text-white shadow-lg'
-                      : currentStep > step.number
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-gray-100 text-gray-500'
-                  }`}>
-                    <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
+                  <div
+                    className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-300 ${
                       currentStep === step.number
-                        ? 'bg-white text-blue-600'
+                        ? "bg-blue-600 text-white shadow-lg"
                         : currentStep > step.number
-                        ? 'bg-green-600 text-white'
-                        : 'bg-gray-300 text-gray-600'
+                        ? "bg-green-100 text-green-700"
+                        : "bg-gray-100 text-gray-500"
                     }`}>
+                    <div
+                      className={`flex items-center justify-center w-8 h-8 rounded-full ${
+                        currentStep === step.number
+                          ? "bg-white text-blue-600"
+                          : currentStep > step.number
+                          ? "bg-green-600 text-white"
+                          : "bg-gray-300 text-gray-600"
+                      }`}>
                       {currentStep > step.number ? (
                         <Check size={18} />
                       ) : (
                         <step.icon size={18} />
                       )}
                     </div>
-                    <span className="font-semibold text-sm hidden sm:block">{step.title}</span>
+                    <span className="font-semibold text-sm hidden sm:block">
+                      {step.title}
+                    </span>
                   </div>
                 </div>
                 {index < steps.length - 1 && (
-                  <ChevronLeft className={`${
-                    currentStep > step.number ? 'text-green-600' : 'text-gray-300'
-                  }`} size={20} />
+                  <ChevronLeft
+                    className={`${
+                      currentStep > step.number
+                        ? "text-green-600"
+                        : "text-gray-300"
+                    }`}
+                    size={20}
+                  />
                 )}
               </React.Fragment>
             ))}
@@ -432,8 +445,8 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                       placeholder="أدخل الاسم الأول"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("firstName")
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
-                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                          ? "border-red-300 focus:ring-red-500 bg-red-50"
+                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                       }`}
                     />
                     {getFieldError("firstName") && (
@@ -457,8 +470,8 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                       placeholder="أدخل اسم الأب"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("fatherName")
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
-                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                          ? "border-red-300 focus:ring-red-500 bg-red-50"
+                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                       }`}
                     />
                     {getFieldError("fatherName") && (
@@ -482,8 +495,8 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                       placeholder="أدخل اسم الجد"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("grandFatherName")
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
-                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                          ? "border-red-300 focus:ring-red-500 bg-red-50"
+                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                       }`}
                     />
                     {getFieldError("grandFatherName") && (
@@ -507,8 +520,8 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                       placeholder="أدخل اسم الأم"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("motherName")
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
-                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                          ? "border-red-300 focus:ring-red-500 bg-red-50"
+                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                       }`}
                     />
                     {getFieldError("motherName") && (
@@ -532,8 +545,8 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                       placeholder="أدخل الكنية"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("lastName")
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
-                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                          ? "border-red-300 focus:ring-red-500 bg-red-50"
+                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                       }`}
                     />
                     {getFieldError("lastName") && (
@@ -567,8 +580,8 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                       placeholder="9 أرقام"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("idNumber")
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
-                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                          ? "border-red-300 focus:ring-red-500 bg-red-50"
+                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                       }`}
                     />
                     {getFieldError("idNumber") && (
@@ -589,12 +602,12 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                       value={formData.birthDate || ""}
                       onChange={handleChange}
                       onBlur={() => handleBlur("birthDate")}
-                      max={new Date().toISOString().split('T')[0]}
+                      max={new Date().toISOString().split("T")[0]}
                       placeholder="اختر تاريخ الميلاد"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("birthDate")
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
-                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                          ? "border-red-300 focus:ring-red-500 bg-red-50"
+                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                       }`}
                     />
                     {getFieldError("birthDate") && (
@@ -613,33 +626,37 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                       name="gender"
                       value={formData.gender}
                       onChange={handleChange}
-                      onBlur={() => handleBlur('gender')}
+                      onBlur={() => handleBlur("gender")}
                       title="اختر الجنس"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
-                        getFieldError('gender')
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50'
-                          : 'border-gray-300 focus:ring-blue-500'
+                        getFieldError("gender")
+                          ? "border-red-300 focus:ring-red-500 bg-red-50"
+                          : "border-gray-300 focus:ring-blue-500"
                       }`}>
                       <option value="">اختر الجنس</option>
                       <option value="ذكر">ذكر</option>
                       <option value="أنثى">أنثى</option>
                     </select>
-                    {getFieldError('gender') && (
+                    {getFieldError("gender") && (
                       <div className="flex items-center gap-1 text-red-600 text-xs">
                         <AlertCircle size={12} />
-                        <span>{getFieldError('gender')}</span>
+                        <span>{getFieldError("gender")}</span>
                       </div>
                     )}
                   </div>
-                  
+
                   {calculatedAge !== null && (
                     <div className="flex items-end col-span-1">
                       <div className="w-full px-4 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg">
                         <div className="flex items-center gap-2 mb-1">
                           <Calendar className="text-blue-600" size={14} />
-                          <span className="text-xs text-blue-600 font-medium">العمر الحالي</span>
+                          <span className="text-xs text-blue-600 font-medium">
+                            العمر الحالي
+                          </span>
                         </div>
-                        <div className="text-2xl font-bold text-blue-700">{calculatedAge} <span className="text-sm">سنة</span></div>
+                        <div className="text-2xl font-bold text-blue-700">
+                          {calculatedAge} <span className="text-sm">سنة</span>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -667,8 +684,8 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                       placeholder="أدخل مكان السكن"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("residence")
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
-                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                          ? "border-red-300 focus:ring-red-500 bg-red-50"
+                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                       }`}
                     />
                     {getFieldError("residence") && (
@@ -704,21 +721,21 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                       onBlur={() => handleBlur("teacher")}
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("teacher")
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
-                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                          ? "border-red-300 focus:ring-red-500 bg-red-50"
+                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                       }`}
-                      title="اختر المعلم"
-                    >
+                      title="اختر المعلم">
                       <option value="">اختر المعلم...</option>
                       {loadingTeachers ? (
-                        <option value="" disabled>جاري التحميل...</option>
+                        <option value="" disabled>
+                          جاري التحميل...
+                        </option>
                       ) : (
                         teachers.map((teacher) => (
-                          <option 
-                            key={teacher._id} 
+                          <option
+                            key={teacher._id}
                             value={`${teacher.firstName} ${teacher.lastName}`}
-                            data-teacher-id={teacher._id}
-                          >
+                            data-teacher-id={teacher._id}>
                             {teacher.firstName} {teacher.lastName}
                           </option>
                         ))
@@ -743,28 +760,34 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                       onBlur={() => handleBlur("group")}
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("group")
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
-                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                          ? "border-red-300 focus:ring-red-500 bg-red-50"
+                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                       }`}
                       title="اختر الحلقة"
-                      disabled={!formData.teacher}
-                    >
+                      disabled={!formData.teacher}>
                       <option value="">
-                        {!formData.teacher ? "اختر المعلم أولاً..." : "اختر الحلقة..."}
+                        {!formData.teacher
+                          ? "اختر المعلم أولاً..."
+                          : "اختر الحلقة..."}
                       </option>
                       {loadingGroups ? (
-                        <option value="" disabled>جاري التحميل...</option>
+                        <option value="" disabled>
+                          جاري التحميل...
+                        </option>
                       ) : filteredGroups.length > 0 ? (
                         filteredGroups.map((group) => (
                           <option key={group._id} value={group.name}>
-                            {group.name} 
-                            {group.currentStudents !== undefined && ` (${group.currentStudents} طالب)`}
+                            {group.name}
+                            {group.currentStudents !== undefined &&
+                              ` (${group.currentStudents} طالب)`}
                             {group.schedule && ` - ${group.schedule}`}
                           </option>
                         ))
                       ) : (
                         <option value="" disabled>
-                          {formData.teacher ? "لا توجد حلقات متاحة لهذا المعلم" : "لا توجد حلقات متاحة"}
+                          {formData.teacher
+                            ? "لا توجد حلقات متاحة لهذا المعلم"
+                            : "لا توجد حلقات متاحة"}
                         </option>
                       )}
                     </select>
@@ -774,29 +797,36 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                         <span>{getFieldError("group")}</span>
                       </div>
                     )}
-                    
+
                     {/* رسالة توضيحية عند عدم وجود حلقات */}
-                    {!loadingGroups && formData.teacher && filteredGroups.length === 0 && (
-                      <div className="flex items-center gap-1 text-amber-600 text-xs animate-fadeIn bg-amber-50 p-3 rounded-lg border border-amber-200">
-                        <AlertCircle size={14} />
-                        <div>
-                          <div className="font-medium">لا توجد حلقات لهذا المعلم</div>
-                          <div className="text-amber-500 mt-1">
-                            المعلم المحدد: <span className="font-medium">{formData.teacher}</span>
+                    {!loadingGroups &&
+                      formData.teacher &&
+                      filteredGroups.length === 0 && (
+                        <div className="flex items-center gap-1 text-amber-600 text-xs animate-fadeIn bg-amber-50 p-3 rounded-lg border border-amber-200">
+                          <AlertCircle size={14} />
+                          <div>
+                            <div className="font-medium">
+                              لا توجد حلقات لهذا المعلم
+                            </div>
+                            <div className="text-amber-500 mt-1">
+                              المعلم المحدد:{" "}
+                              <span className="font-medium">
+                                {formData.teacher}
+                              </span>
+                            </div>
+                            <div className="text-amber-500 mt-1">
+                              تواصل مع الإدارة لإنشاء حلقة جديدة أو تحقق من اسم
+                              المعلم
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setFilteredGroups(groups)}
+                              className="mt-2 text-xs bg-amber-100 hover:bg-amber-200 text-amber-700 px-2 py-1 rounded transition-colors">
+                              عرض جميع الحلقات المتاحة ({groups.length})
+                            </button>
                           </div>
-                          <div className="text-amber-500 mt-1">
-                            تواصل مع الإدارة لإنشاء حلقة جديدة أو تحقق من اسم المعلم
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setFilteredGroups(groups)}
-                            className="mt-2 text-xs bg-amber-100 hover:bg-amber-200 text-amber-700 px-2 py-1 rounded transition-colors"
-                          >
-                            عرض جميع الحلقات المتاحة ({groups.length})
-                          </button>
                         </div>
-                      </div>
-                    )}
+                      )}
                   </div>
                 </div>
               </div>
@@ -822,8 +852,8 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                       placeholder="05xxxxxxxx"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("phoneNumber")
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
-                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                          ? "border-red-300 focus:ring-red-500 bg-red-50"
+                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                       }`}
                     />
                     {getFieldError("phoneNumber") && (
@@ -847,8 +877,8 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                       placeholder="example@email.com"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("email")
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50' 
-                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                          ? "border-red-300 focus:ring-red-500 bg-red-50"
+                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                       }`}
                     />
                     {getFieldError("email") && (
@@ -870,28 +900,39 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                   <div className="bg-white p-3 rounded-lg shadow-sm">
                     <span className="text-gray-600 text-xs">الاسم الكامل</span>
                     <p className="font-semibold text-gray-900 mt-1">
-                      {formData.firstName} {formData.fatherName} {formData.lastName}
+                      {formData.firstName} {formData.fatherName}{" "}
+                      {formData.lastName}
                     </p>
                   </div>
                   <div className="bg-white p-3 rounded-lg shadow-sm">
                     <span className="text-gray-600 text-xs">رقم الهوية</span>
-                    <p className="font-semibold text-gray-900 mt-1">{formData.idNumber || '-'}</p>
+                    <p className="font-semibold text-gray-900 mt-1">
+                      {formData.idNumber || "-"}
+                    </p>
                   </div>
                   <div className="bg-white p-3 rounded-lg shadow-sm">
                     <span className="text-gray-600 text-xs">الجنس</span>
-                    <p className="font-semibold text-gray-900 mt-1">{formData.gender || '-'}</p>
+                    <p className="font-semibold text-gray-900 mt-1">
+                      {formData.gender || "-"}
+                    </p>
                   </div>
                   <div className="bg-white p-3 rounded-lg shadow-sm">
                     <span className="text-gray-600 text-xs">المعلم</span>
-                    <p className="font-semibold text-gray-900 mt-1">{formData.teacher || '-'}</p>
+                    <p className="font-semibold text-gray-900 mt-1">
+                      {formData.teacher || "-"}
+                    </p>
                   </div>
                   <div className="bg-white p-3 rounded-lg shadow-sm">
                     <span className="text-gray-600 text-xs">الحلقة</span>
-                    <p className="font-semibold text-gray-900 mt-1">{formData.group || '-'}</p>
+                    <p className="font-semibold text-gray-900 mt-1">
+                      {formData.group || "-"}
+                    </p>
                   </div>
                   <div className="bg-white p-3 rounded-lg shadow-sm">
                     <span className="text-gray-600 text-xs">رقم الهاتف</span>
-                    <p className="font-semibold text-gray-900 mt-1">{formData.phoneNumber || '-'}</p>
+                    <p className="font-semibold text-gray-900 mt-1">
+                      {formData.phoneNumber || "-"}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -909,20 +950,24 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                     جميع حقول الخطوة الأولى مكتملة
                   </span>
                 ) : (
-                  <span>الحقول المطلوبة محددة بـ <span className="text-red-500">*</span></span>
-                )
-              ) : (
-                isStep2Valid ? (
-                  <span className="text-green-600 font-medium flex items-center gap-1">
-                    <Check size={16} />
-                    جميع حقول الخطوة الثانية مكتملة
+                  <span>
+                    الحقول المطلوبة محددة بـ{" "}
+                    <span className="text-red-500">*</span>
                   </span>
-                ) : (
-                  <span>الحقول المطلوبة محددة بـ <span className="text-red-500">*</span></span>
                 )
+              ) : isStep2Valid ? (
+                <span className="text-green-600 font-medium flex items-center gap-1">
+                  <Check size={16} />
+                  جميع حقول الخطوة الثانية مكتملة
+                </span>
+              ) : (
+                <span>
+                  الحقول المطلوبة محددة بـ{" "}
+                  <span className="text-red-500">*</span>
+                </span>
               )}
             </div>
-            
+
             <div className="flex gap-3">
               {currentStep === 1 ? (
                 <>
@@ -973,7 +1018,6 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
           </div>
         </div>
       </div>
-
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(-10px); }

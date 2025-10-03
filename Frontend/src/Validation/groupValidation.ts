@@ -1,24 +1,24 @@
 // Group Validation using Yup
 // التحقق من صحة بيانات الحلقات باستخدام مكتبة Yup
 
-import * as yup from 'yup';
+import * as yup from "yup";
 
 // تخصيص رسائل Yup بالعربية
 yup.setLocale({
   mixed: {
-    required: '${path} مطلوب',
-    notType: '${path} يجب أن يكون من نوع ${type}',
+    required: "${path} مطلوب",
+    notType: "${path} يجب أن يكون من نوع ${type}",
   },
   string: {
-    min: '${path} يجب أن يحتوي على ${min} أحرف على الأقل',
-    max: '${path} يجب ألا يتجاوز ${max} حرف',
-    matches: '${path} لا يطابق التنسيق المطلوب',
+    min: "${path} يجب أن يحتوي على ${min} أحرف على الأقل",
+    max: "${path} يجب ألا يتجاوز ${max} حرف",
+    matches: "${path} لا يطابق التنسيق المطلوب",
   },
   number: {
-    min: '${path} يجب أن يكون ${min} أو أكثر',
-    max: '${path} يجب أن يكون ${max} أو أقل',
-    positive: '${path} يجب أن يكون رقماً موجباً',
-    integer: '${path} يجب أن يكون رقماً صحيحاً',
+    min: "${path} يجب أن يكون ${min} أو أكثر",
+    max: "${path} يجب أن يكون ${max} أو أقل",
+    positive: "${path} يجب أن يكون رقماً موجباً",
+    integer: "${path} يجب أن يكون رقماً صحيحاً",
   },
 });
 
@@ -26,21 +26,23 @@ yup.setLocale({
 
 // تطبيع اسم الحلقة (إزالة المسافات الزائدة وتوحيد التنسيق)
 const normalizeGroupName = (value: string): string => {
-  if (!value) return '';
-  return value.toString().trim()
-    .replace(/\s+/g, ' ') // استبدال المسافات المتعددة بمسافة واحدة
-    .replace(/^\s+|\s+$/g, ''); // إزالة المسافات من البداية والنهاية
+  if (!value) return "";
+  return value
+    .toString()
+    .trim()
+    .replace(/\s+/g, " ") // استبدال المسافات المتعددة بمسافة واحدة
+    .replace(/^\s+|\s+$/g, ""); // إزالة المسافات من البداية والنهاية
 };
 
 // تطبيع الوصف
 const normalizeDescription = (value: string): string => {
-  if (!value) return '';
+  if (!value) return "";
   return value.toString().trim();
 };
 
 // تطبيع الجدول الزمني
 const normalizeSchedule = (value: string): string => {
-  if (!value) return '';
+  if (!value) return "";
   return value.toString().trim();
 };
 
@@ -67,27 +69,24 @@ export interface GroupValidationResult {
 // Yup Schema - متطابق مع Backend validation
 export const groupValidationSchema = yup.object({
   // معرف الحلقة - اختياري في حالة التعديل
-  _id: yup
-    .string()
-    .optional()
-    .nullable(),
+  _id: yup.string().optional().nullable(),
 
   // اسم الحلقة - مطلوب وفريد (متطابق مع Backend)
   name: yup
     .string()
-    .required('اسم الحلقة مطلوب')
+    .required("اسم الحلقة مطلوب")
     .trim()
     .transform(normalizeGroupName),
 
   // المعلم - مطلوب ويجب أن يكون ObjectId صحيح (متطابق مع Backend)
   teacher: yup
     .string()
-    .required('اسم المعلم مطلوب')
+    .required("اسم المعلم مطلوب")
     .trim()
-    .test('is-valid-id', 'معرف المعلم غير صحيح', function(value) {
+    .test("is-valid-id", "معرف المعلم غير صحيح", function (value) {
       if (!value) return false;
       // التحقق من أن القيمة ليست فارغة أو "اختر المعلم"
-      return value !== '' && value !== 'اختر المعلم' && value.length > 0;
+      return value !== "" && value !== "اختر المعلم" && value.length > 0;
     }),
 
   // الوصف - اختياري (متطابق مع Backend)
@@ -95,7 +94,7 @@ export const groupValidationSchema = yup.object({
     .string()
     .optional()
     .nullable()
-    .max(500, 'الوصف يجب ألا يتجاوز 500 حرف')
+    .max(500, "الوصف يجب ألا يتجاوز 500 حرف")
     .trim()
     .transform(normalizeDescription),
 
@@ -104,11 +103,11 @@ export const groupValidationSchema = yup.object({
     .number()
     .optional()
     .nullable()
-    .min(0, 'السعة يجب أن تكون 0 أو أكثر')
-    .integer('السعة يجب أن تكون رقماً صحيحاً')
-    .max(50, 'السعة يجب ألا تتجاوز 50 طالب')
+    .min(0, "السعة يجب أن تكون 0 أو أكثر")
+    .integer("السعة يجب أن تكون رقماً صحيحاً")
+    .max(50, "السعة يجب ألا تتجاوز 50 طالب")
     .transform((value) => {
-      if (value === null || value === undefined || value === '') return 30; // القيمة الافتراضية متطابقة مع Backend
+      if (value === null || value === undefined || value === "") return 30; // القيمة الافتراضية متطابقة مع Backend
       return Number(value);
     }),
 
@@ -117,16 +116,16 @@ export const groupValidationSchema = yup.object({
     .string()
     .optional()
     .nullable()
-    .max(100, 'الجدول الزمني يجب ألا يتجاوز 100 حرف')
-    .matches(/^[\u0600-\u06FF\s0-9:-]*$/, 'الجدول الزمني يحتوي على أحرف غير مسموحة')
+    .max(100, "الجدول الزمني يجب ألا يتجاوز 100 حرف")
+    .matches(
+      /^[\u0600-\u06FF\s0-9:-]*$/,
+      "الجدول الزمني يحتوي على أحرف غير مسموحة"
+    )
     .trim()
     .transform(normalizeSchedule),
 
   // isActive - يُستخدم في الـ backend (افتراضياً true)
-  isActive: yup
-    .boolean()
-    .optional()
-    .default(true),
+  isActive: yup.boolean().optional().default(true),
 });
 
 /* ----------------------- Validation Functions ----------------------- */
@@ -137,11 +136,11 @@ export const validateGroupWithYup = async (
   isNewGroup: boolean = true
 ): Promise<GroupValidationResult> => {
   try {
-    await groupValidationSchema.validate(data, { 
+    await groupValidationSchema.validate(data, {
       abortEarly: false,
-      context: { isNewGroup }
+      context: { isNewGroup },
     });
-    
+
     return {
       isValid: true,
       errors: {},
@@ -149,19 +148,19 @@ export const validateGroupWithYup = async (
   } catch (error) {
     if (error instanceof yup.ValidationError) {
       const errors: Record<string, string> = {};
-      
+
       error.inner.forEach((err) => {
         if (err.path) {
           errors[err.path] = err.message;
         }
       });
-      
+
       return {
         isValid: false,
         errors,
       };
     }
-    
+
     throw error;
   }
 };
@@ -183,7 +182,7 @@ export const validateGroupFieldWithYup = async (
     if (error instanceof yup.ValidationError) {
       return error.message;
     }
-    return 'خطأ في التحقق';
+    return "خطأ في التحقق";
   }
 };
 
@@ -192,68 +191,91 @@ export const validateGroupFieldWithYup = async (
 // قواعد تحقق إضافية للحلقات
 export const groupBusinessRules = {
   // التحقق من عدم تضارب الأوقات
-  validateScheduleConflict: (schedule: string, existingGroups: GroupFormData[] = [], currentGroupId?: string): string | null => {
+  validateScheduleConflict: (
+    schedule: string,
+    existingGroups: GroupFormData[] = [],
+    currentGroupId?: string
+  ): string | null => {
     // تجاهل الجداول الفارغة أو غير المحددة
-    if (!schedule || schedule.trim() === '' || schedule === 'غير محدد') return null;
-    
-    console.log('🔍 فحص تضارب الجدول:', { schedule, currentGroupId, existingGroupsCount: existingGroups.length });
-    
+    if (!schedule || schedule.trim() === "" || schedule === "غير محدد")
+      return null;
+
+    console.log("🔍 فحص تضارب الجدول:", {
+      schedule,
+      currentGroupId,
+      existingGroupsCount: existingGroups.length,
+    });
+
     // البحث عن تضارب مع حلقات أخرى (عدا الحلقة الحالية في التعديل)
-    const conflictingGroup = existingGroups.find(group => {
+    const conflictingGroup = existingGroups.find((group) => {
       // تجاهل الحلقات بجدول فارغ أو غير محدد
-      if (!group.schedule || group.schedule.trim() === '' || group.schedule === 'غير محدد') {
+      if (
+        !group.schedule ||
+        group.schedule.trim() === "" ||
+        group.schedule === "غير محدد"
+      ) {
         return false;
       }
-      
-      const hasConflict = group.schedule === schedule && group._id !== currentGroupId;
-      console.log(`📋 مقارنة مع ${group.name}:`, { 
-        groupSchedule: group.schedule, 
-        groupId: group._id, 
-        hasConflict 
+
+      const hasConflict =
+        group.schedule === schedule && group._id !== currentGroupId;
+      console.log(`📋 مقارنة مع ${group.name}:`, {
+        groupSchedule: group.schedule,
+        groupId: group._id,
+        hasConflict,
       });
       return hasConflict;
     });
-    
+
     if (conflictingGroup) {
-      console.log('❌ تضارب موجود مع:', conflictingGroup.name);
+      console.log("❌ تضارب موجود مع:", conflictingGroup.name);
       return `يوجد تضارب في الجدول مع الحلقة: ${conflictingGroup.name}`;
     }
-    
-    console.log('✅ لا يوجد تضارب في الجدول');
+
+    console.log("✅ لا يوجد تضارب في الجدول");
     return null;
   },
 
   // التحقق من سعة المعلم
-  validateTeacherCapacity: (teacherId: string, existingGroups: GroupFormData[] = [], currentGroupId?: string): string | null => {
+  validateTeacherCapacity: (
+    teacherId: string,
+    existingGroups: GroupFormData[] = [],
+    currentGroupId?: string
+  ): string | null => {
     if (!teacherId) return null;
-    
+
     // عدد المجموعات التي يدرسها نفس المعلم (عدا الحلقة الحالية في التعديل)
-    const teacherGroups = existingGroups.filter(group => 
-      group.teacher === teacherId && group._id !== currentGroupId
+    const teacherGroups = existingGroups.filter(
+      (group) => group.teacher === teacherId && group._id !== currentGroupId
     );
-    
+
     // حد أقصى 3 مجموعات لكل معلم
     if (teacherGroups.length >= 3) {
-      return 'المعلم المحدد يدرس بالفعل الحد الأقصى من المجموعات (3 مجموعات)';
+      return "المعلم المحدد يدرس بالفعل الحد الأقصى من المجموعات (3 مجموعات)";
     }
-    
+
     return null;
   },
 
   // التحقق من تفرد اسم الحلقة
-  validateUniqueGroupName: (name: string, existingGroups: GroupFormData[] = [], currentGroupId?: string): string | null => {
+  validateUniqueGroupName: (
+    name: string,
+    existingGroups: GroupFormData[] = [],
+    currentGroupId?: string
+  ): string | null => {
     if (!name) return null;
-    
+
     const normalizedName = normalizeGroupName(name);
-    const duplicateGroup = existingGroups.find(group => 
-      normalizeGroupName(group.name) === normalizedName && 
-      group._id !== currentGroupId
+    const duplicateGroup = existingGroups.find(
+      (group) =>
+        normalizeGroupName(group.name) === normalizedName &&
+        group._id !== currentGroupId
     );
-    
+
     if (duplicateGroup) {
-      return 'اسم الحلقة موجود بالفعل، يرجى اختيار اسم آخر';
+      return "اسم الحلقة موجود بالفعل، يرجى اختيار اسم آخر";
     }
-    
+
     return null;
   },
 };
@@ -268,40 +290,40 @@ export const validateGroupComprehensive = async (
 ): Promise<GroupValidationResult> => {
   // التحقق الأساسي باستخدام Yup
   const basicValidation = await validateGroupWithYup(data, isNewGroup);
-  
+
   if (!basicValidation.isValid) {
     return basicValidation;
   }
-  
+
   // التحقق من قواعد العمل
   const businessErrors: Record<string, string> = {};
-  
+
   // تحقق تفرد اسم الحلقة
   const nameError = groupBusinessRules.validateUniqueGroupName(
-    data.name, 
-    existingGroups, 
+    data.name,
+    existingGroups,
     data._id
   );
   if (nameError) businessErrors.name = nameError;
-  
+
   // تحقق سعة المعلم
   const teacherError = groupBusinessRules.validateTeacherCapacity(
-    data.teacher, 
+    data.teacher,
     existingGroups,
     data._id // تمرير معرف الحلقة الحالية
   );
   if (teacherError) businessErrors.teacher = teacherError;
-  
+
   // تحقق تضارب الجداول
   if (data.schedule) {
     const scheduleError = groupBusinessRules.validateScheduleConflict(
-      data.schedule, 
+      data.schedule,
       existingGroups,
       data._id // تمرير معرف الحلقة الحالية
     );
     if (scheduleError) businessErrors.schedule = scheduleError;
   }
-  
+
   return {
     isValid: Object.keys(businessErrors).length === 0,
     errors: businessErrors,
@@ -314,8 +336,4 @@ export const validateGroupComprehensive = async (
 export const groupSchemaForHookForm = groupValidationSchema;
 
 // تصدير الدوال المساعدة
-export { 
-  normalizeGroupName, 
-  normalizeDescription, 
-  normalizeSchedule 
-};
+export { normalizeGroupName, normalizeDescription, normalizeSchedule };

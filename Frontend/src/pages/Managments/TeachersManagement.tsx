@@ -647,7 +647,9 @@ const TeachersManagement: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4 md:p-6 relative" dir="rtl">
+    <div
+      className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4 md:p-6 relative"
+      dir="rtl">
       {/* Center Design Element */}
       <div className="fixed inset-0 flex items-center justify-center pointer-events-none opacity-5 z-0">
         <div className="relative">
@@ -687,21 +689,22 @@ const TeachersManagement: React.FC = () => {
 
             <div className="flex flex-wrap items-center gap-3">
               {/* Socket Connection Status */}
-              <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${
-                isConnected 
-                  ? 'bg-green-100 text-green-700 border border-green-200' 
-                  : 'bg-red-100 text-red-700 border border-red-200'
-              }`}>
-                <div className={`w-2 h-2 rounded-full ${
-                  isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'
-                }`}></div>
-                {isConnected ? 'متصل - تحديث تلقائي' : 'غير متصل'}
+              <div
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${
+                  isConnected
+                    ? "bg-green-100 text-green-700 border border-green-200"
+                    : "bg-red-100 text-red-700 border border-red-200"
+                }`}>
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    isConnected ? "bg-green-500 animate-pulse" : "bg-red-500"
+                  }`}></div>
+                {isConnected ? "متصل - تحديث تلقائي" : "غير متصل"}
               </div>
 
               <button
                 onClick={handleExport}
-                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl hover:from-purple-600 hover:to-pink-700 transition-all duration-200 shadow-md hover:shadow-lg"
-              >
+                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl hover:from-purple-600 hover:to-pink-700 transition-all duration-200 shadow-md hover:shadow-lg">
                 <FaDownload className="w-4 h-4" />
                 تصدير
               </button>
@@ -712,8 +715,7 @@ const TeachersManagement: React.FC = () => {
                   setSelectedTeacher(null);
                   setIsFormVisible(true);
                 }}
-                className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg"
-              >
+                className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg">
                 <FaPlus className="w-4 h-4" />
                 إضافة معلم
               </button>
@@ -734,16 +736,13 @@ const TeachersManagement: React.FC = () => {
                 <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               </div>
 
-
-
               <button
                 onClick={() => setShowFilters(!showFilters)}
                 className={`md:col-span-2 flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-xl transition-all ${
                   showFilters
-                    ? 'border-blue-500 bg-blue-50 text-blue-600'
-                    : 'border-gray-300 hover:border-blue-400'
-                }`}
-              >
+                    ? "border-blue-500 bg-blue-50 text-blue-600"
+                    : "border-gray-300 hover:border-blue-400"
+                }`}>
                 <FaFilter className="w-4 h-4" />
                 فلاتر
               </button>
@@ -751,14 +750,12 @@ const TeachersManagement: React.FC = () => {
               <button
                 onClick={resetFilters}
                 className="md:col-span-1 px-4 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all"
-                title="إعادة تعيين الفلاتر"
-              >
+                title="إعادة تعيين الفلاتر">
                 <svg
                   className="w-5 h-5 text-gray-600 mx-auto"
                   fill="none"
                   stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
+                  viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -773,7 +770,6 @@ const TeachersManagement: React.FC = () => {
             {showFilters && (
               <div className="bg-gradient-to-br from-white to-gray-50 p-6 rounded-2xl border-2 border-gray-100 shadow-lg animate-fadeIn">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  
                   {/* Gender Filter */}
                   <div className="space-y-3">
                     <label className="flex items-center gap-2 text-sm font-semibold text-gray-800">
@@ -782,36 +778,33 @@ const TeachersManagement: React.FC = () => {
                     </label>
                     <div className="grid grid-cols-3 gap-2">
                       <button
-                        onClick={() => setSelectedGender('all')}
+                        onClick={() => setSelectedGender("all")}
                         title="عرض جميع المعلمين"
                         className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                          selectedGender === 'all'
-                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
+                          selectedGender === "all"
+                            ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        }`}>
                         الكل
                       </button>
                       <button
-                        onClick={() => setSelectedGender('ذكر')}
+                        onClick={() => setSelectedGender("ذكر")}
                         title="عرض المعلمين الذكور فقط"
                         className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                          selectedGender === 'ذكر'
-                            ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-md'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
+                          selectedGender === "ذكر"
+                            ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-md"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        }`}>
                         ذكر
                       </button>
                       <button
-                        onClick={() => setSelectedGender('انثى')}
+                        onClick={() => setSelectedGender("انثى")}
                         title="عرض المعلمات الإناث فقط"
                         className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                          selectedGender === 'انثى'
-                            ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
+                          selectedGender === "انثى"
+                            ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        }`}>
                         أنثى
                       </button>
                     </div>
@@ -829,7 +822,9 @@ const TeachersManagement: React.FC = () => {
                         min="0"
                         max="100"
                         value={ageRange[1]}
-                        onChange={(e) => setAgeRange([ageRange[0], parseInt(e.target.value)])}
+                        onChange={(e) =>
+                          setAgeRange([ageRange[0], parseInt(e.target.value)])
+                        }
                         className="w-full h-2 bg-gradient-to-r from-green-200 to-green-400 rounded-lg appearance-none cursor-pointer"
                         title={`العمر: ${ageRange[0]} - ${ageRange[1]} سنة`}
                       />
@@ -854,22 +849,22 @@ const TeachersManagement: React.FC = () => {
                         setCurrentPage(1);
                       }}
                       title="اختيار عدد المعلمين المعروضين في الصفحة"
-                      className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 text-gray-700 font-medium"
-                    >
+                      className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 text-gray-700 font-medium">
                       <option value="10">10 معلمين</option>
                       <option value="25">25 معلم</option>
                       <option value="50">50 معلم</option>
                       <option value="100">100 معلم</option>
                     </select>
                   </div>
-
                 </div>
 
                 {/* Filter Summary */}
                 <div className="mt-6 pt-4 border-t border-gray-200">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm text-gray-600 font-medium">الفلاتر النشطة:</span>
-                    {selectedGender !== 'all' && (
+                    <span className="text-sm text-gray-600 font-medium">
+                      الفلاتر النشطة:
+                    </span>
+                    {selectedGender !== "all" && (
                       <span className="px-3 py-1 bg-pink-100 text-pink-800 rounded-full text-xs font-medium">
                         الجنس: {selectedGender}
                       </span>
@@ -889,123 +884,73 @@ const TeachersManagement: React.FC = () => {
 
         {/* Statistics Cards */}
         {!isLoading && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 xl:grid-cols-6 gap-4 mb-6">
-            <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-blue-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg shadow-md">
-                  <FaUserTie className="w-5 h-5 text-white" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs text-gray-600 font-medium truncate">إجمالي</p>
-                  <p className="text-lg font-bold text-gray-900">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-blue-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm text-gray-600 font-medium mb-1">
+                    إجمالي
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">
                     {stats.total}
                   </p>
                 </div>
-              </div>
-            </div>
-
-            <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-green-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-gradient-to-br from-green-400 to-emerald-600 rounded-lg shadow-md">
-                  <svg
-                    className="w-5 h-5 text-white"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs text-gray-600 font-medium truncate">نشط</p>
-                  <p className="text-lg font-bold text-gray-900">
-                    {stats.active}
-                  </p>
+                <div className="p-3 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg shadow-md">
+                  <FaUserTie className="w-6 h-6 text-white" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-red-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-gradient-to-br from-red-400 to-red-600 rounded-lg shadow-md">
-                  <svg
-                    className="w-5 h-5 text-white"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs text-gray-600 font-medium truncate">غير نشط</p>
-                  <p className="text-lg font-bold text-gray-900">
-                    {stats.inactive}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-cyan-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-lg shadow-md">
-                  <svg
-                    className="w-5 h-5 text-white"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
-                  </svg>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs text-gray-600 font-medium truncate">ذكور</p>
-                  <p className="text-lg font-bold text-gray-900">
+            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-cyan-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm text-gray-600 font-medium mb-1">ذكور</p>
+                  <p className="text-2xl font-bold text-gray-900">
                     {stats.male}
                   </p>
                 </div>
-              </div>
-            </div>
-
-            <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-pink-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-gradient-to-br from-pink-400 to-pink-600 rounded-lg shadow-md">
+                <div className="p-3 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-lg shadow-md">
                   <svg
-                    className="w-5 h-5 text-white"
+                    className="w-6 h-6 text-white"
                     fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
+                    viewBox="0 0 20 20">
                     <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
                   </svg>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs text-gray-600 font-medium truncate">إناث</p>
-                  <p className="text-lg font-bold text-gray-900">
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-pink-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm text-gray-600 font-medium mb-1">إناث</p>
+                  <p className="text-2xl font-bold text-gray-900">
                     {stats.female}
                   </p>
+                </div>
+                <div className="p-3 bg-gradient-to-br from-pink-400 to-pink-600 rounded-lg shadow-md">
+                  <svg
+                    className="w-6 h-6 text-white"
+                    fill="currentColor"
+                    viewBox="0 0 20 20">
+                    <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
+                  </svg>
                 </div>
               </div>
             </div>
 
-
-
-            <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-amber-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-gradient-to-br from-amber-400 to-amber-600 rounded-lg shadow-md">
-                  <FaChartBar className="w-5 h-5 text-white" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs text-gray-600 font-medium truncate">
+            <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-amber-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm text-gray-600 font-medium mb-1">
                     متوسط العمر
                   </p>
-                  <p className="text-lg font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-gray-900">
                     {stats.avgAge}
                   </p>
+                </div>
+                <div className="p-3 bg-gradient-to-br from-amber-400 to-amber-600 rounded-lg shadow-md">
+                  <FaChartBar className="w-6 h-6 text-white" />
                 </div>
               </div>
             </div>
@@ -1020,8 +965,7 @@ const TeachersManagement: React.FC = () => {
             </span>
             <button
               onClick={handleBulkDelete}
-              className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-            >
+              className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
               <FaTrash className="w-4 h-4" />
               حذف المحدد
             </button>
@@ -1035,8 +979,7 @@ const TeachersManagement: React.FC = () => {
               <svg
                 className="w-6 h-6 text-red-600 ml-3 mt-0.5 flex-shrink-0"
                 fill="currentColor"
-                viewBox="0 0 20 20"
-              >
+                viewBox="0 0 20 20">
                 <path
                   fillRule="evenodd"
                   d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
@@ -1050,14 +993,12 @@ const TeachersManagement: React.FC = () => {
                 <p className="text-red-700 mb-4">{error}</p>
                 <button
                   onClick={() => fetchTeachers(retryCount)}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors text-sm font-medium"
-                >
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors text-sm font-medium">
                   <svg
                     className="w-4 h-4"
                     fill="none"
                     stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
+                    viewBox="0 0 24 24">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -1310,12 +1251,11 @@ const TeachersManagement: React.FC = () => {
                     </th>
                     <th
                       className="px-6 py-4 text-right text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors"
-                      onClick={() => handleSort('teacherId')}
-                    >
+                      onClick={() => handleSort("teacherId")}>
                       <div className="flex items-center gap-2">
                         رقم المعلم
-                        {sortField === 'teacherId' &&
-                          (sortOrder === 'asc' ? (
+                        {sortField === "teacherId" &&
+                          (sortOrder === "asc" ? (
                             <FaSortAmountUp className="w-3 h-3" />
                           ) : (
                             <FaSortAmountDown className="w-3 h-3" />
@@ -1324,12 +1264,11 @@ const TeachersManagement: React.FC = () => {
                     </th>
                     <th
                       className="px-6 py-4 text-right text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors"
-                      onClick={() => handleSort('firstName')}
-                    >
+                      onClick={() => handleSort("firstName")}>
                       <div className="flex items-center gap-2">
                         الاسم الكامل
-                        {sortField === 'firstName' &&
-                          (sortOrder === 'asc' ? (
+                        {sortField === "firstName" &&
+                          (sortOrder === "asc" ? (
                             <FaSortAmountUp className="w-3 h-3" />
                           ) : (
                             <FaSortAmountDown className="w-3 h-3" />
@@ -1338,12 +1277,11 @@ const TeachersManagement: React.FC = () => {
                     </th>
                     <th
                       className="px-6 py-4 text-right text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors"
-                      onClick={() => handleSort('email')}
-                    >
+                      onClick={() => handleSort("email")}>
                       <div className="flex items-center gap-2">
                         البريد الإلكتروني
-                        {sortField === 'email' &&
-                          (sortOrder === 'asc' ? (
+                        {sortField === "email" &&
+                          (sortOrder === "asc" ? (
                             <FaSortAmountUp className="w-3 h-3" />
                           ) : (
                             <FaSortAmountDown className="w-3 h-3" />
@@ -1361,12 +1299,11 @@ const TeachersManagement: React.FC = () => {
                     </th>
                     <th
                       className="px-6 py-4 text-right text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors"
-                      onClick={() => handleSort('age')}
-                    >
+                      onClick={() => handleSort("age")}>
                       <div className="flex items-center gap-2">
                         العمر
-                        {sortField === 'age' &&
-                          (sortOrder === 'asc' ? (
+                        {sortField === "age" &&
+                          (sortOrder === "asc" ? (
                             <FaSortAmountUp className="w-3 h-3" />
                           ) : (
                             <FaSortAmountDown className="w-3 h-3" />
@@ -1388,8 +1325,7 @@ const TeachersManagement: React.FC = () => {
                   {currentTeachers.map((teacher) => (
                     <tr
                       key={teacher._id}
-                      className="hover:bg-blue-50 transition-colors"
-                    >
+                      className="hover:bg-blue-50 transition-colors">
                       <td className="px-4 py-4 text-center">
                         <input
                           type="checkbox"
@@ -1437,11 +1373,10 @@ const TeachersManagement: React.FC = () => {
                         {teacher.gender ? (
                           <span
                             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              teacher.gender === 'ذكر'
-                                ? 'bg-cyan-100 text-cyan-800'
-                                : 'bg-pink-100 text-pink-800'
-                            }`}
-                          >
+                              teacher.gender === "ذكر"
+                                ? "bg-cyan-100 text-cyan-800"
+                                : "bg-pink-100 text-pink-800"
+                            }`}>
                             {teacher.gender}
                           </span>
                         ) : (
@@ -1476,15 +1411,13 @@ const TeachersManagement: React.FC = () => {
                           <button
                             onClick={() => handleEdit(teacher)}
                             className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                            title="تعديل"
-                          >
+                            title="تعديل">
                             <FaEdit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(teacher._id)}
                             className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                            title="حذف"
-                          >
+                            title="حذف">
                             <FaTrash className="w-4 h-4" />
                           </button>
                         </div>
@@ -1508,14 +1441,13 @@ const TeachersManagement: React.FC = () => {
             </h3>
             <p className="text-gray-600 mb-6">
               {searchTerm
-                ? 'لم يتم العثور على نتائج مطابقة للبحث'
-                : 'ابدأ بإضافة معلم جديد للنظام'}
+                ? "لم يتم العثور على نتائج مطابقة للبحث"
+                : "ابدأ بإضافة معلم جديد للنظام"}
             </p>
             {!searchTerm && (
               <button
                 onClick={() => setIsFormVisible(true)}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all shadow-lg"
-              >
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all shadow-lg">
                 <FaPlus className="w-4 h-4" />
                 إضافة معلم جديد
               </button>

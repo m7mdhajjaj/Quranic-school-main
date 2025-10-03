@@ -10,10 +10,10 @@ import {
   Check,
   X,
 } from "lucide-react";
-import { 
-  validateGroupFieldWithYup, 
+import {
+  validateGroupFieldWithYup,
   validateGroupComprehensive,
-  type GroupFormData 
+  type GroupFormData,
 } from "../../Validation/groupValidation";
 import { getAllTeachers, type Teacher } from "../../Api/teacherApi";
 import {
@@ -210,7 +210,12 @@ const AddGroupForm: React.FC<AddGroupFormProps> = ({
         if (group && group._id) {
           console.log("🔄 تعديل حلقة موجودة:", group._id);
           console.log("📝 البيانات المرسلة للتحديث:", formData);
-          console.log("🔢 نوع السعة:", typeof formData.capacity, "القيمة:", formData.capacity);
+          console.log(
+            "🔢 نوع السعة:",
+            typeof formData.capacity,
+            "القيمة:",
+            formData.capacity
+          );
           result = await updateGroup(group._id, formData);
         } else {
           console.log("➕ إضافة حلقة جديدة");
@@ -275,7 +280,7 @@ const AddGroupForm: React.FC<AddGroupFormProps> = ({
   // Show success message
   if (showSuccess) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-white/10 backdrop-blur-sm flex items-center justify-center z-50">
         <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-8 mx-4 text-center">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Check className="text-green-600" size={32} />
@@ -290,7 +295,7 @@ const AddGroupForm: React.FC<AddGroupFormProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+<div className="fixed inset-0 bg-white/10 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn" dir="rtl">
       <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto mx-4">
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
