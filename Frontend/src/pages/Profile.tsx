@@ -1067,7 +1067,6 @@
 
 // export default Profile;
 
-
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -1384,6 +1383,9 @@ const Profile: React.FC = () => {
 
     const payload: Partial<UserBase> = {
       firstName: edited.firstName,
+      fatherName: edited.fatherName,
+      grandFatherName: edited.grandFatherName,
+      motherName: edited.motherName,
       lastName: edited.lastName,
       birthDate: edited.birthDate,
       gender: edited.gender,
@@ -1528,7 +1530,9 @@ const Profile: React.FC = () => {
   const roleConfig = getRoleConfig();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100" dir="rtl">
+    <div
+      className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100"
+      dir="rtl">
       {/* Hero Section */}
       <div className="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 overflow-hidden">
         {/* Animated Background */}
@@ -1543,21 +1547,23 @@ const Profile: React.FC = () => {
             <div className="relative group mb-8">
               {/* Glow Effect */}
               <div className="absolute -inset-8 bg-gradient-to-r from-white/30 to-white/10 rounded-full blur-2xl group-hover:blur-3xl transition-all duration-500"></div>
-              
+
               {/* Avatar Container */}
               <div className="relative">
                 <div className="absolute -inset-4 bg-white/40 rounded-full backdrop-blur-sm"></div>
                 <Avatar
                   src={avatarUrl}
-                  previewSrc={avatarFile ? URL.createObjectURL(avatarFile) : null}
+                  previewSrc={
+                    avatarFile ? URL.createObjectURL(avatarFile) : null
+                  }
                   userName={user.firstName}
                   gender={getUserGender(user)}
-                  size="5xl"
+                  size="3xl"
                   border="ring"
                   showStatus={true}
                   fallbackIcon={<UserIcon className="w-20 h-20 text-white" />}
                 />
-                
+
                 {/* Camera Button */}
                 {isEditing && (
                   <button
@@ -1568,7 +1574,7 @@ const Profile: React.FC = () => {
                   </button>
                 )}
               </div>
-              
+
               {isEditing && (
                 <input
                   id="avatar"
@@ -1587,15 +1593,20 @@ const Profile: React.FC = () => {
 
             {/* Role and Age Badges */}
             <div className="flex flex-wrap items-center justify-center gap-4 mb-10">
-              <div className={`inline-flex items-center gap-3 bg-white/20 backdrop-blur-lg px-8 py-4 rounded-full border-2 border-white/40 shadow-xl`}>
+              <div
+                className={`inline-flex items-center gap-3 bg-white/20 backdrop-blur-lg px-8 py-4 rounded-full border-2 border-white/40 shadow-xl`}>
                 <span className="text-3xl">{roleConfig.icon}</span>
-                <span className="text-white font-black text-xl">{roleConfig.label}</span>
+                <span className="text-white font-black text-xl">
+                  {roleConfig.label}
+                </span>
               </div>
 
               {age && (
                 <div className="inline-flex items-center gap-3 bg-white/20 backdrop-blur-lg px-8 py-4 rounded-full border-2 border-white/40 shadow-xl">
                   <Sparkles className="w-7 h-7 text-white" />
-                  <span className="text-white font-black text-xl">{age} سنة</span>
+                  <span className="text-white font-black text-xl">
+                    {age} سنة
+                  </span>
                 </div>
               )}
             </div>
@@ -1650,8 +1661,7 @@ const Profile: React.FC = () => {
           <svg viewBox="0 0 1440 100" className="w-full h-auto">
             <path
               fill="#f8fafc"
-              d="M0,50L48,45C96,40,192,30,288,33.3C384,37,480,53,576,56.7C672,60,768,50,864,45C960,40,1056,40,1152,45C1248,50,1344,60,1392,65L1440,70L1440,100L0,100Z"
-            ></path>
+              d="M0,50L48,45C96,40,192,30,288,33.3C384,37,480,53,576,56.7C672,60,768,50,864,45C960,40,1056,40,1152,45C1248,50,1344,60,1392,65L1440,70L1440,100L0,100Z"></path>
           </svg>
         </div>
       </div>
@@ -1662,11 +1672,16 @@ const Profile: React.FC = () => {
         <div className="grid md:grid-cols-3 gap-6 mb-12">
           {/* Account Type */}
           <div className="group bg-white rounded-3xl shadow-lg border-2 border-slate-100 p-8 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500">
-            <div className={`inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br ${roleConfig.lightGradient} rounded-2xl mb-4 shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300`}>
+            <div
+              className={`inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br ${roleConfig.lightGradient} rounded-2xl mb-4 shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300`}>
               <Award className="w-8 h-8 text-white" />
             </div>
-            <h3 className="text-sm font-bold text-slate-600 mb-2">نوع الحساب</h3>
-            <p className="text-3xl font-black text-slate-900">{roleConfig.label}</p>
+            <h3 className="text-sm font-bold text-slate-600 mb-2">
+              نوع الحساب
+            </h3>
+            <p className="text-3xl font-black text-slate-900">
+              {roleConfig.label}
+            </p>
           </div>
 
           {/* Student ID */}
@@ -1675,8 +1690,12 @@ const Profile: React.FC = () => {
               <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl mb-4 shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
                 <IdCard className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-sm font-bold text-slate-600 mb-2">رقم الطالب</h3>
-              <p className="text-3xl font-black text-slate-900">{user.studentId}</p>
+              <h3 className="text-sm font-bold text-slate-600 mb-2">
+                رقم الطالب
+              </h3>
+              <p className="text-3xl font-black text-slate-900">
+                {user.studentId}
+              </p>
             </div>
           )}
 
@@ -1699,7 +1718,9 @@ const Profile: React.FC = () => {
               <ShieldCheck className="w-8 h-8 text-white" />
             </div>
             <div>
-              <h2 className="text-3xl font-black text-slate-900">المعلومات الشخصية</h2>
+              <h2 className="text-3xl font-black text-slate-900">
+                المعلومات الشخصية
+              </h2>
               <p className="text-slate-600 mt-1">بياناتك الكاملة والدقيقة</p>
             </div>
           </div>
@@ -1718,6 +1739,22 @@ const Profile: React.FC = () => {
                         value={edited?.firstName ?? ""}
                         onChange={(v) =>
                           setEdited((p) => (p ? { ...p, firstName: v } : p))
+                        }
+                      />
+                      <TextInput
+                        placeholder="اسم الأب"
+                        value={edited?.fatherName ?? ""}
+                        onChange={(v) =>
+                          setEdited((p) => (p ? { ...p, fatherName: v } : p))
+                        }
+                      />
+                      <TextInput
+                        placeholder="اسم الجد"
+                        value={edited?.grandFatherName ?? ""}
+                        onChange={(v) =>
+                          setEdited((p) =>
+                            p ? { ...p, grandFatherName: v } : p
+                          )
                         }
                       />
                       <TextInput
@@ -1766,17 +1803,26 @@ const Profile: React.FC = () => {
                     <div className="space-y-2 mt-2">
                       <TextInput
                         type="date"
-                        value={edited?.birthDate ? edited.birthDate.slice(0, 10) : ""}
+                        value={
+                          edited?.birthDate ? edited.birthDate.slice(0, 10) : ""
+                        }
                         onChange={(v) =>
                           setEdited((p) =>
-                            p ? { ...p, birthDate: v ? new Date(v).toISOString() : "" } : p
+                            p
+                              ? {
+                                  ...p,
+                                  birthDate: v ? new Date(v).toISOString() : "",
+                                }
+                              : p
                           )
                         }
                       />
                       {remainingBirth < 2 && (
                         <div className="flex items-center gap-2 text-xs bg-amber-50 text-amber-700 px-3 py-2 rounded-lg border border-amber-200">
                           <span>عدد التعديلات المتبقية:</span>
-                          <span className="font-bold">{remainingBirth} / 2</span>
+                          <span className="font-bold">
+                            {remainingBirth} / 2
+                          </span>
                         </div>
                       )}
                     </div>
@@ -1842,6 +1888,27 @@ const Profile: React.FC = () => {
                     />
                   ) : (
                     nv(user.phoneNumber)
+                  )
+                }
+              />
+            )}
+
+            {/* اسم الأم */}
+            {shouldShow(Boolean(user.motherName)) && (
+              <InfoField
+                icon={<UserIcon className="w-5 h-5" />}
+                label="اسم الأم"
+                value={
+                  isEditing ? (
+                    <TextInput
+                      placeholder="اسم الأم"
+                      value={edited?.motherName ?? ""}
+                      onChange={(v) =>
+                        setEdited((p) => (p ? { ...p, motherName: v } : p))
+                      }
+                    />
+                  ) : (
+                    nv(user.motherName)
                   )
                 }
               />
