@@ -508,34 +508,177 @@ const AdminHeader: React.FC = () => {
             </div>
           </div>
 
-          {/* Mobile Navigation */}
+          {/* Enhanced Mobile Navigation */}
           {mobileMenuOpen && (
             <div className="lg:hidden pb-6 pt-4 border-t border-white/20 animate-slide-down">
-              <nav className="space-y-2">
-                {navItems.map((item, index) => (
+              <div className="space-y-4">
+                {/* User Profile Section */}
+                <div className={`px-4 py-3 rounded-xl ${
+                  scrolled ? 'bg-gray-50' : 'bg-white/10'
+                } backdrop-blur-sm`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
+                      scrolled ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white' : 'bg-white text-emerald-600'
+                    }`}>
+                      {currentUser?.firstName?.charAt(0) || 'A'}
+                    </div>
+                    <div>
+                      <p className={`font-medium text-sm ${scrolled ? 'text-gray-900' : 'text-white'}`}>
+                        {currentUser?.firstName || 'المشرف'}
+                      </p>
+                      <p className={`text-xs ${scrolled ? 'text-gray-600' : 'text-white/70'}`}>
+                        مشرف النظام
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Navigation Items */}
+                <nav className="space-y-2">
+                  <div className={`px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
+                    scrolled ? 'text-gray-500' : 'text-white/70'
+                  }`}>
+                    الإدارة الرئيسية
+                  </div>
+                  {navItems.map((item, index) => (
+                    <button
+                      key={item.path}
+                      onClick={() => {
+                        navigate(item.path);
+                        setMobileMenuOpen(false);
+                      }}
+                      className={`w-full px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-300 flex items-center justify-between group mobile-nav-item ${
+                        isActive(item.path)
+                          ? scrolled
+                            ? `bg-gradient-to-r ${item.gradient} text-white shadow-lg active-item`
+                            : 'bg-white text-emerald-600 shadow-lg active-item'
+                          : scrolled
+                            ? 'text-gray-700 hover:bg-gray-100'
+                            : 'text-white hover:bg-white/20'
+                      }`}
+                      style={{ animationDelay: `${index * 50}ms` }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">{item.icon}</span>
+                        <span>{item.label}</span>
+                      </div>
+                      <svg 
+                        className={`w-4 h-4 transform transition-transform ${
+                          isActive(item.path) ? 'rotate-0' : 'group-hover:translate-x-1'
+                        }`}
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  ))}
+                </nav>
+
+                {/* Quick Actions */}
+                <div className="space-y-2">
+                  <div className={`px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
+                    scrolled ? 'text-gray-500' : 'text-white/70'
+                  }`}>
+                    إجراءات سريعة
+                  </div>
+                  
                   <button
-                    key={item.path}
-                    onClick={() => navigate(item.path)}
-                    className={`w-full px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 flex items-center gap-3 ${
-                      isActive(item.path)
-                        ? scrolled
-                          ? `bg-gradient-to-r ${item.gradient} text-white shadow-lg`
-                          : 'bg-white text-emerald-600 shadow-lg'
-                        : scrolled
-                          ? 'text-gray-700 hover:bg-gray-100'
-                          : 'text-white hover:bg-white/20'
+                    onClick={() => {
+                      setShowNotifications(!showNotifications);
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`w-full px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 flex items-center justify-between group ${
+                      scrolled 
+                        ? 'text-gray-700 hover:bg-gray-100' 
+                        : 'text-white hover:bg-white/20'
                     }`}
-                    style={{ animationDelay: `${index * 50}ms` }}
                   >
-                    <span className="text-xl">{item.icon}</span>
-                    <span>{item.label}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">🔔</span>
+                      <span>الإشعارات</span>
+                      {unreadCount > 0 && (
+                        <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5 min-w-[20px] text-center">
+                          {unreadCount}
+                        </span>
+                      )}
+                    </div>
+                    <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
                   </button>
-                ))}
-              </nav>
+
+                  <button
+                    onClick={() => {
+                      navigate('/admin/profile');
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`w-full px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 flex items-center justify-between group mobile-nav-item ${
+                      scrolled 
+                        ? 'text-gray-700 hover:bg-gray-100' 
+                        : 'text-white hover:bg-white/20'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">👤</span>
+                      <span>الملف الشخصي</span>
+                    </div>
+                    <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      navigate('/admin/reports');
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`w-full px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 flex items-center justify-between group mobile-nav-item ${
+                      scrolled 
+                        ? 'text-gray-700 hover:bg-gray-100' 
+                        : 'text-white hover:bg-white/20'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">📈</span>
+                      <span>التقارير</span>
+                    </div>
+                    <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Logout Button */}
+                <div className="pt-4 border-t border-white/20">
+                  <button
+                    onClick={handleLogout}
+                    className={`w-full px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 flex items-center justify-center gap-3 ${
+                      scrolled 
+                        ? 'bg-red-50 text-red-600 hover:bg-red-100' 
+                        : 'bg-red-500/20 text-white hover:bg-red-500/30'
+                    }`}
+                  >
+                    <span className="text-xl">🚪</span>
+                    <span>تسجيل الخروج</span>
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
       </header>
+
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div 
+          className={`fixed inset-0 bg-black/50 z-40 lg:hidden animate-fade-in ${
+            scrolled ? 'mobile-overlay-scrolled' : 'mobile-overlay-default'
+          }`}
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
 
       {/* Spacer to prevent content from being hidden under fixed header */}
       <div className="h-20"></div>
@@ -590,6 +733,15 @@ const AdminHeader: React.FC = () => {
           }
         }
 
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
         .animate-bounce-slow {
           animation: bounce-slow 3s ease-in-out infinite;
         }
@@ -608,6 +760,35 @@ const AdminHeader: React.FC = () => {
 
         .animate-slide-down {
           animation: slide-down 0.3s ease-out;
+        }
+
+        .animate-fade-in {
+          animation: fade-in 0.3s ease-out;
+        }
+
+        .mobile-overlay-scrolled {
+          top: 80px;
+        }
+
+        .mobile-overlay-default {
+          top: 64px;
+        }
+
+        .mobile-nav-item {
+          transform: translateX(0);
+        }
+
+        .mobile-nav-item:hover {
+          transform: translateX(-2px) scale(0.98);
+        }
+
+        .mobile-nav-item.active-item {
+          transform: scale(0.98);
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .mobile-nav-item:active {
+          transform: scale(0.95);
         }
 
         /* Custom scrollbar for notifications */

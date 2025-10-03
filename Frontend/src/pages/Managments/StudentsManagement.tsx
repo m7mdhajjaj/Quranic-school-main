@@ -6,6 +6,7 @@ import {
   FaUserGraduate, FaChartBar
 } from 'react-icons/fa';
 import { useAuth } from '../../hooks/useAuth';
+import { useSocket } from '../../hooks/useSocket';
 import api from '../../Api/api';
 import AddStudentFormWithYup from '../../components/Forms/AddStudentForm';
 import Swal from 'sweetalert2';
@@ -52,6 +53,7 @@ type SortOrder = 'asc' | 'desc';
 
 const StudentsManagement: React.FC = () => {
   const { user: currentUser } = useAuth();
+  const { onStudentUpdate, offStudentUpdate, isConnected } = useSocket();
   const userRole = currentUser?.role || '';
   const hasPermission = userRole === 'teacher' || userRole === 'admin';
 
@@ -66,9 +68,7 @@ const StudentsManagement: React.FC = () => {
 
   // Filter & Search States
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedGroup, setSelectedGroup] = useState('all');
   const [selectedGender, setSelectedGender] = useState('all');
-  const [selectedTeacher, setSelectedTeacher] = useState('all');
   const [ageRange, setAgeRange] = useState<[number, number]>([0, 100]);
   const [showFilters, setShowFilters] = useState(false);
 
@@ -80,27 +80,20 @@ const StudentsManagement: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [studentsPerPage, setStudentsPerPage] = useState(10);
 
-  // View Mode State
-  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+  // View Mode State (for future use)
+  // const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
 
   // Selected Students for Bulk Actions
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
 
-  // Extract unique groups and teachers
-  const groups = useMemo(() => {
-    return [...new Set(students.map(s => s.group).filter(Boolean))].sort();
-  }, [students]);
 
-  const teachers = useMemo(() => {
-    return [...new Set(students.map(s => s.teacher).filter(Boolean))].sort();
-  }, [students]);
 
   // Statistics
   const stats = useMemo(() => {
     const maleCount = students.filter(s => s.gender === 'ذكر').length;
     const femaleCount = students.filter(s => s.gender === 'انثى').length;
-    const activeCount = students.filter(s => s.isActive !== false).length; // اعتبار الطلاب نشطين بشكل افتراضي
-    const inactiveCount = students.filter(s => s.isActive === false).length;
+    const activeCount = students.length; // Assume all students are active for now
+    const inactiveCount = 0;
     const avgAge = students.length > 0 
       ? (students.reduce((sum, s) => sum + (s.age || 0), 0) / students.length).toFixed(1)
       : 0;
@@ -115,8 +108,13 @@ const StudentsManagement: React.FC = () => {
     };
   }, [students]);
 
-  // Fetch students with optimized loading
+  // Fetch students with optimized loading and duplicate prevention
   const fetchStudents = useCallback(async (retryAttempt = 0) => {
+    if (isLoading) {
+      console.log('⚠️ تحميل البيانات قيد التنفيذ، تم تجاهل الطلب المضاعف');
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
     setRetryCount(retryAttempt);
@@ -187,6 +185,83 @@ const StudentsManagement: React.FC = () => {
     fetchStudents();
   }, [hasPermission, fetchStudents]);
 
+  // Socket event handlers for real-time updates with debouncing
+  const [lastUpdateTime, setLastUpdateTime] = useState<number>(0);
+  
+  useEffect(() => {
+    if (!hasPermission) return;
+
+    const handleStudentUpdate = (event: { type: 'created' | 'updated' | 'deleted'; student: Student; studentId?: string }) => {
+      const now = Date.now();
+      
+      // Debounce updates - prevent rapid successive updates
+      if (now - lastUpdateTime < 300) {
+        console.log('⚠️ Update debounced - too frequent');
+        return;
+      }
+      setLastUpdateTime(now);
+      
+      console.log('📡 Received student update via socket:', event);
+      
+      switch (event.type) {
+        case 'created':
+          setStudents(prevStudents => {
+            // Check if student already exists to prevent duplicates
+            const existingStudent = prevStudents.find(s => s._id === event.student._id);
+            if (existingStudent) {
+              console.log('Student already exists, skipping add');
+              return prevStudents;
+            }
+            
+            console.log('➕ Adding new student to local state');
+            return [...prevStudents, {
+              ...event.student,
+              gender: event.student.gender || 'غير محدد',
+              age: event.student.age || 0
+            }];
+          });
+          
+          // Log notification instead of showing toast
+          console.log('✅ طالب جديد تم إضافته:', event.student.firstName, event.student.lastName);
+          break;
+
+        case 'updated':
+          setStudents(prevStudents => 
+            prevStudents.map(s => 
+              s._id === event.student._id 
+                ? {
+                    ...event.student,
+                    gender: event.student.gender || 'غير محدد',
+                    age: event.student.age || 0
+                  }
+                : s
+            )
+          );
+          
+          // Log notification instead of showing toast
+          console.log('🔄 تم تحديث بيانات الطالب:', event.student.firstName, event.student.lastName);
+          break;
+
+        case 'deleted':
+          setStudents(prevStudents => 
+            prevStudents.filter(s => s._id !== event.studentId)
+          );
+          
+          // Log notification instead of showing toast
+          console.log('🗑️ تم حذف طالب من قبل مستخدم آخر');
+          break;
+      }
+    };
+
+    // Subscribe to socket events
+    onStudentUpdate(handleStudentUpdate);
+
+    // Cleanup: unsubscribe from socket events
+    return () => {
+      offStudentUpdate(handleStudentUpdate);
+    };
+  }, [hasPermission, onStudentUpdate, offStudentUpdate, lastUpdateTime]);
+
   // Handle sorting
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -210,12 +285,10 @@ const StudentsManagement: React.FC = () => {
         (student.teacher || '').toLowerCase().includes(searchLower) ||
         (student.group || '').toLowerCase().includes(searchLower);
 
-      const matchesGroup = selectedGroup === 'all' || student.group === selectedGroup;
       const matchesGender = selectedGender === 'all' || student.gender === selectedGender;
-      const matchesTeacher = selectedTeacher === 'all' || student.teacher === selectedTeacher;
       const matchesAge = student.age >= ageRange[0] && student.age <= ageRange[1];
 
-      return matchesSearch && matchesGroup && matchesGender && matchesTeacher && matchesAge;
+      return matchesSearch && matchesGender && matchesAge;
     });
 
     // Sort
@@ -236,7 +309,7 @@ const StudentsManagement: React.FC = () => {
     });
 
     return filtered;
-  }, [students, searchTerm, selectedGroup, selectedGender, selectedTeacher, ageRange, sortField, sortOrder]);
+  }, [students, searchTerm, selectedGender, ageRange, sortField, sortOrder]);
 
   // Pagination
   const indexOfLastStudent = currentPage * studentsPerPage;
@@ -247,7 +320,7 @@ const StudentsManagement: React.FC = () => {
   );
   const totalPages = Math.ceil(filteredAndSortedStudents.length / studentsPerPage);
 
-  // Handle delete
+  // Handle delete - Socket events will handle state updates automatically
   const handleDelete = async (studentId: string | number) => {
     const result = await Swal.fire({
       title: 'تأكيد حذف الطالب',
@@ -268,20 +341,18 @@ const StudentsManagement: React.FC = () => {
     if (result.isConfirmed) {
       try {
         if (typeof studentId === 'string' && studentId.length > 10) {
+          // Delete via API - socket event will update UI automatically
           await api.delete(`/students/${studentId}`);
+          
+          // Show success message
+          await Swal.fire({
+            title: 'تم الحذف!',
+            text: 'تم حذف الطالب بنجاح',
+            icon: 'success',
+            confirmButtonText: 'موافق',
+            customClass: { popup: 'rtl-popup', title: 'rtl-title' }
+          });
         }
-
-        setStudents(prevStudents =>
-          prevStudents.filter(s => !(s._id === studentId || s.id === studentId))
-        );
-
-        await Swal.fire({
-          title: 'تم الحذف!',
-          text: 'تم حذف الطالب بنجاح',
-          icon: 'success',
-          confirmButtonText: 'موافق',
-          customClass: { popup: 'rtl-popup', title: 'rtl-title' }
-        });
       } catch (deleteError) {
         console.error('❌ فشل في حذف الطالب:', deleteError);
         await Swal.fire({
@@ -302,25 +373,41 @@ const StudentsManagement: React.FC = () => {
     setIsFormVisible(true);
   };
 
-  // Handle add/edit success
+  // Handle add/edit success - Socket events will handle state updates automatically
   const handleAddSuccess = async (studentData: StudentFormData) => {
     try {
       if (isEditMode && selectedStudent) {
-        const response = await api.put(`/students/${selectedStudent._id}`, studentData);
-        setStudents(prev => prev.map(s => 
-          s._id === selectedStudent._id ? response.data : s
-        ));
+        // Update student via API - socket event will update UI automatically
+        await api.put(`/students/${selectedStudent._id}`, studentData);
       } else {
-        const response = await api.post('/students', studentData);
-        setStudents(prev => [...prev, response.data]);
+        // Create new student via API - socket event will update UI automatically
+        await api.post('/students', studentData);
       }
 
+      // Close form regardless of success
       setIsFormVisible(false);
       setIsEditMode(false);
       setSelectedStudent(null);
+      
+      // Show success message
+      await Swal.fire({
+        title: isEditMode ? 'تم التحديث!' : 'تم الإضافة!',
+        text: isEditMode ? 'تم تحديث بيانات الطالب بنجاح' : 'تم إضافة الطالب الجديد بنجاح',
+        icon: 'success',
+        confirmButtonText: 'موافق',
+        customClass: { popup: 'rtl-popup', title: 'rtl-title' }
+      });
+      
     } catch (error) {
       console.error('خطأ في حفظ الطالب:', error);
-      setError('حدث خطأ أثناء حفظ الطالب');
+      
+      await Swal.fire({
+        title: 'خطأ!',
+        text: 'حدث خطأ أثناء حفظ الطالب',
+        icon: 'error',
+        confirmButtonText: 'موافق',
+        customClass: { popup: 'rtl-popup', title: 'rtl-title' }
+      });
     }
   };
 
@@ -346,9 +433,7 @@ const StudentsManagement: React.FC = () => {
   // Reset filters
   const resetFilters = () => {
     setSearchTerm('');
-    setSelectedGroup('all');
     setSelectedGender('all');
-    setSelectedTeacher('all');
     setAgeRange([0, 100]);
     setCurrentPage(1);
   };
@@ -405,21 +490,30 @@ const StudentsManagement: React.FC = () => {
             </div>
             
             <div className="flex flex-wrap items-center gap-3">
-              <button
-                onClick={() => fetchStudents()}
-                disabled={isLoading}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg ${
-                  isLoading 
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                    : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700'
-                }`}
-              >
-                <svg className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                {isLoading ? 'جاري التحديث...' : 'تحديث'}
-              </button>
-              
+              {/* Real-time Connection Status */}
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all duration-300 ${
+                isConnected 
+                  ? 'bg-green-50 border-green-200 text-green-800' 
+                  : 'bg-red-50 border-red-200 text-red-800'
+              }`}>
+                <div className={`w-3 h-3 rounded-full ${
+                  isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'
+                }`}></div>
+                <span className="text-sm font-medium">
+                  {isConnected ? 'تحديث تلقائي' : 'غير متصل'}
+                </span>
+              </div>
+
+              {/* Auto-update notification */}
+              {isConnected && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+                  <svg className="w-4 h-4 text-blue-600 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  <span className="text-sm text-blue-800 font-medium">التحديث التلقائي مفعل</span>
+                </div>
+              )}
+
               <button
                 onClick={handleExport}
                 className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl hover:from-purple-600 hover:to-pink-700 transition-all duration-200 shadow-md hover:shadow-lg"
@@ -444,8 +538,8 @@ const StudentsManagement: React.FC = () => {
 
           {/* Search and Filters */}
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-              <div className="relative md:col-span-6">
+            <div className="grid grid-cols-1 md:grid-cols-10 gap-4">
+              <div className="relative md:col-span-7">
                 <input
                   type="text"
                   placeholder="ابحث عن طالب (الاسم، رقم الهوية، رقم الطالب، المعلم، الحلقة...)"
@@ -456,16 +550,7 @@ const StudentsManagement: React.FC = () => {
                 <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               </div>
               
-              <select
-                value={selectedGroup}
-                onChange={(e) => setSelectedGroup(e.target.value)}
-                className="md:col-span-3 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">جميع الحلقات ({groups.length})</option>
-                {groups.map(group => (
-                  <option key={group} value={group}>{group}</option>
-                ))}
-              </select>
+
               
               <button
                 onClick={() => setShowFilters(!showFilters)}
@@ -490,66 +575,117 @@ const StudentsManagement: React.FC = () => {
               </button>
             </div>
 
-            {/* Extended Filters */}
+            {/* Extended Filters - Modern Design */}
             {showFilters && (
-              <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 animate-fadeIn">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">الجنس</label>
-                    <select
-                      value={selectedGender}
-                      onChange={(e) => setSelectedGender(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="all">الكل</option>
-                      <option value="ذكر">ذكر</option>
-                      <option value="انثى">أنثى</option>
-                    </select>
-                  </div>
+              <div className="bg-gradient-to-br from-white to-gray-50 p-6 rounded-2xl border-2 border-gray-100 shadow-lg animate-fadeIn">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">المعلم</label>
-                    <select
-                      value={selectedTeacher}
-                      onChange={(e) => setSelectedTeacher(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="all">جميع المعلمين ({teachers.length})</option>
-                      {teachers.map(teacher => (
-                        <option key={teacher} value={teacher}>{teacher}</option>
-                      ))}
-                    </select>
+                  {/* Gender Filter */}
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                      <div className="w-2 h-2 rounded-full bg-pink-500"></div>
+                      تصفية حسب الجنس
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        onClick={() => setSelectedGender('all')}
+                        title="عرض جميع الطلاب"
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                          selectedGender === 'all'
+                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        الكل
+                      </button>
+                      <button
+                        onClick={() => setSelectedGender('ذكر')}
+                        title="عرض الطلاب الذكور فقط"
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                          selectedGender === 'ذكر'
+                            ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-md'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        ذكر
+                      </button>
+                      <button
+                        onClick={() => setSelectedGender('انثى')}
+                        title="عرض الطالبات الإناث فقط"
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                          selectedGender === 'انثى'
+                            ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        أنثى
+                      </button>
+                    </div>
                   </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+
+                  {/* Age Range Filter */}
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
                       العمر: {ageRange[0]} - {ageRange[1]} سنة
                     </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={ageRange[1]}
-                      onChange={(e) => setAgeRange([ageRange[0], parseInt(e.target.value)])}
-                      className="w-full"
-                    />
+                    <div className="space-y-2">
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={ageRange[1]}
+                        onChange={(e) => setAgeRange([ageRange[0], parseInt(e.target.value)])}
+                        className="w-full h-2 bg-gradient-to-r from-green-200 to-green-400 rounded-lg appearance-none cursor-pointer"
+                        title={`العمر: ${ageRange[0]} - ${ageRange[1]} سنة`}
+                      />
+                      <div className="flex justify-between text-xs text-gray-500">
+                        <span>0</span>
+                        <span>50</span>
+                        <span>100</span>
+                      </div>
+                    </div>
                   </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">عرض</label>
+
+                  {/* Items per page */}
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                      <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                      عدد الطلاب في الصفحة
+                    </label>
                     <select
                       value={studentsPerPage}
                       onChange={(e) => {
                         setStudentsPerPage(parseInt(e.target.value));
                         setCurrentPage(1);
                       }}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      title="اختيار عدد الطلاب المعروضين في الصفحة"
+                      className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 text-gray-700 font-medium"
                     >
                       <option value="10">10 طلاب</option>
                       <option value="25">25 طالب</option>
                       <option value="50">50 طالب</option>
                       <option value="100">100 طالب</option>
                     </select>
+                  </div>
+
+                </div>
+
+                {/* Filter Summary */}
+                <div className="mt-6 pt-4 border-t border-gray-200">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm text-gray-600 font-medium">الفلاتر النشطة:</span>
+                    {selectedGender !== 'all' && (
+                      <span className="px-3 py-1 bg-pink-100 text-pink-800 rounded-full text-xs font-medium">
+                        الجنس: {selectedGender}
+                      </span>
+                    )}
+
+                    {(ageRange[0] !== 0 || ageRange[1] !== 100) && (
+                      <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                        العمر: {ageRange[0]}-{ageRange[1]}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -664,42 +800,19 @@ const StudentsManagement: React.FC = () => {
         )}
 
         {/* Active Filters Display */}
-        {(selectedTeacher !== 'all' || selectedGroup !== 'all' || selectedGender !== 'all' || ageRange[0] !== 0 || ageRange[1] !== 100 || searchTerm) && (
+        {(selectedGender !== 'all' || ageRange[0] !== 0 || ageRange[1] !== 100 || searchTerm) && (
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 mb-6">
             <div className="flex items-center justify-between">
               <div className="flex flex-wrap gap-2">
                 <span className="text-blue-700 font-medium">الفلاتر المطبقة:</span>
-                {selectedTeacher !== 'all' && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
-                    👨‍🏫 {selectedTeacher}
-                    <button
-                      onClick={() => setSelectedTeacher('all')}
-                      className="ml-1 hover:bg-blue-200 rounded-full p-0.5"
-                    >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </span>
-                )}
-                {selectedGroup !== 'all' && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full">
-                    📚 {selectedGroup}
-                    <button
-                      onClick={() => setSelectedGroup('all')}
-                      className="ml-1 hover:bg-green-200 rounded-full p-0.5"
-                    >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </span>
-                )}
+
+
                 {selectedGender !== 'all' && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-full">
                     {selectedGender === 'ذكر' ? '👦' : '👧'} {selectedGender}
                     <button
                       onClick={() => setSelectedGender('all')}
+                      title="إزالة فلتر الجنس"
                       className="ml-1 hover:bg-purple-200 rounded-full p-0.5"
                     >
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1059,11 +1172,11 @@ const StudentsManagement: React.FC = () => {
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">لا يوجد طلاب</h3>
             <p className="text-gray-600 mb-6">
-              {searchTerm || selectedGroup !== 'all'
+              {searchTerm
                 ? 'لم يتم العثور على نتائج مطابقة للبحث'
                 : 'ابدأ بإضافة طالب جديد للنظام'}
             </p>
-            {!searchTerm && selectedGroup === 'all' && (
+            {!searchTerm && (
               <button
                 onClick={() => setIsFormVisible(true)}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all shadow-lg"
@@ -1075,11 +1188,13 @@ const StudentsManagement: React.FC = () => {
           </div>
         )}
 
-        {/* Enhanced Pagination */}
+        {/* Enhanced Responsive Pagination */}
         {!isLoading && filteredAndSortedStudents.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-xl px-6 py-4 mt-6" dir="rtl">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="text-sm text-gray-700">
+          <div className="bg-white rounded-2xl shadow-xl px-3 sm:px-6 py-4 mt-6" dir="rtl">
+            {/* Mobile-First Layout */}
+            <div className="flex flex-col space-y-4">
+              {/* Results Info - Always visible */}
+              <div className="text-xs sm:text-sm text-gray-700 text-center sm:text-right">
                 عرض <span className="font-semibold">{indexOfFirstStudent + 1}</span> إلى{' '}
                 <span className="font-semibold">
                   {Math.min(indexOfLastStudent, filteredAndSortedStudents.length)}
@@ -1087,86 +1202,110 @@ const StudentsManagement: React.FC = () => {
                 من <span className="font-semibold">{filteredAndSortedStudents.length}</span> طالب
               </div>
               
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setCurrentPage(1)}
-                  disabled={currentPage === 1}
-                  className={`px-3 py-2 border rounded-lg text-sm font-medium transition-all ${
-                    currentPage === 1
-                      ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
-                  }`}
-                >
-                  الأولى
-                </button>
-                
-                <button
-                  onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
-                  disabled={currentPage === 1}
-                  className={`flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium transition-all ${
-                    currentPage === 1
-                      ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
-                  }`}
-                >
-                  <FaChevronRight className="w-3 h-3" />
-                  السابق
-                </button>
+              {/* Pagination Controls */}
+              <div className="flex items-center justify-center">
+                <div className="flex items-center gap-1 sm:gap-2">
+                  {/* First Page - Hidden on mobile when not needed */}
+                  {totalPages > 3 && currentPage > 2 && (
+                    <button
+                      onClick={() => setCurrentPage(1)}
+                      className="hidden sm:flex px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 hover:bg-blue-50 hover:border-blue-300 transition-all"
+                    >
+                      الأولى
+                    </button>
+                  )}
+                  
+                  {/* Previous Button - Always visible */}
+                  <button
+                    onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
+                    disabled={currentPage === 1}
+                    className={`flex items-center gap-1 px-2 py-1.5 sm:px-3 sm:py-2 border rounded-lg text-xs sm:text-sm font-medium transition-all ${
+                      currentPage === 1
+                        ? 'border-gray-200 text-gray-400 cursor-not-allowed bg-gray-50'
+                        : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
+                    }`}
+                  >
+                    <FaChevronRight className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                    <span className="hidden xs:inline">السابق</span>
+                  </button>
 
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-                    
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => setCurrentPage(pageNum)}
-                        className={`w-10 h-10 rounded-lg text-sm font-medium transition-all ${
-                          currentPage === pageNum
-                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
-                            : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
-                        }`}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
+                  {/* Page Numbers - Responsive display */}
+                  <div className="flex items-center gap-0.5 sm:gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      const maxVisible = 5;
+                      
+                      if (totalPages <= maxVisible) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= Math.ceil(maxVisible / 2)) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - Math.floor(maxVisible / 2)) {
+                        pageNum = totalPages - maxVisible + 1 + i;
+                      } else {
+                        pageNum = currentPage - Math.floor(maxVisible / 2) + i;
+                      }
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`w-7 h-7 sm:w-9 sm:h-9 rounded-lg text-xs sm:text-sm font-medium transition-all ${
+                            currentPage === pageNum
+                              ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg transform scale-105'
+                              : 'border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-blue-300'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Next Button - Always visible */}
+                  <button
+                    onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className={`flex items-center gap-1 px-2 py-1.5 sm:px-3 sm:py-2 border rounded-lg text-xs sm:text-sm font-medium transition-all ${
+                      currentPage === totalPages
+                        ? 'border-gray-200 text-gray-400 cursor-not-allowed bg-gray-50'
+                        : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
+                    }`}
+                  >
+                    <span className="hidden xs:inline">التالي</span>
+                    <FaChevronLeft className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                  </button>
+                  
+                  {/* Last Page - Hidden on mobile when not needed */}
+                  {totalPages > 3 && currentPage < totalPages - 1 && (
+                    <button
+                      onClick={() => setCurrentPage(totalPages)}
+                      className="hidden sm:flex px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 hover:bg-blue-50 hover:border-blue-300 transition-all"
+                    >
+                      الأخيرة
+                    </button>
+                  )}
                 </div>
-
-                <button
-                  onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className={`flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium transition-all ${
-                    currentPage === totalPages
-                      ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
-                  }`}
-                >
-                  التالي
-                  <FaChevronLeft className="w-3 h-3" />
-                </button>
-                
-                <button
-                  onClick={() => setCurrentPage(totalPages)}
-                  disabled={currentPage === totalPages}
-                  className={`px-3 py-2 border rounded-lg text-sm font-medium transition-all ${
-                    currentPage === totalPages
-                      ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
-                  }`}
-                >
-                  الأخيرة
-                </button>
               </div>
+
+              {/* Mobile Jump to Page - Only on small screens when many pages */}
+              {totalPages > 5 && (
+                <div className="flex sm:hidden items-center justify-center gap-2 pt-2 border-t border-gray-100">
+                  <span className="text-xs text-gray-600">انتقال سريع:</span>
+                  <select
+                    value={currentPage}
+                    onChange={(e) => setCurrentPage(Number(e.target.value))}
+                    className="px-2 py-1 border border-gray-300 rounded text-xs bg-white focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                    aria-label="اختيار الصفحة"
+                  >
+                    {Array.from({ length: totalPages }, (_, i) => (
+                      <option key={i + 1} value={i + 1}>
+                        صفحة {i + 1}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-xs text-gray-500">من {totalPages}</span>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1192,6 +1331,25 @@ const StudentsManagement: React.FC = () => {
         }
         .animate-fadeIn {
           animation: fadeIn 0.3s ease-out;
+        }
+        
+        /* Responsive pagination styles */
+        @media (max-width: 480px) {
+          .pagination-mobile {
+            gap: 0.25rem;
+          }
+          .pagination-button-mobile {
+            min-width: 28px;
+            height: 28px;
+            font-size: 11px;
+            padding: 0.25rem;
+          }
+        }
+        
+        @media (min-width: 481px) {
+          .xs\\:inline {
+            display: inline !important;
+          }
         }
       `}</style>
     </div>

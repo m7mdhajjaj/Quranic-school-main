@@ -227,6 +227,13 @@ exports.createStudent = async (req, res) => {
     const newStudent = await student.save();
 
     console.log("Student created successfully:", newStudent._id);
+
+    // Emit socket event for real-time updates
+    if (global.io) {
+      console.log('📡 Broadcasting student created event');
+      global.io.emit('studentCreated', newStudent);
+    }
+
     res.status(201).json(newStudent);
   } catch (error) {
     console.error("Error creating student:", error);
@@ -289,6 +296,12 @@ exports.updateStudent = async (req, res) => {
         message: "الطالب غير موجود" 
       });
     }
+
+    // Emit socket event for real-time updates
+    if (global.io) {
+      console.log('📡 Broadcasting student updated event');
+      global.io.emit('studentUpdated', updatedStudent);
+    }
     
     res.json({ success: true, data: updatedStudent });
     
@@ -334,6 +347,16 @@ exports.deleteStudent = async (req, res) => {
     if (!deletedStudent) {
       return res.status(404).json({ message: "Student not found" });
     }
+
+    // Emit socket event for real-time updates
+    if (global.io) {
+      console.log('📡 Broadcasting student deleted event');
+      global.io.emit('studentDeleted', { 
+        studentId: req.params.id, 
+        student: deletedStudent 
+      });
+    }
+
     res.json({ message: "Student deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });

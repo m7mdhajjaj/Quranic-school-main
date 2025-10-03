@@ -112,9 +112,16 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
         if (result.success && result.data) {
           setGroups(result.data);
           setFilteredGroups(result.data);
+          console.log('✅ تم تحميل الحلقات بنجاح:', result.data.length, 'حلقة');
+        } else {
+          console.error('❌ فشل في تحميل الحلقات:', result.message);
+          setGroups([]);
+          setFilteredGroups([]);
         }
       } catch (error) {
-        console.error('Error fetching groups:', error);
+        console.error('❌ خطأ في تحميل الحلقات:', error);
+        setGroups([]);
+        setFilteredGroups([]);
       } finally {
         setLoadingGroups(false);
       }
@@ -124,20 +131,57 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
     fetchGroups();
   }, []);
 
-  // Filter groups when teacher is selected
+  // Filter groups when teacher is selected - improved matching
   useEffect(() => {
     if (formData.teacher) {
-      const teacherGroups = groups.filter(group => group.teacher === formData.teacher);
+      console.log('🔍 Filtering groups for teacher:', formData.teacher);
+      console.log('📋 Available groups:', groups.map(g => ({ name: g.name, teacher: g.teacher, teacherName: g.teacherName })));
+      
+      const teacherGroups = groups.filter(group => {
+        // Normalize teacher names for comparison
+        const normalizeTeacherName = (name: string) => name?.trim().toLowerCase().replace(/\s+/g, ' ') || '';
+        const normalizedFormTeacher = normalizeTeacherName(formData.teacher);
+        const normalizedGroupTeacher = normalizeTeacherName(group.teacher || '');
+        const normalizedGroupTeacherName = normalizeTeacherName(group.teacherName || '');
+        
+        // Check multiple possible matches
+        const matches = (
+          group.teacher === formData.teacher ||                           // Exact teacher field match
+          group.teacherName === formData.teacher ||                       // Teacher name match  
+          normalizedGroupTeacher === normalizedFormTeacher ||             // Normalized exact match
+          normalizedGroupTeacherName === normalizedFormTeacher ||         // Normalized name match
+          normalizedGroupTeacher.includes(normalizedFormTeacher) ||       // Partial match in teacher field
+          normalizedGroupTeacherName.includes(normalizedFormTeacher) ||   // Partial match in teacherName field
+          normalizedFormTeacher.includes(normalizedGroupTeacher) ||       // Reverse partial match
+          normalizedFormTeacher.includes(normalizedGroupTeacherName)      // Reverse partial name match
+        );
+        
+        if (matches) {
+          console.log('✅ Group matched:', group.name, 'with teacher:', group.teacher || group.teacherName);
+        }
+        
+        return matches;
+      });
+      
+      console.log('🎯 Filtered groups:', teacherGroups.map(g => g.name));
       setFilteredGroups(teacherGroups);
       
-      // Clear group selection if it's not available for the selected teacher
+      // Only clear group selection if we're not editing an existing student
+      // and the group is not available for the selected teacher
       if (formData.group && !teacherGroups.some(group => group.name === formData.group)) {
-        setFormData(prev => ({...prev, group: ''}));
+        if (!student) { // Only clear for new students, not when editing
+          console.log('⚠️ Current group not available for selected teacher, clearing...');
+          setFormData(prev => ({...prev, group: ''}));
+        } else {
+          console.log('📝 Editing existing student - keeping original group even if not in filtered list');
+          // When editing, show all groups so the original group remains visible
+          setFilteredGroups(groups);
+        }
       }
     } else {
       setFilteredGroups(groups);
     }
-  }, [formData.teacher, groups, formData.group]);
+  }, [formData.teacher, groups, formData.group, student]);
 
   const isStep1Valid = useMemo(() => {
     const step1Fields = [
@@ -660,7 +704,11 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                         <option value="" disabled>جاري التحميل...</option>
                       ) : (
                         teachers.map((teacher) => (
-                          <option key={teacher._id} value={`${teacher.firstName} ${teacher.lastName}`}>
+                          <option 
+                            key={teacher._id} 
+                            value={`${teacher.firstName} ${teacher.lastName}`}
+                            data-teacher-id={teacher._id}
+                          >
                             {teacher.firstName} {teacher.lastName}
                           </option>
                         ))
@@ -696,18 +744,47 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                       </option>
                       {loadingGroups ? (
                         <option value="" disabled>جاري التحميل...</option>
-                      ) : (
+                      ) : filteredGroups.length > 0 ? (
                         filteredGroups.map((group) => (
                           <option key={group._id} value={group.name}>
-                            {group.name}
+                            {group.name} 
+                            {group.currentStudents !== undefined && ` (${group.currentStudents} طالب)`}
+                            {group.schedule && ` - ${group.schedule}`}
                           </option>
                         ))
+                      ) : (
+                        <option value="" disabled>
+                          {formData.teacher ? "لا توجد حلقات متاحة لهذا المعلم" : "لا توجد حلقات متاحة"}
+                        </option>
                       )}
                     </select>
                     {getFieldError("group") && (
                       <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
                         <AlertCircle size={12} />
                         <span>{getFieldError("group")}</span>
+                      </div>
+                    )}
+                    
+                    {/* رسالة توضيحية عند عدم وجود حلقات */}
+                    {!loadingGroups && formData.teacher && filteredGroups.length === 0 && (
+                      <div className="flex items-center gap-1 text-amber-600 text-xs animate-fadeIn bg-amber-50 p-3 rounded-lg border border-amber-200">
+                        <AlertCircle size={14} />
+                        <div>
+                          <div className="font-medium">لا توجد حلقات لهذا المعلم</div>
+                          <div className="text-amber-500 mt-1">
+                            المعلم المحدد: <span className="font-medium">{formData.teacher}</span>
+                          </div>
+                          <div className="text-amber-500 mt-1">
+                            تواصل مع الإدارة لإنشاء حلقة جديدة أو تحقق من اسم المعلم
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setFilteredGroups(groups)}
+                            className="mt-2 text-xs bg-amber-100 hover:bg-amber-200 text-amber-700 px-2 py-1 rounded transition-colors"
+                          >
+                            عرض جميع الحلقات المتاحة ({groups.length})
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>

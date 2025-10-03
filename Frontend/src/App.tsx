@@ -19,6 +19,7 @@ import React from "react";
 // ============================================================================
 import { AuthProvider } from "./contexts/AuthContext";
 import { UserStatusProvider } from "./contexts/UserStatusContext";
+import { SocketProvider } from "./contexts/SocketContext";
 import { useAuth } from "./hooks/useAuth";
 
 // ============================================================================
@@ -357,13 +358,16 @@ function AppContent() {
  * - BrowserRouter: Enables routing
  * - AuthProvider: Manages authentication state
  * - UserStatusProvider: Manages user online/offline status
+ * - SocketProvider: Manages real-time socket connections
  */
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <UserStatusProvider>
-          <AppContent />
+          <SocketProvider>
+            <AppContent />
+          </SocketProvider>
         </UserStatusProvider>
       </AuthProvider>
     </BrowserRouter>

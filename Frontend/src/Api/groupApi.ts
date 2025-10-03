@@ -6,6 +6,7 @@ export interface Group {
   _id: string;
   name: string;
   teacher: string;
+  teacherName?: string; // حقل إضافي للاسم
   description?: string;
   capacity?: number;
   schedule?: string;

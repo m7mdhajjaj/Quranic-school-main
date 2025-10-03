@@ -122,13 +122,19 @@ const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-// Initialize Socket.IO
+// Initialize Socket.IO with improved settings
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
     methods: ["GET", "POST"],
     credentials: true,
   },
+  pingTimeout: 60000,
+  pingInterval: 25000,
+  upgradeTimeout: 10000,
+  maxHttpBufferSize: 1e6,
+  transports: ['polling', 'websocket'],
+  allowEIO3: true,
 });
 
 // Make io available to routes
