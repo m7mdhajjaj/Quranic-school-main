@@ -82,13 +82,46 @@ exports.createStudent = async (req, res) => {
     const { teacher, group } = req.body;
     if (teacher && group) {
       const Group = require('../models/Group');
-      const groupData = await Group.findOne({ name: group, isActive: { $ne: false } });
+      
+      // البحث بالاسم الكامل أولاً
+      let groupData = await Group.findOne({ name: group, isActive: { $ne: false } });
+      
+      // إذا لم يوجد تطابق كامل، ابحث بالتطابق الجزئي
+      if (!groupData) {
+        groupData = await Group.findOne({ 
+          name: { $regex: group.replace(/\s+/g, '\\s*'), $options: 'i' }, 
+          isActive: { $ne: false } 
+        });
+      }
+      
+      // إذا لم يوجد، ابحث عن المجموعات التي تحتوي على الاسم المحدد
+      if (!groupData) {
+        groupData = await Group.findOne({ 
+          name: { $regex: group, $options: 'i' }, 
+          isActive: { $ne: false } 
+        });
+      }
       
       if (!groupData) {
-        return res.status(400).json({
-          success: false,
-          message: "الحلقة المحددة غير موجودة أو غير نشطة"
-        });
+        // إنشاء المجموعة تلقائياً إذا لم توجد
+        console.log(`📝 إنشاء مجموعة جديدة: ${group}`);
+        try {
+          groupData = await Group.create({
+            name: group,
+            teacher: teacher,
+            teacherName: teacher,
+            description: `مجموعة ${group} - تم إنشاؤها تلقائياً`,
+            capacity: 30,
+            isActive: true
+          });
+          console.log(`✅ تم إنشاء المجموعة: ${group}`);
+        } catch (groupError) {
+          console.error('خطأ في إنشاء المجموعة:', groupError);
+          return res.status(400).json({
+            success: false,
+            message: `الحلقة "${group}" غير موجودة ولم يتمكن من إنشاؤها. ${groupError.message}`
+          });
+        }
       }
 
       // التحقق من تطابق المعلم مع معلم الحلقة
@@ -185,13 +218,46 @@ exports.updateStudent = async (req, res) => {
     const { teacher, group } = updatedData;
     if (teacher && group) {
       const Group = require('../models/Group');
-      const groupData = await Group.findOne({ name: group, isActive: { $ne: false } });
+      
+      // البحث بالاسم الكامل أولاً
+      let groupData = await Group.findOne({ name: group, isActive: { $ne: false } });
+      
+      // إذا لم يوجد تطابق كامل، ابحث بالتطابق الجزئي
+      if (!groupData) {
+        groupData = await Group.findOne({ 
+          name: { $regex: group.replace(/\s+/g, '\\s*'), $options: 'i' }, 
+          isActive: { $ne: false } 
+        });
+      }
+      
+      // إذا لم يوجد، ابحث عن المجموعات التي تحتوي على الاسم المحدد
+      if (!groupData) {
+        groupData = await Group.findOne({ 
+          name: { $regex: group, $options: 'i' }, 
+          isActive: { $ne: false } 
+        });
+      }
       
       if (!groupData) {
-        return res.status(400).json({
-          success: false,
-          message: "الحلقة المحددة غير موجودة أو غير نشطة"
-        });
+        // إنشاء المجموعة تلقائياً إذا لم توجد
+        console.log(`📝 إنشاء مجموعة جديدة: ${group}`);
+        try {
+          groupData = await Group.create({
+            name: group,
+            teacher: teacher,
+            teacherName: teacher,
+            description: `مجموعة ${group} - تم إنشاؤها تلقائياً`,
+            capacity: 30,
+            isActive: true
+          });
+          console.log(`✅ تم إنشاء المجموعة: ${group}`);
+        } catch (groupError) {
+          console.error('خطأ في إنشاء المجموعة:', groupError);
+          return res.status(400).json({
+            success: false,
+            message: `الحلقة "${group}" غير موجودة ولم يتمكن من إنشاؤها. ${groupError.message}`
+          });
+        }
       }
 
       // التحقق من تطابق المعلم مع معلم الحلقة

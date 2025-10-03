@@ -5,7 +5,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node src/app.js",
-    "dev": "nodemon src/app.js"
+    "dev": "nodemon src/app.js",
+    "fix-groups": "node src/scripts/fixGroupNames.js",
+    "move-students": "node src/scripts/moveStudents.js",
+    "check-db": "node src/scripts/checkDatabase.js"
   },
   "keywords": [],
   "author": "",

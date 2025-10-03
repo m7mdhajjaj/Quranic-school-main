@@ -1,4 +1,4 @@
-const Group = require('../models/Group');
+const Group = require("../models/Group");
 
 // إنشاء حلقة جديدة
 exports.createGroup = async (req, res) => {
@@ -10,24 +10,24 @@ exports.createGroup = async (req, res) => {
     if (existingGroup) {
       return res.status(400).json({
         success: false,
-        message: 'يوجد حلقة بنفس الاسم بالفعل',
+        message: "يوجد حلقة بنفس الاسم بالفعل",
       });
     }
 
     // التحقق من وجود المعلم
-    const Teacher = require('../models/Teacher');
+    const Teacher = require("../models/Teacher");
     const teacherExists = await Teacher.findOne({
       $or: [
         { _id: teacher }, // إذا كان المعلم ObjectId
         {
           $and: [
             {
-              firstName: { $regex: teacher.split(' ')[0] || '', $options: 'i' },
+              firstName: { $regex: teacher.split(" ")[0] || "", $options: "i" },
             },
             {
               lastName: {
-                $regex: teacher.split(' ').slice(-1)[0] || '',
-                $options: 'i',
+                $regex: teacher.split(" ").slice(-1)[0] || "",
+                $options: "i",
               },
             },
           ],
@@ -39,7 +39,7 @@ exports.createGroup = async (req, res) => {
     if (!teacherExists) {
       return res.status(400).json({
         success: false,
-        message: 'المعلم المحدد غير موجود أو غير نشط',
+        message: "المعلم المحدد غير موجود أو غير نشط",
       });
     }
 
@@ -54,14 +54,14 @@ exports.createGroup = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'تم إنشاء الحلقة بنجاح',
+      message: "تم إنشاء الحلقة بنجاح",
       data: group,
     });
   } catch (error) {
-    console.error('Error creating group:', error);
+    console.error("Error creating group:", error);
     res.status(500).json({
       success: false,
-      message: 'حدث خطأ أثناء إنشاء الحلقة',
+      message: "حدث خطأ أثناء إنشاء الحلقة",
     });
   }
 };
@@ -75,29 +75,29 @@ let studentCountsCache = {
 
 // دالة محسّنة لحساب عدد الطلاب لجميع الحلقات في استعلام واحد مع caching
 const getStudentCountsForAllGroups = async () => {
-  const Student = require('../models/Student');
+  const Student = require("../models/Student");
 
   try {
     // فحص الـ cache أولاً
     const now = Date.now();
     if (studentCountsCache.timestamp + studentCountsCache.ttl > now) {
-      console.log('📋 استخدام البيانات المحفوظة (cache) لعدد الطلاب');
+      console.log("📋 استخدام البيانات المحفوظة (cache) لعدد الطلاب");
       return studentCountsCache.data;
     }
 
-    console.log('🔄 تحديث إحصائيات الطلاب من قاعدة البيانات...');
+    console.log("🔄 تحديث إحصائيات الطلاب من قاعدة البيانات...");
 
     // استخدام aggregation pipeline للحصول على عدد الطلاب لكل حلقة في استعلام واحد
     const studentCounts = await Student.aggregate([
       {
         $match: {
-          group: { $exists: true, $ne: null, $ne: '' },
+          group: { $exists: true, $ne: null, $ne: "" },
           // يمكن إضافة شروط إضافية مثل: isActive: { $ne: false }
         },
       },
       {
         $group: {
-          _id: '$group', // تجميع حسب اسم الحلقة
+          _id: "$group", // تجميع حسب اسم الحلقة
           count: { $sum: 1 }, // عد الطلاب
         },
       },
@@ -119,14 +119,14 @@ const getStudentCountsForAllGroups = async () => {
     console.log(`✅ تم تحديث إحصائيات ${studentCounts.length} حلقة`);
     return countMap;
   } catch (error) {
-    console.error('خطأ في حساب عدد الطلاب:', error);
+    console.error("خطأ في حساب عدد الطلاب:", error);
     return {};
   }
 };
 
 // دالة لإبطال cache عدد الطلاب (يتم استدعاؤها عند تعديل بيانات الطلاب)
 const invalidateStudentCountsCache = () => {
-  console.log('🗑️ إبطال cache عدد الطلاب');
+  console.log("🗑️ إبطال cache عدد الطلاب");
   studentCountsCache.timestamp = 0;
 };
 
@@ -162,10 +162,10 @@ exports.getAllGroups = async (req, res) => {
       data: groupsWithStudentCount,
     });
   } catch (error) {
-    console.error('Error fetching groups:', error);
+    console.error("Error fetching groups:", error);
     res.status(500).json({
       success: false,
-      message: 'حدث خطأ أثناء جلب الحلقات',
+      message: "حدث خطأ أثناء جلب الحلقات",
     });
   }
 };
@@ -173,14 +173,14 @@ exports.getAllGroups = async (req, res) => {
 // الحصول على حلقة بالمعرف
 exports.getGroupById = async (req, res) => {
   try {
-    const Student = require('../models/Student');
+    const Student = require("../models/Student");
     const { id } = req.params;
     const group = await Group.findById(id);
 
     if (!group) {
       return res.status(404).json({
         success: false,
-        message: 'الحلقة غير موجودة',
+        message: "الحلقة غير موجودة",
       });
     }
 
@@ -197,10 +197,10 @@ exports.getGroupById = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Error fetching group:', error);
+    console.error("Error fetching group:", error);
     res.status(500).json({
       success: false,
-      message: 'حدث خطأ أثناء جلب الحلقة',
+      message: "حدث خطأ أثناء جلب الحلقة",
     });
   }
 };
@@ -219,20 +219,20 @@ exports.updateGroup = async (req, res) => {
     if (!group) {
       return res.status(404).json({
         success: false,
-        message: 'الحلقة غير موجودة',
+        message: "الحلقة غير موجودة",
       });
     }
 
     res.status(200).json({
       success: true,
-      message: 'تم تحديث الحلقة بنجاح',
+      message: "تم تحديث الحلقة بنجاح",
       data: group,
     });
   } catch (error) {
-    console.error('Error updating group:', error);
+    console.error("Error updating group:", error);
     res.status(500).json({
       success: false,
-      message: 'حدث خطأ أثناء تحديث الحلقة',
+      message: "حدث خطأ أثناء تحديث الحلقة",
     });
   }
 };
@@ -246,12 +246,12 @@ exports.deleteGroup = async (req, res) => {
     if (!group) {
       return res.status(404).json({
         success: false,
-        message: 'الحلقة غير موجودة',
+        message: "الحلقة غير موجودة",
       });
     }
 
     // التحقق من وجود طلاب في الحلقة
-    const Student = require('../models/Student');
+    const Student = require("../models/Student");
     const relatedStudents = await Student.find({
       group: group.name,
       isActive: { $ne: false },
@@ -273,32 +273,32 @@ exports.deleteGroup = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'تم حذف الحلقة بنجاح',
+      message: "تم حذف الحلقة بنجاح",
     });
   } catch (error) {
-    console.error('Error deleting group:', error);
+    console.error("Error deleting group:", error);
     res.status(500).json({
       success: false,
-      message: 'حدث خطأ أثناء حذف الحلقة',
+      message: "حدث خطأ أثناء حذف الحلقة",
     });
   }
 };
 
 // دالة محسّنة لحساب عدد الطلاب لمعلم محدد
 const getStudentCountsForTeacher = async (teacherName) => {
-  const Student = require('../models/Student');
+  const Student = require("../models/Student");
 
   try {
     const studentCounts = await Student.aggregate([
       {
         $match: {
           teacher: teacherName,
-          group: { $exists: true, $ne: null, $ne: '' },
+          group: { $exists: true, $ne: null, $ne: "" },
         },
       },
       {
         $group: {
-          _id: '$group',
+          _id: "$group",
           count: { $sum: 1 },
         },
       },
@@ -311,7 +311,7 @@ const getStudentCountsForTeacher = async (teacherName) => {
 
     return countMap;
   } catch (error) {
-    console.error('خطأ في حساب عدد طلاب المعلم:', error);
+    console.error("خطأ في حساب عدد طلاب المعلم:", error);
     return {};
   }
 };
@@ -349,10 +349,73 @@ exports.getGroupsByTeacher = async (req, res) => {
       data: groupsWithStudentCount,
     });
   } catch (error) {
-    console.error('Error fetching groups by teacher:', error);
+    console.error("Error fetching groups by teacher:", error);
     res.status(500).json({
       success: false,
-      message: 'حدث خطأ أثناء جلب حلقات المعلم',
+      message: "حدث خطأ أثناء جلب حلقات المعلم",
+    });
+  }
+};
+
+// دالة لإعادة تسمية مجموعة وتحديث جميع الطلاب المرتبطين بها
+exports.renameGroup = async (req, res) => {
+  try {
+    const { oldName, newName } = req.body;
+
+    if (!oldName || !newName) {
+      return res.status(400).json({
+        success: false,
+        message: "الاسم القديم والجديد مطلوبان",
+      });
+    }
+
+    // العثور على المجموعة
+    const group = await Group.findOne({ name: oldName });
+    if (!group) {
+      return res.status(404).json({
+        success: false,
+        message: `المجموعة "${oldName}" غير موجودة`,
+      });
+    }
+
+    // التحقق من عدم وجود مجموعة أخرى بالاسم الجديد
+    const existingGroup = await Group.findOne({ name: newName });
+    if (
+      existingGroup &&
+      existingGroup._id.toString() !== group._id.toString()
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: `يوجد مجموعة أخرى بالاسم "${newName}" بالفعل`,
+      });
+    }
+
+    // تحديث اسم المجموعة
+    await Group.findByIdAndUpdate(group._id, { name: newName });
+
+    // تحديث جميع الطلاب الذين ينتمون للمجموعة القديمة
+    const Student = require("../models/Student");
+    const updateResult = await Student.updateMany(
+      { group: oldName },
+      { group: newName }
+    );
+
+    console.log(`✅ تم تحديث اسم المجموعة من "${oldName}" إلى "${newName}"`);
+    console.log(`✅ تم تحديث ${updateResult.modifiedCount} طالب`);
+
+    // إبطال cache عدد الطلاب
+    invalidateStudentCountsCache();
+
+    res.status(200).json({
+      success: true,
+      message: `تم تحديث اسم المجموعة بنجاح من "${oldName}" إلى "${newName}"`,
+      updatedStudents: updateResult.modifiedCount,
+    });
+  } catch (error) {
+    console.error("Error renaming group:", error);
+    res.status(500).json({
+      success: false,
+      message: "حدث خطأ أثناء إعادة تسمية المجموعة",
     });
   }
 };

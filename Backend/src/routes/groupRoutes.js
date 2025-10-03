@@ -14,12 +14,23 @@ router.post("/", authMiddleware.adminProtect, groupController.createGroup);
 router.get("/:id", authMiddleware.protect, groupController.getGroupById);
 
 // الحصول على حلقات المعلم - متاح للجميع المسجلين
-router.get("/teacher/:teacher", authMiddleware.protect, groupController.getGroupsByTeacher);
+router.get(
+  "/teacher/:teacher",
+  authMiddleware.protect,
+  groupController.getGroupsByTeacher
+);
 
 // تحديث حلقة - إداري فقط
 router.put("/:id", authMiddleware.adminProtect, groupController.updateGroup);
 
 // حذف حلقة - إداري فقط
 router.delete("/:id", authMiddleware.adminProtect, groupController.deleteGroup);
+
+// إعادة تسمية مجموعة - إداري فقط
+router.post(
+  "/rename",
+  authMiddleware.adminProtect,
+  groupController.renameGroup
+);
 
 module.exports = router;
