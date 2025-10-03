@@ -1,12 +1,27 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { AlertCircle, Users, User, FileText, Hash, Clock, Loader2, Check, X } from "lucide-react";
-import { 
-  validateGroupFieldWithYup, 
+import {
+  AlertCircle,
+  Users,
+  User,
+  FileText,
+  Hash,
+  Clock,
+  Loader2,
+  Check,
+  X,
+} from "lucide-react";
+import {
+  validateGroupFieldWithYup,
   validateGroupComprehensive,
-  type GroupFormData 
+  type GroupFormData,
 } from "../../Validation/groupValidation";
 import { getAllTeachers, type Teacher } from "../../Api/teacherApi";
-import { getAllGroups, createGroup, updateGroup, type Group } from "../../Api/groupApi";
+import {
+  getAllGroups,
+  createGroup,
+  updateGroup,
+  type Group,
+} from "../../Api/groupApi";
 
 interface AddGroupFormProps {
   onClose: () => void;
@@ -39,8 +54,6 @@ const AddGroupForm: React.FC<AddGroupFormProps> = ({
   const [existingGroups, setExistingGroups] = useState<Group[]>([]);
   const [loadingTeachers, setLoadingTeachers] = useState(false);
 
-
-
   // Fetch teachers on component mount
   useEffect(() => {
     const fetchTeachers = async () => {
@@ -48,10 +61,11 @@ const AddGroupForm: React.FC<AddGroupFormProps> = ({
       try {
         const result = await getAllTeachers();
         if (result.success && result.data) {
+          // عرض جميع المعلمين بغض النظر عن حالة النشاط
           setTeachers(result.data);
         }
       } catch (error) {
-        console.error('Error fetching teachers:', error);
+        console.error("Error fetching teachers:", error);
       } finally {
         setLoadingTeachers(false);
       }
@@ -64,7 +78,7 @@ const AddGroupForm: React.FC<AddGroupFormProps> = ({
           setExistingGroups(result.data);
         }
       } catch (error) {
-        console.error('Error fetching groups:', error);
+        console.error("Error fetching groups:", error);
       }
     };
 
@@ -73,123 +87,185 @@ const AddGroupForm: React.FC<AddGroupFormProps> = ({
   }, []);
 
   // Field validation function
-  const validateField = useCallback(async (name: string, value: unknown) => {
-    const error = await validateGroupFieldWithYup(name, value, formData as unknown as Record<string, unknown>, !group);
-    return error;
-  }, [formData, group]);
+  const validateField = useCallback(
+    async (name: string, value: unknown) => {
+      const error = await validateGroupFieldWithYup(
+        name,
+        value,
+        formData as unknown as Record<string, unknown>,
+        !group
+      );
+      return error;
+    },
+    [formData, group]
+  );
 
   // Get field error helper
-  const getFieldError = useCallback((fieldName: string) => {
-    return touchedFields.has(fieldName) ? errors[fieldName] : '';
-  }, [errors, touchedFields]);
+  const getFieldError = useCallback(
+    (fieldName: string) => {
+      return touchedFields.has(fieldName) ? errors[fieldName] : "";
+    },
+    [errors, touchedFields]
+  );
 
   // Handle input change
-  const handleChange = useCallback((
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    
-    let processedValue: string | number = value;
-    
-    if (name === 'capacity') {
-      processedValue = value === '' ? 20 : parseInt(value) || 20;
-    }
-    
-    setFormData(prev => ({
-      ...prev,
-      [name]: processedValue,
-    }));
+  const handleChange = useCallback(
+    (
+      e: React.ChangeEvent<
+        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+      >
+    ) => {
+      const { name, value } = e.target;
 
-    // Clear error for this field when user starts typing
-    if (errors[name]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
-  }, [errors]);
+      let processedValue: string | number = value;
+
+      if (name === "capacity") {
+        processedValue = value === "" ? 20 : parseInt(value) || 20;
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        [name]: processedValue,
+      }));
+
+      // Clear error for this field when user starts typing
+      if (errors[name]) {
+        setErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors[name];
+          return newErrors;
+        });
+      }
+    },
+    [errors]
+  );
 
   // Handle field blur
-  const handleBlur = useCallback(async (fieldName: string) => {
-    setTouchedFields(prev => new Set(prev).add(fieldName));
-    
-    const fieldValue = formData[fieldName as keyof GroupFormData];
-    const error = await validateField(fieldName, fieldValue);
-    
-    if (error) {
-      setErrors(prev => ({
-        ...prev,
-        [fieldName]: error,
-      }));
-    }
-  }, [formData, validateField]);
+  const handleBlur = useCallback(
+    async (fieldName: string) => {
+      setTouchedFields((prev) => new Set(prev).add(fieldName));
+
+      const fieldValue = formData[fieldName as keyof GroupFormData];
+      const error = await validateField(fieldName, fieldValue);
+
+      if (error) {
+        setErrors((prev) => ({
+          ...prev,
+          [fieldName]: error,
+        }));
+      }
+    },
+    [formData, validateField]
+  );
 
   // Form validation
   const isFormValid = useMemo(() => {
-    const requiredFields = ['name', 'teacher'];
-    const hasRequiredFields = requiredFields.every(
-      field => formData[field as keyof GroupFormData]?.toString().trim()
+    const requiredFields = ["name", "teacher"];
+    const hasRequiredFields = requiredFields.every((field) =>
+      formData[field as keyof GroupFormData]?.toString().trim()
     );
     const hasNoErrors = Object.keys(errors).length === 0;
     return hasRequiredFields && hasNoErrors;
   }, [formData, errors]);
 
   // Handle form submission
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!isFormValid || isSubmitting) return;
-    
-    setIsSubmitting(true);
-    
-    try {
-      // Comprehensive validation including business rules
-      const validation = await validateGroupComprehensive(
-        formData, 
-        existingGroups, 
-        !group
-      );
-      
-      if (!validation.isValid) {
-        setErrors(validation.errors);
-        setIsSubmitting(false);
-        return;
-      }
-      
-      // Submit data
-      let result;
-      if (group && group._id) {
-        result = await updateGroup(group._id, formData);
-      } else {
-        result = await createGroup(formData);
-      }
-      
-      if (result.success) {
-        setShowSuccess(true);
-        setTimeout(() => {
-          onSuccess(result.data);
-          onClose();
-        }, 1000);
-      } else {
-        // التحقق من رسائل خطأ التوافق
-        const message = result.message || 'حدث خطأ أثناء حفظ البيانات';
-        if (message.includes('المعلم المحدد غير موجود')) {
-          setErrors({ 
-            teacher: 'المعلم المحدد غير موجود أو غير نشط',
-            submit: message 
-          });
-        } else {
-          setErrors({ submit: message });
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+
+      if (!isFormValid || isSubmitting) return;
+
+      setIsSubmitting(true);
+
+      try {
+        console.log("🚀 بدء عملية حفظ الحلقة:", formData);
+        console.log(
+          "👥 قائمة المعلمين المتاحة:",
+          teachers.map((t) => `${t.firstName} ${t.lastName}`)
+        );
+
+        // Comprehensive validation including business rules
+        const validation = await validateGroupComprehensive(
+          formData,
+          existingGroups,
+          !group
+        );
+
+        console.log("🔍 نتيجة التحقق:", validation);
+
+        if (!validation.isValid) {
+          console.log("❌ فشل في التحقق:", validation.errors);
+          setErrors(validation.errors);
+          setIsSubmitting(false);
+          return;
         }
+
+        console.log("✅ التحقق ناجح، إرسال البيانات...");
+
+        // Submit data
+        let result;
+        if (group && group._id) {
+          console.log("🔄 تعديل حلقة موجودة:", group._id);
+          result = await updateGroup(group._id, formData);
+        } else {
+          console.log("➕ إضافة حلقة جديدة");
+          result = await createGroup(formData);
+        }
+
+        console.log("📤 نتيجة الطلب:", result);
+
+        if (result.success) {
+          console.log("✨ تم حفظ الحلقة بنجاح!");
+          setShowSuccess(true);
+          setTimeout(() => {
+            onSuccess(result.data);
+            onClose();
+          }, 1000);
+        } else {
+          console.log("❌ فشل في حفظ الحلقة:", result.message);
+
+          // التحقق من رسائل خطأ التوافق
+          const message = result.message || "حدث خطأ أثناء حفظ البيانات";
+
+          if (message.includes("المعلم المحدد غير موجود")) {
+            setErrors({
+              teacher: "المعلم المحدد غير موجود أو غير نشط",
+              submit: message,
+            });
+          } else if (message.includes("الاسم موجود")) {
+            setErrors({
+              name: "اسم الحلقة موجود بالفعل",
+              submit: message,
+            });
+          } else {
+            setErrors({ submit: message });
+          }
+        }
+      } catch (error) {
+        console.error("❌ خطأ غير متوقع في handleSubmit:", error);
+
+        let errorMessage = "حدث خطأ غير متوقع";
+
+        if (error instanceof Error) {
+          errorMessage = error.message || errorMessage;
+          console.error("تفاصيل الخطأ:", error.stack);
+        }
+
+        setErrors({ submit: errorMessage });
+      } finally {
+        setIsSubmitting(false);
       }
-    } catch (error) {
-      console.error('Error submitting form:', error);
-      setErrors({ submit: 'حدث خطأ غير متوقع' });
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [isFormValid, isSubmitting, formData, existingGroups, group, onSuccess, onClose]);
+    },
+    [
+      isFormValid,
+      isSubmitting,
+      formData,
+      existingGroups,
+      group,
+      onSuccess,
+      onClose,
+    ]
+  );
 
   // Show success message
   if (showSuccess) {
@@ -253,11 +329,11 @@ const AddGroupForm: React.FC<AddGroupFormProps> = ({
               <Hash className="text-blue-600" size={20} />
               المعلومات الأساسية
             </h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Group Name */}
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                <label className="flex items-center gap-1 text-sm font-medium text-gray-700">
                   <FileText size={14} className="text-gray-500" />
                   اسم الحلقة <span className="text-red-500">*</span>
                 </label>
@@ -266,25 +342,25 @@ const AddGroupForm: React.FC<AddGroupFormProps> = ({
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  onBlur={() => handleBlur('name')}
+                  onBlur={() => handleBlur("name")}
                   placeholder="مثال: حلقة القرآن الأولى"
                   className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
-                    getFieldError('name')
-                      ? 'border-red-300 focus:ring-red-500 bg-red-50' 
-                      : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                    getFieldError("name")
+                      ? "border-red-300 focus:ring-red-500 bg-red-50"
+                      : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                   }`}
                 />
-                {getFieldError('name') && (
+                {getFieldError("name") && (
                   <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
                     <AlertCircle size={12} />
-                    <span>{getFieldError('name')}</span>
+                    <span>{getFieldError("name")}</span>
                   </div>
                 )}
               </div>
 
               {/* Teacher Selection */}
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                <label className="flex items-center gap-1 text-sm font-medium text-gray-700">
                   <User size={14} className="text-gray-500" />
                   اسم المعلم <span className="text-red-500">*</span>
                 </label>
@@ -292,55 +368,59 @@ const AddGroupForm: React.FC<AddGroupFormProps> = ({
                   name="teacher"
                   value={formData.teacher}
                   onChange={handleChange}
-                  onBlur={() => handleBlur('teacher')}
+                  onBlur={() => handleBlur("teacher")}
                   title="اختر المعلم المسؤول عن الحلقة"
                   className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
-                    getFieldError('teacher')
-                      ? 'border-red-300 focus:ring-red-500 bg-red-50' 
-                      : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                    getFieldError("teacher")
+                      ? "border-red-300 focus:ring-red-500 bg-red-50"
+                      : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                   }`}>
                   <option value="">
                     {loadingTeachers ? "جاري التحميل..." : "اختر المعلم"}
                   </option>
                   {teachers.map((teacher) => (
-                    <option key={teacher._id} value={teacher._id}>
-                      {`${teacher.firstName} ${teacher.lastName || ''}`}
+                    <option
+                      key={teacher._id}
+                      value={`${teacher.firstName} ${
+                        teacher.lastName || ""
+                      }`.trim()}>
+                      {`${teacher.firstName} ${teacher.lastName || ""}`}
                     </option>
                   ))}
                 </select>
-                {getFieldError('teacher') && (
+                {getFieldError("teacher") && (
                   <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
                     <AlertCircle size={12} />
-                    <span>{getFieldError('teacher')}</span>
+                    <span>{getFieldError("teacher")}</span>
                   </div>
                 )}
               </div>
 
               {/* Capacity */}
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                <label className="flex items-center gap-1 text-sm font-medium text-gray-700">
                   <Hash size={14} className="text-gray-500" />
                   السعة القصوى
                 </label>
                 <input
                   type="number"
                   name="capacity"
-                  value={formData.capacity?.toString() || ''}
+                  value={formData.capacity?.toString() || ""}
                   onChange={handleChange}
-                  onBlur={() => handleBlur('capacity')}
+                  onBlur={() => handleBlur("capacity")}
                   min="1"
                   max="50"
                   placeholder="30"
                   className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
-                    getFieldError('capacity')
-                      ? 'border-red-300 focus:ring-red-500 bg-red-50' 
-                      : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                    getFieldError("capacity")
+                      ? "border-red-300 focus:ring-red-500 bg-red-50"
+                      : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                   }`}
                 />
-                {getFieldError('capacity') && (
+                {getFieldError("capacity") && (
                   <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
                     <AlertCircle size={12} />
-                    <span>{getFieldError('capacity')}</span>
+                    <span>{getFieldError("capacity")}</span>
                   </div>
                 )}
               </div>
@@ -354,58 +434,58 @@ const AddGroupForm: React.FC<AddGroupFormProps> = ({
               <FileText className="text-green-600" size={20} />
               معلومات إضافية
             </h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Schedule */}
               <div className="space-y-1">
-                <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                <label className="flex items-center gap-1 text-sm font-medium text-gray-700">
                   <Clock size={14} className="text-gray-500" />
                   الجدول الزمني
                 </label>
                 <input
                   type="text"
                   name="schedule"
-                  value={formData.schedule || ''}
+                  value={formData.schedule || ""}
                   onChange={handleChange}
-                  onBlur={() => handleBlur('schedule')}
+                  onBlur={() => handleBlur("schedule")}
                   placeholder="مثال: الأحد والثلاثاء 4:00 - 5:30"
                   className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
-                    getFieldError('schedule')
-                      ? 'border-red-300 focus:ring-red-500 bg-red-50' 
-                      : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                    getFieldError("schedule")
+                      ? "border-red-300 focus:ring-red-500 bg-red-50"
+                      : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                   }`}
                 />
-                {getFieldError('schedule') && (
+                {getFieldError("schedule") && (
                   <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
                     <AlertCircle size={12} />
-                    <span>{getFieldError('schedule')}</span>
+                    <span>{getFieldError("schedule")}</span>
                   </div>
                 )}
               </div>
 
               {/* Description */}
               <div className="space-y-1 md:col-span-1">
-                <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                <label className="flex items-center gap-1 text-sm font-medium text-gray-700">
                   <FileText size={14} className="text-gray-500" />
                   الوصف
                 </label>
                 <textarea
                   name="description"
-                  value={formData.description || ''}
+                  value={formData.description || ""}
                   onChange={handleChange}
-                  onBlur={() => handleBlur('description')}
+                  onBlur={() => handleBlur("description")}
                   rows={3}
                   placeholder="وصف مختصر عن الحلقة وأهدافها..."
                   className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right resize-none ${
-                    getFieldError('description')
-                      ? 'border-red-300 focus:ring-red-500 bg-red-50' 
-                      : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                    getFieldError("description")
+                      ? "border-red-300 focus:ring-red-500 bg-red-50"
+                      : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                   }`}
                 />
-                {getFieldError('description') && (
+                {getFieldError("description") && (
                   <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
                     <AlertCircle size={12} />
-                    <span>{getFieldError('description')}</span>
+                    <span>{getFieldError("description")}</span>
                   </div>
                 )}
               </div>
