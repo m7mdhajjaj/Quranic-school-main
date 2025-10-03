@@ -323,20 +323,41 @@ const StudentsManagement: React.FC = () => {
 
   // Handle delete - Socket events will handle state updates automatically
   const handleDelete = async (studentId: string | number) => {
+    // البحث عن الطالب للحصول على اسمه
+    const student = students.find(s => s._id === studentId || s.id === studentId);
+    const studentName = student ? `${student.firstName} ${student.lastName}` : 'الطالب';
+    
     const result = await Swal.fire({
-      title: 'تأكيد حذف الطالب',
-      text: 'هل أنت متأكد من حذف هذا الطالب؟',
+      title: 'تأكيد حذف الطالب \ud83d\udee1\ufe0f',
+      html: `
+        <div class="text-center">
+          <div class="mb-4">
+            <div class="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+              <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+              </svg>
+            </div>
+          </div>
+          <p class="text-gray-600 mb-2">هل أنت متأكد من حذف:</p>
+          <p class="font-bold text-lg text-red-600">${studentName}</p>
+          <p class="text-sm text-gray-500 mt-2">هذه العملية لا يمكن التراجع عنها</p>
+        </div>
+      `,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'نعم، احذف',
-      cancelButtonText: 'إلغاء',
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: '\ud83d\uddd1\ufe0f نعم، احذف',
+      cancelButtonText: '\u274c إلغاء',
       reverseButtons: true,
+      focusCancel: true,
       customClass: {
-        popup: 'rtl-popup',
-        title: 'rtl-title'
-      }
+        popup: 'rtl-popup swal2-rtl-popup',
+        title: 'rtl-title',
+        htmlContainer: 'rtl-content',
+        confirmButton: 'swal2-confirm-delete',
+        cancelButton: 'swal2-cancel-delete'
+      },
     });
 
     if (result.isConfirmed) {
@@ -390,24 +411,96 @@ const StudentsManagement: React.FC = () => {
       setIsEditMode(false);
       setSelectedStudent(null);
       
-      // Show success message
-      await Swal.fire({
-        title: isEditMode ? 'تم التحديث!' : 'تم الإضافة!',
-        text: isEditMode ? 'تم تحديث بيانات الطالب بنجاح' : 'تم إضافة الطالب الجديد بنجاح',
-        icon: 'success',
-        confirmButtonText: 'موافق',
-        customClass: { popup: 'rtl-popup', title: 'rtl-title' }
-      });
+      // Show enhanced center messages
+      if (isEditMode) {
+        await Swal.fire({
+          title: '\u2728 تم التحديث بنجاح \u2728',
+          html: `
+            <div class="text-center py-4">
+              <div class="mx-auto w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mb-4 animate-bounce">
+                <svg class="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+              </div>
+              <p class="text-lg font-semibold text-gray-800 mb-2">تم تحديث بيانات</p>
+              <p class="text-2xl font-bold text-blue-600 mb-2">${studentData.firstName || 'الطالب'}</p>
+              <p class="text-sm text-gray-500">بنجاح في النظام \ud83d\ude80</p>
+            </div>
+          `,
+          icon: 'success',
+          timer: 3500,
+          timerProgressBar: true,
+          showConfirmButton: false,
+          customClass: {
+            popup: 'rtl-popup swal2-rtl-popup swal2-center-popup',
+            title: 'rtl-title',
+            htmlContainer: 'rtl-content'
+          },
+          didOpen: () => {
+            const popup = Swal.getPopup();
+            if (popup) {
+              popup.style.position = 'fixed';
+              popup.style.top = '50%';
+              popup.style.left = '50%';
+              popup.style.transform = 'translate(-50%, -50%)';
+              popup.style.zIndex = '9999';
+            }
+          }
+        });
+      } else {
+        await Swal.fire({
+          title: '\ud83c\udf89 مرحباً بالطالب الجديد \ud83c\udf89',
+          html: `
+            <div class="text-center py-4">
+              <div class="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-4 animate-bounce">
+                <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+                </svg>
+              </div>
+              <p class="text-lg font-semibold text-gray-800 mb-2">تم إضافة الطالب</p>
+              <p class="text-2xl font-bold text-green-600 mb-2">${studentData.firstName || 'الجديد'}</p>
+              <p class="text-sm text-gray-500">إلى النظام بنجاح \ud83d\ude80</p>
+              <p class="text-xs text-green-600 mt-2">أهلاً وسهلاً \u2728</p>
+            </div>
+          `,
+          icon: 'success',
+          timer: 4500,
+          timerProgressBar: true,
+          showConfirmButton: false,
+          customClass: {
+            popup: 'rtl-popup swal2-rtl-popup swal2-center-popup',
+            title: 'rtl-title',
+            htmlContainer: 'rtl-content'
+          },
+          didOpen: () => {
+            const popup = Swal.getPopup();
+            if (popup) {
+              popup.style.position = 'fixed';
+              popup.style.top = '50%';
+              popup.style.left = '50%';
+              popup.style.transform = 'translate(-50%, -50%)';
+              popup.style.zIndex = '9999';
+            }
+          }
+        });
+      }
       
     } catch (error) {
       console.error('خطأ في حفظ الطالب:', error);
       
       await Swal.fire({
-        title: 'خطأ!',
-        text: 'حدث خطأ أثناء حفظ الطالب',
+        title: 'حدث خطأ! \u26a0\ufe0f',
+        text: 'حدث خطأ أثناء معالجة بيانات الطالب',
         icon: 'error',
-        confirmButtonText: 'موافق',
-        customClass: { popup: 'rtl-popup', title: 'rtl-title' }
+        timer: 3000,
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        customClass: {
+          popup: 'rtl-popup swal2-toast-rtl swal2-error-toast',
+          title: 'rtl-title',
+          htmlContainer: 'rtl-content'
+        }
       });
     }
   };
@@ -463,17 +556,56 @@ const StudentsManagement: React.FC = () => {
         setStudents(prev => prev.filter(s => !selectedStudents.has(s._id || '')));
         setSelectedStudents(new Set());
         
-        await Swal.fire('تم الحذف!', 'تم حذف الطلاب بنجاح', 'success');
+        await Swal.fire({
+          title: 'تم حذف الطلاب! \ud83d\uddd1\ufe0f',
+          text: `تم حذف ${selectedStudents.size} طالب بنجاح`,
+          icon: 'success',
+          timer: 3000,
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          customClass: {
+            popup: 'rtl-popup swal2-toast-rtl swal2-success-toast'
+          }
+        });
       } catch (bulkDeleteError) {
         console.error('❌ فشل في حذف الطلاب:', bulkDeleteError);
-        await Swal.fire('خطأ!', 'حدث خطأ أثناء حذف الطلاب', 'error');
+        await Swal.fire({
+          title: 'فشل في الحذف! \u26a0\ufe0f',
+          text: 'حدث خطأ أثناء حذف الطلاب',
+          icon: 'error',
+          timer: 3000,
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          customClass: {
+            popup: 'rtl-popup swal2-toast-rtl swal2-error-toast'
+          }
+        });
       }
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4 md:p-6" dir="rtl">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4 md:p-6 relative" dir="rtl">
+      {/* Center Design Element */}
+      <div className="fixed inset-0 flex items-center justify-center pointer-events-none opacity-5 z-0">
+        <div className="relative">
+          {/* Vertical Line */}
+          <div className="absolute left-1/2 top-0 w-0.5 h-screen bg-gradient-to-b from-blue-400 via-indigo-500 to-purple-600 transform -translate-x-1/2"></div>
+          {/* Horizontal Line */}
+          <div className="absolute top-1/2 left-0 h-0.5 w-screen bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-600 transform -translate-y-1/2"></div>
+          {/* Center Circle */}
+          <div className="absolute top-1/2 left-1/2 w-32 h-32 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center shadow-2xl">
+            <FaUserGraduate className="w-16 h-16 text-white opacity-70" />
+          </div>
+          {/* Decorative Rings */}
+          <div className="absolute top-1/2 left-1/2 w-48 h-48 border-2 border-blue-300 rounded-full transform -translate-x-1/2 -translate-y-1/2 animate-pulse"></div>
+          <div className="absolute top-1/2 left-1/2 w-64 h-64 border border-indigo-200 rounded-full transform -translate-x-1/2 -translate-y-1/2 animate-ping"></div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto relative z-10">
         
         {/* Header Section */}
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border border-gray-100">
