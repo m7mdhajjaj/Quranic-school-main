@@ -3,69 +3,71 @@ const Group = require("../models/Group");
 // إنشاء حلقة جديدة
 exports.createGroup = async (req, res) => {
   try {
-    console.log('🚀 طلب إنشاء حلقة جديدة');
-    console.log('📋 البيانات المستلمة:', req.body);
-    
+    console.log("🚀 طلب إنشاء حلقة جديدة");
+    console.log("📋 البيانات المستلمة:", req.body);
+
     const { name, teacher, description, capacity, schedule } = req.body;
 
     // التحقق من وجود الحلقة بنفس الاسم
-    console.log('🔍 التحقق من تفرد اسم الحلقة:', name);
+    console.log("🔍 التحقق من تفرد اسم الحلقة:", name);
     const existingGroup = await Group.findOne({ name });
     if (existingGroup) {
-      console.log('❌ اسم الحلقة موجود بالفعل');
+      console.log("❌ اسم الحلقة موجود بالفعل");
       return res.status(400).json({
         success: false,
         message: "يوجد حلقة بنفس الاسم بالفعل",
       });
     }
-    console.log('✅ اسم الحلقة متاح');
+    console.log("✅ اسم الحلقة متاح");
 
     // التحقق من وجود المعلم
     const Teacher = require("../models/Teacher");
-    
-    console.log('🔍 البحث عن المعلم:', teacher);
-    
+
+    console.log("🔍 البحث عن المعلم:", teacher);
+
     let teacherExists = null;
-    
+
     try {
       // محاولة البحث بالـ ObjectId أولاً
       if (teacher.match(/^[0-9a-fA-F]{24}$/)) {
-        console.log('🆔 البحث بالـ ObjectId');
+        console.log("🆔 البحث بالـ ObjectId");
         teacherExists = await Teacher.findById(teacher);
       }
-      
+
       // إذا لم نجد بالـ ObjectId، نبحث بالاسم
       if (!teacherExists) {
-        console.log('👤 البحث بالاسم الكامل');
+        console.log("👤 البحث بالاسم الكامل");
         const nameParts = teacher.trim().split(/\s+/);
-        const firstName = nameParts[0] || '';
-        const lastName = nameParts.slice(1).join(' ') || '';
-        
-        console.log('📝 أجزاء الاسم:', { firstName, lastName });
-        
+        const firstName = nameParts[0] || "";
+        const lastName = nameParts.slice(1).join(" ") || "";
+
+        console.log("📝 أجزاء الاسم:", { firstName, lastName });
+
         const searchQuery = {
           // إزالة شرط النشاط - السماح بجميع المعلمين
         };
-        
+
         if (firstName && lastName) {
           // البحث بالاسم الأول واللقب
           searchQuery.$and = [
             { firstName: { $regex: `^${firstName}$`, $options: "i" } },
-            { lastName: { $regex: `^${lastName}$`, $options: "i" } }
+            { lastName: { $regex: `^${lastName}$`, $options: "i" } },
           ];
         } else if (firstName) {
           // البحث بالاسم الأول فقط
           searchQuery.firstName = { $regex: `^${firstName}$`, $options: "i" };
         }
-        
-        console.log('🔎 استعلام البحث:', JSON.stringify(searchQuery, null, 2));
+
+        console.log("🔎 استعلام البحث:", JSON.stringify(searchQuery, null, 2));
         teacherExists = await Teacher.findOne(searchQuery);
       }
-      
-      console.log('✅ نتيجة البحث عن المعلم:', teacherExists ? 'موجود' : 'غير موجود');
-      
+
+      console.log(
+        "✅ نتيجة البحث عن المعلم:",
+        teacherExists ? "موجود" : "غير موجود"
+      );
     } catch (searchError) {
-      console.error('❌ خطأ في البحث عن المعلم:', searchError);
+      console.error("❌ خطأ في البحث عن المعلم:", searchError);
       return res.status(400).json({
         success: false,
         message: "حدث خطأ في البحث عن المعلم",
@@ -80,7 +82,7 @@ exports.createGroup = async (req, res) => {
     }
 
     // إنشاء حلقة جديدة
-    console.log('📝 إنشاء الحلقة في قاعدة البيانات...');
+    console.log("📝 إنشاء الحلقة في قاعدة البيانات...");
     const group = await Group.create({
       name,
       teacher,
@@ -89,7 +91,7 @@ exports.createGroup = async (req, res) => {
       schedule,
     });
 
-    console.log('✨ تم إنشاء الحلقة بنجاح:', group._id);
+    console.log("✨ تم إنشاء الحلقة بنجاح:", group._id);
     res.status(201).json({
       success: true,
       message: "تم إنشاء الحلقة بنجاح",
@@ -99,11 +101,11 @@ exports.createGroup = async (req, res) => {
     console.error("❌ خطأ في إنشاء الحلقة:", error);
     console.error("📋 تفاصيل الخطأ:", error.message);
     console.error("📚 Stack trace:", error.stack);
-    
+
     res.status(500).json({
       success: false,
       message: "حدث خطأ أثناء إنشاء الحلقة",
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
@@ -279,7 +281,7 @@ exports.updateGroup = async (req, res) => {
   }
 };
 
-// حذف حلقة (تعطيلها بدلاً من الحذف)
+// حذف حلقة (حذف فعلي من قاعدة البيانات)
 exports.deleteGroup = async (req, res) => {
   try {
     const { id } = req.params;
@@ -296,7 +298,6 @@ exports.deleteGroup = async (req, res) => {
     const Student = require("../models/Student");
     const relatedStudents = await Student.find({
       group: group.name,
-      isActive: { $ne: false },
     });
 
     if (relatedStudents.length > 0) {
@@ -310,8 +311,10 @@ exports.deleteGroup = async (req, res) => {
       });
     }
 
-    // تحديث الحلقة لتكون غير نشطة
-    await Group.findByIdAndUpdate(id, { isActive: false }, { new: true });
+    // حذف فعلي للحلقة من قاعدة البيانات
+    await Group.findByIdAndDelete(id);
+
+    console.log(`🗑️ تم حذف الحلقة "${group.name}" نهائياً من قاعدة البيانات`);
 
     res.status(200).json({
       success: true,
