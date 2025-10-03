@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from "react";
-import { AlertCircle, X, Loader2, Check, User, Phone, Calendar, MapPin, Mail, CreditCard, ChevronRight, ChevronLeft, Users } from "lucide-react";
+import { AlertCircle, X, Loader2, Check, User, Phone, Calendar, MapPin, Mail, CreditCard, ChevronRight, ChevronLeft, Users, BookOpen } from "lucide-react";
 import { 
   validateTeacherWithYup, 
   validateTeacherFieldWithYup
@@ -834,88 +834,190 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                 </div>
               </div>
 
-              {/* حقل الحلقات */}
-              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 p-6 rounded-xl border border-purple-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-5 flex items-center gap-2">
-                  <div className="w-1 h-6 bg-purple-500 rounded-full"></div>
-                  <Users className="text-purple-600" size={20} />
-                  الحلقات المسؤول عنها
-                </h3>
-                <div className="space-y-1">
-                  <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                    <Users size={14} className="text-gray-500" />
-                    اختر الحلقات (اختياري)
-                  </label>
+              {/* حقل الحلقات المحسن */}
+              <div className="bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 p-8 rounded-2xl border-2 border-purple-200 shadow-lg hover:shadow-xl transition-all duration-300">
+                <div className="flex items-center gap-4 mb-6">
                   <div className="relative">
-                    {loadingGroups ? (
-                      <div className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-500 flex items-center gap-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
-                        <span>جاري تحميل الحلقات...</span>
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 via-indigo-500 to-blue-500 rounded-2xl flex items-center justify-center shadow-lg hover:scale-105 transition-transform duration-300">
+                      <Users className="text-white" size={24} />
+                    </div>
+                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full animate-pulse shadow-md"></div>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 bg-clip-text text-transparent mb-1">
+                      الحلقات المسؤول عنها
+                    </h3>
+                    <p className="text-sm text-gray-600 font-medium">
+                      اختر الحلقات التي سيكون المعلم مسؤولاً عنها
+                    </p>
+                  </div>
+                  <div className="text-sm text-purple-600 font-bold px-3 py-1 bg-white rounded-full border border-purple-200 shadow-sm">
+                    {formData.groups?.length || 0} حلقة
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  {loadingGroups ? (
+                    <div className="w-full px-6 py-8 bg-white/80 backdrop-blur-sm border-2 border-dashed border-purple-300 rounded-2xl text-center">
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="relative">
+                          <div className="w-10 h-10 border-4 border-purple-200 border-t-purple-500 rounded-full animate-spin"></div>
+                          <div className="absolute inset-0 w-10 h-10 border-4 border-transparent border-r-purple-400 rounded-full animate-spin"></div>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-purple-600 font-bold text-lg mb-1">جاري تحميل الحلقات</p>
+                          <p className="text-purple-500 text-sm">يرجى الانتظار...</p>
+                        </div>
                       </div>
-                    ) : (
-                      <div className="border border-gray-300 rounded-lg bg-white max-h-48 overflow-y-auto">
-                        {availableGroups.length === 0 ? (
-                          <div className="px-3 py-2.5 text-gray-500 text-center">
-                            لا توجد حلقات متاحة
+                    </div>
+                  ) : (
+                    <div className="bg-white/90 backdrop-blur-sm rounded-2xl border-2 border-purple-200/50 shadow-inner overflow-hidden">
+                      {availableGroups.length === 0 ? (
+                        <div className="px-8 py-12 text-center">
+                          <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+                            <Users className="text-purple-400" size={40} />
                           </div>
-                        ) : (
-                          availableGroups.map((group) => (
-                            <label
-                              key={group._id}
-                              className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors">
-                              <input
-                                type="checkbox"
-                                checked={
-                                  formData.groups?.includes(group._id) || false
-                                }
-                                onChange={() => handleGroupsChange(group._id)}
-                                className="h-4 w-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 focus:ring-2"
-                              />
-                              <div className="flex-1">
-                                <div className="text-sm font-medium text-gray-900">
-                                  {group.name}
-                                </div>
-                                {group.description && (
-                                  <div className="text-xs text-gray-500">
-                                    {group.description}
+                          <h4 className="text-lg font-bold text-gray-700 mb-2">لا توجد حلقات متاحة</h4>
+                          <p className="text-sm text-gray-500">سيتم إضافة الحلقات من قبل الإدارة لاحقاً</p>
+                        </div>
+                      ) : (
+                        <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                          <div className="p-4 space-y-2">
+                            {availableGroups.map((group) => (
+                              <label
+                                key={group._id}
+                                className="group flex items-center gap-4 px-4 py-4 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 cursor-pointer transition-all duration-300 rounded-xl border-2 border-transparent hover:border-purple-200 hover:shadow-md transform hover:-translate-y-1 animate-fade-in-up">
+                                <div className="relative flex-shrink-0">
+                                  <input
+                                    type="checkbox"
+                                    checked={formData.groups?.includes(group._id) || false}
+                                    onChange={() => handleGroupsChange(group._id)}
+                                    className="sr-only"
+                                  />
+                                  <div className={`w-6 h-6 rounded-xl border-3 transition-all duration-300 flex items-center justify-center shadow-lg ${
+                                    formData.groups?.includes(group._id)
+                                      ? 'bg-gradient-to-br from-purple-500 to-indigo-500 border-purple-500 shadow-purple-200 scale-110'
+                                      : 'border-gray-300 group-hover:border-purple-400 bg-white group-hover:shadow-purple-100'
+                                  }`}>
+                                    {formData.groups?.includes(group._id) && (
+                                      <Check className="text-white animate-in zoom-in duration-300" size={16} />
+                                    )}
                                   </div>
-                                )}
-                              </div>
-                            </label>
-                          ))
-                        )}
+                                  {formData.groups?.includes(group._id) && (
+                                    <div className="absolute -inset-1 bg-gradient-to-r from-purple-400 to-indigo-400 rounded-xl opacity-20 animate-pulse"></div>
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <h5 className="text-base font-bold text-gray-900 group-hover:text-purple-700 transition-colors truncate">
+                                      {group.name}
+                                    </h5>
+                                    <div className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                                      formData.groups?.includes(group._id)
+                                        ? 'bg-gradient-to-r from-green-400 to-emerald-500 animate-pulse shadow-md'
+                                        : 'bg-gray-300 group-hover:bg-purple-300'
+                                    }`}></div>
+                                  </div>
+                                  {group.description && (
+                                    <p className="text-xs text-gray-600 group-hover:text-purple-600 transition-colors line-clamp-2">
+                                      {group.description}
+                                    </p>
+                                  )}
+                                </div>
+                                <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:scale-110">
+                                  <ChevronRight className="text-purple-500" size={20} />
+                                </div>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {(!formData.groups || formData.groups.length === 0) && (
+                    <div className="mt-6 p-6 bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl border-2 border-dashed border-gray-300 text-center">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-16 h-16 bg-gradient-to-r from-gray-400 to-gray-500 rounded-full flex items-center justify-center animate-pulse">
+                          <Users className="text-white" size={32} />
+                        </div>
+                        <div>
+                          <h4 className="text-lg font-bold text-gray-700 mb-1">لم يتم اختيار أي حلقات</h4>
+                          <p className="text-sm text-gray-600">يمكن للمعلم أن يكون مسؤولاً عن عدة حلقات أو لا يكون مسؤولاً عن أي حلقة</p>
+                          <p className="text-xs text-blue-600 mt-2">اختر من القائمة أعلاه لإضافة الحلقات</p>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-2">
-                    يمكن للمعلم أن يكون مسؤولاً عن عدة حلقات أو لا يكون مسؤولاً
-                    عن أي حلقة
-                  </div>
+                    </div>
+                  )}
+
                   {formData.groups && formData.groups.length > 0 && (
-                    <div className="mt-3">
-                      <div className="text-sm font-medium text-gray-700 mb-2">
-                        الحلقات المختارة:
+                    <div className="mt-6 p-6 bg-white/95 backdrop-blur-sm rounded-2xl border-2 border-purple-200 shadow-lg">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
+                            <Check className="text-white" size={18} />
+                          </div>
+                          <div>
+                            <h4 className="text-lg font-bold text-gray-900">الحلقات المختارة</h4>
+                            <p className="text-sm text-gray-600">المعلم مسؤول عن هذه الحلقات</p>
+                          </div>
+                        </div>
+                        <div className="px-4 py-2 bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-700 font-bold rounded-xl border border-purple-200">
+                          {formData.groups.length} حلقة
+                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {formData.groups.map((groupId) => {
                           const group = availableGroups.find(
                             (g) => g._id === groupId
                           );
                           return group ? (
-                            <span
+                            <div
                               key={groupId}
-                              className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-md">
-                              {group.name}
-                              <button
-                                type="button"
-                                onClick={() => handleGroupsChange(groupId)}
-                                className="ml-1 text-purple-600 hover:text-purple-800 focus:outline-none"
-                                title={`إزالة ${group.name} من القائمة`}>
-                                <X size={12} />
-                              </button>
-                            </span>
+                              className={`group relative bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-500 text-white rounded-2xl p-4 shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300 border-2 border-white/20 animate-fade-in-up`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center animate-pulse">
+                                    <BookOpen className="text-white drop-shadow-sm" size={20} />
+                                  </div>
+                                  <div>
+                                    <h5 className="font-bold text-white drop-shadow-sm">{group.name}</h5>
+                                    <p className="text-xs text-white/80">حلقة نشطة</p>
+                                  </div>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleGroupsChange(groupId)}
+                                  className="w-8 h-8 bg-red-500/20 hover:bg-red-500 rounded-xl flex items-center justify-center transition-all duration-200 group-hover:scale-110 hover:rotate-90"
+                                  title={`إزالة ${group.name} من القائمة`}
+                                >
+                                  <X className="text-white drop-shadow-sm" size={16} />
+                                </button>
+                              </div>
+                              
+                              {/* شريط متحرك */}
+                              <div className="absolute bottom-0 left-0 w-0 h-1 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full group-hover:w-full transition-all duration-500"></div>
+                              
+                              {/* تأثير الانعكاس */}
+                              <div className="absolute inset-0 bg-gradient-to-t from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl pointer-events-none"></div>
+                            </div>
                           ) : null;
                         })}
+                      </div>
+                      
+                      {/* إجمالي الحلقات */}
+                      <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                              <Check className="text-white" size={14} />
+                            </div>
+                            <span className="font-medium text-green-800">إجمالي الحلقات المختارة</span>
+                          </div>
+                          <div className="px-3 py-1 bg-green-500 text-white rounded-lg font-bold text-sm">
+                            {formData.groups.length} حلقة
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}

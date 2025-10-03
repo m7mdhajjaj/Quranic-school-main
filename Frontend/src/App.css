@@ -41,6 +41,7 @@ html, body {
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -48,6 +49,63 @@ html, body {
 /* Reply indicator styling */
 .reply-indicator {
   position: relative;
+}
+
+/* ============================================================================ */
+/* Teacher Form Animations */
+/* ============================================================================ */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out forwards;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(147, 197, 253, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(147, 197, 253, 0);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s infinite;
+}
+
+/* ============================================================================ */
+/* Custom Scrollbar Styling */
+/* ============================================================================ */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #a855f7 #f3f4f6;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #a855f7;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #9333ea;
 }
 
 .reply-indicator::before {
@@ -64,6 +122,7 @@ html, body {
 
 /* Reply text styling */
 .reply-text-badge {
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
