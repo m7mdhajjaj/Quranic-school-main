@@ -228,6 +228,8 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
     setCurrentStep(1);
   };
 
+
+
   const handleSubmit = async () => {
     if (!isStep2Valid) {
       const step2Fields = ['email', 'phoneNumber'];
@@ -236,6 +238,10 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
     }
 
     setIsSubmitting(true);
+    setHasRetryableError(false); // إعادة تعيين حالة الخطأ القابل للتصحيح
+    
+    // مسح الأخطاء السابقة عند بدء محاولة جديدة
+    setErrors({});
 
     try {
       // Validate form data first
@@ -267,13 +273,15 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
       } catch (apiError: unknown) {
         // معالجة أخطاء API بشكل مفصل
         console.error("API Error:", apiError);
+        setIsSubmitting(false); // تأكد من إيقاف loading
         
-        const error = apiError as { response?: { data?: { message?: string } } };
+        const error = apiError as { response?: { data?: { message?: string; field?: string } } };
         if (error.response?.data?.message) {
           const errorMessage = error.response.data.message;
+          const errorField = error.response.data.field;
           
           // معالجة أخطاء محددة (قابلة للتصحيح)
-          if (errorMessage.includes('رقم الهوية')) {
+          if (errorMessage.includes('رقم الهوية') || errorField === 'idNumber') {
             setErrors({ 
               idNumber: 'رقم الهوية موجود بالفعل في النظام - يرجى تغييره',
               general: 'يرجى تصحيح رقم الهوية والمحاولة مرة أخرى' 
@@ -281,7 +289,7 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
             setHasRetryableError(true);
           }
           // معالجة خطأ رقم الهاتف المكرر
-          else if (errorMessage.includes('phoneNumber') || errorMessage.includes('رقم الهاتف')) {
+          else if (errorMessage.includes('phoneNumber') || errorMessage.includes('رقم الهاتف') || errorField === 'phoneNumber') {
             setErrors({ 
               phoneNumber: 'رقم الهاتف موجود بالفعل في النظام - يرجى تغييره',
               general: 'يرجى تصحيح رقم الهاتف والمحاولة مرة أخرى' 
@@ -289,7 +297,7 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
             setHasRetryableError(true);
           }
           // معالجة خطأ البريد الإلكتروني المكرر
-          else if (errorMessage.includes('email') || errorMessage.includes('البريد الإلكتروني')) {
+          else if (errorMessage.includes('email') || errorMessage.includes('البريد الإلكتروني') || errorField === 'email') {
             setErrors({ 
               email: 'البريد الإلكتروني موجود بالفعل في النظام - يرجى تغييره',
               general: 'يرجى تصحيح البريد الإلكتروني والمحاولة مرة أخرى' 
@@ -325,7 +333,6 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
           setErrors({ general: "حدث خطأ في الاتصال مع الخادم" });
           setHasRetryableError(false);
         }
-        setIsSubmitting(false);
         return;
       }
 

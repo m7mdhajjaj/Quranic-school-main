@@ -250,10 +250,19 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
       setErrors(prev => {
         const newErrors = { ...prev };
         delete newErrors[name];
+        // إزالة الخطأ العام إذا تم حل الخطأ في الحقل
+        if (newErrors.general && (name === 'idNumber' || name === 'email' || name === 'phoneNumber')) {
+          delete newErrors.general;
+        }
         return newErrors;
       });
+      
+      // إعادة تعيين حالة الخطأ القابل للتصحيح عند تصحيح الحقل
+      if (hasRetryableError && (name === 'idNumber' || name === 'email' || name === 'phoneNumber')) {
+        setHasRetryableError(false);
+      }
     }
-  }, [errors]);
+  }, [errors, hasRetryableError]);
 
   const handleBlur = useCallback((fieldName: string) => {
     setTouchedFields(prev => new Set(prev).add(fieldName));
@@ -283,6 +292,7 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
     }
 
     setIsSubmitting(true);
+    setHasRetryableError(false); // إعادة تعيين حالة الخطأ القابل للتصحيح
 
     try {
       // Validate form data first

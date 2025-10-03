@@ -1,6 +1,8 @@
 
 
 const Teacher = require("../models/Teacher");
+const Student = require("../models/Student");
+const Admin = require("../models/Admin");
 const bcrypt = require("bcryptjs");
 
 // Calculate age from birth date
@@ -89,12 +91,53 @@ exports.createTeacher = async (req, res) => {
       }
     }
 
-    // duplicates
-    if (await Teacher.findOne({ email })) {
-      return res.status(400).json({ success: false, message: "البريد الإلكتروني مستخدم بالفعل" });
+    // فحص التكرار في جميع المجموعات
+    if (idNumber) {
+      const [existingTeacher, existingStudent, existingAdmin] = await Promise.all([
+        Teacher.findOne({ idNumber }),
+        Student.findOne({ idNumber }),
+        Admin.findOne({ idNumber })
+      ]);
+      
+      if (existingTeacher || existingStudent || existingAdmin) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "رقم الهوية موجود بالفعل في النظام",
+          field: 'idNumber'
+        });
+      }
     }
-    if (await Teacher.findOne({ phoneNumber })) {
-      return res.status(400).json({ success: false, message: "رقم الهاتف مستخدم بالفعل" });
+    
+    if (email) {
+      const [existingTeacher, existingStudent, existingAdmin] = await Promise.all([
+        Teacher.findOne({ email }),
+        Student.findOne({ email }),
+        Admin.findOne({ email })
+      ]);
+      
+      if (existingTeacher || existingStudent || existingAdmin) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "البريد الإلكتروني موجود بالفعل في النظام",
+          field: 'email'
+        });
+      }
+    }
+    
+    if (phoneNumber) {
+      const [existingTeacher, existingStudent, existingAdmin] = await Promise.all([
+        Teacher.findOne({ phoneNumber }),
+        Student.findOne({ phoneNumber }),
+        Admin.findOne({ phoneNumber })
+      ]);
+      
+      if (existingTeacher || existingStudent || existingAdmin) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "رقم الهاتف موجود بالفعل في النظام",
+          field: 'phoneNumber'
+        });
+      }
     }
 
     // teacherId + password
@@ -230,6 +273,55 @@ exports.updateTeacher = async (req, res) => {
   try {
     const id = req.params.id;
     const updates = { ...req.body };
+
+    // فحص التكرار للحقول المحدثة (تجنب الحقل المحدث حالياً)
+    if (updates.idNumber) {
+      const [existingTeacher, existingStudent, existingAdmin] = await Promise.all([
+        Teacher.findOne({ idNumber: updates.idNumber, _id: { $ne: id } }),
+        Student.findOne({ idNumber: updates.idNumber }),
+        Admin.findOne({ idNumber: updates.idNumber })
+      ]);
+      
+      if (existingTeacher || existingStudent || existingAdmin) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "رقم الهوية موجود بالفعل في النظام",
+          field: 'idNumber'
+        });
+      }
+    }
+    
+    if (updates.email) {
+      const [existingTeacher, existingStudent, existingAdmin] = await Promise.all([
+        Teacher.findOne({ email: updates.email, _id: { $ne: id } }),
+        Student.findOne({ email: updates.email }),
+        Admin.findOne({ email: updates.email })
+      ]);
+      
+      if (existingTeacher || existingStudent || existingAdmin) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "البريد الإلكتروني موجود بالفعل في النظام",
+          field: 'email'
+        });
+      }
+    }
+    
+    if (updates.phoneNumber) {
+      const [existingTeacher, existingStudent, existingAdmin] = await Promise.all([
+        Teacher.findOne({ phoneNumber: updates.phoneNumber, _id: { $ne: id } }),
+        Student.findOne({ phoneNumber: updates.phoneNumber }),
+        Admin.findOne({ phoneNumber: updates.phoneNumber })
+      ]);
+      
+      if (existingTeacher || existingStudent || existingAdmin) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "رقم الهاتف موجود بالفعل في النظام",
+          field: 'phoneNumber'
+        });
+      }
+    }
 
     // Remove password field from updates if it's empty or undefined
     if (!updates.password) {

@@ -66,6 +66,59 @@ exports.createStudent = async (req, res) => {
       JSON.stringify(req.body, null, 2),
     );
 
+    const { idNumber, email, phoneNumber } = req.body;
+    const Teacher = require('../models/Teacher');
+    const Admin = require('../models/Admin');
+
+    // فحص التكرار في جميع المجموعات
+    if (idNumber) {
+      const [existingStudent, existingTeacher, existingAdmin] = await Promise.all([
+        Student.findOne({ idNumber }),
+        Teacher.findOne({ idNumber }),
+        Admin.findOne({ idNumber })
+      ]);
+      
+      if (existingStudent || existingTeacher || existingAdmin) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "رقم الهوية موجود بالفعل في النظام",
+          field: 'idNumber'
+        });
+      }
+    }
+    
+    if (email) {
+      const [existingStudent, existingTeacher, existingAdmin] = await Promise.all([
+        Student.findOne({ email }),
+        Teacher.findOne({ email }),
+        Admin.findOne({ email })
+      ]);
+      
+      if (existingStudent || existingTeacher || existingAdmin) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "البريد الإلكتروني موجود بالفعل في النظام",
+          field: 'email'
+        });
+      }
+    }
+    
+    if (phoneNumber) {
+      const [existingStudent, existingTeacher, existingAdmin] = await Promise.all([
+        Student.findOne({ phoneNumber }),
+        Teacher.findOne({ phoneNumber }),
+        Admin.findOne({ phoneNumber })
+      ]);
+      
+      if (existingStudent || existingTeacher || existingAdmin) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "رقم الهاتف موجود بالفعل في النظام",
+          field: 'phoneNumber'
+        });
+      }
+    }
+
     // Generate new studentId (max + 1)
     let maxId = 100000;
     try {
@@ -261,7 +314,59 @@ exports.updateStudent = async (req, res) => {
   try {
     console.log("Request body:", req.body);
     
+    const id = req.params.id;
     const updatedData = { ...req.body };
+    const Teacher = require('../models/Teacher');
+    const Admin = require('../models/Admin');
+
+    // فحص التكرار للحقول المحدثة (تجنب الحقل المحدث حالياً)
+    if (updatedData.idNumber) {
+      const [existingStudent, existingTeacher, existingAdmin] = await Promise.all([
+        Student.findOne({ idNumber: updatedData.idNumber, _id: { $ne: id } }),
+        Teacher.findOne({ idNumber: updatedData.idNumber }),
+        Admin.findOne({ idNumber: updatedData.idNumber })
+      ]);
+      
+      if (existingStudent || existingTeacher || existingAdmin) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "رقم الهوية موجود بالفعل في النظام",
+          field: 'idNumber'
+        });
+      }
+    }
+    
+    if (updatedData.email) {
+      const [existingStudent, existingTeacher, existingAdmin] = await Promise.all([
+        Student.findOne({ email: updatedData.email, _id: { $ne: id } }),
+        Teacher.findOne({ email: updatedData.email }),
+        Admin.findOne({ email: updatedData.email })
+      ]);
+      
+      if (existingStudent || existingTeacher || existingAdmin) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "البريد الإلكتروني موجود بالفعل في النظام",
+          field: 'email'
+        });
+      }
+    }
+    
+    if (updatedData.phoneNumber) {
+      const [existingStudent, existingTeacher, existingAdmin] = await Promise.all([
+        Student.findOne({ phoneNumber: updatedData.phoneNumber, _id: { $ne: id } }),
+        Teacher.findOne({ phoneNumber: updatedData.phoneNumber }),
+        Admin.findOne({ phoneNumber: updatedData.phoneNumber })
+      ]);
+      
+      if (existingStudent || existingTeacher || existingAdmin) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "رقم الهاتف موجود بالفعل في النظام",
+          field: 'phoneNumber'
+        });
+      }
+    }
     
     // Always run validation, but handle password field specially
     if (!updatedData.password || updatedData.password.trim() === '') {
