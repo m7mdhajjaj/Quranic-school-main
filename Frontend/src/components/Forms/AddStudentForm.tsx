@@ -286,7 +286,17 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
       }
 
       if (!apiResult.success) {
-        setErrors({ general: apiResult.message || 'حدث خطأ أثناء حفظ البيانات' });
+        // التحقق من رسائل خطأ التوافق
+        const message = apiResult.message || 'حدث خطأ أثناء حفظ البيانات';
+        if (message.includes('لا يطابق معلم الحلقة')) {
+          setErrors({ 
+            teacher: 'المعلم المختار لا يطابق معلم الحلقة',
+            group: 'الحلقة المختارة لا تتبع للمعلم المحدد',
+            general: message 
+          });
+        } else {
+          setErrors({ general: message });
+        }
         setIsSubmitting(false);
         return;
       }

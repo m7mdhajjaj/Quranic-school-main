@@ -1,4 +1,4 @@
-const Group = require("../models/Group");
+const Group = require('../models/Group');
 
 // إنشاء حلقة جديدة
 exports.createGroup = async (req, res) => {
@@ -10,7 +10,36 @@ exports.createGroup = async (req, res) => {
     if (existingGroup) {
       return res.status(400).json({
         success: false,
-        message: "يوجد حلقة بنفس الاسم بالفعل",
+        message: 'يوجد حلقة بنفس الاسم بالفعل',
+      });
+    }
+
+    // التحقق من وجود المعلم
+    const Teacher = require('../models/Teacher');
+    const teacherExists = await Teacher.findOne({
+      $or: [
+        { _id: teacher }, // إذا كان المعلم ObjectId
+        {
+          $and: [
+            {
+              firstName: { $regex: teacher.split(' ')[0] || '', $options: 'i' },
+            },
+            {
+              lastName: {
+                $regex: teacher.split(' ').slice(-1)[0] || '',
+                $options: 'i',
+              },
+            },
+          ],
+        }, // إذا كان المعلم اسم كامل
+      ],
+      isActive: { $ne: false },
+    });
+
+    if (!teacherExists) {
+      return res.status(400).json({
+        success: false,
+        message: 'المعلم المحدد غير موجود أو غير نشط',
       });
     }
 
@@ -25,14 +54,14 @@ exports.createGroup = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "تم إنشاء الحلقة بنجاح",
+      message: 'تم إنشاء الحلقة بنجاح',
       data: group,
     });
   } catch (error) {
-    console.error("Error creating group:", error);
+    console.error('Error creating group:', error);
     res.status(500).json({
       success: false,
-      message: "حدث خطأ أثناء إنشاء الحلقة",
+      message: 'حدث خطأ أثناء إنشاء الحلقة',
     });
   }
 };
@@ -41,13 +70,13 @@ exports.createGroup = async (req, res) => {
 let studentCountsCache = {
   data: {},
   timestamp: 0,
-  ttl: 60000 // مهلة انتهاء الصلاحية: دقيقة واحدة
+  ttl: 60000, // مهلة انتهاء الصلاحية: دقيقة واحدة
 };
 
 // دالة محسّنة لحساب عدد الطلاب لجميع الحلقات في استعلام واحد مع caching
 const getStudentCountsForAllGroups = async () => {
   const Student = require('../models/Student');
-  
+
   try {
     // فحص الـ cache أولاً
     const now = Date.now();
@@ -57,26 +86,26 @@ const getStudentCountsForAllGroups = async () => {
     }
 
     console.log('🔄 تحديث إحصائيات الطلاب من قاعدة البيانات...');
-    
+
     // استخدام aggregation pipeline للحصول على عدد الطلاب لكل حلقة في استعلام واحد
     const studentCounts = await Student.aggregate([
       {
         $match: {
-          group: { $exists: true, $ne: null, $ne: "" }
+          group: { $exists: true, $ne: null, $ne: '' },
           // يمكن إضافة شروط إضافية مثل: isActive: { $ne: false }
-        }
+        },
       },
       {
         $group: {
-          _id: "$group", // تجميع حسب اسم الحلقة
-          count: { $sum: 1 } // عد الطلاب
-        }
-      }
+          _id: '$group', // تجميع حسب اسم الحلقة
+          count: { $sum: 1 }, // عد الطلاب
+        },
+      },
     ]);
 
     // تحويل النتيجة إلى object للبحث السريع
     const countMap = {};
-    studentCounts.forEach(item => {
+    studentCounts.forEach((item) => {
       countMap[item._id] = item.count;
     });
 
@@ -84,7 +113,7 @@ const getStudentCountsForAllGroups = async () => {
     studentCountsCache = {
       data: countMap,
       timestamp: now,
-      ttl: 60000
+      ttl: 60000,
     };
 
     console.log(`✅ تم تحديث إحصائيات ${studentCounts.length} حلقة`);
@@ -108,33 +137,35 @@ exports.invalidateStudentCountsCache = invalidateStudentCountsCache;
 exports.getAllGroups = async (req, res) => {
   try {
     const startTime = Date.now();
-    
+
     // جلب جميع الحلقات و عدد الطلاب بشكل متوازي للسرعة
     const [groups, studentCountMap] = await Promise.all([
       Group.find().sort({ createdAt: -1 }),
-      getStudentCountsForAllGroups()
+      getStudentCountsForAllGroups(),
     ]);
 
     // إضافة عدد الطلاب لكل حلقة باستخدام البحث السريع
-    const groupsWithStudentCount = groups.map(group => ({
+    const groupsWithStudentCount = groups.map((group) => ({
       ...group.toObject(),
-      currentStudents: studentCountMap[group.name] || 0
+      currentStudents: studentCountMap[group.name] || 0,
     }));
 
     const endTime = Date.now();
     const duration = endTime - startTime;
-    
-    console.log(`✓ تم جلب ${groupsWithStudentCount.length} حلقة مع عدد الطلاب في ${duration}ms`);
+
+    console.log(
+      `✓ تم جلب ${groupsWithStudentCount.length} حلقة مع عدد الطلاب في ${duration}ms`
+    );
 
     res.status(200).json({
       success: true,
       data: groupsWithStudentCount,
     });
   } catch (error) {
-    console.error("Error fetching groups:", error);
+    console.error('Error fetching groups:', error);
     res.status(500).json({
       success: false,
-      message: "حدث خطأ أثناء جلب الحلقات",
+      message: 'حدث خطأ أثناء جلب الحلقات',
     });
   }
 };
@@ -149,27 +180,27 @@ exports.getGroupById = async (req, res) => {
     if (!group) {
       return res.status(404).json({
         success: false,
-        message: "الحلقة غير موجودة",
+        message: 'الحلقة غير موجودة',
       });
     }
 
     // إضافة عدد الطلاب المشتركين في الحلقة
-    const currentStudents = await Student.countDocuments({ 
-      group: group.name 
+    const currentStudents = await Student.countDocuments({
+      group: group.name,
     });
 
     res.status(200).json({
       success: true,
       data: {
         ...group.toObject(),
-        currentStudents
+        currentStudents,
       },
     });
   } catch (error) {
-    console.error("Error fetching group:", error);
+    console.error('Error fetching group:', error);
     res.status(500).json({
       success: false,
-      message: "حدث خطأ أثناء جلب الحلقة",
+      message: 'حدث خطأ أثناء جلب الحلقة',
     });
   }
 };
@@ -188,20 +219,20 @@ exports.updateGroup = async (req, res) => {
     if (!group) {
       return res.status(404).json({
         success: false,
-        message: "الحلقة غير موجودة",
+        message: 'الحلقة غير موجودة',
       });
     }
 
     res.status(200).json({
       success: true,
-      message: "تم تحديث الحلقة بنجاح",
+      message: 'تم تحديث الحلقة بنجاح',
       data: group,
     });
   } catch (error) {
-    console.error("Error updating group:", error);
+    console.error('Error updating group:', error);
     res.status(500).json({
       success: false,
-      message: "حدث خطأ أثناء تحديث الحلقة",
+      message: 'حدث خطأ أثناء تحديث الحلقة',
     });
   }
 };
@@ -211,28 +242,44 @@ exports.deleteGroup = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const group = await Group.findByIdAndUpdate(
-      id,
-      { isActive: false },
-      { new: true }
-    );
-
+    const group = await Group.findById(id);
     if (!group) {
       return res.status(404).json({
         success: false,
-        message: "الحلقة غير موجودة",
+        message: 'الحلقة غير موجودة',
       });
     }
 
+    // التحقق من وجود طلاب في الحلقة
+    const Student = require('../models/Student');
+    const relatedStudents = await Student.find({
+      group: group.name,
+      isActive: { $ne: false },
+    });
+
+    if (relatedStudents.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `لا يمكن حذف الحلقة. يوجد ${relatedStudents.length} طالب مسجلين في هذه الحلقة. يجب نقلهم أولاً.`,
+        details: {
+          studentsCount: relatedStudents.length,
+          students: relatedStudents.map((s) => `${s.firstName} ${s.lastName}`),
+        },
+      });
+    }
+
+    // تحديث الحلقة لتكون غير نشطة
+    await Group.findByIdAndUpdate(id, { isActive: false }, { new: true });
+
     res.status(200).json({
       success: true,
-      message: "تم حذف الحلقة بنجاح",
+      message: 'تم حذف الحلقة بنجاح',
     });
   } catch (error) {
-    console.error("Error deleting group:", error);
+    console.error('Error deleting group:', error);
     res.status(500).json({
       success: false,
-      message: "حدث خطأ أثناء حذف الحلقة",
+      message: 'حدث خطأ أثناء حذف الحلقة',
     });
   }
 };
@@ -240,25 +287,25 @@ exports.deleteGroup = async (req, res) => {
 // دالة محسّنة لحساب عدد الطلاب لمعلم محدد
 const getStudentCountsForTeacher = async (teacherName) => {
   const Student = require('../models/Student');
-  
+
   try {
     const studentCounts = await Student.aggregate([
       {
         $match: {
           teacher: teacherName,
-          group: { $exists: true, $ne: null, $ne: "" }
-        }
+          group: { $exists: true, $ne: null, $ne: '' },
+        },
       },
       {
         $group: {
-          _id: "$group",
-          count: { $sum: 1 }
-        }
-      }
+          _id: '$group',
+          count: { $sum: 1 },
+        },
+      },
     ]);
 
     const countMap = {};
-    studentCounts.forEach(item => {
+    studentCounts.forEach((item) => {
       countMap[item._id] = item.count;
     });
 
@@ -281,29 +328,31 @@ exports.getGroupsByTeacher = async (req, res) => {
         teacher,
         isActive: true,
       }).sort({ createdAt: -1 }),
-      getStudentCountsForTeacher(teacher)
+      getStudentCountsForTeacher(teacher),
     ]);
 
     // إضافة عدد الطلاب باستخدام البحث السريع
-    const groupsWithStudentCount = groups.map(group => ({
+    const groupsWithStudentCount = groups.map((group) => ({
       ...group.toObject(),
-      currentStudents: studentCountMap[group.name] || 0
+      currentStudents: studentCountMap[group.name] || 0,
     }));
 
     const endTime = Date.now();
     const duration = endTime - startTime;
-    
-    console.log(`✓ تم جلب ${groupsWithStudentCount.length} حلقة للمعلم "${teacher}" مع عدد الطلاب في ${duration}ms`);
+
+    console.log(
+      `✓ تم جلب ${groupsWithStudentCount.length} حلقة للمعلم "${teacher}" مع عدد الطلاب في ${duration}ms`
+    );
 
     res.status(200).json({
       success: true,
       data: groupsWithStudentCount,
     });
   } catch (error) {
-    console.error("Error fetching groups by teacher:", error);
+    console.error('Error fetching groups by teacher:', error);
     res.status(500).json({
       success: false,
-      message: "حدث خطأ أثناء جلب حلقات المعلم",
+      message: 'حدث خطأ أثناء جلب حلقات المعلم',
     });
   }
 };

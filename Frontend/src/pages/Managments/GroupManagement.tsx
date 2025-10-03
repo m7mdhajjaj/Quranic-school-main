@@ -206,15 +206,50 @@ const GroupManagement: React.FC = () => {
           confirmButtonText: 'موافق',
           customClass: { popup: 'rtl-popup', title: 'rtl-title' }
         });
-      } catch (deleteError) {
+      } catch (deleteError: unknown) {
         console.error('❌ فشل في حذف الحلقة:', deleteError);
-        await Swal.fire({
-          title: 'خطأ!',
-          text: 'حدث خطأ أثناء حذف الحلقة',
-          icon: 'error',
-          confirmButtonText: 'موافق',
-          customClass: { popup: 'rtl-popup', title: 'rtl-title' }
-        });
+        
+        // التعامل مع خطأ وجود طلاب مرتبطين
+        const error = deleteError as { response?: { status: number; data: { details: { studentsCount: number }; message: string } } };
+        if (error.response?.status === 400 && error.response?.data?.details) {
+          const { studentsCount } = error.response.data.details;
+          
+          await Swal.fire({
+            title: '⚠️ لا يمكن حذف الحلقة ⚠️',
+            html: `
+              <div class="text-center py-4">
+                <div class="mx-auto w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mb-4 animate-pulse">
+                  <svg class="w-10 h-10 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                  </svg>
+                </div>
+                <p class="text-lg font-semibold text-gray-800 mb-2">الحلقة تحتوي على:</p>
+                <p class="text-2xl font-bold text-orange-600 mb-2">👥 ${studentsCount} طالب</p>
+                <p class="text-sm text-gray-600 mb-2">يجب نقل الطلاب إلى حلقة أخرى أولاً</p>
+                <p class="text-xs text-yellow-600">أو إلغاء تسجيلهم من الحلقة</p>
+              </div>
+            `,
+            icon: 'warning',
+            timer: 7000,
+            timerProgressBar: true,
+            showConfirmButton: true,
+            confirmButtonText: 'فهمت',
+            customClass: {
+              popup: 'rtl-popup swal2-rtl-popup swal2-center-popup',
+              title: 'rtl-title',
+              htmlContainer: 'rtl-content'
+            }
+          });
+        } else {
+          // خطأ عام
+          await Swal.fire({
+            title: 'خطأ!',
+            text: error.response?.data?.message || 'حدث خطأ أثناء حذف الحلقة',
+            icon: 'error',
+            confirmButtonText: 'موافق',
+            customClass: { popup: 'rtl-popup', title: 'rtl-title' }
+          });
+        }
       }
     }
   };

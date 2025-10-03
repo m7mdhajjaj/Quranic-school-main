@@ -90,12 +90,15 @@ export const teacherValidationSchema = yup.object({
     .trim()
     .transform((value) => value === '' ? null : value),
     
-  // رقم الهوية - اختياري للمعلم
+  // رقم الهوية - مطلوب وفريد للمعلم
   idNumber: yup
     .string()
-    .nullable()
+    .required('رقم الهوية مطلوب')
     .matches(/^\d{9}$/, 'رقم الهوية يجب أن يتكون من 9 أرقام فقط')
-    .transform((value) => value === '' ? null : value),
+    .test('unique-id', 'رقم الهوية موجود بالفعل', function() {
+      // هذا التحقق يتم في الباك اند - unique constraint
+      return true;
+    }),
     
   // رقم الهاتف - مطلوب وفريد
   phoneNumber: yup

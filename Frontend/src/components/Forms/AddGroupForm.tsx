@@ -24,7 +24,7 @@ const AddGroupForm: React.FC<AddGroupFormProps> = ({
     name: group?.name || "",
     teacher: group?.teacher || "",
     description: group?.description || "",
-    capacity: group?.capacity || 20,
+    capacity: group?.capacity || 30, // متطابق مع Backend default
     schedule: group?.schedule || "",
     isActive: group?.isActive !== undefined ? group.isActive : true,
   });
@@ -172,7 +172,16 @@ const AddGroupForm: React.FC<AddGroupFormProps> = ({
           onClose();
         }, 1000);
       } else {
-        setErrors({ submit: result.message || 'حدث خطأ أثناء حفظ البيانات' });
+        // التحقق من رسائل خطأ التوافق
+        const message = result.message || 'حدث خطأ أثناء حفظ البيانات';
+        if (message.includes('المعلم المحدد غير موجود')) {
+          setErrors({ 
+            teacher: 'المعلم المحدد غير موجود أو غير نشط',
+            submit: message 
+          });
+        } else {
+          setErrors({ submit: message });
+        }
       }
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -321,7 +330,7 @@ const AddGroupForm: React.FC<AddGroupFormProps> = ({
                   onBlur={() => handleBlur('capacity')}
                   min="1"
                   max="50"
-                  placeholder="20"
+                  placeholder="30"
                   className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                     getFieldError('capacity')
                       ? 'border-red-300 focus:ring-red-500 bg-red-50' 

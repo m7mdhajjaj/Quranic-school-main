@@ -1,11 +1,12 @@
-import React, { useState, useCallback, useMemo } from "react";
-import { AlertCircle, X, Loader2, Check, User, Phone, Calendar, MapPin, Mail, CreditCard, ChevronRight, ChevronLeft } from "lucide-react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
+import { AlertCircle, X, Loader2, Check, User, Phone, Calendar, MapPin, Mail, CreditCard, ChevronRight, ChevronLeft, Users } from "lucide-react";
 import { 
   validateTeacherWithYup, 
   validateTeacherFieldWithYup
 } from "../../Validation/teacherValidation";
 import type { TeacherFormData } from "../../Validation/teacherValidation";
 import { createTeacher, updateTeacher, type Teacher } from "../../Api/teacherApi";
+import { getAllGroups, type Group } from "../../Api/groupApi";
 
 // دالة لتحويل التاريخ من الخادم إلى تنسيق input[type="date"]
 const formatDateForInput = (dateValue?: string | Date): string => {
@@ -59,6 +60,7 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
     email: teacher?.email || "",
     phoneNumber: teacher?.phoneNumber || "",
     groupName: teacher?.groupName || "",
+    groups: teacher?.groups || [], // إضافة حقل groups مرتبط بـ Backend
     password: "",
   });
 
@@ -67,9 +69,32 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // State للحلقات المتاحة
+  const [availableGroups, setAvailableGroups] = useState<Group[]>([]);
+  const [loadingGroups, setLoadingGroups] = useState(false);
+
   const calculatedAge = useMemo(() => {
     return formData.birthDate ? calculateAge(formData.birthDate) : null;
   }, [formData.birthDate]);
+
+  // جلب الحلقات المتاحة
+  useEffect(() => {
+    const fetchGroups = async () => {
+      setLoadingGroups(true);
+      try {
+        const result = await getAllGroups();
+        if (result.success && result.data) {
+          setAvailableGroups(result.data);
+        }
+      } catch (error) {
+        console.error('خطأ في جلب الحلقات:', error);
+      } finally {
+        setLoadingGroups(false);
+      }
+    };
+
+    fetchGroups();
+  }, []);
 
   const isStep1Valid = useMemo(() => {
     const step1Fields = [
@@ -124,6 +149,29 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
   const getFieldError = (fieldName: string): string | undefined => {
     return touchedFields.has(fieldName) ? errors[fieldName] : undefined;
   };
+
+  // دالة للتعامل مع اختيار الحلقات المتعددة
+  const handleGroupsChange = useCallback((groupId: string) => {
+    setFormData(prev => {
+      const currentGroups = prev.groups || [];
+      let newGroups: string[];
+      
+      if (currentGroups.includes(groupId)) {
+        // إزالة الحلقة إذا كانت محددة بالفعل
+        newGroups = currentGroups.filter(id => id !== groupId);
+      } else {
+        // إضافة الحلقة إذا لم تكن محددة
+        newGroups = [...currentGroups, groupId];
+      }
+
+      return {
+        ...prev,
+        groups: newGroups,
+        // تحديث groupName ليكون أول حلقة مختارة أو فارغ
+        groupName: newGroups.length > 0 ? newGroups[0] : ""
+      };
+    });
+  }, []);
 
   const handleNextStep = () => {
     if (!isStep1Valid) {
@@ -606,6 +654,85 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                       </div>
                     )}
                   </div>
+                </div>
+              </div>
+
+              {/* حقل الحلقات */}
+              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 p-6 rounded-xl border border-purple-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-5 flex items-center gap-2">
+                  <div className="w-1 h-6 bg-purple-500 rounded-full"></div>
+                  <Users className="text-purple-600" size={20} />
+                  الحلقات المسؤول عنها
+                </h3>
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                    <Users size={14} className="text-gray-500" />
+                    اختر الحلقات (اختياري)
+                  </label>
+                  <div className="relative">
+                    {loadingGroups ? (
+                      <div className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-500 flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                        <span>جاري تحميل الحلقات...</span>
+                      </div>
+                    ) : (
+                      <div className="border border-gray-300 rounded-lg bg-white max-h-48 overflow-y-auto">
+                        {availableGroups.length === 0 ? (
+                          <div className="px-3 py-2.5 text-gray-500 text-center">لا توجد حلقات متاحة</div>
+                        ) : (
+                          availableGroups.map((group) => (
+                            <label
+                              key={group._id}
+                              className="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 cursor-pointer transition-colors"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={formData.groups?.includes(group._id) || false}
+                                onChange={() => handleGroupsChange(group._id)}
+                                className="h-4 w-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 focus:ring-2"
+                              />
+                              <div className="flex-1">
+                                <div className="text-sm font-medium text-gray-900">{group.name}</div>
+                                {group.description && (
+                                  <div className="text-xs text-gray-500">{group.description}</div>
+                                )}
+                              </div>
+
+                            </label>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-2">
+                    يمكن للمعلم أن يكون مسؤولاً عن عدة حلقات أو لا يكون مسؤولاً عن أي حلقة
+                  </div>
+                  {formData.groups && formData.groups.length > 0 && (
+                    <div className="mt-3">
+                      <div className="text-sm font-medium text-gray-700 mb-2">الحلقات المختارة:</div>
+                      <div className="flex flex-wrap gap-2">
+                        {formData.groups.map((groupId) => {
+                          const group = availableGroups.find(g => g._id === groupId);
+                          return group ? (
+                            <span
+                              key={groupId}
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-md"
+                            >
+                              {group.name}
+                              <button
+                                type="button"
+                                onClick={() => handleGroupsChange(groupId)}
+                                className="ml-1 text-purple-600 hover:text-purple-800 focus:outline-none"
+                                title={`إزالة ${group.name} من القائمة`}
+                              >
+                                <X size={12} />
+                              </button>
+                            </span>
+                          ) : null;
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

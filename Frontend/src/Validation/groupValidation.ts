@@ -106,9 +106,9 @@ export const groupValidationSchema = yup.object({
     .nullable()
     .min(0, 'السعة يجب أن تكون 0 أو أكثر')
     .integer('السعة يجب أن تكون رقماً صحيحاً')
-    .max(200, 'السعة يجب ألا تتجاوز 200 طالب')
+    .max(50, 'السعة يجب ألا تتجاوز 50 طالب')
     .transform((value) => {
-      if (value === null || value === undefined || value === '') return 20; // القيمة الافتراضية
+      if (value === null || value === undefined || value === '') return 30; // القيمة الافتراضية متطابقة مع Backend
       return Number(value);
     }),
 

@@ -359,43 +359,91 @@ const TeachersManagement: React.FC = () => {
             }
           }
         });
-      } catch (deleteError) {
+      } catch (deleteError: unknown) {
         console.error('❌ فشل في حذف المعلم:', deleteError);
-        await Swal.fire({
-          title: '\u26a0\ufe0f فشل في الحذف \u26a0\ufe0f',
-          html: `
-            <div class="text-center py-4">
-              <div class="mx-auto w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-4 animate-pulse">
-                <svg class="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
+        
+        // التعامل مع خطأ وجود علاقات مرتبطة
+        const error = deleteError as { response?: { status: number; data: { details: { groupsCount: number; studentsCount: number }; message: string } } };
+        if (error.response?.status === 400 && error.response?.data?.details) {
+          const { groupsCount, studentsCount } = error.response.data.details;
+          
+          await Swal.fire({
+            title: '⚠️ لا يمكن حذف المعلم ⚠️',
+            html: `
+              <div class="text-center py-4">
+                <div class="mx-auto w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mb-4 animate-pulse">
+                  <svg class="w-10 h-10 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                  </svg>
+                </div>
+                <p class="text-lg font-semibold text-gray-800 mb-2">المعلم مرتبط بـ:</p>
+                <div class="space-y-2 mb-4">
+                  ${groupsCount > 0 ? `<p class="text-blue-600 font-medium">🔵 ${groupsCount} حلقة</p>` : ''}
+                  ${studentsCount > 0 ? `<p class="text-green-600 font-medium">🟢 ${studentsCount} طالب</p>` : ''}
+                </div>
+                <p class="text-sm text-gray-600 mb-2">يجب نقل الحلقات والطلاب أولاً</p>
+                <p class="text-xs text-yellow-600">أو تعيين معلم آخر لهم</p>
               </div>
-              <p class="text-lg font-semibold text-gray-800 mb-2">حدث خطأ أثناء الحذف</p>
-              <p class="text-sm text-gray-600 mb-2">يرجى المحاولة مرة أخرى</p>
-              <p class="text-xs text-red-500">تأكد من اتصالك بالإنترنت \ud83c\udf10</p>
-            </div>
-          `,
-          icon: 'error',
-          timer: 5000,
-          timerProgressBar: true,
-          showConfirmButton: true,
-          confirmButtonText: 'حاول مرة أخرى',
-          customClass: {
-            popup: 'rtl-popup swal2-rtl-popup swal2-center-popup',
-            title: 'rtl-title',
-            htmlContainer: 'rtl-content'
-          },
-          didOpen: () => {
-            const popup = Swal.getPopup();
-            if (popup) {
-              popup.style.position = 'fixed';
-              popup.style.top = '50%';
-              popup.style.left = '50%';
-              popup.style.transform = 'translate(-50%, -50%)';
-              popup.style.zIndex = '9999';
+            `,
+            icon: 'warning',
+            timer: 8000,
+            timerProgressBar: true,
+            showConfirmButton: true,
+            confirmButtonText: 'فهمت',
+            customClass: {
+              popup: 'rtl-popup swal2-rtl-popup swal2-center-popup',
+              title: 'rtl-title',
+              htmlContainer: 'rtl-content'
+            },
+            didOpen: () => {
+              const popup = Swal.getPopup();
+              if (popup) {
+                popup.style.position = 'fixed';
+                popup.style.top = '50%';
+                popup.style.left = '50%';
+                popup.style.transform = 'translate(-50%, -50%)';
+                popup.style.zIndex = '9999';
+              }
             }
-          }
-        });
+          });
+        } else {
+          // خطأ عام
+          await Swal.fire({
+            title: '\u26a0\ufe0f فشل في الحذف \u26a0\ufe0f',
+            html: `
+              <div class="text-center py-4">
+                <div class="mx-auto w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-4 animate-pulse">
+                  <svg class="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                </div>
+                <p class="text-lg font-semibold text-gray-800 mb-2">حدث خطأ أثناء الحذف</p>
+                <p class="text-sm text-gray-600 mb-2">${error.response?.data?.message || 'يرجى المحاولة مرة أخرى'}</p>
+                <p class="text-xs text-red-500">تأكد من اتصالك بالإنترنت 🌐</p>
+              </div>
+            `,
+            icon: 'error',
+            timer: 5000,
+            timerProgressBar: true,
+            showConfirmButton: true,
+            confirmButtonText: 'حاول مرة أخرى',
+            customClass: {
+              popup: 'rtl-popup swal2-rtl-popup swal2-center-popup',
+              title: 'rtl-title',
+              htmlContainer: 'rtl-content'
+            },
+            didOpen: () => {
+              const popup = Swal.getPopup();
+              if (popup) {
+                popup.style.position = 'fixed';
+                popup.style.top = '50%';
+                popup.style.left = '50%';
+                popup.style.transform = 'translate(-50%, -50%)';
+                popup.style.zIndex = '9999';
+              }
+            }
+          });
+        }
       }
     }
   };

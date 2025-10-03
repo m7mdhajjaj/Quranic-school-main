@@ -21,7 +21,12 @@ const teacherSchema = new mongoose.Schema(
     motherName: { type: String },
 
     // هوية/تواصل
-    idNumber: { type: String },
+    idNumber: { 
+      type: String,
+      required: [true, 'رقم الهوية مطلوب'],
+      unique: true,
+      match: [/^\d{9}$/, 'رقم الهوية يجب أن يتكون من 9 أرقام فقط']
+    },
     phoneNumber: {
       type: String,
       required: [true, 'رقم الهاتف مطلوب'],
