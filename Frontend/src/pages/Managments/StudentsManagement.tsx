@@ -96,11 +96,22 @@ const StudentsManagement: React.FC = () => {
     new Set()
   );
 
-  // Unique groups for filter
-  const uniqueGroups = useMemo(() => {
-    const groups = [...new Set(students.map((s) => s.group).filter(Boolean))];
-    return groups.sort((a, b) => a.localeCompare(b, "ar"));
-  }, [students]);
+  // جميع الحلقات من قاعدة البيانات
+  const [allGroups, setAllGroups] = useState<{ _id: string; name: string }[]>(
+    []
+  );
+  useEffect(() => {
+    // جلب جميع الحلقات من قاعدة البيانات
+    import("../../Api/groupApi").then(({ getAllGroups }) => {
+      getAllGroups().then((result) => {
+        if (result.success && result.data) {
+          setAllGroups(
+            result.data.map((g: any) => ({ _id: g._id, name: g.name }))
+          );
+        }
+      });
+    });
+  }, []);
 
   // Statistics
   const stats = useMemo(() => {
@@ -310,6 +321,28 @@ const StudentsManagement: React.FC = () => {
   // Filter and sort students
   const filteredAndSortedStudents = useMemo(() => {
     const filtered = students.filter((student) => {
+      // إذا تم اختيار حلقة معينة، اعرض فقط طلاب هذه الحلقة
+      if (selectedGroup !== "all") {
+        // تطبيع أسماء الحلقات للمقارنة (إزالة المسافات الزائدة وتوحيد الحروف)
+        const normalizeGroupName = (name: string) =>
+          (name || "").trim().replace(/\s+/g, " ").toLowerCase();
+
+        const studentGroupNormalized = normalizeGroupName(student.group);
+        const selectedGroupNormalized = normalizeGroupName(selectedGroup);
+
+        // تسجيل للتشخيص
+        console.log(`🔍 مقارنة الحلقات:`, {
+          studentGroup: student.group,
+          selectedGroup: selectedGroup,
+          studentGroupNormalized,
+          selectedGroupNormalized,
+          matches: studentGroupNormalized === selectedGroupNormalized,
+        });
+
+        if (studentGroupNormalized !== selectedGroupNormalized) {
+          return false;
+        }
+      }
       const searchLower = searchTerm.toLowerCase();
       const matchesSearch =
         (student.firstName || "").toLowerCase().includes(searchLower) ||
@@ -322,12 +355,10 @@ const StudentsManagement: React.FC = () => {
 
       const matchesGender =
         selectedGender === "all" || student.gender === selectedGender;
-      const matchesGroup =
-        selectedGroup === "all" || student.group === selectedGroup;
       const matchesAge =
         student.age >= ageRange[0] && student.age <= ageRange[1];
 
-      return matchesSearch && matchesGender && matchesGroup && matchesAge;
+      return matchesSearch && matchesGender && matchesAge;
     });
 
     // Sort
@@ -348,7 +379,15 @@ const StudentsManagement: React.FC = () => {
     });
 
     return filtered;
-  }, [students, searchTerm, selectedGender, ageRange, sortField, sortOrder]);
+  }, [
+    students,
+    searchTerm,
+    selectedGender,
+    selectedGroup,
+    ageRange,
+    sortField,
+    sortOrder,
+  ]);
 
   // Pagination
   const indexOfLastStudent = currentPage * studentsPerPage;
@@ -858,9 +897,9 @@ const StudentsManagement: React.FC = () => {
                       className="w-full px-4 py-2.5 bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 text-gray-700 font-medium"
                       title="اختيار الحلقة للفلترة">
                       <option value="all">جميع الحلقات</option>
-                      {uniqueGroups.map((group) => (
-                        <option key={group} value={group}>
-                          {group}
+                      {allGroups.map((group) => (
+                        <option key={group._id} value={group.name}>
+                          {group.name}
                         </option>
                       ))}
                     </select>
