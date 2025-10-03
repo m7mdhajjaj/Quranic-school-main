@@ -26,6 +26,19 @@ import '../../styles/sweetalert.css';
 type SortField = 'teacherId' | 'firstName' | 'age' | 'email';
 type SortOrder = 'asc' | 'desc';
 
+// دالة مساعدة للحصول على اسم الحلقة بشكل آمن
+const getGroupDisplayName = (group: string | {name?: string; id?: string; number?: number} | null | undefined): string => {
+  if (!group) return 'حلقة غير محددة';
+  if (typeof group === 'string') return group;
+  return group.name || 'حلقة غير محددة';
+};
+
+// دالة مساعدة للحصول على رقم الحلقة
+const getGroupNumber = (group: string | {name?: string; id?: string; number?: number} | null | undefined): string => {
+  if (!group || typeof group === 'string') return '';
+  return group.number ? ` (${group.number})` : '';
+};
+
 const TeachersManagement: React.FC = () => {
   const { user: currentUser } = useAuth();
   const { socket } = useSocket();
@@ -46,6 +59,7 @@ const TeachersManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGender, setSelectedGender] = useState('all');
   const [ageRange, setAgeRange] = useState<[number, number]>([0, 100]);
+  const [groupsFilter, setGroupsFilter] = useState<'all' | 'withGroups' | 'withoutGroups'>('all');
   const [showFilters, setShowFilters] = useState(false);
 
   // Sorting States
@@ -68,6 +82,10 @@ const TeachersManagement: React.FC = () => {
     const maleCount = teachers.filter((t) => t.gender === 'ذكر').length;
     const femaleCount = teachers.filter((t) => t.gender === 'أنثى').length;
     const activeCount = teachers.filter((t) => t.isActive).length;
+    const withGroupsCount = teachers.filter((t) => 
+      t.groups && Array.isArray(t.groups) && t.groups.length > 0
+    ).length;
+    const withoutGroupsCount = teachers.length - withGroupsCount;
     const avgAge =
       teachers.length > 0
         ? (
@@ -81,6 +99,8 @@ const TeachersManagement: React.FC = () => {
       inactive: teachers.length - activeCount,
       male: maleCount,
       female: femaleCount,
+      withGroups: withGroupsCount,
+      withoutGroups: withoutGroupsCount,
       avgAge,
     };
   }, [teachers]);
@@ -239,10 +259,19 @@ const TeachersManagement: React.FC = () => {
         ? teacher.age >= ageRange[0] && teacher.age <= ageRange[1]
         : true;
 
+      const matchesGroupsFilter = () => {
+        const hasGroups = teacher.groups && Array.isArray(teacher.groups) && teacher.groups.length > 0;
+        
+        if (groupsFilter === 'withGroups') return hasGroups;
+        if (groupsFilter === 'withoutGroups') return !hasGroups;
+        return true; // 'all'
+      };
+
       return (
         matchesSearch &&
         matchesGender &&
-        matchesAge
+        matchesAge &&
+        matchesGroupsFilter()
       );
     });
 
@@ -269,6 +298,7 @@ const TeachersManagement: React.FC = () => {
     searchTerm,
     selectedGender,
     ageRange,
+    groupsFilter,
     sortField,
     sortOrder,
   ]);
@@ -333,38 +363,46 @@ const TeachersManagement: React.FC = () => {
 
         // Enhanced center success message
         await Swal.fire({
-          title: '\u2728 تم الحذف بنجاح \u2728',
+          title: '🎉 تمت العملية بنجاح 🎉',
           html: `
-            <div class="text-center py-4">
-              <div class="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-4 animate-pulse">
-                <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            <div class="text-center py-6 success-animation">
+              <div class="mx-auto w-28 h-28 bg-gradient-to-br from-emerald-100 via-green-200 to-teal-300 rounded-full flex items-center justify-center mb-6 shadow-xl relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 opacity-20 animate-pulse"></div>
+                <svg class="w-14 h-14 text-green-600 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
                 </svg>
               </div>
-              <p class="text-lg font-semibold text-gray-800 mb-2">تم حذف المعلم</p>
-              <p class="text-2xl font-bold text-green-600 mb-2">${teacherName}</p>
-              <p class="text-sm text-gray-500">من النظام بنجاح \ud83d\ude80</p>
+              <h3 class="text-xl font-bold text-gray-800 mb-4">✨ تم حذف المعلم بنجاح ✨</h3>
+              <div class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white rounded-2xl p-4 mb-4 shadow-lg">
+                <p class="text-2xl font-bold mb-1">${teacherName}</p>
+                <p class="text-sm opacity-90">تم إزالته من النظام نهائياً</p>
+              </div>
+              <div class="flex items-center justify-center space-x-2 rtl:space-x-reverse">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                  <span class="ml-1">🚀</span>
+                  العملية مكتملة
+                </span>
+              </div>
             </div>
           `,
           icon: 'success',
-          timer: 4000,
+          timer: 5000,
           timerProgressBar: true,
           showConfirmButton: false,
           allowOutsideClick: false,
           customClass: {
-            popup: 'rtl-popup swal2-rtl-popup swal2-center-popup',
+            popup: 'swal2-success-modal rtl-popup',
             title: 'rtl-title',
             htmlContainer: 'rtl-content'
           },
           didOpen: () => {
-            // Add center positioning
             const popup = Swal.getPopup();
             if (popup) {
               popup.style.position = 'fixed';
               popup.style.top = '50%';
               popup.style.left = '50%';
               popup.style.transform = 'translate(-50%, -50%)';
-              popup.style.zIndex = '9999';
+              popup.style.zIndex = '10000';
             }
           }
         });
@@ -650,6 +688,7 @@ const TeachersManagement: React.FC = () => {
   const resetFilters = () => {
     setSearchTerm('');
     setSelectedGender('all');
+    setGroupsFilter('all');
     setAgeRange([0, 100]);
     setCurrentPage(1);
   };
@@ -680,10 +719,70 @@ const TeachersManagement: React.FC = () => {
         setTeachers((prev) => prev.filter((t) => !selectedTeachers.has(t._id)));
         setSelectedTeachers(new Set());
 
-        await Swal.fire('تم الحذف!', 'تم حذف المعلمين بنجاح', 'success');
+        await Swal.fire({
+          title: '🎉 تمت العملية بنجاح 🎉',
+          html: `
+            <div class="text-center py-4 success-animation">
+              <div class="mx-auto w-24 h-24 bg-gradient-to-br from-green-100 to-emerald-200 rounded-full flex items-center justify-center mb-6 shadow-lg">
+                <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+              <h3 class="text-xl font-bold text-gray-800 mb-3">تم حذف المعلمين المحددين</h3>
+              <div class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-full font-semibold text-lg shadow-md">
+                <span class="mr-2">✨</span>
+                <span>${selectedTeachers.size} معلم</span>
+                <span class="mr-2">✨</span>
+              </div>
+              <p class="text-gray-600 mt-4 font-medium">تم تحديث قاعدة البيانات بنجاح</p>
+            </div>
+          `,
+          icon: 'success',
+          timer: 5000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+          allowOutsideClick: false,
+          customClass: {
+            popup: 'swal2-success-modal rtl-popup',
+            title: 'rtl-title',
+            htmlContainer: 'rtl-content'
+          },
+          didOpen: () => {
+            const popup = Swal.getPopup();
+            if (popup) {
+              popup.style.position = 'fixed';
+              popup.style.top = '50%';
+              popup.style.left = '50%';
+              popup.style.transform = 'translate(-50%, -50%)';
+              popup.style.zIndex = '10000';
+            }
+          }
+        });
       } catch (bulkDeleteError) {
         console.error('❌ فشل في حذف المعلمين:', bulkDeleteError);
-        await Swal.fire('خطأ!', 'حدث خطأ أثناء حذف المعلمين', 'error');
+        await Swal.fire({
+          title: '❌ فشل في العملية',
+          html: `
+            <div class="text-center py-4">
+              <div class="mx-auto w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-4 animate-pulse">
+                <svg class="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </div>
+              <p class="text-lg font-semibold text-gray-800 mb-2">حدث خطأ أثناء حذف المعلمين</p>
+              <p class="text-sm text-gray-500">يرجى المحاولة مرة أخرى</p>
+            </div>
+          `,
+          icon: 'error',
+          timer: 4000,
+          timerProgressBar: true,
+          showConfirmButton: true,
+          confirmButtonText: 'حسناً',
+          customClass: {
+            popup: 'rtl-popup',
+            confirmButton: 'rtl-button'
+          }
+        });
       }
     }
   };
@@ -799,7 +898,7 @@ const TeachersManagement: React.FC = () => {
             {/* Enhanced Filters */}
             {showFilters && (
               <div className="bg-gradient-to-br from-white to-gray-50 p-6 rounded-2xl border-2 border-gray-100 shadow-lg animate-fadeIn">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {/* Gender Filter */}
                   <div className="space-y-3">
                     <label className="flex items-center gap-2 text-sm font-semibold text-gray-800">
@@ -836,6 +935,46 @@ const TeachersManagement: React.FC = () => {
                             : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                         }`}>
                         أنثى
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Groups Filter */}
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                      <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                      تصفية حسب الحلقات
+                    </label>
+                    <div className="grid grid-cols-1 gap-2">
+                      <button
+                        onClick={() => setGroupsFilter("all")}
+                        title="عرض جميع المعلمين"
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                          groupsFilter === "all"
+                            ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        }`}>
+                        الكل
+                      </button>
+                      <button
+                        onClick={() => setGroupsFilter("withGroups")}
+                        title="عرض المعلمين الذين لديهم حلقات"
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                          groupsFilter === "withGroups"
+                            ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        }`}>
+                        🎯 لديهم حلقات
+                      </button>
+                      <button
+                        onClick={() => setGroupsFilter("withoutGroups")}
+                        title="عرض المعلمين الذين لا يدرسون أي حلقة"
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                          groupsFilter === "withoutGroups"
+                            ? "bg-gradient-to-r from-red-500 to-pink-600 text-white shadow-md"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        }`}>
+                        🚫 بلا حلقات
                       </button>
                     </div>
                   </div>
@@ -900,6 +1039,12 @@ const TeachersManagement: React.FC = () => {
                       </span>
                     )}
 
+                    {groupsFilter !== "all" && (
+                      <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-medium">
+                        الحلقات: {groupsFilter === "withGroups" ? "لديهم حلقات" : "بلا حلقات"}
+                      </span>
+                    )}
+
                     {(ageRange[0] !== 0 || ageRange[1] !== 100) && (
                       <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
                         العمر: {ageRange[0]}-{ageRange[1]}
@@ -914,7 +1059,7 @@ const TeachersManagement: React.FC = () => {
 
         {/* Statistics Cards */}
         {!isLoading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
             <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-blue-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
@@ -981,6 +1126,62 @@ const TeachersManagement: React.FC = () => {
                 </div>
                 <div className="p-3 bg-gradient-to-br from-amber-400 to-amber-600 rounded-lg shadow-md">
                   <FaChartBar className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </div>
+
+            <div 
+              className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-green-500 hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer"
+              onClick={() => {
+                setGroupsFilter('withGroups');
+                setShowFilters(true);
+              }}
+              title="انقر لعرض المعلمين الذين لديهم حلقات فقط"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm text-gray-600 font-medium mb-1">
+                    لديهم حلقات
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {stats.withGroups}
+                  </p>
+                </div>
+                <div className="p-3 bg-gradient-to-br from-green-400 to-green-600 rounded-lg shadow-md">
+                  <svg
+                    className="w-6 h-6 text-white"
+                    fill="currentColor"
+                    viewBox="0 0 20 20">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <div 
+              className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-red-500 hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer"
+              onClick={() => {
+                setGroupsFilter('withoutGroups');
+                setShowFilters(true);
+              }}
+              title="انقر لعرض المعلمين الذين لا يدرسون أي حلقة"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm text-gray-600 font-medium mb-1">
+                    بلا حلقات
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {stats.withoutGroups}
+                  </p>
+                </div>
+                <div className="p-3 bg-gradient-to-br from-red-400 to-red-600 rounded-lg shadow-md">
+                  <svg
+                    className="w-6 h-6 text-white"
+                    fill="currentColor"
+                    viewBox="0 0 20 20">
+                    <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" />
+                  </svg>
                 </div>
               </div>
             </div>
@@ -1181,7 +1382,7 @@ const TeachersManagement: React.FC = () => {
                         <div className="h-4 w-12 bg-gray-300 rounded animate-pulse"></div>
                       </th>
                       <th className="px-4 py-4 text-right">
-                        <div className="h-4 w-16 bg-gray-300 rounded animate-pulse"></div>
+                        <div className="h-4 w-20 bg-gray-300 rounded animate-pulse"></div>
                       </th>
                       <th className="px-4 py-4 text-right">
                         <div className="h-4 w-20 bg-gray-300 rounded animate-pulse"></div>
@@ -1224,7 +1425,10 @@ const TeachersManagement: React.FC = () => {
                           <div className="h-6 w-14 bg-gray-200 rounded-full animate-pulse"></div>
                         </td>
                         <td className="px-4 py-4">
-                          <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+                          <div className="flex gap-1">
+                            <div className="h-6 w-16 bg-gray-200 rounded-full animate-pulse"></div>
+                            <div className="h-6 w-12 bg-gray-200 rounded-full animate-pulse"></div>
+                          </div>
                         </td>
                         <td className="px-4 py-4">
                           <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
@@ -1341,7 +1545,7 @@ const TeachersManagement: React.FC = () => {
                       </div>
                     </th>
                     <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
-                      الحلقة الخاصة
+                      الحلقات المدرسة
                     </th>
                     <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
                       مكان السكن
@@ -1422,13 +1626,88 @@ const TeachersManagement: React.FC = () => {
                           <span className="text-gray-400">-</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {teacher.specialCircle ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                            {teacher.specialCircle}
-                          </span>
+                      <td className="px-6 py-4">
+                        {teacher.groups && Array.isArray(teacher.groups) && teacher.groups.length > 0 ? (
+                          <div className="max-w-xs">
+                            {teacher.groups.length === 1 ? (
+                              /* عرض حلقة واحدة فقط */
+                              (() => {
+                                const group = teacher.groups[0];
+                                if (!group) return null;
+                                
+                                const groupName = getGroupDisplayName(group);
+                                const groupNumber = getGroupNumber(group);
+                                
+                                return (
+                                  <span
+                                    className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 hover:from-blue-200 hover:to-blue-300 transition-all duration-200 shadow-md hover:shadow-lg border border-blue-200"
+                                    title={`حلقة: ${groupName}${groupNumber ? ` - رقم ${groupNumber}` : ''}`}
+                                  >
+                                    <span className="font-bold">
+                                      {groupName}
+                                    </span>
+                                    {groupNumber && (
+                                      <span className="mr-2 px-2 py-0.5 bg-blue-600 text-white rounded-full text-xs font-bold">
+                                        {groupNumber}
+                                      </span>
+                                    )}
+                                  </span>
+                                );
+                              })()
+                            ) : (
+                              /* عرض متعدد الحلقات في منيو */
+                              <details className="group relative">
+                                <summary className="cursor-pointer list-none focus:outline-none">
+                                  <span className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 hover:from-purple-200 hover:to-purple-300 transition-all duration-300 shadow-md hover:shadow-lg group-open:bg-gradient-to-r group-open:from-green-100 group-open:to-green-200 group-open:text-green-800 border border-purple-200 group-open:border-green-200">
+                                    <span className="font-bold text-purple-900 group-open:text-green-900">{teacher.groups.length}</span>
+                                    <span className="mr-1.5 font-medium">حلقات</span>
+                                    <svg className="w-4 h-4 mr-1 transform group-open:rotate-180 transition-transform duration-300 text-purple-600 group-open:text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                  </span>
+                                </summary>
+                                <div className="absolute top-full left-0 mt-1 z-10 w-52 bg-white border border-gray-200 rounded-xl shadow-xl max-h-48 overflow-y-auto animate-fade-in">
+                                  <div className="p-1">
+                                    <div className="px-3 py-2 text-xs font-semibold text-gray-500 bg-gray-50 rounded-t-lg border-b border-gray-100">
+                                      جميع الحلقات ({teacher.groups.length})
+                                    </div>
+                                    <div className="space-y-0.5 mt-1">
+                                      {teacher.groups.map((group, index) => {
+                                        if (!group) return null;
+                                        
+                                        const groupName = getGroupDisplayName(group);
+                                        const groupNumber = getGroupNumber(group);
+                                        
+                                        return (
+                                          <div
+                                            key={index}
+                                            className="flex items-center justify-between p-2.5 hover:bg-blue-50 rounded-lg text-sm transition-all duration-200 cursor-pointer group/item border-b border-gray-50 last:border-b-0"
+                                            title={`حلقة: ${groupName}${groupNumber ? ` - رقم ${groupNumber}` : ''}`}
+                                          >
+                                            <span className="font-medium text-gray-800 group-hover/item:text-blue-800 transition-colors">
+                                              {groupName && groupName.length > 18 ? `${groupName.substring(0, 18)}...` : groupName}
+                                            </span>
+                                            {groupNumber && (
+                                              <span className="px-2 py-1 bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 rounded-full font-bold text-xs shadow-sm group-hover/item:from-blue-200 group-hover/item:to-blue-300 transition-all">
+                                                {groupNumber}
+                                              </span>
+                                            )}
+                                          </div>
+                                        );
+                                      }).filter(Boolean)}
+                                    </div>
+                                  </div>
+                                </div>
+                              </details>
+                            )}
+                          </div>
                         ) : (
-                          <span className="text-gray-400">-</span>
+                          <div className="flex items-center">
+                            <svg className="w-4 h-4 text-gray-400 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2 2v-5m16 0h-2M4 13h2" />
+                            </svg>
+                            <span className="text-gray-400 text-sm">لا توجد حلقات</span>
+                          </div>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">

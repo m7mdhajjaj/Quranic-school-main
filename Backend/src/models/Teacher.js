@@ -1,6 +1,25 @@
 // models/Teacher.js
 const mongoose = require('mongoose');
 
+// تعريف sub-schema للحلقات
+const groupSubSchema = new mongoose.Schema({
+  id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Group',
+    required: [true, 'معرف الحلقة مطلوب']
+  },
+  name: {
+    type: String,
+    required: [true, 'اسم الحلقة مطلوب'],
+    trim: true
+  },
+  number: {
+    type: Number,
+    required: [true, 'رقم الحلقة مطلوب'],
+    min: [1, 'رقم الحلقة يجب أن يكون أكبر من 0']
+  }
+}, { _id: false }); // منع إنشاء _id تلقائي للعناصر الفرعية
+
 const teacherSchema = new mongoose.Schema(
   {
     teacherId: {
@@ -97,16 +116,15 @@ const teacherSchema = new mongoose.Schema(
     residence: { type: String },
 
     // الحلقات التي يدرسها المعلم
-    groups: { 
-      type: [String], 
+    groups: {
+      type: [groupSubSchema],
       default: [],
-      validate: {
-        validator: function(v) {
-          // التأكد من أن كل عنصر في المصفوفة نص صالح
-          return Array.isArray(v) && v.every(group => typeof group === 'string' && group.trim().length > 0);
-        },
-        message: 'يجب أن تكون الحلقات مصفوفة من النصوص الصالحة'
-      }
+      validate: [
+        {
+          validator: arr => Array.isArray(arr) && arr.every(g => g && g.name && g.number && g.id),
+          message: 'كل حلقة يجب أن تحتوي على اسم ورقم ومعرف صالح.',
+        }
+      ]
     },
 
     // خبرة/دور

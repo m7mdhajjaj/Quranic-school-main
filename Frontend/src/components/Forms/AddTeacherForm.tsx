@@ -189,17 +189,25 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
   };
 
   // دالة للتعامل مع اختيار الحلقات المتعددة
-  const handleGroupsChange = useCallback((groupId: string) => {
+  const handleGroupsChange = useCallback((group: Group) => {
     setFormData(prev => {
       const currentGroups = prev.groups || [];
-      let newGroups: string[];
       
-      if (currentGroups.includes(groupId)) {
-        // إزالة الحلقة إذا كانت محددة بالفعل
-        newGroups = currentGroups.filter(id => id !== groupId);
+      // التحقق من وجود الحلقة في المصفوفة الحالية
+      const existingIndex = currentGroups.findIndex(g => g.id === group._id);
+      
+      let newGroups;
+      if (existingIndex !== -1) {
+        // إزالة الحلقة إذا كانت موجودة
+        newGroups = currentGroups.filter((_, index) => index !== existingIndex);
       } else {
-        // إضافة الحلقة إذا لم تكن محددة
-        newGroups = [...currentGroups, groupId];
+        // إضافة الحلقة إذا لم تكن موجودة
+        const groupData = {
+          id: group._id,
+          name: group.name,
+          number: 1 // يمكن تخصيصه لاحقاً
+        };
+        newGroups = [...currentGroups, groupData];
       }
 
       return {
@@ -471,9 +479,17 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
         </div>
 
         {showSuccess && (
-          <div className="mx-6 mt-4 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg flex items-center gap-2 animate-fadeIn">
-            <Check className="text-green-600" size={20} />
-            <span className="font-medium">تم حفظ البيانات بنجاح!</span>
+          <div className="mx-6 mt-4 bg-gradient-to-r from-emerald-50 to-teal-50 border-2 border-emerald-200 text-emerald-800 px-6 py-4 rounded-xl flex items-center gap-3 animate-fadeIn shadow-lg relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-emerald-100 to-teal-100 opacity-30 animate-pulse"></div>
+            <div className="relative z-10 flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-green-500 rounded-full flex items-center justify-center shadow-md">
+                <Check className="text-white" size={20} />
+              </div>
+              <div>
+                <span className="font-bold text-lg">✨ تم حفظ البيانات بنجاح! ✨</span>
+                <p className="text-sm text-emerald-700 mt-1">جميع المعلومات محفوظة في قاعدة البيانات</p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -886,20 +902,20 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                                 <div className="relative flex-shrink-0">
                                   <input
                                     type="checkbox"
-                                    checked={formData.groups?.includes(group._id) || false}
-                                    onChange={() => handleGroupsChange(group._id)}
+                                    checked={formData.groups?.some(g => g.id === group._id) || false}
+                                    onChange={() => handleGroupsChange(group)}
                                     className="sr-only"
                                   />
                                   <div className={`w-6 h-6 rounded-xl border-3 transition-all duration-300 flex items-center justify-center shadow-lg ${
-                                    formData.groups?.includes(group._id)
+                                    formData.groups?.some(g => g.id === group._id)
                                       ? 'bg-gradient-to-br from-purple-500 to-indigo-500 border-purple-500 shadow-purple-200 scale-110'
                                       : 'border-gray-300 group-hover:border-purple-400 bg-white group-hover:shadow-purple-100'
                                   }`}>
-                                    {formData.groups?.includes(group._id) && (
+                                    {formData.groups?.some(g => g.id === group._id) && (
                                       <Check className="text-white animate-in zoom-in duration-300" size={16} />
                                     )}
                                   </div>
-                                  {formData.groups?.includes(group._id) && (
+                                  {formData.groups?.some(g => g.id === group._id) && (
                                     <div className="absolute -inset-1 bg-gradient-to-r from-purple-400 to-indigo-400 rounded-xl opacity-20 animate-pulse"></div>
                                   )}
                                 </div>
@@ -909,7 +925,7 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                                       {group.name}
                                     </h5>
                                     <div className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
-                                      formData.groups?.includes(group._id)
+                                      formData.groups?.some(g => g.id === group._id)
                                         ? 'bg-gradient-to-r from-green-400 to-emerald-500 animate-pulse shadow-md'
                                         : 'bg-gray-300 group-hover:bg-purple-300'
                                     }`}></div>
@@ -963,13 +979,13 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                         </div>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {formData.groups.map((groupId) => {
+                        {formData.groups.map((groupData) => {
                           const group = availableGroups.find(
-                            (g) => g._id === groupId
+                            (g) => g._id === groupData.id
                           );
                           return group ? (
                             <div
-                              key={groupId}
+                              key={groupData.id}
                               className={`group relative bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-500 text-white rounded-2xl p-4 shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300 border-2 border-white/20 animate-fade-in-up`}
                             >
                               <div className="flex items-center justify-between">
@@ -978,15 +994,15 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                                     <BookOpen className="text-white drop-shadow-sm" size={20} />
                                   </div>
                                   <div>
-                                    <h5 className="font-bold text-white drop-shadow-sm">{group.name}</h5>
-                                    <p className="text-xs text-white/80">حلقة نشطة</p>
+                                    <h5 className="font-bold text-white drop-shadow-sm">{groupData.name}</h5>
+                                    <p className="text-xs text-white/80">رقم الحلقة: {groupData.number}</p>
                                   </div>
                                 </div>
                                 <button
                                   type="button"
-                                  onClick={() => handleGroupsChange(groupId)}
+                                  onClick={() => handleGroupsChange(group)}
                                   className="w-8 h-8 bg-red-500/20 hover:bg-red-500 rounded-xl flex items-center justify-center transition-all duration-200 group-hover:scale-110 hover:rotate-90"
-                                  title={`إزالة ${group.name} من القائمة`}
+                                  title={`إزالة ${groupData.name} من القائمة`}
                                 >
                                   <X className="text-white drop-shadow-sm" size={16} />
                                 </button>

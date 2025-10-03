@@ -166,7 +166,18 @@ exports.createTeacher = async (req, res) => {
       residence,
       email,
       phoneNumber,
-      groups: Array.isArray(groups) ? groups : [], // التأكد من أن groups مصفوفة
+      groups: Array.isArray(groups) ? groups.map(group => {
+        // دعم البيانات القديمة والجديدة
+        if (typeof group === 'string') {
+          // تحويل البيانات القديمة (string) إلى البنية الجديدة
+          return {
+            id: null, // سيتم تحديثه لاحقاً
+            name: group,
+            number: 1 // قيمة افتراضية
+          };
+        }
+        return group; // البيانات الجديدة (object)
+      }) : [], // التأكد من أن groups مصفوفة
       yearsOfExperience,
       role,
     });
@@ -335,9 +346,24 @@ exports.updateTeacher = async (req, res) => {
       updates.age = calculateAge(updates.birthDate);
     }
 
-    // التأكد من أن groups مصفوفة صالحة
-    if (updates.groups && !Array.isArray(updates.groups)) {
-      updates.groups = [];
+    // التأكد من أن groups مصفوفة صالحة وتحويل البيانات القديمة
+    if (updates.groups) {
+      if (!Array.isArray(updates.groups)) {
+        updates.groups = [];
+      } else {
+        updates.groups = updates.groups.map(group => {
+          // دعم البيانات القديمة والجديدة
+          if (typeof group === 'string') {
+            // تحويل البيانات القديمة (string) إلى البنية الجديدة
+            return {
+              id: null, // سيتم تحديثه لاحقاً
+              name: group,
+              number: 1 // قيمة افتراضية
+            };
+          }
+          return group; // البيانات الجديدة (object)
+        });
+      }
     }
 
     const updated = await Teacher.findByIdAndUpdate(

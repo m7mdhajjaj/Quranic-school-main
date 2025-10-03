@@ -1,40 +1,80 @@
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import {
+  AlertCircle,
+  X,
+  Loader2,
+  Check,
+  User,
+  School,
+  Phone,
+  Calendar,
+  MapPin,
+  Mail,
+  CreditCard,
+  Users,
+  ChevronRight,
+  ChevronLeft,
+} from 'lucide-react';
+import {
+  validateStudentWithYup,
+  type StudentFormData,
+} from '../../Validation/studentValidation';
+import {
+  createStudent,
+  updateStudent,
+  type Student,
+} from '../../Api/studentApi';
+import { getAllTeachers, type Teacher } from '../../Api/teacherApi';
+import { getAllGroups, type Group } from '../../Api/groupApi';
 
+// دالة مساعدة للتحقق من تطابق الحلقات
+const isGroupMatch = (
+  group:
+    | string
+    | { name?: string; id?: string; number?: number }
+    | null
+    | undefined,
+  targetGroup: string
+): boolean => {
+  if (!group || !targetGroup) return false;
 
+  if (typeof group === 'string') {
+    return group === targetGroup;
+  }
 
-
-import React, { useState, useCallback, useMemo, useEffect } from "react";
-import { AlertCircle, X, Loader2, Check, User, School, Phone, Calendar, MapPin, Mail, CreditCard, Users, ChevronRight, ChevronLeft } from "lucide-react";
-import { validateStudentWithYup, type StudentFormData } from "../../Validation/studentValidation";
-import { createStudent, updateStudent, type Student } from "../../Api/studentApi";
-import { getAllTeachers, type Teacher } from "../../Api/teacherApi";
-import { getAllGroups, type Group } from "../../Api/groupApi";
+  return (
+    !!(group.name && group.name === targetGroup) ||
+    !!(group.id && group.id === targetGroup)
+  );
+};
 
 // Using centralized validation from studentValidation.ts
 
 // دالة لتحويل التاريخ من الخادم إلى تنسيق input[type="date"]
 const formatDateForInput = (dateValue?: string | Date): string => {
-  if (!dateValue) return "";
-  
+  if (!dateValue) return '';
+
   try {
-    const date = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
-    if (isNaN(date.getTime())) return "";
-    
+    const date =
+      typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
+    if (isNaN(date.getTime())) return '';
+
     // تحويل التاريخ إلى تنسيق YYYY-MM-DD
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
-    
+
     return `${year}-${month}-${day}`;
   } catch (error) {
     console.error('خطأ في تحويل التاريخ:', error);
-    return "";
+    return '';
   }
 };
 
 const normalizeGender = (value: string) => {
   const normalized = value.trim();
-  if (normalized === "ذكر" || normalized === "male") return "ذكر";
-  if (normalized === "أنثى" || normalized === "female") return "أنثى";
+  if (normalized === 'ذكر' || normalized === 'male') return 'ذكر';
+  if (normalized === 'أنثى' || normalized === 'female') return 'أنثى';
   return normalized;
 };
 
@@ -55,22 +95,26 @@ interface Props {
   student?: Student;
 }
 
-const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) => {
+const EnhancedStudentForm: React.FC<Props> = ({
+  onClose,
+  onSuccess,
+  student,
+}) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
-    firstName: student?.firstName || "",
-    fatherName: student?.fatherName || "",
-    grandFatherName: student?.grandFatherName || "",
-    motherName: student?.motherName || "",
-    lastName: student?.lastName || "",
-    idNumber: student?.idNumber || "",
+    firstName: student?.firstName || '',
+    fatherName: student?.fatherName || '',
+    grandFatherName: student?.grandFatherName || '',
+    motherName: student?.motherName || '',
+    lastName: student?.lastName || '',
+    idNumber: student?.idNumber || '',
     birthDate: formatDateForInput(student?.birthDate),
-    gender: student?.gender || "",
-    residence: student?.residence || "",
-    teacher: student?.teacher || "",
-    group: student?.group || "",
-    email: student?.email || "",
-    phoneNumber: student?.phoneNumber || "",
+    gender: student?.gender || '',
+    residence: student?.residence || '',
+    teacher: student?.teacher || '',
+    group: student?.group || '',
+    email: student?.email || '',
+    phoneNumber: student?.phoneNumber || '',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -78,7 +122,7 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [hasRetryableError, setHasRetryableError] = useState(false);
-  
+
   // States for dropdowns
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
@@ -98,14 +142,24 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
         const result = await getAllTeachers();
         if (result.success && result.data) {
           setTeachers(result.data);
-          console.log('✅ تم تحميل المعلمين بنجاح:', result.data.length, 'معلم');
+          console.log(
+            '✅ تم تحميل المعلمين بنجاح:',
+            result.data.length,
+            'معلم'
+          );
         } else {
           console.error('❌ فشل في تحميل المعلمين:', result.message);
-          setErrors(prev => ({ ...prev, teacher: 'فشل في تحميل قائمة المعلمين' }));
+          setErrors((prev) => ({
+            ...prev,
+            teacher: 'فشل في تحميل قائمة المعلمين',
+          }));
         }
       } catch (error) {
         console.error('❌ خطأ في تحميل المعلمين:', error);
-        setErrors(prev => ({ ...prev, teacher: 'حدث خطأ أثناء تحميل قائمة المعلمين' }));
+        setErrors((prev) => ({
+          ...prev,
+          teacher: 'حدث خطأ أثناء تحميل قائمة المعلمين',
+        }));
       } finally {
         setLoadingTeachers(false);
       }
@@ -121,12 +175,18 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
         } else {
           console.error('❌ فشل في تحميل الحلقات:', result.message);
           setGroups([]);
-          setErrors(prev => ({ ...prev, group: 'فشل في تحميل قائمة الحلقات' }));
+          setErrors((prev) => ({
+            ...prev,
+            group: 'فشل في تحميل قائمة الحلقات',
+          }));
         }
       } catch (error) {
         console.error('❌ خطأ في تحميل الحلقات:', error);
         setGroups([]);
-        setErrors(prev => ({ ...prev, group: 'حدث خطأ أثناء تحميل قائمة الحلقات' }));
+        setErrors((prev) => ({
+          ...prev,
+          group: 'حدث خطأ أثناء تحميل قائمة الحلقات',
+        }));
       } finally {
         setLoadingGroups(false);
       }
@@ -140,26 +200,48 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
   useEffect(() => {
     if (formData.group) {
       console.log('🔍 Filtering teachers for group:', formData.group);
-      console.log('📋 Available teachers:', teachers.map(t => ({ name: `${t.firstName} ${t.lastName}`, groups: t.groups })));
-      
+      console.log(
+        '📋 Available teachers:',
+        teachers.map((t) => ({
+          name: `${t.firstName} ${t.lastName}`,
+          groups: t.groups || [],
+        }))
+      );
+
       // Find teachers who are responsible for the selected group
-      const groupTeachers = teachers.filter(teacher => {
-        // Check if teacher has this group in their groups array
-        return teacher.groups && teacher.groups.includes(formData.group);
+      const groupTeachers = teachers.filter((teacher) => {
+        if (!teacher.groups || !Array.isArray(teacher.groups)) return false;
+
+        // دعم البنية الجديدة والقديمة مع التحقق من صحة البيانات
+        return teacher.groups.some((group) =>
+          isGroupMatch(group, formData.group)
+        );
       });
-      
-      console.log('🎯 Filtered teachers:', groupTeachers.map(t => `${t.firstName} ${t.lastName}`));
+
+      console.log(
+        '🎯 Filtered teachers:',
+        groupTeachers.map((t) => `${t.firstName} ${t.lastName}`)
+      );
       setFilteredTeachers(groupTeachers);
-      
+
       // Clear teacher selection if current teacher is not available for the selected group
-      if (formData.teacher && !groupTeachers.some(teacher => 
-        `${teacher.firstName} ${teacher.lastName}` === formData.teacher
-      )) {
-        if (!student) { // Only clear for new students, not when editing
-          console.log('⚠️ Current teacher not available for selected group, clearing...');
-          setFormData(prev => ({...prev, teacher: ''}));
+      if (
+        formData.teacher &&
+        !groupTeachers.some(
+          (teacher) =>
+            `${teacher.firstName} ${teacher.lastName}` === formData.teacher
+        )
+      ) {
+        if (!student) {
+          // Only clear for new students, not when editing
+          console.log(
+            '⚠️ Current teacher not available for selected group, clearing...'
+          );
+          setFormData((prev) => ({ ...prev, teacher: '' }));
         } else {
-          console.log('📝 Editing existing student - keeping original teacher even if not in filtered list');
+          console.log(
+            '📝 Editing existing student - keeping original teacher even if not in filtered list'
+          );
           // When editing, show all teachers so the original teacher remains visible
           setFilteredTeachers(teachers);
         }
@@ -171,90 +253,112 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
 
   const isStep1Valid = useMemo(() => {
     const step1Fields = [
-      'firstName', 'fatherName', 'grandFatherName', 'motherName', 
-      'lastName', 'idNumber', 'birthDate', 'gender', 'residence'
+      'firstName',
+      'fatherName',
+      'grandFatherName',
+      'motherName',
+      'lastName',
+      'idNumber',
+      'birthDate',
+      'gender',
+      'residence',
     ];
-    return step1Fields.every(field => formData[field as keyof typeof formData]?.toString().trim());
+    return step1Fields.every((field) =>
+      formData[field as keyof typeof formData]?.toString().trim()
+    );
   }, [formData]);
 
   const isStep2Valid = useMemo(() => {
     // يجب أن يكون الطالب مربوط بحلقة ومعلم ورقم هاتف
     const requiredFields = ['teacher', 'group', 'phoneNumber', 'email'];
-    const fieldsValid = requiredFields.every(field => 
+    const fieldsValid = requiredFields.every((field) =>
       formData[field as keyof typeof formData]?.toString().trim()
     );
-    
+
     // تأكد من أن المعلم المختار متوفر للحلقة المختارة
-    const teacherValidForGroup = !formData.teacher || !formData.group || 
-      filteredTeachers.some(teacher => 
-        `${teacher.firstName} ${teacher.lastName}` === formData.teacher
+    const teacherValidForGroup =
+      !formData.teacher ||
+      !formData.group ||
+      filteredTeachers.some(
+        (teacher) =>
+          `${teacher.firstName} ${teacher.lastName}` === formData.teacher
       );
-    
+
     return fieldsValid && teacherValidForGroup;
   }, [formData, filteredTeachers]);
 
-  const handleChange = useCallback((
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    
-    let processedValue = value;
-    
-    if (name === 'gender') {
-      processedValue = normalizeGender(value);
-    }
-    
-    if (name === 'phoneNumber') {
-      processedValue = value.replace(/\D/g, '').slice(0, 10);
-    }
-    
-    if (name === 'idNumber') {
-      // السماح بالأرقام فقط وحد أقصى 9 أرقام
-      processedValue = value.replace(/\D/g, '').slice(0, 9);
-      
-      // التحقق الفوري من طول رقم الهوية
-      if (processedValue.length > 0 && processedValue.length < 9) {
-        setErrors(prev => ({
-          ...prev,
-          idNumber: `رقم الهوية يجب أن يتكون من 9 أرقام (${processedValue.length}/9)`
-        }));
-      } else if (processedValue.length === 9) {
-        // إزالة خطأ رقم الهوية إذا كان الطول صحيحاً
-        setErrors(prev => {
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      const { name, value } = e.target;
+
+      let processedValue = value;
+
+      if (name === 'gender') {
+        processedValue = normalizeGender(value);
+      }
+
+      if (name === 'phoneNumber') {
+        processedValue = value.replace(/\D/g, '').slice(0, 10);
+      }
+
+      if (name === 'idNumber') {
+        // السماح بالأرقام فقط وحد أقصى 9 أرقام
+        processedValue = value.replace(/\D/g, '').slice(0, 9);
+
+        // التحقق الفوري من طول رقم الهوية
+        if (processedValue.length > 0 && processedValue.length < 9) {
+          setErrors((prev) => ({
+            ...prev,
+            idNumber: `رقم الهوية يجب أن يتكون من 9 أرقام (${processedValue.length}/9)`,
+          }));
+        } else if (processedValue.length === 9) {
+          // إزالة خطأ رقم الهوية إذا كان الطول صحيحاً
+          setErrors((prev) => {
+            const newErrors = { ...prev };
+            if (
+              newErrors.idNumber &&
+              newErrors.idNumber.includes('يجب أن يتكون من 9 أرقام')
+            ) {
+              delete newErrors.idNumber;
+            }
+            return newErrors;
+          });
+        }
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        [name]: processedValue,
+      }));
+
+      if (errors[name]) {
+        setErrors((prev) => {
           const newErrors = { ...prev };
-          if (newErrors.idNumber && newErrors.idNumber.includes('يجب أن يتكون من 9 أرقام')) {
-            delete newErrors.idNumber;
+          delete newErrors[name];
+          // إزالة الخطأ العام إذا تم حل الخطأ في الحقل
+          if (
+            newErrors.general &&
+            (name === 'idNumber' || name === 'email' || name === 'phoneNumber')
+          ) {
+            delete newErrors.general;
           }
           return newErrors;
         });
-      }
-    }
-    
-    setFormData(prev => ({
-      ...prev,
-      [name]: processedValue,
-    }));
-    
-    if (errors[name]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        // إزالة الخطأ العام إذا تم حل الخطأ في الحقل
-        if (newErrors.general && (name === 'idNumber' || name === 'email' || name === 'phoneNumber')) {
-          delete newErrors.general;
+
+        // إعادة تعيين حالة الخطأ القابل للتصحيح عند تصحيح الحقل
+        if (
+          hasRetryableError &&
+          (name === 'idNumber' || name === 'email' || name === 'phoneNumber')
+        ) {
+          setHasRetryableError(false);
         }
-        return newErrors;
-      });
-      
-      // إعادة تعيين حالة الخطأ القابل للتصحيح عند تصحيح الحقل
-      if (hasRetryableError && (name === 'idNumber' || name === 'email' || name === 'phoneNumber')) {
-        setHasRetryableError(false);
       }
-    }
-  }, [errors, hasRetryableError]);
+    },
+    [errors, hasRetryableError]
+  );
 
   const handleBlur = useCallback((fieldName: string) => {
-    setTouchedFields(prev => new Set(prev).add(fieldName));
+    setTouchedFields((prev) => new Set(prev).add(fieldName));
   }, []);
 
   const handleNextStep = () => {
@@ -262,10 +366,17 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
       setCurrentStep(2);
     } else {
       const step1Fields = [
-        'firstName', 'fatherName', 'grandFatherName', 'motherName', 
-        'lastName', 'idNumber', 'birthDate', 'gender', 'residence'
+        'firstName',
+        'fatherName',
+        'grandFatherName',
+        'motherName',
+        'lastName',
+        'idNumber',
+        'birthDate',
+        'gender',
+        'residence',
       ];
-      setTouchedFields(prev => new Set([...prev, ...step1Fields]));
+      setTouchedFields((prev) => new Set([...prev, ...step1Fields]));
     }
   };
 
@@ -276,7 +387,7 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
   const handleSubmit = async () => {
     if (!isStep2Valid) {
       const step2Fields = ['teacher', 'group', 'phoneNumber'];
-      setTouchedFields(prev => new Set([...prev, ...step2Fields]));
+      setTouchedFields((prev) => new Set([...prev, ...step2Fields]));
       return;
     }
 
@@ -312,61 +423,70 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
         }
       } catch (apiError: unknown) {
         // معالجة أخطاء API بشكل مفصل
-        console.error("API Error:", apiError);
-        
-        const error = apiError as { response?: { data?: { message?: string } } };
+        console.error('API Error:', apiError);
+
+        const error = apiError as {
+          response?: { data?: { message?: string } };
+        };
         if (error.response?.data?.message) {
           const errorMessage = error.response.data.message;
-          
+
           // معالجة أخطاء التحقق من الحلقة والمعلم
           if (errorMessage.includes('لا يطابق معلم الحلقة')) {
-            setErrors({ 
-              teacher: 'المعلم المختار لا يطابق معلم الحلقة - يرجى اختيار حلقة أخرى',
+            setErrors({
+              teacher:
+                'المعلم المختار لا يطابق معلم الحلقة - يرجى اختيار حلقة أخرى',
               group: 'الحلقة المختارة لا تتبع للمعلم المحدد - يرجى التصحيح',
-              general: 'يرجى تصحيح اختيار المعلم والحلقة والمحاولة مرة أخرى' 
+              general: 'يرجى تصحيح اختيار المعلم والحلقة والمحاولة مرة أخرى',
             });
             setHasRetryableError(true);
-          } 
+          }
           // معالجة خطأ رقم الهوية المكرر
-          else if (errorMessage.includes('idNumber') || errorMessage.includes('رقم الهوية')) {
-            setErrors({ 
+          else if (
+            errorMessage.includes('idNumber') ||
+            errorMessage.includes('رقم الهوية')
+          ) {
+            setErrors({
               idNumber: 'رقم الهوية موجود بالفعل في النظام - يرجى تغييره',
-              general: 'يرجى تصحيح رقم الهوية والمحاولة مرة أخرى' 
+              general: 'يرجى تصحيح رقم الهوية والمحاولة مرة أخرى',
             });
             setHasRetryableError(true);
           }
           // معالجة خطأ رقم الهاتف المكرر
-          else if (errorMessage.includes('phoneNumber') || errorMessage.includes('رقم الهاتف')) {
-            setErrors({ 
+          else if (
+            errorMessage.includes('phoneNumber') ||
+            errorMessage.includes('رقم الهاتف')
+          ) {
+            setErrors({
               phoneNumber: 'رقم الهاتف موجود بالفعل في النظام - يرجى تغييره',
-              general: 'يرجى تصحيح رقم الهاتف والمحاولة مرة أخرى' 
+              general: 'يرجى تصحيح رقم الهاتف والمحاولة مرة أخرى',
             });
             setHasRetryableError(true);
           }
           // معالجة أخطاء التحقق من صحة البيانات
           else if (errorMessage.includes('التحقق من البيانات')) {
             const fieldErrors: Record<string, string> = {};
-            
+
             // استخراج أخطاء الحقول الفردية من رسالة الخطأ
             if (errorMessage.includes('رقم الهوية')) {
               fieldErrors.idNumber = 'رقم الهوية يجب أن يتكون من 9 أرقام فقط';
             }
             if (errorMessage.includes('رقم الهاتف')) {
-              fieldErrors.phoneNumber = 'رقم الهاتف يجب أن يبدأ بـ 05 ويتكون من 10 أرقام';
+              fieldErrors.phoneNumber =
+                'رقم الهاتف يجب أن يبدأ بـ 05 ويتكون من 10 أرقام';
             }
-            
-            setErrors({ 
+
+            setErrors({
               ...fieldErrors,
-              general: 'يرجى تصحيح الحقول المؤشرة والمحاولة مرة أخرى' 
+              general: 'يرجى تصحيح الحقول المؤشرة والمحاولة مرة أخرى',
             });
             setHasRetryableError(true);
-          }
-          else {
+          } else {
             setErrors({ general: errorMessage });
             setHasRetryableError(false);
           }
         } else {
-          setErrors({ general: "حدث خطأ في الاتصال مع الخادم" });
+          setErrors({ general: 'حدث خطأ في الاتصال مع الخادم' });
           setHasRetryableError(false);
         }
         setIsSubmitting(false);
@@ -377,20 +497,26 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
         // التحقق من رسائل خطأ التوافق
         const message = apiResult.message || 'حدث خطأ أثناء حفظ البيانات';
         if (message.includes('لا يطابق معلم الحلقة')) {
-          setErrors({ 
+          setErrors({
             teacher: 'المعلم المختار لا يطابق معلم الحلقة',
             group: 'الحلقة المختارة لا تتبع للمعلم المحدد',
-            general: message 
+            general: message,
           });
-        } else if (message.includes('idNumber') || message.includes('رقم الهوية')) {
-          setErrors({ 
+        } else if (
+          message.includes('idNumber') ||
+          message.includes('رقم الهوية')
+        ) {
+          setErrors({
             idNumber: 'رقم الهوية موجود بالفعل في النظام',
-            general: message 
+            general: message,
           });
-        } else if (message.includes('phoneNumber') || message.includes('رقم الهاتف')) {
-          setErrors({ 
+        } else if (
+          message.includes('phoneNumber') ||
+          message.includes('رقم الهاتف')
+        ) {
+          setErrors({
             phoneNumber: 'رقم الهاتف موجود بالفعل في النظام',
-            general: message 
+            general: message,
           });
         } else {
           setErrors({ general: message });
@@ -402,24 +528,23 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
       setErrors({});
       setHasRetryableError(false);
       setShowSuccess(true);
-      
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
+
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
       await onSuccess(apiResult.data!);
       setTimeout(onClose, 300);
-      
     } catch (error: unknown) {
-      console.error("Unexpected error saving student:", error);
-      
+      console.error('Unexpected error saving student:', error);
+
       // معالجة الأخطاء غير المتوقعة
-      let errorMessage = "حدث خطأ غير متوقع أثناء حفظ البيانات";
-      
+      let errorMessage = 'حدث خطأ غير متوقع أثناء حفظ البيانات';
+
       if (error instanceof Error && error.message) {
         errorMessage = error.message;
       } else if (typeof error === 'string') {
         errorMessage = error;
       }
-      
+
       setErrors({ general: errorMessage });
       setIsSubmitting(false);
     }
@@ -429,36 +554,36 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
     return touchedFields.has(fieldName) ? errors[fieldName] : undefined;
   };
 
-
-
   const steps = [
-    { number: 1, title: "المعلومات الشخصية", icon: User },
-    { number: 2, title: "الدراسة والتواصل", icon: School }
+    { number: 1, title: 'المعلومات الشخصية', icon: User },
+    { number: 2, title: 'الدراسة والتواصل', icon: School },
   ];
 
   return (
     <div
       className="fixed inset-0 bg-gray-100/30 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-fadeIn"
-      dir="rtl">
-      {" "}
+      dir="rtl"
+    >
+      {' '}
       <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         <div className="p-6 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
           <div className="flex justify-between items-start mb-4">
             <div>
               <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                 <User className="text-blue-600" size={28} />
-                {student ? "تعديل بيانات الطالب" : "إضافة طالب جديد"}
+                {student ? 'تعديل بيانات الطالب' : 'إضافة طالب جديد'}
               </h2>
               <p className="text-sm text-gray-600 mt-1">
                 {student
-                  ? "قم بتحديث معلومات الطالب"
-                  : "أدخل بيانات الطالب الكاملة"}
+                  ? 'قم بتحديث معلومات الطالب'
+                  : 'أدخل بيانات الطالب الكاملة'}
               </p>
             </div>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-2 transition-all duration-200"
-              aria-label="إغلاق">
+              aria-label="إغلاق"
+            >
               <X size={24} />
             </button>
           </div>
@@ -470,19 +595,21 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                   <div
                     className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-300 ${
                       currentStep === step.number
-                        ? "bg-blue-600 text-white shadow-lg"
+                        ? 'bg-blue-600 text-white shadow-lg'
                         : currentStep > step.number
-                        ? "bg-green-100 text-green-700"
-                        : "bg-gray-100 text-gray-500"
-                    }`}>
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-gray-100 text-gray-500'
+                    }`}
+                  >
                     <div
                       className={`flex items-center justify-center w-8 h-8 rounded-full ${
                         currentStep === step.number
-                          ? "bg-white text-blue-600"
+                          ? 'bg-white text-blue-600'
                           : currentStep > step.number
-                          ? "bg-green-600 text-white"
-                          : "bg-gray-300 text-gray-600"
-                      }`}>
+                            ? 'bg-green-600 text-white'
+                            : 'bg-gray-300 text-gray-600'
+                      }`}
+                    >
                       {currentStep > step.number ? (
                         <Check size={18} />
                       ) : (
@@ -498,8 +625,8 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                   <ChevronLeft
                     className={`${
                       currentStep > step.number
-                        ? "text-green-600"
-                        : "text-gray-300"
+                        ? 'text-green-600'
+                        : 'text-gray-300'
                     }`}
                     size={20}
                   />
@@ -517,17 +644,19 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
         )}
 
         {Object.keys(errors).length > 0 && !showSuccess && (
-          <div className={`mx-6 mt-4 px-4 py-3 rounded-lg animate-fadeIn ${
-            hasRetryableError 
-              ? 'bg-orange-50 border border-orange-200 text-orange-700' 
-              : 'bg-red-50 border border-red-200 text-red-700'
-          }`}>
+          <div
+            className={`mx-6 mt-4 px-4 py-3 rounded-lg animate-fadeIn ${
+              hasRetryableError
+                ? 'bg-orange-50 border border-orange-200 text-orange-700'
+                : 'bg-red-50 border border-red-200 text-red-700'
+            }`}
+          >
             <div className="flex items-center gap-2 mb-2">
               <AlertCircle size={20} />
               <span className="font-semibold">
-                {hasRetryableError 
-                  ? "يرجى تصحيح البيانات والمحاولة مرة أخرى:" 
-                  : "يرجى إصلاح الأخطاء التالية:"}
+                {hasRetryableError
+                  ? 'يرجى تصحيح البيانات والمحاولة مرة أخرى:'
+                  : 'يرجى إصلاح الأخطاء التالية:'}
               </span>
             </div>
             <ul className="list-disc list-inside space-y-1 text-sm ml-6">
@@ -537,7 +666,8 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
             </ul>
             {hasRetryableError && (
               <div className="mt-3 p-2 bg-orange-100 rounded text-sm">
-                💡 <strong>ملاحظة:</strong> يمكنك تعديل البيانات المطلوبة والضغط على "المحاولة مرة أخرى" دون فقدان باقي البيانات المدخلة.
+                💡 <strong>ملاحظة:</strong> يمكنك تعديل البيانات المطلوبة والضغط
+                على "المحاولة مرة أخرى" دون فقدان باقي البيانات المدخلة.
               </div>
             )}
           </div>
@@ -561,20 +691,20 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                     <input
                       name="firstName"
                       type="text"
-                      value={formData.firstName || ""}
+                      value={formData.firstName || ''}
                       onChange={handleChange}
-                      onBlur={() => handleBlur("firstName")}
+                      onBlur={() => handleBlur('firstName')}
                       placeholder="أدخل الاسم الأول"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
-                        getFieldError("firstName")
-                          ? "border-red-300 focus:ring-red-500 bg-red-50"
-                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                        getFieldError('firstName')
+                          ? 'border-red-300 focus:ring-red-500 bg-red-50'
+                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                       }`}
                     />
-                    {getFieldError("firstName") && (
+                    {getFieldError('firstName') && (
                       <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
                         <AlertCircle size={12} />
-                        <span>{getFieldError("firstName")}</span>
+                        <span>{getFieldError('firstName')}</span>
                       </div>
                     )}
                   </div>
@@ -586,20 +716,20 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                     <input
                       name="fatherName"
                       type="text"
-                      value={formData.fatherName || ""}
+                      value={formData.fatherName || ''}
                       onChange={handleChange}
-                      onBlur={() => handleBlur("fatherName")}
+                      onBlur={() => handleBlur('fatherName')}
                       placeholder="أدخل اسم الأب"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
-                        getFieldError("fatherName")
-                          ? "border-red-300 focus:ring-red-500 bg-red-50"
-                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                        getFieldError('fatherName')
+                          ? 'border-red-300 focus:ring-red-500 bg-red-50'
+                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                       }`}
                     />
-                    {getFieldError("fatherName") && (
+                    {getFieldError('fatherName') && (
                       <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
                         <AlertCircle size={12} />
-                        <span>{getFieldError("fatherName")}</span>
+                        <span>{getFieldError('fatherName')}</span>
                       </div>
                     )}
                   </div>
@@ -611,20 +741,20 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                     <input
                       name="grandFatherName"
                       type="text"
-                      value={formData.grandFatherName || ""}
+                      value={formData.grandFatherName || ''}
                       onChange={handleChange}
-                      onBlur={() => handleBlur("grandFatherName")}
+                      onBlur={() => handleBlur('grandFatherName')}
                       placeholder="أدخل اسم الجد"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
-                        getFieldError("grandFatherName")
-                          ? "border-red-300 focus:ring-red-500 bg-red-50"
-                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                        getFieldError('grandFatherName')
+                          ? 'border-red-300 focus:ring-red-500 bg-red-50'
+                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                       }`}
                     />
-                    {getFieldError("grandFatherName") && (
+                    {getFieldError('grandFatherName') && (
                       <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
                         <AlertCircle size={12} />
-                        <span>{getFieldError("grandFatherName")}</span>
+                        <span>{getFieldError('grandFatherName')}</span>
                       </div>
                     )}
                   </div>
@@ -636,20 +766,20 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                     <input
                       name="motherName"
                       type="text"
-                      value={formData.motherName || ""}
+                      value={formData.motherName || ''}
                       onChange={handleChange}
-                      onBlur={() => handleBlur("motherName")}
+                      onBlur={() => handleBlur('motherName')}
                       placeholder="أدخل اسم الأم"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
-                        getFieldError("motherName")
-                          ? "border-red-300 focus:ring-red-500 bg-red-50"
-                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                        getFieldError('motherName')
+                          ? 'border-red-300 focus:ring-red-500 bg-red-50'
+                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                       }`}
                     />
-                    {getFieldError("motherName") && (
+                    {getFieldError('motherName') && (
                       <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
                         <AlertCircle size={12} />
-                        <span>{getFieldError("motherName")}</span>
+                        <span>{getFieldError('motherName')}</span>
                       </div>
                     )}
                   </div>
@@ -661,20 +791,20 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                     <input
                       name="lastName"
                       type="text"
-                      value={formData.lastName || ""}
+                      value={formData.lastName || ''}
                       onChange={handleChange}
-                      onBlur={() => handleBlur("lastName")}
+                      onBlur={() => handleBlur('lastName')}
                       placeholder="أدخل الكنية"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
-                        getFieldError("lastName")
-                          ? "border-red-300 focus:ring-red-500 bg-red-50"
-                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                        getFieldError('lastName')
+                          ? 'border-red-300 focus:ring-red-500 bg-red-50'
+                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                       }`}
                     />
-                    {getFieldError("lastName") && (
+                    {getFieldError('lastName') && (
                       <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
                         <AlertCircle size={12} />
-                        <span>{getFieldError("lastName")}</span>
+                        <span>{getFieldError('lastName')}</span>
                       </div>
                     )}
                   </div>
@@ -696,20 +826,20 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                     <input
                       name="idNumber"
                       type="text"
-                      value={formData.idNumber || ""}
+                      value={formData.idNumber || ''}
                       onChange={handleChange}
-                      onBlur={() => handleBlur("idNumber")}
+                      onBlur={() => handleBlur('idNumber')}
                       placeholder="9 أرقام"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
-                        getFieldError("idNumber")
-                          ? "border-red-300 focus:ring-red-500 bg-red-50"
-                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                        getFieldError('idNumber')
+                          ? 'border-red-300 focus:ring-red-500 bg-red-50'
+                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                       }`}
                     />
-                    {getFieldError("idNumber") && (
+                    {getFieldError('idNumber') && (
                       <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
                         <AlertCircle size={12} />
-                        <span>{getFieldError("idNumber")}</span>
+                        <span>{getFieldError('idNumber')}</span>
                       </div>
                     )}
                   </div>
@@ -721,21 +851,21 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                     <input
                       name="birthDate"
                       type="date"
-                      value={formData.birthDate || ""}
+                      value={formData.birthDate || ''}
                       onChange={handleChange}
-                      onBlur={() => handleBlur("birthDate")}
-                      max={new Date().toISOString().split("T")[0]}
+                      onBlur={() => handleBlur('birthDate')}
+                      max={new Date().toISOString().split('T')[0]}
                       placeholder="اختر تاريخ الميلاد"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
-                        getFieldError("birthDate")
-                          ? "border-red-300 focus:ring-red-500 bg-red-50"
-                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                        getFieldError('birthDate')
+                          ? 'border-red-300 focus:ring-red-500 bg-red-50'
+                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                       }`}
                     />
-                    {getFieldError("birthDate") && (
+                    {getFieldError('birthDate') && (
                       <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
                         <AlertCircle size={12} />
-                        <span>{getFieldError("birthDate")}</span>
+                        <span>{getFieldError('birthDate')}</span>
                       </div>
                     )}
                   </div>
@@ -748,21 +878,22 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                       name="gender"
                       value={formData.gender}
                       onChange={handleChange}
-                      onBlur={() => handleBlur("gender")}
+                      onBlur={() => handleBlur('gender')}
                       title="اختر الجنس"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
-                        getFieldError("gender")
-                          ? "border-red-300 focus:ring-red-500 bg-red-50"
-                          : "border-gray-300 focus:ring-blue-500"
-                      }`}>
+                        getFieldError('gender')
+                          ? 'border-red-300 focus:ring-red-500 bg-red-50'
+                          : 'border-gray-300 focus:ring-blue-500'
+                      }`}
+                    >
                       <option value="">اختر الجنس</option>
                       <option value="ذكر">ذكر</option>
                       <option value="أنثى">أنثى</option>
                     </select>
-                    {getFieldError("gender") && (
+                    {getFieldError('gender') && (
                       <div className="flex items-center gap-1 text-red-600 text-xs">
                         <AlertCircle size={12} />
-                        <span>{getFieldError("gender")}</span>
+                        <span>{getFieldError('gender')}</span>
                       </div>
                     )}
                   </div>
@@ -800,20 +931,20 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                     <input
                       name="residence"
                       type="text"
-                      value={formData.residence || ""}
+                      value={formData.residence || ''}
                       onChange={handleChange}
-                      onBlur={() => handleBlur("residence")}
+                      onBlur={() => handleBlur('residence')}
                       placeholder="أدخل مكان السكن"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
-                        getFieldError("residence")
-                          ? "border-red-300 focus:ring-red-500 bg-red-50"
-                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                        getFieldError('residence')
+                          ? 'border-red-300 focus:ring-red-500 bg-red-50'
+                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                       }`}
                     />
-                    {getFieldError("residence") && (
+                    {getFieldError('residence') && (
                       <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
                         <AlertCircle size={12} />
-                        <span>{getFieldError("residence")}</span>
+                        <span>{getFieldError('residence')}</span>
                       </div>
                     )}
                   </div>
@@ -832,7 +963,8 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                 </h3>
                 <div className="bg-emerald-100 border border-emerald-300 rounded-lg p-3 mb-5">
                   <p className="text-sm text-emerald-700 text-center">
-                    <strong>تنبيه:</strong> يجب اختيار الحلقة أولاً، ثم سيتم عرض المعلمين المتاحين لهذه الحلقة
+                    <strong>تنبيه:</strong> يجب اختيار الحلقة أولاً، ثم سيتم عرض
+                    المعلمين المتاحين لهذه الحلقة
                   </p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -844,15 +976,16 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                     </label>
                     <select
                       name="group"
-                      value={formData.group || ""}
+                      value={formData.group || ''}
                       onChange={handleChange}
-                      onBlur={() => handleBlur("group")}
+                      onBlur={() => handleBlur('group')}
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
-                        getFieldError("group")
-                          ? "border-red-300 focus:ring-red-500 bg-red-50"
-                          : "border-emerald-300 focus:ring-emerald-500 focus:border-emerald-500"
+                        getFieldError('group')
+                          ? 'border-red-300 focus:ring-red-500 bg-red-50'
+                          : 'border-emerald-300 focus:ring-emerald-500 focus:border-emerald-500'
                       }`}
-                      title="اختر الحلقة">
+                      title="اختر الحلقة"
+                    >
                       <option value="">اختر الحلقة أولاً...</option>
                       {loadingGroups ? (
                         <option value="" disabled>
@@ -869,14 +1002,14 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                         ))
                       )}
                     </select>
-                    {getFieldError("group") && (
+                    {getFieldError('group') && (
                       <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
                         <AlertCircle size={12} />
-                        <span>{getFieldError("group")}</span>
+                        <span>{getFieldError('group')}</span>
                       </div>
                     )}
                   </div>
-                  
+
                   {/* اختيار المعلم بناءً على الحلقة */}
                   <div className="space-y-1">
                     <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
@@ -885,22 +1018,23 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                     </label>
                     <select
                       name="teacher"
-                      value={formData.teacher || ""}
+                      value={formData.teacher || ''}
                       onChange={handleChange}
-                      onBlur={() => handleBlur("teacher")}
+                      onBlur={() => handleBlur('teacher')}
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
-                        getFieldError("teacher")
-                          ? "border-red-300 focus:ring-red-500 bg-red-50"
-                          : formData.group 
-                            ? "border-teal-300 focus:ring-teal-500 focus:border-teal-500"
-                            : "border-gray-300 bg-gray-100 cursor-not-allowed"
+                        getFieldError('teacher')
+                          ? 'border-red-300 focus:ring-red-500 bg-red-50'
+                          : formData.group
+                            ? 'border-teal-300 focus:ring-teal-500 focus:border-teal-500'
+                            : 'border-gray-300 bg-gray-100 cursor-not-allowed'
                       }`}
                       title="اختر المعلم"
-                      disabled={!formData.group}>
+                      disabled={!formData.group}
+                    >
                       <option value="">
                         {!formData.group
-                          ? "اختر الحلقة أولاً..."
-                          : "اختر المعلم..."}
+                          ? 'اختر الحلقة أولاً...'
+                          : 'اختر المعلم...'}
                       </option>
                       {loadingTeachers ? (
                         <option value="" disabled>
@@ -911,23 +1045,25 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                           <option
                             key={teacher._id}
                             value={`${teacher.firstName} ${teacher.lastName}`}
-                            data-teacher-id={teacher._id}>
+                            data-teacher-id={teacher._id}
+                          >
                             {teacher.firstName} {teacher.lastName}
-                            {teacher.specialCircle && ` - ${teacher.specialCircle}`}
+                            {teacher.specialCircle &&
+                              ` - ${teacher.specialCircle}`}
                           </option>
                         ))
                       ) : (
                         <option value="" disabled>
                           {formData.group
-                            ? "لا يوجد معلمين متاحين لهذه الحلقة"
-                            : "لا يوجد معلمين متاحين"}
+                            ? 'لا يوجد معلمين متاحين لهذه الحلقة'
+                            : 'لا يوجد معلمين متاحين'}
                         </option>
                       )}
                     </select>
-                    {getFieldError("teacher") && (
+                    {getFieldError('teacher') && (
                       <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
                         <AlertCircle size={12} />
-                        <span>{getFieldError("teacher")}</span>
+                        <span>{getFieldError('teacher')}</span>
                       </div>
                     )}
 
@@ -942,7 +1078,7 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                               لا يوجد معلمين لهذه الحلقة
                             </div>
                             <div className="text-amber-500 mt-1">
-                              الحلقة المختارة:{" "}
+                              الحلقة المختارة:{' '}
                               <span className="font-medium">
                                 {formData.group}
                               </span>
@@ -953,7 +1089,8 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                             <button
                               type="button"
                               onClick={() => setFilteredTeachers(teachers)}
-                              className="mt-2 text-xs bg-amber-100 hover:bg-amber-200 text-amber-700 px-2 py-1 rounded transition-colors">
+                              className="mt-2 text-xs bg-amber-100 hover:bg-amber-200 text-amber-700 px-2 py-1 rounded transition-colors"
+                            >
                               عرض جميع المعلمين المتاحين ({teachers.length})
                             </button>
                           </div>
@@ -978,20 +1115,20 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                     <input
                       name="phoneNumber"
                       type="tel"
-                      value={formData.phoneNumber || ""}
+                      value={formData.phoneNumber || ''}
                       onChange={handleChange}
-                      onBlur={() => handleBlur("phoneNumber")}
+                      onBlur={() => handleBlur('phoneNumber')}
                       placeholder="05xxxxxxxx"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
-                        getFieldError("phoneNumber")
-                          ? "border-red-300 focus:ring-red-500 bg-red-50"
-                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                        getFieldError('phoneNumber')
+                          ? 'border-red-300 focus:ring-red-500 bg-red-50'
+                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                       }`}
                     />
-                    {getFieldError("phoneNumber") && (
+                    {getFieldError('phoneNumber') && (
                       <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
                         <AlertCircle size={12} />
-                        <span>{getFieldError("phoneNumber")}</span>
+                        <span>{getFieldError('phoneNumber')}</span>
                       </div>
                     )}
                   </div>
@@ -1003,20 +1140,20 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                     <input
                       name="email"
                       type="email"
-                      value={formData.email || ""}
+                      value={formData.email || ''}
                       onChange={handleChange}
-                      onBlur={() => handleBlur("email")}
+                      onBlur={() => handleBlur('email')}
                       placeholder="example@email.com"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
-                        getFieldError("email")
-                          ? "border-red-300 focus:ring-red-500 bg-red-50"
-                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                        getFieldError('email')
+                          ? 'border-red-300 focus:ring-red-500 bg-red-50'
+                          : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                       }`}
                     />
-                    {getFieldError("email") && (
+                    {getFieldError('email') && (
                       <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
                         <AlertCircle size={12} />
-                        <span>{getFieldError("email")}</span>
+                        <span>{getFieldError('email')}</span>
                       </div>
                     )}
                   </div>
@@ -1032,38 +1169,38 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                   <div className="bg-white p-3 rounded-lg shadow-sm">
                     <span className="text-gray-600 text-xs">الاسم الكامل</span>
                     <p className="font-semibold text-gray-900 mt-1">
-                      {formData.firstName} {formData.fatherName}{" "}
+                      {formData.firstName} {formData.fatherName}{' '}
                       {formData.lastName}
                     </p>
                   </div>
                   <div className="bg-white p-3 rounded-lg shadow-sm">
                     <span className="text-gray-600 text-xs">رقم الهوية</span>
                     <p className="font-semibold text-gray-900 mt-1">
-                      {formData.idNumber || "-"}
+                      {formData.idNumber || '-'}
                     </p>
                   </div>
                   <div className="bg-white p-3 rounded-lg shadow-sm">
                     <span className="text-gray-600 text-xs">الجنس</span>
                     <p className="font-semibold text-gray-900 mt-1">
-                      {formData.gender || "-"}
+                      {formData.gender || '-'}
                     </p>
                   </div>
                   <div className="bg-white p-3 rounded-lg shadow-sm">
                     <span className="text-gray-600 text-xs">المعلم</span>
                     <p className="font-semibold text-gray-900 mt-1">
-                      {formData.teacher || "-"}
+                      {formData.teacher || '-'}
                     </p>
                   </div>
                   <div className="bg-white p-3 rounded-lg shadow-sm">
                     <span className="text-gray-600 text-xs">الحلقة</span>
                     <p className="font-semibold text-gray-900 mt-1">
-                      {formData.group || "-"}
+                      {formData.group || '-'}
                     </p>
                   </div>
                   <div className="bg-white p-3 rounded-lg shadow-sm">
                     <span className="text-gray-600 text-xs">رقم الهاتف</span>
                     <p className="font-semibold text-gray-900 mt-1">
-                      {formData.phoneNumber || "-"}
+                      {formData.phoneNumber || '-'}
                     </p>
                   </div>
                 </div>
@@ -1083,7 +1220,7 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                   </span>
                 ) : (
                   <span>
-                    الحقول المطلوبة محددة بـ{" "}
+                    الحقول المطلوبة محددة بـ{' '}
                     <span className="text-red-500">*</span>
                   </span>
                 )
@@ -1094,7 +1231,7 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                 </span>
               ) : (
                 <span>
-                  الحقول المطلوبة محددة بـ{" "}
+                  الحقول المطلوبة محددة بـ{' '}
                   <span className="text-red-500">*</span>
                 </span>
               )}
@@ -1106,14 +1243,16 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                   <button
                     type="button"
                     onClick={onClose}
-                    className="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors font-medium">
+                    className="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors font-medium"
+                  >
                     إلغاء
                   </button>
                   <button
                     type="button"
                     onClick={handleNextStep}
                     disabled={!isStep1Valid}
-                    className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center gap-2 shadow-lg shadow-blue-500/30">
+                    className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center gap-2 shadow-lg shadow-blue-500/30"
+                  >
                     <span>التالي</span>
                     <ChevronLeft size={18} />
                   </button>
@@ -1123,7 +1262,8 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                   <button
                     type="button"
                     onClick={handlePrevStep}
-                    className="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors font-medium flex items-center gap-2">
+                    className="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors font-medium flex items-center gap-2"
+                  >
                     <span>السابق</span>
                     <ChevronRight size={18} />
                   </button>
@@ -1132,10 +1272,11 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                     onClick={handleSubmit}
                     disabled={isSubmitting || !isStep2Valid}
                     className={`px-6 py-2.5 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center gap-2 shadow-lg ${
-                      hasRetryableError 
-                        ? 'bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 shadow-orange-500/30' 
+                      hasRetryableError
+                        ? 'bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 shadow-orange-500/30'
                         : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-green-500/30'
-                    }`}>
+                    }`}
+                  >
                     {isSubmitting ? (
                       <>
                         <Loader2 className="animate-spin" size={18} />
@@ -1149,7 +1290,7 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                     ) : (
                       <>
                         <Check size={18} />
-                        <span>{student ? "تعديل الطالب" : "إضافة الطالب"}</span>
+                        <span>{student ? 'تعديل الطالب' : 'إضافة الطالب'}</span>
                       </>
                     )}
                   </button>

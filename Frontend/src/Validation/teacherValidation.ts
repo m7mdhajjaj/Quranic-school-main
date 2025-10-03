@@ -161,10 +161,16 @@ export const teacherValidationSchema = yup.object({
     .trim()
     .transform((value) => value === '' ? null : value),
     
-  // الحلقات - مصفوفة من النصوص
+  // الحلقات - مصفوفة من كائنات الحلقات
   groups: yup
     .array()
-    .of(yup.string().trim())
+    .of(
+      yup.object({
+        id: yup.string().required('معرف الحلقة مطلوب'),
+        name: yup.string().trim().required('اسم الحلقة مطلوب'),
+        number: yup.number().min(1, 'رقم الحلقة يجب أن يكون أكبر من 0').required('رقم الحلقة مطلوب')
+      })
+    )
     .default([])
     .nullable()
     .transform((value) => value === null || value === undefined ? [] : value),

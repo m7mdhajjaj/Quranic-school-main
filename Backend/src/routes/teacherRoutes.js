@@ -89,6 +89,7 @@ const Teacher = require("../models/Teacher");
 const Student = require("../models/Student"); // for /for-student
 const controller = require("../controllers/teacherController");
 const { protect } = require("../middleware/authMiddleware");
+const { validateTeacherGroups, sanitizeTeacherData } = require("../middleware/validateTeacherData");
 
 // ========== Multer in-memory (لا ملفات على الهارد) ==========
 const teacherAvatarUpload = multer({
@@ -150,7 +151,14 @@ router.get("/for-student/:studentId", async (req, res) => {
       ...(student.group ? [student.group] : []),
     ].filter(Boolean);
 
-    const teachers = await Teacher.find({ groups: { $in: sGroups } }).select("-password");
+    // البحث في الحلقات بالبنية الجديدة والقديمة
+    const teachers = await Teacher.find({
+      $or: [
+        { 'groups.name': { $in: sGroups } }, // البنية الجديدة
+        { 'groups.id': { $in: sGroups } },   // البحث بالمعرف
+        { groups: { $in: sGroups } }         // دعم البيانات القديمة
+      ]
+    }).select("-password");
     
     return res.status(200).json({ success: true, data: teachers });
   } catch (error) {
@@ -159,8 +167,8 @@ router.get("/for-student/:studentId", async (req, res) => {
 });
 
 router.get("/:id", controller.getTeacherById);
-router.post("/", controller.createTeacher);
-router.put("/:id", controller.updateTeacher);
+router.post("/", sanitizeTeacherData, validateTeacherGroups, controller.createTeacher);
+router.put("/:id", sanitizeTeacherData, validateTeacherGroups, controller.updateTeacher);
 router.delete("/:id", controller.deleteTeacher);
 
 module.exports = router;
