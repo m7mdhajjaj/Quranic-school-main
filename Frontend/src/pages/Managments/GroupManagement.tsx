@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
-  FaEdit, FaTrash, FaPlus, FaSearch, FaChevronLeft, FaChevronRight,
+  FaEdit, FaTrash, FaPlus, FaSearch,
   FaDownload, FaFilter, FaSortAmountDown, FaSortAmountUp,
-  FaUsers, FaChalkboardTeacher, FaTh, FaList, FaCalendar, FaBook, FaUserFriends
+  FaUsers, FaChalkboardTeacher, FaTh, FaList, FaCalendar, FaUserFriends
 } from 'react-icons/fa';
 import { useAuth } from '../../hooks/useAuth';
 import AddGroupForm from '../../components/Forms/AddGroupForm';
+import ResponsivePagination from '../../components/Pagination/ResponsivePagination';
 import { getAllGroups, deleteGroup, type Group } from '../../Api/groupApi';
 import { type GroupFormData } from '../../Validation/groupValidation';
 import Swal from 'sweetalert2';
@@ -52,44 +53,7 @@ const GroupManagement: React.FC = () => {
     return [...new Set(groups.map(g => g.teacher).filter(Boolean))].sort();
   }, [groups]);
 
-  // Statistics
-  const stats = useMemo(() => {
-    const activeCount = groups.filter(g => g.isActive !== false).length;
-    const inactiveCount = groups.filter(g => g.isActive === false).length;
-    const totalCapacity = groups.reduce((sum, g) => sum + (g.capacity || 0), 0);
-    const totalCurrentStudents = groups.reduce((sum, g) => sum + (g.currentStudents || 0), 0);
-    
-    // حلقات ممتلئة (وصلت للحد الأقصى)
-    const fullGroups = groups.filter(g => (g.currentStudents || 0) >= (g.capacity || 30)).length;
-    
-    // حلقات قريبة من الامتلاء (80% أو أكثر)
-    const nearFullGroups = groups.filter(g => 
-      (g.currentStudents || 0) >= (g.capacity || 30) * 0.8 && 
-      (g.currentStudents || 0) < (g.capacity || 30)
-    ).length;
-    
-    // نسبة الامتلاء العامة
-    const occupancyRate = totalCapacity > 0 
-      ? ((totalCurrentStudents / totalCapacity) * 100).toFixed(1)
-      : '0';
-      
-    const avgCapacity = groups.length > 0 
-      ? (totalCapacity / groups.length).toFixed(1)
-      : 0;
-    
-    return {
-      total: groups.length,
-      active: activeCount,
-      inactive: inactiveCount,
-      totalCapacity,
-      totalCurrentStudents,
-      fullGroups, // عدد الحلقات الممتلئة
-      nearFullGroups, // عدد الحلقات القريبة من الامتلاء
-      occupancyRate, // نسبة الامتلاء العامة
-      avgCapacity,
-      teachers: teachers.length
-    };
-  }, [groups, teachers.length]);
+
 
   // Fetch groups with optimized loading and student count
   const fetchGroups = useCallback(async () => {
@@ -263,12 +227,39 @@ const GroupManagement: React.FC = () => {
   };
 
   // Handle add/edit success
-  const handleAddSuccess = (data?: Group | GroupFormData) => {
-    console.log('تمت العملية بنجاح:', data);
-    fetchGroups();
-    setIsFormVisible(false);
-    setIsEditMode(false);
-    setSelectedGroup(null);
+  const handleAddSuccess = async (data?: Group | GroupFormData) => {
+    try {
+      console.log('تمت العملية بنجاح:', data);
+      fetchGroups();
+      setIsFormVisible(false);
+      setIsEditMode(false);
+      setSelectedGroup(null);
+      
+      // SweetAlert for success
+      await Swal.fire({
+        title: isEditMode ? 'تم التحديث!' : 'تم الإضافة!',
+        text: isEditMode ? 'تم تحديث بيانات الحلقة بنجاح' : 'تم إضافة الحلقة الجديدة بنجاح',
+        icon: 'success',
+        timer: 2000,
+        showConfirmButton: false,
+        toast: true,
+        position: 'top-end',
+        timerProgressBar: true
+      });
+      
+    } catch (error) {
+      console.error('خطأ في حفظ الحلقة:', error);
+      
+      await Swal.fire({
+        title: 'خطأ!',
+        text: 'حدث خطأ أثناء حفظ بيانات الحلقة',
+        icon: 'error',
+        timer: 3000,
+        showConfirmButton: false,
+        toast: true,
+        position: 'top-end'
+      });
+    }
   };
 
   // Export to CSV
@@ -540,54 +531,7 @@ const GroupManagement: React.FC = () => {
           </div>
         </div>
 
-        {/* Statistics Cards */}
-        {isLoading ? (
-          /* Skeleton Loading for Cards */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mb-6">
-            {Array.from({ length: 2 }, (_, index) => (
-              <div key={index} className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-gray-300 animate-pulse">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-gray-200 rounded-lg">
-                    <div className="w-5 h-5 bg-gray-300 rounded"></div>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="h-3 w-12 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-5 w-8 bg-gray-300 rounded"></div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mb-6">
-            <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-blue-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg shadow-md">
-                  <FaBook className="w-5 h-5 text-white" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs text-gray-600 font-medium truncate">إجمالي الحلقات</p>
-                  <p className="text-lg font-bold text-gray-900">{stats.total}</p>
-                </div>
-              </div>
-            </div>
 
-            <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-purple-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg shadow-md">
-                  <FaUserFriends className="w-5 h-5 text-white" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs text-gray-600 font-medium truncate">الطلاب المشتركين</p>
-                  <div className="flex items-center gap-2">
-                    <p className="text-lg font-bold text-gray-900">{stats.totalCurrentStudents}</p>
-                    <span className="text-xs text-gray-500">/ {stats.totalCapacity}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Loading State - Table Skeleton */}
         {isLoading && (
@@ -970,106 +914,18 @@ const GroupManagement: React.FC = () => {
           </div>
         )}
 
-        {/* Enhanced Pagination - Always show if groups exist */}
-        {!isLoading && !error && filteredAndSortedGroups.length > 0 && totalPages >= 1 && (
-          <div className="bg-white rounded-2xl shadow-xl px-6 py-4 mt-6" dir="rtl">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="text-sm text-gray-700">
-                عرض{' '}
-                <span className="font-semibold">
-                  {indexOfFirstGroup + 1}
-                </span>{' '}
-                إلى{' '}
-                <span className="font-semibold">
-                  {Math.min(indexOfLastGroup, filteredAndSortedGroups.length)}
-                </span>{' '}
-                من{' '}
-                <span className="font-semibold">
-                  {filteredAndSortedGroups.length}
-                </span>{' '}
-                حلقة
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setCurrentPage(1)}
-                  disabled={currentPage === 1}
-                  className={`px-3 py-2 border rounded-lg text-sm font-medium transition-all ${
-                    currentPage === 1
-                      ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
-                  }`}>
-                  الأولى
-                </button>
-
-                <button
-                  onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
-                  disabled={currentPage === 1}
-                  className={`flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium transition-all ${
-                    currentPage === 1
-                      ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
-                  }`}>
-                  <FaChevronRight className="w-3 h-3" />
-                  السابق
-                </button>
-
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => setCurrentPage(pageNum)}
-                        className={`w-10 h-10 rounded-lg text-sm font-medium transition-all ${
-                          currentPage === pageNum
-                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
-                            : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
-                        }`}>
-                        {pageNum}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <button
-                  onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className={`flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium transition-all ${
-                    currentPage === totalPages
-                      ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
-                  }`}>
-                  التالي
-                  <FaChevronLeft className="w-3 h-3" />
-                </button>
-
-                <button
-                  onClick={() => setCurrentPage(totalPages)}
-                  disabled={currentPage === totalPages}
-                  className={`px-3 py-2 border rounded-lg text-sm font-medium transition-all ${
-                    currentPage === totalPages
-                      ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                      : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
-                  }`}>
-                  الأخيرة
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Add/Edit Form Modal */}
+        {/* Enhanced Responsive Pagination */}
+        {!isLoading && !error && filteredAndSortedGroups.length > 0 && (
+          <ResponsivePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredAndSortedGroups.length}
+            itemsPerPage={groupsPerPage}
+            onPageChange={setCurrentPage}
+            itemName="حلقة"
+            showQuickJump={true}
+          />
+        )}        {/* Add/Edit Form Modal */}
         {isFormVisible && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -1103,6 +959,35 @@ const GroupManagement: React.FC = () => {
         )}
         </div>
       </div>
+
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out;
+        }
+        
+        /* Responsive pagination styles */
+        @media (max-width: 480px) {
+          .pagination-mobile {
+            gap: 0.25rem;
+          }
+          .pagination-button-mobile {
+            min-width: 28px;
+            height: 28px;
+            font-size: 11px;
+            padding: 0.25rem;
+          }
+        }
+        
+        @media (min-width: 481px) {
+          .xs\\:inline {
+            display: inline;
+          }
+        }
+      `}</style>
     </>
   );
 };

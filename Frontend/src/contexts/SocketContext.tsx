@@ -22,10 +22,35 @@ interface Student {
   email?: string;
 }
 
+interface Teacher {
+  _id?: string;
+  teacherId: number;
+  idNumber: string;
+  firstName: string;
+  fatherName: string;
+  grandFatherName: string;
+  motherName: string;
+  lastName: string;
+  birthDate: string;
+  age: number;
+  gender: 'ذكر' | 'انثى';
+  residence: string;
+  phoneNumber?: string;
+  email?: string;
+  groups: string[];
+  isActive: boolean;
+}
+
 interface StudentUpdateEvent {
   type: 'created' | 'updated' | 'deleted';
   student: Student;
   studentId?: string;
+}
+
+interface TeacherUpdateEvent {
+  type: 'created' | 'updated' | 'deleted';
+  teacher: Teacher;
+  teacherId?: string;
 }
 
 interface OnlineUser {
@@ -50,6 +75,10 @@ interface SocketContextType {
   onStudentUpdate: (callback: (event: StudentUpdateEvent) => void) => void;
   offStudentUpdate: (callback: (event: StudentUpdateEvent) => void) => void;
   
+  // Teacher-specific events
+  onTeacherUpdate: (callback: (event: TeacherUpdateEvent) => void) => void;
+  offTeacherUpdate: (callback: (event: TeacherUpdateEvent) => void) => void;
+  
   // General events
   emit: (eventName: string, data: SocketEventData) => void;
   on: (eventName: string, callback: (data: SocketEventData) => void) => void;
@@ -72,6 +101,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   
   // Store event callbacks
   const studentUpdateCallbacks = useRef<Set<(event: StudentUpdateEvent) => void>>(new Set());
+  const teacherUpdateCallbacks = useRef<Set<(event: TeacherUpdateEvent) => void>>(new Set());
 
   useEffect(() => {
     if (!user) {
@@ -163,6 +193,29 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       studentUpdateCallbacks.current.forEach(callback => callback(event));
     });
 
+    // Teacher management events
+    socketInstance.on('teacherCreated', (data: Teacher) => {
+      console.log('👨‍🏫 Teacher created:', data);
+      const event: TeacherUpdateEvent = { type: 'created', teacher: data };
+      teacherUpdateCallbacks.current.forEach(callback => callback(event));
+    });
+
+    socketInstance.on('teacherUpdated', (data: Teacher) => {
+      console.log('✏️ Teacher updated:', data);
+      const event: TeacherUpdateEvent = { type: 'updated', teacher: data };
+      teacherUpdateCallbacks.current.forEach(callback => callback(event));
+    });
+
+    socketInstance.on('teacherDeleted', (data: { _id: string }) => {
+      console.log('🗑️ Teacher deleted:', data);
+      const event: TeacherUpdateEvent = { 
+        type: 'deleted', 
+        teacher: { _id: data._id } as Teacher,
+        teacherId: data._id 
+      };
+      teacherUpdateCallbacks.current.forEach(callback => callback(event));
+    });
+
     // User status events
     socketInstance.on('userStatusChange', (data: { userId: string; isActive: boolean; lastSeen: string }) => {
       console.log('🔄 User status changed:', data);
@@ -202,6 +255,14 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     studentUpdateCallbacks.current.delete(callback);
   };
 
+  const onTeacherUpdate = (callback: (event: TeacherUpdateEvent) => void) => {
+    teacherUpdateCallbacks.current.add(callback);
+  };
+
+  const offTeacherUpdate = (callback: (event: TeacherUpdateEvent) => void) => {
+    teacherUpdateCallbacks.current.delete(callback);
+  };
+
   // Generic socket methods
   const emit = (eventName: string, data: SocketEventData) => {
     if (socket && isConnected) {
@@ -229,6 +290,8 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     onlineUsers,
     onStudentUpdate,
     offStudentUpdate,
+    onTeacherUpdate,
+    offTeacherUpdate,
     emit,
     on,
     off

@@ -573,6 +573,13 @@ exports.createTeacher = async (req, res) => {
     });
 
     console.log("Teacher created successfully:", doc._id);
+    
+    // Emit socket event for real-time update
+    if (global.io) {
+      global.io.emit('teacherCreated', doc);
+      console.log('📡 Teacher created event emitted via socket');
+    }
+    
     return res.status(201).json({ success: true, message: "تم إنشاء المعلم بنجاح", data: doc });
   } catch (error) {
     console.error("Error creating teacher:", error);
@@ -614,6 +621,12 @@ exports.updateTeacher = async (req, res) => {
       return res.status(404).json({ success: false, message: "المعلم غير موجود" });
     }
 
+    // Emit socket event for real-time update
+    if (global.io) {
+      global.io.emit('teacherUpdated', updated);
+      console.log('📡 Teacher updated event emitted via socket');
+    }
+
     return res.status(200).json({ 
       success: true, 
       message: "تم تحديث بيانات المعلم بنجاح", 
@@ -636,6 +649,13 @@ exports.deleteTeacher = async (req, res) => {
 
     // soft delete (requires isActive in schema)
     await Teacher.findByIdAndUpdate(id, { isActive: false, updatedAt: new Date() });
+    
+    // Emit socket event for real-time update
+    if (global.io) {
+      global.io.emit('teacherDeleted', { _id: id });
+      console.log('📡 Teacher deleted event emitted via socket');
+    }
+    
     return res.status(200).json({ success: true, message: "تم حذف المعلم بنجاح" });
   } catch (error) {
     console.error("Error deleting teacher:", error);

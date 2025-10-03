@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
-  FaEdit, FaTrash, FaPlus, FaSearch, FaChevronLeft, FaChevronRight,
+  FaEdit, FaTrash, FaPlus, FaSearch,
   FaDownload, FaFilter, FaSortAmountDown, FaSortAmountUp,
   FaUserGraduate, FaChartBar
 } from 'react-icons/fa';
@@ -9,6 +9,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useSocket } from '../../hooks/useSocket';
 import api from '../../Api/api';
 import AddStudentFormWithYup from '../../components/Forms/AddStudentForm';
+import ResponsivePagination from '../../components/Pagination/ResponsivePagination';
 import Swal from 'sweetalert2';
 import '../../styles/sweetalert.css';
 
@@ -826,6 +827,8 @@ const StudentsManagement: React.FC = () => {
                     🎂 {ageRange[0]}-{ageRange[1]} سنة
                     <button
                       onClick={() => setAgeRange([0, 100])}
+                      title="إزالة فلتر العمر"
+                      aria-label="إزالة فلتر العمر"
                       className="ml-1 hover:bg-amber-200 rounded-full p-0.5"
                     >
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -839,6 +842,8 @@ const StudentsManagement: React.FC = () => {
                     🔍 "{searchTerm}"
                     <button
                       onClick={() => setSearchTerm('')}
+                      title="مسح البحث"
+                      aria-label="مسح البحث"
                       className="ml-1 hover:bg-gray-200 rounded-full p-0.5"
                     >
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1189,126 +1194,15 @@ const StudentsManagement: React.FC = () => {
         )}
 
         {/* Enhanced Responsive Pagination */}
-        {!isLoading && filteredAndSortedStudents.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-xl px-3 sm:px-6 py-4 mt-6" dir="rtl">
-            {/* Mobile-First Layout */}
-            <div className="flex flex-col space-y-4">
-              {/* Results Info - Always visible */}
-              <div className="text-xs sm:text-sm text-gray-700 text-center sm:text-right">
-                عرض <span className="font-semibold">{indexOfFirstStudent + 1}</span> إلى{' '}
-                <span className="font-semibold">
-                  {Math.min(indexOfLastStudent, filteredAndSortedStudents.length)}
-                </span>{' '}
-                من <span className="font-semibold">{filteredAndSortedStudents.length}</span> طالب
-              </div>
-              
-              {/* Pagination Controls */}
-              <div className="flex items-center justify-center">
-                <div className="flex items-center gap-1 sm:gap-2">
-                  {/* First Page - Hidden on mobile when not needed */}
-                  {totalPages > 3 && currentPage > 2 && (
-                    <button
-                      onClick={() => setCurrentPage(1)}
-                      className="hidden sm:flex px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 hover:bg-blue-50 hover:border-blue-300 transition-all"
-                    >
-                      الأولى
-                    </button>
-                  )}
-                  
-                  {/* Previous Button - Always visible */}
-                  <button
-                    onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
-                    disabled={currentPage === 1}
-                    className={`flex items-center gap-1 px-2 py-1.5 sm:px-3 sm:py-2 border rounded-lg text-xs sm:text-sm font-medium transition-all ${
-                      currentPage === 1
-                        ? 'border-gray-200 text-gray-400 cursor-not-allowed bg-gray-50'
-                        : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
-                    }`}
-                  >
-                    <FaChevronRight className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                    <span className="hidden xs:inline">السابق</span>
-                  </button>
-
-                  {/* Page Numbers - Responsive display */}
-                  <div className="flex items-center gap-0.5 sm:gap-1">
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum;
-                      const maxVisible = 5;
-                      
-                      if (totalPages <= maxVisible) {
-                        pageNum = i + 1;
-                      } else if (currentPage <= Math.ceil(maxVisible / 2)) {
-                        pageNum = i + 1;
-                      } else if (currentPage >= totalPages - Math.floor(maxVisible / 2)) {
-                        pageNum = totalPages - maxVisible + 1 + i;
-                      } else {
-                        pageNum = currentPage - Math.floor(maxVisible / 2) + i;
-                      }
-                      
-                      return (
-                        <button
-                          key={pageNum}
-                          onClick={() => setCurrentPage(pageNum)}
-                          className={`w-7 h-7 sm:w-9 sm:h-9 rounded-lg text-xs sm:text-sm font-medium transition-all ${
-                            currentPage === pageNum
-                              ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg transform scale-105'
-                              : 'border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-blue-300'
-                          }`}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Next Button - Always visible */}
-                  <button
-                    onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                    className={`flex items-center gap-1 px-2 py-1.5 sm:px-3 sm:py-2 border rounded-lg text-xs sm:text-sm font-medium transition-all ${
-                      currentPage === totalPages
-                        ? 'border-gray-200 text-gray-400 cursor-not-allowed bg-gray-50'
-                        : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
-                    }`}
-                  >
-                    <span className="hidden xs:inline">التالي</span>
-                    <FaChevronLeft className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                  </button>
-                  
-                  {/* Last Page - Hidden on mobile when not needed */}
-                  {totalPages > 3 && currentPage < totalPages - 1 && (
-                    <button
-                      onClick={() => setCurrentPage(totalPages)}
-                      className="hidden sm:flex px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 hover:bg-blue-50 hover:border-blue-300 transition-all"
-                    >
-                      الأخيرة
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Mobile Jump to Page - Only on small screens when many pages */}
-              {totalPages > 5 && (
-                <div className="flex sm:hidden items-center justify-center gap-2 pt-2 border-t border-gray-100">
-                  <span className="text-xs text-gray-600">انتقال سريع:</span>
-                  <select
-                    value={currentPage}
-                    onChange={(e) => setCurrentPage(Number(e.target.value))}
-                    className="px-2 py-1 border border-gray-300 rounded text-xs bg-white focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
-                    aria-label="اختيار الصفحة"
-                  >
-                    {Array.from({ length: totalPages }, (_, i) => (
-                      <option key={i + 1} value={i + 1}>
-                        صفحة {i + 1}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="text-xs text-gray-500">من {totalPages}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        <ResponsivePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredAndSortedStudents.length}
+          itemsPerPage={studentsPerPage}
+          onPageChange={setCurrentPage}
+          itemName="طالب"
+          showQuickJump={true}
+        />
       </div>
 
       {/* Student Form Modal */}
@@ -1331,25 +1225,6 @@ const StudentsManagement: React.FC = () => {
         }
         .animate-fadeIn {
           animation: fadeIn 0.3s ease-out;
-        }
-        
-        /* Responsive pagination styles */
-        @media (max-width: 480px) {
-          .pagination-mobile {
-            gap: 0.25rem;
-          }
-          .pagination-button-mobile {
-            min-width: 28px;
-            height: 28px;
-            font-size: 11px;
-            padding: 0.25rem;
-          }
-        }
-        
-        @media (min-width: 481px) {
-          .xs\\:inline {
-            display: inline !important;
-          }
         }
       `}</style>
     </div>

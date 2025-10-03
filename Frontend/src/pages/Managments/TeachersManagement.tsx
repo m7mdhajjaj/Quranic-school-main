@@ -4,22 +4,21 @@ import {
   FaTrash,
   FaPlus,
   FaSearch,
-  FaChevronLeft,
-  FaChevronRight,
   FaDownload,
   FaFilter,
   FaSortAmountDown,
   FaSortAmountUp,
   FaUserTie,
-  FaBook,
   FaChartBar,
 } from 'react-icons/fa';
 import { useAuth } from '../../hooks/useAuth';
+import { useSocket } from '../../hooks/useSocket';
 import api from '../../Api/api';
 import { getAllTeachers } from '../../Api/teacherApi';
 import type { Teacher } from '../../Api/teacherApi';
 import type { TeacherFormData } from '../../Validation/teacherValidation';
 import EnhancedTeacherForm from '../../components/Forms/AddTeacherForm';
+import ResponsivePagination from '../../components/Pagination/ResponsivePagination';
 import Swal from 'sweetalert2';
 import '../../styles/sweetalert.css';
 
@@ -28,6 +27,7 @@ type SortOrder = 'asc' | 'desc';
 
 const TeachersManagement: React.FC = () => {
   const { user: currentUser } = useAuth();
+  const { socket, isConnected } = useSocket();
   const userRole = currentUser?.role || '';
   const hasPermission = userRole === 'admin';
 
@@ -42,7 +42,6 @@ const TeachersManagement: React.FC = () => {
 
   // Filter & Search States
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedGroup, setSelectedGroup] = useState('all');
   const [selectedGender, setSelectedGender] = useState('all');
   const [ageRange, setAgeRange] = useState<[number, number]>([0, 100]);
   const [showFilters, setShowFilters] = useState(false);
@@ -60,11 +59,7 @@ const TeachersManagement: React.FC = () => {
     new Set()
   );
 
-  // Extract unique groups
-  const groups = useMemo(() => {
-    const allGroups = teachers.flatMap((t) => t.groups || []);
-    return [...new Set(allGroups)].sort();
-  }, [teachers]);
+
 
   // Statistics
   const stats = useMemo(() => {
@@ -85,9 +80,8 @@ const TeachersManagement: React.FC = () => {
       male: maleCount,
       female: femaleCount,
       avgAge,
-      groups: groups.length,
     };
-  }, [teachers, groups.length]);
+  }, [teachers]);
 
 
   // Fetch teachers
@@ -132,6 +126,80 @@ const TeachersManagement: React.FC = () => {
     fetchTeachers();
   }, [hasPermission, fetchTeachers]);
 
+  // Socket event handlers for real-time updates
+  useEffect(() => {
+    if (!hasPermission || !socket) return;
+
+    const handleTeacherUpdate = (event: { type: 'created' | 'updated' | 'deleted'; teacher: Teacher; teacherId?: string }) => {
+      console.log('📡 Received teacher update via socket:', event);
+      
+      switch (event.type) {
+        case 'created':
+          setTeachers(prevTeachers => {
+            // Check if teacher already exists to prevent duplicates
+            const existingTeacher = prevTeachers.find(t => 
+              t._id === event.teacher._id || 
+              (t.email && t.email === event.teacher.email)
+            );
+            
+            if (existingTeacher) {
+              console.log('Teacher already exists, skipping add');
+              return prevTeachers;
+            }
+            
+            console.log('➕ Adding new teacher to local state');
+            return [...prevTeachers, {
+              ...event.teacher,
+              gender: event.teacher.gender || 'غير محدد',
+              age: event.teacher.age || 0
+            }];
+          });
+          
+          // Log notification instead of showing toast
+          console.log('✅ معلم جديد تم إضافته:', event.teacher.firstName, event.teacher.lastName);
+          break;
+
+        case 'updated':
+          setTeachers(prevTeachers => 
+            prevTeachers.map(t => 
+              t._id === event.teacher._id 
+                ? {
+                    ...event.teacher,
+                    gender: event.teacher.gender || 'غير محدد',
+                    age: event.teacher.age || 0
+                  }
+                : t
+            )
+          );
+          
+          // Log notification instead of showing toast
+          console.log('🔄 تم تحديث بيانات المعلم:', event.teacher.firstName, event.teacher.lastName);
+          break;
+
+        case 'deleted':
+          setTeachers(prevTeachers => 
+            prevTeachers.filter(t => t._id !== event.teacherId)
+          );
+          
+          // Log notification instead of showing toast
+          console.log('🗑️ تم حذف معلم من قبل مستخدم آخر');
+          break;
+      }
+    };
+
+    // Listen for teacher events
+    socket.on('teacherCreated', (data: Teacher) => handleTeacherUpdate({ type: 'created', teacher: data }));
+    socket.on('teacherUpdated', (data: Teacher) => handleTeacherUpdate({ type: 'updated', teacher: data }));
+    socket.on('teacherDeleted', (data: { teacherId: string; teacher?: Teacher }) => handleTeacherUpdate({ type: 'deleted', teacher: data.teacher!, teacherId: data.teacherId }));
+
+    // Cleanup: remove event listeners
+    return () => {
+      socket.off('teacherCreated');
+      socket.off('teacherUpdated');
+      socket.off('teacherDeleted');
+    };
+  }, [hasPermission, socket]);
+
   // Handle sorting
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -155,9 +223,6 @@ const TeachersManagement: React.FC = () => {
         (teacher.email || '').toLowerCase().includes(searchLower) ||
         (teacher.phoneNumber || '').includes(searchLower);
 
-      const matchesGroup =
-        selectedGroup === 'all' ||
-        (teacher.groups && teacher.groups.includes(selectedGroup));
       const matchesGender =
         selectedGender === 'all' || teacher.gender === selectedGender;
 
@@ -167,7 +232,6 @@ const TeachersManagement: React.FC = () => {
 
       return (
         matchesSearch &&
-        matchesGroup &&
         matchesGender &&
         matchesAge
       );
@@ -194,7 +258,6 @@ const TeachersManagement: React.FC = () => {
   }, [
     teachers,
     searchTerm,
-    selectedGroup,
     selectedGender,
     ageRange,
     sortField,
@@ -326,7 +389,6 @@ const TeachersManagement: React.FC = () => {
   // Reset filters
   const resetFilters = () => {
     setSearchTerm('');
-    setSelectedGroup('all');
     setSelectedGender('all');
     setAgeRange([0, 100]);
     setCurrentPage(1);
@@ -392,32 +454,17 @@ const TeachersManagement: React.FC = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <button
-                onClick={() => {
-                  fetchTeachers();
-                }}
-                disabled={isLoading}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg ${
-                  isLoading
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700'
-                }`}
-              >
-                <svg
-                  className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                  />
-                </svg>
-                {isLoading ? 'جاري التحديث...' : 'تحديث البيانات'}
-              </button>
+              {/* Socket Connection Status */}
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${
+                isConnected 
+                  ? 'bg-green-100 text-green-700 border border-green-200' 
+                  : 'bg-red-100 text-red-700 border border-red-200'
+              }`}>
+                <div className={`w-2 h-2 rounded-full ${
+                  isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'
+                }`}></div>
+                {isConnected ? 'متصل - تحديث تلقائي' : 'غير متصل'}
+              </div>
 
               <button
                 onClick={handleExport}
@@ -455,18 +502,7 @@ const TeachersManagement: React.FC = () => {
                 <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               </div>
 
-              <select
-                value={selectedGroup}
-                onChange={(e) => setSelectedGroup(e.target.value)}
-                className="md:col-span-3 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">جميع الحلقات ({groups.length})</option>
-                {groups.map((group) => (
-                  <option key={group} value={group}>
-                    {group}
-                  </option>
-                ))}
-              </select>
+
 
               <button
                 onClick={() => setShowFilters(!showFilters)}
@@ -501,46 +537,83 @@ const TeachersManagement: React.FC = () => {
               </button>
             </div>
 
-            {/* Extended Filters */}
+            {/* Enhanced Filters */}
             {showFilters && (
-              <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 animate-fadeIn">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      الجنس
+              <div className="bg-gradient-to-br from-white to-gray-50 p-6 rounded-2xl border-2 border-gray-100 shadow-lg animate-fadeIn">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  
+                  {/* Gender Filter */}
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                      <div className="w-2 h-2 rounded-full bg-pink-500"></div>
+                      تصفية حسب الجنس
                     </label>
-                    <select
-                      value={selectedGender}
-                      onChange={(e) => setSelectedGender(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="all">الكل</option>
-                      <option value="ذكر">ذكر</option>
-                      <option value="أنثى">أنثى</option>
-                    </select>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        onClick={() => setSelectedGender('all')}
+                        title="عرض جميع المعلمين"
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                          selectedGender === 'all'
+                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        الكل
+                      </button>
+                      <button
+                        onClick={() => setSelectedGender('ذكر')}
+                        title="عرض المعلمين الذكور فقط"
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                          selectedGender === 'ذكر'
+                            ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-md'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        ذكر
+                      </button>
+                      <button
+                        onClick={() => setSelectedGender('انثى')}
+                        title="عرض المعلمات الإناث فقط"
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                          selectedGender === 'انثى'
+                            ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        أنثى
+                      </button>
+                    </div>
                   </div>
 
-
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {/* Age Range Filter */}
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
                       العمر: {ageRange[0]} - {ageRange[1]} سنة
                     </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={ageRange[1]}
-                      onChange={(e) =>
-                        setAgeRange([ageRange[0], parseInt(e.target.value)])
-                      }
-                      className="w-full"
-                    />
+                    <div className="space-y-2">
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={ageRange[1]}
+                        onChange={(e) => setAgeRange([ageRange[0], parseInt(e.target.value)])}
+                        className="w-full h-2 bg-gradient-to-r from-green-200 to-green-400 rounded-lg appearance-none cursor-pointer"
+                        title={`العمر: ${ageRange[0]} - ${ageRange[1]} سنة`}
+                      />
+                      <div className="flex justify-between text-xs text-gray-500">
+                        <span>0</span>
+                        <span>50</span>
+                        <span>100</span>
+                      </div>
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      عرض
+                  {/* Items per page */}
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                      <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                      عدد المعلمين في الصفحة
                     </label>
                     <select
                       value={teachersPerPage}
@@ -548,13 +621,33 @@ const TeachersManagement: React.FC = () => {
                         setTeachersPerPage(parseInt(e.target.value));
                         setCurrentPage(1);
                       }}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      title="اختيار عدد المعلمين المعروضين في الصفحة"
+                      className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 text-gray-700 font-medium"
                     >
                       <option value="10">10 معلمين</option>
                       <option value="25">25 معلم</option>
                       <option value="50">50 معلم</option>
                       <option value="100">100 معلم</option>
                     </select>
+                  </div>
+
+                </div>
+
+                {/* Filter Summary */}
+                <div className="mt-6 pt-4 border-t border-gray-200">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm text-gray-600 font-medium">الفلاتر النشطة:</span>
+                    {selectedGender !== 'all' && (
+                      <span className="px-3 py-1 bg-pink-100 text-pink-800 rounded-full text-xs font-medium">
+                        الجنس: {selectedGender}
+                      </span>
+                    )}
+
+                    {(ageRange[0] !== 0 || ageRange[1] !== 100) && (
+                      <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                        العمر: {ageRange[0]}-{ageRange[1]}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -564,7 +657,7 @@ const TeachersManagement: React.FC = () => {
 
         {/* Statistics Cards */}
         {!isLoading && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 xl:grid-cols-7 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 xl:grid-cols-6 gap-4 mb-6">
             <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-blue-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
               <div className="flex items-center gap-2">
                 <div className="p-2 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg shadow-md">
@@ -667,19 +760,7 @@ const TeachersManagement: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-purple-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg shadow-md">
-                  <FaBook className="w-5 h-5 text-white" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs text-gray-600 font-medium truncate">الحلقات</p>
-                  <p className="text-lg font-bold text-gray-900">
-                    {stats.groups}
-                  </p>
-                </div>
-              </div>
-            </div>
+
 
             <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-amber-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
               <div className="flex items-center gap-2">
@@ -763,7 +844,7 @@ const TeachersManagement: React.FC = () => {
         {isLoading && (
           <>
             {/* Statistics Cards Skeleton */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 xl:grid-cols-7 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 xl:grid-cols-6 gap-4 mb-6">
               {/* Total Teachers Skeleton */}
               <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-gray-300 hover:shadow-xl transition-shadow animate-pulse">
                 <div className="flex items-center gap-2">
@@ -825,19 +906,6 @@ const TeachersManagement: React.FC = () => {
                   <div className="min-w-0 flex-1">
                     <div className="h-3 w-6 bg-gray-200 rounded mb-2"></div>
                     <div className="h-5 w-8 bg-gray-300 rounded"></div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Groups Skeleton */}
-              <div className="bg-white p-3 rounded-xl shadow-lg border-l-4 border-gray-300 hover:shadow-xl transition-shadow animate-pulse">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-gray-200 rounded-lg">
-                    <div className="w-5 h-5 bg-gray-300 rounded"></div>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="h-3 w-10 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-5 w-6 bg-gray-300 rounded"></div>
                   </div>
                 </div>
               </div>
@@ -1205,11 +1273,11 @@ const TeachersManagement: React.FC = () => {
               لا يوجد معلمين
             </h3>
             <p className="text-gray-600 mb-6">
-              {searchTerm || selectedGroup !== 'all'
+              {searchTerm
                 ? 'لم يتم العثور على نتائج مطابقة للبحث'
                 : 'ابدأ بإضافة معلم جديد للنظام'}
             </p>
-            {!searchTerm && selectedGroup === 'all' && (
+            {!searchTerm && (
               <button
                 onClick={() => setIsFormVisible(true)}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all shadow-lg"
@@ -1221,119 +1289,18 @@ const TeachersManagement: React.FC = () => {
           </div>
         )}
 
-        {/* Enhanced Pagination - Always show if teachers exist */}
-        {!isLoading &&
-          filteredAndSortedTeachers.length > 0 &&
-          totalPages >= 1 && (
-            <div
-              className="bg-white rounded-2xl shadow-xl px-6 py-4 mt-6"
-              dir="rtl"
-            >
-              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="text-sm text-gray-700">
-                  عرض{' '}
-                  <span className="font-semibold">
-                    {indexOfFirstTeacher + 1}
-                  </span>{' '}
-                  إلى{' '}
-                  <span className="font-semibold">
-                    {Math.min(
-                      indexOfLastTeacher,
-                      filteredAndSortedTeachers.length
-                    )}
-                  </span>{' '}
-                  من{' '}
-                  <span className="font-semibold">
-                    {filteredAndSortedTeachers.length}
-                  </span>{' '}
-                  معلم
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setCurrentPage(1)}
-                    disabled={currentPage === 1}
-                    className={`px-3 py-2 border rounded-lg text-sm font-medium transition-all ${
-                      currentPage === 1
-                        ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                        : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
-                    }`}
-                  >
-                    الأولى
-                  </button>
-
-                  <button
-                    onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
-                    disabled={currentPage === 1}
-                    className={`flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium transition-all ${
-                      currentPage === 1
-                        ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                        : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
-                    }`}
-                  >
-                    <FaChevronRight className="w-3 h-3" />
-                    السابق
-                  </button>
-
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum;
-                      if (totalPages <= 5) {
-                        pageNum = i + 1;
-                      } else if (currentPage <= 3) {
-                        pageNum = i + 1;
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
-                      } else {
-                        pageNum = currentPage - 2 + i;
-                      }
-
-                      return (
-                        <button
-                          key={pageNum}
-                          onClick={() => setCurrentPage(pageNum)}
-                          className={`w-10 h-10 rounded-lg text-sm font-medium transition-all ${
-                            currentPage === pageNum
-                              ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
-                              : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
-                          }`}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <button
-                    onClick={() =>
-                      setCurrentPage(Math.min(currentPage + 1, totalPages))
-                    }
-                    disabled={currentPage === totalPages}
-                    className={`flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium transition-all ${
-                      currentPage === totalPages
-                        ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                        : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
-                    }`}
-                  >
-                    التالي
-                    <FaChevronLeft className="w-3 h-3" />
-                  </button>
-
-                  <button
-                    onClick={() => setCurrentPage(totalPages)}
-                    disabled={currentPage === totalPages}
-                    className={`px-3 py-2 border rounded-lg text-sm font-medium transition-all ${
-                      currentPage === totalPages
-                        ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                        : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
-                    }`}
-                  >
-                    الأخيرة
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+        {/* Enhanced Responsive Pagination */}
+        {!isLoading && filteredAndSortedTeachers.length > 0 && (
+          <ResponsivePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={filteredAndSortedTeachers.length}
+            itemsPerPage={teachersPerPage}
+            onPageChange={setCurrentPage}
+            itemName="معلم"
+            showQuickJump={true}
+          />
+        )}
       </div>
 
       {/* Teacher Form Modal */}
@@ -1356,6 +1323,25 @@ const TeachersManagement: React.FC = () => {
         }
         .animate-fadeIn {
           animation: fadeIn 0.3s ease-out;
+        }
+        
+        /* Responsive pagination styles */
+        @media (max-width: 480px) {
+          .pagination-mobile {
+            gap: 0.25rem;
+          }
+          .pagination-button-mobile {
+            min-width: 28px;
+            height: 28px;
+            font-size: 11px;
+            padding: 0.25rem;
+          }
+        }
+        
+        @media (min-width: 481px) {
+          .xs\\:inline {
+            display: inline;
+          }
         }
       `}</style>
     </div>
