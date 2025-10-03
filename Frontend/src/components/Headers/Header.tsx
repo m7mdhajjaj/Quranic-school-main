@@ -1,16 +1,30 @@
-
-
-
-
-import { NavLink, useNavigate, Link } from 'react-router-dom';
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import NotificationHeader from '../NotificationHeader';
-import { useAuth } from '../../hooks/useAuth';
-import { io, Socket } from 'socket.io-client';
-import axios from 'axios';
-import { showLogoutConfirmation } from '../../utils/logoutUtils';
-import { API_BASE_URL, API_URL } from '../../config';
-import { Award, BookOpen, CalendarDays, ClipboardList, FileCheck2, Headphones, Home, LogOut, Medal, MessageSquare, Newspaper, PieChart, Settings2, Sparkles, Target, User, UserCheck } from 'lucide-react';
+import { NavLink, useNavigate, Link } from "react-router-dom";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import NotificationHeader from "../NotificationHeader";
+import { useAuth } from "../../hooks/useAuth";
+import { io, Socket } from "socket.io-client";
+import axios from "axios";
+import { showLogoutConfirmation } from "../../utils/logoutUtils";
+import { API_BASE_URL, API_URL } from "../../config";
+import {
+  Award,
+  BookOpen,
+  CalendarDays,
+  ClipboardList,
+  FileCheck2,
+  Headphones,
+  Home,
+  LogOut,
+  Medal,
+  MessageSquare,
+  Newspaper,
+  PieChart,
+  Settings2,
+  Sparkles,
+  Target,
+  User,
+  UserCheck,
+} from "lucide-react";
 
 const api = axios.create({
   baseURL: API_URL,
@@ -155,13 +169,19 @@ const Header = () => {
       },
       {
         to: "/daily-marks",
-        label: "العلامات",
+        label: " العلامات اليومية",
         icon: Award,
         color: "from-orange-500 to-red-500",
       },
       {
+        to: "/absence",
+        label: "الحضور والغياب",
+        icon: UserCheck,
+        color: "from-red-500 to-pink-500",
+      },
+      {
         to: "/test",
-        label: "الاختبارات",
+        label: "اختبر نفسك",
         icon: FileCheck2,
         color: "from-indigo-500 to-purple-500",
       },
@@ -179,7 +199,7 @@ const Header = () => {
       },
       {
         to: "/quran-audio",
-        label: "الصوتي",
+        label: "استمع للقران",
         icon: Headphones,
         color: "from-blue-500 to-indigo-500",
       },
@@ -195,33 +215,28 @@ const Header = () => {
         icon: Sparkles,
         color: "from-pink-500 to-rose-500",
       },
-      {
-        to: "/absence",
-        label: "الحضور",
-        icon: UserCheck,
-        color: "from-red-500 to-pink-500",
-      },
+    
       {
         to: "/reports",
-        label: "التقارير",
+        label: "التقارير الشهرية",
         icon: PieChart,
         color: "from-purple-500 to-indigo-500",
       },
       {
         to: "/timetable",
-        label: "الجدول",
+        label: "مواعيد الحلقة",
         icon: CalendarDays,
         color: "from-emerald-500 to-green-500",
       },
       {
         to: "/exam-schedule",
-        label: "الامتحانات",
+        label: "الامتحانات الرسمية",
         icon: ClipboardList,
         color: "from-violet-500 to-purple-500",
       },
       {
         to: "/chat",
-        label: "المحادثات",
+        label: "المحادثة",
         icon: MessageSquare,
         color: "from-green-500 to-teal-500",
       },
@@ -527,7 +542,7 @@ const Header = () => {
             onClick={() => setIsMenuOpen(false)}
           />
           <div className="fixed right-0 top-0 h-full w-80 max-w-[90vw] bg-gradient-to-b from-emerald-600 via-emerald-700 to-emerald-800 shadow-2xl overflow-y-auto animate-slide-in-right">
-            <div className="p-6">
+            <div className="p-6 flex flex-col justify-end text-right">
               <div className="flex items-center justify-between mb-6 pb-4 border-b border-emerald-500/30">
                 <h2 className="text-lg font-bold text-white">
                   القائمة الرئيسية
