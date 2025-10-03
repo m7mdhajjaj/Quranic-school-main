@@ -10,6 +10,12 @@ import {
   FaSortAmountUp,
   FaUserTie,
   FaChartBar,
+  FaTh,
+  FaList,
+  FaPhone,
+  FaEnvelope,
+  FaMapMarkerAlt,
+  FaBirthdayCake,
 } from 'react-icons/fa';
 import { useAuth } from '../../hooks/useAuth';
 import { useSocket } from '../../hooks/useSocket';
@@ -61,6 +67,10 @@ const TeachersManagement: React.FC = () => {
   const [ageRange, setAgeRange] = useState<[number, number]>([0, 100]);
   const [groupsFilter, setGroupsFilter] = useState<'all' | 'withGroups' | 'withoutGroups'>('all');
   const [showFilters, setShowFilters] = useState(false);
+  
+  // View Mode State
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+  const [gridColumns, setGridColumns] = useState<2 | 3 | 4 | 6>(4);
 
   // Sorting States
   const [sortField, setSortField] = useState<SortField>('teacherId');
@@ -812,17 +822,30 @@ const TeachersManagement: React.FC = () => {
         {/* Header Section */}
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border border-gray-100">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6 text-right">
-            <div>
+            <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
                 <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
                   <FaUserTie className="w-6 h-6 text-white" />
                 </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">
-                    إدارة المعلمين
-                  </h1>
+                <div className="flex-1">
+                  <div className="flex items-center gap-3">
+                    <h1 className="text-3xl font-bold text-gray-900">
+                      إدارة المعلمين
+                    </h1>
+                    {viewMode === 'grid' ? (
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-200">
+                        <FaTh className="w-3 h-3 ml-1" />
+                        عرض شبكة ({gridColumns} أعمدة)
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                        <FaList className="w-3 h-3 ml-1" />
+                        عرض جدول
+                      </span>
+                    )}
+                  </div>
                   <p className="text-gray-600 text-sm mt-1">
-                    نظام متكامل لإدارة بيانات المعلمين
+                    نظام متكامل لإدارة بيانات المعلمين • {filteredAndSortedTeachers.length} معلم
                   </p>
                 </div>
               </div>
@@ -865,15 +888,52 @@ const TeachersManagement: React.FC = () => {
                 <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               </div>
 
+              {/* View Mode Toggle */}
+              <div className="md:col-span-2 flex items-center border border-gray-300 rounded-xl p-1">
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={`flex items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all flex-1 ${
+                    viewMode === 'table'
+                      ? 'bg-blue-500 text-white shadow-sm'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                  title="عرض جدول">
+                  <FaList className="w-4 h-4" />
+                  <span className="text-xs font-medium">جدول</span>
+                </button>
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`flex items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all flex-1 ${
+                    viewMode === 'grid'
+                      ? 'bg-blue-500 text-white shadow-sm'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                  title="عرض شبكة">
+                  <FaTh className="w-4 h-4" />
+                  <span className="text-xs font-medium">شبكة</span>
+                </button>
+              </div>
+
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`md:col-span-2 flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-xl transition-all ${
+                className={`md:col-span-1 flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-xl transition-all ${
                   showFilters
                     ? "border-blue-500 bg-blue-50 text-blue-600"
                     : "border-gray-300 hover:border-blue-400"
                 }`}>
                 <FaFilter className="w-4 h-4" />
-                فلاتر
+                <span className="hidden sm:inline">فلاتر</span>
+              </button>
+
+              {/* Export Button for both views */}
+              <button
+                onClick={() => {
+                  // Export functionality can be implemented here
+                  console.log('Export data in', viewMode, 'format');
+                }}
+                className="md:col-span-1 flex items-center justify-center gap-2 px-4 py-3 border border-green-300 text-green-600 hover:bg-green-50 rounded-xl transition-all"
+                title={`تصدير البيانات (${viewMode === 'grid' ? 'شبكة' : 'جدول'})`}>
+                <FaDownload className="w-4 h-4" />
               </button>
 
               <button
@@ -1460,8 +1520,323 @@ const TeachersManagement: React.FC = () => {
           </>
         )}
 
-        {/* Teachers Table */}
+        {/* Teachers Display - Grid or Table */}
         {!isLoading && filteredAndSortedTeachers.length > 0 && (
+          <>
+            {/* Grid View */}
+            {viewMode === 'grid' && (
+              <>
+                {/* Grid Controls */}
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-4 mb-6">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex flex-wrap items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <FaTh className="text-blue-600" />
+                        <span className="text-sm font-semibold text-blue-900">عرض الشبكة</span>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-blue-800">أعمدة:</span>
+                        <div className="flex items-center gap-1 bg-white rounded-lg p-1 border shadow-sm">
+                          {[2, 3, 4, 6].map((cols) => (
+                            <button
+                              key={cols}
+                              onClick={() => setGridColumns(cols as 2 | 3 | 4 | 6)}
+                              className={`px-3 py-1.5 rounded-md text-sm font-bold transition-all min-w-[32px] ${
+                                gridColumns === cols
+                                  ? 'bg-blue-500 text-white shadow-md'
+                                  : 'text-gray-600 hover:bg-blue-100 hover:text-blue-700'
+                              }`}
+                              title={`عرض ${cols} أعمدة`}>
+                              {cols}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-4">
+                      <div className="text-sm text-blue-700 bg-white px-3 py-1.5 rounded-lg border shadow-sm">
+                        <span className="font-bold">{currentTeachers.length}</span> من <span className="font-bold">{filteredAndSortedTeachers.length}</span> معلم
+                      </div>
+                      
+                      {selectedTeachers.size > 0 && (
+                        <div className="text-sm bg-green-100 text-green-800 px-3 py-1.5 rounded-lg border border-green-300 font-medium">
+                          <span className="font-bold">{selectedTeachers.size}</span> محدد
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className={`grid gap-6 ${
+                  gridColumns === 2 ? 'grid-cols-1 sm:grid-cols-2' :
+                  gridColumns === 3 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' :
+                  gridColumns === 4 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' :
+                  'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6'
+                }`}>
+                {currentTeachers.map((teacher) => (
+                  <div
+                    key={teacher._id}
+                    className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 border-2 border-gray-100 hover:border-blue-300 group relative overflow-hidden">
+                    
+                    {/* Background Pattern */}
+                    <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-400 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
+                      <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-purple-400 to-transparent rounded-full translate-y-12 -translate-x-12"></div>
+                    </div>
+                    
+                    {/* Selection Checkbox */}
+                    <div className="absolute top-4 left-4 z-10">
+                      <input
+                        type="checkbox"
+                        title={`تحديد المعلم ${teacher.firstName}`}
+                        checked={selectedTeachers.has(teacher._id)}
+                        onChange={(e) => {
+                          const newSet = new Set(selectedTeachers);
+                          if (e.target.checked) {
+                            newSet.add(teacher._id);
+                          } else {
+                            newSet.delete(teacher._id);
+                          }
+                          setSelectedTeachers(newSet);
+                        }}
+                        className="w-5 h-5 text-blue-600 rounded-md focus:ring-blue-500 focus:ring-2 shadow-lg"
+                      />
+                    </div>
+
+                    {/* Teacher Avatar */}
+                    <div className="flex flex-col items-center mb-5 relative z-10">
+                      <div className="relative">
+                        <div className="w-24 h-24 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-full flex items-center justify-center mb-3 text-white text-2xl font-bold shadow-xl group-hover:scale-110 transition-all duration-300 ring-4 ring-blue-100 group-hover:ring-blue-200">
+                          {teacher.firstName?.charAt(0) || 'م'}
+                        </div>
+                        {teacher.isActive && (
+                          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-3 border-white flex items-center justify-center">
+                            <span className="text-white text-xs">✓</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 border border-blue-200">
+                          #{teacher.teacherId}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Teacher Info */}
+                    <div className="text-center space-y-4 relative z-10">
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900 mb-1 group-hover:text-blue-700 transition-colors">
+                          {teacher.firstName} {teacher.lastName}
+                        </h3>
+                        {teacher.specialCircle && (
+                          <p className="text-sm text-blue-600 font-medium">{teacher.specialCircle}</p>
+                        )}
+                      </div>
+                      
+                      {/* Contact Info */}
+                      <div className="space-y-2 text-sm">
+                        {teacher.phoneNumber && (
+                          <div className="flex items-center justify-center gap-2 p-2 rounded-lg bg-green-50 border border-green-200">
+                            <FaPhone className="text-green-600" size={14} />
+                            <span className="font-semibold text-green-800" dir="ltr">{teacher.phoneNumber}</span>
+                          </div>
+                        )}
+                        {teacher.email && (
+                          <div className="flex items-center justify-center gap-2 p-2 rounded-lg bg-blue-50 border border-blue-200">
+                            <FaEnvelope className="text-blue-600" size={14} />
+                            <span className="truncate font-medium text-blue-800" title={teacher.email}>{teacher.email}</span>
+                          </div>
+                        )}
+                        {(teacher.residence || teacher.address) && (
+                          <div className="flex items-center justify-center gap-2 p-2 rounded-lg bg-red-50 border border-red-200">
+                            <FaMapMarkerAlt className="text-red-600" size={14} />
+                            <span className="truncate font-medium text-red-800">{teacher.residence || teacher.address}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Stats */}
+                      <div className="flex justify-center gap-2 text-xs">
+                        {teacher.gender && (
+                          <span className={`inline-flex items-center px-3 py-1.5 rounded-full font-bold border-2 ${
+                            teacher.gender === 'ذكر' 
+                              ? 'bg-cyan-100 text-cyan-800 border-cyan-300' 
+                              : 'bg-pink-100 text-pink-800 border-pink-300'
+                          }`}>
+                            {teacher.gender}
+                          </span>
+                        )}
+                        {teacher.age && (
+                          <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-amber-100 text-amber-800 font-bold border-2 border-amber-300">
+                            <FaBirthdayCake className="ml-1" size={12} />
+                            {teacher.age} سنة
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Groups */}
+                      <div className="mt-5 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                        {teacher.groups && Array.isArray(teacher.groups) && teacher.groups.length > 0 ? (
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-center gap-1 mb-3">
+                              <span className="text-xs font-bold text-gray-700">الحلقات المدرسة</span>
+                              <span className="inline-flex items-center justify-center w-5 h-5 bg-blue-500 text-white rounded-full text-xs font-bold">
+                                {teacher.groups.length}
+                              </span>
+                            </div>
+                            {teacher.groups.length === 1 ? (
+                              (() => {
+                                const group = teacher.groups[0];
+                                if (!group) return null;
+                                
+                                const groupName = getGroupDisplayName(group);
+                                const groupNumber = getGroupNumber(group);
+                                
+                                return (
+                                  <div className="bg-white p-3 rounded-lg border-2 border-blue-200 shadow-sm">
+                                    <div className="text-center">
+                                      <span className="font-bold text-blue-900 text-sm">{groupName}</span>
+                                      {groupNumber && (
+                                        <div className="mt-1">
+                                          <span className="inline-block px-2 py-1 bg-blue-600 text-white rounded-full text-xs font-bold">
+                                            رقم {groupNumber}
+                                          </span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })()
+                            ) : (
+                              <div className="space-y-2">
+                                {/* عرض أول حلقتين */}
+                                <div className="space-y-2">
+                                  {teacher.groups.slice(0, 2).map((group, index) => {
+                                    if (!group) return null;
+                                    
+                                    const groupName = getGroupDisplayName(group);
+                                    const groupNumber = getGroupNumber(group);
+                                    
+                                    return (
+                                      <div
+                                        key={index}
+                                        className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 rounded-xl border-2 border-blue-200 transition-all duration-200 shadow-sm hover:shadow-md group/card">
+                                        <div className="flex items-center gap-2">
+                                          <div className="w-2 h-2 bg-blue-500 rounded-full group-hover/card:scale-125 transition-transform"></div>
+                                          <span className="font-bold text-blue-900 text-sm truncate" title={groupName}>
+                                            {groupName && groupName.length > 8 ? `${groupName.substring(0, 8)}...` : groupName}
+                                          </span>
+                                        </div>
+                                        {groupNumber && (
+                                          <span className="px-2.5 py-1 bg-blue-600 text-white rounded-full font-bold text-xs shadow-md group-hover/card:bg-blue-700 transition-colors">
+                                            {groupNumber}
+                                          </span>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                                
+                                {/* منيو منسدل للحلقات الإضافية */}
+                                {teacher.groups.length > 2 && (
+                                  <details className="group/details">
+                                    <summary className="cursor-pointer list-none focus:outline-none">
+                                      <div className="flex items-center justify-center p-3 bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-800 hover:from-indigo-200 hover:to-purple-200 rounded-xl border-2 border-indigo-200 transition-all duration-300 shadow-md hover:shadow-lg group-open/details:bg-gradient-to-r group-open/details:from-emerald-100 group-open/details:to-green-100 group-open/details:text-emerald-800 group-open/details:border-emerald-300 group-open/details:shadow-xl">
+                                        <div className="flex items-center gap-2">
+                                          <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-sm">
+                                            <span className="font-bold text-xs text-indigo-700 group-open/details:text-emerald-700">{teacher.groups.length - 2}</span>
+                                          </div>
+                                          <span className="text-sm font-bold">حلقات أخرى</span>
+                                          <svg className="w-5 h-5 transform group-open/details:rotate-180 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+                                          </svg>
+                                        </div>
+                                      </div>
+                                    </summary>
+                                    <div className="mt-3 bg-white border-2 border-indigo-200 rounded-2xl shadow-xl overflow-hidden animate-fade-in relative">
+                                      {/* Header with gradient */}
+                                      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-4 py-3 border-b-2 border-indigo-100">
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-sm font-bold text-indigo-800 flex items-center gap-2">
+                                            <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
+                                            الحلقات الإضافية
+                                          </span>
+                                          <span className="bg-indigo-200 text-indigo-800 px-2 py-1 rounded-full text-xs font-bold">
+                                            {teacher.groups.length - 2}
+                                          </span>
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Content */}
+                                      <div className="max-h-36 overflow-y-auto">
+                                        <div className="p-1">
+                                          {teacher.groups.slice(2).map((group, index) => {
+                                            if (!group) return null;
+                                            
+                                            const groupName = getGroupDisplayName(group);
+                                            const groupNumber = getGroupNumber(group);
+                                            
+                                            return (
+                                              <div
+                                                key={index + 2}
+                                                className="flex items-center justify-between p-3 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200 rounded-lg mx-1 my-1 border border-transparent hover:border-blue-200 group/item"
+                                                title={`حلقة: ${groupName}${groupNumber ? ` - رقم ${groupNumber}` : ''}`}>
+                                                <div className="flex items-center gap-2 flex-1">
+                                                  <div className="w-2 h-2 bg-blue-400 rounded-full group-hover/item:bg-blue-600 transition-colors"></div>
+                                                  <span className="font-semibold text-gray-800 group-hover/item:text-blue-800 text-sm transition-colors">
+                                                    {groupName && groupName.length > 10 ? `${groupName.substring(0, 10)}...` : groupName}
+                                                  </span>
+                                                </div>
+                                                {groupNumber && (
+                                                  <span className="px-2.5 py-1 bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 rounded-full font-bold text-xs group-hover/item:from-blue-200 group-hover/item:to-indigo-200 transition-all shadow-sm">
+                                                    {groupNumber}
+                                                  </span>
+                                                )}
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </details>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="text-center py-3">
+                            <div className="text-gray-400 text-sm font-medium">لا توجد حلقات مخصصة</div>
+                            <div className="text-xs text-gray-400 mt-1">غير مرتبط بأي حلقة</div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex justify-center gap-2 mt-6 pt-4 border-t-2 border-gray-100">
+                        <button
+                          onClick={() => handleEdit(teacher)}
+                          className="flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-600 hover:bg-blue-200 hover:text-blue-700 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105"
+                          title="تعديل المعلم">
+                          <FaEdit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(teacher._id)}
+                          className="flex items-center justify-center w-10 h-10 bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-700 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105"
+                          title="حذف المعلم">
+                          <FaTrash className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              </>
+            )}
+
+            {/* Table View */}
+            {viewMode === 'table' && (
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
             <div className="overflow-x-auto" dir="rtl">
               <table className="w-full" dir="rtl">
@@ -1737,6 +2112,8 @@ const TeachersManagement: React.FC = () => {
               </table>
             </div>
           </div>
+            )}
+          </>
         )}
 
         {/* Empty State */}
