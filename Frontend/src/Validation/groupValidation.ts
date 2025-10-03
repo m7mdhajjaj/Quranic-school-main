@@ -192,29 +192,44 @@ export const validateGroupFieldWithYup = async (
 // قواعد تحقق إضافية للحلقات
 export const groupBusinessRules = {
   // التحقق من عدم تضارب الأوقات
-  validateScheduleConflict: (schedule: string, existingGroups: GroupFormData[] = []): string | null => {
-    if (!schedule) return null;
+  validateScheduleConflict: (schedule: string, existingGroups: GroupFormData[] = [], currentGroupId?: string): string | null => {
+    // تجاهل الجداول الفارغة أو غير المحددة
+    if (!schedule || schedule.trim() === '' || schedule === 'غير محدد') return null;
     
-    // هنا يمكن إضافة منطق للتحقق من تضارب الأوقات
-    // مثال: إذا كان هناك مجموعات أخرى في نفس الوقت
-    const conflictingGroup = existingGroups.find(group => 
-      group.schedule === schedule
-    );
+    console.log('🔍 فحص تضارب الجدول:', { schedule, currentGroupId, existingGroupsCount: existingGroups.length });
+    
+    // البحث عن تضارب مع حلقات أخرى (عدا الحلقة الحالية في التعديل)
+    const conflictingGroup = existingGroups.find(group => {
+      // تجاهل الحلقات بجدول فارغ أو غير محدد
+      if (!group.schedule || group.schedule.trim() === '' || group.schedule === 'غير محدد') {
+        return false;
+      }
+      
+      const hasConflict = group.schedule === schedule && group._id !== currentGroupId;
+      console.log(`📋 مقارنة مع ${group.name}:`, { 
+        groupSchedule: group.schedule, 
+        groupId: group._id, 
+        hasConflict 
+      });
+      return hasConflict;
+    });
     
     if (conflictingGroup) {
+      console.log('❌ تضارب موجود مع:', conflictingGroup.name);
       return `يوجد تضارب في الجدول مع الحلقة: ${conflictingGroup.name}`;
     }
     
+    console.log('✅ لا يوجد تضارب في الجدول');
     return null;
   },
 
   // التحقق من سعة المعلم
-  validateTeacherCapacity: (teacherId: string, existingGroups: GroupFormData[] = []): string | null => {
+  validateTeacherCapacity: (teacherId: string, existingGroups: GroupFormData[] = [], currentGroupId?: string): string | null => {
     if (!teacherId) return null;
     
-    // عدد المجموعات التي يدرسها نفس المعلم
+    // عدد المجموعات التي يدرسها نفس المعلم (عدا الحلقة الحالية في التعديل)
     const teacherGroups = existingGroups.filter(group => 
-      group.teacher === teacherId
+      group.teacher === teacherId && group._id !== currentGroupId
     );
     
     // حد أقصى 3 مجموعات لكل معلم
@@ -272,7 +287,8 @@ export const validateGroupComprehensive = async (
   // تحقق سعة المعلم
   const teacherError = groupBusinessRules.validateTeacherCapacity(
     data.teacher, 
-    existingGroups
+    existingGroups,
+    data._id // تمرير معرف الحلقة الحالية
   );
   if (teacherError) businessErrors.teacher = teacherError;
   
@@ -280,7 +296,8 @@ export const validateGroupComprehensive = async (
   if (data.schedule) {
     const scheduleError = groupBusinessRules.validateScheduleConflict(
       data.schedule, 
-      existingGroups
+      existingGroups,
+      data._id // تمرير معرف الحلقة الحالية
     );
     if (scheduleError) businessErrors.schedule = scheduleError;
   }

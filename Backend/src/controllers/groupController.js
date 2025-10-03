@@ -252,8 +252,18 @@ exports.getGroupById = async (req, res) => {
 // تحديث حلقة
 exports.updateGroup = async (req, res) => {
   try {
+    console.log('🔄 طلب تحديث حلقة');
+    console.log('📋 معرف الحلقة:', req.params.id);
+    console.log('📝 البيانات المرسلة:', req.body);
+    
     const { id } = req.params;
     const updates = req.body;
+
+    // التأكد من تحويل capacity إلى رقم إذا كان موجود
+    if (updates.capacity) {
+      updates.capacity = parseInt(updates.capacity);
+      console.log('🔢 تحويل السعة إلى رقم:', updates.capacity);
+    }
 
     const group = await Group.findByIdAndUpdate(id, updates, {
       new: true,
@@ -261,22 +271,26 @@ exports.updateGroup = async (req, res) => {
     });
 
     if (!group) {
+      console.log('❌ الحلقة غير موجودة');
       return res.status(404).json({
         success: false,
         message: "الحلقة غير موجودة",
       });
     }
 
+    console.log('✅ تم تحديث الحلقة بنجاح:', group);
     res.status(200).json({
       success: true,
       message: "تم تحديث الحلقة بنجاح",
       data: group,
     });
   } catch (error) {
-    console.error("Error updating group:", error);
+    console.error("❌ خطأ في تحديث الحلقة:", error);
+    console.error("📋 تفاصيل الخطأ:", error.message);
     res.status(500).json({
       success: false,
       message: "حدث خطأ أثناء تحديث الحلقة",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };

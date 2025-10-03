@@ -10,10 +10,10 @@ import {
   Check,
   X,
 } from "lucide-react";
-import {
-  validateGroupFieldWithYup,
+import { 
+  validateGroupFieldWithYup, 
   validateGroupComprehensive,
-  type GroupFormData,
+  type GroupFormData 
 } from "../../Validation/groupValidation";
 import { getAllTeachers, type Teacher } from "../../Api/teacherApi";
 import {
@@ -36,6 +36,7 @@ const AddGroupForm: React.FC<AddGroupFormProps> = ({
 }) => {
   // Form state
   const [formData, setFormData] = useState<GroupFormData>({
+    _id: group?._id || undefined, // إضافة معرف الحلقة للتعديل
     name: group?.name || "",
     teacher: group?.teacher || "",
     description: group?.description || "",
@@ -183,6 +184,8 @@ const AddGroupForm: React.FC<AddGroupFormProps> = ({
           "👥 قائمة المعلمين المتاحة:",
           teachers.map((t) => `${t.firstName} ${t.lastName}`)
         );
+        console.log("🆔 معرف الحلقة في formData:", formData._id);
+        console.log("📋 هل هو تعديل؟", !!group, "معرف المجموعة:", group?._id);
 
         // Comprehensive validation including business rules
         const validation = await validateGroupComprehensive(
@@ -206,6 +209,8 @@ const AddGroupForm: React.FC<AddGroupFormProps> = ({
         let result;
         if (group && group._id) {
           console.log("🔄 تعديل حلقة موجودة:", group._id);
+          console.log("📝 البيانات المرسلة للتحديث:", formData);
+          console.log("🔢 نوع السعة:", typeof formData.capacity, "القيمة:", formData.capacity);
           result = await updateGroup(group._id, formData);
         } else {
           console.log("➕ إضافة حلقة جديدة");
