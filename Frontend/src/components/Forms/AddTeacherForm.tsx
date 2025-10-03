@@ -150,21 +150,24 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
     }));
 
     // Clear error for this field when user starts typing
-    if (errors[name] && name !== 'idNumber') {
+    if (errors[name]) {
       setErrors(prev => {
         const newErrors = { ...prev };
         delete newErrors[name];
-        // إزالة الخطأ العام إذا تم تصحيح الحقل الخطأ
+        
+        // إزالة الخطأ العام إذا تم تصحيح الحقل الخطأ وإعادة تعيين حالة إعادة المحاولة
         if (newErrors.general && (newErrors.general.includes('تصحيح') || newErrors.general.includes('المحاولة'))) {
           delete newErrors.general;
         }
+        
+        // تحقق من وجود أخطاء أخرى قبل إعادة تعيين حالة إعادة المحاولة
+        const remainingErrors = Object.keys(newErrors).filter(key => key !== 'general');
+        if (remainingErrors.length === 0 && hasRetryableError) {
+          setHasRetryableError(false);
+        }
+        
         return newErrors;
       });
-      
-      // إعادة تعيين حالة الخطأ القابل للتصحيح
-      if (hasRetryableError) {
-        setHasRetryableError(false);
-      }
     }
   }, [errors, hasRetryableError]);
 
@@ -236,17 +239,19 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
 
 
   const handleSubmit = async () => {
-    if (!isStep2Valid) {
+    if (!isStep2Valid && !hasRetryableError) {
       const step2Fields = ['email', 'phoneNumber'];
       setTouchedFields(prev => new Set([...prev, ...step2Fields]));
       return;
     }
 
     setIsSubmitting(true);
-    setHasRetryableError(false); // إعادة تعيين حالة الخطأ القابل للتصحيح
     
     // مسح الأخطاء السابقة عند بدء محاولة جديدة
     setErrors({});
+    
+    // إعادة تعيين حالة الخطأ القابل للتصحيح فقط عند بداية محاولة جديدة
+    setHasRetryableError(false);
 
     try {
       // Validate form data first
@@ -1076,7 +1081,7 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={isSubmitting || !isStep2Valid}
+                disabled={isSubmitting || (!hasRetryableError && !isStep2Valid)}
                 className={`flex items-center gap-2 px-6 py-2.5 text-white rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
                   hasRetryableError 
                     ? 'bg-orange-600 hover:bg-orange-700' 

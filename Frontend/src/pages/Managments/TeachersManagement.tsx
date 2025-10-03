@@ -70,7 +70,7 @@ const TeachersManagement: React.FC = () => {
   
   // View Mode State
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
-  const [gridColumns, setGridColumns] = useState<2 | 3 | 4 | 6>(4);
+  // إزالة التحكم في عدد الأعمدة - تم تعيين 3 أعمدة ثابت
 
   // Sorting States
   const [sortField, setSortField] = useState<SortField>('teacherId');
@@ -602,6 +602,12 @@ const TeachersManagement: React.FC = () => {
           });
         }
       }
+      
+      // إغلاق النموذج بنجاح
+      setIsFormVisible(false);
+      setIsEditMode(false);
+      setSelectedTeacher(null);
+      
     } catch (error: unknown) {
       console.error('خطأ في handleAddSuccess:', error);
       
@@ -649,12 +655,9 @@ const TeachersManagement: React.FC = () => {
         }
       });
 
-      // إعادة فتح النموذج في حالة الخطأ
-      setIsFormVisible(true);
+      // عدم إغلاق النموذج في حالة وجود خطأ للسماح بإعادة المحاولة
     } finally {
-      setIsFormVisible(false);
-      setIsEditMode(false);
-      setSelectedTeacher(null);
+      // سيتم إغلاق النموذج فقط عند النجاح من داخل AddTeacherForm
     }
   };
 
@@ -832,20 +835,10 @@ const TeachersManagement: React.FC = () => {
                     <h1 className="text-3xl font-bold text-gray-900">
                       إدارة المعلمين
                     </h1>
-                    {viewMode === 'grid' ? (
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800 border border-purple-200">
-                        <FaTh className="w-3 h-3 ml-1" />
-                        عرض شبكة ({gridColumns} أعمدة)
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200">
-                        <FaList className="w-3 h-3 ml-1" />
-                        عرض جدول
-                      </span>
-                    )}
+
                   </div>
                   <p className="text-gray-600 text-sm mt-1">
-                    نظام متكامل لإدارة بيانات المعلمين • {filteredAndSortedTeachers.length} معلم
+                    نظام متكامل لإدارة بيانات المعلمين
                   </p>
                 </div>
               </div>
@@ -876,8 +869,9 @@ const TeachersManagement: React.FC = () => {
 
           {/* Search and Filters */}
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-              <div className="relative md:col-span-6">
+            <div className="flex flex-col sm:flex-row gap-4 w-full">
+              {/* Search Bar - Takes full width on mobile, flex-1 on desktop */}
+              <div className="relative flex-1">
                 <input
                   type="text"
                   placeholder="ابحث عن معلم (الاسم، البريد الإلكتروني، رقم الهاتف، رقم المعلم...)"
@@ -888,71 +882,63 @@ const TeachersManagement: React.FC = () => {
                 <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               </div>
 
-              {/* View Mode Toggle */}
-              <div className="md:col-span-2 flex items-center border border-gray-300 rounded-xl p-1">
+              {/* Controls Section */}
+              <div className="flex gap-2 flex-shrink-0">
+                {/* View Mode Toggle */}
+                <div className="flex items-center border border-gray-300 rounded-xl p-1">
+                  <button
+                    onClick={() => setViewMode('table')}
+                    className={`flex items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all ${
+                      viewMode === 'table'
+                        ? 'bg-blue-500 text-white shadow-sm'
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                    title="عرض جدول">
+                    <FaList className="w-4 h-4" />
+                    <span className="text-xs font-medium hidden sm:inline">جدول</span>
+                  </button>
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`flex items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all ${
+                      viewMode === 'grid'
+                        ? 'bg-blue-500 text-white shadow-sm'
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                    title="عرض شبكة">
+                    <FaTh className="w-4 h-4" />
+                    <span className="text-xs font-medium hidden sm:inline">شبكة</span>
+                  </button>
+                </div>
+
                 <button
-                  onClick={() => setViewMode('table')}
-                  className={`flex items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all flex-1 ${
-                    viewMode === 'table'
-                      ? 'bg-blue-500 text-white shadow-sm'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                  title="عرض جدول">
-                  <FaList className="w-4 h-4" />
-                  <span className="text-xs font-medium">جدول</span>
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={`flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-xl transition-all ${
+                    showFilters
+                      ? "border-blue-500 bg-blue-50 text-blue-600"
+                      : "border-gray-300 hover:border-blue-400"
+                  }`}>
+                  <FaFilter className="w-4 h-4" />
+                  <span className="hidden sm:inline">فلاتر</span>
                 </button>
+
                 <button
-                  onClick={() => setViewMode('grid')}
-                  className={`flex items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all flex-1 ${
-                    viewMode === 'grid'
-                      ? 'bg-blue-500 text-white shadow-sm'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                  title="عرض شبكة">
-                  <FaTh className="w-4 h-4" />
-                  <span className="text-xs font-medium">شبكة</span>
+                  onClick={resetFilters}
+                  className="px-4 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all"
+                  title="إعادة تعيين الفلاتر">
+                  <svg
+                    className="w-5 h-5 text-gray-600 mx-auto"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
                 </button>
               </div>
-
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`md:col-span-1 flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-xl transition-all ${
-                  showFilters
-                    ? "border-blue-500 bg-blue-50 text-blue-600"
-                    : "border-gray-300 hover:border-blue-400"
-                }`}>
-                <FaFilter className="w-4 h-4" />
-                <span className="hidden sm:inline">فلاتر</span>
-              </button>
-
-              {/* Export Button for both views */}
-              <button
-                onClick={() => {
-                  // Export functionality can be implemented here
-                  console.log('Export data in', viewMode, 'format');
-                }}
-                className="md:col-span-1 flex items-center justify-center gap-2 px-4 py-3 border border-green-300 text-green-600 hover:bg-green-50 rounded-xl transition-all"
-                title={`تصدير البيانات (${viewMode === 'grid' ? 'شبكة' : 'جدول'})`}>
-                <FaDownload className="w-4 h-4" />
-              </button>
-
-              <button
-                onClick={resetFilters}
-                className="md:col-span-1 px-4 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all"
-                title="إعادة تعيين الفلاتر">
-                <svg
-                  className="w-5 h-5 text-gray-600 mx-auto"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
             </div>
 
             {/* Enhanced Filters */}
@@ -1526,55 +1512,16 @@ const TeachersManagement: React.FC = () => {
             {/* Grid View */}
             {viewMode === 'grid' && (
               <>
-                {/* Grid Controls */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-4 mb-6">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="flex flex-wrap items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <FaTh className="text-blue-600" />
-                        <span className="text-sm font-semibold text-blue-900">عرض الشبكة</span>
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-blue-800">أعمدة:</span>
-                        <div className="flex items-center gap-1 bg-white rounded-lg p-1 border shadow-sm">
-                          {[2, 3, 4, 6].map((cols) => (
-                            <button
-                              key={cols}
-                              onClick={() => setGridColumns(cols as 2 | 3 | 4 | 6)}
-                              className={`px-3 py-1.5 rounded-md text-sm font-bold transition-all min-w-[32px] ${
-                                gridColumns === cols
-                                  ? 'bg-blue-500 text-white shadow-md'
-                                  : 'text-gray-600 hover:bg-blue-100 hover:text-blue-700'
-                              }`}
-                              title={`عرض ${cols} أعمدة`}>
-                              {cols}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-4">
-                      <div className="text-sm text-blue-700 bg-white px-3 py-1.5 rounded-lg border shadow-sm">
-                        <span className="font-bold">{currentTeachers.length}</span> من <span className="font-bold">{filteredAndSortedTeachers.length}</span> معلم
-                      </div>
-                      
-                      {selectedTeachers.size > 0 && (
-                        <div className="text-sm bg-green-100 text-green-800 px-3 py-1.5 rounded-lg border border-green-300 font-medium">
-                          <span className="font-bold">{selectedTeachers.size}</span> محدد
-                        </div>
-                      )}
+                {/* Selection Info */}
+                {selectedTeachers.size > 0 && (
+                  <div className="bg-green-50 rounded-xl border border-green-200 p-4 mb-6">
+                    <div className="text-sm bg-green-100 text-green-800 px-3 py-1.5 rounded-lg border border-green-300 font-medium inline-block">
+                      <span className="font-bold">{selectedTeachers.size}</span> محدد
                     </div>
                   </div>
-                </div>
+                )}
 
-                <div className={`grid gap-6 ${
-                  gridColumns === 2 ? 'grid-cols-1 sm:grid-cols-2' :
-                  gridColumns === 3 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' :
-                  gridColumns === 4 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' :
-                  'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6'
-                }`}>
+                <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {currentTeachers.map((teacher) => (
                   <div
                     key={teacher._id}
