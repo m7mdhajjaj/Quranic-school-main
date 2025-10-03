@@ -169,13 +169,6 @@ export const teacherValidationSchema = yup.object({
     .nullable()
     .transform((value) => value === null || value === undefined ? [] : value),
     
-  // اسم الحلقة - يستخدم لتعبئة groups
-  groupName: yup
-    .string()
-    .nullable()
-    .trim()
-    .transform((value) => value === '' ? null : value),
-    
   // الدور - افتراضي teacher
   role: yup
     .string()

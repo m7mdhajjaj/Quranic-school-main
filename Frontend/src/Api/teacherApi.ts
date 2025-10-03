@@ -20,8 +20,7 @@ export interface Teacher {
   residence?: string;
   address?: string; // مكان السكن
   specialCircle?: string; // الحلقة الخاصة
-  groups?: string[];
-  groupName?: string;
+  groups?: string[]; // الحلقات التي يدرسها المعلم
   role: string;
   isActive: boolean;
   lastSeen: Date;

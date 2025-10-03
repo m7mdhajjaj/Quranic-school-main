@@ -79,7 +79,7 @@ exports.createTeacher = async (req, res) => {
       firstName, lastName, email, phoneNumber,
       fatherName, grandFatherName, motherName,
       idNumber, birthDate, gender, residence,
-      groupName, yearsOfExperience = 0, role = "teacher",
+      groups = [], yearsOfExperience = 0, role = "teacher",
       password,
     } = req.body;
 
@@ -166,8 +166,7 @@ exports.createTeacher = async (req, res) => {
       residence,
       email,
       phoneNumber,
-      groupName,
-      groups: groupName ? [groupName] : [],
+      groups: Array.isArray(groups) ? groups : [], // التأكد من أن groups مصفوفة
       yearsOfExperience,
       role,
     });
@@ -336,9 +335,9 @@ exports.updateTeacher = async (req, res) => {
       updates.age = calculateAge(updates.birthDate);
     }
 
-    // Handle groups array
-    if (updates.groupName) {
-      updates.groups = [updates.groupName];
+    // التأكد من أن groups مصفوفة صالحة
+    if (updates.groups && !Array.isArray(updates.groups)) {
+      updates.groups = [];
     }
 
     const updated = await Teacher.findByIdAndUpdate(
@@ -538,7 +537,7 @@ exports.getTeacherStats = async (req, res) => {
           _id: t._id,
           teacherId: t.teacherId,
           fullName: `${t.firstName || ""} ${t.fatherName || ""} ${t.lastName || ""}`.replace(/\s+/g, " ").trim(),
-          groupName: t.groupName,
+          groups: t.groups || [], // الحلقات التي يدرسها المعلم
           yearsOfExperience: exp(t.yearsOfExperience),
           role: t.role,
         })),

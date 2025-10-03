@@ -59,8 +59,7 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
     residence: teacher?.residence || "",
     email: teacher?.email || "",
     phoneNumber: teacher?.phoneNumber || "",
-    groupName: teacher?.groupName || "",
-    groups: teacher?.groups || [], // إضافة حقل groups مرتبط بـ Backend
+    groups: teacher?.groups || [], // الحلقات التي يدرسها المعلم
     password: "",
   });
 
@@ -205,9 +204,7 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
 
       return {
         ...prev,
-        groups: newGroups,
-        // تحديث groupName ليكون أول حلقة مختارة أو فارغ
-        groupName: newGroups.length > 0 ? newGroups[0] : ""
+        groups: newGroups
       };
     });
   }, []);

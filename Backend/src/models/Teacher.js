@@ -96,9 +96,18 @@ const teacherSchema = new mongoose.Schema(
 
     residence: { type: String },
 
-    // الحلقات
-    groups: { type: [String], default: [] }, // كان required ويسبب فشل عند عدم الإرسال
-    groupName: { type: String }, // يستخدمه الكونترولر لتعبئة groups
+    // الحلقات التي يدرسها المعلم
+    groups: { 
+      type: [String], 
+      default: [],
+      validate: {
+        validator: function(v) {
+          // التأكد من أن كل عنصر في المصفوفة نص صالح
+          return Array.isArray(v) && v.every(group => typeof group === 'string' && group.trim().length > 0);
+        },
+        message: 'يجب أن تكون الحلقات مصفوفة من النصوص الصالحة'
+      }
+    },
 
     // خبرة/دور
     role: { type: String, enum: ['teacher'], default: 'teacher' },
