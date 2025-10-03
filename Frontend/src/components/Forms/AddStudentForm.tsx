@@ -82,7 +82,7 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
   // States for dropdowns
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
-  const [filteredGroups, setFilteredGroups] = useState<Group[]>([]);
+  const [filteredTeachers, setFilteredTeachers] = useState<Teacher[]>([]);
   const [loadingTeachers, setLoadingTeachers] = useState(false);
   const [loadingGroups, setLoadingGroups] = useState(false);
 
@@ -117,18 +117,15 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
         const result = await getAllGroups();
         if (result.success && result.data) {
           setGroups(result.data);
-          setFilteredGroups(result.data);
           console.log('✅ تم تحميل الحلقات بنجاح:', result.data.length, 'حلقة');
         } else {
           console.error('❌ فشل في تحميل الحلقات:', result.message);
           setGroups([]);
-          setFilteredGroups([]);
           setErrors(prev => ({ ...prev, group: 'فشل في تحميل قائمة الحلقات' }));
         }
       } catch (error) {
         console.error('❌ خطأ في تحميل الحلقات:', error);
         setGroups([]);
-        setFilteredGroups([]);
         setErrors(prev => ({ ...prev, group: 'حدث خطأ أثناء تحميل قائمة الحلقات' }));
       } finally {
         setLoadingGroups(false);
@@ -139,57 +136,38 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
     fetchGroups();
   }, []);
 
-  // Filter groups when teacher is selected - improved matching
+  // Filter teachers when group is selected
   useEffect(() => {
-    if (formData.teacher) {
-      console.log('🔍 Filtering groups for teacher:', formData.teacher);
-      console.log('📋 Available groups:', groups.map(g => ({ name: g.name, teacher: g.teacher, teacherName: g.teacherName })));
+    if (formData.group) {
+      console.log('🔍 Filtering teachers for group:', formData.group);
+      console.log('📋 Available teachers:', teachers.map(t => ({ name: `${t.firstName} ${t.lastName}`, groups: t.groups })));
       
-      const teacherGroups = groups.filter(group => {
-        // Normalize teacher names for comparison
-        const normalizeTeacherName = (name: string) => name?.trim().toLowerCase().replace(/\s+/g, ' ') || '';
-        const normalizedFormTeacher = normalizeTeacherName(formData.teacher);
-        const normalizedGroupTeacher = normalizeTeacherName(group.teacher || '');
-        const normalizedGroupTeacherName = normalizeTeacherName(group.teacherName || '');
-        
-        // Check multiple possible matches
-        const matches = (
-          group.teacher === formData.teacher ||                           // Exact teacher field match
-          group.teacherName === formData.teacher ||                       // Teacher name match  
-          normalizedGroupTeacher === normalizedFormTeacher ||             // Normalized exact match
-          normalizedGroupTeacherName === normalizedFormTeacher ||         // Normalized name match
-          normalizedGroupTeacher.includes(normalizedFormTeacher) ||       // Partial match in teacher field
-          normalizedGroupTeacherName.includes(normalizedFormTeacher) ||   // Partial match in teacherName field
-          normalizedFormTeacher.includes(normalizedGroupTeacher) ||       // Reverse partial match
-          normalizedFormTeacher.includes(normalizedGroupTeacherName)      // Reverse partial name match
-        );
-        
-        if (matches) {
-          console.log('✅ Group matched:', group.name, 'with teacher:', group.teacher || group.teacherName);
-        }
-        
-        return matches;
+      // Find teachers who are responsible for the selected group
+      const groupTeachers = teachers.filter(teacher => {
+        // Check if teacher has this group in their groups array
+        return teacher.groups && teacher.groups.includes(formData.group);
       });
       
-      console.log('🎯 Filtered groups:', teacherGroups.map(g => g.name));
-      setFilteredGroups(teacherGroups);
+      console.log('🎯 Filtered teachers:', groupTeachers.map(t => `${t.firstName} ${t.lastName}`));
+      setFilteredTeachers(groupTeachers);
       
-      // Only clear group selection if we're not editing an existing student
-      // and the group is not available for the selected teacher
-      if (formData.group && !teacherGroups.some(group => group.name === formData.group)) {
+      // Clear teacher selection if current teacher is not available for the selected group
+      if (formData.teacher && !groupTeachers.some(teacher => 
+        `${teacher.firstName} ${teacher.lastName}` === formData.teacher
+      )) {
         if (!student) { // Only clear for new students, not when editing
-          console.log('⚠️ Current group not available for selected teacher, clearing...');
-          setFormData(prev => ({...prev, group: ''}));
+          console.log('⚠️ Current teacher not available for selected group, clearing...');
+          setFormData(prev => ({...prev, teacher: ''}));
         } else {
-          console.log('📝 Editing existing student - keeping original group even if not in filtered list');
-          // When editing, show all groups so the original group remains visible
-          setFilteredGroups(groups);
+          console.log('📝 Editing existing student - keeping original teacher even if not in filtered list');
+          // When editing, show all teachers so the original teacher remains visible
+          setFilteredTeachers(teachers);
         }
       }
     } else {
-      setFilteredGroups(groups);
+      setFilteredTeachers(teachers);
     }
-  }, [formData.teacher, groups, formData.group, student]);
+  }, [formData.group, teachers, formData.teacher, student]);
 
   const isStep1Valid = useMemo(() => {
     const step1Fields = [
@@ -200,9 +178,20 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
   }, [formData]);
 
   const isStep2Valid = useMemo(() => {
-    const step2Fields = ['teacher', 'group', 'phoneNumber'];
-    return step2Fields.every(field => formData[field as keyof typeof formData]?.toString().trim());
-  }, [formData]);
+    // يجب أن يكون الطالب مربوط بحلقة ومعلم ورقم هاتف
+    const requiredFields = ['teacher', 'group', 'phoneNumber', 'email'];
+    const fieldsValid = requiredFields.every(field => 
+      formData[field as keyof typeof formData]?.toString().trim()
+    );
+    
+    // تأكد من أن المعلم المختار متوفر للحلقة المختارة
+    const teacherValidForGroup = !formData.teacher || !formData.group || 
+      filteredTeachers.some(teacher => 
+        `${teacher.firstName} ${teacher.lastName}` === formData.teacher
+      );
+    
+    return fieldsValid && teacherValidForGroup;
+  }, [formData, filteredTeachers]);
 
   const handleChange = useCallback((
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -835,55 +824,22 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
 
           {currentStep === 2 && (
             <div className="space-y-6 animate-fadeIn">
-              <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-6 rounded-xl border border-indigo-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-5 flex items-center gap-2">
-                  <div className="w-1 h-6 bg-indigo-500 rounded-full"></div>
-                  <School className="text-indigo-600" size={20} />
-                  معلومات الدراسة
+              <div className="bg-gradient-to-br from-emerald-50 to-teal-50 p-6 rounded-xl border border-emerald-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <div className="w-1 h-6 bg-emerald-500 rounded-full"></div>
+                  <Users className="text-emerald-600" size={20} />
+                  اختيار الحلقة والمعلم
                 </h3>
+                <div className="bg-emerald-100 border border-emerald-300 rounded-lg p-3 mb-5">
+                  <p className="text-sm text-emerald-700 text-center">
+                    <strong>تنبيه:</strong> يجب اختيار الحلقة أولاً، ثم سيتم عرض المعلمين المتاحين لهذه الحلقة
+                  </p>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* اختيار الحلقة أولاً */}
                   <div className="space-y-1">
                     <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                      <User size={14} className="text-gray-500" />
-                      اسم المعلم <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      name="teacher"
-                      value={formData.teacher || ""}
-                      onChange={handleChange}
-                      onBlur={() => handleBlur("teacher")}
-                      className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
-                        getFieldError("teacher")
-                          ? "border-red-300 focus:ring-red-500 bg-red-50"
-                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                      }`}
-                      title="اختر المعلم">
-                      <option value="">اختر المعلم...</option>
-                      {loadingTeachers ? (
-                        <option value="" disabled>
-                          جاري التحميل...
-                        </option>
-                      ) : (
-                        teachers.map((teacher) => (
-                          <option
-                            key={teacher._id}
-                            value={`${teacher.firstName} ${teacher.lastName}`}
-                            data-teacher-id={teacher._id}>
-                            {teacher.firstName} {teacher.lastName}
-                          </option>
-                        ))
-                      )}
-                    </select>
-                    {getFieldError("teacher") && (
-                      <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
-                        <AlertCircle size={12} />
-                        <span>{getFieldError("teacher")}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                      <Users size={14} className="text-gray-500" />
+                      <Users size={14} className="text-emerald-500" />
                       اسم الحلقة <span className="text-red-500">*</span>
                     </label>
                     <select
@@ -894,21 +850,16 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError("group")
                           ? "border-red-300 focus:ring-red-500 bg-red-50"
-                          : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                          : "border-emerald-300 focus:ring-emerald-500 focus:border-emerald-500"
                       }`}
-                      title="اختر الحلقة"
-                      disabled={!formData.teacher}>
-                      <option value="">
-                        {!formData.teacher
-                          ? "اختر المعلم أولاً..."
-                          : "اختر الحلقة..."}
-                      </option>
+                      title="اختر الحلقة">
+                      <option value="">اختر الحلقة أولاً...</option>
                       {loadingGroups ? (
                         <option value="" disabled>
                           جاري التحميل...
                         </option>
-                      ) : filteredGroups.length > 0 ? (
-                        filteredGroups.map((group) => (
+                      ) : (
+                        groups.map((group) => (
                           <option key={group._id} value={group.name}>
                             {group.name}
                             {group.currentStudents !== undefined &&
@@ -916,12 +867,6 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                             {group.schedule && ` - ${group.schedule}`}
                           </option>
                         ))
-                      ) : (
-                        <option value="" disabled>
-                          {formData.teacher
-                            ? "لا توجد حلقات متاحة لهذا المعلم"
-                            : "لا توجد حلقات متاحة"}
-                        </option>
                       )}
                     </select>
                     {getFieldError("group") && (
@@ -930,32 +875,86 @@ const EnhancedStudentForm: React.FC<Props> = ({ onClose, onSuccess, student }) =
                         <span>{getFieldError("group")}</span>
                       </div>
                     )}
+                  </div>
+                  
+                  {/* اختيار المعلم بناءً على الحلقة */}
+                  <div className="space-y-1">
+                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                      <User size={14} className="text-teal-500" />
+                      اسم المعلم <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="teacher"
+                      value={formData.teacher || ""}
+                      onChange={handleChange}
+                      onBlur={() => handleBlur("teacher")}
+                      className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
+                        getFieldError("teacher")
+                          ? "border-red-300 focus:ring-red-500 bg-red-50"
+                          : formData.group 
+                            ? "border-teal-300 focus:ring-teal-500 focus:border-teal-500"
+                            : "border-gray-300 bg-gray-100 cursor-not-allowed"
+                      }`}
+                      title="اختر المعلم"
+                      disabled={!formData.group}>
+                      <option value="">
+                        {!formData.group
+                          ? "اختر الحلقة أولاً..."
+                          : "اختر المعلم..."}
+                      </option>
+                      {loadingTeachers ? (
+                        <option value="" disabled>
+                          جاري تحميل المعلمين...
+                        </option>
+                      ) : filteredTeachers.length > 0 ? (
+                        filteredTeachers.map((teacher) => (
+                          <option
+                            key={teacher._id}
+                            value={`${teacher.firstName} ${teacher.lastName}`}
+                            data-teacher-id={teacher._id}>
+                            {teacher.firstName} {teacher.lastName}
+                            {teacher.specialCircle && ` - ${teacher.specialCircle}`}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="" disabled>
+                          {formData.group
+                            ? "لا يوجد معلمين متاحين لهذه الحلقة"
+                            : "لا يوجد معلمين متاحين"}
+                        </option>
+                      )}
+                    </select>
+                    {getFieldError("teacher") && (
+                      <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
+                        <AlertCircle size={12} />
+                        <span>{getFieldError("teacher")}</span>
+                      </div>
+                    )}
 
-                    {/* رسالة توضيحية عند عدم وجود حلقات */}
-                    {!loadingGroups &&
-                      formData.teacher &&
-                      filteredGroups.length === 0 && (
+                    {/* رسالة توضيحية عند عدم وجود معلمين */}
+                    {!loadingTeachers &&
+                      formData.group &&
+                      filteredTeachers.length === 0 && (
                         <div className="flex items-center gap-1 text-amber-600 text-xs animate-fadeIn bg-amber-50 p-3 rounded-lg border border-amber-200">
                           <AlertCircle size={14} />
                           <div>
                             <div className="font-medium">
-                              لا توجد حلقات لهذا المعلم
+                              لا يوجد معلمين لهذه الحلقة
                             </div>
                             <div className="text-amber-500 mt-1">
-                              المعلم المحدد:{" "}
+                              الحلقة المختارة:{" "}
                               <span className="font-medium">
-                                {formData.teacher}
+                                {formData.group}
                               </span>
                             </div>
                             <div className="text-amber-500 mt-1">
-                              تواصل مع الإدارة لإنشاء حلقة جديدة أو تحقق من اسم
-                              المعلم
+                              تواصل مع الإدارة لإضافة معلم لهذه الحلقة
                             </div>
                             <button
                               type="button"
-                              onClick={() => setFilteredGroups(groups)}
+                              onClick={() => setFilteredTeachers(teachers)}
                               className="mt-2 text-xs bg-amber-100 hover:bg-amber-200 text-amber-700 px-2 py-1 rounded transition-colors">
-                              عرض جميع الحلقات المتاحة ({groups.length})
+                              عرض جميع المعلمين المتاحين ({teachers.length})
                             </button>
                           </div>
                         </div>
