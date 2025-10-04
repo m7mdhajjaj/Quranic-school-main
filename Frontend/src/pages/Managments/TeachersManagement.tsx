@@ -33,14 +33,26 @@ type SortField = 'teacherId' | 'firstName' | 'age' | 'email';
 type SortOrder = 'asc' | 'desc';
 
 // دالة مساعدة للحصول على اسم الحلقة بشكل آمن
-const getGroupDisplayName = (group: string | {name?: string; id?: string; number?: number} | null | undefined): string => {
+const getGroupDisplayName = (
+  group:
+    | string
+    | { name?: string; id?: string; number?: number }
+    | null
+    | undefined
+): string => {
   if (!group) return 'حلقة غير محددة';
   if (typeof group === 'string') return group;
   return group.name || 'حلقة غير محددة';
 };
 
 // دالة مساعدة للحصول على رقم الحلقة
-const getGroupNumber = (group: string | {name?: string; id?: string; number?: number} | null | undefined): string => {
+const getGroupNumber = (
+  group:
+    | string
+    | { name?: string; id?: string; number?: number }
+    | null
+    | undefined
+): string => {
   if (!group || typeof group === 'string') return '';
   return group.number ? ` (${group.number})` : '';
 };
@@ -65,9 +77,11 @@ const TeachersManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGender, setSelectedGender] = useState('all');
   const [ageRange, setAgeRange] = useState<[number, number]>([0, 100]);
-  const [groupsFilter, setGroupsFilter] = useState<'all' | 'withGroups' | 'withoutGroups'>('all');
+  const [groupsFilter, setGroupsFilter] = useState<
+    'all' | 'withGroups' | 'withoutGroups'
+  >('all');
   const [showFilters, setShowFilters] = useState(false);
-  
+
   // View Mode State
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   // إزالة التحكم في عدد الأعمدة - تم تعيين 3 أعمدة ثابت
@@ -85,15 +99,13 @@ const TeachersManagement: React.FC = () => {
     new Set()
   );
 
-
-
   // Statistics
   const stats = useMemo(() => {
     const maleCount = teachers.filter((t) => t.gender === 'ذكر').length;
     const femaleCount = teachers.filter((t) => t.gender === 'أنثى').length;
     const activeCount = teachers.filter((t) => t.isActive).length;
-    const withGroupsCount = teachers.filter((t) => 
-      t.groups && Array.isArray(t.groups) && t.groups.length > 0
+    const withGroupsCount = teachers.filter(
+      (t) => t.groups && Array.isArray(t.groups) && t.groups.length > 0
     ).length;
     const withoutGroupsCount = teachers.length - withGroupsCount;
     const avgAge =
@@ -114,7 +126,6 @@ const TeachersManagement: React.FC = () => {
       avgAge,
     };
   }, [teachers]);
-
 
   // Fetch teachers
   const fetchTeachers = useCallback(async (retryAttempt = 0) => {
@@ -140,8 +151,12 @@ const TeachersManagement: React.FC = () => {
 
       // Check if it's a network error (backend not running)
       if (error instanceof Error) {
-        if (error.message.includes('Network Error') || error.message.includes('ERR_CONNECTION_REFUSED')) {
-          errorMessage = 'لا يمكن الاتصال بالخادم. تأكد من تشغيل الخادم الخلفي على البورت 5005';
+        if (
+          error.message.includes('Network Error') ||
+          error.message.includes('ERR_CONNECTION_REFUSED')
+        ) {
+          errorMessage =
+            'لا يمكن الاتصال بالخادم. تأكد من تشغيل الخادم الخلفي على البورت 5005';
         } else {
           errorMessage = error.message || 'خطأ غير محدد';
         }
@@ -155,8 +170,6 @@ const TeachersManagement: React.FC = () => {
     }
   }, []);
 
-
-
   useEffect(() => {
     if (!hasPermission) return;
 
@@ -167,57 +180,73 @@ const TeachersManagement: React.FC = () => {
   useEffect(() => {
     if (!hasPermission || !socket) return;
 
-    const handleTeacherUpdate = (event: { type: 'created' | 'updated' | 'deleted'; teacher: Teacher; teacherId?: string }) => {
+    const handleTeacherUpdate = (event: {
+      type: 'created' | 'updated' | 'deleted';
+      teacher: Teacher;
+      teacherId?: string;
+    }) => {
       console.log('📡 Received teacher update via socket:', event);
-      
+
       switch (event.type) {
         case 'created':
-          setTeachers(prevTeachers => {
+          setTeachers((prevTeachers) => {
             // Check if teacher already exists to prevent duplicates
-            const existingTeacher = prevTeachers.find(t => 
-              t._id === event.teacher._id || 
-              (t.email && t.email === event.teacher.email)
+            const existingTeacher = prevTeachers.find(
+              (t) =>
+                t._id === event.teacher._id ||
+                (t.email && t.email === event.teacher.email)
             );
-            
+
             if (existingTeacher) {
               console.log('Teacher already exists, skipping add');
               return prevTeachers;
             }
-            
+
             console.log('➕ Adding new teacher to local state');
-            return [...prevTeachers, {
-              ...event.teacher,
-              gender: event.teacher.gender || 'غير محدد',
-              age: event.teacher.age || 0
-            }];
+            return [
+              ...prevTeachers,
+              {
+                ...event.teacher,
+                gender: event.teacher.gender || 'غير محدد',
+                age: event.teacher.age || 0,
+              },
+            ];
           });
-          
+
           // Log notification instead of showing toast
-          console.log('✅ معلم جديد تم إضافته:', event.teacher.firstName, event.teacher.lastName);
+          console.log(
+            '✅ معلم جديد تم إضافته:',
+            event.teacher.firstName,
+            event.teacher.lastName
+          );
           break;
 
         case 'updated':
-          setTeachers(prevTeachers => 
-            prevTeachers.map(t => 
-              t._id === event.teacher._id 
+          setTeachers((prevTeachers) =>
+            prevTeachers.map((t) =>
+              t._id === event.teacher._id
                 ? {
                     ...event.teacher,
                     gender: event.teacher.gender || 'غير محدد',
-                    age: event.teacher.age || 0
+                    age: event.teacher.age || 0,
                   }
                 : t
             )
           );
-          
+
           // Log notification instead of showing toast
-          console.log('🔄 تم تحديث بيانات المعلم:', event.teacher.firstName, event.teacher.lastName);
+          console.log(
+            '🔄 تم تحديث بيانات المعلم:',
+            event.teacher.firstName,
+            event.teacher.lastName
+          );
           break;
 
         case 'deleted':
-          setTeachers(prevTeachers => 
-            prevTeachers.filter(t => t._id !== event.teacherId)
+          setTeachers((prevTeachers) =>
+            prevTeachers.filter((t) => t._id !== event.teacherId)
           );
-          
+
           // Log notification instead of showing toast
           console.log('🗑️ تم حذف معلم من قبل مستخدم آخر');
           break;
@@ -225,9 +254,21 @@ const TeachersManagement: React.FC = () => {
     };
 
     // Listen for teacher events
-    socket.on('teacherCreated', (data: Teacher) => handleTeacherUpdate({ type: 'created', teacher: data }));
-    socket.on('teacherUpdated', (data: Teacher) => handleTeacherUpdate({ type: 'updated', teacher: data }));
-    socket.on('teacherDeleted', (data: { teacherId: string; teacher?: Teacher }) => handleTeacherUpdate({ type: 'deleted', teacher: data.teacher!, teacherId: data.teacherId }));
+    socket.on('teacherCreated', (data: Teacher) =>
+      handleTeacherUpdate({ type: 'created', teacher: data })
+    );
+    socket.on('teacherUpdated', (data: Teacher) =>
+      handleTeacherUpdate({ type: 'updated', teacher: data })
+    );
+    socket.on(
+      'teacherDeleted',
+      (data: { teacherId: string; teacher?: Teacher }) =>
+        handleTeacherUpdate({
+          type: 'deleted',
+          teacher: data.teacher!,
+          teacherId: data.teacherId,
+        })
+    );
 
     // Cleanup: remove event listeners
     return () => {
@@ -270,18 +311,18 @@ const TeachersManagement: React.FC = () => {
         : true;
 
       const matchesGroupsFilter = () => {
-        const hasGroups = teacher.groups && Array.isArray(teacher.groups) && teacher.groups.length > 0;
-        
+        const hasGroups =
+          teacher.groups &&
+          Array.isArray(teacher.groups) &&
+          teacher.groups.length > 0;
+
         if (groupsFilter === 'withGroups') return hasGroups;
         if (groupsFilter === 'withoutGroups') return !hasGroups;
         return true; // 'all'
       };
 
       return (
-        matchesSearch &&
-        matchesGender &&
-        matchesAge &&
-        matchesGroupsFilter()
+        matchesSearch && matchesGender && matchesAge && matchesGroupsFilter()
       );
     });
 
@@ -327,9 +368,11 @@ const TeachersManagement: React.FC = () => {
   // Handle delete
   const handleDelete = async (teacherId: string) => {
     // البحث عن المعلم للحصول على اسمه
-    const teacher = teachers.find(t => t._id === teacherId);
-    const teacherName = teacher ? `${teacher.firstName} ${teacher.lastName}` : 'المعلم';
-    
+    const teacher = teachers.find((t) => t._id === teacherId);
+    const teacherName = teacher
+      ? `${teacher.firstName} ${teacher.lastName}`
+      : 'المعلم';
+
     const result = await Swal.fire({
       title: 'تأكيد حذف المعلم \ud83d\udee1\ufe0f',
       html: `
@@ -359,7 +402,7 @@ const TeachersManagement: React.FC = () => {
         title: 'rtl-title',
         htmlContainer: 'rtl-content',
         confirmButton: 'swal2-confirm-delete',
-        cancelButton: 'swal2-cancel-delete'
+        cancelButton: 'swal2-cancel-delete',
       },
     });
 
@@ -403,7 +446,7 @@ const TeachersManagement: React.FC = () => {
           customClass: {
             popup: 'swal2-success-modal rtl-popup',
             title: 'rtl-title',
-            htmlContainer: 'rtl-content'
+            htmlContainer: 'rtl-content',
           },
           didOpen: () => {
             const popup = Swal.getPopup();
@@ -414,16 +457,24 @@ const TeachersManagement: React.FC = () => {
               popup.style.transform = 'translate(-50%, -50%)';
               popup.style.zIndex = '10000';
             }
-          }
+          },
         });
       } catch (deleteError: unknown) {
         console.error('❌ فشل في حذف المعلم:', deleteError);
-        
+
         // التعامل مع خطأ وجود علاقات مرتبطة
-        const error = deleteError as { response?: { status: number; data: { details: { groupsCount: number; studentsCount: number }; message: string } } };
+        const error = deleteError as {
+          response?: {
+            status: number;
+            data: {
+              details: { groupsCount: number; studentsCount: number };
+              message: string;
+            };
+          };
+        };
         if (error.response?.status === 400 && error.response?.data?.details) {
           const { groupsCount, studentsCount } = error.response.data.details;
-          
+
           await Swal.fire({
             title: '⚠️ لا يمكن حذف المعلم ⚠️',
             html: `
@@ -450,7 +501,7 @@ const TeachersManagement: React.FC = () => {
             customClass: {
               popup: 'rtl-popup swal2-rtl-popup swal2-center-popup',
               title: 'rtl-title',
-              htmlContainer: 'rtl-content'
+              htmlContainer: 'rtl-content',
             },
             didOpen: () => {
               const popup = Swal.getPopup();
@@ -461,7 +512,7 @@ const TeachersManagement: React.FC = () => {
                 popup.style.transform = 'translate(-50%, -50%)';
                 popup.style.zIndex = '9999';
               }
-            }
+            },
           });
         } else {
           // خطأ عام
@@ -487,7 +538,7 @@ const TeachersManagement: React.FC = () => {
             customClass: {
               popup: 'rtl-popup swal2-rtl-popup swal2-center-popup',
               title: 'rtl-title',
-              htmlContainer: 'rtl-content'
+              htmlContainer: 'rtl-content',
             },
             didOpen: () => {
               const popup = Swal.getPopup();
@@ -498,7 +549,7 @@ const TeachersManagement: React.FC = () => {
                 popup.style.transform = 'translate(-50%, -50%)';
                 popup.style.zIndex = '9999';
               }
-            }
+            },
           });
         }
       }
@@ -524,7 +575,7 @@ const TeachersManagement: React.FC = () => {
                 : t
             )
           );
-          
+
           // Enhanced center update message
           await Swal.fire({
             title: '\u2728 تم التحديث بنجاح \u2728',
@@ -547,7 +598,7 @@ const TeachersManagement: React.FC = () => {
             customClass: {
               popup: 'rtl-popup swal2-rtl-popup swal2-center-popup',
               title: 'rtl-title',
-              htmlContainer: 'rtl-content'
+              htmlContainer: 'rtl-content',
             },
             didOpen: () => {
               const popup = Swal.getPopup();
@@ -558,12 +609,12 @@ const TeachersManagement: React.FC = () => {
                 popup.style.transform = 'translate(-50%, -50%)';
                 popup.style.zIndex = '9999';
               }
-            }
+            },
           });
         } else {
           // للمعلمين الجدد سيتم إضافتهم بواسطة الـ API
           await fetchTeachers(); // إعادة تحميل القائمة
-          
+
           // Enhanced center welcome message
           await Swal.fire({
             title: '\ud83c\udf89 مرحباً بالمعلم الجديد \ud83c\udf89',
@@ -587,7 +638,7 @@ const TeachersManagement: React.FC = () => {
             customClass: {
               popup: 'rtl-popup swal2-rtl-popup swal2-center-popup',
               title: 'rtl-title',
-              htmlContainer: 'rtl-content'
+              htmlContainer: 'rtl-content',
             },
             didOpen: () => {
               const popup = Swal.getPopup();
@@ -598,41 +649,52 @@ const TeachersManagement: React.FC = () => {
                 popup.style.transform = 'translate(-50%, -50%)';
                 popup.style.zIndex = '9999';
               }
-            }
+            },
           });
         }
       }
-      
+
       // إغلاق النموذج بنجاح
       setIsFormVisible(false);
       setIsEditMode(false);
       setSelectedTeacher(null);
-      
     } catch (error: unknown) {
       console.error('خطأ في handleAddSuccess:', error);
-      
-      let errorMessage = "حدث خطأ أثناء معالجة بيانات المعلم";
-      let errorTitle = "حدث خطأ! ⚠️";
-      
+
+      let errorMessage = 'حدث خطأ أثناء معالجة بيانات المعلم';
+      let errorTitle = 'حدث خطأ! ⚠️';
+
       // معالجة أخطاء API المحددة
       if (error && typeof error === 'object') {
-        const apiError = error as { response?: { data?: { message?: string } } };
-        
+        const apiError = error as {
+          response?: { data?: { message?: string } };
+        };
+
         if (apiError.response?.data?.message) {
           const msg = apiError.response.data.message;
-          
+
           if (msg.includes('رقم الهوية')) {
-            errorTitle = "رقم هوية مكرر! 🚫";
-            errorMessage = "رقم الهوية موجود بالفعل في النظام. يرجى استخدام رقم هوية مختلف.";
-          } else if (msg.includes('رقم الهاتف') || msg.includes('phoneNumber')) {
-            errorTitle = "رقم هاتف مكرر! 📱";
-            errorMessage = "رقم الهاتف موجود بالفعل في النظام. يرجى استخدام رقم هاتف مختلف.";
-          } else if (msg.includes('البريد الإلكتروني') || msg.includes('email')) {
-            errorTitle = "بريد إلكتروني مكرر! 📧";
-            errorMessage = "البريد الإلكتروني موجود بالفعل في النظام. يرجى استخدام بريد إلكتروني مختلف.";
+            errorTitle = 'رقم هوية مكرر! 🚫';
+            errorMessage =
+              'رقم الهوية موجود بالفعل في النظام. يرجى استخدام رقم هوية مختلف.';
+          } else if (
+            msg.includes('رقم الهاتف') ||
+            msg.includes('phoneNumber')
+          ) {
+            errorTitle = 'رقم هاتف مكرر! 📱';
+            errorMessage =
+              'رقم الهاتف موجود بالفعل في النظام. يرجى استخدام رقم هاتف مختلف.';
+          } else if (
+            msg.includes('البريد الإلكتروني') ||
+            msg.includes('email')
+          ) {
+            errorTitle = 'بريد إلكتروني مكرر! 📧';
+            errorMessage =
+              'البريد الإلكتروني موجود بالفعل في النظام. يرجى استخدام بريد إلكتروني مختلف.';
           } else if (msg.includes('التحقق من البيانات')) {
-            errorTitle = "خطأ في البيانات! 📝";
-            errorMessage = "هناك خطأ في تنسيق البيانات المدخلة. يرجى مراجعة جميع الحقول.";
+            errorTitle = 'خطأ في البيانات! 📝';
+            errorMessage =
+              'هناك خطأ في تنسيق البيانات المدخلة. يرجى مراجعة جميع الحقول.';
           } else {
             errorMessage = msg;
           }
@@ -651,8 +713,8 @@ const TeachersManagement: React.FC = () => {
         customClass: {
           popup: 'rtl-popup swal2-toast-rtl swal2-error-toast',
           title: 'rtl-title',
-          htmlContainer: 'rtl-content'
-        }
+          htmlContainer: 'rtl-content',
+        },
       });
 
       // عدم إغلاق النموذج في حالة وجود خطأ للسماح بإعادة المحاولة
@@ -758,7 +820,7 @@ const TeachersManagement: React.FC = () => {
           customClass: {
             popup: 'swal2-success-modal rtl-popup',
             title: 'rtl-title',
-            htmlContainer: 'rtl-content'
+            htmlContainer: 'rtl-content',
           },
           didOpen: () => {
             const popup = Swal.getPopup();
@@ -769,7 +831,7 @@ const TeachersManagement: React.FC = () => {
               popup.style.transform = 'translate(-50%, -50%)';
               popup.style.zIndex = '10000';
             }
-          }
+          },
         });
       } catch (bulkDeleteError) {
         console.error('❌ فشل في حذف المعلمين:', bulkDeleteError);
@@ -793,8 +855,8 @@ const TeachersManagement: React.FC = () => {
           confirmButtonText: 'حسناً',
           customClass: {
             popup: 'rtl-popup',
-            confirmButton: 'rtl-button'
-          }
+            confirmButton: 'rtl-button',
+          },
         });
       }
     }
@@ -803,7 +865,8 @@ const TeachersManagement: React.FC = () => {
   return (
     <div
       className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4 md:p-6 relative"
-      dir="rtl">
+      dir="rtl"
+    >
       {/* Center Design Element */}
       <div className="fixed inset-0 flex items-center justify-center pointer-events-none opacity-5 z-0">
         <div className="relative">
@@ -835,7 +898,6 @@ const TeachersManagement: React.FC = () => {
                     <h1 className="text-3xl font-bold text-gray-900">
                       إدارة المعلمين
                     </h1>
-
                   </div>
                   <p className="text-gray-600 text-sm mt-1">
                     نظام متكامل لإدارة بيانات المعلمين
@@ -845,11 +907,10 @@ const TeachersManagement: React.FC = () => {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-
-
               <button
                 onClick={handleExport}
-                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl hover:from-purple-600 hover:to-pink-700 transition-all duration-200 shadow-md hover:shadow-lg">
+                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl hover:from-purple-600 hover:to-pink-700 transition-all duration-200 shadow-md hover:shadow-lg"
+              >
                 <FaDownload className="w-4 h-4" />
                 تصدير
               </button>
@@ -860,7 +921,8 @@ const TeachersManagement: React.FC = () => {
                   setSelectedTeacher(null);
                   setIsFormVisible(true);
                 }}
-                className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg">
+                className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg"
+              >
                 <FaPlus className="w-4 h-4" />
                 إضافة معلم
               </button>
@@ -893,9 +955,12 @@ const TeachersManagement: React.FC = () => {
                         ? 'bg-blue-500 text-white shadow-sm'
                         : 'text-gray-600 hover:bg-gray-100'
                     }`}
-                    title="عرض جدول">
+                    title="عرض جدول"
+                  >
                     <FaList className="w-4 h-4" />
-                    <span className="text-xs font-medium hidden sm:inline">جدول</span>
+                    <span className="text-xs font-medium hidden sm:inline">
+                      جدول
+                    </span>
                   </button>
                   <button
                     onClick={() => setViewMode('grid')}
@@ -904,9 +969,12 @@ const TeachersManagement: React.FC = () => {
                         ? 'bg-blue-500 text-white shadow-sm'
                         : 'text-gray-600 hover:bg-gray-100'
                     }`}
-                    title="عرض شبكة">
+                    title="عرض شبكة"
+                  >
                     <FaTh className="w-4 h-4" />
-                    <span className="text-xs font-medium hidden sm:inline">شبكة</span>
+                    <span className="text-xs font-medium hidden sm:inline">
+                      شبكة
+                    </span>
                   </button>
                 </div>
 
@@ -914,9 +982,10 @@ const TeachersManagement: React.FC = () => {
                   onClick={() => setShowFilters(!showFilters)}
                   className={`flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-xl transition-all ${
                     showFilters
-                      ? "border-blue-500 bg-blue-50 text-blue-600"
-                      : "border-gray-300 hover:border-blue-400"
-                  }`}>
+                      ? 'border-blue-500 bg-blue-50 text-blue-600'
+                      : 'border-gray-300 hover:border-blue-400'
+                  }`}
+                >
                   <FaFilter className="w-4 h-4" />
                   <span className="hidden sm:inline">فلاتر</span>
                 </button>
@@ -924,12 +993,14 @@ const TeachersManagement: React.FC = () => {
                 <button
                   onClick={resetFilters}
                   className="px-4 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all"
-                  title="إعادة تعيين الفلاتر">
+                  title="إعادة تعيين الفلاتر"
+                >
                   <svg
                     className="w-5 h-5 text-gray-600 mx-auto"
                     fill="none"
                     stroke="currentColor"
-                    viewBox="0 0 24 24">
+                    viewBox="0 0 24 24"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -953,33 +1024,36 @@ const TeachersManagement: React.FC = () => {
                     </label>
                     <div className="grid grid-cols-3 gap-2">
                       <button
-                        onClick={() => setSelectedGender("all")}
+                        onClick={() => setSelectedGender('all')}
                         title="عرض جميع المعلمين"
                         className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                          selectedGender === "all"
-                            ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        }`}>
+                          selectedGender === 'all'
+                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
                         الكل
                       </button>
                       <button
-                        onClick={() => setSelectedGender("ذكر")}
+                        onClick={() => setSelectedGender('ذكر')}
                         title="عرض المعلمين الذكور فقط"
                         className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                          selectedGender === "ذكر"
-                            ? "bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-md"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        }`}>
+                          selectedGender === 'ذكر'
+                            ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-md'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
                         ذكر
                       </button>
                       <button
-                        onClick={() => setSelectedGender("انثى")}
+                        onClick={() => setSelectedGender('انثى')}
                         title="عرض المعلمات الإناث فقط"
                         className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                          selectedGender === "انثى"
-                            ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        }`}>
+                          selectedGender === 'انثى'
+                            ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
                         أنثى
                       </button>
                     </div>
@@ -993,33 +1067,36 @@ const TeachersManagement: React.FC = () => {
                     </label>
                     <div className="grid grid-cols-1 gap-2">
                       <button
-                        onClick={() => setGroupsFilter("all")}
+                        onClick={() => setGroupsFilter('all')}
                         title="عرض جميع المعلمين"
                         className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                          groupsFilter === "all"
-                            ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        }`}>
+                          groupsFilter === 'all'
+                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
                         الكل
                       </button>
                       <button
-                        onClick={() => setGroupsFilter("withGroups")}
+                        onClick={() => setGroupsFilter('withGroups')}
                         title="عرض المعلمين الذين لديهم حلقات"
                         className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                          groupsFilter === "withGroups"
-                            ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        }`}>
+                          groupsFilter === 'withGroups'
+                            ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
                         🎯 لديهم حلقات
                       </button>
                       <button
-                        onClick={() => setGroupsFilter("withoutGroups")}
+                        onClick={() => setGroupsFilter('withoutGroups')}
                         title="عرض المعلمين الذين لا يدرسون أي حلقة"
                         className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                          groupsFilter === "withoutGroups"
-                            ? "bg-gradient-to-r from-red-500 to-pink-600 text-white shadow-md"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        }`}>
+                          groupsFilter === 'withoutGroups'
+                            ? 'bg-gradient-to-r from-red-500 to-pink-600 text-white shadow-md'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
                         🚫 بلا حلقات
                       </button>
                     </div>
@@ -1064,7 +1141,8 @@ const TeachersManagement: React.FC = () => {
                         setCurrentPage(1);
                       }}
                       title="اختيار عدد المعلمين المعروضين في الصفحة"
-                      className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 text-gray-700 font-medium">
+                      className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 text-gray-700 font-medium"
+                    >
                       <option value="10">10 معلمين</option>
                       <option value="25">25 معلم</option>
                       <option value="50">50 معلم</option>
@@ -1079,15 +1157,18 @@ const TeachersManagement: React.FC = () => {
                     <span className="text-sm text-gray-600 font-medium">
                       الفلاتر النشطة:
                     </span>
-                    {selectedGender !== "all" && (
+                    {selectedGender !== 'all' && (
                       <span className="px-3 py-1 bg-pink-100 text-pink-800 rounded-full text-xs font-medium">
                         الجنس: {selectedGender}
                       </span>
                     )}
 
-                    {groupsFilter !== "all" && (
+                    {groupsFilter !== 'all' && (
                       <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-medium">
-                        الحلقات: {groupsFilter === "withGroups" ? "لديهم حلقات" : "بلا حلقات"}
+                        الحلقات:{' '}
+                        {groupsFilter === 'withGroups'
+                          ? 'لديهم حلقات'
+                          : 'بلا حلقات'}
                       </span>
                     )}
 
@@ -1134,7 +1215,8 @@ const TeachersManagement: React.FC = () => {
                   <svg
                     className="w-6 h-6 text-white"
                     fill="currentColor"
-                    viewBox="0 0 20 20">
+                    viewBox="0 0 20 20"
+                  >
                     <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
                   </svg>
                 </div>
@@ -1153,7 +1235,8 @@ const TeachersManagement: React.FC = () => {
                   <svg
                     className="w-6 h-6 text-white"
                     fill="currentColor"
-                    viewBox="0 0 20 20">
+                    viewBox="0 0 20 20"
+                  >
                     <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
                   </svg>
                 </div>
@@ -1176,7 +1259,7 @@ const TeachersManagement: React.FC = () => {
               </div>
             </div>
 
-            <div 
+            <div
               className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-green-500 hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer"
               onClick={() => {
                 setGroupsFilter('withGroups');
@@ -1197,14 +1280,15 @@ const TeachersManagement: React.FC = () => {
                   <svg
                     className="w-6 h-6 text-white"
                     fill="currentColor"
-                    viewBox="0 0 20 20">
+                    viewBox="0 0 20 20"
+                  >
                     <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
               </div>
             </div>
 
-            <div 
+            <div
               className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-red-500 hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer"
               onClick={() => {
                 setGroupsFilter('withoutGroups');
@@ -1225,7 +1309,8 @@ const TeachersManagement: React.FC = () => {
                   <svg
                     className="w-6 h-6 text-white"
                     fill="currentColor"
-                    viewBox="0 0 20 20">
+                    viewBox="0 0 20 20"
+                  >
                     <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" />
                   </svg>
                 </div>
@@ -1242,7 +1327,8 @@ const TeachersManagement: React.FC = () => {
             </span>
             <button
               onClick={handleBulkDelete}
-              className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+              className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+            >
               <FaTrash className="w-4 h-4" />
               حذف المحدد
             </button>
@@ -1256,7 +1342,8 @@ const TeachersManagement: React.FC = () => {
               <svg
                 className="w-6 h-6 text-red-600 ml-3 mt-0.5 flex-shrink-0"
                 fill="currentColor"
-                viewBox="0 0 20 20">
+                viewBox="0 0 20 20"
+              >
                 <path
                   fillRule="evenodd"
                   d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
@@ -1270,12 +1357,14 @@ const TeachersManagement: React.FC = () => {
                 <p className="text-red-700 mb-4">{error}</p>
                 <button
                   onClick={() => fetchTeachers(retryCount)}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors text-sm font-medium">
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors text-sm font-medium"
+                >
                   <svg
                     className="w-4 h-4"
                     fill="none"
                     stroke="currentColor"
-                    viewBox="0 0 24 24">
+                    viewBox="0 0 24 24"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -1516,373 +1605,26 @@ const TeachersManagement: React.FC = () => {
                 {selectedTeachers.size > 0 && (
                   <div className="bg-green-50 rounded-xl border border-green-200 p-4 mb-6">
                     <div className="text-sm bg-green-100 text-green-800 px-3 py-1.5 rounded-lg border border-green-300 font-medium inline-block">
-                      <span className="font-bold">{selectedTeachers.size}</span> محدد
+                      <span className="font-bold">{selectedTeachers.size}</span>{' '}
+                      محدد
                     </div>
                   </div>
                 )}
 
                 <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                {currentTeachers.map((teacher) => (
-                  <div
-                    key={teacher._id}
-                    className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 border-2 border-gray-100 hover:border-blue-300 group relative overflow-hidden">
-                    
-                    {/* Background Pattern */}
-                    <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity">
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-400 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
-                      <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-purple-400 to-transparent rounded-full translate-y-12 -translate-x-12"></div>
-                    </div>
-                    
-                    {/* Selection Checkbox */}
-                    <div className="absolute top-4 left-4 z-10">
-                      <input
-                        type="checkbox"
-                        title={`تحديد المعلم ${teacher.firstName}`}
-                        checked={selectedTeachers.has(teacher._id)}
-                        onChange={(e) => {
-                          const newSet = new Set(selectedTeachers);
-                          if (e.target.checked) {
-                            newSet.add(teacher._id);
-                          } else {
-                            newSet.delete(teacher._id);
-                          }
-                          setSelectedTeachers(newSet);
-                        }}
-                        className="w-5 h-5 text-blue-600 rounded-md focus:ring-blue-500 focus:ring-2 shadow-lg"
-                      />
-                    </div>
-
-                    {/* Teacher Avatar */}
-                    <div className="flex flex-col items-center mb-5 relative z-10">
-                      <div className="relative">
-                        <div className="w-24 h-24 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-full flex items-center justify-center mb-3 text-white text-2xl font-bold shadow-xl group-hover:scale-110 transition-all duration-300 ring-4 ring-blue-100 group-hover:ring-blue-200">
-                          {teacher.firstName?.charAt(0) || 'م'}
-                        </div>
-                        {teacher.isActive && (
-                          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-3 border-white flex items-center justify-center">
-                            <span className="text-white text-xs">✓</span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 border border-blue-200">
-                          #{teacher.teacherId}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Teacher Info */}
-                    <div className="text-center space-y-4 relative z-10">
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-1 group-hover:text-blue-700 transition-colors">
-                          {teacher.firstName} {teacher.lastName}
-                        </h3>
-                        {teacher.specialCircle && (
-                          <p className="text-sm text-blue-600 font-medium">{teacher.specialCircle}</p>
-                        )}
-                      </div>
-                      
-                      {/* Contact Info */}
-                      <div className="space-y-2 text-sm">
-                        {teacher.phoneNumber && (
-                          <div className="flex items-center justify-center gap-2 p-2 rounded-lg bg-green-50 border border-green-200">
-                            <FaPhone className="text-green-600" size={14} />
-                            <span className="font-semibold text-green-800" dir="ltr">{teacher.phoneNumber}</span>
-                          </div>
-                        )}
-                        {teacher.email && (
-                          <div className="flex items-center justify-center gap-2 p-2 rounded-lg bg-blue-50 border border-blue-200">
-                            <FaEnvelope className="text-blue-600" size={14} />
-                            <span className="truncate font-medium text-blue-800" title={teacher.email}>{teacher.email}</span>
-                          </div>
-                        )}
-                        {(teacher.residence || teacher.address) && (
-                          <div className="flex items-center justify-center gap-2 p-2 rounded-lg bg-red-50 border border-red-200">
-                            <FaMapMarkerAlt className="text-red-600" size={14} />
-                            <span className="truncate font-medium text-red-800">{teacher.residence || teacher.address}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Stats */}
-                      <div className="flex justify-center gap-2 text-xs">
-                        {teacher.gender && (
-                          <span className={`inline-flex items-center px-3 py-1.5 rounded-full font-bold border-2 ${
-                            teacher.gender === 'ذكر' 
-                              ? 'bg-cyan-100 text-cyan-800 border-cyan-300' 
-                              : 'bg-pink-100 text-pink-800 border-pink-300'
-                          }`}>
-                            {teacher.gender}
-                          </span>
-                        )}
-                        {teacher.age && (
-                          <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-amber-100 text-amber-800 font-bold border-2 border-amber-300">
-                            <FaBirthdayCake className="ml-1" size={12} />
-                            {teacher.age} سنة
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Groups */}
-                      <div className="mt-5 p-3 bg-gray-50 rounded-xl border border-gray-200">
-                        {teacher.groups && Array.isArray(teacher.groups) && teacher.groups.length > 0 ? (
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-center gap-1 mb-3">
-                              <span className="text-xs font-bold text-gray-700">الحلقات المدرسة</span>
-                              <span className="inline-flex items-center justify-center w-5 h-5 bg-blue-500 text-white rounded-full text-xs font-bold">
-                                {teacher.groups.length}
-                              </span>
-                            </div>
-                            {teacher.groups.length === 1 ? (
-                              (() => {
-                                const group = teacher.groups[0];
-                                if (!group) return null;
-                                
-                                const groupName = getGroupDisplayName(group);
-                                const groupNumber = getGroupNumber(group);
-                                
-                                return (
-                                  <div className="bg-white p-3 rounded-lg border-2 border-blue-200 shadow-sm">
-                                    <div className="text-center">
-                                      <span className="font-bold text-blue-900 text-sm">{groupName}</span>
-                                      {groupNumber && (
-                                        <div className="mt-1">
-                                          <span className="inline-block px-2 py-1 bg-blue-600 text-white rounded-full text-xs font-bold">
-                                            رقم {groupNumber}
-                                          </span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })()
-                            ) : (
-                              <div className="space-y-2">
-                                {/* عرض أول حلقتين */}
-                                <div className="space-y-2">
-                                  {teacher.groups.slice(0, 2).map((group, index) => {
-                                    if (!group) return null;
-                                    
-                                    const groupName = getGroupDisplayName(group);
-                                    const groupNumber = getGroupNumber(group);
-                                    
-                                    return (
-                                      <div
-                                        key={index}
-                                        className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 rounded-xl border-2 border-blue-200 transition-all duration-200 shadow-sm hover:shadow-md group/card">
-                                        <div className="flex items-center gap-2">
-                                          <div className="w-2 h-2 bg-blue-500 rounded-full group-hover/card:scale-125 transition-transform"></div>
-                                          <span className="font-bold text-blue-900 text-sm truncate" title={groupName}>
-                                            {groupName && groupName.length > 8 ? `${groupName.substring(0, 8)}...` : groupName}
-                                          </span>
-                                        </div>
-                                        {groupNumber && (
-                                          <span className="px-2.5 py-1 bg-blue-600 text-white rounded-full font-bold text-xs shadow-md group-hover/card:bg-blue-700 transition-colors">
-                                            {groupNumber}
-                                          </span>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                                
-                                {/* منيو منسدل للحلقات الإضافية */}
-                                {teacher.groups.length > 2 && (
-                                  <details className="group/details">
-                                    <summary className="cursor-pointer list-none focus:outline-none">
-                                      <div className="flex items-center justify-center p-3 bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-800 hover:from-indigo-200 hover:to-purple-200 rounded-xl border-2 border-indigo-200 transition-all duration-300 shadow-md hover:shadow-lg group-open/details:bg-gradient-to-r group-open/details:from-emerald-100 group-open/details:to-green-100 group-open/details:text-emerald-800 group-open/details:border-emerald-300 group-open/details:shadow-xl">
-                                        <div className="flex items-center gap-2">
-                                          <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-sm">
-                                            <span className="font-bold text-xs text-indigo-700 group-open/details:text-emerald-700">{teacher.groups.length - 2}</span>
-                                          </div>
-                                          <span className="text-sm font-bold">حلقات أخرى</span>
-                                          <svg className="w-5 h-5 transform group-open/details:rotate-180 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
-                                          </svg>
-                                        </div>
-                                      </div>
-                                    </summary>
-                                    <div className="mt-3 bg-white border-2 border-indigo-200 rounded-2xl shadow-xl overflow-hidden animate-fade-in relative">
-                                      {/* Header with gradient */}
-                                      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-4 py-3 border-b-2 border-indigo-100">
-                                        <div className="flex items-center justify-between">
-                                          <span className="text-sm font-bold text-indigo-800 flex items-center gap-2">
-                                            <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
-                                            الحلقات الإضافية
-                                          </span>
-                                          <span className="bg-indigo-200 text-indigo-800 px-2 py-1 rounded-full text-xs font-bold">
-                                            {teacher.groups.length - 2}
-                                          </span>
-                                        </div>
-                                      </div>
-                                      
-                                      {/* Content */}
-                                      <div className="max-h-36 overflow-y-auto">
-                                        <div className="p-1">
-                                          {teacher.groups.slice(2).map((group, index) => {
-                                            if (!group) return null;
-                                            
-                                            const groupName = getGroupDisplayName(group);
-                                            const groupNumber = getGroupNumber(group);
-                                            
-                                            return (
-                                              <div
-                                                key={index + 2}
-                                                className="flex items-center justify-between p-3 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200 rounded-lg mx-1 my-1 border border-transparent hover:border-blue-200 group/item"
-                                                title={`حلقة: ${groupName}${groupNumber ? ` - رقم ${groupNumber}` : ''}`}>
-                                                <div className="flex items-center gap-2 flex-1">
-                                                  <div className="w-2 h-2 bg-blue-400 rounded-full group-hover/item:bg-blue-600 transition-colors"></div>
-                                                  <span className="font-semibold text-gray-800 group-hover/item:text-blue-800 text-sm transition-colors">
-                                                    {groupName && groupName.length > 10 ? `${groupName.substring(0, 10)}...` : groupName}
-                                                  </span>
-                                                </div>
-                                                {groupNumber && (
-                                                  <span className="px-2.5 py-1 bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 rounded-full font-bold text-xs group-hover/item:from-blue-200 group-hover/item:to-indigo-200 transition-all shadow-sm">
-                                                    {groupNumber}
-                                                  </span>
-                                                )}
-                                              </div>
-                                            );
-                                          })}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </details>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="text-center py-3">
-                            <div className="text-gray-400 text-sm font-medium">لا توجد حلقات مخصصة</div>
-                            <div className="text-xs text-gray-400 mt-1">غير مرتبط بأي حلقة</div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex justify-center gap-2 mt-6 pt-4 border-t-2 border-gray-100">
-                        <button
-                          onClick={() => handleEdit(teacher)}
-                          className="flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-600 hover:bg-blue-200 hover:text-blue-700 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105"
-                          title="تعديل المعلم">
-                          <FaEdit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(teacher._id)}
-                          className="flex items-center justify-center w-10 h-10 bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-700 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105"
-                          title="حذف المعلم">
-                          <FaTrash className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              </>
-            )}
-
-            {/* Table View */}
-            {viewMode === 'table' && (
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-            <div className="overflow-x-auto" dir="rtl">
-              <table className="w-full" dir="rtl">
-                <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
-                  <tr>
-                    <th className="px-4 py-4 text-center">
-                      <input
-                        type="checkbox"
-                        title="تحديد جميع المعلمين"
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedTeachers(
-                              new Set(currentTeachers.map((t) => t._id))
-                            );
-                          } else {
-                            setSelectedTeachers(new Set());
-                          }
-                        }}
-                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                      />
-                    </th>
-                    <th
-                      className="px-6 py-4 text-right text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors"
-                      onClick={() => handleSort("teacherId")}>
-                      <div className="flex items-center gap-2">
-                        رقم المعلم
-                        {sortField === "teacherId" &&
-                          (sortOrder === "asc" ? (
-                            <FaSortAmountUp className="w-3 h-3" />
-                          ) : (
-                            <FaSortAmountDown className="w-3 h-3" />
-                          ))}
-                      </div>
-                    </th>
-                    <th
-                      className="px-6 py-4 text-right text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors"
-                      onClick={() => handleSort("firstName")}>
-                      <div className="flex items-center gap-2">
-                        الاسم الكامل
-                        {sortField === "firstName" &&
-                          (sortOrder === "asc" ? (
-                            <FaSortAmountUp className="w-3 h-3" />
-                          ) : (
-                            <FaSortAmountDown className="w-3 h-3" />
-                          ))}
-                      </div>
-                    </th>
-                    <th
-                      className="px-6 py-4 text-right text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors"
-                      onClick={() => handleSort("email")}>
-                      <div className="flex items-center gap-2">
-                        البريد الإلكتروني
-                        {sortField === "email" &&
-                          (sortOrder === "asc" ? (
-                            <FaSortAmountUp className="w-3 h-3" />
-                          ) : (
-                            <FaSortAmountDown className="w-3 h-3" />
-                          ))}
-                      </div>
-                    </th>
-                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
-                      رقم الهاتف
-                    </th>
-                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
-                      رقم الهوية
-                    </th>
-                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
-                      الجنس
-                    </th>
-                    <th
-                      className="px-6 py-4 text-right text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors"
-                      onClick={() => handleSort("age")}>
-                      <div className="flex items-center gap-2">
-                        العمر
-                        {sortField === "age" &&
-                          (sortOrder === "asc" ? (
-                            <FaSortAmountUp className="w-3 h-3" />
-                          ) : (
-                            <FaSortAmountDown className="w-3 h-3" />
-                          ))}
-                      </div>
-                    </th>
-                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
-                      الحلقات المدرسة
-                    </th>
-                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
-                      مكان السكن
-                    </th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
-                      الإجراءات
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
                   {currentTeachers.map((teacher) => (
-                    <tr
+                    <div
                       key={teacher._id}
-                      className="hover:bg-blue-50 transition-colors">
-                      <td className="px-4 py-4 text-center">
+                      className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 border-2 border-gray-100 hover:border-blue-300 group relative overflow-hidden"
+                    >
+                      {/* Background Pattern */}
+                      <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-400 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
+                        <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-purple-400 to-transparent rounded-full translate-y-12 -translate-x-12"></div>
+                      </div>
+
+                      {/* Selection Checkbox */}
+                      <div className="absolute top-4 left-4 z-10">
                         <input
                           type="checkbox"
                           title={`تحديد المعلم ${teacher.firstName}`}
@@ -1896,169 +1638,625 @@ const TeachersManagement: React.FC = () => {
                             }
                             setSelectedTeachers(newSet);
                           }}
-                          className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                          className="w-5 h-5 text-blue-600 rounded-md focus:ring-blue-500 focus:ring-2 shadow-lg"
                         />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          {teacher.teacherId}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          <div className="text-sm font-semibold text-gray-900">
-                            {teacher.firstName} {teacher.lastName}
+                      </div>
+
+                      {/* Teacher Avatar */}
+                      <div className="flex flex-col items-center mb-5 relative z-10">
+                        <div className="relative">
+                          <div className="w-24 h-24 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-full flex items-center justify-center mb-3 text-white text-2xl font-bold shadow-xl group-hover:scale-110 transition-all duration-300 ring-4 ring-blue-100 group-hover:ring-blue-200">
+                            {teacher.firstName?.charAt(0) || 'م'}
                           </div>
-                          <div className="text-xs text-gray-500">
-                            {teacher.fatherName && `${teacher.fatherName}`}
-                          </div>
+                          {teacher.isActive && (
+                            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-3 border-white flex items-center justify-center">
+                              <span className="text-white text-xs">✓</span>
+                            </div>
+                          )}
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {teacher.email}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
-                        {teacher.phoneNumber}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
-                        {teacher.idNumber || (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {teacher.gender ? (
-                          <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              teacher.gender === "ذكر"
-                                ? "bg-cyan-100 text-cyan-800"
-                                : "bg-pink-100 text-pink-800"
-                            }`}>
-                            {teacher.gender}
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 border border-blue-200">
+                            #{teacher.teacherId}
                           </span>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {teacher.age ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                            {teacher.age}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        {teacher.groups && Array.isArray(teacher.groups) && teacher.groups.length > 0 ? (
-                          <div className="max-w-xs">
-                            {teacher.groups.length === 1 ? (
-                              /* عرض حلقة واحدة فقط */
-                              (() => {
-                                const group = teacher.groups[0];
-                                if (!group) return null;
-                                
-                                const groupName = getGroupDisplayName(group);
-                                const groupNumber = getGroupNumber(group);
-                                
-                                return (
-                                  <span
-                                    className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 hover:from-blue-200 hover:to-blue-300 transition-all duration-200 shadow-md hover:shadow-lg border border-blue-200"
-                                    title={`حلقة: ${groupName}${groupNumber ? ` - رقم ${groupNumber}` : ''}`}
-                                  >
-                                    <span className="font-bold">
-                                      {groupName}
-                                    </span>
-                                    {groupNumber && (
-                                      <span className="mr-2 px-2 py-0.5 bg-blue-600 text-white rounded-full text-xs font-bold">
-                                        {groupNumber}
-                                      </span>
-                                    )}
-                                  </span>
-                                );
-                              })()
-                            ) : (
-                              /* عرض متعدد الحلقات في منيو */
-                              <details className="group relative">
-                                <summary className="cursor-pointer list-none focus:outline-none">
-                                  <span className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 hover:from-purple-200 hover:to-purple-300 transition-all duration-300 shadow-md hover:shadow-lg group-open:bg-gradient-to-r group-open:from-green-100 group-open:to-green-200 group-open:text-green-800 border border-purple-200 group-open:border-green-200">
-                                    <span className="font-bold text-purple-900 group-open:text-green-900">{teacher.groups.length}</span>
-                                    <span className="mr-1.5 font-medium">حلقات</span>
-                                    <svg className="w-4 h-4 mr-1 transform group-open:rotate-180 transition-transform duration-300 text-purple-600 group-open:text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                  </span>
-                                </summary>
-                                <div className="absolute top-full left-0 mt-1 z-10 w-52 bg-white border border-gray-200 rounded-xl shadow-xl max-h-48 overflow-y-auto animate-fade-in">
-                                  <div className="p-1">
-                                    <div className="px-3 py-2 text-xs font-semibold text-gray-500 bg-gray-50 rounded-t-lg border-b border-gray-100">
-                                      جميع الحلقات ({teacher.groups.length})
+                        </div>
+                      </div>
+
+                      {/* Teacher Info */}
+                      <div className="text-center space-y-4 relative z-10">
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-900 mb-1 group-hover:text-blue-700 transition-colors">
+                            {teacher.firstName} {teacher.lastName}
+                          </h3>
+                          {teacher.specialCircle && (
+                            <p className="text-sm text-blue-600 font-medium">
+                              {teacher.specialCircle}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Contact Info */}
+                        <div className="space-y-2 text-sm">
+                          {teacher.phoneNumber && (
+                            <div className="flex items-center justify-center gap-2 p-2 rounded-lg bg-green-50 border border-green-200">
+                              <FaPhone className="text-green-600" size={14} />
+                              <span
+                                className="font-semibold text-green-800"
+                                dir="ltr"
+                              >
+                                {teacher.phoneNumber}
+                              </span>
+                            </div>
+                          )}
+                          {teacher.email && (
+                            <div className="flex items-center justify-center gap-2 p-2 rounded-lg bg-blue-50 border border-blue-200">
+                              <FaEnvelope className="text-blue-600" size={14} />
+                              <span
+                                className="truncate font-medium text-blue-800"
+                                title={teacher.email}
+                              >
+                                {teacher.email}
+                              </span>
+                            </div>
+                          )}
+                          {(teacher.residence || teacher.address) && (
+                            <div className="flex items-center justify-center gap-2 p-2 rounded-lg bg-red-50 border border-red-200">
+                              <FaMapMarkerAlt
+                                className="text-red-600"
+                                size={14}
+                              />
+                              <span className="truncate font-medium text-red-800">
+                                {teacher.residence || teacher.address}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Stats */}
+                        <div className="flex justify-center gap-2 text-xs">
+                          {teacher.gender && (
+                            <span
+                              className={`inline-flex items-center px-3 py-1.5 rounded-full font-bold border-2 ${
+                                teacher.gender === 'ذكر'
+                                  ? 'bg-cyan-100 text-cyan-800 border-cyan-300'
+                                  : 'bg-pink-100 text-pink-800 border-pink-300'
+                              }`}
+                            >
+                              {teacher.gender}
+                            </span>
+                          )}
+                          {teacher.age && (
+                            <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-amber-100 text-amber-800 font-bold border-2 border-amber-300">
+                              <FaBirthdayCake className="ml-1" size={12} />
+                              {teacher.age} سنة
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Groups */}
+                        <div className="mt-5 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                          {teacher.groups &&
+                          Array.isArray(teacher.groups) &&
+                          teacher.groups.length > 0 ? (
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-center gap-1 mb-3">
+                                <span className="text-xs font-bold text-gray-700">
+                                  الحلقات المدرسة
+                                </span>
+                                <span className="inline-flex items-center justify-center w-5 h-5 bg-blue-500 text-white rounded-full text-xs font-bold">
+                                  {teacher.groups.length}
+                                </span>
+                              </div>
+                              {teacher.groups.length === 1 ? (
+                                (() => {
+                                  const group = teacher.groups[0];
+                                  if (!group) return null;
+
+                                  const groupName = getGroupDisplayName(group);
+                                  const groupNumber = getGroupNumber(group);
+
+                                  return (
+                                    <div className="bg-white p-3 rounded-lg border-2 border-blue-200 shadow-sm">
+                                      <div className="text-center">
+                                        <span className="font-bold text-blue-900 text-sm">
+                                          {groupName}
+                                        </span>
+                                        {groupNumber && (
+                                          <div className="mt-1">
+                                            <span className="inline-block px-2 py-1 bg-blue-600 text-white rounded-full text-xs font-bold">
+                                              رقم {groupNumber}
+                                            </span>
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
-                                    <div className="space-y-0.5 mt-1">
-                                      {teacher.groups.map((group, index) => {
+                                  );
+                                })()
+                              ) : (
+                                <div className="space-y-2">
+                                  {/* عرض أول حلقتين */}
+                                  <div className="space-y-2">
+                                    {teacher.groups
+                                      .slice(0, 2)
+                                      .map((group, index) => {
                                         if (!group) return null;
-                                        
-                                        const groupName = getGroupDisplayName(group);
-                                        const groupNumber = getGroupNumber(group);
-                                        
+
+                                        const groupName =
+                                          getGroupDisplayName(group);
+                                        const groupNumber =
+                                          getGroupNumber(group);
+
                                         return (
                                           <div
                                             key={index}
-                                            className="flex items-center justify-between p-2.5 hover:bg-blue-50 rounded-lg text-sm transition-all duration-200 cursor-pointer group/item border-b border-gray-50 last:border-b-0"
-                                            title={`حلقة: ${groupName}${groupNumber ? ` - رقم ${groupNumber}` : ''}`}
+                                            className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 rounded-xl border-2 border-blue-200 transition-all duration-200 shadow-sm hover:shadow-md group/card"
                                           >
-                                            <span className="font-medium text-gray-800 group-hover/item:text-blue-800 transition-colors">
-                                              {groupName && groupName.length > 18 ? `${groupName.substring(0, 18)}...` : groupName}
-                                            </span>
+                                            <div className="flex items-center gap-2">
+                                              <div className="w-2 h-2 bg-blue-500 rounded-full group-hover/card:scale-125 transition-transform"></div>
+                                              <span
+                                                className="font-bold text-blue-900 text-sm truncate"
+                                                title={groupName}
+                                              >
+                                                {groupName &&
+                                                groupName.length > 8
+                                                  ? `${groupName.substring(0, 8)}...`
+                                                  : groupName}
+                                              </span>
+                                            </div>
                                             {groupNumber && (
-                                              <span className="px-2 py-1 bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 rounded-full font-bold text-xs shadow-sm group-hover/item:from-blue-200 group-hover/item:to-blue-300 transition-all">
+                                              <span className="px-2.5 py-1 bg-blue-600 text-white rounded-full font-bold text-xs shadow-md group-hover/card:bg-blue-700 transition-colors">
                                                 {groupNumber}
                                               </span>
                                             )}
                                           </div>
                                         );
-                                      }).filter(Boolean)}
-                                    </div>
+                                      })}
                                   </div>
+
+                                  {/* منيو منسدل للحلقات الإضافية */}
+                                  {teacher.groups.length > 2 && (
+                                    <details className="group/details">
+                                      <summary className="cursor-pointer list-none focus:outline-none">
+                                        <div className="flex items-center justify-center p-3 bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-800 hover:from-indigo-200 hover:to-purple-200 rounded-xl border-2 border-indigo-200 transition-all duration-300 shadow-md hover:shadow-lg group-open/details:bg-gradient-to-r group-open/details:from-emerald-100 group-open/details:to-green-100 group-open/details:text-emerald-800 group-open/details:border-emerald-300 group-open/details:shadow-xl">
+                                          <div className="flex items-center gap-2">
+                                            <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-sm">
+                                              <span className="font-bold text-xs text-indigo-700 group-open/details:text-emerald-700">
+                                                {teacher.groups.length - 2}
+                                              </span>
+                                            </div>
+                                            <span className="text-sm font-bold">
+                                              حلقات أخرى
+                                            </span>
+                                            <svg
+                                              className="w-5 h-5 transform group-open/details:rotate-180 transition-transform duration-300"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              viewBox="0 0 24 24"
+                                            >
+                                              <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={3}
+                                                d="M19 9l-7 7-7-7"
+                                              />
+                                            </svg>
+                                          </div>
+                                        </div>
+                                      </summary>
+                                      <div className="mt-3 bg-white border-2 border-indigo-200 rounded-2xl shadow-xl overflow-hidden animate-fade-in relative">
+                                        {/* Header with gradient */}
+                                        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-4 py-3 border-b-2 border-indigo-100">
+                                          <div className="flex items-center justify-between">
+                                            <span className="text-sm font-bold text-indigo-800 flex items-center gap-2">
+                                              <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
+                                              الحلقات الإضافية
+                                            </span>
+                                            <span className="bg-indigo-200 text-indigo-800 px-2 py-1 rounded-full text-xs font-bold">
+                                              {teacher.groups.length - 2}
+                                            </span>
+                                          </div>
+                                        </div>
+
+                                        {/* Content */}
+                                        <div className="max-h-36 overflow-y-auto">
+                                          <div className="p-1">
+                                            {teacher.groups
+                                              .slice(2)
+                                              .map((group, index) => {
+                                                if (!group) return null;
+
+                                                const groupName =
+                                                  getGroupDisplayName(group);
+                                                const groupNumber =
+                                                  getGroupNumber(group);
+
+                                                return (
+                                                  <div
+                                                    key={index + 2}
+                                                    className="flex items-center justify-between p-3 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200 rounded-lg mx-1 my-1 border border-transparent hover:border-blue-200 group/item"
+                                                    title={`حلقة: ${groupName}${groupNumber ? ` - رقم ${groupNumber}` : ''}`}
+                                                  >
+                                                    <div className="flex items-center gap-2 flex-1">
+                                                      <div className="w-2 h-2 bg-blue-400 rounded-full group-hover/item:bg-blue-600 transition-colors"></div>
+                                                      <span className="font-semibold text-gray-800 group-hover/item:text-blue-800 text-sm transition-colors">
+                                                        {groupName &&
+                                                        groupName.length > 10
+                                                          ? `${groupName.substring(0, 10)}...`
+                                                          : groupName}
+                                                      </span>
+                                                    </div>
+                                                    {groupNumber && (
+                                                      <span className="px-2.5 py-1 bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 rounded-full font-bold text-xs group-hover/item:from-blue-200 group-hover/item:to-indigo-200 transition-all shadow-sm">
+                                                        {groupNumber}
+                                                      </span>
+                                                    )}
+                                                  </div>
+                                                );
+                                              })}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </details>
+                                  )}
                                 </div>
-                              </details>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="flex items-center">
-                            <svg className="w-4 h-4 text-gray-400 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2 2v-5m16 0h-2M4 13h2" />
-                            </svg>
-                            <span className="text-gray-400 text-sm">لا توجد حلقات</span>
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {teacher.residence || teacher.address || (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <div className="flex items-center justify-center gap-2">
+                              )}
+                            </div>
+                          ) : (
+                            <div className="text-center py-3">
+                              <div className="text-gray-400 text-sm font-medium">
+                                لا توجد حلقات مخصصة
+                              </div>
+                              <div className="text-xs text-gray-400 mt-1">
+                                غير مرتبط بأي حلقة
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex justify-center gap-2 mt-6 pt-4 border-t-2 border-gray-100">
                           <button
                             onClick={() => handleEdit(teacher)}
-                            className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                            title="تعديل">
+                            className="flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-600 hover:bg-blue-200 hover:text-blue-700 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105"
+                            title="تعديل المعلم"
+                          >
                             <FaEdit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(teacher._id)}
-                            className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                            title="حذف">
+                            className="flex items-center justify-center w-10 h-10 bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-700 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105"
+                            title="حذف المعلم"
+                          >
                             <FaTrash className="w-4 h-4" />
                           </button>
                         </div>
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                </div>
+              </>
+            )}
+
+            {/* Table View */}
+            {viewMode === 'table' && (
+              <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+                <div className="overflow-x-auto" dir="rtl">
+                  <table className="w-full" dir="rtl">
+                    <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+                      <tr>
+                        <th className="px-4 py-4 text-center">
+                          <input
+                            type="checkbox"
+                            title="تحديد جميع المعلمين"
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedTeachers(
+                                  new Set(currentTeachers.map((t) => t._id))
+                                );
+                              } else {
+                                setSelectedTeachers(new Set());
+                              }
+                            }}
+                            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                          />
+                        </th>
+                        <th
+                          className="px-6 py-4 text-right text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors"
+                          onClick={() => handleSort('teacherId')}
+                        >
+                          <div className="flex items-center gap-2">
+                            رقم المعلم
+                            {sortField === 'teacherId' &&
+                              (sortOrder === 'asc' ? (
+                                <FaSortAmountUp className="w-3 h-3" />
+                              ) : (
+                                <FaSortAmountDown className="w-3 h-3" />
+                              ))}
+                          </div>
+                        </th>
+                        <th
+                          className="px-6 py-4 text-right text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors"
+                          onClick={() => handleSort('firstName')}
+                        >
+                          <div className="flex items-center gap-2">
+                            الاسم الكامل
+                            {sortField === 'firstName' &&
+                              (sortOrder === 'asc' ? (
+                                <FaSortAmountUp className="w-3 h-3" />
+                              ) : (
+                                <FaSortAmountDown className="w-3 h-3" />
+                              ))}
+                          </div>
+                        </th>
+                        <th
+                          className="px-6 py-4 text-right text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors"
+                          onClick={() => handleSort('email')}
+                        >
+                          <div className="flex items-center gap-2">
+                            البريد الإلكتروني
+                            {sortField === 'email' &&
+                              (sortOrder === 'asc' ? (
+                                <FaSortAmountUp className="w-3 h-3" />
+                              ) : (
+                                <FaSortAmountDown className="w-3 h-3" />
+                              ))}
+                          </div>
+                        </th>
+                        <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
+                          رقم الهاتف
+                        </th>
+                        <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
+                          رقم الهوية
+                        </th>
+                        <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
+                          الجنس
+                        </th>
+                        <th
+                          className="px-6 py-4 text-right text-sm font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors"
+                          onClick={() => handleSort('age')}
+                        >
+                          <div className="flex items-center gap-2">
+                            العمر
+                            {sortField === 'age' &&
+                              (sortOrder === 'asc' ? (
+                                <FaSortAmountUp className="w-3 h-3" />
+                              ) : (
+                                <FaSortAmountDown className="w-3 h-3" />
+                              ))}
+                          </div>
+                        </th>
+                        <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
+                          الحلقات المدرسة
+                        </th>
+                        <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">
+                          مكان السكن
+                        </th>
+                        <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
+                          الإجراءات
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {currentTeachers.map((teacher) => (
+                        <tr
+                          key={teacher._id}
+                          className="hover:bg-blue-50 transition-colors"
+                        >
+                          <td className="px-4 py-4 text-center">
+                            <input
+                              type="checkbox"
+                              title={`تحديد المعلم ${teacher.firstName}`}
+                              checked={selectedTeachers.has(teacher._id)}
+                              onChange={(e) => {
+                                const newSet = new Set(selectedTeachers);
+                                if (e.target.checked) {
+                                  newSet.add(teacher._id);
+                                } else {
+                                  newSet.delete(teacher._id);
+                                }
+                                setSelectedTeachers(newSet);
+                              }}
+                              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                            />
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {teacher.teacherId}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div>
+                              <div className="text-sm font-semibold text-gray-900">
+                                {teacher.firstName} {teacher.lastName}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {teacher.fatherName && `${teacher.fatherName}`}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {teacher.email}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+                            {teacher.phoneNumber}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
+                            {teacher.idNumber || (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {teacher.gender ? (
+                              <span
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                  teacher.gender === 'ذكر'
+                                    ? 'bg-cyan-100 text-cyan-800'
+                                    : 'bg-pink-100 text-pink-800'
+                                }`}
+                              >
+                                {teacher.gender}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {teacher.age ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                                {teacher.age}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4">
+                            {teacher.groups &&
+                            Array.isArray(teacher.groups) &&
+                            teacher.groups.length > 0 ? (
+                              <div className="max-w-xs">
+                                {teacher.groups.length === 1 ? (
+                                  /* عرض حلقة واحدة فقط */
+                                  (() => {
+                                    const group = teacher.groups[0];
+                                    if (!group) return null;
+
+                                    const groupName =
+                                      getGroupDisplayName(group);
+                                    const groupNumber = getGroupNumber(group);
+
+                                    return (
+                                      <span
+                                        className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 hover:from-blue-200 hover:to-blue-300 transition-all duration-200 shadow-md hover:shadow-lg border border-blue-200"
+                                        title={`حلقة: ${groupName}${groupNumber ? ` - رقم ${groupNumber}` : ''}`}
+                                      >
+                                        <span className="font-bold">
+                                          {groupName}
+                                        </span>
+                                        {groupNumber && (
+                                          <span className="mr-2 px-2 py-0.5 bg-blue-600 text-white rounded-full text-xs font-bold">
+                                            {groupNumber}
+                                          </span>
+                                        )}
+                                      </span>
+                                    );
+                                  })()
+                                ) : (
+                                  /* عرض متعدد الحلقات في منيو */
+                                  <details className="group relative">
+                                    <summary className="cursor-pointer list-none focus:outline-none">
+                                      <span className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 hover:from-purple-200 hover:to-purple-300 transition-all duration-300 shadow-md hover:shadow-lg group-open:bg-gradient-to-r group-open:from-green-100 group-open:to-green-200 group-open:text-green-800 border border-purple-200 group-open:border-green-200">
+                                        <span className="font-bold text-purple-900 group-open:text-green-900">
+                                          {teacher.groups.length}
+                                        </span>
+                                        <span className="mr-1.5 font-medium">
+                                          حلقات
+                                        </span>
+                                        <svg
+                                          className="w-4 h-4 mr-1 transform group-open:rotate-180 transition-transform duration-300 text-purple-600 group-open:text-green-600"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          viewBox="0 0 24 24"
+                                        >
+                                          <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2.5}
+                                            d="M19 9l-7 7-7-7"
+                                          />
+                                        </svg>
+                                      </span>
+                                    </summary>
+                                    <div className="absolute top-full left-0 mt-1 z-10 w-52 bg-white border border-gray-200 rounded-xl shadow-xl max-h-48 overflow-y-auto animate-fade-in">
+                                      <div className="p-1">
+                                        <div className="px-3 py-2 text-xs font-semibold text-gray-500 bg-gray-50 rounded-t-lg border-b border-gray-100">
+                                          جميع الحلقات ({teacher.groups.length})
+                                        </div>
+                                        <div className="space-y-0.5 mt-1">
+                                          {teacher.groups
+                                            .map((group, index) => {
+                                              if (!group) return null;
+
+                                              const groupName =
+                                                getGroupDisplayName(group);
+                                              const groupNumber =
+                                                getGroupNumber(group);
+
+                                              return (
+                                                <div
+                                                  key={index}
+                                                  className="flex items-center justify-between p-2.5 hover:bg-blue-50 rounded-lg text-sm transition-all duration-200 cursor-pointer group/item border-b border-gray-50 last:border-b-0"
+                                                  title={`حلقة: ${groupName}${groupNumber ? ` - رقم ${groupNumber}` : ''}`}
+                                                >
+                                                  <span className="font-medium text-gray-800 group-hover/item:text-blue-800 transition-colors">
+                                                    {groupName &&
+                                                    groupName.length > 18
+                                                      ? `${groupName.substring(0, 18)}...`
+                                                      : groupName}
+                                                  </span>
+                                                  {groupNumber && (
+                                                    <span className="px-2 py-1 bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 rounded-full font-bold text-xs shadow-sm group-hover/item:from-blue-200 group-hover/item:to-blue-300 transition-all">
+                                                      {groupNumber}
+                                                    </span>
+                                                  )}
+                                                </div>
+                                              );
+                                            })
+                                            .filter(Boolean)}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </details>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="flex items-center">
+                                <svg
+                                  className="w-4 h-4 text-gray-400 ml-1"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2 2v-5m16 0h-2M4 13h2"
+                                  />
+                                </svg>
+                                <span className="text-gray-400 text-sm">
+                                  لا توجد حلقات
+                                </span>
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {teacher.residence || teacher.address || (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                onClick={() => handleEdit(teacher)}
+                                className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                                title="تعديل"
+                              >
+                                <FaEdit className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(teacher._id)}
+                                className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                                title="حذف"
+                              >
+                                <FaTrash className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             )}
           </>
         )}
@@ -2074,13 +2272,14 @@ const TeachersManagement: React.FC = () => {
             </h3>
             <p className="text-gray-600 mb-6">
               {searchTerm
-                ? "لم يتم العثور على نتائج مطابقة للبحث"
-                : "ابدأ بإضافة معلم جديد للنظام"}
+                ? 'لم يتم العثور على نتائج مطابقة للبحث'
+                : 'ابدأ بإضافة معلم جديد للنظام'}
             </p>
             {!searchTerm && (
               <button
                 onClick={() => setIsFormVisible(true)}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all shadow-lg">
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all shadow-lg"
+              >
                 <FaPlus className="w-4 h-4" />
                 إضافة معلم جديد
               </button>
@@ -2089,7 +2288,7 @@ const TeachersManagement: React.FC = () => {
         )}
 
         {/* Enhanced Responsive Pagination */}
-        {!isLoading && filteredAndSortedTeachers.length > 0 && (
+        {!isLoading && filteredAndSortedTeachers.length > 0 && totalPages > 1 && (
           <ResponsivePagination
             currentPage={currentPage}
             totalPages={totalPages}

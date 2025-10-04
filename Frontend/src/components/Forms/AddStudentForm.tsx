@@ -76,7 +76,7 @@ interface Props {
   student?: Student;
 }
 
-const EnhancedStudentForm: React.FC<Props> = ({
+const AddStudentForm: React.FC<Props> = ({
   onClose,
   onSuccess,
   student,
@@ -1363,4 +1363,4 @@ const EnhancedStudentForm: React.FC<Props> = ({
   );
 };
 
-export default EnhancedStudentForm;
+export default AddStudentForm;
