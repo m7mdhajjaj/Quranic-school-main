@@ -226,11 +226,22 @@ exports.getAllGroups = async (req, res) => {
       getStudentCountsForAllGroups(),
     ]);
 
-    // إضافة عدد الطلاب لكل حلقة باستخدام البحث السريع
-    const groupsWithStudentCount = groups.map((group) => ({
-      ...group.toObject(),
-      currentStudents: studentCountMap[group.name] || 0,
-    }));
+    // إضافة عدد الطلاب وحالة السعة لكل حلقة
+    const groupsWithStudentCount = groups.map((group) => {
+      const currentStudents = studentCountMap[group.name] || 0;
+      const capacity = group.capacity || 30;
+      const isFull = currentStudents >= capacity;
+      
+      return {
+        ...group.toObject(),
+        currentStudents,
+        capacity,
+        isFull,
+        availableSpots: Math.max(0, capacity - currentStudents),
+        capacityStatus: `${currentStudents}/${capacity}`,
+        capacityPercentage: Math.round((currentStudents / capacity) * 100),
+      };
+    });
 
     const endTime = Date.now();
     const duration = endTime - startTime;

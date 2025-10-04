@@ -914,20 +914,47 @@ const GroupManagement: React.FC = () => {
                             </span>
                           </td>
                           <td className="px-6 py-4">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
-                                  (group.currentStudents || 0) >=
-                                  (group.capacity || 30)
-                                    ? "bg-red-100 text-red-700"
-                                    : (group.currentStudents || 0) >=
-                                      (group.capacity || 30) * 0.8
-                                    ? "bg-yellow-100 text-yellow-700"
-                                    : "bg-green-100 text-green-700"
-                                }`}>
-                                <FaUserFriends className="w-3 h-3" />
-                                {group.currentStudents || 0}/
-                                {group.capacity || 30}
+                            <div className="flex flex-col gap-2">
+                              <div className="flex items-center justify-between">
+                                <span
+                                  className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
+                                    group.isFull
+                                      ? "bg-red-100 text-red-700"
+                                      : (group.capacityPercentage || 0) >= 80
+                                      ? "bg-yellow-100 text-yellow-700"
+                                      : "bg-green-100 text-green-700"
+                                  }`}>
+                                  <FaUserFriends className="w-3 h-3" />
+                                  {group.capacityStatus || `${group.currentStudents || 0}/${group.capacity || 30}`}
+                                </span>
+                                {group.isFull && (
+                                  <span className="text-red-500 text-xs font-bold">
+                                    ممتلئة
+                                  </span>
+                                )}
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2 relative">
+                                <div
+                                  className={`h-2 rounded-full transition-all duration-300 absolute top-0 left-0 ${
+                                    group.isFull
+                                      ? "bg-red-500"
+                                      : (group.capacityPercentage || 0) >= 80
+                                      ? "bg-yellow-500"
+                                      : "bg-green-500"
+                                  } ${
+                                    (group.capacityPercentage || 0) >= 100 ? "w-full" :
+                                    (group.capacityPercentage || 0) >= 90 ? "w-11/12" :
+                                    (group.capacityPercentage || 0) >= 80 ? "w-4/5" :
+                                    (group.capacityPercentage || 0) >= 70 ? "w-3/5" :
+                                    (group.capacityPercentage || 0) >= 50 ? "w-1/2" :
+                                    (group.capacityPercentage || 0) >= 30 ? "w-1/3" :
+                                    (group.capacityPercentage || 0) >= 20 ? "w-1/5" :
+                                    (group.capacityPercentage || 0) >= 10 ? "w-1/12" : "w-0"
+                                  }`}
+                                ></div>
+                              </div>
+                              <span className="text-xs text-gray-500 text-center">
+                                {group.capacityPercentage || 0}%
                               </span>
                             </div>
                           </td>
@@ -1108,21 +1135,24 @@ const GroupManagement: React.FC = () => {
                             {group.currentStudents || 0}/{group.capacity || 30}
                           </span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="w-full bg-gray-200 rounded-full h-2 relative">
                           <div
-                            className={`h-2 rounded-full transition-all ${
+                            className={`h-2 rounded-full transition-all absolute top-0 left-0 ${
                               (group.currentStudents || 0) >= (group.capacity || 30)
                                 ? "bg-red-500"
                                 : (group.currentStudents || 0) >= (group.capacity || 30) * 0.8
                                 ? "bg-yellow-500"
                                 : "bg-green-500"
-                            }`}
-                            style={{
-                              width: `${Math.min(
-                                ((group.currentStudents || 0) / (group.capacity || 30)) * 100,
-                                100
-                              )}%`,
-                            }}>
+                            } ${
+                              ((group.currentStudents || 0) / (group.capacity || 30)) * 100 >= 100 ? "w-full" :
+                              ((group.currentStudents || 0) / (group.capacity || 30)) * 100 >= 90 ? "w-11/12" :
+                              ((group.currentStudents || 0) / (group.capacity || 30)) * 100 >= 80 ? "w-4/5" :
+                              ((group.currentStudents || 0) / (group.capacity || 30)) * 100 >= 70 ? "w-3/5" :
+                              ((group.currentStudents || 0) / (group.capacity || 30)) * 100 >= 50 ? "w-1/2" :
+                              ((group.currentStudents || 0) / (group.capacity || 30)) * 100 >= 30 ? "w-1/3" :
+                              ((group.currentStudents || 0) / (group.capacity || 30)) * 100 >= 20 ? "w-1/5" :
+                              ((group.currentStudents || 0) / (group.capacity || 30)) * 100 >= 10 ? "w-1/12" : "w-0"
+                            }`}>
                           </div>
                         </div>
                       </div>

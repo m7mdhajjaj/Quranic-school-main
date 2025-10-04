@@ -12,6 +12,10 @@ export interface Group {
   schedule?: string;
   isActive: boolean;
   currentStudents?: number; // عدد الطلاب المشتركين في الحلقة
+  isFull?: boolean; // هل الحلقة ممتلئة؟
+  availableSpots?: number; // عدد الأماكن المتاحة
+  capacityStatus?: string; // حالة السعة مثل "25/30"
+  capacityPercentage?: number; // نسبة الإشغال المئوية
   createdAt: Date;
   updatedAt: Date;
 }
@@ -94,7 +98,7 @@ export const createGroup = async (
     const axiosError = error as AxiosError<{
       message?: string;
       error?: string;
-      details?: any;
+      details?: Record<string, unknown>;
     }>;
 
     // تسجيل تفاصيل أكثر عن الخطأ

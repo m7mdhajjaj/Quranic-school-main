@@ -147,7 +147,17 @@ export const studentValidationSchema = yup.object({
     .when('$isNewStudent', {
       is: true,
       then: (schema) => schema.required('كلمة المرور مطلوبة'),
-      otherwise: (schema) => schema.nullable(),
+      otherwise: (schema) => schema.nullable().notRequired(),
+    })
+    .test('password-for-new-student', 'كلمة المرور مطلوبة للطلاب الجدد', function(value) {
+      const { isNewStudent } = this.options.context || {};
+      console.log('🔍 password test - isNewStudent:', isNewStudent, 'value:', value);
+      
+      // إذا كان طالب جديد يجب أن تكون كلمة المرور موجودة
+      if (isNewStudent && (!value || value.trim() === '')) {
+        return false;
+      }
+      return true;
     }),
     
   age: yup
@@ -191,6 +201,9 @@ export const validateStudentWithYup = async (
   isNewStudent: boolean = false
 ): Promise<{ isValid: boolean; errors: Record<string, string>; data?: StudentFormData }> => {
   try {
+    console.log('🔍 التحقق من البيانات - isNewStudent:', isNewStudent);
+    console.log('🔍 البيانات المُدخلة:', JSON.stringify(data, null, 2));
+    
     const validData = await studentValidationSchema.validate(data, {
       abortEarly: false,
       context: { isNewStudent },

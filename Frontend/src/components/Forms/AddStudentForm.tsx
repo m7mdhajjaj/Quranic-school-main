@@ -382,6 +382,25 @@ const AddStudentForm: React.FC<Props> = ({
   };
 
   const handleSubmit = async () => {
+    // التحقق من صحة الخطوة الأولى
+    if (!isStep1Valid) {
+      const step1Fields = [
+        'firstName',
+        'fatherName', 
+        'grandFatherName',
+        'motherName',
+        'lastName',
+        'idNumber',
+        'birthDate',
+        'gender', 
+        'residence',
+      ];
+      setTouchedFields((prev) => new Set([...prev, ...step1Fields]));
+      setCurrentStep(1); // الرجوع للخطوة الأولى
+      return;
+    }
+
+    // التحقق من صحة الخطوة الثانية
     if (!isStep2Valid) {
       const step2Fields = ['teacher', 'group', 'phoneNumber'];
       setTouchedFields((prev) => new Set([...prev, ...step2Fields]));
@@ -397,8 +416,11 @@ const AddStudentForm: React.FC<Props> = ({
       const dataToValidate = {
         ...formData,
         age: calculatedAge,
-        password: !student ? formData.idNumber : undefined,
+        password: !student ? (formData.idNumber || '') : undefined,
       };
+
+      console.log('🔍 البيانات قبل التحقق:', JSON.stringify(dataToValidate, null, 2));
+      console.log('🔍 هل هو طالب جديد؟', !student);
 
       const result = await validateStudentWithYup(dataToValidate, !student);
 
@@ -412,6 +434,10 @@ const AddStudentForm: React.FC<Props> = ({
       // If validation passes, call API
       let apiResult;
       try {
+        // إضافة logging للتشخيص
+        console.log('🔍 البيانات المُرسلة إلى API:', JSON.stringify(result.data, null, 2));
+        console.log('🔍 نوع العملية:', student && student._id ? 'تحديث' : 'إنشاء جديد');
+        
         if (student && student._id) {
           // Update existing student
           apiResult = await updateStudent(student._id, result.data!);
@@ -1046,10 +1072,14 @@ const AddStudentForm: React.FC<Props> = ({
                         </option>
                       ) : (
                         groups.map((group) => (
-                          <option key={group._id} value={group.name}>
+                          <option 
+                            key={group._id} 
+                            value={group.name}
+                            disabled={group.isFull}
+                          >
                             {group.name}
-                            {group.currentStudents !== undefined &&
-                              ` (${group.currentStudents} طالب)`}
+                            {group.capacityStatus && ` (${group.capacityStatus})`}
+                            {group.isFull && ' - ممتلئة!'}
                             {group.schedule && ` - ${group.schedule}`}
                           </option>
                         ))
@@ -1059,6 +1089,40 @@ const AddStudentForm: React.FC<Props> = ({
                       <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
                         <AlertCircle size={12} />
                         <span>{getFieldError('group')}</span>
+                      </div>
+                    )}
+                    
+                    {/* تحذير للحلقة الممتلئة */}
+                    {formData.group && groups.find(g => g.name === formData.group)?.isFull && (
+                      <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <div className="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center">
+                          <AlertCircle size={14} className="text-red-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-red-800 font-medium text-sm">
+                            تحذير: الحلقة المختارة ممتلئة!
+                          </p>
+                          <p className="text-red-600 text-xs mt-1">
+                            لا يمكن إضافة طلاب جدد لهذه الحلقة حالياً
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* معلومات السعة للحلقة المختارة */}
+                    {formData.group && !groups.find(g => g.name === formData.group)?.isFull && (
+                      <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                          <Check size={14} className="text-green-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-green-800 font-medium text-sm">
+                            الحلقة متاحة ({groups.find(g => g.name === formData.group)?.capacityStatus})
+                          </p>
+                          <p className="text-green-600 text-xs mt-1">
+                            يمكن إضافة {groups.find(g => g.name === formData.group)?.availableSpots} طالب إضافي
+                          </p>
+                        </div>
                       </div>
                     )}
                   </div>

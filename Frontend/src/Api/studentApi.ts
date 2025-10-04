@@ -75,11 +75,23 @@ export const getStudentById = async (id: string): Promise<{ success: boolean; da
 // Create new student
 export const createStudent = async (studentData: StudentFormData): Promise<{ success: boolean; data?: Student; message?: string }> => {
   try {
+    console.log('📤 إرسال بيانات الطالب إلى الخادم:', JSON.stringify(studentData, null, 2));
     const response = await api.post('/students', studentData);
+    console.log('✅ استجابة الخادم:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Error creating student:', error);
-    const axiosError = error as AxiosError<{message?: string}>;
+    console.error('❌ خطأ في إنشاء الطالب:', error);
+    const axiosError = error as AxiosError<{message?: string; details?: unknown}>;
+    
+    // تسجيل تفاصيل أكثر عن الخطأ
+    if (axiosError.response) {
+      console.error('🔍 تفاصيل الخطأ من الخادم:');
+      console.error('   - كود الحالة:', axiosError.response.status);
+      console.error('   - الرسالة:', axiosError.response.data?.message);
+      console.error('   - التفاصيل:', axiosError.response.data?.details);
+      console.error('   - البيانات الكاملة:', axiosError.response.data);
+    }
+    
     return {
       success: false,
       message: axiosError.response?.data?.message || 'حدث خطأ أثناء إنشاء الطالب'

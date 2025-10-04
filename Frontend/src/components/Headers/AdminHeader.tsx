@@ -29,17 +29,24 @@ const AdminHeader: React.FC = () => {
   const handleLogout = useCallback(async () => {
     const confirmed = await showLogoutConfirmation({
       userType: 'admin',
+      userName: currentUser?.firstName || 'المدير',
+      customMessage: 'ستحتاج إلى إعادة تسجيل الدخول للوصول لوحة التحكم مرة أخرى',
       onConfirm: () => {
         setProfileMenuOpen(false);
         setMobileMenuOpen(false);
         authLogout();
       },
+      onCancel: () => {
+        console.log('👤 المدير ألغى عملية تسجيل الخروج');
+      }
     });
 
     if (!confirmed) {
-      console.log('تم إلغاء تسجيل الخروج');
+      console.log('❌ تم إلغاء تسجيل الخروج من قبل المدير');
+    } else {
+      console.log('✅ تم تسجيل خروج المدير بنجاح');
     }
-  }, [authLogout]);
+  }, [authLogout, currentUser]);
 
   // Redirect if not authenticated
   useEffect(() => {

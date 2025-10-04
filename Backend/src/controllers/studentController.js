@@ -156,6 +156,17 @@ exports.createStudent = async (req, res) => {
           }". يجب أن يكون الطالب في حلقة تابعة لنفس المعلم.`,
         });
       }
+
+      // التحقق من سعة الحلقة
+      const currentStudentCount = await Student.countDocuments({ group: group });
+      const capacity = groupData.capacity || 30; // السعة الافتراضية 30
+      
+      if (currentStudentCount >= capacity) {
+        return res.status(400).json({
+          success: false,
+          message: `الحلقة "${group}" ممتلئة! العدد الحالي: ${currentStudentCount}/${capacity}. لا يمكن إضافة المزيد من الطلاب.`,
+        });
+      }
     }
 
     const studentData = {
@@ -174,6 +185,10 @@ exports.createStudent = async (req, res) => {
     const student = new Student(studentData);
     const newStudent = await student.save();
     console.log("Student created successfully:", newStudent._id);
+
+    // إبطال cache عدد الطلاب في الحلقات
+    const { invalidateStudentCountsCache } = require('./groupController');
+    invalidateStudentCountsCache();
 
     // Emit socket event for real-time updates
     if (global.io) {
@@ -292,6 +307,20 @@ exports.updateStudent = async (req, res) => {
           }". يجب أن يكون الطالب في حلقة تابعة لنفس المعلم.`,
         });
       }
+
+      // التحقق من سعة الحلقة الجديدة (فقط إذا تم تغيير الحلقة)
+      const currentStudent = await Student.findById(req.params.id);
+      if (currentStudent && currentStudent.group !== group) {
+        const currentStudentCount = await Student.countDocuments({ group: group });
+        const capacity = groupData.capacity || 30;
+        
+        if (currentStudentCount >= capacity) {
+          return res.status(400).json({
+            success: false,
+            message: `الحلقة "${group}" ممتلئة! العدد الحالي: ${currentStudentCount}/${capacity}. لا يمكن نقل الطالب إلى هذه الحلقة.`,
+          });
+        }
+      }
     }
 
     const updatedStudent = await Student.findByIdAndUpdate(
@@ -310,6 +339,10 @@ exports.updateStudent = async (req, res) => {
         message: "الطالب غير موجود",
       });
     }
+
+    // إبطال cache عدد الطلاب في الحلقات
+    const { invalidateStudentCountsCache } = require('./groupController');
+    invalidateStudentCountsCache();
 
     // Emit socket event for real-time updates
     if (global.io) {
@@ -360,6 +393,10 @@ exports.deleteStudent = async (req, res) => {
     if (!deletedStudent) {
       return res.status(404).json({ message: "Student not found" });
     }
+
+    // إبطال cache عدد الطلاب في الحلقات
+    const { invalidateStudentCountsCache } = require('./groupController');
+    invalidateStudentCountsCache();
 
     // Emit socket event for real-time updates
     if (global.io) {
