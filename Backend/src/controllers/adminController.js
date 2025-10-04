@@ -1,5 +1,6 @@
 const Admin = require("../models/Admin");
 const bcrypt = require("bcryptjs");
+const { validateAndCheckDuplicates } = require("../utils/duplicateChecker");
 
 // Calculate age from birth date
 const calculateAge = (birthDate) => {
@@ -100,17 +101,9 @@ exports.createAdmin = async (req, res) => {
       }
     }
 
-    // duplicates
-    if (await Admin.findOne({ email })) {
-      return res
-        .status(400)
-        .json({ success: false, message: "البريد الإلكتروني مستخدم بالفعل" });
-    }
-    if (await Admin.findOne({ phoneNumber })) {
-      return res
-        .status(400)
-        .json({ success: false, message: "رقم الهاتف مستخدم بالفعل" });
-    }
+    // التحقق من تكرار البيانات الفريدة عبر جميع أنواع المستخدمين
+    const hasDuplicates = await validateAndCheckDuplicates(req, res, { idNumber, phoneNumber, email });
+    if (hasDuplicates) return; // تم إرسال استجابة الخطأ بالفعل
 
     // adminId + password
     const adminId = await generateAdminId();
@@ -162,6 +155,11 @@ exports.updateAdmin = async (req, res) => {
   try {
     const id = req.params.id;
     const updates = { ...req.body };
+
+    // التحقق من تكرار البيانات الفريدة عبر جميع أنواع المستخدمين (مع استثناء المدير الحالي)
+    const { idNumber, phoneNumber, email } = updates;
+    const hasDuplicates = await validateAndCheckDuplicates(req, res, { idNumber, phoneNumber, email }, id, 'admin');
+    if (hasDuplicates) return; // تم إرسال استجابة الخطأ بالفعل
 
     // Remove password field from updates if it's empty or undefined
     if (!updates.password) {

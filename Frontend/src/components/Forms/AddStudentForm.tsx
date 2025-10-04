@@ -103,6 +103,7 @@ const AddStudentForm: React.FC<Props> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [hasRetryableError, setHasRetryableError] = useState(false);
+  const [duplicateFieldInfo, setDuplicateFieldInfo] = useState<{field: string; userType: string; userName?: string} | null>(null);
 
   // States for dropdowns
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -346,6 +347,7 @@ const AddStudentForm: React.FC<Props> = ({
           (name === 'idNumber' || name === 'email' || name === 'phoneNumber')
         ) {
           setHasRetryableError(false);
+          setDuplicateFieldInfo(null);
         }
       }
     },
@@ -388,6 +390,7 @@ const AddStudentForm: React.FC<Props> = ({
 
     setIsSubmitting(true);
     setHasRetryableError(false); // إعادة تعيين حالة الخطأ القابل للتصحيح
+    setDuplicateFieldInfo(null); // إعادة تعيين معلومات التكرار
 
     try {
       // Validate form data first
@@ -436,25 +439,52 @@ const AddStudentForm: React.FC<Props> = ({
             });
             setHasRetryableError(true);
           }
-          // معالجة خطأ رقم الهوية المكرر
+          // معالجة أخطاء التكرار للحقول الحساسة (النظام الموحد الجديد)
           else if (
-            errorMessage.includes('idNumber') ||
-            errorMessage.includes('رقم الهوية')
+            errorMessage.includes('رقم الهوية') && 
+            (errorMessage.includes('مُستخدم بالفعل') || errorMessage.includes('موجود بالفعل'))
           ) {
+            // استخراج نوع المستخدم الموجود من الرسالة
+            const userType = errorMessage.includes('لطالب') ? 'طالب' :
+                           errorMessage.includes('لمعلم') ? 'معلم' :
+                           errorMessage.includes('لمدير') ? 'مدير' : 'مستخدم آخر';
+            
+            setDuplicateFieldInfo({ field: 'idNumber', userType });
             setErrors({
-              idNumber: 'رقم الهوية موجود بالفعل في النظام - يرجى تغييره',
-              general: 'يرجى تصحيح رقم الهوية والمحاولة مرة أخرى',
+              idNumber: `⚠️ رقم الهوية موجود بالفعل لدى ${userType} في النظام - يرجى استخدام رقم هوية مختلف`,
+              general: '🔄 يمكنك تعديل رقم الهوية والضغط على "المحاولة مرة أخرى" لحفظ البيانات',
             });
             setHasRetryableError(true);
           }
-          // معالجة خطأ رقم الهاتف المكرر
           else if (
-            errorMessage.includes('phoneNumber') ||
-            errorMessage.includes('رقم الهاتف')
+            errorMessage.includes('رقم الهاتف') && 
+            (errorMessage.includes('مُستخدم بالفعل') || errorMessage.includes('موجود بالفعل'))
           ) {
+            // استخراج نوع المستخدم الموجود من الرسالة
+            const userType = errorMessage.includes('لطالب') ? 'طالب' :
+                           errorMessage.includes('لمعلم') ? 'معلم' :
+                           errorMessage.includes('لمدير') ? 'مدير' : 'مستخدم آخر';
+            
+            setDuplicateFieldInfo({ field: 'phoneNumber', userType });
             setErrors({
-              phoneNumber: 'رقم الهاتف موجود بالفعل في النظام - يرجى تغييره',
-              general: 'يرجى تصحيح رقم الهاتف والمحاولة مرة أخرى',
+              phoneNumber: `⚠️ رقم الهاتف موجود بالفعل لدى ${userType} في النظام - يرجى استخدام رقم هاتف مختلف`,
+              general: '🔄 يمكنك تعديل رقم الهاتف والضغط على "المحاولة مرة أخرى" لحفظ البيانات',
+            });
+            setHasRetryableError(true);
+          }
+          else if (
+            errorMessage.includes('البريد الإلكتروني') && 
+            (errorMessage.includes('مُستخدم بالفعل') || errorMessage.includes('موجود بالفعل'))
+          ) {
+            // استخراج نوع المستخدم الموجود من الرسالة
+            const userType = errorMessage.includes('لطالب') ? 'طالب' :
+                           errorMessage.includes('لمعلم') ? 'معلم' :
+                           errorMessage.includes('لمدير') ? 'مدير' : 'مستخدم آخر';
+            
+            setDuplicateFieldInfo({ field: 'email', userType });
+            setErrors({
+              email: `⚠️ البريد الإلكتروني موجود بالفعل لدى ${userType} في النظام - يرجى استخدام بريد إلكتروني مختلف`,
+              general: '🔄 يمكنك تعديل البريد الإلكتروني والضغط على "المحاولة مرة أخرى" لحفظ البيانات',
             });
             setHasRetryableError(true);
           }
@@ -547,6 +577,12 @@ const AddStudentForm: React.FC<Props> = ({
 
   const getFieldError = (fieldName: string) => {
     return touchedFields.has(fieldName) ? errors[fieldName] : undefined;
+  };
+
+  // دالة للتحقق من كون الحقل يحتوي على خطأ تكرار
+  const isDuplicateError = (fieldName: string) => {
+    const error = getFieldError(fieldName);
+    return error && error.includes('موجود بالفعل');
   };
 
   const steps = [
@@ -660,9 +696,27 @@ const AddStudentForm: React.FC<Props> = ({
               ))}
             </ul>
             {hasRetryableError && (
-              <div className="mt-3 p-2 bg-orange-100 rounded text-sm">
-                💡 <strong>ملاحظة:</strong> يمكنك تعديل البيانات المطلوبة والضغط
-                على "المحاولة مرة أخرى" دون فقدان باقي البيانات المدخلة.
+              <div className="mt-3 space-y-2">
+                <div className="p-3 bg-orange-100 rounded-lg text-sm border-l-4 border-orange-500">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertCircle size={16} className="text-orange-600" />
+                    <strong className="text-orange-800">كيفية إصلاح المشكلة:</strong>
+                  </div>
+                  <div className="text-orange-700 space-y-1">
+                    {duplicateFieldInfo && (
+                      <p>
+                        • <strong>{
+                          duplicateFieldInfo.field === 'idNumber' ? 'رقم الهوية' :
+                          duplicateFieldInfo.field === 'phoneNumber' ? 'رقم الهاتف' :
+                          duplicateFieldInfo.field === 'email' ? 'البريد الإلكتروني' : 'الحقل'
+                        }</strong> موجود بالفعل لدى <strong>{duplicateFieldInfo.userType}</strong> آخر في النظام
+                      </p>
+                    )}
+                    <p>• قم بتعديل البيانات المطلوبة في الحقول المؤشرة أعلاه</p>
+                    <p>• اضغط على زر <strong>"المحاولة مرة أخرى"</strong> لحفظ البيانات</p>
+                    <p>• لن تفقد باقي البيانات التي أدخلتها</p>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -827,12 +881,16 @@ const AddStudentForm: React.FC<Props> = ({
                       placeholder="9 أرقام"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError('idNumber')
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50'
+                          ? isDuplicateError('idNumber')
+                            ? 'border-orange-300 focus:ring-orange-500 bg-orange-50'
+                            : 'border-red-300 focus:ring-red-500 bg-red-50'
                           : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                       }`}
                     />
                     {getFieldError('idNumber') && (
-                      <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
+                      <div className={`flex items-center gap-1 text-xs animate-fadeIn ${
+                        isDuplicateError('idNumber') ? 'text-orange-600' : 'text-red-600'
+                      }`}>
                         <AlertCircle size={12} />
                         <span>{getFieldError('idNumber')}</span>
                       </div>
@@ -1171,12 +1229,16 @@ const AddStudentForm: React.FC<Props> = ({
                       placeholder="05xxxxxxxx"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError('phoneNumber')
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50'
+                          ? isDuplicateError('phoneNumber')
+                            ? 'border-orange-300 focus:ring-orange-500 bg-orange-50'
+                            : 'border-red-300 focus:ring-red-500 bg-red-50'
                           : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                       }`}
                     />
                     {getFieldError('phoneNumber') && (
-                      <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
+                      <div className={`flex items-center gap-1 text-xs animate-fadeIn ${
+                        isDuplicateError('phoneNumber') ? 'text-orange-600' : 'text-red-600'
+                      }`}>
                         <AlertCircle size={12} />
                         <span>{getFieldError('phoneNumber')}</span>
                       </div>
@@ -1196,12 +1258,16 @@ const AddStudentForm: React.FC<Props> = ({
                       placeholder="example@email.com"
                       className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
                         getFieldError('email')
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50'
+                          ? isDuplicateError('email')
+                            ? 'border-orange-300 focus:ring-orange-500 bg-orange-50'
+                            : 'border-red-300 focus:ring-red-500 bg-red-50'
                           : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
                       }`}
                     />
                     {getFieldError('email') && (
-                      <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
+                      <div className={`flex items-center gap-1 text-xs animate-fadeIn ${
+                        isDuplicateError('email') ? 'text-orange-600' : 'text-red-600'
+                      }`}>
                         <AlertCircle size={12} />
                         <span>{getFieldError('email')}</span>
                       </div>

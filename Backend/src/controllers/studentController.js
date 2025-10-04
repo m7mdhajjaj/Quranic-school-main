@@ -1,4 +1,5 @@
 const Student = require("../models/Student");
+const { validateAndCheckDuplicates } = require("../utils/duplicateChecker");
 
 // Get all students - OPTIMIZED for performance
 exports.getStudents = async (req, res) => {
@@ -96,47 +97,10 @@ exports.createStudent = async (req, res) => {
       studentId = 100000 + (Date.now() % 100000);
     }
 
-    // التحقق من تكرار البيانات الفريدة أولاً
+    // التحقق من تكرار البيانات الفريدة عبر جميع أنواع المستخدمين
     const { idNumber, phoneNumber, email } = req.body;
-
-    // فحص تكرار رقم الهوية
-    if (idNumber) {
-      const existingByIdNumber = await Student.findOne({ idNumber });
-      if (existingByIdNumber) {
-        return res.status(400).json({
-          success: false,
-          message: `رقم الهوية "${idNumber}" مُستخدم بالفعل لطالب آخر. يرجى التحقق من البيانات.`,
-          field: "idNumber",
-          duplicateValue: idNumber,
-        });
-      }
-    }
-
-    // فحص تكرار رقم الهاتف
-    if (phoneNumber) {
-      const existingByPhone = await Student.findOne({ phoneNumber });
-      if (existingByPhone) {
-        return res.status(400).json({
-          success: false,
-          message: `رقم الهاتف "${phoneNumber}" مُستخدم بالفعل لطالب آخر.`,
-          field: "phoneNumber",
-          duplicateValue: phoneNumber,
-        });
-      }
-    }
-
-    // فحص تكرار البريد الإلكتروني (إذا موجود)
-    if (email) {
-      const existingByEmail = await Student.findOne({ email });
-      if (existingByEmail) {
-        return res.status(400).json({
-          success: false,
-          message: `البريد الإلكتروني "${email}" مُستخدم بالفعل لطالب آخر.`,
-          field: "email",
-          duplicateValue: email,
-        });
-      }
-    }
+    const hasDuplicates = await validateAndCheckDuplicates(req, res, { idNumber, phoneNumber, email });
+    if (hasDuplicates) return; // تم إرسال استجابة الخطأ بالفعل
 
     // التحقق من توافق المعلم مع الحلقة
     const { teacher, group } = req.body;
@@ -268,6 +232,11 @@ exports.updateStudent = async (req, res) => {
       // If no password provided, remove it from update data
       delete updatedData.password;
     }
+
+    // التحقق من تكرار البيانات الفريدة عبر جميع أنواع المستخدمين (مع استثناء المستخدم الحالي)
+    const { idNumber, phoneNumber, email } = updatedData;
+    const hasDuplicates = await validateAndCheckDuplicates(req, res, { idNumber, phoneNumber, email }, req.params.id, 'student');
+    if (hasDuplicates) return; // تم إرسال استجابة الخطأ بالفعل
 
     // التحقق من توافق المعلم مع الحلقة عند التعديل
     const { teacher, group } = updatedData;

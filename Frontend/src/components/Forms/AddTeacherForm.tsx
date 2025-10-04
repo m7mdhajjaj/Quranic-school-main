@@ -343,40 +343,50 @@ const EnhancedTeacherForm: React.FC<Props> = ({
         };
         if (error.response?.data?.message) {
           const errorMessage = error.response.data.message;
-          const errorField = error.response.data.field;
 
-          // معالجة أخطاء محددة (قابلة للتصحيح)
+          // معالجة أخطاء التكرار للحقول الحساسة (النظام الموحد الجديد)
           if (
-            errorMessage.includes("رقم الهوية") ||
-            errorField === "idNumber"
+            errorMessage.includes('رقم الهوية') && 
+            (errorMessage.includes('مُستخدم بالفعل') || errorMessage.includes('موجود بالفعل'))
           ) {
+            // استخراج نوع المستخدم الموجود من الرسالة
+            const userType = errorMessage.includes('لطالب') ? 'طالب' :
+                           errorMessage.includes('لمعلم') ? 'معلم' :
+                           errorMessage.includes('لمدير') ? 'مدير' : 'مستخدم آخر';
+            
             setErrors({
-              idNumber: "رقم الهوية موجود بالفعل في النظام - يرجى تغييره",
-              general: "يرجى تصحيح رقم الهوية والمحاولة مرة أخرى",
+              idNumber: `⚠️ رقم الهوية موجود بالفعل لدى ${userType} في النظام - يرجى استخدام رقم هوية مختلف`,
+              general: '🔄 يمكنك تعديل رقم الهوية والضغط على "المحاولة مرة أخرى" لحفظ البيانات',
             });
             setHasRetryableError(true);
           }
-          // معالجة خطأ رقم الهاتف المكرر
           else if (
-            errorMessage.includes("phoneNumber") ||
-            errorMessage.includes("رقم الهاتف") ||
-            errorField === "phoneNumber"
+            errorMessage.includes('رقم الهاتف') && 
+            (errorMessage.includes('مُستخدم بالفعل') || errorMessage.includes('موجود بالفعل'))
           ) {
+            // استخراج نوع المستخدم الموجود من الرسالة
+            const userType = errorMessage.includes('لطالب') ? 'طالب' :
+                           errorMessage.includes('لمعلم') ? 'معلم' :
+                           errorMessage.includes('لمدير') ? 'مدير' : 'مستخدم آخر';
+            
             setErrors({
-              phoneNumber: "رقم الهاتف موجود بالفعل في النظام - يرجى تغييره",
-              general: "يرجى تصحيح رقم الهاتف والمحاولة مرة أخرى",
+              phoneNumber: `⚠️ رقم الهاتف موجود بالفعل لدى ${userType} في النظام - يرجى استخدام رقم هاتف مختلف`,
+              general: '🔄 يمكنك تعديل رقم الهاتف والضغط على "المحاولة مرة أخرى" لحفظ البيانات',
             });
             setHasRetryableError(true);
           }
-          // معالجة خطأ البريد الإلكتروني المكرر
           else if (
-            errorMessage.includes("email") ||
-            errorMessage.includes("البريد الإلكتروني") ||
-            errorField === "email"
+            errorMessage.includes('البريد الإلكتروني') && 
+            (errorMessage.includes('مُستخدم بالفعل') || errorMessage.includes('موجود بالفعل'))
           ) {
+            // استخراج نوع المستخدم الموجود من الرسالة
+            const userType = errorMessage.includes('لطالب') ? 'طالب' :
+                           errorMessage.includes('لمعلم') ? 'معلم' :
+                           errorMessage.includes('لمدير') ? 'مدير' : 'مستخدم آخر';
+            
             setErrors({
-              email: "البريد الإلكتروني موجود بالفعل في النظام - يرجى تغييره",
-              general: "يرجى تصحيح البريد الإلكتروني والمحاولة مرة أخرى",
+              email: `⚠️ البريد الإلكتروني موجود بالفعل لدى ${userType} في النظام - يرجى استخدام بريد إلكتروني مختلف`,
+              general: '🔄 يمكنك تعديل البريد الإلكتروني والضغط على "المحاولة مرة أخرى" لحفظ البيانات',
             });
             setHasRetryableError(true);
           }
