@@ -5,7 +5,6 @@ import {
   FaFacebook,
   FaTwitter,
   FaInstagram,
-  FaHeart,
   FaCalendarAlt,
 } from "react-icons/fa";
 
