@@ -167,16 +167,8 @@ const Absence = () => {
     try {
       setError(null);
 
-      // 1) جلب طلاب المعلم فقط
-      if (!currentUser) return;
-      const teacherName = `${currentUser.firstName} ${
-        currentUser.lastName || ""
-      }`.trim();
-      const studentsRes = await api.get(
-        `/students?teacher=${encodeURIComponent(teacherName)}`
-      );
-      console.log("👩‍🏫 جلب طلاب المعلم:", teacherName);
-
+      // 1) جلب جميع الطلاب
+      const studentsRes = await api.get("/students");
       const rawStudents: Student[] = Array.isArray(studentsRes.data)
         ? studentsRes.data
         : [];
@@ -221,7 +213,6 @@ const Absence = () => {
   const fetchStudentAbsenceStats = async (studentId: string) => {
     try {
       setError(null);
-      console.log("🎓 جلب إحصائيات الغياب للطالب:", studentId);
       const res = await api.get(`/attendance/student/${studentId}`);
       const data = Array.isArray(res.data) ? res.data : [];
 
@@ -361,17 +352,10 @@ const Absence = () => {
         isPresent: s.isPresent,
       }));
 
-      const attendanceData = {
+      await api.post("/attendance", {
         date,
         records: payload,
-        teacher: `${currentUser?.firstName} ${
-          currentUser?.lastName || ""
-        }`.trim(),
-        group: currentUser?.group || "مجموعة المعلم",
-      };
-
-      console.log("💾 حفظ سجل الحضور:", attendanceData);
-      await api.post("/attendance", attendanceData);
+      });
 
       setIsEditing(false);
       setUnsavedChanges(false);
@@ -436,13 +420,13 @@ const Absence = () => {
     return { absenceCount, totalDays, rate };
   }, [monthlyStats, selectedYear]);
 
-  // صندوق صغير يبين رقم الغياب للشهر المحدد (اختياري) - تم تعطيله مؤقتاً
-  // const selectedMonthSummary = useMemo(() => {
-  //   if (filteredMonthlyStats.length === 0) {
-  //     return { absenceCount: 0, totalDays: 0, rate: 0 };
-  //   }
-  //   return filteredMonthlyStats[0];
-  // }, [filteredMonthlyStats]);
+  // صندوق صغير يبين رقم الغياب للشهر المحدد (اختياري)
+  const selectedMonthSummary = useMemo(() => {
+    if (filteredMonthlyStats.length === 0) {
+      return { absenceCount: 0, totalDays: 0, rate: 0 };
+    }
+    return filteredMonthlyStats[0];
+  }, [filteredMonthlyStats]);
 
   // ================== واجهة المستخدم ==================
   return (

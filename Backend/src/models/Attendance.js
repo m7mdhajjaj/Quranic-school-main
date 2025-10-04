@@ -15,16 +15,8 @@ const attendanceSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
-    teacher: {
-      type: String,
-      required: true,
-    },
-    group: {
-      type: String,
-      required: true,
-    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Create a compound index on studentId and date to prevent duplicate records
