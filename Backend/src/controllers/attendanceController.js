@@ -7,13 +7,20 @@ exports.createAttendance = async (req, res) => {
   try {
     console.log(
       "Received request to create attendance records:",
-      JSON.stringify(req.body, null, 2),
+      JSON.stringify(req.body, null, 2)
     );
-    const { date, records } = req.body;
+    const { date, records, teacher, group } = req.body;
+
+    console.log("💾 حفظ سجل حضور - المعلم:", teacher, "المجموعة:", group);
 
     if (!date) {
       console.log("No date provided in request");
       return res.status(400).json({ message: "التاريخ مطلوب" });
+    }
+
+    if (!teacher) {
+      console.log("No teacher provided in request");
+      return res.status(400).json({ message: "معلومات المعلم مطلوبة" });
     }
 
     if (!records || !Array.isArray(records) || records.length === 0) {
@@ -46,7 +53,7 @@ exports.createAttendance = async (req, res) => {
       });
 
       console.log(
-        `Deleted ${deleteResult.deletedCount} existing records for this date`,
+        `Deleted ${deleteResult.deletedCount} existing records for this date`
       );
     } catch (deleteError) {
       console.error("Error deleting existing records:", deleteError);
@@ -58,14 +65,16 @@ exports.createAttendance = async (req, res) => {
       studentId: record.studentId,
       date: formattedDate,
       isPresent: record.isPresent,
+      teacher: teacher,
+      group: group || "غير محدد",
     }));
 
     console.log(
-      `Prepared ${attendanceRecords.length} attendance records for insertion`,
+      `Prepared ${attendanceRecords.length} attendance records for insertion`
     );
     console.log(
       "First few records:",
-      JSON.stringify(attendanceRecords.slice(0, 3)),
+      JSON.stringify(attendanceRecords.slice(0, 3))
     );
 
     try {
@@ -84,13 +93,13 @@ exports.createAttendance = async (req, res) => {
         ordered: false,
       });
       console.log(
-        `Successfully inserted ${insertResult.length} attendance records`,
+        `Successfully inserted ${insertResult.length} attendance records`
       );
 
       // إرسال إشعارات للطلاب الغائبين
       if (global.notificationService) {
         const absentRecords = attendanceRecords.filter(
-          (record) => !record.isPresent,
+          (record) => !record.isPresent
         );
         const dateStr = formattedDate.toLocaleDateString("ar-SA");
 
@@ -99,19 +108,19 @@ exports.createAttendance = async (req, res) => {
             await global.notificationService.notifyAbsence(
               record.studentId,
               dateStr,
-              req.user?.name || "المعلم",
+              req.user?.name || "المعلم"
             );
           } catch (notificationError) {
             console.error(
               "Error sending absence notification:",
-              notificationError,
+              notificationError
             );
             // لا نريد أن يفشل حفظ الحضور بسبب مشكلة في الإشعارات
           }
         }
 
         console.log(
-          `Sent absence notifications to ${absentRecords.length} students`,
+          `Sent absence notifications to ${absentRecords.length} students`
         );
       }
 
@@ -143,7 +152,10 @@ exports.createAttendance = async (req, res) => {
 exports.getAttendanceByDate = async (req, res) => {
   try {
     const dateParam = req.params.date;
-    console.log(`Getting attendance records for date: ${dateParam}`);
+    const { teacher, group } = req.query;
+    console.log(
+      `Getting attendance records for date: ${dateParam}, teacher: ${teacher}, group: ${group}`
+    );
 
     if (!dateParam) {
       console.log("No date parameter provided");
@@ -168,15 +180,28 @@ exports.getAttendanceByDate = async (req, res) => {
     nextDay.setDate(date.getDate() + 1);
 
     try {
-      const records = await Attendance.find({
+      // بناء الاستعلام مع الفلاتر
+      const query = {
         date: {
           $gte: date,
           $lt: nextDay,
         },
-      });
+      };
+
+      if (teacher) {
+        query.teacher = decodeURIComponent(teacher);
+        console.log("👩‍🏫 فلترة بالمعلم:", query.teacher);
+      }
+
+      if (group && group !== "all") {
+        query.group = decodeURIComponent(group);
+        console.log("🎓 فلترة بالمجموعة:", query.group);
+      }
+
+      const records = await Attendance.find(query);
 
       console.log(
-        `Found ${records.length} attendance records for date: ${dateParam}`,
+        `Found ${records.length} attendance records for date: ${dateParam} with filters`
       );
       return res.json(records);
     } catch (findError) {
@@ -194,14 +219,17 @@ exports.getAttendanceByDate = async (req, res) => {
 exports.getStudentAttendance = async (req, res) => {
   try {
     const studentId = req.params.studentId;
-    console.log(`Getting attendance records for student ID: ${studentId}`);
+    const { group } = req.query;
+    console.log(
+      `Getting attendance records for student ID: ${studentId}, group filter: ${group}`
+    );
 
     // Verify that the student exists - but don't fail if not found
     try {
       const student = await Student.findById(studentId);
       if (!student) {
         console.log(
-          `Student with ID ${studentId} not found, returning empty records`,
+          `Student with ID ${studentId} not found, returning empty records`
         );
         // Instead of failing, just return empty records
         return res.json([]);
@@ -213,9 +241,17 @@ exports.getStudentAttendance = async (req, res) => {
 
     // Try to find attendance records for the student
     try {
-      const records = await Attendance.find({ studentId }).sort({ date: -1 });
+      const query = { studentId };
+
+      // فلترة بالمجموعة إذا تم توفيرها
+      if (group && group !== "all") {
+        query.group = decodeURIComponent(group);
+        console.log("🎓 فلترة سجلات الطالب بالمجموعة:", query.group);
+      }
+
+      const records = await Attendance.find(query).sort({ date: -1 });
       console.log(
-        `Found ${records.length} attendance records for student ID: ${studentId}`,
+        `Found ${records.length} attendance records for student ID: ${studentId} with group filter`
       );
       return res.json(records);
     } catch (recordError) {

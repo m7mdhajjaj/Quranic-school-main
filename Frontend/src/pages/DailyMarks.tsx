@@ -16,15 +16,7 @@ interface Student {
   group: string;
 }
 
-// Interface for Teacher data from backend
-interface Teacher {
-  _id: string;
-  teacherId: number;
-  firstName: string;
-  lastName: string;
-  groups: string[];
-  role: string;
-}
+// Interface for Teacher data from backend - removed as unused
 
 // Interface for logged-in user
 interface LoggedInUser {
