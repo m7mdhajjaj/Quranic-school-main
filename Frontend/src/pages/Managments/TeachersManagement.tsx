@@ -44,17 +44,7 @@ const getGroupDisplayName = (
   return group.name || 'حلقة غير محددة';
 };
 
-// دالة مساعدة للحصول على رقم الحلقة
-const getGroupNumber = (
-  group:
-    | string
-    | { name?: string; id?: string; number?: number }
-    | null
-    | undefined
-): string => {
-  if (!group || typeof group === 'string') return '';
-  return group.number ? ` (${group.number})` : '';
-};
+
 
 const TeachersManagement: React.FC = () => {
   const { user: currentUser } = useAuth();
@@ -1597,7 +1587,7 @@ const TeachersManagement: React.FC = () => {
         {/* Teachers Display - Grid or Table */}
         {!isLoading && filteredAndSortedTeachers.length > 0 && (
           <>
-            {/* Grid View */}
+            Grid View
             {viewMode === 'grid' && (
               <>
                 {/* Selection Info */}
@@ -1760,24 +1750,18 @@ const TeachersManagement: React.FC = () => {
                                     if (!group) return null;
                                     const groupName =
                                       getGroupDisplayName(group);
-                                    const groupNumber = getGroupNumber(group);
 
                                     return (
                                       <div
                                         key={index}
                                         className="group/item flex items-center justify-between p-1.5 bg-blue-50 hover:bg-blue-100 rounded text-xs border border-blue-200 hover:border-blue-300 transition-all duration-300 transform hover:scale-[1.02] cursor-pointer relative"
-                                        title={`${groupName}${groupNumber ? ` - رقم ${groupNumber}` : ''}`}
+                                        title={groupName}
                                       >
                                         <span className="font-medium text-blue-800 group-hover/item:text-blue-900 truncate transition-colors">
                                           {groupName && groupName.length > 12
                                             ? `${groupName.substring(0, 12)}...`
                                             : groupName}
                                         </span>
-                                        {groupNumber && (
-                                          <span className="bg-blue-600 group-hover/item:bg-blue-700 text-white px-1.5 py-0.5 rounded-full text-xs font-bold transition-colors animate-pulse group-hover/item:animate-none">
-                                            {groupNumber}
-                                          </span>
-                                        )}
 
                                         {/* Tooltip للاسم الكامل */}
                                         {groupName && groupName.length > 12 && (
@@ -1821,14 +1805,12 @@ const TeachersManagement: React.FC = () => {
                                         if (!group) return null;
                                         const groupName =
                                           getGroupDisplayName(group);
-                                        const groupNumber =
-                                          getGroupNumber(group);
 
                                         return (
                                           <div
                                             key={index + 2}
                                             className="group/extra flex items-center justify-between p-1.5 bg-green-50 hover:bg-green-100 rounded text-xs border border-green-200 hover:border-green-300 transition-all duration-300 transform hover:scale-[1.02] cursor-pointer relative"
-                                            title={`${groupName}${groupNumber ? ` - رقم ${groupNumber}` : ''}`}
+                                            title={`${groupName}`}
                                           >
                                             <span className="font-medium text-green-800 group-hover/extra:text-green-900 truncate transition-colors">
                                               {groupName &&
@@ -1836,11 +1818,6 @@ const TeachersManagement: React.FC = () => {
                                                 ? `${groupName.substring(0, 10)}...`
                                                 : groupName}
                                             </span>
-                                            {groupNumber && (
-                                              <span className="bg-green-600 group-hover/extra:bg-green-700 text-white px-1.5 py-0.5 rounded-full text-xs font-bold transition-colors">
-                                                {groupNumber}
-                                              </span>
-                                            )}
 
                                             {/* Tooltip للاسم الكامل */}
                                             {groupName &&
@@ -2064,46 +2041,46 @@ const TeachersManagement: React.FC = () => {
                             {teacher.groups &&
                             Array.isArray(teacher.groups) &&
                             teacher.groups.length > 0 ? (
-                              <div className="max-w-xs">
-                                {teacher.groups.length === 1 ? (
-                                  /* عرض حلقة واحدة فقط */
-                                  (() => {
-                                    const group = teacher.groups[0];
+                              <div className="max-w-md">
+                                {/* عرض أول حلقتين دائماً */}
+                                <div className="flex flex-wrap gap-2 mb-2">
+                                  {teacher.groups.slice(0, 2).map((group, index) => {
                                     if (!group) return null;
 
-                                    const groupName =
-                                      getGroupDisplayName(group);
-                                    const groupNumber = getGroupNumber(group);
+                                    const groupName = getGroupDisplayName(group);
 
                                     return (
-                                      <span
-                                        className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 hover:from-blue-200 hover:to-blue-300 transition-all duration-200 shadow-md hover:shadow-lg border border-blue-200"
-                                        title={`حلقة: ${groupName}${groupNumber ? ` - رقم ${groupNumber}` : ''}`}
+                                      <div
+                                        key={index}
+                                        className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 rounded-lg text-sm font-medium border border-blue-300 shadow-sm hover:shadow-md transition-all duration-200 hover:from-blue-200 hover:to-blue-300 group/card"
+                                        title={`حلقة: ${groupName}`}
                                       >
-                                        <span className="font-bold">
-                                          {groupName}
-                                        </span>
-                                        {groupNumber && (
-                                          <span className="mr-2 px-2 py-0.5 bg-blue-600 text-white rounded-full text-xs font-bold">
-                                            {groupNumber}
+                                        <div className="flex items-center gap-1.5">
+                                          <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse group-hover/card:animate-none"></div>
+                                          <span className="font-bold text-blue-900 group-hover/card:text-blue-800 transition-colors">
+                                            {groupName && groupName.length > 15
+                                              ? `${groupName.substring(0, 15)}...`
+                                              : groupName}
                                           </span>
-                                        )}
-                                      </span>
+                                        </div>
+                                      </div>
                                     );
-                                  })()
-                                ) : (
-                                  /* عرض متعدد الحلقات في منيو */
-                                  <details className="group relative">
-                                    <summary className="cursor-pointer list-none focus:outline-none">
-                                      <span className="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 hover:from-purple-200 hover:to-purple-300 transition-all duration-300 shadow-md hover:shadow-lg group-open:bg-gradient-to-r group-open:from-green-100 group-open:to-green-200 group-open:text-green-800 border border-purple-200 group-open:border-green-200">
-                                        <span className="font-bold text-purple-900 group-open:text-green-900">
-                                          {teacher.groups.length}
-                                        </span>
-                                        <span className="mr-1.5 font-medium">
-                                          حلقات
-                                        </span>
+                                  })}
+                                </div>
+
+                                {/* عرض الحلقات الإضافية في منطقة قابلة للتوسع */}
+                                {teacher.groups.length > 2 && (
+                                  <details className="group/details">
+                                    <summary className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-800 rounded-lg text-sm font-medium border border-indigo-300 cursor-pointer hover:from-indigo-200 hover:to-purple-200 transition-all duration-300 list-none shadow-sm hover:shadow-md group-open/details:bg-gradient-to-r group-open/details:from-emerald-100 group-open/details:to-green-100 group-open/details:text-emerald-800 group-open/details:border-emerald-300">
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-sm group-open/details:bg-emerald-50">
+                                          <span className="text-xs font-bold text-indigo-700 group-open/details:text-emerald-700">
+                                            +{teacher.groups.length - 2}
+                                          </span>
+                                        </div>
+                                        <span className="font-bold">حلقة أخرى</span>
                                         <svg
-                                          className="w-4 h-4 mr-1 transform group-open:rotate-180 transition-transform duration-300 text-purple-600 group-open:text-green-600"
+                                          className="w-4 h-4 transform group-open/details:rotate-180 transition-transform duration-300"
                                           fill="none"
                                           stroke="currentColor"
                                           viewBox="0 0 24 24"
@@ -2111,58 +2088,51 @@ const TeachersManagement: React.FC = () => {
                                           <path
                                             strokeLinecap="round"
                                             strokeLinejoin="round"
-                                            strokeWidth={2.5}
+                                            strokeWidth={2}
                                             d="M19 9l-7 7-7-7"
                                           />
                                         </svg>
-                                      </span>
+                                      </div>
                                     </summary>
-                                    <div className="absolute top-full left-0 mt-1 z-10 w-52 bg-white border border-gray-200 rounded-xl shadow-xl max-h-48 overflow-y-auto animate-fade-in">
-                                      <div className="p-1">
-                                        <div className="px-3 py-2 text-xs font-semibold text-gray-500 bg-gray-50 rounded-t-lg border-b border-gray-100">
-                                          جميع الحلقات ({teacher.groups.length})
-                                        </div>
-                                        <div className="space-y-0.5 mt-1">
-                                          {teacher.groups
-                                            .map((group, index) => {
-                                              if (!group) return null;
+                                    
+                                    {/* الحلقات الإضافية */}
+                                    <div className="mt-3 space-y-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                      <div className="text-xs font-semibold text-gray-600 mb-2 flex items-center gap-2">
+                                        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                                        الحلقات الإضافية ({teacher.groups.length - 2})
+                                      </div>
+                                      <div className="flex flex-wrap gap-2">
+                                        {teacher.groups.slice(2).map((group, index) => {
+                                          if (!group) return null;
 
-                                              const groupName =
-                                                getGroupDisplayName(group);
-                                              const groupNumber =
-                                                getGroupNumber(group);
+                                          const groupName = getGroupDisplayName(group);
 
-                                              return (
-                                                <div
-                                                  key={index}
-                                                  className="flex items-center justify-between p-2.5 hover:bg-blue-50 rounded-lg text-sm transition-all duration-200 cursor-pointer group/item border-b border-gray-50 last:border-b-0"
-                                                  title={`حلقة: ${groupName}${groupNumber ? ` - رقم ${groupNumber}` : ''}`}
-                                                >
-                                                  <span className="font-medium text-gray-800 group-hover/item:text-blue-800 transition-colors">
-                                                    {groupName &&
-                                                    groupName.length > 18
-                                                      ? `${groupName.substring(0, 18)}...`
-                                                      : groupName}
-                                                  </span>
-                                                  {groupNumber && (
-                                                    <span className="px-2 py-1 bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 rounded-full font-bold text-xs shadow-sm group-hover/item:from-blue-200 group-hover/item:to-blue-300 transition-all">
-                                                      {groupNumber}
-                                                    </span>
-                                                  )}
-                                                </div>
-                                              );
-                                            })
-                                            .filter(Boolean)}
-                                        </div>
+                                          return (
+                                            <div
+                                              key={index + 2}
+                                              className="inline-flex items-center gap-2 px-2.5 py-1.5 bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-800 rounded-md text-xs font-medium border border-emerald-200 shadow-sm hover:shadow-md transition-all duration-200 hover:from-emerald-200 hover:to-green-200 group/extra"
+                                              title={`حلقة: ${groupName}`}
+                                            >
+                                              <div className="flex items-center gap-1">
+                                                <div className="w-1.5 h-1.5 bg-emerald-600 rounded-full group-hover/extra:animate-pulse"></div>
+                                                <span className="font-bold text-emerald-900 group-hover/extra:text-emerald-800 transition-colors">
+                                                  {groupName && groupName.length > 12
+                                                    ? `${groupName.substring(0, 12)}...`
+                                                    : groupName}
+                                                </span>
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
                                       </div>
                                     </div>
                                   </details>
                                 )}
                               </div>
                             ) : (
-                              <div className="flex items-center">
+                              <div className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
                                 <svg
-                                  className="w-4 h-4 text-gray-400 ml-1"
+                                  className="w-5 h-5 text-gray-400"
                                   fill="none"
                                   stroke="currentColor"
                                   viewBox="0 0 24 24"
@@ -2174,8 +2144,8 @@ const TeachersManagement: React.FC = () => {
                                     d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2 2v-5m16 0h-2M4 13h2"
                                   />
                                 </svg>
-                                <span className="text-gray-400 text-sm">
-                                  لا توجد حلقات
+                                <span className="text-gray-500 text-sm font-medium">
+                                  لا توجد حلقات مخصصة
                                 </span>
                               </div>
                             )}
