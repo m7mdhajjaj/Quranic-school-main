@@ -1,29 +1,49 @@
 import React, { useState, useCallback, useMemo, useEffect } from "react";
-import { AlertCircle, X, Loader2, Check, User, Phone, Calendar, MapPin, Mail, CreditCard, ChevronRight, ChevronLeft, Users, BookOpen } from "lucide-react";
-import { 
-  validateTeacherWithYup, 
-  validateTeacherFieldWithYup
+import {
+  AlertCircle,
+  X,
+  Loader2,
+  Check,
+  User,
+  Phone,
+  Calendar,
+  MapPin,
+  Mail,
+  CreditCard,
+  ChevronRight,
+  ChevronLeft,
+  Users,
+  BookOpen,
+} from "lucide-react";
+import {
+  validateTeacherWithYup,
+  validateTeacherFieldWithYup,
 } from "../../Validation/teacherValidation";
 import type { TeacherFormData } from "../../Validation/teacherValidation";
-import { createTeacher, updateTeacher, type Teacher } from "../../Api/teacherApi";
+import {
+  createTeacher,
+  updateTeacher,
+  type Teacher,
+} from "../../Api/teacherApi";
 import { getAllGroups, type Group } from "../../Api/groupApi";
 
 // دالة لتحويل التاريخ من الخادم إلى تنسيق input[type="date"]
 const formatDateForInput = (dateValue?: string | Date): string => {
   if (!dateValue) return "";
-  
+
   try {
-    const date = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
+    const date =
+      typeof dateValue === "string" ? new Date(dateValue) : dateValue;
     if (isNaN(date.getTime())) return "";
-    
+
     // تحويل التاريخ إلى تنسيق YYYY-MM-DD
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+
     return `${year}-${month}-${day}`;
   } catch (error) {
-    console.error('خطأ في تحويل التاريخ:', error);
+    console.error("خطأ في تحويل التاريخ:", error);
     return "";
   }
 };
@@ -45,7 +65,11 @@ interface Props {
   teacher?: Teacher;
 }
 
-const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) => {
+const EnhancedTeacherForm: React.FC<Props> = ({
+  onClose,
+  onSuccess,
+  teacher,
+}) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     firstName: teacher?.firstName || "",
@@ -87,7 +111,7 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
           setAvailableGroups(result.data);
         }
       } catch (error) {
-        console.error('خطأ في جلب الحلقات:', error);
+        console.error("خطأ في جلب الحلقات:", error);
       } finally {
         setLoadingGroups(false);
       }
@@ -98,124 +122,148 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
 
   const isStep1Valid = useMemo(() => {
     const step1Fields = [
-      'firstName', 'fatherName', 'grandFatherName', 'motherName', 
-      'lastName', 'idNumber', 'birthDate', 'gender', 'residence'
+      "firstName",
+      "fatherName",
+      "grandFatherName",
+      "motherName",
+      "lastName",
+      "idNumber",
+      "birthDate",
+      "gender",
+      "residence",
     ];
-    return step1Fields.every(field => formData[field as keyof typeof formData]?.toString().trim());
+    return step1Fields.every((field) =>
+      formData[field as keyof typeof formData]?.toString().trim()
+    );
   }, [formData]);
 
   const isStep2Valid = useMemo(() => {
-    const step2Fields = ['email', 'phoneNumber'];
-    const requiredValid = step2Fields.every(field => formData[field as keyof typeof formData]?.toString().trim());
+    const step2Fields = ["email", "phoneNumber"];
+    const requiredValid = step2Fields.every((field) =>
+      formData[field as keyof typeof formData]?.toString().trim()
+    );
     const hasNoErrors = Object.keys(errors).length === 0;
     return requiredValid && hasNoErrors;
   }, [formData, errors]);
 
-  const handleChange = useCallback((
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    
-    let processedValue = value;
-    
-    if (name === 'phoneNumber') {
-      processedValue = value.replace(/\D/g, '').slice(0, 10);
-    }
-    
-    if (name === 'idNumber') {
-      // السماح بالأرقام فقط وحد أقصى 9 أرقام
-      processedValue = value.replace(/\D/g, '').slice(0, 9);
-      
-      // التحقق الفوري من طول رقم الهوية
-      if (processedValue.length > 0 && processedValue.length < 9) {
-        setErrors(prev => ({
-          ...prev,
-          idNumber: `رقم الهوية يجب أن يتكون من 9 أرقام (${processedValue.length}/9)`
-        }));
-      } else if (processedValue.length === 9) {
-        // إزالة خطأ رقم الهوية إذا كان الطول صحيحاً
-        setErrors(prev => {
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      const { name, value } = e.target;
+
+      let processedValue = value;
+
+      if (name === "phoneNumber") {
+        processedValue = value.replace(/\D/g, "").slice(0, 10);
+      }
+
+      if (name === "idNumber") {
+        // السماح بالأرقام فقط وحد أقصى 9 أرقام
+        processedValue = value.replace(/\D/g, "").slice(0, 9);
+
+        // التحقق الفوري من طول رقم الهوية
+        if (processedValue.length > 0 && processedValue.length < 9) {
+          setErrors((prev) => ({
+            ...prev,
+            idNumber: `رقم الهوية يجب أن يتكون من 9 أرقام (${processedValue.length}/9)`,
+          }));
+        } else if (processedValue.length === 9) {
+          // إزالة خطأ رقم الهوية إذا كان الطول صحيحاً
+          setErrors((prev) => {
+            const newErrors = { ...prev };
+            if (
+              newErrors.idNumber &&
+              newErrors.idNumber.includes("يجب أن يتكون من 9 أرقام")
+            ) {
+              delete newErrors.idNumber;
+            }
+            return newErrors;
+          });
+        }
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        [name]: processedValue,
+      }));
+
+      // Clear error for this field when user starts typing
+      if (errors[name]) {
+        setErrors((prev) => {
           const newErrors = { ...prev };
-          if (newErrors.idNumber && newErrors.idNumber.includes('يجب أن يتكون من 9 أرقام')) {
-            delete newErrors.idNumber;
+          delete newErrors[name];
+
+          // إزالة الخطأ العام إذا تم تصحيح الحقل الخطأ وإعادة تعيين حالة إعادة المحاولة
+          if (
+            newErrors.general &&
+            (newErrors.general.includes("تصحيح") ||
+              newErrors.general.includes("المحاولة"))
+          ) {
+            delete newErrors.general;
           }
+
+          // تحقق من وجود أخطاء أخرى قبل إعادة تعيين حالة إعادة المحاولة
+          const remainingErrors = Object.keys(newErrors).filter(
+            (key) => key !== "general"
+          );
+          if (remainingErrors.length === 0 && hasRetryableError) {
+            setHasRetryableError(false);
+          }
+
           return newErrors;
         });
       }
-    }
-    
-    setFormData((prev) => ({
-      ...prev,
-      [name]: processedValue,
-    }));
+    },
+    [errors, hasRetryableError]
+  );
 
-    // Clear error for this field when user starts typing
-    if (errors[name]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        
-        // إزالة الخطأ العام إذا تم تصحيح الحقل الخطأ وإعادة تعيين حالة إعادة المحاولة
-        if (newErrors.general && (newErrors.general.includes('تصحيح') || newErrors.general.includes('المحاولة'))) {
-          delete newErrors.general;
-        }
-        
-        // تحقق من وجود أخطاء أخرى قبل إعادة تعيين حالة إعادة المحاولة
-        const remainingErrors = Object.keys(newErrors).filter(key => key !== 'general');
-        if (remainingErrors.length === 0 && hasRetryableError) {
-          setHasRetryableError(false);
-        }
-        
-        return newErrors;
-      });
-    }
-  }, [errors, hasRetryableError]);
+  const handleBlur = useCallback(
+    async (fieldName: string) => {
+      setTouchedFields((prev) => new Set(prev).add(fieldName));
 
-  const handleBlur = useCallback(async (fieldName: string) => {
-    setTouchedFields(prev => new Set(prev).add(fieldName));
-    
-    // Validate field on blur
-    const fieldError = await validateTeacherFieldWithYup(
-      fieldName, 
-      formData[fieldName as keyof typeof formData], 
-      formData,
-      !teacher // isNewTeacher
-    );
-    
-    if (fieldError) {
-      setErrors(prev => ({ ...prev, [fieldName]: fieldError }));
-    }
-  }, [formData, teacher]);
+      // Validate field on blur
+      const fieldError = await validateTeacherFieldWithYup(
+        fieldName,
+        formData[fieldName as keyof typeof formData],
+        formData,
+        !teacher // isNewTeacher
+      );
+
+      if (fieldError) {
+        setErrors((prev) => ({ ...prev, [fieldName]: fieldError }));
+      }
+    },
+    [formData, teacher]
+  );
 
   const getFieldError = (fieldName: string): string | undefined => {
     return touchedFields.has(fieldName) ? errors[fieldName] : undefined;
   };
 
-  // دالة للتعامل مع اختيار الحلقات المتعددة
+  // دالة للتعامل مع اختيار حلقة واحدة فقط
   const handleGroupsChange = useCallback((group: Group) => {
-    setFormData(prev => {
+    setFormData((prev) => {
       const currentGroups = prev.groups || [];
-      
+
       // التحقق من وجود الحلقة في المصفوفة الحالية
-      const existingIndex = currentGroups.findIndex(g => g.id === group._id);
-      
-      let newGroups;
+      const existingIndex = currentGroups.findIndex((g) => g.id === group._id);
+
+      let newGroups: Array<{ id: string; name: string; number: number }>;
       if (existingIndex !== -1) {
-        // إزالة الحلقة إذا كانت موجودة
-        newGroups = currentGroups.filter((_, index) => index !== existingIndex);
+        // إزالة الحلقة إذا كانت موجودة (إلغاء الاختيار)
+        newGroups = [];
       } else {
-        // إضافة الحلقة إذا لم تكن موجودة
+        // إضافة حلقة واحدة فقط (استبدال أي حلقة موجودة)
         const groupData = {
           id: group._id,
           name: group.name,
-          number: 1 // يمكن تخصيصه لاحقاً
+          number: 1,
         };
-        newGroups = [...currentGroups, groupData];
+        newGroups = [groupData]; // حلقة واحدة فقط
       }
 
       return {
         ...prev,
-        groups: newGroups
+        groups: newGroups,
       };
     });
   }, []);
@@ -223,10 +271,17 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
   const handleNextStep = () => {
     if (!isStep1Valid) {
       const step1Fields = [
-        'firstName', 'fatherName', 'grandFatherName', 'motherName', 
-        'lastName', 'idNumber', 'birthDate', 'gender', 'residence'
+        "firstName",
+        "fatherName",
+        "grandFatherName",
+        "motherName",
+        "lastName",
+        "idNumber",
+        "birthDate",
+        "gender",
+        "residence",
       ];
-      setTouchedFields(prev => new Set([...prev, ...step1Fields]));
+      setTouchedFields((prev) => new Set([...prev, ...step1Fields]));
     } else {
       setCurrentStep(2);
     }
@@ -236,20 +291,18 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
     setCurrentStep(1);
   };
 
-
-
   const handleSubmit = async () => {
     if (!isStep2Valid && !hasRetryableError) {
-      const step2Fields = ['email', 'phoneNumber'];
-      setTouchedFields(prev => new Set([...prev, ...step2Fields]));
+      const step2Fields = ["email", "phoneNumber"];
+      setTouchedFields((prev) => new Set([...prev, ...step2Fields]));
       return;
     }
 
     setIsSubmitting(true);
-    
+
     // مسح الأخطاء السابقة عند بدء محاولة جديدة
     setErrors({});
-    
+
     // إعادة تعيين حالة الخطأ القابل للتصحيح فقط عند بداية محاولة جديدة
     setHasRetryableError(false);
 
@@ -284,58 +337,71 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
         // معالجة أخطاء API بشكل مفصل
         console.error("API Error:", apiError);
         setIsSubmitting(false); // تأكد من إيقاف loading
-        
-        const error = apiError as { response?: { data?: { message?: string; field?: string } } };
+
+        const error = apiError as {
+          response?: { data?: { message?: string; field?: string } };
+        };
         if (error.response?.data?.message) {
           const errorMessage = error.response.data.message;
           const errorField = error.response.data.field;
-          
+
           // معالجة أخطاء محددة (قابلة للتصحيح)
-          if (errorMessage.includes('رقم الهوية') || errorField === 'idNumber') {
-            setErrors({ 
-              idNumber: 'رقم الهوية موجود بالفعل في النظام - يرجى تغييره',
-              general: 'يرجى تصحيح رقم الهوية والمحاولة مرة أخرى' 
+          if (
+            errorMessage.includes("رقم الهوية") ||
+            errorField === "idNumber"
+          ) {
+            setErrors({
+              idNumber: "رقم الهوية موجود بالفعل في النظام - يرجى تغييره",
+              general: "يرجى تصحيح رقم الهوية والمحاولة مرة أخرى",
             });
             setHasRetryableError(true);
           }
           // معالجة خطأ رقم الهاتف المكرر
-          else if (errorMessage.includes('phoneNumber') || errorMessage.includes('رقم الهاتف') || errorField === 'phoneNumber') {
-            setErrors({ 
-              phoneNumber: 'رقم الهاتف موجود بالفعل في النظام - يرجى تغييره',
-              general: 'يرجى تصحيح رقم الهاتف والمحاولة مرة أخرى' 
+          else if (
+            errorMessage.includes("phoneNumber") ||
+            errorMessage.includes("رقم الهاتف") ||
+            errorField === "phoneNumber"
+          ) {
+            setErrors({
+              phoneNumber: "رقم الهاتف موجود بالفعل في النظام - يرجى تغييره",
+              general: "يرجى تصحيح رقم الهاتف والمحاولة مرة أخرى",
             });
             setHasRetryableError(true);
           }
           // معالجة خطأ البريد الإلكتروني المكرر
-          else if (errorMessage.includes('email') || errorMessage.includes('البريد الإلكتروني') || errorField === 'email') {
-            setErrors({ 
-              email: 'البريد الإلكتروني موجود بالفعل في النظام - يرجى تغييره',
-              general: 'يرجى تصحيح البريد الإلكتروني والمحاولة مرة أخرى' 
+          else if (
+            errorMessage.includes("email") ||
+            errorMessage.includes("البريد الإلكتروني") ||
+            errorField === "email"
+          ) {
+            setErrors({
+              email: "البريد الإلكتروني موجود بالفعل في النظام - يرجى تغييره",
+              general: "يرجى تصحيح البريد الإلكتروني والمحاولة مرة أخرى",
             });
             setHasRetryableError(true);
           }
           // معالجة أخطاء التحقق من صحة البيانات
-          else if (errorMessage.includes('التحقق من البيانات')) {
+          else if (errorMessage.includes("التحقق من البيانات")) {
             const fieldErrors: Record<string, string> = {};
-            
+
             // استخراج أخطاء الحقول الفردية من رسالة الخطأ
-            if (errorMessage.includes('رقم الهوية')) {
-              fieldErrors.idNumber = 'رقم الهوية يجب أن يتكون من 9 أرقام فقط';
+            if (errorMessage.includes("رقم الهوية")) {
+              fieldErrors.idNumber = "رقم الهوية يجب أن يتكون من 9 أرقام فقط";
             }
-            if (errorMessage.includes('رقم الهاتف')) {
-              fieldErrors.phoneNumber = 'رقم الهاتف يجب أن يبدأ بـ 05 ويتكون من 10 أرقام';
+            if (errorMessage.includes("رقم الهاتف")) {
+              fieldErrors.phoneNumber =
+                "رقم الهاتف يجب أن يبدأ بـ 05 ويتكون من 10 أرقام";
             }
-            if (errorMessage.includes('البريد الإلكتروني')) {
-              fieldErrors.email = 'البريد الإلكتروني غير صحيح';
+            if (errorMessage.includes("البريد الإلكتروني")) {
+              fieldErrors.email = "البريد الإلكتروني غير صحيح";
             }
-            
-            setErrors({ 
+
+            setErrors({
               ...fieldErrors,
-              general: 'يرجى تصحيح الحقول المؤشرة والمحاولة مرة أخرى' 
+              general: "يرجى تصحيح الحقول المؤشرة والمحاولة مرة أخرى",
             });
             setHasRetryableError(true);
-          }
-          else {
+          } else {
             setErrors({ general: errorMessage });
             setHasRetryableError(false);
           }
@@ -348,23 +414,29 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
 
       if (!apiResult.success) {
         // التحقق من رسائل خطأ التوافق
-        const message = apiResult.message || 'حدث خطأ أثناء حفظ البيانات';
-        if (message.includes('idNumber') || message.includes('رقم الهوية')) {
-          setErrors({ 
-            idNumber: 'رقم الهوية موجود بالفعل في النظام - يرجى تغييره',
-            general: 'يرجى تصحيح رقم الهوية والمحاولة مرة أخرى' 
+        const message = apiResult.message || "حدث خطأ أثناء حفظ البيانات";
+        if (message.includes("idNumber") || message.includes("رقم الهوية")) {
+          setErrors({
+            idNumber: "رقم الهوية موجود بالفعل في النظام - يرجى تغييره",
+            general: "يرجى تصحيح رقم الهوية والمحاولة مرة أخرى",
           });
           setHasRetryableError(true);
-        } else if (message.includes('phoneNumber') || message.includes('رقم الهاتف')) {
-          setErrors({ 
-            phoneNumber: 'رقم الهاتف موجود بالفعل في النظام - يرجى تغييره',
-            general: 'يرجى تصحيح رقم الهاتف والمحاولة مرة أخرى' 
+        } else if (
+          message.includes("phoneNumber") ||
+          message.includes("رقم الهاتف")
+        ) {
+          setErrors({
+            phoneNumber: "رقم الهاتف موجود بالفعل في النظام - يرجى تغييره",
+            general: "يرجى تصحيح رقم الهاتف والمحاولة مرة أخرى",
           });
           setHasRetryableError(true);
-        } else if (message.includes('email') || message.includes('البريد الإلكتروني')) {
-          setErrors({ 
-            email: 'البريد الإلكتروني موجود بالفعل في النظام - يرجى تغييره',
-            general: 'يرجى تصحيح البريد الإلكتروني والمحاولة مرة أخرى' 
+        } else if (
+          message.includes("email") ||
+          message.includes("البريد الإلكتروني")
+        ) {
+          setErrors({
+            email: "البريد الإلكتروني موجود بالفعل في النظام - يرجى تغييره",
+            general: "يرجى تصحيح البريد الإلكتروني والمحاولة مرة أخرى",
           });
           setHasRetryableError(true);
         } else {
@@ -378,27 +450,26 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
       setErrors({});
       setHasRetryableError(false);
       setShowSuccess(true);
-      
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
+
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
       await onSuccess(apiResult.data!);
       setTimeout(onClose, 300);
-      
     } catch (error: unknown) {
       console.error("Unexpected error saving teacher:", error);
-      
+
       // معالجة الأخطاء غير المتوقعة
       let errorMessage = "حدث خطأ غير متوقع أثناء حفظ البيانات";
-      
+
       if (error instanceof Error && error.message) {
         errorMessage = error.message;
-      } else if (typeof error === 'string') {
+      } else if (typeof error === "string") {
         errorMessage = error;
       }
-      
+
       setErrors({ general: errorMessage });
       setIsSubmitting(false);
-      
+
       // عدم إغلاق النموذج إذا كان الخطأ قابلاً للتصحيح
       if (!hasRetryableError) {
         // يمكن إضافة منطق إضافي هنا للأخطاء غير القابلة للتصحيح
@@ -408,7 +479,7 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
 
   const steps = [
     { number: 1, title: "المعلومات الشخصية", icon: User },
-    { number: 2, title: "التواصل والإعدادات", icon: Phone }
+    { number: 2, title: "التواصل والإعدادات", icon: Phone },
   ];
 
   return (
@@ -491,24 +562,29 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                 <Check className="text-white" size={20} />
               </div>
               <div>
-                <span className="font-bold text-lg">✨ تم حفظ البيانات بنجاح! ✨</span>
-                <p className="text-sm text-emerald-700 mt-1">جميع المعلومات محفوظة في قاعدة البيانات</p>
+                <span className="font-bold text-lg">
+                  ✨ تم حفظ البيانات بنجاح! ✨
+                </span>
+                <p className="text-sm text-emerald-700 mt-1">
+                  جميع المعلومات محفوظة في قاعدة البيانات
+                </p>
               </div>
             </div>
           </div>
         )}
 
         {Object.keys(errors).length > 0 && !showSuccess && (
-          <div className={`mx-6 mt-4 px-4 py-3 rounded-lg animate-fadeIn ${
-            hasRetryableError 
-              ? 'bg-orange-50 border border-orange-200 text-orange-700' 
-              : 'bg-red-50 border border-red-200 text-red-700'
-          }`}>
+          <div
+            className={`mx-6 mt-4 px-4 py-3 rounded-lg animate-fadeIn ${
+              hasRetryableError
+                ? "bg-orange-50 border border-orange-200 text-orange-700"
+                : "bg-red-50 border border-red-200 text-red-700"
+            }`}>
             <div className="flex items-center gap-2 mb-2">
               <AlertCircle size={20} />
               <span className="font-semibold">
-                {hasRetryableError 
-                  ? "يرجى تصحيح البيانات والمحاولة مرة أخرى:" 
+                {hasRetryableError
+                  ? "يرجى تصحيح البيانات والمحاولة مرة أخرى:"
                   : "يرجى إصلاح الأخطاء التالية:"}
               </span>
             </div>
@@ -519,7 +595,8 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
             </ul>
             {hasRetryableError && (
               <div className="mt-3 p-2 bg-orange-100 rounded text-sm">
-                💡 <strong>ملاحظة:</strong> يمكنك تعديل البيانات المطلوبة والضغط على "المحاولة مرة أخرى" دون فقدان باقي البيانات المدخلة.
+                💡 <strong>ملاحظة:</strong> يمكنك تعديل البيانات المطلوبة والضغط
+                على "المحاولة مرة أخرى" دون فقدان باقي البيانات المدخلة.
               </div>
             )}
           </div>
@@ -536,7 +613,7 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div className="space-y-1">
-                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                    <label className="flex items-center gap-1 text-sm font-medium text-gray-700">
                       <User size={14} className="text-gray-500" />
                       الاسم الأول <span className="text-red-500">*</span>
                     </label>
@@ -722,7 +799,7 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                   </div>
                   {calculatedAge && (
                     <div className="space-y-1">
-                      <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
+                      <label className="flex items-center gap-1 text-sm font-medium text-gray-700">
                         <Calendar size={14} className="text-gray-500" />
                         العمر
                       </label>
@@ -863,10 +940,10 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                   </div>
                   <div className="flex-1">
                     <h3 className="text-xl font-bold bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 bg-clip-text text-transparent mb-1">
-                      الحلقات المسؤول عنها
+                      الحلقة المسؤول عنها
                     </h3>
                     <p className="text-sm text-gray-600 font-medium">
-                      اختر الحلقات التي سيكون المعلم مسؤولاً عنها
+                      اختر الحلقة الواحدة التي سيكون المعلم مسؤولاً عنها
                     </p>
                   </div>
                   <div className="text-sm text-purple-600 font-bold px-3 py-1 bg-white rounded-full border border-purple-200 shadow-sm">
@@ -882,8 +959,12 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                           <div className="absolute inset-0 w-10 h-10 border-4 border-transparent border-r-purple-400 rounded-full animate-spin"></div>
                         </div>
                         <div className="text-center">
-                          <p className="text-purple-600 font-bold text-lg mb-1">جاري تحميل الحلقات</p>
-                          <p className="text-purple-500 text-sm">يرجى الانتظار...</p>
+                          <p className="text-purple-600 font-bold text-lg mb-1">
+                            جاري تحميل الحلقات
+                          </p>
+                          <p className="text-purple-500 text-sm">
+                            يرجى الانتظار...
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -894,8 +975,12 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                           <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner">
                             <Users className="text-purple-400" size={40} />
                           </div>
-                          <h4 className="text-lg font-bold text-gray-700 mb-2">لا توجد حلقات متاحة</h4>
-                          <p className="text-sm text-gray-500">سيتم إضافة الحلقات من قبل الإدارة لاحقاً</p>
+                          <h4 className="text-lg font-bold text-gray-700 mb-2">
+                            لا توجد حلقات متاحة
+                          </h4>
+                          <p className="text-sm text-gray-500">
+                            سيتم إضافة الحلقات من قبل الإدارة لاحقاً
+                          </p>
                         </div>
                       ) : (
                         <div className="max-h-60 overflow-y-auto custom-scrollbar">
@@ -907,20 +992,34 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                                 <div className="relative flex-shrink-0">
                                   <input
                                     type="checkbox"
-                                    checked={formData.groups?.some(g => g.id === group._id) || false}
+                                    checked={
+                                      formData.groups?.some(
+                                        (g) => g.id === group._id
+                                      ) || false
+                                    }
                                     onChange={() => handleGroupsChange(group)}
                                     className="sr-only"
                                   />
-                                  <div className={`w-6 h-6 rounded-xl border-3 transition-all duration-300 flex items-center justify-center shadow-lg ${
-                                    formData.groups?.some(g => g.id === group._id)
-                                      ? 'bg-gradient-to-br from-purple-500 to-indigo-500 border-purple-500 shadow-purple-200 scale-110'
-                                      : 'border-gray-300 group-hover:border-purple-400 bg-white group-hover:shadow-purple-100'
-                                  }`}>
-                                    {formData.groups?.some(g => g.id === group._id) && (
-                                      <Check className="text-white animate-in zoom-in duration-300" size={16} />
+                                  <div
+                                    className={`w-6 h-6 rounded-xl border-3 transition-all duration-300 flex items-center justify-center shadow-lg ${
+                                      formData.groups?.some(
+                                        (g) => g.id === group._id
+                                      )
+                                        ? "bg-gradient-to-br from-purple-500 to-indigo-500 border-purple-500 shadow-purple-200 scale-110"
+                                        : "border-gray-300 group-hover:border-purple-400 bg-white group-hover:shadow-purple-100"
+                                    }`}>
+                                    {formData.groups?.some(
+                                      (g) => g.id === group._id
+                                    ) && (
+                                      <Check
+                                        className="text-white animate-in zoom-in duration-300"
+                                        size={16}
+                                      />
                                     )}
                                   </div>
-                                  {formData.groups?.some(g => g.id === group._id) && (
+                                  {formData.groups?.some(
+                                    (g) => g.id === group._id
+                                  ) && (
                                     <div className="absolute -inset-1 bg-gradient-to-r from-purple-400 to-indigo-400 rounded-xl opacity-20 animate-pulse"></div>
                                   )}
                                 </div>
@@ -929,11 +1028,14 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                                     <h5 className="text-base font-bold text-gray-900 group-hover:text-purple-700 transition-colors truncate">
                                       {group.name}
                                     </h5>
-                                    <div className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
-                                      formData.groups?.some(g => g.id === group._id)
-                                        ? 'bg-gradient-to-r from-green-400 to-emerald-500 animate-pulse shadow-md'
-                                        : 'bg-gray-300 group-hover:bg-purple-300'
-                                    }`}></div>
+                                    <div
+                                      className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                                        formData.groups?.some(
+                                          (g) => g.id === group._id
+                                        )
+                                          ? "bg-gradient-to-r from-green-400 to-emerald-500 animate-pulse shadow-md"
+                                          : "bg-gray-300 group-hover:bg-purple-300"
+                                      }`}></div>
                                   </div>
                                   {group.description && (
                                     <p className="text-xs text-gray-600 group-hover:text-purple-600 transition-colors line-clamp-2">
@@ -942,7 +1044,10 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                                   )}
                                 </div>
                                 <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:scale-110">
-                                  <ChevronRight className="text-purple-500" size={20} />
+                                  <ChevronRight
+                                    className="text-purple-500"
+                                    size={20}
+                                  />
                                 </div>
                               </label>
                             ))}
@@ -959,9 +1064,16 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                           <Users className="text-white" size={32} />
                         </div>
                         <div>
-                          <h4 className="text-lg font-bold text-gray-700 mb-1">لم يتم اختيار أي حلقات</h4>
-                          <p className="text-sm text-gray-600">يمكن للمعلم أن يكون مسؤولاً عن عدة حلقات أو لا يكون مسؤولاً عن أي حلقة</p>
-                          <p className="text-xs text-blue-600 mt-2">اختر من القائمة أعلاه لإضافة الحلقات</p>
+                          <h4 className="text-lg font-bold text-gray-700 mb-1">
+                            لم يتم اختيار أي حلقة
+                          </h4>
+                          <p className="text-sm text-gray-600">
+                            يمكن للمعلم أن يكون مسؤولاً عن حلقة واحدة فقط أو لا
+                            يكون مسؤولاً عن أي حلقة
+                          </p>
+                          <p className="text-xs text-blue-600 mt-2">
+                            اختر من القائمة أعلاه لإضافة حلقة واحدة
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -975,8 +1087,12 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                             <Check className="text-white" size={18} />
                           </div>
                           <div>
-                            <h4 className="text-lg font-bold text-gray-900">الحلقات المختارة</h4>
-                            <p className="text-sm text-gray-600">المعلم مسؤول عن هذه الحلقات</p>
+                            <h4 className="text-lg font-bold text-gray-900">
+                              الحلقة المختارة
+                            </h4>
+                            <p className="text-sm text-gray-600">
+                              المعلم مسؤول عن هذه الحلقة
+                            </p>
                           </div>
                         </div>
                         <div className="px-4 py-2 bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-700 font-bold rounded-xl border border-purple-200">
@@ -991,38 +1107,46 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                           return group ? (
                             <div
                               key={groupData.id}
-                              className={`group relative bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-500 text-white rounded-2xl p-4 shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300 border-2 border-white/20 animate-fade-in-up`}
-                            >
+                              className={`group relative bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-500 text-white rounded-2xl p-4 shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300 border-2 border-white/20 animate-fade-in-up`}>
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                   <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center animate-pulse">
-                                    <BookOpen className="text-white drop-shadow-sm" size={20} />
+                                    <BookOpen
+                                      className="text-white drop-shadow-sm"
+                                      size={20}
+                                    />
                                   </div>
                                   <div>
-                                    <h5 className="font-bold text-white drop-shadow-sm">{groupData.name}</h5>
-                                    <p className="text-xs text-white/80">رقم الحلقة: {groupData.number}</p>
+                                    <h5 className="font-bold text-white drop-shadow-sm">
+                                      {groupData.name}
+                                    </h5>
+                                    <p className="text-xs text-white/80">
+                                      رقم الحلقة: {groupData.number}
+                                    </p>
                                   </div>
                                 </div>
                                 <button
                                   type="button"
                                   onClick={() => handleGroupsChange(group)}
                                   className="w-8 h-8 bg-red-500/20 hover:bg-red-500 rounded-xl flex items-center justify-center transition-all duration-200 group-hover:scale-110 hover:rotate-90"
-                                  title={`إزالة ${groupData.name} من القائمة`}
-                                >
-                                  <X className="text-white drop-shadow-sm" size={16} />
+                                  title={`إزالة ${groupData.name} من القائمة`}>
+                                  <X
+                                    className="text-white drop-shadow-sm"
+                                    size={16}
+                                  />
                                 </button>
                               </div>
-                              
+
                               {/* شريط متحرك */}
                               <div className="absolute bottom-0 left-0 w-0 h-1 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full group-hover:w-full transition-all duration-500"></div>
-                              
+
                               {/* تأثير الانعكاس */}
                               <div className="absolute inset-0 bg-gradient-to-t from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl pointer-events-none"></div>
                             </div>
                           ) : null;
                         })}
                       </div>
-                      
+
                       {/* إجمالي الحلقات */}
                       <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
                         <div className="flex items-center justify-between">
@@ -1030,7 +1154,9 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                             <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
                               <Check className="text-white" size={14} />
                             </div>
-                            <span className="font-medium text-green-800">إجمالي الحلقات المختارة</span>
+                            <span className="font-medium text-green-800">
+                              الحلقة المختارة
+                            </span>
                           </div>
                           <div className="px-3 py-1 bg-green-500 text-white rounded-lg font-bold text-sm">
                             {formData.groups.length} حلقة
@@ -1083,9 +1209,9 @@ const EnhancedTeacherForm: React.FC<Props> = ({ onClose, onSuccess, teacher }) =
                 onClick={handleSubmit}
                 disabled={isSubmitting || (!hasRetryableError && !isStep2Valid)}
                 className={`flex items-center gap-2 px-6 py-2.5 text-white rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
-                  hasRetryableError 
-                    ? 'bg-orange-600 hover:bg-orange-700' 
-                    : 'bg-green-600 hover:bg-green-700'
+                  hasRetryableError
+                    ? "bg-orange-600 hover:bg-orange-700"
+                    : "bg-green-600 hover:bg-green-700"
                 }`}>
                 {isSubmitting ? (
                   <>

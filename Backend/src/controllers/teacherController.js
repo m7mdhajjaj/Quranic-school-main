@@ -167,12 +167,34 @@ exports.createTeacher = async (req, res) => {
     // age
     const age = calculateAge(birthDate);
     if (birthDate && age < 18) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "يجب أن يكون عمر المعلم 18 عام على الأقل",
+      return res.status(400).json({
+        success: false,
+        message: "يجب أن يكون عمر المعلم 18 عام على الأقل",
+      });
+    }
+
+    // التحقق من أن الحلقات المضافة للمعلم الجديد لا تحتوي على معلمين آخرين
+    if (Array.isArray(groups) && groups.length > 0) {
+      const Group = require("../models/Group");
+
+      for (const groupItem of groups) {
+        const groupName =
+          typeof groupItem === "string" ? groupItem : groupItem.name;
+
+        // التحقق من وجود الحلقة مع معلم آخر
+        const existingGroup = await Group.findOne({
+          name: groupName,
+          teacher: { $exists: true, $ne: null, $ne: "" },
         });
+
+        if (existingGroup) {
+          return res.status(400).json({
+            success: false,
+            message: `الحلقة "${groupName}" مرتبطة بالفعل بمعلم آخر. لا يمكن للحلقة الواحدة أن يكون لها أكثر من معلم.`,
+            field: "groups",
+          });
+        }
+      }
     }
 
     const doc = await Teacher.create({
@@ -403,6 +425,36 @@ exports.updateTeacher = async (req, res) => {
           return group; // البيانات الجديدة (object)
         });
       }
+
+      // التحقق من أن الحلقات المضافة للمعلم لا تحتوي على معلمين آخرين
+      const Group = require("../models/Group");
+      const currentTeacher = await Teacher.findById(id);
+      if (currentTeacher) {
+        const teacherFullName = `${currentTeacher.firstName} ${currentTeacher.lastName}`;
+
+        for (const groupItem of updates.groups) {
+          const groupName =
+            typeof groupItem === "string" ? groupItem : groupItem.name;
+
+          // التحقق من وجود الحلقة مع معلم مختلف
+          const existingGroup = await Group.findOne({
+            name: groupName,
+            $and: [
+              { teacher: { $ne: currentTeacher._id.toString() } },
+              { teacher: { $ne: teacherFullName } },
+              { teacher: { $exists: true, $ne: null, $ne: "" } },
+            ],
+          });
+
+          if (existingGroup) {
+            return res.status(400).json({
+              success: false,
+              message: `الحلقة "${groupName}" مرتبطة بالفعل بمعلم آخر. لا يمكن للحلقة الواحدة أن يكون لها أكثر من معلم.`,
+              field: "groups",
+            });
+          }
+        }
+      }
     }
 
     const updated = await Teacher.findByIdAndUpdate(
@@ -575,12 +627,10 @@ exports.deleteTeacher = async (req, res) => {
       console.log("📡 Teacher deleted event emitted via socket");
     }
 
-    return res
-      .status(200)
-      .json({
-        success: true,
-        message: "تم حذف المعلم نهائياً من قاعدة البيانات",
-      });
+    return res.status(200).json({
+      success: true,
+      message: "تم حذف المعلم نهائياً من قاعدة البيانات",
+    });
   } catch (error) {
     console.error("Error deleting teacher:", error);
     return res

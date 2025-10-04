@@ -81,6 +81,44 @@ exports.createGroup = async (req, res) => {
       });
     }
 
+    // التحقق من أن المعلم ليس لديه حلقة أخرى بنفس الاسم
+    console.log("🔍 التحقق من تفرد المعلم للحلقة");
+    const teacherFullName = `${teacherExists.firstName} ${teacherExists.lastName}`;
+    const existingGroupByTeacher = await Group.findOne({
+      name: name,
+      $or: [
+        { teacher: teacher },
+        { teacher: teacherExists._id.toString() },
+        { teacher: teacherFullName },
+        { teacherName: teacherFullName },
+      ],
+    });
+
+    if (existingGroupByTeacher) {
+      return res.status(400).json({
+        success: false,
+        message: `الحلقة "${name}" مرتبطة بالفعل بهذا المعلم. لا يمكن للحلقة الواحدة أن يكون لها أكثر من معلم.`,
+      });
+    }
+
+    // التحقق من أن الحلقة ليس لها معلم آخر
+    const existingGroupWithDifferentTeacher = await Group.findOne({
+      name: name,
+      $and: [
+        { teacher: { $ne: teacher } },
+        { teacher: { $ne: teacherExists._id.toString() } },
+        { teacher: { $ne: teacherFullName } },
+        { teacher: { $exists: true, $ne: null, $ne: "" } },
+      ],
+    });
+
+    if (existingGroupWithDifferentTeacher) {
+      return res.status(400).json({
+        success: false,
+        message: `الحلقة "${name}" مرتبطة بالفعل بمعلم آخر. لا يمكن للحلقة الواحدة أن يكون لها أكثر من معلم.`,
+      });
+    }
+
     // إنشاء حلقة جديدة
     console.log("📝 إنشاء الحلقة في قاعدة البيانات...");
     const group = await Group.create({
@@ -263,6 +301,71 @@ exports.updateGroup = async (req, res) => {
     if (updates.capacity) {
       updates.capacity = parseInt(updates.capacity);
       console.log("🔢 تحويل السعة إلى رقم:", updates.capacity);
+    }
+
+    // إذا كان التحديث يشمل المعلم أو اسم الحلقة، نحتاج للتحقق من القيود
+    if (updates.teacher || updates.name) {
+      const currentGroup = await Group.findById(id);
+      if (!currentGroup) {
+        return res.status(404).json({
+          success: false,
+          message: "الحلقة غير موجودة",
+        });
+      }
+
+      const groupName = updates.name || currentGroup.name;
+      const teacherToCheck = updates.teacher || currentGroup.teacher;
+
+      if (teacherToCheck) {
+        // التحقق من أن الحلقة لن تكون لها أكثر من معلم واحد
+        const Teacher = require("../models/Teacher");
+        let teacherExists = null;
+
+        // البحث عن المعلم
+        if (teacherToCheck.match(/^[0-9a-fA-F]{24}$/)) {
+          teacherExists = await Teacher.findById(teacherToCheck);
+        } else {
+          const nameParts = teacherToCheck.trim().split(/\s+/);
+          const firstName = nameParts[0] || "";
+          const lastName = nameParts.slice(1).join(" ") || "";
+
+          if (firstName && lastName) {
+            teacherExists = await Teacher.findOne({
+              $and: [
+                { firstName: { $regex: `^${firstName}$`, $options: "i" } },
+                { lastName: { $regex: `^${lastName}$`, $options: "i" } },
+              ],
+            });
+          } else if (firstName) {
+            teacherExists = await Teacher.findOne({
+              firstName: { $regex: `^${firstName}$`, $options: "i" },
+            });
+          }
+        }
+
+        if (teacherExists) {
+          const teacherFullName = `${teacherExists.firstName} ${teacherExists.lastName}`;
+
+          // التحقق من عدم وجود حلقة بنفس الاسم مع معلم مختلف
+          const conflictingGroup = await Group.findOne({
+            name: groupName,
+            _id: { $ne: id }, // استثناء الحلقة الحالية
+            $and: [
+              { teacher: { $ne: teacherToCheck } },
+              { teacher: { $ne: teacherExists._id.toString() } },
+              { teacher: { $ne: teacherFullName } },
+              { teacher: { $exists: true, $ne: null, $ne: "" } },
+            ],
+          });
+
+          if (conflictingGroup) {
+            return res.status(400).json({
+              success: false,
+              message: `الحلقة "${groupName}" مرتبطة بالفعل بمعلم آخر. لا يمكن للحلقة الواحدة أن يكون لها أكثر من معلم.`,
+            });
+          }
+        }
+      }
     }
 
     const group = await Group.findByIdAndUpdate(id, updates, {
