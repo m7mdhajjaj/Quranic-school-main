@@ -21,7 +21,6 @@ import AddGroupForm from "../../components/Forms/AddGroupForm";
 import ResponsivePagination from "../../components/Pagination/ResponsivePagination";
 import { getAllGroups, deleteGroup, type Group } from "../../Api/groupApi";
 import { type GroupFormData } from "../../Validation/groupValidation";
-import Swal from "sweetalert2";
 import "../../styles/sweetalert.css";
 import { showCenteredSwal, showSuccessMessage, showErrorMessage } from "../../utils/sweetalertUtils";
 

@@ -25,10 +25,8 @@ import type { Teacher } from '../../Api/teacherApi';
 import type { TeacherFormData } from '../../Validation/teacherValidation';
 import EnhancedTeacherForm from '../../components/Forms/AddTeacherForm';
 import ResponsivePagination from '../../components/Pagination/ResponsivePagination';
-import CustomSnackbar from '../../components/Snackbar/CustomSnackbar';
-import Swal from 'sweetalert2';
 import "../../styles/sweetalert.css";
-import { showCenteredSwal, showSuccessMessage, showErrorMessage, showWarningMessage } from "../../utils/sweetalertUtils";
+import { showCenteredSwal, showSuccessMessage, showErrorMessage } from "../../utils/sweetalertUtils";
 
 type SortField = 'teacherId' | 'firstName' | 'age' | 'email';
 type SortOrder = 'asc' | 'desc';
@@ -90,35 +88,7 @@ const TeachersManagement: React.FC = () => {
     new Set()
   );
 
-  // Snackbar States
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: '',
-    title: '',
-    severity: 'success' as 'success' | 'error' | 'warning' | 'info',
-    actionType: 'general' as 'add' | 'edit' | 'delete' | 'general',
-  });
 
-  // Helper function to show snackbar
-  const showSnackbar = (
-    message: string,
-    title: string,
-    severity: 'success' | 'error' | 'warning' | 'info' = 'success',
-    actionType: 'add' | 'edit' | 'delete' | 'general' = 'general'
-  ) => {
-    setSnackbar({
-      open: true,
-      message,
-      title,
-      severity,
-      actionType,
-    });
-  };
-
-  // Close snackbar
-  const handleSnackbarClose = () => {
-    setSnackbar(prev => ({ ...prev, open: false }));
-  };
 
   // Statistics
   const stats = useMemo(() => {
@@ -435,12 +405,10 @@ const TeachersManagement: React.FC = () => {
           prevTeachers.filter((t) => t._id !== teacherId)
         );
 
-        // رسالة نجاح الحذف باستخدام Snackbar
-        showSnackbar(
-          `تم حذف المعلم ${teacherName} من النظام نهائياً بنجاح`,
-          'تم الحذف بنجاح',
-          'success',
-          'delete'
+        // رسالة نجاح الحذف
+        await showSuccessMessage(
+          'تم الحذف!',
+          `تم حذف المعلم ${teacherName} من النظام بنجاح`
         );
       } catch (deleteError: unknown) {
         console.error('❌ فشل في حذف المعلم:', deleteError);
@@ -458,24 +426,43 @@ const TeachersManagement: React.FC = () => {
         if (error.response?.status === 400 && error.response?.data?.details) {
           const { groupsCount, studentsCount } = error.response.data.details;
           
-          let relationMessage = 'المعلم مرتبط بـ: ';
-          const relations = [];
-          if (groupsCount > 0) relations.push(`${groupsCount} حلقة`);
-          if (studentsCount > 0) relations.push(`${studentsCount} طالب`);
-          relationMessage += relations.join(' و ');
-          relationMessage += '. يجب نقل الحلقات والطلاب أولاً أو تعيين معلم آخر لهم.';
 
-          showSnackbar(
-            relationMessage,
-            'لا يمكن حذف المعلم',
-            'warning'
-          );
+
+          await showCenteredSwal({
+            title: '⚠️ لا يمكن حذف المعلم ⚠️',
+            html: `
+              <div class="text-center py-4">
+                <div class="mx-auto w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mb-4 animate-pulse">
+                  <svg class="w-10 h-10 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                  </svg>
+                </div>
+                <p class="text-lg font-semibold text-gray-800 mb-2">المعلم مرتبط بـ:</p>
+                <div class="text-xl font-bold text-orange-600 mb-2">
+                  ${groupsCount > 0 ? `📚 ${groupsCount} حلقة` : ''}
+                  ${groupsCount > 0 && studentsCount > 0 ? '<br>' : ''}
+                  ${studentsCount > 0 ? `👥 ${studentsCount} طالب` : ''}
+                </div>
+                <p class="text-sm text-gray-600 mb-2">يجب نقل الحلقات والطلاب أولاً</p>
+                <p class="text-xs text-yellow-600">أو تعيين معلم آخر لهم</p>
+              </div>
+            `,
+            icon: 'warning',
+            timer: 7000,
+            timerProgressBar: true,
+            showConfirmButton: true,
+            confirmButtonText: 'فهمت',
+            customClass: {
+              popup: 'rtl-popup swal2-rtl-popup swal2-center-popup',
+              title: 'rtl-title',
+              htmlContainer: 'rtl-content',
+            },
+          });
         } else {
           // خطأ عام
-          showSnackbar(
-            error.response?.data?.message || 'حدث خطأ أثناء الحذف. يرجى المحاولة مرة أخرى.',
-            'فشل في الحذف',
-            'error'
+          await showErrorMessage(
+            'خطأ!',
+            error.response?.data?.message || 'حدث خطأ أثناء حذف المعلم'
           );
         }
       }
@@ -502,23 +489,19 @@ const TeachersManagement: React.FC = () => {
             )
           );
 
-          // رسالة نجاح التحديث باستخدام Snackbar
-          showSnackbar(
-            `تم تحديث بيانات ${('firstName' in teacherData && teacherData.firstName) || 'المعلم'} في النظام بنجاح`,
-            'تم التحديث بنجاح',
-            'success',
-            'edit'
+          // رسالة نجاح التحديث
+          await showSuccessMessage(
+            'تم التحديث!',
+            `تم تحديث بيانات ${('firstName' in teacherData && teacherData.firstName) || 'المعلم'} بنجاح`
           );
         } else {
           // للمعلمين الجدد سيتم إضافتهم بواسطة الـ API
           await fetchTeachers(); // إعادة تحميل القائمة
 
-          // رسالة نجاح الإضافة باستخدام Snackbar
-          showSnackbar(
-            `أهلاً وسهلاً! تم إضافة ${('firstName' in teacherData && teacherData.firstName) || 'المعلم الجديد'} إلى فريق العمل بنجاح`,
-            'مرحباً بالمعلم الجديد',
-            'success',
-            'add'
+          // رسالة نجاح الإضافة
+          await showSuccessMessage(
+            'مرحباً بالمعلم الجديد!',
+            `أهلاً وسهلاً! تم إضافة ${('firstName' in teacherData && teacherData.firstName) || 'المعلم الجديد'} إلى فريق العمل بنجاح`
           );
 
         }
@@ -1981,17 +1964,7 @@ const TeachersManagement: React.FC = () => {
         }
       `}</style>
 
-      {/* Custom Snackbar */}
-      <CustomSnackbar
-        open={snackbar.open}
-        onClose={handleSnackbarClose}
-        message={snackbar.message}
-        title={snackbar.title}
-        severity={snackbar.severity}
-        actionType={snackbar.actionType}
-        animation="grow"
-        showProgress={true}
-      />
+
     </div>
   );
 };
