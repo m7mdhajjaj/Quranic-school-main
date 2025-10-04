@@ -14,6 +14,7 @@ import {
   FaList,
   FaCalendar,
   FaUserFriends,
+  FaBookOpen,
 } from "react-icons/fa";
 import { useAuth } from "../../hooks/useAuth";
 import AddGroupForm from "../../components/Forms/AddGroupForm";
@@ -979,110 +980,169 @@ const GroupManagement: React.FC = () => {
           )}
           {/* Grid View */}
           {!isLoading && !error && viewMode === "grid" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-6">
               {currentGroups.length === 0 ? (
-                <div className="col-span-full bg-white rounded-2xl shadow-xl p-12 text-center">
-                  <FaUsers className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500 font-medium">لا توجد حلقات</p>
+                <div className="col-span-full bg-white rounded-2xl shadow-xl p-16 text-center">
+                  <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 mb-6">
+                    <FaUsers className="w-12 h-12 text-blue-500" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                    لا توجد حلقات
+                  </h3>
+                  <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                    لم يتم العثور على أي حلقات. قم بإضافة حلقة جديدة.
+                  </p>
                 </div>
               ) : (
                 currentGroups.map((group) => (
                   <div
                     key={group._id}
-                    className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all p-6 border border-gray-100">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
-                          <FaUsers className="w-6 h-6 text-white" />
+                    className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 transform hover:-translate-y-1">
+                    {/* Card Header with Gradient */}
+                    <div className="relative bg-gradient-to-br from-orange-500 via-red-500 to-pink-600 p-6 text-center">
+                      {/* Group Avatar */}
+                      <div className="relative inline-block mb-4">
+                        <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-xl ring-4 ring-white/30">
+                          <FaBookOpen className="w-12 h-12 text-orange-600" />
                         </div>
-                        <div>
-                          <h3 className="font-bold text-gray-900 text-lg">
-                            {group.name}
-                          </h3>
-                          <p className="text-sm text-gray-500">
-                            {group.teacher}
-                          </p>
+                        {/* Capacity Badge */}
+                        <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-white px-3 py-1 rounded-full shadow-lg">
+                          <span className="text-orange-600 font-bold text-sm">
+                            {group.capacity || 30} طالب
+                          </span>
                         </div>
                       </div>
-                      <input
-                        type="checkbox"
-                        checked={selectedGroups.has(group._id || "")}
-                        onChange={() => toggleGroupSelection(group._id || "")}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
+
+                      {/* Status Badge */}
+                      <div className="absolute top-4 right-4">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                          (group.currentStudents || 0) >= (group.capacity || 30)
+                            ? "bg-red-100 text-red-800"
+                            : (group.currentStudents || 0) >= (group.capacity || 30) * 0.8
+                            ? "bg-yellow-100 text-yellow-800" 
+                            : "bg-green-100 text-green-800"
+                        }`}>
+                          {(group.currentStudents || 0) >= (group.capacity || 30) ? 'ممتلئة' : 'متاحة'}
+                        </span>
+                      </div>
+
+                      {/* Group Name */}
+                      <h3 className="text-white text-xl font-bold mb-1 drop-shadow-lg">
+                        {group.name}
+                      </h3>
+                      <p className="text-orange-100 text-sm drop-shadow">
+                        {group.teacher || 'غير محدد'}
+                      </p>
                     </div>
 
-                    <div className="space-y-2 mb-4">
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <FaUsers className="w-4 h-4 text-purple-500" />
-                        <span>السعة القصوى: {group.capacity} طالب</span>
-                      </div>
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between text-sm">
-                          <div className="flex items-center gap-2">
-                            <FaUserFriends className="w-4 h-4 text-green-500" />
-                            <span className="text-gray-600">
-                              الطلاب المشتركين
-                            </span>
+                    {/* Card Body */}
+                    <div className="p-6 space-y-4">
+                      {/* Teacher Information */}
+                      {group.teacher && (
+                        <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
+                          <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <FaChalkboardTeacher className="w-4 h-4 text-purple-600" />
                           </div>
-                          <span
-                            className={`font-medium ${
-                              (group.currentStudents || 0) >=
-                              (group.capacity || 30)
-                                ? "text-red-600"
-                                : (group.currentStudents || 0) >=
-                                  (group.capacity || 30) * 0.8
-                                ? "text-yellow-600"
-                                : "text-green-600"
-                            }`}>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-gray-500">المعلم</p>
+                            <p className="text-sm font-semibold text-purple-700 truncate">
+                              {group.teacher}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Schedule Information */}
+                      {group.schedule && (
+                        <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <FaCalendar className="w-4 h-4 text-blue-600" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-gray-500">موعد الحلقة</p>
+                            <p className="text-sm font-semibold text-blue-700">
+                              {group.schedule}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Students Count with Progress */}
+                      <div className="p-3 bg-green-50 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <FaUserFriends className="w-4 h-4 text-green-600" />
+                            <p className="text-xs text-gray-500">الطلاب المشتركين</p>
+                          </div>
+                          <span className={`font-bold text-sm ${
+                            (group.currentStudents || 0) >= (group.capacity || 30)
+                              ? "text-red-600"
+                              : (group.currentStudents || 0) >= (group.capacity || 30) * 0.8
+                              ? "text-yellow-600"
+                              : "text-green-600"
+                          }`}>
                             {group.currentStudents || 0}/{group.capacity || 30}
                           </span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
                           <div
                             className={`h-2 rounded-full transition-all ${
-                              (group.currentStudents || 0) >=
-                              (group.capacity || 30)
+                              (group.currentStudents || 0) >= (group.capacity || 30)
                                 ? "bg-red-500"
-                                : (group.currentStudents || 0) >=
-                                  (group.capacity || 30) * 0.8
+                                : (group.currentStudents || 0) >= (group.capacity || 30) * 0.8
                                 ? "bg-yellow-500"
                                 : "bg-green-500"
                             }`}
                             style={{
                               width: `${Math.min(
-                                ((group.currentStudents || 0) /
-                                  (group.capacity || 30)) *
-                                  100,
+                                ((group.currentStudents || 0) / (group.capacity || 30)) * 100,
                                 100
                               )}%`,
-                            }}></div>
+                            }}>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <FaCalendar className="w-4 h-4 text-blue-500" />
-                        <span>{group.schedule || "غير محدد"}</span>
-                      </div>
+
+                      {/* Description */}
                       {group.description && (
-                        <p className="text-sm text-gray-500 line-clamp-2">
-                          {group.description}
-                        </p>
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <p className="text-xs text-gray-500 mb-1">الوصف</p>
+                          <p className="text-sm text-gray-700 line-clamp-2">
+                            {group.description}
+                          </p>
+                        </div>
                       )}
                     </div>
 
-                    <div className="flex gap-2 pt-4 border-t border-gray-200">
-                      <button
-                        onClick={() => handleEdit(group)}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all">
-                        <FaEdit className="w-4 h-4" />
-                        <span>تعديل</span>
-                      </button>
-                      <button
-                        onClick={() => handleDelete(group._id || "")}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all">
-                        <FaTrash className="w-4 h-4" />
-                        <span>حذف</span>
-                      </button>
+                    {/* Card Footer - Actions */}
+                    <div className="px-6 pb-6">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleEdit(group)}
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-all shadow-md hover:shadow-lg transform hover:scale-105">
+                          <FaEdit className="w-4 h-4" />
+                          <span className="font-medium">تعديل</span>
+                        </button>
+                        <button
+                          onClick={() => handleDelete(group._id || "")}
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-all shadow-md hover:shadow-lg transform hover:scale-105">
+                          <FaTrash className="w-4 h-4" />
+                          <span className="font-medium">حذف</span>
+                        </button>
+                      </div>
+
+                      {/* Checkbox for bulk selection */}
+                      <div className="mt-3 flex items-center justify-center">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedGroups.has(group._id || "")}
+                            onChange={() => toggleGroupSelection(group._id || "")}
+                            className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                          />
+                          <span className="text-sm text-gray-600">تحديد للحذف الجماعي</span>
+                        </label>
+                      </div>
                     </div>
                   </div>
                 ))

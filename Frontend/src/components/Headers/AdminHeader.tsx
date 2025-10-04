@@ -117,7 +117,7 @@ const AdminHeader: React.FC = () => {
     },
     {
       path: '/admin/settings',
-      label: 'الإعدادات',
+      label: 'إعدادات التواصل',
       icon: '⚙️',
       gradient: 'from-gray-500 to-slate-500',
     },
