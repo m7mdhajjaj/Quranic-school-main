@@ -1040,31 +1040,34 @@ const AddStudentForm: React.FC<Props> = ({
                   <Users className="text-emerald-600" size={20} />
                   اختيار الحلقة والمعلم
                 </h3>
-                <div className="bg-emerald-100 border border-emerald-300 rounded-lg p-3 mb-5">
-                  <p className="text-sm text-emerald-700 text-center">
-                    <strong>تنبيه:</strong> يجب اختيار الحلقة أولاً، ثم سيتم عرض
-                    المعلمين المتاحين لهذه الحلقة
+                <div className="bg-gradient-to-r from-blue-100 to-emerald-100 border-2 border-blue-300 rounded-xl p-4 mb-6 shadow-sm">
+                  <p className="text-sm text-blue-800 text-center font-medium">
+                    <strong>📋 تعليمات:</strong> اختر المعلم المطلوب أولاً، ثم اختر الحلقة المناسبة
                   </p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-6">
                   {/* اختيار الحلقة أولاً */}
                   <div className="space-y-1">
-                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                      <Users size={14} className="text-emerald-500" />
-                      اسم الحلقة <span className="text-red-500">*</span>
+                    <label className="block text-sm font-semibold text-gray-900 flex items-center gap-2 mb-2">
+                      <div className="w-7 h-7 bg-gradient-to-br from-emerald-500 to-green-600 rounded-lg flex items-center justify-center shadow-sm">
+                        <Users size={14} className="text-white" />
+                      </div>
+                      <span className="text-base">اختيار الحلقة الدراسية</span>
+                      <span className="text-red-500 text-lg">*</span>
                     </label>
-                    <select
-                      name="group"
-                      value={formData.group || ''}
-                      onChange={handleChange}
-                      onBlur={() => handleBlur('group')}
-                      className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
-                        getFieldError('group')
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50'
-                          : 'border-emerald-300 focus:ring-emerald-500 focus:border-emerald-500'
-                      }`}
-                      title="اختر الحلقة"
-                    >
+                    <div className="relative">
+                      <select
+                        name="group"
+                        value={formData.group || ''}
+                        onChange={handleChange}
+                        onBlur={() => handleBlur('group')}
+                        className={`w-full px-4 py-3.5 pr-12 border-2 rounded-xl transition-all duration-300 focus:outline-none focus:ring-4 text-right bg-white shadow-sm hover:shadow-md appearance-none ${
+                          getFieldError('group')
+                            ? 'border-red-400 focus:ring-red-100 focus:border-red-500 bg-red-50'
+                            : 'border-emerald-300 focus:ring-emerald-100 focus:border-emerald-500 hover:border-emerald-400'
+                        }`}
+                        title="اختر الحلقة"
+                      >
                       <option value="">اختر الحلقة أولاً...</option>
                       {loadingGroups ? (
                         <option value="" disabled>
@@ -1085,7 +1088,16 @@ const AddStudentForm: React.FC<Props> = ({
                         ))
                       )}
                     </select>
-                    {getFieldError('group') && (
+                    
+                    {/* أيقونة في الزاوية */}
+                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                      <Users size={18} className={`${
+                        formData.group ? 'text-emerald-500' : 'text-gray-400'
+                      } transition-colors duration-200`} />
+                    </div>
+                  </div>
+                  
+                  {getFieldError('group') && (
                       <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
                         <AlertCircle size={12} />
                         <span>{getFieldError('group')}</span>
@@ -1129,58 +1141,65 @@ const AddStudentForm: React.FC<Props> = ({
 
                   {/* اختيار المعلم بناءً على الحلقة */}
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700 flex items-center gap-1">
-                      <User size={14} className="text-teal-500" />
-                      اسم المعلم <span className="text-red-500">*</span>
+                    <label className="block text-sm font-semibold text-gray-900 flex items-center gap-2 mb-2">
+                      <div className="w-7 h-7 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-lg flex items-center justify-center shadow-sm">
+                        <User size={14} className="text-white" />
+                      </div>
+                      <span className="text-base">اختيار المعلم المسؤول</span>
+                      <span className="text-red-500 text-lg">*</span>
                     </label>
                     
-                    {/* معلومات الفلترة المحسنة */}
+                    {/* معلومات المعلمين المتاحين */}
                     {formData.group && (
-                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg border border-blue-200">
+                      <div className="bg-gradient-to-r from-teal-50 to-cyan-50 p-4 rounded-xl border-2 border-teal-200 shadow-sm">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                            <span className="text-blue-700 font-medium text-sm">
-                              الحلقة: <span className="font-bold text-blue-800">{formData.group}</span>
-                            </span>
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
+                              <User size={16} className="text-teal-600" />
+                            </div>
+                            <div>
+                              <p className="text-teal-800 font-semibold text-sm">المعلمين المتاحين</p>
+                              <p className="text-teal-600 text-xs">للحلقة: {formData.group}</p>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-col items-end gap-1">
                             {filteredTeachers.length > 0 ? (
-                              <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                              <span className="bg-green-100 text-green-800 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-2">
+                                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                                 {filteredTeachers.length} معلم متاح
                               </span>
                             ) : (
-                              <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
+                              <span className="bg-red-100 text-red-800 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-2">
+                                <span className="w-2 h-2 bg-red-500 rounded-full"></span>
                                 لا يوجد معلمين
+                              </span>
+                            )}
+                            {teachers.length > 0 && (
+                              <span className="text-teal-600 text-xs font-medium">
+                                📊 من إجمالي {teachers.length} معلم في النظام
                               </span>
                             )}
                           </div>
                         </div>
-                        {teachers.length > 0 && (
-                          <div className="mt-2 text-xs text-blue-600">
-                            📊 إجمالي المعلمين في النظام: <span className="font-semibold">{teachers.length}</span>
-                          </div>
-                        )}
                       </div>
                     )}
 
-                    <select
-                      name="teacher"
-                      value={formData.teacher || ''}
-                      onChange={handleChange}
-                      onBlur={() => handleBlur('teacher')}
-                      className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
-                        getFieldError('teacher')
-                          ? 'border-red-300 focus:ring-red-500 bg-red-50'
-                          : formData.group && filteredTeachers.length > 0
-                            ? 'border-teal-300 focus:ring-teal-500 focus:border-teal-500 bg-white'
-                            : 'border-gray-300 bg-gray-100 cursor-not-allowed'
-                      }`}
-                      title="اختر المعلم"
-                      disabled={!formData.group || filteredTeachers.length === 0}
-                    >
+                    <div className="relative">
+                      <select
+                        name="teacher"
+                        value={formData.teacher || ''}
+                        onChange={handleChange}
+                        onBlur={() => handleBlur('teacher')}
+                        className={`w-full px-4 py-3.5 pr-12 border-2 rounded-xl transition-all duration-300 focus:outline-none focus:ring-4 text-right bg-white shadow-sm hover:shadow-md appearance-none ${
+                          getFieldError('teacher')
+                            ? 'border-red-400 focus:ring-red-100 focus:border-red-500 bg-red-50'
+                            : formData.group && filteredTeachers.length > 0
+                              ? 'border-teal-300 focus:ring-teal-100 focus:border-teal-500 hover:border-teal-400'
+                              : 'border-gray-300 bg-gray-50 cursor-not-allowed hover:border-gray-400'
+                        }`}
+                        title="اختر المعلم"
+                        disabled={!formData.group || filteredTeachers.length === 0}
+                      >
                       <option value="">
                         {!formData.group
                           ? '👆 اختر الحلقة أولاً لرؤية المعلمين المتاحين'
@@ -1210,7 +1229,15 @@ const AddStudentForm: React.FC<Props> = ({
                       ) : null}
                     </select>
                     
-                    {getFieldError('teacher') && (
+                    {/* أيقونة في الزاوية */}
+                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                      <User size={18} className={`${
+                        formData.teacher ? 'text-teal-500' : 'text-gray-400'
+                      } transition-colors duration-200`} />
+                    </div>
+                  </div>
+                  
+                  {getFieldError('teacher') && (
                       <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
                         <AlertCircle size={12} />
                         <span>{getFieldError('teacher')}</span>

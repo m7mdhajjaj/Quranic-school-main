@@ -1672,6 +1672,8 @@ import api from "../../Api/api";
 import AddStudentFormWithYup from "../../components/Forms/AddStudentForm";
 import ResponsivePagination from "../../components/Pagination/ResponsivePagination";
 import Swal from "sweetalert2";
+import "../../styles/sweetalert.css";
+import { showSuccessMessage, showWarningMessage } from "../../utils/sweetalertUtils";
 
 interface StudentFormData {
   firstName: string;
@@ -2091,76 +2093,20 @@ const StudentsManagement: React.FC = () => {
       setCurrentPage(1);
 
       // عرض رسالة النجاح
-      await Swal.fire({
-        title: isEditMode ? "✨ تم التحديث بنجاح" : "🎉 مرحباً بالطالب الجديد",
-        html: `
-          <div class="text-center py-4 success-animation">
-            <div class="mx-auto w-24 h-24 bg-gradient-to-br from-green-100 to-emerald-200 rounded-full flex items-center justify-center mb-6 shadow-lg">
-              <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
-              </svg>
-            </div>
-            <h3 class="text-xl font-bold text-gray-800 mb-3">${isEditMode ? 'تم تحديث بيانات الطالب' : 'تم إضافة الطالب'}</h3>
-            <div class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-full font-semibold text-lg shadow-md">
-              <span class="mr-2">✨</span>
-              <span>${studentData?.firstName || 'الطالب'} ${studentData?.lastName || ''}</span>
-              <span class="mr-2">✨</span>
-            </div>
-            <p class="text-gray-600 mt-4 font-medium">تم تحديث قائمة الطلاب بنجاح</p>
-          </div>
-        `,
-        icon: "success",
-        timer: 4000,
-        timerProgressBar: true,
-        showConfirmButton: false,
-        allowOutsideClick: false,
-        customClass: {
-          popup: "swal2-success-modal rtl-popup",
-          title: "rtl-title",
-          htmlContainer: "rtl-content",
-        },
-        didOpen: () => {
-          const popup = Swal.getPopup();
-          if (popup) {
-            popup.style.position = 'fixed';
-            popup.style.top = '50%';
-            popup.style.left = '50%';
-            popup.style.transform = 'translate(-50%, -50%)';
-            popup.style.zIndex = '10000';
-          }
-        },
-      });
+      await showSuccessMessage(
+        isEditMode ? "✨ تم التحديث بنجاح" : "🎉 مرحباً بالطالب الجديد",
+        isEditMode ? 'تم تحديث بيانات الطالب' : 'تم إضافة الطالب',
+        `${studentData?.firstName || 'الطالب'} ${studentData?.lastName || ''}`
+      );
     } catch (error: unknown) {
       console.error("❌ خطأ في معالجة نجاح إضافة الطالب:", error);
       
       const errorMessage = "حدث خطأ أثناء إعادة تحميل البيانات";
-      const errorTitle = "تحذير ⚠️";
       
-      await Swal.fire({
-        title: errorTitle,
-        html: `
-          <div class="text-center py-4">
-            <div class="mx-auto w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mb-4 animate-pulse">
-              <svg class="w-10 h-10 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-              </svg>
-            </div>
-            <p class="text-lg font-semibold text-gray-800 mb-2">تم حفظ البيانات بنجاح</p>
-            <p class="text-sm text-orange-600">${errorMessage}</p>
-            <p class="text-xs text-gray-500 mt-2">يرجى تحديث الصفحة يدوياً</p>
-          </div>
-        `,
-        icon: "warning",
-        timer: 4000,
-        timerProgressBar: true,
-        showConfirmButton: true,
-        confirmButtonText: "حسناً",
-        customClass: {
-          popup: "rtl-popup",
-          title: "rtl-title",
-          confirmButton: "rtl-button",
-        },
-      });
+      await showWarningMessage(
+        "تحذير ⚠️",
+        `${errorMessage} - يرجى تحديث الصفحة يدوياً`
+      );
     }
   };
 

@@ -1,4 +1,5 @@
 import Swal from 'sweetalert2';
+import { showCenteredSwal } from './sweetalertUtils';
 
 interface LogoutConfirmationOptions {
   userType?: 'admin' | 'user';
@@ -73,7 +74,7 @@ export const showAdvancedLogoutConfirmation = async (options: LogoutConfirmation
   const isAdmin = userType === 'admin';
   const displayName = userName || (isAdmin ? 'المدير' : 'المستخدم');
   
-  const result = await Swal.fire({
+  const result = await showCenteredSwal({
     title: `وداعاً ${displayName} 👋`,
     html: `
       <div class="text-center py-4" dir="rtl">

@@ -48,7 +48,6 @@ const AddGroupForm: React.FC<AddGroupFormProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
 
   // Data loading states
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -226,11 +225,9 @@ const AddGroupForm: React.FC<AddGroupFormProps> = ({
 
         if (result.success) {
           console.log("✨ تم حفظ الحلقة بنجاح!");
-          setShowSuccess(true);
-          setTimeout(() => {
-            onSuccess(result.data);
-            onClose();
-          }, 1000);
+          // سيتم عرض رسالة النجاح من GroupManagement
+          onSuccess(result.data);
+          onClose();
         } else {
           console.log("❌ فشل في حفظ الحلقة:", result.message);
 
@@ -272,27 +269,13 @@ const AddGroupForm: React.FC<AddGroupFormProps> = ({
       formData,
       existingGroups,
       group,
+      teachers,
       onSuccess,
       onClose,
     ]
   );
 
-  // Show success message
-  if (showSuccess) {
-    return (
-      <div className="fixed inset-0 bg-white/10 backdrop-blur-sm flex items-center justify-center z-50">
-        <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-8 mx-4 text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Check className="text-green-600" size={32} />
-          </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            {group ? "تم تعديل الحلقة بنجاح!" : "تم إنشاء الحلقة بنجاح!"}
-          </h3>
-          <p className="text-gray-600">جاري إعادة توجيهك...</p>
-        </div>
-      </div>
-    );
-  }
+  // تم إزالة رسالة النجاح من هنا - ستظهر من GroupManagement بدلاً من ذلك
 
   return (
 <div className="fixed inset-0 bg-white/10 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn" dir="rtl">

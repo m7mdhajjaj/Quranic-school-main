@@ -22,6 +22,8 @@ import ResponsivePagination from "../../components/Pagination/ResponsivePaginati
 import { getAllGroups, deleteGroup, type Group } from "../../Api/groupApi";
 import { type GroupFormData } from "../../Validation/groupValidation";
 import Swal from "sweetalert2";
+import "../../styles/sweetalert.css";
+import { showCenteredSwal, showSuccessMessage, showErrorMessage } from "../../utils/sweetalertUtils";
 
 
 type SortField = "name" | "teacher" | "capacity";
@@ -209,7 +211,7 @@ const GroupManagement: React.FC = () => {
 
   // Handle delete
   const handleDelete = async (groupId: string) => {
-    const result = await Swal.fire({
+    const result = await showCenteredSwal({
       title: "تأكيد حذف الحلقة",
       text: "هل أنت متأكد من حذف هذه الحلقة؟",
       icon: "warning",
@@ -231,13 +233,10 @@ const GroupManagement: React.FC = () => {
 
         setGroups((prevGroups) => prevGroups.filter((g) => g._id !== groupId));
 
-        await Swal.fire({
-          title: "تم الحذف!",
-          text: "تم حذف الحلقة بنجاح",
-          icon: "success",
-          confirmButtonText: "موافق",
-          customClass: { popup: "rtl-popup", title: "rtl-title" },
-        });
+        await showSuccessMessage(
+          "تم الحذف!",
+          "تم حذف الحلقة بنجاح"
+        );
       } catch (deleteError: unknown) {
         console.error("❌ فشل في حذف الحلقة:", deleteError);
 
@@ -251,7 +250,7 @@ const GroupManagement: React.FC = () => {
         if (error.response?.status === 400 && error.response?.data?.details) {
           const { studentsCount } = error.response.data.details;
 
-          await Swal.fire({
+          await showCenteredSwal({
             title: "⚠️ لا يمكن حذف الحلقة ⚠️",
             html: `
               <div class="text-center py-4">
@@ -279,13 +278,10 @@ const GroupManagement: React.FC = () => {
           });
         } else {
           // خطأ عام
-          await Swal.fire({
-            title: "خطأ!",
-            text: error.response?.data?.message || "حدث خطأ أثناء حذف الحلقة",
-            icon: "error",
-            confirmButtonText: "موافق",
-            customClass: { popup: "rtl-popup", title: "rtl-title" },
-          });
+          await showErrorMessage(
+            "خطأ!",
+            error.response?.data?.message || "حدث خطأ أثناء حذف الحلقة"
+          );
         }
       }
     }
@@ -308,30 +304,19 @@ const GroupManagement: React.FC = () => {
       setSelectedGroup(null);
 
       // SweetAlert for success
-      await Swal.fire({
-        title: isEditMode ? "تم التحديث!" : "تم الإضافة!",
-        text: isEditMode
+      await showSuccessMessage(
+        isEditMode ? "تم التحديث!" : "تم الإضافة!",
+        isEditMode
           ? "تم تحديث بيانات الحلقة بنجاح"
-          : "تم إضافة الحلقة الجديدة بنجاح",
-        icon: "success",
-        timer: 2000,
-        showConfirmButton: false,
-        toast: true,
-        position: "top-end",
-        timerProgressBar: true,
-      });
+          : "تم إضافة الحلقة الجديدة بنجاح"
+      );
     } catch (error) {
       console.error("خطأ في حفظ الحلقة:", error);
 
-      await Swal.fire({
-        title: "خطأ!",
-        text: "حدث خطأ أثناء حفظ بيانات الحلقة",
-        icon: "error",
-        timer: 3000,
-        showConfirmButton: false,
-        toast: true,
-        position: "top-end",
-      });
+      await showErrorMessage(
+        "خطأ!",
+        "حدث خطأ أثناء حفظ بيانات الحلقة"
+      );
     }
   };
 
@@ -379,7 +364,7 @@ const GroupManagement: React.FC = () => {
   const handleBulkDelete = async () => {
     if (selectedGroups.size === 0) return;
 
-    const result = await Swal.fire({
+    const result = await showCenteredSwal({
       title: `حذف ${selectedGroups.size} حلقة`,
       text: "هل أنت متأكد من حذف الحلقات المحددة؟",
       icon: "warning",
@@ -401,10 +386,17 @@ const GroupManagement: React.FC = () => {
         );
         setSelectedGroups(new Set());
 
-        await Swal.fire("تم الحذف!", "تم حذف الحلقات بنجاح", "success");
+        await showSuccessMessage(
+          "تم الحذف!",
+          "تم حذف الحلقات بنجاح",
+          `${selectedGroups.size} حلقة`
+        );
       } catch (bulkDeleteError) {
         console.error("❌ فشل في حذف الحلقات:", bulkDeleteError);
-        await Swal.fire("خطأ!", "حدث خطأ أثناء حذف الحلقات", "error");
+        await showErrorMessage(
+          "خطأ!",
+          "حدث خطأ أثناء حذف الحلقات"
+        );
       }
     }
   };

@@ -1,0 +1,72 @@
+/* إعدادات مخصصة لـ SweetAlert لضمان عدم الحركة والموضع الثابت في الوسط */
+
+/* إلغاء جميع الحركات */
+.swal2-noanimation {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* تثبيت الموضع في الوسط */
+.swal2-center-fixed {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
+}
+
+/* خلفية مخصصة بتمويه خفيف */
+.swal2-backdrop {
+  background-color: rgba(0, 0, 0, 0.2) !important;
+  -webkit-backdrop-filter: blur(2px) !important;
+  backdrop-filter: blur(2px) !important;
+}
+
+/* منع أي حركة عند الظهور والإخفاء */
+.swal2-show {
+  animation: none !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+.swal2-hide {
+  animation: none !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+/* RTL support */
+.rtl-popup {
+  direction: rtl;
+  text-align: right;
+}
+
+.rtl-title {
+  text-align: center;
+}
+
+.rtl-content {
+  text-align: center;
+}
+
+.rtl-button {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* رسائل النجاح */
+.swal2-success-modal {
+  border-radius: 12px !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* منع أي تحريك للعناصر الداخلية */
+.swal2-success-modal * {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* إعدادات إضافية للتأكد من الموضع الثابت */
+@media (max-width: 768px) {
+  .swal2-center-fixed {
+    width: 90% !important;
+    max-width: 400px !important;
+  }
+}

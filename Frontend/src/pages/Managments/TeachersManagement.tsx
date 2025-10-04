@@ -27,6 +27,8 @@ import EnhancedTeacherForm from '../../components/Forms/AddTeacherForm';
 import ResponsivePagination from '../../components/Pagination/ResponsivePagination';
 import CustomSnackbar from '../../components/Snackbar/CustomSnackbar';
 import Swal from 'sweetalert2';
+import "../../styles/sweetalert.css";
+import { showCenteredSwal, showSuccessMessage, showErrorMessage, showWarningMessage } from "../../utils/sweetalertUtils";
 
 type SortField = 'teacherId' | 'firstName' | 'age' | 'email';
 type SortOrder = 'asc' | 'desc';
@@ -392,7 +394,7 @@ const TeachersManagement: React.FC = () => {
       ? `${teacher.firstName} ${teacher.lastName}`
       : 'المعلم';
 
-    const result = await Swal.fire({
+    const result = await showCenteredSwal({
       title: 'تأكيد حذف المعلم \ud83d\udee1\ufe0f',
       html: `
         <div class="text-center">
@@ -569,21 +571,7 @@ const TeachersManagement: React.FC = () => {
         }
       }
 
-      await Swal.fire({
-        title: errorTitle,
-        text: errorMessage,
-        icon: 'error',
-        timer: 5000,
-        timerProgressBar: true,
-        toast: true,
-        position: 'top-end',
-        showConfirmButton: false,
-        customClass: {
-          popup: 'rtl-popup swal2-toast-rtl swal2-error-toast',
-          title: 'rtl-title',
-          htmlContainer: 'rtl-content',
-        },
-      });
+      await showErrorMessage(errorTitle, errorMessage);
 
       // عدم إغلاق النموذج في حالة وجود خطأ للسماح بإعادة المحاولة
     } finally {
@@ -640,7 +628,7 @@ const TeachersManagement: React.FC = () => {
   const handleBulkDelete = async () => {
     if (selectedTeachers.size === 0) return;
 
-    const result = await Swal.fire({
+    const result = await showCenteredSwal({
       title: `حذف ${selectedTeachers.size} معلم`,
       text: 'هل أنت متأكد من حذف المعلمين المحددين؟',
       icon: 'warning',
@@ -662,70 +650,17 @@ const TeachersManagement: React.FC = () => {
         setTeachers((prev) => prev.filter((t) => !selectedTeachers.has(t._id)));
         setSelectedTeachers(new Set());
 
-        await Swal.fire({
-          title: '🎉 تمت العملية بنجاح 🎉',
-          html: `
-            <div class="text-center py-4 success-animation">
-              <div class="mx-auto w-24 h-24 bg-gradient-to-br from-green-100 to-emerald-200 rounded-full flex items-center justify-center mb-6 shadow-lg">
-                <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
-                </svg>
-              </div>
-              <h3 class="text-xl font-bold text-gray-800 mb-3">تم حذف المعلمين المحددين</h3>
-              <div class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-full font-semibold text-lg shadow-md">
-                <span class="mr-2">✨</span>
-                <span>${selectedTeachers.size} معلم</span>
-                <span class="mr-2">✨</span>
-              </div>
-              <p class="text-gray-600 mt-4 font-medium">تم تحديث قاعدة البيانات بنجاح</p>
-            </div>
-          `,
-          icon: 'success',
-          timer: 5000,
-          timerProgressBar: true,
-          showConfirmButton: false,
-          allowOutsideClick: false,
-          customClass: {
-            popup: 'swal2-success-modal rtl-popup',
-            title: 'rtl-title',
-            htmlContainer: 'rtl-content',
-          },
-          didOpen: () => {
-            const popup = Swal.getPopup();
-            if (popup) {
-              popup.style.position = 'fixed';
-              popup.style.top = '50%';
-              popup.style.left = '50%';
-              popup.style.transform = 'translate(-50%, -50%)';
-              popup.style.zIndex = '10000';
-            }
-          },
-        });
+        await showSuccessMessage(
+          '🎉 تمت العملية بنجاح 🎉',
+          'تم حذف المعلمين المحددين',
+          `${selectedTeachers.size} معلم`
+        );
       } catch (bulkDeleteError) {
         console.error('❌ فشل في حذف المعلمين:', bulkDeleteError);
-        await Swal.fire({
-          title: '❌ فشل في العملية',
-          html: `
-            <div class="text-center py-4">
-              <div class="mx-auto w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-4 animate-pulse">
-                <svg class="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-              </div>
-              <p class="text-lg font-semibold text-gray-800 mb-2">حدث خطأ أثناء حذف المعلمين</p>
-              <p class="text-sm text-gray-500">يرجى المحاولة مرة أخرى</p>
-            </div>
-          `,
-          icon: 'error',
-          timer: 4000,
-          timerProgressBar: true,
-          showConfirmButton: true,
-          confirmButtonText: 'حسناً',
-          customClass: {
-            popup: 'rtl-popup',
-            confirmButton: 'rtl-button',
-          },
-        });
+        await showErrorMessage(
+          '❌ فشل في العملية',
+          'حدث خطأ أثناء حذف المعلمين - يرجى المحاولة مرة أخرى'
+        );
       }
     }
   };
