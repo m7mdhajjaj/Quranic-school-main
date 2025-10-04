@@ -1672,7 +1672,6 @@ import api from "../../Api/api";
 import AddStudentFormWithYup from "../../components/Forms/AddStudentForm";
 import ResponsivePagination from "../../components/Pagination/ResponsivePagination";
 import Swal from "sweetalert2";
-import "../../styles/sweetalert.css";
 
 interface StudentFormData {
   firstName: string;

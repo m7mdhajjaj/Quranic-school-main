@@ -21,7 +21,7 @@ import ResponsivePagination from "../../components/Pagination/ResponsivePaginati
 import { getAllGroups, deleteGroup, type Group } from "../../Api/groupApi";
 import { type GroupFormData } from "../../Validation/groupValidation";
 import Swal from "sweetalert2";
-import "../../styles/sweetalert.css";
+
 
 type SortField = "name" | "teacher" | "capacity";
 type SortOrder = "asc" | "desc";

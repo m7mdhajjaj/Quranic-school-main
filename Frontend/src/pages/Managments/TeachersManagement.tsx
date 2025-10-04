@@ -25,8 +25,8 @@ import type { Teacher } from '../../Api/teacherApi';
 import type { TeacherFormData } from '../../Validation/teacherValidation';
 import EnhancedTeacherForm from '../../components/Forms/AddTeacherForm';
 import ResponsivePagination from '../../components/Pagination/ResponsivePagination';
+import CustomSnackbar from '../../components/Snackbar/CustomSnackbar';
 import Swal from 'sweetalert2';
-import '../../styles/sweetalert.css';
 
 type SortField = 'teacherId' | 'firstName' | 'age' | 'email';
 type SortOrder = 'asc' | 'desc';
@@ -87,6 +87,36 @@ const TeachersManagement: React.FC = () => {
   const [selectedTeachers, setSelectedTeachers] = useState<Set<string>>(
     new Set()
   );
+
+  // Snackbar States
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    title: '',
+    severity: 'success' as 'success' | 'error' | 'warning' | 'info',
+    actionType: 'general' as 'add' | 'edit' | 'delete' | 'general',
+  });
+
+  // Helper function to show snackbar
+  const showSnackbar = (
+    message: string,
+    title: string,
+    severity: 'success' | 'error' | 'warning' | 'info' = 'success',
+    actionType: 'add' | 'edit' | 'delete' | 'general' = 'general'
+  ) => {
+    setSnackbar({
+      open: true,
+      message,
+      title,
+      severity,
+      actionType,
+    });
+  };
+
+  // Close snackbar
+  const handleSnackbarClose = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
 
   // Statistics
   const stats = useMemo(() => {
@@ -403,51 +433,13 @@ const TeachersManagement: React.FC = () => {
           prevTeachers.filter((t) => t._id !== teacherId)
         );
 
-        // Enhanced center success message
-        await Swal.fire({
-          title: '🎉 تمت العملية بنجاح 🎉',
-          html: `
-            <div class="text-center py-6 success-animation">
-              <div class="mx-auto w-28 h-28 bg-gradient-to-br from-emerald-100 via-green-200 to-teal-300 rounded-full flex items-center justify-center mb-6 shadow-xl relative overflow-hidden">
-                <div class="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 opacity-20 animate-pulse"></div>
-                <svg class="w-14 h-14 text-green-600 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
-                </svg>
-              </div>
-              <h3 class="text-xl font-bold text-gray-800 mb-4">✨ تم حذف المعلم بنجاح ✨</h3>
-              <div class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white rounded-2xl p-4 mb-4 shadow-lg">
-                <p class="text-2xl font-bold mb-1">${teacherName}</p>
-                <p class="text-sm opacity-90">تم إزالته من النظام نهائياً</p>
-              </div>
-              <div class="flex items-center justify-center space-x-2 rtl:space-x-reverse">
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                  <span class="ml-1">🚀</span>
-                  العملية مكتملة
-                </span>
-              </div>
-            </div>
-          `,
-          icon: 'success',
-          timer: 5000,
-          timerProgressBar: true,
-          showConfirmButton: false,
-          allowOutsideClick: false,
-          customClass: {
-            popup: 'swal2-success-modal rtl-popup',
-            title: 'rtl-title',
-            htmlContainer: 'rtl-content',
-          },
-          didOpen: () => {
-            const popup = Swal.getPopup();
-            if (popup) {
-              popup.style.position = 'fixed';
-              popup.style.top = '50%';
-              popup.style.left = '50%';
-              popup.style.transform = 'translate(-50%, -50%)';
-              popup.style.zIndex = '10000';
-            }
-          },
-        });
+        // رسالة نجاح الحذف باستخدام Snackbar
+        showSnackbar(
+          `تم حذف المعلم ${teacherName} من النظام نهائياً بنجاح`,
+          'تم الحذف بنجاح',
+          'success',
+          'delete'
+        );
       } catch (deleteError: unknown) {
         console.error('❌ فشل في حذف المعلم:', deleteError);
 
@@ -463,83 +455,26 @@ const TeachersManagement: React.FC = () => {
         };
         if (error.response?.status === 400 && error.response?.data?.details) {
           const { groupsCount, studentsCount } = error.response.data.details;
+          
+          let relationMessage = 'المعلم مرتبط بـ: ';
+          const relations = [];
+          if (groupsCount > 0) relations.push(`${groupsCount} حلقة`);
+          if (studentsCount > 0) relations.push(`${studentsCount} طالب`);
+          relationMessage += relations.join(' و ');
+          relationMessage += '. يجب نقل الحلقات والطلاب أولاً أو تعيين معلم آخر لهم.';
 
-          await Swal.fire({
-            title: '⚠️ لا يمكن حذف المعلم ⚠️',
-            html: `
-              <div class="text-center py-4">
-                <div class="mx-auto w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mb-4 animate-pulse">
-                  <svg class="w-10 h-10 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                  </svg>
-                </div>
-                <p class="text-lg font-semibold text-gray-800 mb-2">المعلم مرتبط بـ:</p>
-                <div class="space-y-2 mb-4">
-                  ${groupsCount > 0 ? `<p class="text-blue-600 font-medium">🔵 ${groupsCount} حلقة</p>` : ''}
-                  ${studentsCount > 0 ? `<p class="text-green-600 font-medium">🟢 ${studentsCount} طالب</p>` : ''}
-                </div>
-                <p class="text-sm text-gray-600 mb-2">يجب نقل الحلقات والطلاب أولاً</p>
-                <p class="text-xs text-yellow-600">أو تعيين معلم آخر لهم</p>
-              </div>
-            `,
-            icon: 'warning',
-            timer: 8000,
-            timerProgressBar: true,
-            showConfirmButton: true,
-            confirmButtonText: 'فهمت',
-            customClass: {
-              popup: 'rtl-popup swal2-rtl-popup swal2-center-popup',
-              title: 'rtl-title',
-              htmlContainer: 'rtl-content',
-            },
-            didOpen: () => {
-              const popup = Swal.getPopup();
-              if (popup) {
-                popup.style.position = 'fixed';
-                popup.style.top = '50%';
-                popup.style.left = '50%';
-                popup.style.transform = 'translate(-50%, -50%)';
-                popup.style.zIndex = '9999';
-              }
-            },
-          });
+          showSnackbar(
+            relationMessage,
+            'لا يمكن حذف المعلم',
+            'warning'
+          );
         } else {
           // خطأ عام
-          await Swal.fire({
-            title: '\u26a0\ufe0f فشل في الحذف \u26a0\ufe0f',
-            html: `
-              <div class="text-center py-4">
-                <div class="mx-auto w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-4 animate-pulse">
-                  <svg class="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                  </svg>
-                </div>
-                <p class="text-lg font-semibold text-gray-800 mb-2">حدث خطأ أثناء الحذف</p>
-                <p class="text-sm text-gray-600 mb-2">${error.response?.data?.message || 'يرجى المحاولة مرة أخرى'}</p>
-                <p class="text-xs text-red-500">تأكد من اتصالك بالإنترنت 🌐</p>
-              </div>
-            `,
-            icon: 'error',
-            timer: 5000,
-            timerProgressBar: true,
-            showConfirmButton: true,
-            confirmButtonText: 'حاول مرة أخرى',
-            customClass: {
-              popup: 'rtl-popup swal2-rtl-popup swal2-center-popup',
-              title: 'rtl-title',
-              htmlContainer: 'rtl-content',
-            },
-            didOpen: () => {
-              const popup = Swal.getPopup();
-              if (popup) {
-                popup.style.position = 'fixed';
-                popup.style.top = '50%';
-                popup.style.left = '50%';
-                popup.style.transform = 'translate(-50%, -50%)';
-                popup.style.zIndex = '9999';
-              }
-            },
-          });
+          showSnackbar(
+            error.response?.data?.message || 'حدث خطأ أثناء الحذف. يرجى المحاولة مرة أخرى.',
+            'فشل في الحذف',
+            'error'
+          );
         }
       }
     }
@@ -565,81 +500,25 @@ const TeachersManagement: React.FC = () => {
             )
           );
 
-          // Enhanced center update message
-          await Swal.fire({
-            title: '\u2728 تم التحديث بنجاح \u2728',
-            html: `
-              <div class="text-center py-4">
-                <div class="mx-auto w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mb-4 animate-bounce">
-                  <svg class="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                  </svg>
-                </div>
-                <p class="text-lg font-semibold text-gray-800 mb-2">تم تحديث بيانات</p>
-                <p class="text-2xl font-bold text-blue-600 mb-2">${('firstName' in teacherData && teacherData.firstName) || 'المعلم'}</p>
-                <p class="text-sm text-gray-500">بنجاح في النظام \ud83d\ude80</p>
-              </div>
-            `,
-            icon: 'success',
-            timer: 3500,
-            timerProgressBar: true,
-            showConfirmButton: false,
-            customClass: {
-              popup: 'rtl-popup swal2-rtl-popup swal2-center-popup',
-              title: 'rtl-title',
-              htmlContainer: 'rtl-content',
-            },
-            didOpen: () => {
-              const popup = Swal.getPopup();
-              if (popup) {
-                popup.style.position = 'fixed';
-                popup.style.top = '50%';
-                popup.style.left = '50%';
-                popup.style.transform = 'translate(-50%, -50%)';
-                popup.style.zIndex = '9999';
-              }
-            },
-          });
+          // رسالة نجاح التحديث باستخدام Snackbar
+          showSnackbar(
+            `تم تحديث بيانات ${('firstName' in teacherData && teacherData.firstName) || 'المعلم'} في النظام بنجاح`,
+            'تم التحديث بنجاح',
+            'success',
+            'edit'
+          );
         } else {
           // للمعلمين الجدد سيتم إضافتهم بواسطة الـ API
           await fetchTeachers(); // إعادة تحميل القائمة
 
-          // Enhanced center welcome message
-          await Swal.fire({
-            title: '\ud83c\udf89 مرحباً بالمعلم الجديد \ud83c\udf89',
-            html: `
-              <div class="text-center py-4">
-                <div class="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-4 animate-bounce">
-                  <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
-                  </svg>
-                </div>
-                <p class="text-lg font-semibold text-gray-800 mb-2">تم إضافة المعلم</p>
-                <p class="text-2xl font-bold text-green-600 mb-2">${('firstName' in teacherData && teacherData.firstName) || 'الجديد'}</p>
-                <p class="text-sm text-gray-500">إلى النظام بنجاح \ud83d\ude80</p>
-                <p class="text-xs text-green-600 mt-2">أهلاً وسهلاً \u2728</p>
-              </div>
-            `,
-            icon: 'success',
-            timer: 4500,
-            timerProgressBar: true,
-            showConfirmButton: false,
-            customClass: {
-              popup: 'rtl-popup swal2-rtl-popup swal2-center-popup',
-              title: 'rtl-title',
-              htmlContainer: 'rtl-content',
-            },
-            didOpen: () => {
-              const popup = Swal.getPopup();
-              if (popup) {
-                popup.style.position = 'fixed';
-                popup.style.top = '50%';
-                popup.style.left = '50%';
-                popup.style.transform = 'translate(-50%, -50%)';
-                popup.style.zIndex = '9999';
-              }
-            },
-          });
+          // رسالة نجاح الإضافة باستخدام Snackbar
+          showSnackbar(
+            `أهلاً وسهلاً! تم إضافة ${('firstName' in teacherData && teacherData.firstName) || 'المعلم الجديد'} إلى فريق العمل بنجاح`,
+            'مرحباً بالمعلم الجديد',
+            'success',
+            'add'
+          );
+
         }
       }
 
@@ -852,10 +731,10 @@ const TeachersManagement: React.FC = () => {
   };
 
   return (
-    <div
-      className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4 md:p-6 relative"
-      dir="rtl"
-    >
+      <div
+        className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4 md:p-6 relative"
+        dir="rtl"
+      >
       {/* Center Design Element */}
       <div className="fixed inset-0 flex items-center justify-center pointer-events-none opacity-5 z-0">
         <div className="relative">
@@ -936,32 +815,32 @@ const TeachersManagement: React.FC = () => {
               {/* Controls Section */}
               <div className="flex gap-2 flex-shrink-0">
                 {/* View Mode Toggle */}
-                <div className="flex items-center border border-gray-300 rounded-xl p-1">
+                <div className="flex items-center bg-gray-100 rounded-lg p-1 gap-1">
                   <button
                     onClick={() => setViewMode('table')}
-                    className={`flex items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all ${
+                    className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all duration-200 ${
                       viewMode === 'table'
-                        ? 'bg-blue-500 text-white shadow-sm'
-                        : 'text-gray-600 hover:bg-gray-100'
+                        ? 'bg-blue-500 text-white shadow-md'
+                        : 'text-gray-600 hover:text-gray-800 hover:bg-white'
                     }`}
                     title="عرض جدول"
                   >
                     <FaList className="w-4 h-4" />
-                    <span className="text-xs font-medium hidden sm:inline">
+                    <span className="text-sm font-medium">
                       جدول
                     </span>
                   </button>
                   <button
                     onClick={() => setViewMode('grid')}
-                    className={`flex items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all ${
+                    className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all duration-200 ${
                       viewMode === 'grid'
-                        ? 'bg-blue-500 text-white shadow-sm'
-                        : 'text-gray-600 hover:bg-gray-100'
+                        ? 'bg-blue-500 text-white shadow-md'
+                        : 'text-gray-600 hover:text-gray-800 hover:bg-white'
                     }`}
                     title="عرض شبكة"
                   >
                     <FaTh className="w-4 h-4" />
-                    <span className="text-xs font-medium hidden sm:inline">
+                    <span className="text-sm font-medium">
                       شبكة
                     </span>
                   </button>
@@ -2266,6 +2145,18 @@ const TeachersManagement: React.FC = () => {
           }
         }
       `}</style>
+
+      {/* Custom Snackbar */}
+      <CustomSnackbar
+        open={snackbar.open}
+        onClose={handleSnackbarClose}
+        message={snackbar.message}
+        title={snackbar.title}
+        severity={snackbar.severity}
+        actionType={snackbar.actionType}
+        animation="grow"
+        showProgress={true}
+      />
     </div>
   );
 };

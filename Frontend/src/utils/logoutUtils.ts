@@ -1,4 +1,4 @@
-import '../styles/sweetalert.css';
+
 
 interface LogoutConfirmationOptions {
   userType?: 'admin' | 'user';
