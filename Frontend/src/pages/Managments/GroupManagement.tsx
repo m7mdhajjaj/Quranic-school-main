@@ -489,9 +489,11 @@ const GroupManagement: React.FC = () => {
             </div>
 
             {/* Search and Filters */}
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                <div className="relative md:col-span-6">
+            <div className="space-y-4 w-full">
+              {/* Search and Controls in one row */}
+              <div className="flex flex-wrap gap-4 w-full items-center">
+                {/* Search Bar */}
+                <div className="relative flex-1 min-w-80">
                   <input
                     type="text"
                     placeholder="ابحث عن حلقة (الاسم، المعلم، المواعيد...)"
@@ -505,58 +507,80 @@ const GroupManagement: React.FC = () => {
                   <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 </div>
 
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className={`md:col-span-2 flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-xl transition-all ${
-                    showFilters
-                      ? "border-blue-500 bg-blue-50 text-blue-600"
-                      : "border-gray-300 hover:border-blue-400"
-                  }`}>
-                  <FaFilter className="w-4 h-4" />
-                  فلاتر
-                </button>
+                  {/* View Mode Toggle */}
+                  <div className="flex items-center bg-gray-100 rounded-lg p-1 gap-1">
+                    <button
+                      onClick={() => setViewMode('table')}
+                      className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all duration-200 ${
+                        viewMode === 'table'
+                          ? 'bg-blue-500 text-white shadow-md'
+                          : 'text-gray-600 hover:text-gray-800 hover:bg-white'
+                      }`}
+                      title="عرض جدول"
+                    >
+                      <FaList className="w-4 h-4" />
+                      <span className="text-sm font-medium">
+                        جدول
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => setViewMode('grid')}
+                      className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all duration-200 ${
+                        viewMode === 'grid'
+                          ? 'bg-blue-500 text-white shadow-md'
+                          : 'text-gray-600 hover:text-gray-800 hover:bg-white'
+                      }`}
+                      title="عرض شبكة"
+                    >
+                      <FaTh className="w-4 h-4" />
+                      <span className="text-sm font-medium">
+                        شبكة
+                      </span>
+                    </button>
+                  </div>
 
-                <button
-                  onClick={() =>
-                    setViewMode(viewMode === "table" ? "grid" : "table")
-                  }
-                  className="md:col-span-2 flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all">
-                  {viewMode === "table" ? (
-                    <FaTh className="w-4 h-4" />
-                  ) : (
-                    <FaList className="w-4 h-4" />
-                  )}
-                  <span className="hidden md:inline">
-                    {viewMode === "table" ? "شبكة" : "جدول"}
-                  </span>
-                </button>
-
-                <button
-                  onClick={resetFilters}
-                  className="md:col-span-1 px-4 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all"
-                  title="إعادة تعيين الفلاتر">
-                  <svg
-                    className="w-5 h-5 text-gray-600 mx-auto"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-
-                {selectedGroups.size > 0 && (
                   <button
-                    onClick={handleBulkDelete}
-                    className="md:col-span-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all">
-                    <FaTrash className="w-4 h-4" />
-                    <span>حذف ({selectedGroups.size})</span>
+                    onClick={() => setShowFilters(!showFilters)}
+                    className={`flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-xl transition-all ${
+                      showFilters
+                        ? 'border-blue-500 bg-blue-50 text-blue-600'
+                        : 'border-gray-300 hover:border-blue-400'
+                    }`}
+                  >
+                    <FaFilter className="w-4 h-4" />
+                    <span className="hidden sm:inline">فلاتر</span>
                   </button>
-                )}
+
+                  <button
+                    onClick={resetFilters}
+                    className="px-4 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all"
+                    title="إعادة تعيين الفلاتر"
+                  >
+                    <svg
+                      className="w-5 h-5 text-gray-600 mx-auto"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+
+                  {selectedGroups.size > 0 && (
+                    <button
+                      onClick={handleBulkDelete}
+                      className="flex items-center justify-center gap-2 px-4 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all"
+                    >
+                      <FaTrash className="w-4 h-4" />
+                      <span>حذف ({selectedGroups.size})</span>
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Extended Filters */}
@@ -1194,7 +1218,6 @@ const GroupManagement: React.FC = () => {
             </div>
           )}
         </div>
-      </div>
 
       <style>{`
         @keyframes fadeIn {
