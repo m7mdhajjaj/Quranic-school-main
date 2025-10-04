@@ -1,5 +1,3 @@
-
-
 const Teacher = require("../models/Teacher");
 const Student = require("../models/Student");
 const Admin = require("../models/Admin");
@@ -50,11 +48,13 @@ exports.getAllTeachers = async (req, res) => {
   try {
     // return full teacher docs (minus password) so UI has everything (including avatar)
     const teachers = await Teacher.find({}).select("-password");
-    
+
     return res.status(200).json({ success: true, data: teachers });
   } catch (error) {
     console.error("Error fetching teachers:", error);
-    return res.status(500).json({ success: false, message: "حدث خطأ أثناء جلب المعلمين" });
+    return res
+      .status(500)
+      .json({ success: false, message: "حدث خطأ أثناء جلب المعلمين" });
   }
 };
 
@@ -63,12 +63,16 @@ exports.getTeacherById = async (req, res) => {
   try {
     const teacher = await Teacher.findById(req.params.id).select("-password");
     if (!teacher) {
-      return res.status(404).json({ success: false, message: "المعلم غير موجود" });
+      return res
+        .status(404)
+        .json({ success: false, message: "المعلم غير موجود" });
     }
     return res.status(200).json({ success: true, data: teacher });
   } catch (error) {
     console.error("Error fetching teacher:", error);
-    return res.status(500).json({ success: false, message: "حدث خطأ أثناء جلب المعلم" });
+    return res
+      .status(500)
+      .json({ success: false, message: "حدث خطأ أثناء جلب المعلم" });
   }
 };
 
@@ -76,10 +80,20 @@ exports.getTeacherById = async (req, res) => {
 exports.createTeacher = async (req, res) => {
   try {
     const {
-      firstName, lastName, email, phoneNumber,
-      fatherName, grandFatherName, motherName,
-      idNumber, birthDate, gender, residence,
-      groups = [], yearsOfExperience = 0, role = "teacher",
+      firstName,
+      lastName,
+      email,
+      phoneNumber,
+      fatherName,
+      grandFatherName,
+      motherName,
+      idNumber,
+      birthDate,
+      gender,
+      residence,
+      groups = [],
+      yearsOfExperience = 0,
+      role = "teacher",
       password,
     } = req.body;
 
@@ -87,55 +101,60 @@ exports.createTeacher = async (req, res) => {
     const must = ["firstName", "lastName", "email", "phoneNumber"];
     for (const f of must) {
       if (!req.body[f]) {
-        return res.status(400).json({ success: false, message: `حقل ${f} مطلوب` });
+        return res
+          .status(400)
+          .json({ success: false, message: `حقل ${f} مطلوب` });
       }
     }
 
     // فحص التكرار في جميع المجموعات
     if (idNumber) {
-      const [existingTeacher, existingStudent, existingAdmin] = await Promise.all([
-        Teacher.findOne({ idNumber }),
-        Student.findOne({ idNumber }),
-        Admin.findOne({ idNumber })
-      ]);
-      
+      const [existingTeacher, existingStudent, existingAdmin] =
+        await Promise.all([
+          Teacher.findOne({ idNumber }),
+          Student.findOne({ idNumber }),
+          Admin.findOne({ idNumber }),
+        ]);
+
       if (existingTeacher || existingStudent || existingAdmin) {
-        return res.status(400).json({ 
-          success: false, 
+        return res.status(400).json({
+          success: false,
           message: "رقم الهوية موجود بالفعل في النظام",
-          field: 'idNumber'
+          field: "idNumber",
         });
       }
     }
-    
+
     if (email) {
-      const [existingTeacher, existingStudent, existingAdmin] = await Promise.all([
-        Teacher.findOne({ email }),
-        Student.findOne({ email }),
-        Admin.findOne({ email })
-      ]);
-      
+      const [existingTeacher, existingStudent, existingAdmin] =
+        await Promise.all([
+          Teacher.findOne({ email }),
+          Student.findOne({ email }),
+          Admin.findOne({ email }),
+        ]);
+
       if (existingTeacher || existingStudent || existingAdmin) {
-        return res.status(400).json({ 
-          success: false, 
+        return res.status(400).json({
+          success: false,
           message: "البريد الإلكتروني موجود بالفعل في النظام",
-          field: 'email'
+          field: "email",
         });
       }
     }
-    
+
     if (phoneNumber) {
-      const [existingTeacher, existingStudent, existingAdmin] = await Promise.all([
-        Teacher.findOne({ phoneNumber }),
-        Student.findOne({ phoneNumber }),
-        Admin.findOne({ phoneNumber })
-      ]);
-      
+      const [existingTeacher, existingStudent, existingAdmin] =
+        await Promise.all([
+          Teacher.findOne({ phoneNumber }),
+          Student.findOne({ phoneNumber }),
+          Admin.findOne({ phoneNumber }),
+        ]);
+
       if (existingTeacher || existingStudent || existingAdmin) {
-        return res.status(400).json({ 
-          success: false, 
+        return res.status(400).json({
+          success: false,
           message: "رقم الهاتف موجود بالفعل في النظام",
-          field: 'phoneNumber'
+          field: "phoneNumber",
         });
       }
     }
@@ -148,7 +167,12 @@ exports.createTeacher = async (req, res) => {
     // age
     const age = calculateAge(birthDate);
     if (birthDate && age < 18) {
-      return res.status(400).json({ success: false, message: "يجب أن يكون عمر المعلم 18 عام على الأقل" });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "يجب أن يكون عمر المعلم 18 عام على الأقل",
+        });
     }
 
     const doc = await Teacher.create({
@@ -166,31 +190,35 @@ exports.createTeacher = async (req, res) => {
       residence,
       email,
       phoneNumber,
-      groups: Array.isArray(groups) ? groups.map(group => {
-        // دعم البيانات القديمة والجديدة
-        if (typeof group === 'string') {
-          // تحويل البيانات القديمة (string) إلى البنية الجديدة
-          return {
-            id: null, // سيتم تحديثه لاحقاً
-            name: group,
-            number: 1 // قيمة افتراضية
-          };
-        }
-        return group; // البيانات الجديدة (object)
-      }) : [], // التأكد من أن groups مصفوفة
+      groups: Array.isArray(groups)
+        ? groups.map((group) => {
+            // دعم البيانات القديمة والجديدة
+            if (typeof group === "string") {
+              // تحويل البيانات القديمة (string) إلى البنية الجديدة
+              return {
+                id: null, // سيتم تحديثه لاحقاً
+                name: group,
+                number: 1, // قيمة افتراضية
+              };
+            }
+            return group; // البيانات الجديدة (object)
+          })
+        : [], // التأكد من أن groups مصفوفة
       yearsOfExperience,
       role,
     });
 
     console.log("Teacher created successfully:", doc._id);
-    
+
     // Emit socket event for real-time update
     if (global.io) {
-      global.io.emit('teacherCreated', doc);
-      console.log('📡 Teacher created event emitted via socket');
+      global.io.emit("teacherCreated", doc);
+      console.log("📡 Teacher created event emitted via socket");
     }
-    
-    return res.status(201).json({ success: true, message: "تم إنشاء المعلم بنجاح", data: doc });
+
+    return res
+      .status(201)
+      .json({ success: true, message: "تم إنشاء المعلم بنجاح", data: doc });
   } catch (error) {
     console.error("Error creating teacher:", error);
 
@@ -198,22 +226,22 @@ exports.createTeacher = async (req, res) => {
     if (error.name === "ValidationError") {
       const validationErrors = {};
       const errorMessages = [];
-      
+
       Object.keys(error.errors).forEach((field) => {
         const fieldError = error.errors[field];
         validationErrors[field] = fieldError.message;
-        
+
         // رسائل خطأ مخصصة حسب نوع الحقل
-        if (field === 'idNumber') {
-          if (fieldError.message.includes('9 أرقام')) {
-            errorMessages.push('رقم الهوية يجب أن يتكون من 9 أرقام فقط');
+        if (field === "idNumber") {
+          if (fieldError.message.includes("9 أرقام")) {
+            errorMessages.push("رقم الهوية يجب أن يتكون من 9 أرقام فقط");
           } else {
-            errorMessages.push('رقم الهوية غير صحيح');
+            errorMessages.push("رقم الهوية غير صحيح");
           }
-        } else if (field === 'phoneNumber') {
-          errorMessages.push('رقم الهاتف يجب أن يبدأ بـ 05 ويتكون من 10 أرقام');
-        } else if (field === 'email') {
-          errorMessages.push('البريد الإلكتروني غير صحيح');
+        } else if (field === "phoneNumber") {
+          errorMessages.push("رقم الهاتف يجب أن يبدأ بـ 05 ويتكون من 10 أرقام");
+        } else if (field === "email") {
+          errorMessages.push("البريد الإلكتروني غير صحيح");
         } else {
           errorMessages.push(`${field}: ${fieldError.message}`);
         }
@@ -221,9 +249,9 @@ exports.createTeacher = async (req, res) => {
 
       return res.status(400).json({
         success: false,
-        message: `خطأ في التحقق من البيانات: ${errorMessages.join(', ')}`,
+        message: `خطأ في التحقق من البيانات: ${errorMessages.join(", ")}`,
         errors: validationErrors,
-        validationErrors: errorMessages
+        validationErrors: errorMessages,
       });
     }
 
@@ -231,49 +259,54 @@ exports.createTeacher = async (req, res) => {
     if (error.code === 11000) {
       const field = Object.keys(error.keyPattern)[0];
       let arabicFieldName = field;
-      let specificMessage = '';
-      
+      let specificMessage = "";
+
       switch (field) {
-        case 'idNumber':
-          arabicFieldName = 'رقم الهوية';
-          specificMessage = 'رقم الهوية موجود بالفعل في النظام. يرجى استخدام رقم هوية مختلف.';
+        case "idNumber":
+          arabicFieldName = "رقم الهوية";
+          specificMessage =
+            "رقم الهوية موجود بالفعل في النظام. يرجى استخدام رقم هوية مختلف.";
           break;
-        case 'phoneNumber':
-          arabicFieldName = 'رقم الهاتف';
-          specificMessage = 'رقم الهاتف موجود بالفعل في النظام. يرجى استخدام رقم هاتف مختلف.';
+        case "phoneNumber":
+          arabicFieldName = "رقم الهاتف";
+          specificMessage =
+            "رقم الهاتف موجود بالفعل في النظام. يرجى استخدام رقم هاتف مختلف.";
           break;
-        case 'email':
-          arabicFieldName = 'البريد الإلكتروني';
-          specificMessage = 'البريد الإلكتروني موجود بالفعل في النظام.';
+        case "email":
+          arabicFieldName = "البريد الإلكتروني";
+          specificMessage = "البريد الإلكتروني موجود بالفعل في النظام.";
           break;
         default:
           specificMessage = `${arabicFieldName} موجود بالفعل في النظام.`;
       }
-      
+
       return res.status(400).json({
         success: false,
         message: specificMessage,
         error: `Duplicate ${field}`,
         field: field,
-        arabicField: arabicFieldName
+        arabicField: arabicFieldName,
       });
     }
 
     // معالجة أخطاء أخرى محددة
-    if (error.message && error.message.includes('Cast to')) {
+    if (error.message && error.message.includes("Cast to")) {
       return res.status(400).json({
         success: false,
         message: "نوع البيانات المدخلة غير صحيح",
-        error: "Invalid data type"
+        error: "Invalid data type",
       });
     }
 
     // معالجة الأخطاء العامة
-    console.error('Unexpected error:', error);
+    console.error("Unexpected error:", error);
     return res.status(500).json({
       success: false,
       message: "حدث خطأ غير متوقع أثناء حفظ بيانات المعلم",
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Internal server error",
     });
   }
 };
@@ -286,49 +319,55 @@ exports.updateTeacher = async (req, res) => {
 
     // فحص التكرار للحقول المحدثة (تجنب الحقل المحدث حالياً)
     if (updates.idNumber) {
-      const [existingTeacher, existingStudent, existingAdmin] = await Promise.all([
-        Teacher.findOne({ idNumber: updates.idNumber, _id: { $ne: id } }),
-        Student.findOne({ idNumber: updates.idNumber }),
-        Admin.findOne({ idNumber: updates.idNumber })
-      ]);
-      
+      const [existingTeacher, existingStudent, existingAdmin] =
+        await Promise.all([
+          Teacher.findOne({ idNumber: updates.idNumber, _id: { $ne: id } }),
+          Student.findOne({ idNumber: updates.idNumber }),
+          Admin.findOne({ idNumber: updates.idNumber }),
+        ]);
+
       if (existingTeacher || existingStudent || existingAdmin) {
-        return res.status(400).json({ 
-          success: false, 
+        return res.status(400).json({
+          success: false,
           message: "رقم الهوية موجود بالفعل في النظام",
-          field: 'idNumber'
+          field: "idNumber",
         });
       }
     }
-    
+
     if (updates.email) {
-      const [existingTeacher, existingStudent, existingAdmin] = await Promise.all([
-        Teacher.findOne({ email: updates.email, _id: { $ne: id } }),
-        Student.findOne({ email: updates.email }),
-        Admin.findOne({ email: updates.email })
-      ]);
-      
+      const [existingTeacher, existingStudent, existingAdmin] =
+        await Promise.all([
+          Teacher.findOne({ email: updates.email, _id: { $ne: id } }),
+          Student.findOne({ email: updates.email }),
+          Admin.findOne({ email: updates.email }),
+        ]);
+
       if (existingTeacher || existingStudent || existingAdmin) {
-        return res.status(400).json({ 
-          success: false, 
+        return res.status(400).json({
+          success: false,
           message: "البريد الإلكتروني موجود بالفعل في النظام",
-          field: 'email'
+          field: "email",
         });
       }
     }
-    
+
     if (updates.phoneNumber) {
-      const [existingTeacher, existingStudent, existingAdmin] = await Promise.all([
-        Teacher.findOne({ phoneNumber: updates.phoneNumber, _id: { $ne: id } }),
-        Student.findOne({ phoneNumber: updates.phoneNumber }),
-        Admin.findOne({ phoneNumber: updates.phoneNumber })
-      ]);
-      
+      const [existingTeacher, existingStudent, existingAdmin] =
+        await Promise.all([
+          Teacher.findOne({
+            phoneNumber: updates.phoneNumber,
+            _id: { $ne: id },
+          }),
+          Student.findOne({ phoneNumber: updates.phoneNumber }),
+          Admin.findOne({ phoneNumber: updates.phoneNumber }),
+        ]);
+
       if (existingTeacher || existingStudent || existingAdmin) {
-        return res.status(400).json({ 
-          success: false, 
+        return res.status(400).json({
+          success: false,
           message: "رقم الهاتف موجود بالفعل في النظام",
-          field: 'phoneNumber'
+          field: "phoneNumber",
         });
       }
     }
@@ -351,14 +390,14 @@ exports.updateTeacher = async (req, res) => {
       if (!Array.isArray(updates.groups)) {
         updates.groups = [];
       } else {
-        updates.groups = updates.groups.map(group => {
+        updates.groups = updates.groups.map((group) => {
           // دعم البيانات القديمة والجديدة
-          if (typeof group === 'string') {
+          if (typeof group === "string") {
             // تحويل البيانات القديمة (string) إلى البنية الجديدة
             return {
               id: null, // سيتم تحديثه لاحقاً
               name: group,
-              number: 1 // قيمة افتراضية
+              number: 1, // قيمة افتراضية
             };
           }
           return group; // البيانات الجديدة (object)
@@ -373,43 +412,45 @@ exports.updateTeacher = async (req, res) => {
     ).select("-password");
 
     if (!updated) {
-      return res.status(404).json({ success: false, message: "المعلم غير موجود" });
+      return res
+        .status(404)
+        .json({ success: false, message: "المعلم غير موجود" });
     }
 
     // Emit socket event for real-time update
     if (global.io) {
-      global.io.emit('teacherUpdated', updated);
-      console.log('📡 Teacher updated event emitted via socket');
+      global.io.emit("teacherUpdated", updated);
+      console.log("📡 Teacher updated event emitted via socket");
     }
 
-    return res.status(200).json({ 
-      success: true, 
-      message: "تم تحديث بيانات المعلم بنجاح", 
-      data: updated 
+    return res.status(200).json({
+      success: true,
+      message: "تم تحديث بيانات المعلم بنجاح",
+      data: updated,
     });
   } catch (error) {
     console.error("Error updating teacher:", error);
-    
+
     // التحقق من أخطاء التحقق من صحة البيانات
     if (error.name === "ValidationError") {
       const validationErrors = {};
       const errorMessages = [];
-      
+
       Object.keys(error.errors).forEach((field) => {
         const fieldError = error.errors[field];
         validationErrors[field] = fieldError.message;
-        
+
         // رسائل خطأ مخصصة حسب نوع الحقل
-        if (field === 'idNumber') {
-          if (fieldError.message.includes('9 أرقام')) {
-            errorMessages.push('رقم الهوية يجب أن يتكون من 9 أرقام فقط');
+        if (field === "idNumber") {
+          if (fieldError.message.includes("9 أرقام")) {
+            errorMessages.push("رقم الهوية يجب أن يتكون من 9 أرقام فقط");
           } else {
-            errorMessages.push('رقم الهوية غير صحيح');
+            errorMessages.push("رقم الهوية غير صحيح");
           }
-        } else if (field === 'phoneNumber') {
-          errorMessages.push('رقم الهاتف يجب أن يبدأ بـ 05 ويتكون من 10 أرقام');
-        } else if (field === 'email') {
-          errorMessages.push('البريد الإلكتروني غير صحيح');
+        } else if (field === "phoneNumber") {
+          errorMessages.push("رقم الهاتف يجب أن يبدأ بـ 05 ويتكون من 10 أرقام");
+        } else if (field === "email") {
+          errorMessages.push("البريد الإلكتروني غير صحيح");
         } else {
           errorMessages.push(`${field}: ${fieldError.message}`);
         }
@@ -417,9 +458,9 @@ exports.updateTeacher = async (req, res) => {
 
       return res.status(400).json({
         success: false,
-        message: `خطأ في التحقق من البيانات: ${errorMessages.join(', ')}`,
+        message: `خطأ في التحقق من البيانات: ${errorMessages.join(", ")}`,
         errors: validationErrors,
-        validationErrors: errorMessages
+        validationErrors: errorMessages,
       });
     }
 
@@ -427,49 +468,54 @@ exports.updateTeacher = async (req, res) => {
     if (error.code === 11000) {
       const field = Object.keys(error.keyPattern)[0];
       let arabicFieldName = field;
-      let specificMessage = '';
-      
+      let specificMessage = "";
+
       switch (field) {
-        case 'idNumber':
-          arabicFieldName = 'رقم الهوية';
-          specificMessage = 'رقم الهوية موجود بالفعل في النظام. يرجى استخدام رقم هوية مختلف.';
+        case "idNumber":
+          arabicFieldName = "رقم الهوية";
+          specificMessage =
+            "رقم الهوية موجود بالفعل في النظام. يرجى استخدام رقم هوية مختلف.";
           break;
-        case 'phoneNumber':
-          arabicFieldName = 'رقم الهاتف';
-          specificMessage = 'رقم الهاتف موجود بالفعل في النظام. يرجى استخدام رقم هاتف مختلف.';
+        case "phoneNumber":
+          arabicFieldName = "رقم الهاتف";
+          specificMessage =
+            "رقم الهاتف موجود بالفعل في النظام. يرجى استخدام رقم هاتف مختلف.";
           break;
-        case 'email':
-          arabicFieldName = 'البريد الإلكتروني';
-          specificMessage = 'البريد الإلكتروني موجود بالفعل في النظام.';
+        case "email":
+          arabicFieldName = "البريد الإلكتروني";
+          specificMessage = "البريد الإلكتروني موجود بالفعل في النظام.";
           break;
         default:
           specificMessage = `${arabicFieldName} موجود بالفعل في النظام.`;
       }
-      
+
       return res.status(400).json({
         success: false,
         message: specificMessage,
         error: `Duplicate ${field}`,
         field: field,
-        arabicField: arabicFieldName
+        arabicField: arabicFieldName,
       });
     }
 
     // معالجة أخطاء أخرى محددة
-    if (error.message && error.message.includes('Cast to')) {
+    if (error.message && error.message.includes("Cast to")) {
       return res.status(400).json({
         success: false,
         message: "نوع البيانات المدخلة غير صحيح",
-        error: "Invalid data type"
+        error: "Invalid data type",
       });
     }
 
     // معالجة الأخطاء العامة
-    console.error('Unexpected error during update:', error);
-    return res.status(500).json({ 
-      success: false, 
+    console.error("Unexpected error during update:", error);
+    return res.status(500).json({
+      success: false,
       message: "حدث خطأ غير متوقع أثناء تحديث بيانات المعلم",
-      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+      error:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Internal server error",
     });
   }
 };
@@ -480,57 +526,66 @@ exports.deleteTeacher = async (req, res) => {
     const id = req.params.id;
     const teacher = await Teacher.findById(id);
     if (!teacher) {
-      return res.status(404).json({ success: false, message: "المعلم غير موجود" });
+      return res
+        .status(404)
+        .json({ success: false, message: "المعلم غير موجود" });
     }
 
     // التحقق من وجود حلقات مرتبطة بالمعلم
-    const Group = require('../models/Group');
-    const Student = require('../models/Student');
-    
+    const Group = require("../models/Group");
+    const Student = require("../models/Student");
+
     const teacherName = `${teacher.firstName} ${teacher.lastName}`;
-    
+
     // فحص الحلقات المرتبطة
-    const relatedGroups = await Group.find({ 
+    const relatedGroups = await Group.find({
       $or: [
         { teacher: teacherName },
         { teacherName: teacherName },
-        { teacher: teacher._id }
+        { teacher: teacher._id },
       ],
-      isActive: { $ne: false }
+      isActive: { $ne: false },
     });
-    
+
     // فحص الطلاب المرتبطين
-    const relatedStudents = await Student.find({ 
+    const relatedStudents = await Student.find({
       teacher: teacherName,
-      isActive: { $ne: false }
+      isActive: { $ne: false },
     });
-    
+
     if (relatedGroups.length > 0 || relatedStudents.length > 0) {
-      return res.status(400).json({ 
-        success: false, 
+      return res.status(400).json({
+        success: false,
         message: `لا يمكن حذف المعلم. يوجد ${relatedGroups.length} حلقة و ${relatedStudents.length} طالب مرتبطين بالمعلم. يجب نقلهم أولاً.`,
         details: {
           groupsCount: relatedGroups.length,
           studentsCount: relatedStudents.length,
-          groups: relatedGroups.map(g => g.name),
-          students: relatedStudents.map(s => `${s.firstName} ${s.lastName}`)
-        }
+          groups: relatedGroups.map((g) => g.name),
+          students: relatedStudents.map((s) => `${s.firstName} ${s.lastName}`),
+        },
       });
     }
 
-    // soft delete (requires isActive in schema)
-    await Teacher.findByIdAndUpdate(id, { isActive: false, updatedAt: new Date() });
-    
+    // Hard delete - permanently remove from database
+    await Teacher.findByIdAndDelete(id);
+
     // Emit socket event for real-time update
     if (global.io) {
-      global.io.emit('teacherDeleted', { _id: id });
-      console.log('📡 Teacher deleted event emitted via socket');
+      global.io.emit("teacherDeleted", { _id: id });
+      console.log("📡 Teacher deleted event emitted via socket");
     }
-    
-    return res.status(200).json({ success: true, message: "تم حذف المعلم بنجاح" });
+
+    return res
+      .status(200)
+      .json({
+        success: true,
+        message: "تم حذف المعلم نهائياً من قاعدة البيانات",
+      });
   } catch (error) {
     console.error("Error deleting teacher:", error);
-    return res.status(500).json({ success: false, message: "حدث خطأ أثناء حذف المعلم" });
+    return res
+      .status(500)
+      .json({ success: false, message: "حدث خطأ أثناء حذف المعلم" });
   }
 };
 
@@ -539,17 +594,32 @@ exports.getTeacherStats = async (req, res) => {
   try {
     // requires isActive in schema; if not present, remove filters
     const totalTeachers = await Teacher.countDocuments({ isActive: true });
-    const totalAdmins = await Teacher.countDocuments({ role: "admin", isActive: true });
-    const totalActiveTeachers = await Teacher.countDocuments({ role: "teacher", isActive: true });
+    const totalAdmins = await Teacher.countDocuments({
+      role: "admin",
+      isActive: true,
+    });
+    const totalActiveTeachers = await Teacher.countDocuments({
+      role: "teacher",
+      isActive: true,
+    });
 
-    const teachers = await Teacher.find({ isActive: true }).select("-password -avatar");
+    const teachers = await Teacher.find({ isActive: true }).select(
+      "-password -avatar"
+    );
 
-    const exp = (x) => Number.isFinite(x) ? x : 0;
+    const exp = (x) => (Number.isFinite(x) ? x : 0);
     const experienceDistribution = {
-      "مبتدئ (0-2 سنة)": teachers.filter(t => exp(t.yearsOfExperience) <= 2).length,
-      "متوسط (3-5 سنوات)": teachers.filter(t => exp(t.yearsOfExperience) >= 3 && exp(t.yearsOfExperience) <= 5).length,
-      "خبير (6-10 سنوات)": teachers.filter(t => exp(t.yearsOfExperience) >= 6 && exp(t.yearsOfExperience) <= 10).length,
-      "خبير جداً (+10 سنوات)": teachers.filter(t => exp(t.yearsOfExperience) > 10).length,
+      "مبتدئ (0-2 سنة)": teachers.filter((t) => exp(t.yearsOfExperience) <= 2)
+        .length,
+      "متوسط (3-5 سنوات)": teachers.filter(
+        (t) => exp(t.yearsOfExperience) >= 3 && exp(t.yearsOfExperience) <= 5
+      ).length,
+      "خبير (6-10 سنوات)": teachers.filter(
+        (t) => exp(t.yearsOfExperience) >= 6 && exp(t.yearsOfExperience) <= 10
+      ).length,
+      "خبير جداً (+10 سنوات)": teachers.filter(
+        (t) => exp(t.yearsOfExperience) > 10
+      ).length,
     };
 
     return res.status(200).json({
@@ -559,10 +629,14 @@ exports.getTeacherStats = async (req, res) => {
         totalAdmins,
         totalActiveTeachers,
         experienceDistribution,
-        teachers: teachers.map(t => ({
+        teachers: teachers.map((t) => ({
           _id: t._id,
           teacherId: t.teacherId,
-          fullName: `${t.firstName || ""} ${t.fatherName || ""} ${t.lastName || ""}`.replace(/\s+/g, " ").trim(),
+          fullName: `${t.firstName || ""} ${t.fatherName || ""} ${
+            t.lastName || ""
+          }`
+            .replace(/\s+/g, " ")
+            .trim(),
           groups: t.groups || [], // الحلقات التي يدرسها المعلم
           yearsOfExperience: exp(t.yearsOfExperience),
           role: t.role,
@@ -571,6 +645,8 @@ exports.getTeacherStats = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching teacher stats:", error);
-    return res.status(500).json({ success: false, message: "حدث خطأ أثناء جلب إحصائيات المعلمين" });
+    return res
+      .status(500)
+      .json({ success: false, message: "حدث خطأ أثناء جلب إحصائيات المعلمين" });
   }
 };
