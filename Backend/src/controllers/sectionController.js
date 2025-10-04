@@ -1,12 +1,35 @@
 const Section = require("../models/Section");
 const Mark = require("../models/Mark");
 
-// Get all sections, sorted by date (newest first)
+// Get sections with filtering support (by group/teacher)
 exports.getSections = async (req, res) => {
   try {
-    const sections = await Section.find().sort({ date: -1 });
+    console.log("📄 جلب المقاطع...");
+
+    // بناء استعلام الفلترة
+    let query = {};
+
+    // فلترة حسب الحلقة
+    if (req.query.group) {
+      const groupName = decodeURIComponent(req.query.group);
+      console.log("🎯 فلترة حسب الحلقة:", groupName);
+      query.group = groupName;
+    }
+
+    // فلترة حسب المعلم
+    if (req.query.teacher) {
+      const teacherName = decodeURIComponent(req.query.teacher);
+      console.log("👩‍🏫 فلترة حسب المعلم:", teacherName);
+      query.teacher = teacherName;
+    }
+
+    const sections = await Section.find(query).sort({ date: -1 });
+    console.log(`✅ تم جلب ${sections.length} مقطع`);
+    console.log("🔍 استعلام الفلترة:", query);
+
     res.json(sections);
   } catch (error) {
+    console.error("❌ خطأ في جلب المقاطع:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -27,13 +50,18 @@ exports.getSection = async (req, res) => {
 // Create a new section
 exports.createSection = async (req, res) => {
   try {
+    console.log("➕ إنشاء مقطع جديد:", req.body);
+
     const section = new Section({
       date: req.body.date,
       reviewSection: req.body.reviewSection,
       memorizationSection: req.body.memorizationSection,
+      group: req.body.group,
+      teacher: req.body.teacher,
     });
 
     const newSection = await section.save();
+    console.log("✅ تم إنشاء المقطع بنجاح:", newSection._id);
     res.status(201).json(newSection);
   } catch (error) {
     // Handle validation errors
@@ -63,7 +91,7 @@ exports.updateSection = async (req, res) => {
     const updatedSection = await Section.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true },
+      { new: true }
     );
 
     res.json(updatedSection);

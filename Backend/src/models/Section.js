@@ -15,8 +15,18 @@ const sectionSchema = new mongoose.Schema(
       type: String,
       required: [true, "مقطع الحفظ مطلوب"],
     },
+    // إضافة حقل الحلقة لربط المقطع بحلقة معينة
+    group: {
+      type: String,
+      required: [true, "اسم الحلقة مطلوب"],
+    },
+    // إضافة حقل المعلم للتأكد من أن المعلم ينشئ مقاطع لحلقته فقط
+    teacher: {
+      type: String,
+      required: [true, "اسم المعلم مطلوب"],
+    },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 const Section = mongoose.model("Section", sectionSchema);

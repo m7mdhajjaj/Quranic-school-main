@@ -138,14 +138,40 @@ const DailyMarks = () => {
         const user = JSON.parse(userJson);
         setCurrentUser(user);
 
-        // Fetch sections for everyone
-        const sectionsResponse = await axios.get(`${API_URL}/sections`);
+        // Fetch sections based on user role
+        let sectionsUrl = `${API_URL}/sections`;
+        if (user.role === "teacher" || user.role === "admin") {
+          // للمعلم: جلب مقاطع حلقاته فقط
+          const teacherName = `${user.firstName} ${user.lastName || ""}`.trim();
+          sectionsUrl += `?teacher=${encodeURIComponent(teacherName)}`;
+          console.log("👩‍🏫 جلب مقاطع المعلم:", teacherName);
+        } else if (user.role === "student") {
+          // للطالب: جلب مقاطع حلقته فقط
+          if (user.group) {
+            sectionsUrl += `?group=${encodeURIComponent(user.group)}`;
+            console.log("🎓 جلب مقاطع الطالب للحلقة:", user.group);
+          } else {
+            console.warn("⚠️ طالب بدون مجموعة:", user.firstName, user.lastName);
+            setSections([]); // لا يوجد مقاطع للعرض
+            setLoading(false);
+            return;
+          }
+        }
+
+        const sectionsResponse = await axios.get(sectionsUrl);
+        console.log("📚 تم جلب", sectionsResponse.data.length, "مقطع");
         setSections(sectionsResponse.data);
 
-        // If user is a teacher, fetch all students
+        // If user is a teacher, fetch students from their groups only
         if (user.role === "teacher" || user.role === "admin") {
-          // Fetch students filtered by teacher's groups if needed
-          const studentsResponse = await axios.get(`${API_URL}/students`);
+          // جلب الطلاب الذين ينتمون للمعلم فقط
+          const teacherName = `${user.firstName} ${user.lastName || ""}`.trim();
+          console.log("👩‍🏫 جلب طلاب المعلم:", teacherName);
+
+          const studentsResponse = await axios.get(
+            `${API_URL}/students?teacher=${encodeURIComponent(teacherName)}`
+          );
+          console.log("👥 تم جلب", studentsResponse.data.length, "طالب للمعلم");
           setStudents(studentsResponse.data);
         }
       } catch (err) {
@@ -216,8 +242,25 @@ const DailyMarks = () => {
   const handleAddSection = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!currentUser) {
+      alert("يجب تسجيل الدخول أولاً");
+      return;
+    }
+
     try {
-      const response = await axios.post(`${API_URL}/sections`, newSection);
+      // إعداد بيانات المقطع مع معلومات المجموعة والمعلم
+      const sectionData = {
+        ...newSection,
+        teacher: `${currentUser.firstName} ${
+          currentUser.lastName || ""
+        }`.trim(),
+        group:
+          currentUser.group ||
+          (currentUser.role === "teacher" ? "مجموعة المعلم" : "غير محدد"),
+      };
+
+      console.log("📝 إضافة مقطع جديد:", sectionData);
+      const response = await axios.post(`${API_URL}/sections`, sectionData);
       setSections((prev) => [response.data, ...prev]);
       setIsAddSectionModalOpen(false);
 
@@ -330,44 +373,7 @@ const DailyMarks = () => {
   };
 
   // Handle deleting section
-  const handleDeleteSection = async (sectionId: string) => {
-    if (
-      !confirm(
-        "هل أنت متأكد من حذف هذا المقطع؟ سيتم حذف جميع العلامات المرتبطة به."
-      )
-    ) {
-      return;
-    }
-
-    try {
-      await axios.delete(`${API_URL}/sections/${sectionId}`);
-
-      // Remove section from sections array
-      setSections((prev) =>
-        prev.filter((section) => section._id !== sectionId)
-      );
-
-      // Remove related marks
-      setMarks((prev) =>
-        prev.filter((mark) => {
-          if (typeof mark.sectionId === "string") {
-            return mark.sectionId !== sectionId;
-          } else {
-            return mark.sectionId._id !== sectionId;
-          }
-        })
-      );
-    } catch (err) {
-      console.error("Error deleting section:", err);
-      alert("حدث خطأ أثناء حذف المقطع");
-    }
-  };
-
-  // Open edit section modal
-  const openEditSectionModal = (section: Section) => {
-    setEditingSection({ ...section });
-    setIsEditSectionModalOpen(true);
-  };
+  // Delete and edit section functions removed for now - not used in current UI
 
   // Handle bulk update sections - opens modal to select sections
   const handleBulkUpdateSections = () => {
