@@ -15,7 +15,6 @@ import {
   FaPhone,
   FaEnvelope,
   FaMapMarkerAlt,
-  FaBirthdayCake,
 } from 'react-icons/fa';
 import { useAuth } from '../../hooks/useAuth';
 import { useSocket } from '../../hooks/useSocket';
@@ -1611,175 +1610,215 @@ const TeachersManagement: React.FC = () => {
                   </div>
                 )}
 
-                <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {currentTeachers.map((teacher) => (
                     <div
                       key={teacher._id}
-                      className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 border-2 border-gray-100 hover:border-blue-300 group relative overflow-hidden"
+                      className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-200 hover:border-blue-400 group relative overflow-hidden transform hover:scale-[1.03] hover:-translate-y-2 hover:rotate-1 animate-fadeInUp"
                     >
-                      {/* Background Pattern */}
-                      <div className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-400 to-transparent rounded-full -translate-y-16 translate-x-16"></div>
-                        <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-purple-400 to-transparent rounded-full translate-y-12 -translate-x-12"></div>
-                      </div>
+                      {/* Header Section with Avatar and Info */}
+                      <div className="relative bg-gradient-to-r from-blue-500 via-blue-600 to-indigo-600 p-4">
+                        {/* Selection Checkbox */}
+                        <div className="absolute top-3 left-3 z-10">
+                          <input
+                            type="checkbox"
+                            title={`تحديد المعلم ${teacher.firstName}`}
+                            checked={selectedTeachers.has(teacher._id)}
+                            onChange={(e) => {
+                              const newSet = new Set(selectedTeachers);
+                              if (e.target.checked) {
+                                newSet.add(teacher._id);
+                              } else {
+                                newSet.delete(teacher._id);
+                              }
+                              setSelectedTeachers(newSet);
+                            }}
+                            className="w-4 h-4 text-white bg-white/20 border-white/30 rounded focus:ring-white/50"
+                          />
+                        </div>
 
-                      {/* Selection Checkbox */}
-                      <div className="absolute top-4 left-4 z-10">
-                        <input
-                          type="checkbox"
-                          title={`تحديد المعلم ${teacher.firstName}`}
-                          checked={selectedTeachers.has(teacher._id)}
-                          onChange={(e) => {
-                            const newSet = new Set(selectedTeachers);
-                            if (e.target.checked) {
-                              newSet.add(teacher._id);
-                            } else {
-                              newSet.delete(teacher._id);
-                            }
-                            setSelectedTeachers(newSet);
-                          }}
-                          className="w-5 h-5 text-blue-600 rounded-md focus:ring-blue-500 focus:ring-2 shadow-lg"
-                        />
-                      </div>
+                        {/* Active Status */}
+                        {teacher.isActive && (
+                          <div className="absolute top-3 right-3 w-3 h-3 bg-green-400 rounded-full animate-pulse border-2 border-white"></div>
+                        )}
 
-                      {/* Teacher Avatar */}
-                      <div className="flex flex-col items-center mb-5 relative z-10">
-                        <div className="relative">
-                          <div className="w-24 h-24 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-full flex items-center justify-center mb-3 text-white text-2xl font-bold shadow-xl group-hover:scale-110 transition-all duration-300 ring-4 ring-blue-100 group-hover:ring-blue-200">
+                        {/* Avatar and Basic Info */}
+                        <div className="text-center">
+                          <div className="w-16 h-16 bg-white/30 rounded-full flex items-center justify-center mb-3 mx-auto text-white text-xl font-bold border-2 border-white/40 transition-all duration-300 group-hover:scale-110 group-hover:rotate-12 group-hover:bg-white/40 group-hover:border-white/60 group-hover:shadow-xl animate-pulse group-hover:animate-none">
                             {teacher.firstName?.charAt(0) || 'م'}
                           </div>
-                          {teacher.isActive && (
-                            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-3 border-white flex items-center justify-center">
-                              <span className="text-white text-xs">✓</span>
-                            </div>
+                          <h3 className="text-lg font-bold text-white mb-1 truncate transition-all duration-300 group-hover:text-blue-100 group-hover:scale-105">
+                            {teacher.firstName} {teacher.lastName}
+                          </h3>
+                          {teacher.specialCircle && (
+                            <p className="text-xs text-blue-100 font-medium mb-1 truncate transition-all duration-300 group-hover:text-white animate-fadeIn">
+                              {teacher.specialCircle}
+                            </p>
                           )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 border border-blue-200">
+                          <span className="inline-block px-2 py-1 bg-white/30 rounded-md text-xs font-bold text-white border border-white/40 transition-all duration-300 group-hover:bg-white/40 group-hover:border-white/60 group-hover:scale-105 animate-pulse group-hover:animate-none">
                             #{teacher.teacherId}
                           </span>
                         </div>
                       </div>
 
-                      {/* Teacher Info */}
-                      <div className="text-center space-y-4 relative z-10">
-                        <div>
-                          <h3 className="text-xl font-bold text-gray-900 mb-1 group-hover:text-blue-700 transition-colors">
-                            {teacher.firstName} {teacher.lastName}
-                          </h3>
-                          {teacher.specialCircle && (
-                            <p className="text-sm text-blue-600 font-medium">
-                              {teacher.specialCircle}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Contact Info */}
-                        <div className="space-y-2 text-sm">
-                          {teacher.phoneNumber && (
-                            <div className="flex items-center justify-center gap-2 p-2 rounded-lg bg-green-50 border border-green-200">
-                              <FaPhone className="text-green-600" size={14} />
-                              <span
-                                className="font-semibold text-green-800"
-                                dir="ltr"
-                              >
-                                {teacher.phoneNumber}
-                              </span>
-                            </div>
-                          )}
-                          {teacher.email && (
-                            <div className="flex items-center justify-center gap-2 p-2 rounded-lg bg-blue-50 border border-blue-200">
-                              <FaEnvelope className="text-blue-600" size={14} />
-                              <span
-                                className="truncate font-medium text-blue-800"
-                                title={teacher.email}
-                              >
-                                {teacher.email}
-                              </span>
-                            </div>
-                          )}
-                          {(teacher.residence || teacher.address) && (
-                            <div className="flex items-center justify-center gap-2 p-2 rounded-lg bg-red-50 border border-red-200">
-                              <FaMapMarkerAlt
-                                className="text-red-600"
-                                size={14}
-                              />
-                              <span className="truncate font-medium text-red-800">
-                                {teacher.residence || teacher.address}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Stats */}
-                        <div className="flex justify-center gap-2 text-xs">
+                      {/* Content Section */}
+                      <div className="p-4 space-y-3">
+                        {/* Quick Stats */}
+                        <div className="flex justify-center gap-2">
                           {teacher.gender && (
                             <span
-                              className={`inline-flex items-center px-3 py-1.5 rounded-full font-bold border-2 ${
+                              className={`px-2 py-1 rounded-full text-xs font-bold transition-all duration-300 transform hover:scale-110 animate-fadeIn ${
                                 teacher.gender === 'ذكر'
-                                  ? 'bg-cyan-100 text-cyan-800 border-cyan-300'
-                                  : 'bg-pink-100 text-pink-800 border-pink-300'
+                                  ? 'bg-blue-100 text-blue-700 hover:bg-blue-200 hover:text-blue-800'
+                                  : 'bg-pink-100 text-pink-700 hover:bg-pink-200 hover:text-pink-800'
                               }`}
                             >
                               {teacher.gender}
                             </span>
                           )}
                           {teacher.age && (
-                            <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-amber-100 text-amber-800 font-bold border-2 border-amber-300">
-                              <FaBirthdayCake className="ml-1" size={12} />
+                            <span className="px-2 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-bold transition-all duration-300 transform hover:scale-110 hover:bg-amber-200 hover:text-amber-800 animate-fadeIn">
                               {teacher.age} سنة
                             </span>
                           )}
                         </div>
 
-                        {/* Groups */}
-                        <div className="mt-5 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                        {/* Contact & Location - Compact */}
+                        {(teacher.phoneNumber ||
+                          teacher.email ||
+                          teacher.residence ||
+                          teacher.address) && (
+                          <div className="bg-gray-50 rounded-lg p-2 space-y-1 transition-all duration-300 hover:bg-gray-100 hover:shadow-md">
+                            {teacher.phoneNumber && (
+                              <div className="flex items-center gap-2 text-xs group/contact cursor-pointer transition-all duration-300 hover:bg-green-50 rounded p-1">
+                                <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center transition-all duration-300 group-hover/contact:bg-green-200 group-hover/contact:scale-110">
+                                  <FaPhone
+                                    className="text-green-600 group-hover/contact:animate-bounce"
+                                    size={10}
+                                  />
+                                </div>
+                                <span
+                                  className="font-medium text-gray-700 truncate group-hover/contact:text-green-800 transition-colors"
+                                  dir="ltr"
+                                >
+                                  {teacher.phoneNumber}
+                                </span>
+                              </div>
+                            )}
+                            {teacher.email && (
+                              <div className="flex items-center gap-2 text-xs group/contact cursor-pointer transition-all duration-300 hover:bg-blue-50 rounded p-1">
+                                <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center transition-all duration-300 group-hover/contact:bg-blue-200 group-hover/contact:scale-110">
+                                  <FaEnvelope
+                                    className="text-blue-600 group-hover/contact:animate-pulse"
+                                    size={10}
+                                  />
+                                </div>
+                                <span
+                                  className="font-medium text-gray-700 truncate group-hover/contact:text-blue-800 transition-colors"
+                                  title={teacher.email}
+                                >
+                                  {teacher.email}
+                                </span>
+                              </div>
+                            )}
+                            {(teacher.residence || teacher.address) && (
+                              <div className="flex items-center gap-2 text-xs group/contact cursor-pointer transition-all duration-300 hover:bg-red-50 rounded p-1">
+                                <div className="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center transition-all duration-300 group-hover/contact:bg-red-200 group-hover/contact:scale-110">
+                                  <FaMapMarkerAlt
+                                    className="text-red-600 group-hover/contact:animate-bounce"
+                                    size={10}
+                                  />
+                                </div>
+                                <span className="font-medium text-gray-700 truncate group-hover/contact:text-red-800 transition-colors">
+                                  {teacher.residence || teacher.address}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Groups - Compact Version */}
+                        <div className="bg-gray-50 rounded-lg p-2">
                           {teacher.groups &&
                           Array.isArray(teacher.groups) &&
                           teacher.groups.length > 0 ? (
                             <div className="space-y-2">
-                              <div className="flex items-center justify-center gap-1 mb-3">
-                                <span className="text-xs font-bold text-gray-700">
-                                  الحلقات المدرسة
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="font-bold text-gray-600 transition-colors duration-300 group-hover:text-gray-800">
+                                  الحلقات
                                 </span>
-                                <span className="inline-flex items-center justify-center w-5 h-5 bg-blue-500 text-white rounded-full text-xs font-bold">
+                                <span className="bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center font-bold text-xs transition-all duration-300 group-hover:bg-blue-600 group-hover:scale-110 animate-pulse group-hover:animate-bounce">
                                   {teacher.groups.length}
                                 </span>
                               </div>
-                              {teacher.groups.length === 1 ? (
-                                (() => {
-                                  const group = teacher.groups[0];
-                                  if (!group) return null;
 
-                                  const groupName = getGroupDisplayName(group);
-                                  const groupNumber = getGroupNumber(group);
+                              {/* Display first 2 groups compactly */}
+                              <div className="space-y-1">
+                                {teacher.groups
+                                  .slice(0, 2)
+                                  .map((group, index) => {
+                                    if (!group) return null;
+                                    const groupName =
+                                      getGroupDisplayName(group);
+                                    const groupNumber = getGroupNumber(group);
 
-                                  return (
-                                    <div className="bg-white p-3 rounded-lg border-2 border-blue-200 shadow-sm">
-                                      <div className="text-center">
-                                        <span className="font-bold text-blue-900 text-sm">
-                                          {groupName}
+                                    return (
+                                      <div
+                                        key={index}
+                                        className="group/item flex items-center justify-between p-1.5 bg-blue-50 hover:bg-blue-100 rounded text-xs border border-blue-200 hover:border-blue-300 transition-all duration-300 transform hover:scale-[1.02] cursor-pointer relative"
+                                        title={`${groupName}${groupNumber ? ` - رقم ${groupNumber}` : ''}`}
+                                      >
+                                        <span className="font-medium text-blue-800 group-hover/item:text-blue-900 truncate transition-colors">
+                                          {groupName && groupName.length > 12
+                                            ? `${groupName.substring(0, 12)}...`
+                                            : groupName}
                                         </span>
                                         {groupNumber && (
-                                          <div className="mt-1">
-                                            <span className="inline-block px-2 py-1 bg-blue-600 text-white rounded-full text-xs font-bold">
-                                              رقم {groupNumber}
-                                            </span>
+                                          <span className="bg-blue-600 group-hover/item:bg-blue-700 text-white px-1.5 py-0.5 rounded-full text-xs font-bold transition-colors animate-pulse group-hover/item:animate-none">
+                                            {groupNumber}
+                                          </span>
+                                        )}
+
+                                        {/* Tooltip للاسم الكامل */}
+                                        {groupName && groupName.length > 12 && (
+                                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover/item:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap z-50">
+                                            {groupName}
+                                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-2 border-r-2 border-t-2 border-transparent border-t-gray-800"></div>
                                           </div>
                                         )}
                                       </div>
+                                    );
+                                  })}
+                              </div>
+
+                              {/* Show more button if more than 2 groups */}
+                              {teacher.groups.length > 2 && (
+                                <details className="group/details">
+                                  <summary className="w-full text-xs text-blue-600 hover:text-blue-800 font-medium bg-blue-100 hover:bg-blue-200 rounded py-1 transition-all duration-300 cursor-pointer list-none transform hover:scale-[1.02] animate-bounce hover:animate-none">
+                                    <div className="flex items-center justify-center gap-1">
+                                      <span>
+                                        +{teacher.groups.length - 2} حلقة أخرى
+                                      </span>
+                                      <svg
+                                        className="w-3 h-3 transform group-open/details:rotate-180 transition-transform duration-300"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M19 9l-7 7-7-7"
+                                        />
+                                      </svg>
                                     </div>
-                                  );
-                                })()
-                              ) : (
-                                <div className="space-y-2">
-                                  {/* عرض أول حلقتين */}
-                                  <div className="space-y-2">
+                                  </summary>
+                                  <div className="mt-2 space-y-1 animate-fadeIn">
                                     {teacher.groups
-                                      .slice(0, 2)
+                                      .slice(2)
                                       .map((group, index) => {
                                         if (!group) return null;
-
                                         const groupName =
                                           getGroupDisplayName(group);
                                         const groupNumber =
@@ -1787,146 +1826,59 @@ const TeachersManagement: React.FC = () => {
 
                                         return (
                                           <div
-                                            key={index}
-                                            className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 rounded-xl border-2 border-blue-200 transition-all duration-200 shadow-sm hover:shadow-md group/card"
+                                            key={index + 2}
+                                            className="group/extra flex items-center justify-between p-1.5 bg-green-50 hover:bg-green-100 rounded text-xs border border-green-200 hover:border-green-300 transition-all duration-300 transform hover:scale-[1.02] cursor-pointer relative"
+                                            title={`${groupName}${groupNumber ? ` - رقم ${groupNumber}` : ''}`}
                                           >
-                                            <div className="flex items-center gap-2">
-                                              <div className="w-2 h-2 bg-blue-500 rounded-full group-hover/card:scale-125 transition-transform"></div>
-                                              <span
-                                                className="font-bold text-blue-900 text-sm truncate"
-                                                title={groupName}
-                                              >
-                                                {groupName &&
-                                                groupName.length > 8
-                                                  ? `${groupName.substring(0, 8)}...`
-                                                  : groupName}
-                                              </span>
-                                            </div>
+                                            <span className="font-medium text-green-800 group-hover/extra:text-green-900 truncate transition-colors">
+                                              {groupName &&
+                                              groupName.length > 10
+                                                ? `${groupName.substring(0, 10)}...`
+                                                : groupName}
+                                            </span>
                                             {groupNumber && (
-                                              <span className="px-2.5 py-1 bg-blue-600 text-white rounded-full font-bold text-xs shadow-md group-hover/card:bg-blue-700 transition-colors">
+                                              <span className="bg-green-600 group-hover/extra:bg-green-700 text-white px-1.5 py-0.5 rounded-full text-xs font-bold transition-colors">
                                                 {groupNumber}
                                               </span>
                                             )}
+
+                                            {/* Tooltip للاسم الكامل */}
+                                            {groupName &&
+                                              groupName.length > 10 && (
+                                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover/extra:opacity-100 transition-opacity duration-300 pointer-events-none whitespace-nowrap z-50">
+                                                  {groupName}
+                                                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-2 border-r-2 border-t-2 border-transparent border-t-gray-800"></div>
+                                                </div>
+                                              )}
                                           </div>
                                         );
                                       })}
                                   </div>
-
-                                  {/* منيو منسدل للحلقات الإضافية */}
-                                  {teacher.groups.length > 2 && (
-                                    <details className="group/details">
-                                      <summary className="cursor-pointer list-none focus:outline-none">
-                                        <div className="flex items-center justify-center p-3 bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-800 hover:from-indigo-200 hover:to-purple-200 rounded-xl border-2 border-indigo-200 transition-all duration-300 shadow-md hover:shadow-lg group-open/details:bg-gradient-to-r group-open/details:from-emerald-100 group-open/details:to-green-100 group-open/details:text-emerald-800 group-open/details:border-emerald-300 group-open/details:shadow-xl">
-                                          <div className="flex items-center gap-2">
-                                            <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-sm">
-                                              <span className="font-bold text-xs text-indigo-700 group-open/details:text-emerald-700">
-                                                {teacher.groups.length - 2}
-                                              </span>
-                                            </div>
-                                            <span className="text-sm font-bold">
-                                              حلقات أخرى
-                                            </span>
-                                            <svg
-                                              className="w-5 h-5 transform group-open/details:rotate-180 transition-transform duration-300"
-                                              fill="none"
-                                              stroke="currentColor"
-                                              viewBox="0 0 24 24"
-                                            >
-                                              <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={3}
-                                                d="M19 9l-7 7-7-7"
-                                              />
-                                            </svg>
-                                          </div>
-                                        </div>
-                                      </summary>
-                                      <div className="mt-3 bg-white border-2 border-indigo-200 rounded-2xl shadow-xl overflow-hidden animate-fade-in relative">
-                                        {/* Header with gradient */}
-                                        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 px-4 py-3 border-b-2 border-indigo-100">
-                                          <div className="flex items-center justify-between">
-                                            <span className="text-sm font-bold text-indigo-800 flex items-center gap-2">
-                                              <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
-                                              الحلقات الإضافية
-                                            </span>
-                                            <span className="bg-indigo-200 text-indigo-800 px-2 py-1 rounded-full text-xs font-bold">
-                                              {teacher.groups.length - 2}
-                                            </span>
-                                          </div>
-                                        </div>
-
-                                        {/* Content */}
-                                        <div className="max-h-36 overflow-y-auto">
-                                          <div className="p-1">
-                                            {teacher.groups
-                                              .slice(2)
-                                              .map((group, index) => {
-                                                if (!group) return null;
-
-                                                const groupName =
-                                                  getGroupDisplayName(group);
-                                                const groupNumber =
-                                                  getGroupNumber(group);
-
-                                                return (
-                                                  <div
-                                                    key={index + 2}
-                                                    className="flex items-center justify-between p-3 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200 rounded-lg mx-1 my-1 border border-transparent hover:border-blue-200 group/item"
-                                                    title={`حلقة: ${groupName}${groupNumber ? ` - رقم ${groupNumber}` : ''}`}
-                                                  >
-                                                    <div className="flex items-center gap-2 flex-1">
-                                                      <div className="w-2 h-2 bg-blue-400 rounded-full group-hover/item:bg-blue-600 transition-colors"></div>
-                                                      <span className="font-semibold text-gray-800 group-hover/item:text-blue-800 text-sm transition-colors">
-                                                        {groupName &&
-                                                        groupName.length > 10
-                                                          ? `${groupName.substring(0, 10)}...`
-                                                          : groupName}
-                                                      </span>
-                                                    </div>
-                                                    {groupNumber && (
-                                                      <span className="px-2.5 py-1 bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 rounded-full font-bold text-xs group-hover/item:from-blue-200 group-hover/item:to-indigo-200 transition-all shadow-sm">
-                                                        {groupNumber}
-                                                      </span>
-                                                    )}
-                                                  </div>
-                                                );
-                                              })}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </details>
-                                  )}
-                                </div>
+                                </details>
                               )}
                             </div>
                           ) : (
-                            <div className="text-center py-3">
-                              <div className="text-gray-400 text-sm font-medium">
-                                لا توجد حلقات مخصصة
-                              </div>
-                              <div className="text-xs text-gray-400 mt-1">
-                                غير مرتبط بأي حلقة
-                              </div>
+                            <div className="text-center text-gray-400 text-xs py-2">
+                              لا توجد حلقات
                             </div>
                           )}
                         </div>
 
-                        {/* Actions */}
-                        <div className="flex justify-center gap-2 mt-6 pt-4 border-t-2 border-gray-100">
+                        {/* Actions - Bottom */}
+                        <div className="flex justify-center gap-2 pt-2 border-t border-gray-100">
                           <button
                             onClick={() => handleEdit(teacher)}
-                            className="flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-600 hover:bg-blue-200 hover:text-blue-700 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105"
+                            className="flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-600 hover:bg-blue-200 hover:text-blue-700 rounded-lg transition-all duration-300 transform hover:scale-110 hover:-translate-y-0.5 hover:shadow-lg group/edit"
                             title="تعديل المعلم"
                           >
-                            <FaEdit className="w-4 h-4" />
+                            <FaEdit className="w-3.5 h-3.5 group-hover/edit:animate-pulse" />
                           </button>
                           <button
                             onClick={() => handleDelete(teacher._id)}
-                            className="flex items-center justify-center w-10 h-10 bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-700 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105"
+                            className="flex items-center justify-center w-8 h-8 bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-700 rounded-lg transition-all duration-300 transform hover:scale-110 hover:-translate-y-0.5 hover:shadow-lg group/delete"
                             title="حذف المعلم"
                           >
-                            <FaTrash className="w-4 h-4" />
+                            <FaTrash className="w-3.5 h-3.5 group-hover/delete:animate-bounce" />
                           </button>
                         </div>
                       </div>
@@ -2288,17 +2240,19 @@ const TeachersManagement: React.FC = () => {
         )}
 
         {/* Enhanced Responsive Pagination */}
-        {!isLoading && filteredAndSortedTeachers.length > 0 && totalPages > 1 && (
-          <ResponsivePagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={filteredAndSortedTeachers.length}
-            itemsPerPage={teachersPerPage}
-            onPageChange={setCurrentPage}
-            itemName="معلم"
-            showQuickJump={true}
-          />
-        )}
+        {!isLoading &&
+          filteredAndSortedTeachers.length > 0 &&
+          totalPages > 1 && (
+            <ResponsivePagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredAndSortedTeachers.length}
+              itemsPerPage={teachersPerPage}
+              onPageChange={setCurrentPage}
+              itemName="معلم"
+              showQuickJump={true}
+            />
+          )}
       </div>
 
       {/* Teacher Form Modal */}
