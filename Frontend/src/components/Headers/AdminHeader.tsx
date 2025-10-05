@@ -76,6 +76,13 @@ const AdminHeader: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Close profile menu when mobile menu opens
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      setProfileMenuOpen(false);
+    }
+  }, [mobileMenuOpen]);
+
   // Close mobile menu on route change
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -216,7 +223,10 @@ const AdminHeader: React.FC = () => {
               {navItems.map((item, index) => (
                 <button
                   key={item.path}
-                  onClick={() => navigate(item.path)}
+                  onClick={() => {
+                    navigate(item.path);
+                    setProfileMenuOpen(false);
+                  }}
                   className={`group relative px-2 sm:px-3 lg:px-5 py-2 lg:py-2.5 rounded-lg lg:rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
                     isActive(item.path)
                       ? scrolled
@@ -232,7 +242,7 @@ const AdminHeader: React.FC = () => {
                     <span className="text-sm lg:text-lg transition-transform duration-300 group-hover:scale-125">
                       {item.icon}
                     </span>
-                    <span className="hidden lg:inline">{item.label}</span>
+                    <span className="hidden md:inline text-xs md:text-sm lg:text-base">{item.label}</span>
                   </span>
                   {isActive(item.path) && (
                     <span
@@ -295,10 +305,10 @@ const AdminHeader: React.FC = () => {
                       {mockNotifications.map((notification, index) => (
                         <div
                           key={notification.id}
-                          className={`px-6 py-4 border-b border-gray-100 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 cursor-pointer transition-all duration-300 transform hover:scale-[1.02] ${
+                          className={`px-6 py-4 border-b border-gray-100 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 cursor-pointer transition-all duration-300 transform hover:scale-[1.02] notification-item ${
                             notification.unread ? 'bg-blue-50/50' : ''
                           }`}
-                          style={{ animationDelay: `${index * 50}ms` }}
+                          data-animation-delay={index * 50}
                         >
                           <div className="flex items-start gap-3">
                             <div
@@ -379,7 +389,7 @@ const AdminHeader: React.FC = () => {
                   </svg>
                 </button>
 
-                {profileMenuOpen && (
+                {profileMenuOpen && !mobileMenuOpen && (
                   <div className="absolute left-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-scale-in z-50">
                     <div className="bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-5">
                       <div className="flex items-center gap-3">
@@ -482,12 +492,19 @@ const AdminHeader: React.FC = () => {
 
               {/* Mobile Menu Button */}
               <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                onClick={() => {
+                  setMobileMenuOpen(!mobileMenuOpen);
+                  if (!mobileMenuOpen) {
+                    setProfileMenuOpen(false);
+                  }
+                }}
                 className={`md:hidden p-2 sm:p-2.5 rounded-lg sm:rounded-xl transition-all duration-300 ${
                   scrolled
                     ? 'bg-gray-100 text-gray-700'
                     : 'bg-white/20 text-white'
                 }`}
+                title="فتح القائمة"
+                aria-label="فتح القائمة"
               >
                 <svg
                   className="w-5 h-5 sm:w-6 sm:h-6"
@@ -517,7 +534,7 @@ const AdminHeader: React.FC = () => {
 
           {/* Enhanced Mobile Navigation */}
           {mobileMenuOpen && (
-            <div className="lg:hidden pb-6 pt-4 border-t border-white/20 animate-slide-down">
+            <div className="md:hidden pb-6 pt-4 border-t border-white/20 animate-slide-down">
               <div className="space-y-4">
                 {/* User Profile Section */}
                 <div className={`px-4 py-3 rounded-xl ${
@@ -553,17 +570,18 @@ const AdminHeader: React.FC = () => {
                       onClick={() => {
                         navigate(item.path);
                         setMobileMenuOpen(false);
+                        setProfileMenuOpen(false);
                       }}
-                      className={`w-full px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-300 flex items-center justify-between group mobile-nav-item ${
+                      className={`w-full px-4 py-4 rounded-xl text-sm font-medium transition-all duration-300 flex items-center justify-between group mobile-nav-item touch-manipulation ${
                         isActive(item.path)
                           ? scrolled
                             ? `bg-gradient-to-r ${item.gradient} text-white shadow-lg active-item`
                             : 'bg-white text-emerald-600 shadow-lg active-item'
                           : scrolled
-                            ? 'text-gray-700 hover:bg-gray-100'
-                            : 'text-white hover:bg-white/20'
+                            ? 'text-gray-700 hover:bg-gray-100 active:bg-gray-200'
+                            : 'text-white hover:bg-white/20 active:bg-white/30'
                       }`}
-                      style={{ animationDelay: `${index * 50}ms` }}
+                      data-animation-delay={index * 50}
                     >
                       <div className="flex items-center gap-3">
                         <span className="text-xl">{item.icon}</span>
@@ -571,13 +589,13 @@ const AdminHeader: React.FC = () => {
                       </div>
                       <svg 
                         className={`w-4 h-4 transform transition-transform ${
-                          isActive(item.path) ? 'rotate-0' : 'group-hover:translate-x-1'
+                          isActive(item.path) ? 'rotate-0' : 'group-hover:-translate-x-1'
                         }`}
                         fill="none" 
                         stroke="currentColor" 
                         viewBox="0 0 24 24"
                       >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                       </svg>
                     </button>
                   ))}
@@ -595,6 +613,7 @@ const AdminHeader: React.FC = () => {
                     onClick={() => {
                       setShowNotifications(!showNotifications);
                       setMobileMenuOpen(false);
+                      setProfileMenuOpen(false);
                     }}
                     className={`w-full px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 flex items-center justify-between group ${
                       scrolled 
@@ -611,15 +630,16 @@ const AdminHeader: React.FC = () => {
                         </span>
                       )}
                     </div>
-                    <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    <svg className="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                     </svg>
                   </button>
 
                   <button
                     onClick={() => {
-                      navigate('/admin/profile');
+                      navigate('/profile');
                       setMobileMenuOpen(false);
+                      setProfileMenuOpen(false);
                     }}
                     className={`w-full px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 flex items-center justify-between group mobile-nav-item ${
                       scrolled 
@@ -631,8 +651,29 @@ const AdminHeader: React.FC = () => {
                       <span className="text-xl">👤</span>
                       <span>الملف الشخصي</span>
                     </div>
-                    <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    <svg className="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      navigate('/change-password');
+                      setMobileMenuOpen(false);
+                      setProfileMenuOpen(false);
+                    }}
+                    className={`w-full px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 flex items-center justify-between group mobile-nav-item ${
+                      scrolled 
+                        ? 'text-gray-700 hover:bg-gray-100' 
+                        : 'text-white hover:bg-white/20'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">🔐</span>
+                      <span>تغيير كلمة المرور</span>
+                    </div>
+                    <svg className="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                     </svg>
                   </button>
 
@@ -640,6 +681,7 @@ const AdminHeader: React.FC = () => {
                     onClick={() => {
                       navigate('/admin/reports');
                       setMobileMenuOpen(false);
+                      setProfileMenuOpen(false);
                     }}
                     className={`w-full px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 flex items-center justify-between group mobile-nav-item ${
                       scrolled 
@@ -651,8 +693,8 @@ const AdminHeader: React.FC = () => {
                       <span className="text-xl">📈</span>
                       <span>التقارير</span>
                     </div>
-                    <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    <svg className="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                     </svg>
                   </button>
                 </div>
@@ -660,15 +702,24 @@ const AdminHeader: React.FC = () => {
                 {/* Logout Button */}
                 <div className="pt-4 border-t border-white/20">
                   <button
-                    onClick={handleLogout}
-                    className={`w-full px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 flex items-center justify-center gap-3 ${
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setProfileMenuOpen(false);
+                      handleLogout();
+                    }}
+                    className={`w-full px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 flex items-center justify-between group mobile-nav-item ${
                       scrolled 
-                        ? 'bg-red-50 text-red-600 hover:bg-red-100' 
-                        : 'bg-red-500/20 text-white hover:bg-red-500/30'
+                        ? 'text-red-600 hover:bg-red-50' 
+                        : 'text-white hover:bg-red-500/20'
                     }`}
                   >
-                    <span className="text-xl">🚪</span>
-                    <span>تسجيل الخروج</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">🚪</span>
+                      <span>تسجيل الخروج</span>
+                    </div>
+                    <svg className="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
                   </button>
                 </div>
               </div>
@@ -680,10 +731,13 @@ const AdminHeader: React.FC = () => {
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
         <div 
-          className={`fixed inset-0 bg-black/50 z-40 lg:hidden animate-fade-in ${
+          className={`fixed inset-0 bg-black/50 z-40 md:hidden animate-fade-in ${
             scrolled ? 'mobile-overlay-scrolled' : 'mobile-overlay-default'
           }`}
-          onClick={() => setMobileMenuOpen(false)}
+          onClick={() => {
+            setMobileMenuOpen(false);
+            setProfileMenuOpen(false);
+          }}
         />
       )}
 
@@ -796,6 +850,77 @@ const AdminHeader: React.FC = () => {
 
         .mobile-nav-item:active {
           transform: scale(0.95);
+        }
+
+        /* Animation delays for staggered effects */
+        .notification-item[data-animation-delay="0"] {
+          animation-delay: 0ms;
+        }
+        .notification-item[data-animation-delay="50"] {
+          animation-delay: 50ms;
+        }
+        .notification-item[data-animation-delay="100"] {
+          animation-delay: 100ms;
+        }
+        .notification-item[data-animation-delay="150"] {
+          animation-delay: 150ms;
+        }
+        .notification-item[data-animation-delay="200"] {
+          animation-delay: 200ms;
+        }
+
+        .mobile-nav-item[data-animation-delay="0"] {
+          animation-delay: 0ms;
+        }
+        .mobile-nav-item[data-animation-delay="50"] {
+          animation-delay: 50ms;
+        }
+        .mobile-nav-item[data-animation-delay="100"] {
+          animation-delay: 100ms;
+        }
+        .mobile-nav-item[data-animation-delay="150"] {
+          animation-delay: 150ms;
+        }
+        .mobile-nav-item[data-animation-delay="200"] {
+          animation-delay: 200ms;
+        }
+
+        /* Responsive navigation improvements */
+        @media (max-width: 1024px) {
+          nav button {
+            padding: 0.5rem 0.75rem;
+          }
+          nav button span:last-child {
+            font-size: 0.75rem;
+          }
+        }
+
+        @media (max-width: 868px) {
+          nav button span:last-child {
+            font-size: 0.7rem;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .mobile-overlay-scrolled {
+            top: 80px;
+          }
+          .mobile-overlay-default {
+            top: 64px;
+          }
+        }
+
+        /* Touch improvements for mobile */
+        .touch-manipulation {
+          touch-action: manipulation;
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Better mobile menu animations */
+        @media (max-width: 768px) {
+          .mobile-nav-item {
+            min-height: 48px;
+          }
         }
 
         /* Custom scrollbar for notifications */
