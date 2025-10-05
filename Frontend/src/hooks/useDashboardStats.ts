@@ -1,5 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
-import api from '../Api/api';
+import { useState, useEffect, useCallback } from "react";
+import api from "../Api/api";
+
+export interface GroupDistribution {
+  groupName: string;
+  studentCount: number;
+  capacity: number;
+  percentage: number;
+}
 
 interface Stats {
   totalStudents: number;
@@ -13,6 +20,7 @@ interface Stats {
   attendanceRate: number;
   upcomingExams: number;
   recentMarksCount: number;
+  groupsDistribution?: GroupDistribution[];
 }
 
 interface UseDashboardStatsReturn {
@@ -22,6 +30,7 @@ interface UseDashboardStatsReturn {
   lastUpdated: Date | null;
   refreshing: boolean;
   fetchStats: (force?: boolean) => Promise<void>;
+  groupsDistribution: GroupDistribution[];
 }
 
 const INITIAL_STATS: Stats = {
@@ -36,6 +45,7 @@ const INITIAL_STATS: Stats = {
   attendanceRate: 0,
   upcomingExams: 0,
   recentMarksCount: 0,
+  groupsDistribution: [],
 };
 
 export const useDashboardStats = (): UseDashboardStatsReturn => {
@@ -45,36 +55,63 @@ export const useDashboardStats = (): UseDashboardStatsReturn => {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const [groupsDistribution, setGroupsDistribution] = useState<
+    GroupDistribution[]
+  >([]);
 
   const fetchStats = useCallback(async () => {
     try {
       setRefreshing(true);
       setError(null);
-      
-      console.log('📊 جلب إحصائيات لوحة التحكم...');
-      
-      const response = await api.get('/dashboard/stats');
-      
-      if (response.data.success) {
-        const statsData = response.data.data;
+
+      console.log("📊 جلب إحصائيات لوحة التحكم...");
+
+      // جلب الإحصائيات الأساسية
+      const statsResponse = await api.get("/dashboard/stats");
+
+      // جلب بيانات الحلقات لحساب التوزيع
+      const groupsResponse = await api.get("/groups");
+
+      if (statsResponse.data.success) {
+        const statsData = statsResponse.data.data;
         const now = Date.now();
-        
-        setStats(statsData);
+
+        // معالجة بيانات توزيع الحلقات
+        let groupsDistributionData: GroupDistribution[] = [];
+
+        if (groupsResponse.data.success && groupsResponse.data.data) {
+          groupsDistributionData = groupsResponse.data.data.map(
+            (group: any) => ({
+              groupName: group.name,
+              studentCount: group.currentStudents || 0,
+              capacity: group.capacity || 30,
+              percentage: Math.round(
+                ((group.currentStudents || 0) / (group.capacity || 30)) * 100
+              ),
+            })
+          );
+        }
+
+        setStats({ ...statsData, groupsDistribution: groupsDistributionData });
+        setGroupsDistribution(groupsDistributionData);
         setLastUpdated(new Date(now));
         setInitialized(true);
-        console.log('✅ تم جلب الإحصائيات بنجاح:', statsData);
+
+        console.log("✅ تم جلب الإحصائيات بنجاح:", statsData);
+        console.log("✅ تم جلب توزيع الحلقات:", groupsDistributionData);
       } else {
-        throw new Error(response.data.message || 'فشل في جلب الإحصائيات');
+        throw new Error(statsResponse.data.message || "فشل في جلب الإحصائيات");
       }
-      
     } catch (error) {
-      console.error('❌ خطأ في جلب الإحصائيات:', error);
-      const errorMessage = error instanceof Error ? error.message : 'خطأ في جلب الإحصائيات';
+      console.error("❌ خطأ في جلب الإحصائيات:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "خطأ في جلب الإحصائيات";
       setError(errorMessage);
-      
+
       // استخدام البيانات الافتراضية عند الخطأ
       if (!initialized) {
         setStats(INITIAL_STATS);
+        setGroupsDistribution([]);
         setInitialized(true);
       }
     } finally {
@@ -93,7 +130,7 @@ export const useDashboardStats = (): UseDashboardStatsReturn => {
   // Auto refresh كل 10 دقائق
   useEffect(() => {
     if (!initialized) return;
-    
+
     const interval = setInterval(() => {
       fetchStats();
     }, 10 * 60 * 1000); // 10 دقائق
@@ -108,5 +145,6 @@ export const useDashboardStats = (): UseDashboardStatsReturn => {
     lastUpdated,
     refreshing,
     fetchStats,
+    groupsDistribution,
   };
 };
