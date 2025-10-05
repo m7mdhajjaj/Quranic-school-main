@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import LoadingSkeleton from "../components/Loading/LoadingSkeleton";
 import { useDashboardStats } from "../hooks/useDashboardStats";
@@ -58,16 +57,6 @@ const AdminDashboard = () => {
     labels: groupsWithStudents.map((g) => g.groupName),
     data: groupsWithStudents.map((g) => g.studentCount),
   };
-
-  const [marksByGroup] = useState<ChartData>({
-    labels: [
-      "حلقة الأطفال",
-      "حلقة المبتدئين",
-      "حلقة المتوسطين",
-      "حلقة المتقدمين",
-    ],
-    data: [85, 78, 82, 88],
-  });
 
   // عرض Loading state
   if (isLoading) {
@@ -179,7 +168,7 @@ const AdminDashboard = () => {
               <div className="w-full bg-gray-100 rounded-t-lg relative h-60 overflow-hidden">
                 <div
                   className={`${color} rounded-t-lg absolute bottom-0 w-full transition-all duration-500 hover:opacity-80 flex items-end justify-center pb-2`}
-                  data-height={heightPercent}>
+                  style={{ height: `${heightPercent}%` }}>
                   <span className="text-white font-bold text-sm">{value}</span>
                 </div>
               </div>
@@ -554,7 +543,7 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300">
+          <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300">
             <h3 className="text-xl font-bold text-gray-900 mb-2 flex items-center text-right">
               <span className="w-2 h-8 bg-gradient-to-b from-green-500 to-green-600 rounded-full mr-3"></span>
               توزيع الطلاب حسب الحلقات
@@ -607,38 +596,9 @@ const AdminDashboard = () => {
               )}
             </div>
           </div>
-
-          <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300">
-            <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center text-right">
-              <span className="w-2 h-8 bg-gradient-to-b from-purple-500 to-purple-600 rounded-full mr-3"></span>
-              الدرجات حسب الحلقات
-            </h3>
-            <div className="h-72">
-              <BarChart
-                data={marksByGroup.data}
-                labels={marksByGroup.labels}
-                color="bg-gradient-to-t from-purple-500 to-purple-600"
-                maxValue={100}
-              />
-            </div>
-          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-            <h3 className="text-xl font-bold text-gray-900 mb-6 text-right">
-              معدل الحضور
-            </h3>
-            <div className="flex items-center justify-center h-32">
-              <div className="text-center">
-                <div className="text-4xl font-bold text-green-600 mb-2">
-                  {stats.attendanceRate}%
-                </div>
-                <p className="text-gray-600">من إجمالي الحصص</p>
-              </div>
-            </div>
-          </div>
-
+        <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-8">
           <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
             <h3 className="text-xl font-bold text-gray-900 mb-6 text-right">
               الطلاب النشطون
