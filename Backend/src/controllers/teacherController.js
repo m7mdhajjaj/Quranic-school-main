@@ -1,6 +1,7 @@
 const Teacher = require("../models/Teacher");
 const Student = require("../models/Student");
 const Admin = require("../models/Admin");
+const Group = require("../models/Group");
 const bcrypt = require("bcryptjs");
 const { validateAndCheckDuplicates } = require("../utils/duplicateChecker");
 
@@ -47,10 +48,24 @@ const generateTeacherId = async () => {
 // Get all teachers
 exports.getAllTeachers = async (req, res) => {
   try {
-    // return full teacher docs (minus password) so UI has everything (including avatar)
     const teachers = await Teacher.find({}).select("-password");
 
-    return res.status(200).json({ success: true, data: teachers });
+    // جلب الحلقات لكل معلم
+    const teachersWithGroups = await Promise.all(
+      teachers.map(async (teacher) => {
+        const teacherFullName = `${teacher.firstName} ${teacher.lastName}`;
+        // البحث عن الحلقات التي تطابق اسم المعلم الكامل أو الـ ID
+        const groups = await Group.find({
+          $or: [{ teacher: teacher._id }, { teacher: teacherFullName }],
+        });
+        return {
+          ...teacher.toObject(),
+          groups: groups.map((g) => ({ name: g.name, id: g._id })), // إرجاع اسم الحلقة والـ ID
+        };
+      })
+    );
+
+    return res.status(200).json({ success: true, data: teachersWithGroups });
   } catch (error) {
     console.error("Error fetching teachers:", error);
     return res
@@ -109,7 +124,11 @@ exports.createTeacher = async (req, res) => {
     }
 
     // التحقق من تكرار البيانات الفريدة عبر جميع أنواع المستخدمين
-    const hasDuplicates = await validateAndCheckDuplicates(req, res, { idNumber, phoneNumber, email });
+    const hasDuplicates = await validateAndCheckDuplicates(req, res, {
+      idNumber,
+      phoneNumber,
+      email,
+    });
     if (hasDuplicates) return; // تم إرسال استجابة الخطأ بالفعل
 
     // teacherId + password
@@ -294,7 +313,13 @@ exports.updateTeacher = async (req, res) => {
 
     // التحقق من تكرار البيانات الفريدة عبر جميع أنواع المستخدمين (مع استثناء المعلم الحالي)
     const { idNumber, phoneNumber, email } = updates;
-    const hasDuplicates = await validateAndCheckDuplicates(req, res, { idNumber, phoneNumber, email }, id, 'teacher');
+    const hasDuplicates = await validateAndCheckDuplicates(
+      req,
+      res,
+      { idNumber, phoneNumber, email },
+      id,
+      "teacher"
+    );
     if (hasDuplicates) return; // تم إرسال استجابة الخطأ بالفعل
 
     // Remove password field from updates if it's empty or undefined
@@ -310,60 +335,63 @@ exports.updateTeacher = async (req, res) => {
       updates.age = calculateAge(updates.birthDate);
     }
 
-    // التأكد من أن groups مصفوفة صالحة وتحويل البيانات القديمة
-    if (updates.groups) {
-      if (!Array.isArray(updates.groups)) {
-        updates.groups = [];
-      } else {
-        updates.groups = updates.groups.map((group) => {
-          // دعم البيانات القديمة والجديدة
-          if (typeof group === "string") {
-            // تحويل البيانات القديمة (string) إلى البنية الجديدة
-            return {
-              id: null, // سيتم تحديثه لاحقاً
-              name: group,
-              number: 1, // قيمة افتراضية
-            };
-          }
-          return group; // البيانات الجديدة (object)
-        });
-      }
+    // --- إدارة الحلقات ---
+    const Group = require("../models/Group");
+    const currentTeacher = await Teacher.findById(id);
+    if (!currentTeacher) {
+      return res
+        .status(404)
+        .json({ success: false, message: "المعلم غير موجود" });
+    }
+    const teacherFullName = `${currentTeacher.firstName} ${currentTeacher.lastName}`;
 
-      // التحقق من أن الحلقات المضافة للمعلم لا تحتوي على معلمين آخرين
-      const Group = require("../models/Group");
-      const currentTeacher = await Teacher.findById(id);
-      if (currentTeacher) {
-        const teacherFullName = `${currentTeacher.firstName} ${currentTeacher.lastName}`;
+    // 1. جلب الحلقات الحالية للمعلم
+    const currentGroupIds = currentTeacher.groups.map((g) => g.id);
 
-        for (const groupItem of updates.groups) {
-          const groupName =
-            typeof groupItem === "string" ? groupItem : groupItem.name;
+    // 2. جلب الحلقات الجديدة من الطلب
+    const newGroupIds = Array.isArray(updates.groups)
+      ? updates.groups.map((g) => g.id)
+      : [];
 
-          // التحقق من وجود الحلقة مع معلم مختلف
-          const existingGroup = await Group.findOne({
-            name: groupName,
-            $and: [
-              { teacher: { $ne: currentTeacher._id.toString() } },
-              { teacher: { $ne: teacherFullName } },
-              { teacher: { $exists: true, $ne: null, $ne: "" } },
-            ],
+    // 3. تحديد الحلقات التي يجب إزالة المعلم منها
+    const groupsToRemove = currentGroupIds.filter(
+      (id) => !newGroupIds.includes(id)
+    );
+    if (groupsToRemove.length > 0) {
+      await Group.updateMany(
+        { _id: { $in: groupsToRemove } },
+        { $unset: { teacher: "" } }
+      );
+    }
+
+    // 4. التحقق من الحلقات الجديدة وتعيينها
+    if (Array.isArray(updates.groups)) {
+      for (const groupItem of updates.groups) {
+        const group = await Group.findById(groupItem.id);
+        if (
+          group &&
+          group.teacher &&
+          group.teacher !== teacherFullName &&
+          group.teacher.toString() !== currentTeacher._id.toString()
+        ) {
+          return res.status(400).json({
+            success: false,
+            message: `الحلقة "${group.name}" مرتبطة بالفعل بمعلم آخر.`,
+            field: "groups",
           });
-
-          if (existingGroup) {
-            return res.status(400).json({
-              success: false,
-              message: `الحلقة "${groupName}" مرتبطة بالفعل بمعلم آخر. لا يمكن للحلقة الواحدة أن يكون لها أكثر من معلم.`,
-              field: "groups",
-            });
-          }
         }
+        // تعيين المعلم للحلقة
+        await Group.updateOne(
+          { _id: groupItem.id },
+          { teacher: teacherFullName }
+        );
       }
     }
 
     const updated = await Teacher.findByIdAndUpdate(
       id,
       { ...updates, updatedAt: new Date() },
-      { new: true, runValidators: false } // Skip validation for updates
+      { new: true, runValidators: true }
     ).select("-password");
 
     if (!updated) {

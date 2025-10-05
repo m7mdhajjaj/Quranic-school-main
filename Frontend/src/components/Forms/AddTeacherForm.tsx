@@ -250,15 +250,15 @@ const EnhancedTeacherForm: React.FC<Props> = ({
       let newGroups: Array<{ id: string; name: string; number: number }>;
       if (existingIndex !== -1) {
         // إزالة الحلقة إذا كانت موجودة (إلغاء الاختيار)
-        newGroups = [];
+        newGroups = currentGroups.filter((g) => g.id !== group._id);
       } else {
-        // إضافة حلقة واحدة فقط (استبدال أي حلقة موجودة)
+        // إضافة حلقة جديدة إلى القائمة
         const groupData = {
           id: group._id,
           name: group.name,
-          number: 1,
+          number: 1, // يمكنك تعديل هذا الرقم إذا لزم الأمر
         };
-        newGroups = [groupData]; // حلقة واحدة فقط
+        newGroups = [...currentGroups, groupData];
       }
 
       return {
@@ -346,47 +346,63 @@ const EnhancedTeacherForm: React.FC<Props> = ({
 
           // معالجة أخطاء التكرار للحقول الحساسة (النظام الموحد الجديد)
           if (
-            errorMessage.includes('رقم الهوية') && 
-            (errorMessage.includes('مُستخدم بالفعل') || errorMessage.includes('موجود بالفعل'))
+            errorMessage.includes("رقم الهوية") &&
+            (errorMessage.includes("مُستخدم بالفعل") ||
+              errorMessage.includes("موجود بالفعل"))
           ) {
             // استخراج نوع المستخدم الموجود من الرسالة
-            const userType = errorMessage.includes('لطالب') ? 'طالب' :
-                           errorMessage.includes('لمعلم') ? 'معلم' :
-                           errorMessage.includes('لمدير') ? 'مدير' : 'مستخدم آخر';
-            
+            const userType = errorMessage.includes("لطالب")
+              ? "طالب"
+              : errorMessage.includes("لمعلم")
+              ? "معلم"
+              : errorMessage.includes("لمدير")
+              ? "مدير"
+              : "مستخدم آخر";
+
             setErrors({
               idNumber: `⚠️ رقم الهوية موجود بالفعل لدى ${userType} في النظام - يرجى استخدام رقم هوية مختلف`,
-              general: '🔄 يمكنك تعديل رقم الهوية والضغط على "المحاولة مرة أخرى" لحفظ البيانات',
+              general:
+                '🔄 يمكنك تعديل رقم الهوية والضغط على "المحاولة مرة أخرى" لحفظ البيانات',
             });
             setHasRetryableError(true);
-          }
-          else if (
-            errorMessage.includes('رقم الهاتف') && 
-            (errorMessage.includes('مُستخدم بالفعل') || errorMessage.includes('موجود بالفعل'))
+          } else if (
+            errorMessage.includes("رقم الهاتف") &&
+            (errorMessage.includes("مُستخدم بالفعل") ||
+              errorMessage.includes("موجود بالفعل"))
           ) {
             // استخراج نوع المستخدم الموجود من الرسالة
-            const userType = errorMessage.includes('لطالب') ? 'طالب' :
-                           errorMessage.includes('لمعلم') ? 'معلم' :
-                           errorMessage.includes('لمدير') ? 'مدير' : 'مستخدم آخر';
-            
+            const userType = errorMessage.includes("لطالب")
+              ? "طالب"
+              : errorMessage.includes("لمعلم")
+              ? "معلم"
+              : errorMessage.includes("لمدير")
+              ? "مدير"
+              : "مستخدم آخر";
+
             setErrors({
               phoneNumber: `⚠️ رقم الهاتف موجود بالفعل لدى ${userType} في النظام - يرجى استخدام رقم هاتف مختلف`,
-              general: '🔄 يمكنك تعديل رقم الهاتف والضغط على "المحاولة مرة أخرى" لحفظ البيانات',
+              general:
+                '🔄 يمكنك تعديل رقم الهاتف والضغط على "المحاولة مرة أخرى" لحفظ البيانات',
             });
             setHasRetryableError(true);
-          }
-          else if (
-            errorMessage.includes('البريد الإلكتروني') && 
-            (errorMessage.includes('مُستخدم بالفعل') || errorMessage.includes('موجود بالفعل'))
+          } else if (
+            errorMessage.includes("البريد الإلكتروني") &&
+            (errorMessage.includes("مُستخدم بالفعل") ||
+              errorMessage.includes("موجود بالفعل"))
           ) {
             // استخراج نوع المستخدم الموجود من الرسالة
-            const userType = errorMessage.includes('لطالب') ? 'طالب' :
-                           errorMessage.includes('لمعلم') ? 'معلم' :
-                           errorMessage.includes('لمدير') ? 'مدير' : 'مستخدم آخر';
-            
+            const userType = errorMessage.includes("لطالب")
+              ? "طالب"
+              : errorMessage.includes("لمعلم")
+              ? "معلم"
+              : errorMessage.includes("لمدير")
+              ? "مدير"
+              : "مستخدم آخر";
+
             setErrors({
               email: `⚠️ البريد الإلكتروني موجود بالفعل لدى ${userType} في النظام - يرجى استخدام بريد إلكتروني مختلف`,
-              general: '🔄 يمكنك تعديل البريد الإلكتروني والضغط على "المحاولة مرة أخرى" لحفظ البيانات',
+              general:
+                '🔄 يمكنك تعديل البريد الإلكتروني والضغط على "المحاولة مرة أخرى" لحفظ البيانات',
             });
             setHasRetryableError(true);
           }
@@ -953,11 +969,11 @@ const EnhancedTeacherForm: React.FC<Props> = ({
                       الحلقة المسؤول عنها
                     </h3>
                     <p className="text-sm text-gray-600 font-medium">
-                      اختر الحلقة الواحدة التي سيكون المعلم مسؤولاً عنها
+                      اختر الحلقات التي سيكون المعلم مسؤولاً عنها
                     </p>
                   </div>
                   <div className="text-sm text-purple-600 font-bold px-3 py-1 bg-white rounded-full border border-purple-200 shadow-sm">
-                    {formData.groups?.length || 0} حلقة
+                    {formData.groups?.length || 0} حلقات
                   </div>
                 </div>
                 <div className="space-y-4">
@@ -995,72 +1011,85 @@ const EnhancedTeacherForm: React.FC<Props> = ({
                       ) : (
                         <div className="max-h-60 overflow-y-auto custom-scrollbar">
                           <div className="p-4 space-y-2">
-                            {availableGroups.map((group) => (
-                              <label
-                                key={group._id}
-                                className="group flex items-center gap-4 px-4 py-4 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 cursor-pointer transition-all duration-300 rounded-xl border-2 border-transparent hover:border-purple-200 hover:shadow-md transform hover:-translate-y-1 animate-fade-in-up">
-                                <div className="relative flex-shrink-0">
-                                  <input
-                                    type="checkbox"
-                                    checked={
-                                      formData.groups?.some(
-                                        (g) => g.id === group._id
-                                      ) || false
-                                    }
-                                    onChange={() => handleGroupsChange(group)}
-                                    className="sr-only"
-                                  />
-                                  <div
-                                    className={`w-6 h-6 rounded-xl border-3 transition-all duration-300 flex items-center justify-center shadow-lg ${
-                                      formData.groups?.some(
-                                        (g) => g.id === group._id
-                                      )
-                                        ? "bg-gradient-to-br from-purple-500 to-indigo-500 border-purple-500 shadow-purple-200 scale-110"
-                                        : "border-gray-300 group-hover:border-purple-400 bg-white group-hover:shadow-purple-100"
-                                    }`}>
-                                    {formData.groups?.some(
-                                      (g) => g.id === group._id
-                                    ) && (
-                                      <Check
-                                        className="text-white animate-in zoom-in duration-300"
-                                        size={16}
-                                      />
-                                    )}
-                                  </div>
-                                  {formData.groups?.some(
-                                    (g) => g.id === group._id
-                                  ) && (
-                                    <div className="absolute -inset-1 bg-gradient-to-r from-purple-400 to-indigo-400 rounded-xl opacity-20 animate-pulse"></div>
-                                  )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-3 mb-2">
-                                    <h5 className="text-base font-bold text-gray-900 group-hover:text-purple-700 transition-colors truncate">
-                                      {group.name}
-                                    </h5>
+                            {availableGroups.map((group) => {
+                              // التحقق مما إذا كانت الحلقة مرتبطة بمعلم آخر
+                              const isTakenByOther =
+                                !!group.teacher &&
+                                group.teacher !==
+                                  `${teacher?.firstName} ${teacher?.lastName}`;
+
+                              return (
+                                <label
+                                  key={group._id}
+                                  className={`group flex items-center gap-4 px-4 py-4 hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 transition-all duration-300 rounded-xl border-2 border-transparent hover:border-purple-200 hover:shadow-md transform hover:-translate-y-1 animate-fade-in-up ${
+                                    isTakenByOther
+                                      ? "cursor-not-allowed opacity-50"
+                                      : "cursor-pointer"
+                                  }`}>
+                                  <div className="relative flex-shrink-0">
+                                    <input
+                                      type="checkbox"
+                                      checked={
+                                        formData.groups?.some(
+                                          (g) => g.id === group._id
+                                        ) || false
+                                      }
+                                      onChange={() =>
+                                        !isTakenByOther &&
+                                        handleGroupsChange(group)
+                                      }
+                                      disabled={isTakenByOther}
+                                      className="sr-only"
+                                    />
                                     <div
-                                      className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                                      className={`w-6 h-6 rounded-xl border-3 transition-all duration-300 flex items-center justify-center shadow-lg ${
                                         formData.groups?.some(
                                           (g) => g.id === group._id
                                         )
-                                          ? "bg-gradient-to-r from-green-400 to-emerald-500 animate-pulse shadow-md"
-                                          : "bg-gray-300 group-hover:bg-purple-300"
-                                      }`}></div>
+                                          ? "bg-gradient-to-br from-purple-500 to-indigo-500 border-purple-500 shadow-purple-200 scale-110"
+                                          : "border-gray-300 group-hover:border-purple-400 bg-white group-hover:shadow-purple-100"
+                                      }`}>
+                                      {formData.groups?.some(
+                                        (g) => g.id === group._id
+                                      ) && (
+                                        <Check
+                                          className="text-white animate-in zoom-in duration-300"
+                                          size={16}
+                                        />
+                                      )}
+                                    </div>
+                                    {formData.groups?.some(
+                                      (g) => g.id === group._id
+                                    ) && (
+                                      <div className="absolute -inset-1 bg-gradient-to-r from-purple-400 to-indigo-400 rounded-xl opacity-20 animate-pulse"></div>
+                                    )}
                                   </div>
-                                  {group.description && (
-                                    <p className="text-xs text-gray-600 group-hover:text-purple-600 transition-colors line-clamp-2">
-                                      {group.description}
-                                    </p>
-                                  )}
-                                </div>
-                                <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:scale-110">
-                                  <ChevronRight
-                                    className="text-purple-500"
-                                    size={20}
-                                  />
-                                </div>
-                              </label>
-                            ))}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <h5 className="text-base font-bold text-gray-900 group-hover:text-purple-700 transition-colors truncate">
+                                        {group.name}
+                                      </h5>
+                                      {isTakenByOther && (
+                                        <span className="text-xs text-red-500 font-semibold">
+                                          (معلم آخر)
+                                        </span>
+                                      )}
+                                    </div>
+                                    {group.description && (
+                                      <p className="text-xs text-gray-600 group-hover:text-purple-600 transition-colors line-clamp-2">
+                                        {group.description}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:scale-110">
+                                    <ChevronRight
+                                      className="text-purple-500"
+                                      size={20}
+                                    />
+                                  </div>
+                                </label>
+                              );
+                            })}
                           </div>
                         </div>
                       )}
@@ -1078,11 +1107,10 @@ const EnhancedTeacherForm: React.FC<Props> = ({
                             لم يتم اختيار أي حلقة
                           </h4>
                           <p className="text-sm text-gray-600">
-                            يمكن للمعلم أن يكون مسؤولاً عن حلقة واحدة فقط أو لا
-                            يكون مسؤولاً عن أي حلقة
+                            يمكن للمعلم أن يكون مسؤولاً عن عدة حلقات
                           </p>
                           <p className="text-xs text-blue-600 mt-2">
-                            اختر من القائمة أعلاه لإضافة حلقة واحدة
+                            اختر من القائمة أعلاه لإضافة الحلقات
                           </p>
                         </div>
                       </div>
@@ -1098,15 +1126,15 @@ const EnhancedTeacherForm: React.FC<Props> = ({
                           </div>
                           <div>
                             <h4 className="text-lg font-bold text-gray-900">
-                              الحلقة المختارة
+                              الحلقات المختارة
                             </h4>
                             <p className="text-sm text-gray-600">
-                              المعلم مسؤول عن هذه الحلقة
+                              المعلم مسؤول عن هذه الحلقات
                             </p>
                           </div>
                         </div>
                         <div className="px-4 py-2 bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-700 font-bold rounded-xl border border-purple-200">
-                          {formData.groups.length} حلقة
+                          {formData.groups.length} حلقات
                         </div>
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1137,7 +1165,13 @@ const EnhancedTeacherForm: React.FC<Props> = ({
                                 </div>
                                 <button
                                   type="button"
-                                  onClick={() => handleGroupsChange(group)}
+                                  onClick={() =>
+                                    handleGroupsChange(
+                                      availableGroups.find(
+                                        (g) => g._id === groupData.id
+                                      )!
+                                    )
+                                  }
                                   className="w-8 h-8 bg-red-500/20 hover:bg-red-500 rounded-xl flex items-center justify-center transition-all duration-200 group-hover:scale-110 hover:rotate-90"
                                   title={`إزالة ${groupData.name} من القائمة`}>
                                   <X
@@ -1165,11 +1199,11 @@ const EnhancedTeacherForm: React.FC<Props> = ({
                               <Check className="text-white" size={14} />
                             </div>
                             <span className="font-medium text-green-800">
-                              الحلقة المختارة
+                              إجمالي الحلقات
                             </span>
                           </div>
                           <div className="px-3 py-1 bg-green-500 text-white rounded-lg font-bold text-sm">
-                            {formData.groups.length} حلقة
+                            {formData.groups.length} حلقات
                           </div>
                         </div>
                       </div>
