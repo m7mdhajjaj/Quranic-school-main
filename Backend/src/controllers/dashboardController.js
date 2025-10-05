@@ -1,16 +1,17 @@
-const Student = require('../models/Student');
-const Teacher = require('../models/Teacher');
-const Exam = require('../models/Exam');
-const Group = require('../models/Group');
-const Activity = require('../models/Activity');
-const News = require('../models/News');
-const Mark = require('../models/Mark');
-const Attendance = require('../models/Attendance');
+const Student = require("../models/Student");
+const Teacher = require("../models/Teacher");
+const Exam = require("../models/Exam");
+const Group = require("../models/Group");
+const Activity = require("../models/Activity");
+const News = require("../models/News");
+const Mark = require("../models/Mark");
+const ExamMark = require("../models/ExamMark");
+const Attendance = require("../models/Attendance");
 
 // Get dashboard statistics - optimized for performance
 exports.getDashboardStats = async (req, res) => {
   try {
-    console.log('📊 جلب إحصائيات لوحة التحكم...');
+    console.log("📊 جلب إحصائيات لوحة التحكم...");
 
     // Use Promise.all for parallel execution of all database queries
     const [
@@ -21,46 +22,57 @@ exports.getDashboardStats = async (req, res) => {
       activitiesCount,
       newsCount,
       averageMarksResult,
+      examMarksResult,
       activeStudentsCount,
       attendanceStats,
       upcomingExamsCount,
-      recentMarks
+      recentMarks,
     ] = await Promise.all([
       // Count total students
       Student.countDocuments(),
-      
+
       // Count total teachers
       Teacher.countDocuments(),
-      
+
       // Count total exams
       Exam.countDocuments(),
-      
+
       // Count total groups
       Group.countDocuments(),
-      
+
       // Count total activities
       Activity.countDocuments(),
-      
+
       // Count total news
       News.countDocuments(),
-      
-      // Calculate average marks
+
+      // Calculate average marks from regular marks
       Mark.aggregate([
         {
           $group: {
             _id: null,
-            averageMarks: { $avg: "$mark" }
-          }
-        }
+            averageMarks: { $avg: "$mark" },
+          },
+        },
       ]),
-      
+
+      // Calculate average marks from exam marks
+      ExamMark.aggregate([
+        {
+          $group: {
+            _id: null,
+            averageExamMarks: { $avg: { $toDouble: "$mark" } },
+          },
+        },
+      ]),
+
       // Count active students (logged in last 30 days)
       Student.countDocuments({
-        lastSeen: { 
-          $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) 
-        }
+        lastSeen: {
+          $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        },
       }),
-      
+
       // Get attendance statistics
       Attendance.aggregate([
         {
@@ -69,37 +81,46 @@ exports.getDashboardStats = async (req, res) => {
             totalAttendance: { $sum: 1 },
             presentCount: {
               $sum: {
-                $cond: [{ $eq: ["$status", "present"] }, 1, 0]
-              }
-            }
-          }
-        }
+                $cond: [{ $eq: ["$status", "present"] }, 1, 0],
+              },
+            },
+          },
+        },
       ]),
-      
+
       // Count upcoming exams (next 30 days)
       Exam.countDocuments({
-        date: { 
+        date: {
           $gte: new Date(),
-          $lte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-        }
+          $lte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        },
       }),
-      
+
       // Get recent marks for trend analysis
-      Mark.find()
-        .sort({ createdAt: -1 })
-        .limit(100)
-        .select('mark createdAt')
+      Mark.find().sort({ createdAt: -1 }).limit(100).select("mark createdAt"),
     ]);
 
     // Calculate attendance rate
-    const attendanceRate = attendanceStats.length > 0 && attendanceStats[0].totalAttendance > 0 
-      ? Math.round((attendanceStats[0].presentCount / attendanceStats[0].totalAttendance) * 100)
-      : 0;
+    const attendanceRate =
+      attendanceStats.length > 0 && attendanceStats[0].totalAttendance > 0
+        ? Math.round(
+            (attendanceStats[0].presentCount /
+              attendanceStats[0].totalAttendance) *
+              100
+          )
+        : 0;
 
     // Calculate average marks
-    const averageMarks = averageMarksResult.length > 0 
-      ? Math.round(averageMarksResult[0].averageMarks || 0)
-      : 0;
+    const averageMarks =
+      averageMarksResult.length > 0
+        ? Math.round(averageMarksResult[0].averageMarks || 0)
+        : 0;
+
+    // Calculate average exam marks
+    const averageExamMarks =
+      examMarksResult.length > 0
+        ? Math.round(examMarksResult[0].averageExamMarks || 0)
+        : 0;
 
     // Prepare response data
     const stats = {
@@ -110,26 +131,26 @@ exports.getDashboardStats = async (req, res) => {
       totalActivities: activitiesCount,
       totalNews: newsCount,
       averageMarks: averageMarks,
+      averageExamMarks: averageExamMarks,
       activeStudents: activeStudentsCount,
       attendanceRate: attendanceRate,
       upcomingExams: upcomingExamsCount,
-      recentMarksCount: recentMarks.length
+      recentMarksCount: recentMarks.length,
     };
 
-    console.log('✅ تم جلب الإحصائيات بنجاح:', stats);
+    console.log("✅ تم جلب الإحصائيات بنجاح:", stats);
 
     res.status(200).json({
       success: true,
-      message: 'تم جلب إحصائيات لوحة التحكم بنجاح',
-      data: stats
+      message: "تم جلب إحصائيات لوحة التحكم بنجاح",
+      data: stats,
     });
-
   } catch (error) {
-    console.error('❌ خطأ في جلب إحصائيات لوحة التحكم:', error);
+    console.error("❌ خطأ في جلب إحصائيات لوحة التحكم:", error);
     res.status(500).json({
       success: false,
-      message: 'خطأ في جلب إحصائيات لوحة التحكم',
-      error: error.message
+      message: "خطأ في جلب إحصائيات لوحة التحكم",
+      error: error.message,
     });
   }
 };
@@ -137,61 +158,61 @@ exports.getDashboardStats = async (req, res) => {
 // Get detailed charts data for dashboard
 exports.getDashboardCharts = async (req, res) => {
   try {
-    console.log('📈 جلب بيانات الرسوم البيانية...');
+    console.log("📈 جلب بيانات الرسوم البيانية...");
 
     const [
       groupDistribution,
       genderDistribution,
       marksDistribution,
-      attendanceByMonth
+      attendanceByMonth,
     ] = await Promise.all([
       // Students distribution by group
       Student.aggregate([
         {
           $lookup: {
-            from: 'groups',
-            localField: 'group',
-            foreignField: '_id',
-            as: 'groupInfo'
-          }
+            from: "groups",
+            localField: "group",
+            foreignField: "_id",
+            as: "groupInfo",
+          },
         },
         {
-          $unwind: { path: '$groupInfo', preserveNullAndEmptyArrays: true }
+          $unwind: { path: "$groupInfo", preserveNullAndEmptyArrays: true },
         },
         {
           $group: {
-            _id: '$groupInfo.name',
-            count: { $sum: 1 }
-          }
+            _id: "$groupInfo.name",
+            count: { $sum: 1 },
+          },
         },
         {
-          $sort: { count: -1 }
-        }
+          $sort: { count: -1 },
+        },
       ]),
 
       // Students by gender
       Student.aggregate([
         {
           $group: {
-            _id: '$gender',
-            count: { $sum: 1 }
-          }
-        }
+            _id: "$gender",
+            count: { $sum: 1 },
+          },
+        },
       ]),
 
       // Marks distribution
       Mark.aggregate([
         {
           $bucket: {
-            groupBy: '$mark',
+            groupBy: "$mark",
             boundaries: [0, 50, 70, 85, 100],
-            default: 'other',
+            default: "other",
             output: {
               count: { $sum: 1 },
-              avgMark: { $avg: '$mark' }
-            }
-          }
-        }
+              avgMark: { $avg: "$mark" },
+            },
+          },
+        },
       ]),
 
       // Attendance by month (last 6 months)
@@ -199,51 +220,50 @@ exports.getDashboardCharts = async (req, res) => {
         {
           $match: {
             date: {
-              $gte: new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000)
-            }
-          }
+              $gte: new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000),
+            },
+          },
         },
         {
           $group: {
             _id: {
-              year: { $year: '$date' },
-              month: { $month: '$date' }
+              year: { $year: "$date" },
+              month: { $month: "$date" },
             },
             total: { $sum: 1 },
             present: {
               $sum: {
-                $cond: [{ $eq: ['$status', 'present'] }, 1, 0]
-              }
-            }
-          }
+                $cond: [{ $eq: ["$status", "present"] }, 1, 0],
+              },
+            },
+          },
         },
         {
-          $sort: { '_id.year': 1, '_id.month': 1 }
-        }
-      ])
+          $sort: { "_id.year": 1, "_id.month": 1 },
+        },
+      ]),
     ]);
 
     const chartsData = {
       groupDistribution,
       genderDistribution,
       marksDistribution,
-      attendanceByMonth
+      attendanceByMonth,
     };
 
-    console.log('✅ تم جلب بيانات الرسوم البيانية بنجاح');
+    console.log("✅ تم جلب بيانات الرسوم البيانية بنجاح");
 
     res.status(200).json({
       success: true,
-      message: 'تم جلب بيانات الرسوم البيانية بنجاح',
-      data: chartsData
+      message: "تم جلب بيانات الرسوم البيانية بنجاح",
+      data: chartsData,
     });
-
   } catch (error) {
-    console.error('❌ خطأ في جلب بيانات الرسوم البيانية:', error);
+    console.error("❌ خطأ في جلب بيانات الرسوم البيانية:", error);
     res.status(500).json({
       success: false,
-      message: 'خطأ في جلب بيانات الرسوم البيانية',
-      error: error.message
+      message: "خطأ في جلب بيانات الرسوم البيانية",
+      error: error.message,
     });
   }
 };

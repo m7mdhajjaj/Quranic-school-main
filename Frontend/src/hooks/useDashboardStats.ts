@@ -16,6 +16,7 @@ interface Stats {
   totalActivities: number;
   totalNews: number;
   averageMarks: number;
+  averageExamMarks: number;
   activeStudents: number;
   attendanceRate: number;
   upcomingExams: number;
@@ -41,6 +42,7 @@ const INITIAL_STATS: Stats = {
   totalActivities: 0,
   totalNews: 0,
   averageMarks: 0,
+  averageExamMarks: 0,
   activeStudents: 0,
   attendanceRate: 0,
   upcomingExams: 0,

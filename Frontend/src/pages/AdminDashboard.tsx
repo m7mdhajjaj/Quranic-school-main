@@ -483,7 +483,7 @@ const AdminDashboard = () => {
               </svg>
             }
             title="معدل الدرجات"
-            value={stats.averageMarks}
+            value={stats.averageExamMarks}
             color="bg-gradient-to-br from-purple-500 to-purple-600"
             bgColor="bg-purple-50"
             borderColor="border-purple-200"
