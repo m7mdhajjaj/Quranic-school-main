@@ -505,8 +505,8 @@ const AdminDashboard = () => {
                 />
               </svg>
             }
-            title="الامتحانات القادمة"
-            value={stats.upcomingExams}
+            title="عدد الامتحانات"
+            value={stats.totalExams}
             color="bg-gradient-to-br from-orange-500 to-orange-600"
             bgColor="bg-orange-50"
             borderColor="border-orange-200"
