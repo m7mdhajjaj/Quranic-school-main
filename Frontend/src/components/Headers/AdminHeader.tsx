@@ -9,6 +9,13 @@ const AdminHeader: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('darkMode') === 'true' || 
+             (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    }
+    return false;
+  });
 
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const notificationMenuRef = useRef<HTMLDivElement>(null);
@@ -48,6 +55,36 @@ const AdminHeader: React.FC = () => {
       console.log('تم تسجيل خروج المدير بنجاح');
     }
   }, [authLogout, currentUser]);
+
+  // Handle dark mode toggle
+  const toggleDarkMode = useCallback(() => {
+    setIsDarkMode(prev => {
+      const newMode = !prev;
+      localStorage.setItem('darkMode', newMode.toString());
+      
+      // Apply dark mode to document
+      if (newMode) {
+        document.documentElement.classList.add('dark');
+        document.body.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.body.classList.remove('dark');
+      }
+      
+      return newMode;
+    });
+  }, []);
+
+  // Initialize dark mode on component mount
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+      document.body.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.body.classList.remove('dark');
+    }
+  }, [isDarkMode]);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -260,29 +297,54 @@ const AdminHeader: React.FC = () => {
 
             {/* الإعدادات والإشعارات - منفصلين ومحركين يميناً */}
             <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4 mr-1 sm:mr-2 md:mr-4">
-              {/* زر الإعدادات (بدون منطق) */}
+              {/* زر Light/Dark Mode */}
               <button
+                onClick={toggleDarkMode}
                 className={`relative p-2 sm:p-2.5 md:p-3 rounded-lg sm:rounded-xl transition-all duration-500 transform hover:scale-110 overflow-hidden group ${
                   scrolled
-                    ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    : 'bg-white/20 text-white hover:bg-white/30'
+                    ? (isDarkMode ? 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white shadow-lg hover:from-yellow-600 hover:to-amber-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200')
+                    : (isDarkMode ? 'bg-gradient-to-r from-yellow-400 to-amber-400 text-gray-900 shadow-lg hover:from-yellow-500 hover:to-amber-500' : 'bg-white/20 text-white hover:bg-white/30')
                 }`}
-                title="الإعدادات"
+                title={isDarkMode ? 'التبديل إلى الوضع الفاتح' : 'التبديل إلى الوضع المظلم'}
               >
                 <div className="relative z-10">
-                  <svg
-                    className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 transform transition-transform duration-500 group-hover:rotate-180"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                  {isDarkMode ? (
+                    // Sun icon for light mode
+                    <svg
+                      className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 transform transition-all duration-500 group-hover:rotate-180 group-hover:scale-110"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                      />
+                    </svg>
+                  ) : (
+                    // Moon icon for dark mode
+                    <svg
+                      className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 transform transition-all duration-500 group-hover:-rotate-12 group-hover:scale-110"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                      />
+                    </svg>
+                  )}
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/20 to-teal-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className={`absolute inset-0 transition-opacity duration-300 opacity-0 group-hover:opacity-100 ${
+                  isDarkMode 
+                    ? 'bg-gradient-to-r from-yellow-300/30 to-amber-300/30'
+                    : 'bg-gradient-to-r from-blue-400/20 to-indigo-400/20'
+                }`}></div>
               </button>
 
               {/* الإشعارات */}
