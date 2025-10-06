@@ -272,12 +272,12 @@ const AdminHeader: React.FC = () => {
                     navigate(item.path);
                     setProfileMenuOpen(false);
                   }}
-                  className={`group relative px-2 md:px-4 lg:px-6 py-2 md:py-3 rounded-lg md:rounded-xl text-xs md:text-sm lg:text-base font-medium transition-all duration-300 transform hover:scale-105 nav-item flex-1 nav-item-delay-${index} min-w-0 ${
+                  className={`group relative px-2 md:px-4 lg:px-6 py-2 md:py-3 rounded-lg md:rounded-xl text-xs md:text-sm lg:text-base font-bold transition-all duration-300 transform hover:scale-105 nav-item flex-1 nav-item-delay-${index} min-w-0 ${
                     isActive(item.path)
-                      ? `bg-gradient-to-r ${item.gradient} text-white shadow-lg active-nav-item`
+                      ? `bg-gradient-to-r ${item.gradient} text-white shadow-2xl ring-2 ring-white/30 scale-105 active-nav-item`
                       : scrolled
-                        ? 'text-gray-700 hover:bg-gray-100/50'
-                        : 'text-white hover:bg-white/20'
+                        ? 'text-gray-700 hover:bg-gray-100/50 hover:text-gray-900'
+                        : 'text-white/90 hover:bg-white/20 hover:text-white'
                   }`}
                 >
                   <span className="flex items-center space-x-reverse space-x-1 md:space-x-2">
@@ -289,7 +289,11 @@ const AdminHeader: React.FC = () => {
                     </span>
                   </span>
                   {isActive(item.path) && (
-                    <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-white/20 to-transparent animate-shimmer"></div>
+                    <>
+                      <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-white/30 to-transparent animate-shimmer"></div>
+                      <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-8 h-1 bg-white rounded-full shadow-lg"></div>
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-ping shadow-lg"></div>
+                    </>
                   )}
                 </button>
               ))}
@@ -673,17 +677,24 @@ const AdminHeader: React.FC = () => {
                         setMobileMenuOpen(false);
                         setProfileMenuOpen(false);
                       }}
-                      className={`w-full px-4 py-4 rounded-xl text-sm font-medium transition-all duration-300 flex items-center justify-between group mobile-nav-item touch-manipulation ${
+                      className={`relative w-full px-4 py-4 rounded-xl text-sm font-bold transition-all duration-300 flex items-center justify-between group mobile-nav-item touch-manipulation ${
                         isActive(item.path)
-                          ? `bg-gradient-to-r ${item.gradient} text-white shadow-lg active-item`
+                          ? `bg-gradient-to-r ${item.gradient} text-white shadow-xl ring-2 ring-white/30 scale-105 active-item`
                           : scrolled
                             ? 'text-gray-700 hover:bg-gray-100 active:bg-gray-200'
                             : 'text-white hover:bg-white/20 active:bg-white/30'
                       }`}
                     >
                       <div className="flex items-center space-x-reverse space-x-3">
-                        <span className="text-xl">{item.icon}</span>
-                        <span>{item.label}</span>
+                        <span className={`text-xl transition-transform duration-300 ${
+                          isActive(item.path) ? 'scale-125' : ''
+                        }`}>
+                          {item.icon}
+                        </span>
+                        <span className={isActive(item.path) ? 'font-black' : ''}>{item.label}</span>
+                        {isActive(item.path) && (
+                          <span className="text-xs bg-white/20 px-2 py-1 rounded-full">نشط</span>
+                        )}
                       </div>
                       <svg
                         className={`w-4 h-4 transform transition-transform ${
