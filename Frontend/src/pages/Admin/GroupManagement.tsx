@@ -1315,7 +1315,7 @@ const GroupManagement: React.FC = () => {
           </div>
         )}
         {/* Enhanced Responsive Pagination */}
-        {!isLoading && !error && filteredAndSortedGroups.length > 0 && (
+        {!isLoading && !error && filteredAndSortedGroups.length > 0 && totalPages > 1 && (
           <ResponsivePagination
             currentPage={currentPage}
             totalPages={totalPages}

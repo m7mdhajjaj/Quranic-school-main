@@ -42,7 +42,7 @@ export interface SocketEvents {
 // Dashboard Types
 export interface DashboardUpdatePayload {
   type: 'stats' | 'groups' | 'full';
-  data?: any;
+  data?: unknown;
   timestamp: string;
   action?: 'create' | 'update' | 'delete';
 }

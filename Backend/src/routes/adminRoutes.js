@@ -71,6 +71,7 @@ router.get("/:id/avatar", async (req, res) => {
 
 // ========== باقي المسارات ==========
 router.get("/", controller.getAllAdmins);
+router.get("/stats", controller.getAdminStats);
 router.get("/:id", controller.getAdminById);
 router.post("/", controller.createAdmin);
 router.put("/:id", controller.updateAdmin);

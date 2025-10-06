@@ -66,6 +66,13 @@ interface SocketEventData {
   [key: string]: unknown;
 }
 
+interface DashboardUpdateEvent {
+  type: 'stats' | 'groups' | 'full';
+  data?: unknown;
+  timestamp: string;
+  action?: 'create' | 'update' | 'delete';
+}
+
 interface SocketContextType {
   socket: Socket | null;
   isConnected: boolean;
@@ -78,6 +85,12 @@ interface SocketContextType {
   // Teacher-specific events
   onTeacherUpdate: (callback: (event: TeacherUpdateEvent) => void) => void;
   offTeacherUpdate: (callback: (event: TeacherUpdateEvent) => void) => void;
+  
+  // Dashboard-specific events
+  onDashboardUpdate: (callback: (event: DashboardUpdateEvent) => void) => void;
+  offDashboardUpdate: (callback: (event: DashboardUpdateEvent) => void) => void;
+  joinDashboard: () => void;
+  leaveDashboard: () => void;
   
   // General events
   emit: (eventName: string, data: SocketEventData) => void;
@@ -102,6 +115,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   // Store event callbacks
   const studentUpdateCallbacks = useRef<Set<(event: StudentUpdateEvent) => void>>(new Set());
   const teacherUpdateCallbacks = useRef<Set<(event: TeacherUpdateEvent) => void>>(new Set());
+  const dashboardUpdateCallbacks = useRef<Set<(event: DashboardUpdateEvent) => void>>(new Set());
 
   useEffect(() => {
     if (!user) {
@@ -216,6 +230,12 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       teacherUpdateCallbacks.current.forEach(callback => callback(event));
     });
 
+    // Dashboard events
+    socketInstance.on('dashboardUpdate', (data: DashboardUpdateEvent) => {
+      console.log('📊 Dashboard update received:', data);
+      dashboardUpdateCallbacks.current.forEach(callback => callback(data));
+    });
+
     // User status events
     socketInstance.on('userStatusChange', (data: { userId: string; isActive: boolean; lastSeen: string }) => {
       console.log('🔄 User status changed:', data);
@@ -284,6 +304,27 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     }
   };
 
+  // Dashboard-specific functions
+  const onDashboardUpdate = (callback: (event: DashboardUpdateEvent) => void) => {
+    dashboardUpdateCallbacks.current.add(callback);
+  };
+
+  const offDashboardUpdate = (callback: (event: DashboardUpdateEvent) => void) => {
+    dashboardUpdateCallbacks.current.delete(callback);
+  };
+
+  const joinDashboard = () => {
+    if (socket) {
+      socket.emit('joinDashboard');
+    }
+  };
+
+  const leaveDashboard = () => {
+    if (socket) {
+      socket.emit('leaveDashboard');
+    }
+  };
+
   const value: SocketContextType = {
     socket,
     isConnected,
@@ -292,6 +333,10 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     offStudentUpdate,
     onTeacherUpdate,
     offTeacherUpdate,
+    onDashboardUpdate,
+    offDashboardUpdate,
+    joinDashboard,
+    leaveDashboard,
     emit,
     on,
     off

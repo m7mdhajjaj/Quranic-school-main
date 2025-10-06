@@ -1,6 +1,7 @@
 const Admin = require("../models/Admin");
 const bcrypt = require("bcryptjs");
 const { validateAndCheckDuplicates } = require("../utils/duplicateChecker");
+const { notifyDashboardUpdate } = require("../utils/dashboardNotifications");
 
 // Calculate age from birth date
 const calculateAge = (birthDate) => {
@@ -139,6 +140,10 @@ exports.createAdmin = async (req, res) => {
     });
 
     console.log("Admin created successfully:", doc._id);
+    
+    // إشعار تحديث الداشبورد
+    notifyDashboardUpdate('stats');
+    
     return res
       .status(201)
       .json({ success: true, message: "تم إنشاء الإداري بنجاح", data: doc });
@@ -186,6 +191,9 @@ exports.updateAdmin = async (req, res) => {
         .json({ success: false, message: "الإداري غير موجود" });
     }
 
+    // إشعار تحديث الداشبورد
+    notifyDashboardUpdate('stats');
+
     return res.status(200).json({
       success: true,
       message: "تم تحديث بيانات الإداري بنجاح",
@@ -214,6 +222,10 @@ exports.deleteAdmin = async (req, res) => {
       isActive: false,
       updatedAt: new Date(),
     });
+    
+    // Notify dashboard about admin deletion
+    notifyDashboardUpdate('stats');
+    
     return res
       .status(200)
       .json({ success: true, message: "تم حذف الإداري بنجاح" });
@@ -222,5 +234,41 @@ exports.deleteAdmin = async (req, res) => {
     return res
       .status(500)
       .json({ success: false, message: "حدث خطأ أثناء حذف الإداري" });
+  }
+};
+
+// Get admin statistics
+exports.getAdminStats = async (req, res) => {
+  try {
+    const totalAdmins = await Admin.countDocuments({ isActive: true });
+    const superAdmins = await Admin.countDocuments({ 
+      isActive: true, 
+      role: 'superAdmin' 
+    });
+    const regularAdmins = await Admin.countDocuments({ 
+      isActive: true, 
+      role: 'admin' 
+    });
+    const recentAdmins = await Admin.countDocuments({
+      isActive: true,
+      createdAt: {
+        $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        total: totalAdmins,
+        superAdmins,
+        regularAdmins,
+        recent: recentAdmins
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching admin stats:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "حدث خطأ أثناء جلب إحصائيات الإدارة" });
   }
 };

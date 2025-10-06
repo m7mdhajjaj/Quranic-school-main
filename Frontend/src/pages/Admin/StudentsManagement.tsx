@@ -2990,7 +2990,7 @@ const StudentsManagement: React.FC = () => {
         )}
 
         {/* Pagination */}
-        {!isLoading && currentStudents.length > 0 && (
+        {!isLoading && currentStudents.length > 0 && totalPages > 1 && (
           <ResponsivePagination
             currentPage={currentPage}
             totalPages={totalPages}

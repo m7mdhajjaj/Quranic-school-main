@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { fetchAllDashboardData, type GroupData } from "../Api/dashboardApi";
+import { useSocket } from "./useSocket";
+import type { DashboardUpdatePayload } from "../types/socket.types";
 
 export interface GroupDistribution {
   groupName: string;
@@ -60,22 +62,6 @@ export const useDashboardStats = (): UseDashboardStatsReturn => {
   const [groupsDistribution, setGroupsDistribution] = useState<
     GroupDistribution[]
   >([]);
-  
-  // للحصول على معلومات المستخدم من localStorage
-  const getUserData = useCallback(() => {
-    const user = localStorage.getItem('user');
-    const userId = localStorage.getItem('userId');
-    if (user && userId) {
-      const userData = JSON.parse(user);
-      return {
-        userId,
-        role: userData.role || 'admin',
-        firstName: userData.firstName || 'Admin',
-      };
-    }
-    return null;
-  }, []);
-
   // معالجة بيانات توزيع الحلقات
   const processGroupsDistribution = useCallback((groupsData: GroupData[]): GroupDistribution[] => {
     return groupsData.map((group) => ({
@@ -130,79 +116,44 @@ export const useDashboardStats = (): UseDashboardStatsReturn => {
     }
   }, [initialized, processGroupsDistribution]);
 
-  // Socket.IO integration for real-time updates
+  // Socket.IO integration using centralized SocketContext
+  const { onDashboardUpdate, offDashboardUpdate, joinDashboard, leaveDashboard, isConnected } = useSocket();
+
   useEffect(() => {
-    let socket: any = null;
+    if (!isConnected || !initialized) return;
+
+    console.log('✅ Dashboard متصل بـ Socket.IO من خلال SocketContext');
     
-    const connectSocket = async () => {
-      try {
-        // Dynamic import للـ socket.io-client
-        const { io } = await import('socket.io-client');
-        const { API_BASE_URL } = await import('../config');
-        
-        socket = io(API_BASE_URL, {
-          transports: ['websocket', 'polling'],
-          reconnection: true,
-          reconnectionAttempts: 5,
-          reconnectionDelay: 3000,
-        });
+    // Join dashboard room
+    joinDashboard();
 
-        socket.on('connect', () => {
-          console.log('✅ Socket.IO متصل للداشبورد');
-          
-          // تسجيل دخول المستخدم
-          const userData = getUserData();
-          if (userData) {
-            socket.emit('login', userData);
-          }
-          
-          // الانضمام لغرفة الداشبورد
-          socket.emit('joinDashboard');
-        });
-
-        // الاستماع للتحديثات التلقائية
-        socket.on('dashboardUpdate', (payload: any) => {
-          console.log('🔄 تحديث الداشبورد:', payload);
-          
-          if (payload.type === 'stats' && payload.data) {
-            setStats(prev => ({ ...prev, ...payload.data }));
-            setLastUpdated(new Date());
-          } else if (payload.type === 'groups' && payload.data) {
-            const newGroupsDistribution = processGroupsDistribution(payload.data);
-            setGroupsDistribution(newGroupsDistribution);
-            setStats(prev => ({ ...prev, groupsDistribution: newGroupsDistribution }));
-            setLastUpdated(new Date());
-          } else if (payload.type === 'full') {
-            // تحديث كامل - إعادة جلب البيانات
-            fetchStats();
-          }
-        });
-
-        socket.on('disconnect', (reason: string) => {
-          console.log('🔌 انقطع اتصال Socket.IO للداشبورد:', reason);
-        });
-
-        socket.on('connect_error', (error: Error) => {
-          console.error('❌ خطأ في اتصال Socket.IO:', error);
-        });
-
-      } catch (error) {
-        console.error('❌ فشل تحميل Socket.IO:', error);
+    // Listen for dashboard updates
+    const handleDashboardUpdate = (payload: DashboardUpdatePayload) => {
+      console.log('🔄 تحديث الداشبورد:', payload);
+      
+      if (payload.type === 'stats' && payload.data && typeof payload.data === 'object') {
+        setStats(prev => ({ ...prev, ...(payload.data as Partial<Stats>) }));
+        setLastUpdated(new Date());
+      } else if (payload.type === 'groups' && payload.data && Array.isArray(payload.data)) {
+        const newGroupsDistribution = processGroupsDistribution(payload.data as GroupData[]);
+        setGroupsDistribution(newGroupsDistribution);
+        setStats(prev => ({ ...prev, groupsDistribution: newGroupsDistribution }));
+        setLastUpdated(new Date());
+      } else if (payload.type === 'full') {
+        // تحديث كامل - إعادة جلب البيانات
+        fetchStats();
       }
     };
 
-    // الاتصال بـ Socket.IO بعد التهيئة
-    if (initialized) {
-      connectSocket();
-    }
+    // Register event listener using SocketContext
+    onDashboardUpdate(handleDashboardUpdate);
 
+    // Cleanup function
     return () => {
-      if (socket) {
-        socket.emit('leaveDashboard');
-        socket.disconnect();
-      }
+      offDashboardUpdate(handleDashboardUpdate);
+      leaveDashboard();
     };
-  }, [initialized, getUserData, processGroupsDistribution, fetchStats]);
+  }, [isConnected, initialized, fetchStats, processGroupsDistribution, onDashboardUpdate, offDashboardUpdate, joinDashboard, leaveDashboard]);
 
   // تحميل البيانات عند أول استخدام فقط
   useEffect(() => {

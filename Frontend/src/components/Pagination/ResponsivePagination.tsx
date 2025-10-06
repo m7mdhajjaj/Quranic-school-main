@@ -26,8 +26,8 @@ const ResponsivePagination: React.FC<ResponsivePaginationProps> = ({
   const indexOfFirstItem = (currentPage - 1) * itemsPerPage;
   const indexOfLastItem = Math.min(currentPage * itemsPerPage, totalItems);
 
-  // عدم عرض المكون إذا لم توجد صفحات
-  if (totalPages <= 1 && totalItems <= itemsPerPage) {
+  // عدم عرض المكون إذا لم توجد أكثر من صفحة واحدة
+  if (totalPages <= 1) {
     return null;
   }
 
@@ -48,8 +48,10 @@ const ResponsivePagination: React.FC<ResponsivePaginationProps> = ({
             {/* First Page - Hidden on mobile when not needed */}
             {totalPages > 3 && currentPage > 2 && (
               <button
-                onClick={() => onPageChange(1)}
-                className="hidden sm:flex px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 hover:bg-blue-50 hover:border-blue-300 transition-all"
+                onClick={() => currentPage !== 1 ? onPageChange(1) : undefined}
+                className="hidden sm:flex px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 hover:bg-blue-50 hover:border-blue-300 hover:transform hover:scale-105 active:scale-95 transition-all"
+                aria-label="الانتقال إلى الصفحة الأولى"
+                title="انتقل إلى الصفحة الأولى"
               >
                 الأولى
               </button>
@@ -57,13 +59,15 @@ const ResponsivePagination: React.FC<ResponsivePaginationProps> = ({
             
             {/* Previous Button - Always visible */}
             <button
-              onClick={() => onPageChange(Math.max(currentPage - 1, 1))}
+              onClick={() => currentPage > 1 ? onPageChange(currentPage - 1) : undefined}
               disabled={currentPage === 1}
               className={`flex items-center gap-1 px-2 py-1.5 sm:px-3 sm:py-2 border rounded-lg text-xs sm:text-sm font-medium transition-all ${
                 currentPage === 1
-                  ? 'border-gray-200 text-gray-400 cursor-not-allowed bg-gray-50'
-                  : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
+                  ? 'border-gray-200 text-gray-400 cursor-not-allowed bg-gray-50 opacity-60'
+                  : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300 hover:transform hover:scale-105 active:scale-95'
               }`}
+              aria-label="الصفحة السابقة"
+              title={currentPage === 1 ? 'لا توجد صفحة سابقة' : `انتقل إلى الصفحة ${currentPage - 1}`}
             >
               <FaChevronRight className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
               <span className="hidden xs:inline">السابق</span>
@@ -88,12 +92,15 @@ const ResponsivePagination: React.FC<ResponsivePaginationProps> = ({
                 return (
                   <button
                     key={pageNum}
-                    onClick={() => onPageChange(pageNum)}
+                    onClick={() => currentPage !== pageNum ? onPageChange(pageNum) : undefined}
+                    disabled={currentPage === pageNum}
                     className={`w-7 h-7 sm:w-9 sm:h-9 rounded-lg text-xs sm:text-sm font-medium transition-all ${
                       currentPage === pageNum
-                        ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg transform scale-105'
-                        : 'border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-blue-300'
+                        ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg transform scale-105 cursor-default'
+                        : 'border border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300 hover:transform hover:scale-105 cursor-pointer active:scale-95'
                     }`}
+                    aria-label={`الانتقال إلى الصفحة ${pageNum}`}
+                    title={currentPage === pageNum ? `الصفحة الحالية: ${pageNum}` : `انتقل إلى الصفحة ${pageNum}`}
                   >
                     {pageNum}
                   </button>
@@ -103,13 +110,15 @@ const ResponsivePagination: React.FC<ResponsivePaginationProps> = ({
 
             {/* Next Button - Always visible */}
             <button
-              onClick={() => onPageChange(Math.min(currentPage + 1, totalPages))}
+              onClick={() => currentPage < totalPages ? onPageChange(currentPage + 1) : undefined}
               disabled={currentPage === totalPages}
               className={`flex items-center gap-1 px-2 py-1.5 sm:px-3 sm:py-2 border rounded-lg text-xs sm:text-sm font-medium transition-all ${
                 currentPage === totalPages
-                  ? 'border-gray-200 text-gray-400 cursor-not-allowed bg-gray-50'
-                  : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300'
+                  ? 'border-gray-200 text-gray-400 cursor-not-allowed bg-gray-50 opacity-60'
+                  : 'border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300 hover:transform hover:scale-105 active:scale-95'
               }`}
+              aria-label="الصفحة التالية"
+              title={currentPage === totalPages ? 'لا توجد صفحة تالية' : `انتقل إلى الصفحة ${currentPage + 1}`}
             >
               <span className="hidden xs:inline">التالي</span>
               <FaChevronLeft className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
@@ -118,8 +127,10 @@ const ResponsivePagination: React.FC<ResponsivePaginationProps> = ({
             {/* Last Page - Hidden on mobile when not needed */}
             {totalPages > 3 && currentPage < totalPages - 1 && (
               <button
-                onClick={() => onPageChange(totalPages)}
-                className="hidden sm:flex px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 hover:bg-blue-50 hover:border-blue-300 transition-all"
+                onClick={() => currentPage !== totalPages ? onPageChange(totalPages) : undefined}
+                className="hidden sm:flex px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 hover:bg-blue-50 hover:border-blue-300 hover:transform hover:scale-105 active:scale-95 transition-all"
+                aria-label="الانتقال إلى الصفحة الأخيرة"
+                title={`انتقل إلى الصفحة الأخيرة (${totalPages})`}
               >
                 الأخيرة
               </button>
@@ -133,13 +144,18 @@ const ResponsivePagination: React.FC<ResponsivePaginationProps> = ({
             <span className="text-xs text-gray-600">انتقال سريع:</span>
             <select
               value={currentPage}
-              onChange={(e) => onPageChange(Number(e.target.value))}
-              className="px-2 py-1 border border-gray-300 rounded text-xs bg-white focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
-              aria-label="اختيار الصفحة"
+              onChange={(e) => {
+                const selectedPage = Number(e.target.value);
+                if (selectedPage !== currentPage) {
+                  onPageChange(selectedPage);
+                }
+              }}
+              className="px-2 py-1 border border-gray-300 rounded text-xs bg-white focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-all hover:border-blue-300"
+              aria-label="اختيار الصفحة للانتقال إليها"
             >
               {Array.from({ length: totalPages }, (_, i) => (
                 <option key={i + 1} value={i + 1}>
-                  صفحة {i + 1}
+                  {currentPage === i + 1 ? `★ صفحة ${i + 1} (الحالية)` : `صفحة ${i + 1}`}
                 </option>
               ))}
             </select>
@@ -152,6 +168,25 @@ const ResponsivePagination: React.FC<ResponsivePaginationProps> = ({
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(-10px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+        }
+        
+        /* Enhanced pagination styles */
+        .pagination-button:hover:not(:disabled) {
+          animation: pulse 0.2s ease-in-out;
+        }
+        
+        .pagination-button:active:not(:disabled) {
+          transform: scale(0.95);
+        }
+        
+        .pagination-button:disabled {
+          opacity: 0.6;
+          pointer-events: none;
         }
         
         /* Responsive pagination styles */
@@ -171,6 +206,17 @@ const ResponsivePagination: React.FC<ResponsivePaginationProps> = ({
           .xs\\:inline {
             display: inline;
           }
+        }
+        
+        /* Focus styles for accessibility */
+        button:focus-visible {
+          outline: 2px solid #3B82F6;
+          outline-offset: 2px;
+        }
+        
+        select:focus-visible {
+          outline: 2px solid #3B82F6;
+          outline-offset: 2px;
         }
       `}</style>
     </div>
