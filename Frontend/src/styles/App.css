@@ -46,6 +46,36 @@ html, body {
   overflow: hidden;
 }
 
+/* Navigation Active State Animations */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  animation: shimmer 2s infinite;
+}
+
+.active-nav-item {
+  animation: activeGlow 0.6s ease-in-out;
+  box-shadow: 0 0 20px rgba(255,255,255,0.3);
+}
+
+@keyframes activeGlow {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1.05); }
+}
+
+/* Navigation item delay animations */
+.nav-item-delay-0 { animation-delay: 0ms; }
+.nav-item-delay-1 { animation-delay: 100ms; }
+.nav-item-delay-2 { animation-delay: 200ms; }
+.nav-item-delay-3 { animation-delay: 300ms; }
+.nav-item-delay-4 { animation-delay: 400ms; }
+.nav-item-delay-5 { animation-delay: 500ms; }
+
 /* Reply indicator styling */
 .reply-indicator {
   position: relative;

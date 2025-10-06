@@ -140,7 +140,32 @@ const AdminHeader: React.FC = () => {
     return () => document.removeEventListener('keydown', handleEscKey);
   }, []);
 
-  const isActive = (path: string) => location.pathname === path;
+  // دالة تحديد الحالة النشطة مع دعم المسارات الفرعية المحسنة
+  const isActive = (path: string) => {
+    const currentPath = location.pathname;
+    
+    // تحقق من التطابق الكامل
+    if (currentPath === path) {
+      return true;
+    }
+    
+    // معالجة خاصة لصفحة الإحصائيات (Dashboard)
+    if (path === '/admin/dashboard') {
+      return (
+        currentPath === '/admin/dashboard' || 
+        currentPath === '/admin' || 
+        currentPath === '/' ||
+        currentPath.startsWith('/admin/dashboard/')
+      );
+    }
+    
+    // تحقق من المسارات الفرعية للصفحات الأخرى
+    if (path !== '/admin/dashboard' && path !== '/admin' && currentPath.startsWith(path)) {
+      return true;
+    }
+    
+    return false;
+  };
 
   const navItems = [
     {

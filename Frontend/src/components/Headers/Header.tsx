@@ -1,4 +1,4 @@
-import { NavLink, useNavigate, Link } from "react-router-dom";
+import { NavLink, useNavigate, useLocation, Link } from "react-router-dom";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import NotificationHeader from "../NotificationHeader";
 import { useAuth } from "../../hooks/useAuth";
@@ -58,6 +58,7 @@ const Header = () => {
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const isTeacherOrAdmin =
     currentUser?.role === "teacher" || currentUser?.role === "admin";
@@ -292,30 +293,59 @@ const Header = () => {
                   <NavLink
                     key={item.to}
                     to={item.to}
-                    className={({ isActive }) =>
-                      `group relative px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 hover:scale-105 ${
-                        isActive
-                          ? "bg-white text-emerald-600 shadow-lg"
+                    end={item.to === '/'}
+                    className={({ isActive }) => {
+                      // تحسين تحديد الحالة النشطة للمسارات الفرعية
+                      const currentPath = location.pathname;
+                      let isCurrentActive = isActive;
+                      
+                      // معالجة خاصة للصفحة الرئيسية - تكون نشطة فقط في المسار الدقيق
+                      if (item.to === '/' && currentPath !== '/') {
+                        isCurrentActive = false;
+                      }
+                      
+                      // معالجة المسارات الأخرى - تكون نشطة في المسارات الفرعية أيضاً
+                      if (item.to !== '/' && !isActive) {
+                        isCurrentActive = currentPath.startsWith(item.to + '/');
+                      }
+                      
+                      return `group relative px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 hover:scale-105 ${
+                        isCurrentActive
+                          ? "bg-white text-emerald-600 shadow-lg transform scale-105"
                           : "text-white hover:bg-white/20"
-                      }`
-                    }>
-                    {({ isActive }) => (
-                      <>
-                        <span className="flex items-center gap-2">
-                          <IconComponent
-                            size={20}
-                            className={`group-hover:scale-125 transition-transform ${
-                              isActive ? "text-emerald-600" : "text-white/70"
-                            }`}
-                          />
-                          <span>{item.label}</span>
-                        </span>
-                        {isActive && (
-                          <span
-                            className={`absolute -bottom-3 left-0 right-0 h-1 bg-gradient-to-r ${item.color} rounded-full animate-gradient-slide`}></span>
-                        )}
-                      </>
-                    )}
+                      }`;
+                    }}>
+                    {({ isActive }) => {
+                      // تحديد الحالة النشطة هنا أيضاً للتناسق
+                      const currentPath = location.pathname;
+                      let isCurrentActive = isActive;
+                      
+                      if (item.to === '/' && currentPath !== '/') {
+                        isCurrentActive = false;
+                      }
+                      
+                      if (item.to !== '/' && !isActive) {
+                        isCurrentActive = currentPath.startsWith(item.to + '/');
+                      }
+                      
+                      return (
+                        <>
+                          <span className="flex items-center gap-2">
+                            <IconComponent
+                              size={20}
+                              className={`group-hover:scale-125 transition-transform ${
+                                isCurrentActive ? "text-emerald-600" : "text-white/70"
+                              }`}
+                            />
+                            <span>{item.label}</span>
+                          </span>
+                          {isCurrentActive && (
+                            <span
+                              className={`absolute -bottom-3 left-0 right-0 h-1 bg-gradient-to-r ${item.color} rounded-full animate-gradient-slide`}></span>
+                          )}
+                        </>
+                      );
+                    }}
                   </NavLink>
                 );
               })}
@@ -498,30 +528,55 @@ const Header = () => {
                       <NavLink
                         key={item.to}
                         to={item.to}
-                        className={({ isActive }) =>
-                          `group relative px-3 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 whitespace-nowrap hover:scale-105 ${
-                            isActive
-                              ? "bg-white text-emerald-600 shadow-lg border border-emerald-200"
+                        end={item.to === '/'}
+                        className={({ isActive }) => {
+                          const currentPath = location.pathname;
+                          let isCurrentActive = isActive;
+                          
+                          if (item.to === '/' && currentPath !== '/') {
+                            isCurrentActive = false;
+                          }
+                          
+                          if (item.to !== '/' && !isActive) {
+                            isCurrentActive = currentPath.startsWith(item.to + '/');
+                          }
+                          
+                          return `group relative px-3 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 whitespace-nowrap hover:scale-105 ${
+                            isCurrentActive
+                              ? "bg-white text-emerald-600 shadow-lg border border-emerald-200 transform scale-105"
                               : "text-emerald-100 hover:bg-white/20 hover:text-white"
-                          }`
-                        }>
-                        {({ isActive }) => (
-                          <>
-                            <IconComponent
-                              size={18}
-                              className={
-                                isActive
-                                  ? "text-emerald-600"
-                                  : "text-emerald-100"
-                              }
-                            />
-                            <span>{item.label}</span>
-                            {isActive && (
-                              <span
-                                className={`absolute -bottom-2 left-0 right-0 h-1 bg-gradient-to-r ${item.color} rounded-full animate-gradient-slide`}></span>
-                            )}
-                          </>
-                        )}
+                          }`;
+                        }}>
+                        {({ isActive }) => {
+                          const currentPath = location.pathname;
+                          let isCurrentActive = isActive;
+                          
+                          if (item.to === '/' && currentPath !== '/') {
+                            isCurrentActive = false;
+                          }
+                          
+                          if (item.to !== '/' && !isActive) {
+                            isCurrentActive = currentPath.startsWith(item.to + '/');
+                          }
+                          
+                          return (
+                            <>
+                              <IconComponent
+                                size={18}
+                                className={
+                                  isCurrentActive
+                                    ? "text-emerald-600"
+                                    : "text-emerald-100"
+                                }
+                              />
+                              <span>{item.label}</span>
+                              {isCurrentActive && (
+                                <span
+                                  className={`absolute -bottom-2 left-0 right-0 h-1 bg-gradient-to-r ${item.color} rounded-full animate-gradient-slide`}></span>
+                              )}
+                            </>
+                          );
+                        }}
                       </NavLink>
                     );
                   })}
@@ -594,27 +649,52 @@ const Header = () => {
                     <NavLink
                       key={item.to}
                       to={item.to}
+                      end={item.to === '/'}
                       onClick={() => setIsMenuOpen(false)}
-                      className={({ isActive }) =>
-                        `flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                          isActive
-                            ? "bg-white/20 text-white shadow-lg"
+                      className={({ isActive }) => {
+                        const currentPath = location.pathname;
+                        let isCurrentActive = isActive;
+                        
+                        if (item.to === '/' && currentPath !== '/') {
+                          isCurrentActive = false;
+                        }
+                        
+                        if (item.to !== '/' && !isActive) {
+                          isCurrentActive = currentPath.startsWith(item.to + '/');
+                        }
+                        
+                        return `flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                          isCurrentActive
+                            ? "bg-white/20 text-white shadow-lg transform scale-105"
                             : "text-emerald-100 hover:bg-white/15 hover:text-white"
-                        }`
-                      }>
-                      {({ isActive }) => (
-                        <>
-                          <IconComponent
-                            size={22}
-                            className={
-                              isActive ? "text-white" : "text-white/70"
-                            }
-                          />
-                          <span className="font-medium flex-1">
-                            {item.label}
-                          </span>
-                        </>
-                      )}
+                        }`;
+                      }}>
+                      {({ isActive }) => {
+                        const currentPath = location.pathname;
+                        let isCurrentActive = isActive;
+                        
+                        if (item.to === '/' && currentPath !== '/') {
+                          isCurrentActive = false;
+                        }
+                        
+                        if (item.to !== '/' && !isActive) {
+                          isCurrentActive = currentPath.startsWith(item.to + '/');
+                        }
+                        
+                        return (
+                          <>
+                            <IconComponent
+                              size={22}
+                              className={
+                                isCurrentActive ? "text-white" : "text-white/70"
+                              }
+                            />
+                            <span className="font-medium flex-1">
+                              {item.label}
+                            </span>
+                          </>
+                        );
+                      }}
                     </NavLink>
                   );
                 })}

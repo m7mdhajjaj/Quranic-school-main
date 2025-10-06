@@ -6,7 +6,7 @@
 // of headers and footers based on user roles and current routes.
 // ============================================================================
 
-import "./App.css";
+import "./styles/App.css";
 
 // ============================================================================
 // External Dependencies

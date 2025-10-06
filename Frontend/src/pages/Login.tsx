@@ -72,7 +72,7 @@ const Login = () => {
     // إعادة التوجه إذا كان المستخدم مسجلاً دخوله
     if (isAuthenticated) {
       const userRole = JSON.parse(localStorage.getItem("user") || "{}").role;
-      const targetPage = userRole === "admin" ? "/admin" : "/";
+      const targetPage = userRole === "admin" ? "/admin/dashboard" : "/";
       navigate(targetPage, { replace: true });
       return;
     }
@@ -204,7 +204,7 @@ const Login = () => {
 
         // Navigate to appropriate page based on role
         const userRole = response.data.user.role;
-        const targetPage = userRole === "admin" ? "/admin" : "/";
+        const targetPage = userRole === "admin" ? "/admin/dashboard" : "/";
 
         // Navigate with a small delay to ensure state is updated
         setTimeout(() => {
