@@ -15,6 +15,8 @@ import {
   FaPhone,
   FaEnvelope,
   FaMapMarkerAlt,
+  FaTimes,
+  FaSync,
 } from 'react-icons/fa';
 import { useAuth } from '../../hooks/useAuth';
 import { useSocket } from '../../hooks/useSocket';
@@ -90,7 +92,13 @@ const TeachersManagement: React.FC = () => {
     new Set()
   );
 
-
+  // Active Filters Count
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (selectedGender !== "all") count++;
+    if (searchTerm) count++;
+    return count;
+  }, [selectedGender, searchTerm]);
 
   // Statistics
   const stats = useMemo(() => {
@@ -734,76 +742,95 @@ const TeachersManagement: React.FC = () => {
 
           {/* Search and Filters */}
           <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-4 w-full">
-              {/* Search Bar - Takes full width on mobile, flex-1 on desktop */}
-              <div className="relative flex-1">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+              <div className="relative md:col-span-8">
                 <input
                   type="text"
-                  placeholder="ابحث عن معلم (الاسم، البريد الإلكتروني، رقم الهاتف، رقم المعلم...)"
+                  placeholder="ابحث عن معلم (الاسم، البريد الإلكتروني، رقم الهاتف...)"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-right"
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 />
                 <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm("")}
+                    className="absolute left-12 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    title="مسح البحث">
+                    <FaTimes className="w-4 h-4" />
+                  </button>
+                )}
               </div>
 
-              {/* Controls Section */}
-              <div className="flex gap-2 flex-shrink-0">
+              <div className="flex gap-2 md:col-span-4">
                 {/* View Mode Toggle */}
-                <div className="flex items-center bg-gray-100 rounded-lg p-1 gap-1">
+                <div className="flex-1 flex items-center border border-gray-300 rounded-xl p-1">
                   <button
-                    onClick={() => setViewMode('table')}
-                    className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all duration-200 ${
-                      viewMode === 'table'
-                        ? 'bg-blue-500 text-white shadow-md'
-                        : 'text-gray-600 hover:text-gray-800 hover:bg-white'
+                    onClick={() => setViewMode("table")}
+                    className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all ${
+                      viewMode === "table"
+                        ? "bg-blue-500 text-white shadow-sm"
+                        : "text-gray-600 hover:bg-gray-100"
                     }`}
-                    title="عرض جدول"
-                  >
+                    title="عرض جدول">
                     <FaList className="w-4 h-4" />
-                    <span className="text-sm font-medium">
-                      جدول
-                    </span>
+                    <span className="text-xs font-medium hidden sm:inline">جدول</span>
                   </button>
                   <button
-                    onClick={() => setViewMode('grid')}
-                    className={`flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all duration-200 ${
-                      viewMode === 'grid'
-                        ? 'bg-blue-500 text-white shadow-md'
-                        : 'text-gray-600 hover:text-gray-800 hover:bg-white'
+                    onClick={() => setViewMode("grid")}
+                    className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all ${
+                      viewMode === "grid"
+                        ? "bg-blue-500 text-white shadow-sm"
+                        : "text-gray-600 hover:bg-gray-100"
                     }`}
-                    title="عرض شبكة"
-                  >
+                    title="عرض شبكة">
                     <FaTh className="w-4 h-4" />
-                    <span className="text-sm font-medium">
-                      شبكة
-                    </span>
+                    <span className="text-xs font-medium hidden sm:inline">شبكة</span>
                   </button>
                 </div>
 
+                {/* Filter Button */}
                 <button
                   onClick={() => setShowFilters(!showFilters)}
-                  className={`flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-xl transition-all ${
+                  className={`relative flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-xl transition-all ${
                     showFilters
-                      ? 'border-blue-500 bg-blue-50 text-blue-600'
-                      : 'border-gray-300 hover:border-blue-400'
-                  }`}
-                >
+                      ? "border-blue-500 bg-blue-50 text-blue-600"
+                      : "border-gray-300 hover:border-blue-400"
+                  }`}>
                   <FaFilter className="w-4 h-4" />
                   <span className="hidden sm:inline">فلاتر</span>
+                  {activeFiltersCount > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
+                      {activeFiltersCount}
+                    </span>
+                  )}
                 </button>
 
+                {/* Reset Filters */}
+                {activeFiltersCount > 0 && (
+                  <button
+                    onClick={resetFilters}
+                    className="px-4 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all"
+                    title="إعادة تعيين الفلاتر">
+                    <FaSync className="w-5 h-5 text-gray-600" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Extended Filters */}
+            {showFilters && (
+              <div className="bg-gradient-to-br from-white to-gray-50 p-6 rounded-2xl border-2 border-gray-100 shadow-lg animate-fadeIn relative">
+                {/* Close Button */}
                 <button
-                  onClick={resetFilters}
-                  className="px-4 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all"
-                  title="إعادة تعيين الفلاتر"
-                >
+                  onClick={() => setShowFilters(false)}
+                  className="absolute top-4 left-4 p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-full transition-all duration-200"
+                  title="إغلاق الفلاتر">
                   <svg
-                    className="w-5 h-5 text-gray-600 mx-auto"
+                    className="w-5 h-5"
                     fill="none"
                     stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
+                    viewBox="0 0 24 24">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -812,12 +839,7 @@ const TeachersManagement: React.FC = () => {
                     />
                   </svg>
                 </button>
-              </div>
-            </div>
-
-            {/* Enhanced Filters */}
-            {showFilters && (
-              <div className="bg-gradient-to-br from-white to-gray-50 p-6 rounded-2xl border-2 border-gray-100 shadow-lg animate-fadeIn">
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {/* Gender Filter */}
                   <div className="space-y-3">
