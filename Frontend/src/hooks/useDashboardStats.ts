@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import api from "../Api/api";
+import { fetchAllDashboardData, type GroupData } from "../Api/dashboardApi";
 
 export interface GroupDistribution {
   groupName: string;
@@ -60,6 +60,33 @@ export const useDashboardStats = (): UseDashboardStatsReturn => {
   const [groupsDistribution, setGroupsDistribution] = useState<
     GroupDistribution[]
   >([]);
+  
+  // للحصول على معلومات المستخدم من localStorage
+  const getUserData = useCallback(() => {
+    const user = localStorage.getItem('user');
+    const userId = localStorage.getItem('userId');
+    if (user && userId) {
+      const userData = JSON.parse(user);
+      return {
+        userId,
+        role: userData.role || 'admin',
+        firstName: userData.firstName || 'Admin',
+      };
+    }
+    return null;
+  }, []);
+
+  // معالجة بيانات توزيع الحلقات
+  const processGroupsDistribution = useCallback((groupsData: GroupData[]): GroupDistribution[] => {
+    return groupsData.map((group) => ({
+      groupName: group.name,
+      studentCount: group.currentStudents || 0,
+      capacity: group.capacity || 30,
+      percentage: Math.round(
+        ((group.currentStudents || 0) / (group.capacity || 30)) * 100
+      ),
+    }));
+  }, []);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -68,41 +95,22 @@ export const useDashboardStats = (): UseDashboardStatsReturn => {
 
       console.log("📊 جلب إحصائيات لوحة التحكم...");
 
-      // جلب الإحصائيات الأساسية
-      const statsResponse = await api.get("/dashboard/stats");
-
-      // جلب بيانات الحلقات لحساب التوزيع
-      const groupsResponse = await api.get("/groups");
-
-      if (statsResponse.data.success) {
-        const statsData = statsResponse.data.data;
-        const now = Date.now();
-
-        // معالجة بيانات توزيع الحلقات
-        let groupsDistributionData: GroupDistribution[] = [];
-
-        if (groupsResponse.data.success && groupsResponse.data.data) {
-          groupsDistributionData = groupsResponse.data.data.map(
-            (group: any) => ({
-              groupName: group.name,
-              studentCount: group.currentStudents || 0,
-              capacity: group.capacity || 30,
-              percentage: Math.round(
-                ((group.currentStudents || 0) / (group.capacity || 30)) * 100
-              ),
-            })
-          );
-        }
-
-        setStats({ ...statsData, groupsDistribution: groupsDistributionData });
+      // استخدام API المحسن للجلب المتوازي
+      const result = await fetchAllDashboardData();
+      
+      if (result.success) {
+        const groupsDistributionData = processGroupsDistribution(result.groups);
+        
+        setStats({ 
+          ...result.stats, 
+          groupsDistribution: groupsDistributionData 
+        });
         setGroupsDistribution(groupsDistributionData);
-        setLastUpdated(new Date(now));
+        setLastUpdated(new Date());
         setInitialized(true);
 
-        console.log("✅ تم جلب الإحصائيات بنجاح:", statsData);
+        console.log("✅ تم جلب الإحصائيات بنجاح:", result.stats);
         console.log("✅ تم جلب توزيع الحلقات:", groupsDistributionData);
-      } else {
-        throw new Error(statsResponse.data.message || "فشل في جلب الإحصائيات");
       }
     } catch (error) {
       console.error("❌ خطأ في جلب الإحصائيات:", error);
@@ -120,7 +128,81 @@ export const useDashboardStats = (): UseDashboardStatsReturn => {
       setIsLoading(false);
       setRefreshing(false);
     }
-  }, [initialized]);
+  }, [initialized, processGroupsDistribution]);
+
+  // Socket.IO integration for real-time updates
+  useEffect(() => {
+    let socket: any = null;
+    
+    const connectSocket = async () => {
+      try {
+        // Dynamic import للـ socket.io-client
+        const { io } = await import('socket.io-client');
+        const { API_BASE_URL } = await import('../config');
+        
+        socket = io(API_BASE_URL, {
+          transports: ['websocket', 'polling'],
+          reconnection: true,
+          reconnectionAttempts: 5,
+          reconnectionDelay: 3000,
+        });
+
+        socket.on('connect', () => {
+          console.log('✅ Socket.IO متصل للداشبورد');
+          
+          // تسجيل دخول المستخدم
+          const userData = getUserData();
+          if (userData) {
+            socket.emit('login', userData);
+          }
+          
+          // الانضمام لغرفة الداشبورد
+          socket.emit('joinDashboard');
+        });
+
+        // الاستماع للتحديثات التلقائية
+        socket.on('dashboardUpdate', (payload: any) => {
+          console.log('🔄 تحديث الداشبورد:', payload);
+          
+          if (payload.type === 'stats' && payload.data) {
+            setStats(prev => ({ ...prev, ...payload.data }));
+            setLastUpdated(new Date());
+          } else if (payload.type === 'groups' && payload.data) {
+            const newGroupsDistribution = processGroupsDistribution(payload.data);
+            setGroupsDistribution(newGroupsDistribution);
+            setStats(prev => ({ ...prev, groupsDistribution: newGroupsDistribution }));
+            setLastUpdated(new Date());
+          } else if (payload.type === 'full') {
+            // تحديث كامل - إعادة جلب البيانات
+            fetchStats();
+          }
+        });
+
+        socket.on('disconnect', (reason: string) => {
+          console.log('🔌 انقطع اتصال Socket.IO للداشبورد:', reason);
+        });
+
+        socket.on('connect_error', (error: Error) => {
+          console.error('❌ خطأ في اتصال Socket.IO:', error);
+        });
+
+      } catch (error) {
+        console.error('❌ فشل تحميل Socket.IO:', error);
+      }
+    };
+
+    // الاتصال بـ Socket.IO بعد التهيئة
+    if (initialized) {
+      connectSocket();
+    }
+
+    return () => {
+      if (socket) {
+        socket.emit('leaveDashboard');
+        socket.disconnect();
+      }
+    };
+  }, [initialized, getUserData, processGroupsDistribution, fetchStats]);
 
   // تحميل البيانات عند أول استخدام فقط
   useEffect(() => {
@@ -128,17 +210,6 @@ export const useDashboardStats = (): UseDashboardStatsReturn => {
       fetchStats();
     }
   }, [fetchStats, initialized]);
-
-  // Auto refresh كل 10 دقائق
-  useEffect(() => {
-    if (!initialized) return;
-
-    const interval = setInterval(() => {
-      fetchStats();
-    }, 10 * 60 * 1000); // 10 دقائق
-
-    return () => clearInterval(interval);
-  }, [initialized, fetchStats]);
 
   return {
     stats,

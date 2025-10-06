@@ -10,6 +10,14 @@ export interface SocketEvents {
   teacherUpdated: Teacher;
   teacherDeleted: { teacherId: string; teacher?: Teacher };
   
+  // Dashboard Events - جديد
+  dashboardUpdate: DashboardUpdatePayload;
+  dashboardStatsUpdate: any;
+  dashboardGroupsUpdate: any;
+  joinDashboard: void;
+  leaveDashboard: void;
+  requestDashboardUpdate: void;
+  
   // User Status Events
   userStatusChange: {
     userId: string;
@@ -28,7 +36,37 @@ export interface SocketEvents {
   connect: void;
   disconnect: string;
   connect_error: Error;
+  error: SocketError;
 }
+
+// Dashboard Types
+export interface DashboardUpdatePayload {
+  type: 'stats' | 'groups' | 'full';
+  data?: any;
+  timestamp: string;
+  action?: 'create' | 'update' | 'delete';
+}
+
+export interface SocketUser {
+  userId: string;
+  role: 'student' | 'teacher' | 'admin';
+  firstName: string;
+}
+
+export interface SocketError {
+  message: string;
+  code?: string;
+  timestamp: string;
+}
+
+export interface SocketConnection {
+  isConnected: boolean;
+  reconnectAttempts: number;
+  lastConnected?: Date;
+  error?: SocketError;
+}
+
+export type SocketCallback<T = any> = (data: T) => void;
 
 export interface Student {
   _id?: string;

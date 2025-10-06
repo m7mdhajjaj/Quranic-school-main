@@ -141,6 +141,20 @@ app.set('io', io);
 // Store online users
 const onlineUsers = new Map();
 
+// Global function to notify dashboard updates
+global.notifyDashboardUpdate = (updateType, data = null) => {
+  if (io) {
+    const payload = {
+      type: updateType, // 'stats', 'groups', 'full'
+      data: data,
+      timestamp: new Date().toISOString()
+    };
+    
+    console.log(`📊 Broadcasting dashboard update: ${updateType}`);
+    io.to('dashboard').emit('dashboardUpdate', payload);
+  }
+};
+
 // Initialize Notification Service
 let notificationService;
 
@@ -211,6 +225,34 @@ io.on("connection", (socket) => {
     }
     
     console.log(`📊 Online users: ${onlineUsers.size}`);
+  });
+
+  // Dashboard Socket Events
+  socket.on("joinDashboard", () => {
+    socket.join("dashboard");
+    console.log(`📊 User ${socket.id} joined dashboard room`);
+  });
+
+  socket.on("leaveDashboard", () => {
+    socket.leave("dashboard");
+    console.log(`📊 User ${socket.id} left dashboard room`);
+  });
+
+  socket.on("requestDashboardUpdate", async () => {
+    console.log(`📊 Dashboard update requested by ${socket.id}`);
+    try {
+      // يمكن إضافة منطق لجلب البيانات المحدثة وإرسالها
+      socket.emit('dashboardUpdate', {
+        type: 'full',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error handling dashboard update request:', error);
+      socket.emit('error', {
+        message: 'فشل في تحديث الداشبورد',
+        timestamp: new Date().toISOString()
+      });
+    }
   });
 
   // Handle logout

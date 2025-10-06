@@ -1,5 +1,6 @@
 const Student = require("../models/Student");
 const { validateAndCheckDuplicates } = require("../utils/duplicateChecker");
+const { notifyStudentStatsUpdate } = require("../utils/dashboardNotifications");
 
 // Get all students - OPTIMIZED for performance
 exports.getStudents = async (req, res) => {
@@ -196,6 +197,9 @@ exports.createStudent = async (req, res) => {
       global.io.emit("studentCreated", newStudent);
     }
 
+    // إشعار تحديث إحصائيات الداشبورد
+    notifyStudentStatsUpdate();
+
     return res.status(201).json({
       success: true,
       message: "تم إضافة الطالب بنجاح",
@@ -350,6 +354,9 @@ exports.updateStudent = async (req, res) => {
       global.io.emit("studentUpdated", updatedStudent);
     }
 
+    // إشعار تحديث إحصائيات الداشبورد
+    notifyStudentStatsUpdate();
+
     res.json({ success: true, data: updatedStudent });
   } catch (error) {
     console.error("Error updating student:", error);
@@ -406,6 +413,9 @@ exports.deleteStudent = async (req, res) => {
         student: deletedStudent,
       });
     }
+
+    // إشعار تحديث إحصائيات الداشبورد
+    notifyStudentStatsUpdate();
 
     res.json({ message: "Student deleted successfully" });
   } catch (error) {
