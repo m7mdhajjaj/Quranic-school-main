@@ -1135,13 +1135,13 @@ const AdminHeader: React.FC = () => {
         }`}
         dir="rtl"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
+        <div className="max-w-full mx-auto px-2 sm:px-4 lg:px-6">
+          <div className="flex items-center justify-between h-23">
             
             {/* اللوغو والعنوان - اليمين */}
-            <div className="flex items-center space-x-reverse space-x-4">
+            <div className="flex items-center space-x-reverse space-x-2 mr-4">
               <div 
-                className="flex items-center space-x-reverse space-x-3 cursor-pointer hover:opacity-90 transition-all duration-300 hover:scale-105" 
+                className="flex items-center space-x-reverse space-x-2 cursor-pointer hover:opacity-90 transition-all duration-300 hover:scale-105" 
                 onClick={() => navigate('/admin/dashboard')}
               >
                 <div
@@ -1175,8 +1175,8 @@ const AdminHeader: React.FC = () => {
               </div>
             </div>
 
-            {/* التنقل - الوسط */}
-            <nav className="hidden lg:flex items-center space-x-reverse space-x-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-2">
+            {/* التنقل - الوسط - عرض محسن ومتناسق */}
+            <nav className="hidden md:flex items-center space-x-reverse space-x-1 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-2 flex-1 max-w-4xl mx-4 lg:mx-8 justify-center">
               {navItems.map((item, index) => (
                 <button
                   key={item.path}
@@ -1184,7 +1184,7 @@ const AdminHeader: React.FC = () => {
                     navigate(item.path);
                     setProfileMenuOpen(false);
                   }}
-                  className={`group relative px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 nav-item ${
+                  className={`group relative px-4 md:px-6 py-3 rounded-xl text-sm md:text-base font-medium transition-all duration-300 transform hover:scale-105 nav-item flex-1 ${
                     isActive(item.path)
                       ? `bg-gradient-to-r ${item.gradient} text-white shadow-lg active-nav-item`
                       : scrolled
@@ -1194,10 +1194,10 @@ const AdminHeader: React.FC = () => {
                   style={{ animationDelay: `${index * 100}ms` }}
                 >
                   <span className="flex items-center space-x-reverse space-x-2">
-                    <span className="text-lg transition-transform duration-300 group-hover:scale-125 group-hover:rotate-12 nav-icon">
+                    <span className="text-lg md:text-xl transition-transform duration-300 group-hover:scale-125 group-hover:rotate-12 nav-icon">
                       {item.icon}
                     </span>
-                    <span className="text-sm font-semibold whitespace-nowrap">{item.label}</span>
+                    <span className="text-sm md:text-base font-semibold whitespace-nowrap">{item.label}</span>
                   </span>
                   {isActive(item.path) && (
                     <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-white/20 to-transparent animate-shimmer"></div>
@@ -1206,12 +1206,12 @@ const AdminHeader: React.FC = () => {
               ))}
             </nav>
 
-            {/* الإعدادات والملف الشخصي - اليسار */}
-            <div className="flex items-center space-x-reverse space-x-3">
+            {/* الإعدادات والإشعارات - منفصلين ومحركين يميناً */}
+            <div className="flex items-center space-x-reverse space-x-3 mr-2 md:mr-4">
               
               {/* زر الإعدادات (بدون منطق) */}
               <button
-                className={`relative p-2.5 rounded-xl transition-all duration-500 transform hover:scale-110 overflow-hidden group ${
+                className={`relative p-3 rounded-xl transition-all duration-500 transform hover:scale-110 overflow-hidden group ${
                   scrolled
                     ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     : 'bg-white/20 text-white hover:bg-white/30'
@@ -1219,7 +1219,7 @@ const AdminHeader: React.FC = () => {
                 title="الإعدادات"
               >
                 <div className="relative z-10">
-                  <svg className="w-5 h-5 transform transition-transform duration-500 group-hover:rotate-180" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-6 h-6 transform transition-transform duration-500 group-hover:rotate-180" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
                   </svg>
                 </div>
@@ -1230,14 +1230,14 @@ const AdminHeader: React.FC = () => {
               <div className="relative" ref={notificationMenuRef}>
                 <button
                   onClick={() => setShowNotifications(!showNotifications)}
-                  className={`relative p-2.5 rounded-xl transition-all duration-300 transform hover:scale-110 ${
+                  className={`relative p-3 rounded-xl transition-all duration-300 transform hover:scale-110 ${
                     scrolled
                       ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       : 'bg-white/20 text-white hover:bg-white/30'
                   }`}
                 >
                   <svg
-                    className="w-5 h-5"
+                    className="w-6 h-6"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -1273,7 +1273,7 @@ const AdminHeader: React.FC = () => {
                     </div>
 
                     <div className="max-h-96 overflow-y-auto">
-                      {mockNotifications.map((notification, index) => (
+                      {mockNotifications.map((notification) => (
                         <div
                           key={notification.id}
                           className={`px-6 py-4 border-b border-gray-100 cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 ${
@@ -1317,21 +1317,21 @@ const AdminHeader: React.FC = () => {
                 )}
               </div>
 
-              {/* فاصل */}
-              <div className="w-px h-6 bg-white/30"></div>
+            {/* فاصل */}
+            <div className="hidden md:block w-px h-8 bg-white/30 mx-3"></div>
 
-              {/* قائمة الملف الشخصي */}
-              <div className="relative" ref={profileMenuRef}>
-                <button
-                  onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                  className={`flex items-center space-x-reverse space-x-2 px-3 py-2.5 rounded-xl transition-all duration-300 transform hover:scale-105 ${
+            {/* قائمة الملف الشخصي - منفصلة */}
+            <div className="relative" ref={profileMenuRef}>
+              <button
+                onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                className={`flex items-center space-x-reverse space-x-3 px-4 py-3 rounded-xl transition-all duration-300 transform hover:scale-105 ${
                     scrolled
                       ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'
                       : 'bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/30'
                   }`}
                 >
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                <div
+                  className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-base ${
                       scrolled
                         ? 'bg-white text-emerald-600'
                         : 'bg-white/20 text-white'
@@ -1339,9 +1339,9 @@ const AdminHeader: React.FC = () => {
                   >
                     {currentUser?.firstName?.[0] || 'A'}
                   </div>
-                  <span className="text-sm font-semibold hidden md:block">
-                    {currentUser?.firstName || 'المشرف'}
-                  </span>
+                <span className="text-base font-semibold hidden lg:block">
+                  {currentUser?.firstName || 'المشرف'}
+                </span>
                   <svg
                     className={`w-4 h-4 transition-transform duration-300 ${profileMenuOpen ? 'rotate-180' : ''}`}
                     fill="none"
@@ -1533,7 +1533,7 @@ const AdminHeader: React.FC = () => {
                   }`}>
                     الإدارة الرئيسية
                   </div>
-                  {navItems.map((item, index) => (
+                  {navItems.map((item) => (
                     <button
                       key={item.path}
                       onClick={() => {
@@ -1686,7 +1686,7 @@ const AdminHeader: React.FC = () => {
       )}
 
       {/* Spacer to prevent content from being hidden under fixed header */}
-      <div className="h-20"></div>
+      <div className="h-23"></div>
 
       <style>{`
         /* RTL Support - Space-x-reverse utility */
