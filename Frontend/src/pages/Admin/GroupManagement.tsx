@@ -441,13 +441,13 @@ const GroupManagement: React.FC = () => {
       <div
         className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4 md:p-6"
         dir="rtl">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-full mx-auto px-2">
           {/* Header Section */}
           <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border border-gray-100">
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6 text-right">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg">
+                  <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-xl">
                     <FaUsers className="w-6 h-6 text-white" />
                   </div>
                   <div>
@@ -727,11 +727,11 @@ const GroupManagement: React.FC = () => {
           {/* Statistics Cards */}
           <div className="max-w-7xl mx-auto">
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              {Array.from({ length: 3 }).map((_, index) => (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-6 w-full justify-items-stretch">
+              {Array.from({ length: 6 }).map((_, index) => (
                 <div
                   key={index}
-                  className="bg-white p-6 rounded-xl shadow-lg border-l-4 border-gray-300 animate-pulse">
+                  className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-gray-300 animate-pulse w-full">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-gray-200 rounded-lg">
                       <div className="w-6 h-6 bg-gray-300 rounded"></div>
@@ -745,45 +745,60 @@ const GroupManagement: React.FC = () => {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-6 w-full justify-items-stretch">
               {[
                 {
-                  label: "إجمالي الحلقات",
+                  label: "إجمالي",
                   value: filteredAndSortedGroups.length,
                   icon: FaUsers,
                   color: "blue",
                   total: groups.length,
                 },
                 {
-                  label: "المعلمين",
-                  value: teachers.length,
+                  label: "ذكور",
+                  value: groups.filter(g => g.teacher && g.teacher.includes('معلم')).length,
                   icon: FaChalkboardTeacher,
+                  color: "cyan",
+                },
+                {
+                  label: "إناث",
+                  value: groups.filter(g => g.teacher && g.teacher.includes('معلمة')).length,
+                  icon: FaChalkboardTeacher,
+                  color: "pink",
+                },
+                {
+                  label: "نشطين",
+                  value: groups.filter(g => g.isActive !== false).length,
+                  icon: FaCalendar,
                   color: "emerald",
                 },
                 {
-                  label: "إجمالي الطلاب",
-                  value: groups.reduce(
-                    (sum, g) => sum + (g.currentStudents || 0),
-                    0
-                  ),
+                  label: "غير نشطين",
+                  value: groups.filter(g => g.isActive === false).length,
+                  icon: FaTimes,
+                  color: "red",
+                },
+                {
+                  label: "متوسط العمر",
+                  value: Math.round(groups.reduce((sum, g) => sum + (g.capacity || 0), 0) / (groups.length || 1)),
                   icon: FaUserFriends,
-                  color: "purple",
+                  color: "amber",
                 },
               ].map((stat, idx) => (
                 <div
                   key={idx}
-                  className={`bg-white p-6 rounded-xl shadow-lg border-l-4 border-${stat.color}-500 hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer`}>
-                  <div className="flex items-center gap-4">
+                  className={`bg-white p-4 rounded-xl shadow-lg border-l-4 border-${stat.color}-500 hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer`}>
+                  <div className="flex items-center gap-3">
                     <div
-                      className={`p-3 bg-gradient-to-br from-${stat.color}-400 to-${stat.color}-600 rounded-lg shadow-md`}>
-                      <stat.icon className="w-6 h-6 text-white" />
+                      className={`p-2 bg-gradient-to-br from-${stat.color}-400 to-${stat.color}-600 rounded-lg shadow-md`}>
+                      <stat.icon className="w-5 h-5 text-white" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm text-gray-600 font-medium mb-1">
+                      <p className="text-xs text-gray-600 font-medium truncate">
                         {stat.label}
                       </p>
                       <div className="flex items-center gap-2">
-                        <p className="text-2xl font-bold text-gray-900">
+                        <p className="text-xl font-bold text-gray-900">
                           {stat.value}
                         </p>
                         {stat.total && stat.value !== stat.total && (
@@ -1126,11 +1141,11 @@ const GroupManagement: React.FC = () => {
         )}
         {/* Grid View Loading Skeleton */}
         {isLoading && viewMode === "grid" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 justify-items-start">
             {Array.from({ length: groupsPerPage }, (_, index) => (
               <div
                 key={index}
-                className="bg-white rounded-xl shadow-lg border border-gray-100">
+                className="bg-white rounded-xl shadow-lg border border-gray-100 w-full">
                 {/* Card Header */}
                 <div className="p-6 border-b border-gray-200">
                   <div className="flex items-start justify-between mb-4">
@@ -1167,7 +1182,7 @@ const GroupManagement: React.FC = () => {
         )}
         {/* Grid View */}
         {!isLoading && !error && viewMode === "grid" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-6 justify-items-start">
             {currentGroups.length === 0 ? (
               <div className="col-span-full bg-white rounded-2xl shadow-xl p-16 text-center">
                 <FaUsers className="w-16 h-16 text-gray-300 mx-auto mb-4" />
