@@ -18,6 +18,7 @@ import {
 } from 'react-icons/fa';
 import { useAuth } from '../../hooks/useAuth';
 import { useSocket } from '../../hooks/useSocket';
+import { useSounds } from '../../hooks/useSounds';
 
 import api from '../../Api/api';
 import { getAllTeachers } from '../../Api/teacherApi';
@@ -49,6 +50,7 @@ const getGroupDisplayName = (
 const TeachersManagement: React.FC = () => {
   const { user: currentUser } = useAuth();
   const { socket } = useSocket();
+  const { playAdd, playUpdate, playDelete, playError } = useSounds();
 
   const userRole = currentUser?.role || '';
   const hasPermission = userRole === 'admin';
@@ -405,6 +407,9 @@ const TeachersManagement: React.FC = () => {
           prevTeachers.filter((t) => t._id !== teacherId)
         );
 
+        // تشغيل صوت الحذف الناجح
+        playDelete();
+
         // رسالة نجاح الحذف
         await showSuccessMessage(
           'تم الحذف!',
@@ -412,6 +417,9 @@ const TeachersManagement: React.FC = () => {
         );
       } catch (deleteError: unknown) {
         console.error('❌ فشل في حذف المعلم:', deleteError);
+
+        // تشغيل صوت الخطأ
+        playError();
 
         // التعامل مع خطأ وجود علاقات مرتبطة
         const error = deleteError as {
@@ -489,6 +497,9 @@ const TeachersManagement: React.FC = () => {
             )
           );
 
+          // تشغيل صوت التعديل الناجح
+          playUpdate();
+
           // رسالة نجاح التحديث
           await showSuccessMessage(
             'تم التحديث!',
@@ -497,6 +508,9 @@ const TeachersManagement: React.FC = () => {
         } else {
           // للمعلمين الجدد سيتم إضافتهم بواسطة الـ API
           await fetchTeachers(); // إعادة تحميل القائمة
+
+          // تشغيل صوت الإضافة الناجحة
+          playAdd();
 
           // رسالة نجاح الإضافة
           await showSuccessMessage(
@@ -513,6 +527,9 @@ const TeachersManagement: React.FC = () => {
       setSelectedTeacher(null);
     } catch (error: unknown) {
       console.error('خطأ في handleAddSuccess:', error);
+
+      // تشغيل صوت الخطأ
+      playError();
 
       let errorMessage = 'حدث خطأ أثناء معالجة بيانات المعلم';
       let errorTitle = 'حدث خطأ! ⚠️';

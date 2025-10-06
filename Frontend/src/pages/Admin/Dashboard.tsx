@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
-import LoadingSkeleton from "../components/Loading/LoadingSkeleton";
-import { useDashboardStats } from "../hooks/useDashboardStats";
-import "../styles/dashboard.css";
+import LoadingSkeleton from "../../components/Loading/LoadingSkeleton";
+import { useDashboardStats } from "../../hooks/useDashboardStats";
+import "../../styles/dashboard.css";
 
 interface StatCardProps {
   icon: React.ReactNode;

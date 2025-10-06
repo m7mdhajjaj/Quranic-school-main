@@ -76,11 +76,11 @@ import QuranAudio from "./pages/QuranAudio";
 // ============================================================================
 // Page Components - Admin
 // ============================================================================
-import AdminDashboard from "./pages/AdminDashboard";
+import AdminDashboard from "./pages/Admin/Dashboard";
 // import AdminManagement from "./pages/Managments/AdminManagement";
-import StudentsManagement from "./pages/Managments/StudentsManagement";
-import TeachersManagement from "./pages/Managments/TeachersManagement";
-import GroupManagement from "./pages/Managments/GroupManagement";
+import StudentsManagement from "./pages/Admin/StudentsManagement";
+import TeachersManagement from "./pages/Admin/TeachersManagement";
+import GroupManagement from "./pages/Admin/GroupManagement";
 import ContactSettings from "./pages/Admin/ContactSettings";
 
 // ============================================================================
