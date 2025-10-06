@@ -109,6 +109,7 @@ const AddStudentForm: React.FC<Props> = ({
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [filteredTeachers, setFilteredTeachers] = useState<Teacher[]>([]);
+  const [filteredGroups, setFilteredGroups] = useState<Group[]>([]);
   const [loadingTeachers, setLoadingTeachers] = useState(false);
   const [loadingGroups, setLoadingGroups] = useState(false);
 
@@ -246,6 +247,43 @@ const AddStudentForm: React.FC<Props> = ({
       setFilteredTeachers(teachers);
     }
   }, [formData.group, teachers, formData.teacher, student, errors.teacher]);
+
+  // Filter groups when teacher is selected
+  useEffect(() => {
+    if (formData.teacher && formData.teacher !== '') {
+      console.log('📚 تصفية الحلقات للمعلم:', formData.teacher);
+      
+      // Find groups that this teacher is responsible for
+      const selectedTeacher = teachers.find(
+        (teacher) => `${teacher.firstName} ${teacher.lastName}` === formData.teacher
+      );
+      
+      if (selectedTeacher && selectedTeacher.groups && selectedTeacher.groups.length > 0) {
+        const teacherGroups = groups.filter((group) => {
+          return selectedTeacher.groups!.some((tGroup) => {
+            if (typeof tGroup === 'string') {
+              return tGroup === group.name;
+            }
+            return tGroup.name === group.name || tGroup.id === group._id;
+          });
+        });
+        
+        console.log('📚 الحلقات المتاحة للمعلم:', teacherGroups.length);
+        setFilteredGroups(teacherGroups);
+        
+        // Clear group selection if current group is not available for this teacher
+        if (formData.group && !teacherGroups.some(g => g.name === formData.group)) {
+          setFormData(prev => ({ ...prev, group: '' }));
+        }
+      } else {
+        setFilteredGroups([]);
+      }
+    } else {
+      // No teacher selected: show all groups
+      console.log('📚 عرض جميع الحلقات (لم يتم اختيار معلم)');
+      setFilteredGroups(groups);
+    }
+  }, [formData.teacher, teachers, groups, formData.group]);
 
   const isStep1Valid = useMemo(() => {
     const step1Fields = [
@@ -1042,11 +1080,64 @@ const AddStudentForm: React.FC<Props> = ({
                 </h3>
                 <div className="bg-gradient-to-r from-blue-100 to-emerald-100 border-2 border-blue-300 rounded-xl p-4 mb-6 shadow-sm">
                   <p className="text-sm text-blue-800 text-center font-medium">
-                    <strong>📋 تعليمات:</strong> اختر المعلم المطلوب أولاً، ثم اختر الحلقة المناسبة
+                    <strong>📋 تعليمات:</strong> اختر الحلقة المطلوبة أولاً، ثم اختر المعلم المناسب
                   </p>
                 </div>
                 <div className="space-y-6">
-                  {/* اختيار الحلقة أولاً */}
+                  {/* اختيار المعلم أولاً */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-900 flex items-center gap-2 mb-2">
+                      <div className="w-7 h-7 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-lg flex items-center justify-center shadow-sm">
+                        <User size={14} className="text-white" />
+                      </div>
+                      <span className="text-base">اختيار المعلم المسؤول</span>
+                      <span className="text-red-500 text-lg">*</span>
+                    </label>
+                    
+                    <div className="relative">
+                      <select
+                        name="teacher"
+                        value={formData.teacher || ''}
+                        onChange={handleChange}
+                        onBlur={() => handleBlur('teacher')}
+                        className={`w-full px-4 py-3.5 pr-12 border-2 rounded-xl transition-all duration-300 focus:outline-none focus:ring-4 text-right bg-white shadow-sm hover:shadow-md appearance-none ${
+                          getFieldError('teacher')
+                            ? 'border-red-400 focus:ring-red-100 focus:border-red-500 bg-red-50'
+                            : 'border-teal-300 focus:ring-teal-100 focus:border-teal-500 hover:border-teal-400'
+                        }`}
+                        title="اختر المعلم"
+                      >
+                        <option value="">اختر المعلم أولاً...</option>
+                        {loadingTeachers ? (
+                          <option value="" disabled>
+                            جاري التحميل...
+                          </option>
+                        ) : (
+                          teachers.map((teacher) => (
+                            <option key={teacher._id} value={`${teacher.firstName} ${teacher.lastName}`}>
+                              {teacher.firstName} {teacher.lastName} - {teacher.specialCircle || 'غير محدد'}
+                            </option>
+                          ))
+                        )}
+                      </select>
+                      
+                      {/* أيقونة في الزاوية */}
+                      <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                        <User size={18} className={`${
+                          formData.teacher ? 'text-teal-500' : 'text-gray-400'
+                        } transition-colors duration-200`} />
+                      </div>
+                    </div>
+                    
+                    {getFieldError('teacher') && (
+                      <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
+                        <AlertCircle size={12} />
+                        <span>{getFieldError('teacher')}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* اختيار الحلقة بناءً على المعلم */}
                   <div className="space-y-1">
                     <label className="block text-sm font-semibold text-gray-900 flex items-center gap-2 mb-2">
                       <div className="w-7 h-7 bg-gradient-to-br from-emerald-500 to-green-600 rounded-lg flex items-center justify-center shadow-sm">
@@ -1055,6 +1146,41 @@ const AddStudentForm: React.FC<Props> = ({
                       <span className="text-base">اختيار الحلقة الدراسية</span>
                       <span className="text-red-500 text-lg">*</span>
                     </label>
+                    
+                    {/* معلومات الحلقات المتاحة */}
+                    {formData.teacher && (
+                      <div className="bg-gradient-to-r from-emerald-50 to-green-50 p-4 rounded-xl border-2 border-emerald-200 shadow-sm">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
+                              <Users size={16} className="text-emerald-600" />
+                            </div>
+                            <div>
+                              <p className="text-emerald-800 font-semibold text-sm">الحلقات المتاحة</p>
+                              <p className="text-emerald-600 text-xs">للمعلم: {formData.teacher}</p>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            {filteredGroups.length > 0 ? (
+                              <span className="bg-green-100 text-green-800 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-2">
+                                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                                {filteredGroups.length} حلقة متاحة
+                              </span>
+                            ) : (
+                              <span className="bg-red-100 text-red-800 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-2">
+                                <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                                لا يوجد حلقات
+                              </span>
+                            )}
+                            {groups.length > 0 && (
+                              <span className="text-emerald-600 text-xs font-medium">
+                                📊 من إجمالي {groups.length} حلقة في النظام
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     <div className="relative">
                       <select
                         name="group"
@@ -1064,17 +1190,26 @@ const AddStudentForm: React.FC<Props> = ({
                         className={`w-full px-4 py-3.5 pr-12 border-2 rounded-xl transition-all duration-300 focus:outline-none focus:ring-4 text-right bg-white shadow-sm hover:shadow-md appearance-none ${
                           getFieldError('group')
                             ? 'border-red-400 focus:ring-red-100 focus:border-red-500 bg-red-50'
-                            : 'border-emerald-300 focus:ring-emerald-100 focus:border-emerald-500 hover:border-emerald-400'
+                            : formData.teacher && filteredGroups.length > 0
+                              ? 'border-emerald-300 focus:ring-emerald-100 focus:border-emerald-500 hover:border-emerald-400'
+                              : 'border-gray-300 bg-gray-50 cursor-not-allowed hover:border-gray-400'
                         }`}
                         title="اختر الحلقة"
+                        disabled={!formData.teacher || filteredGroups.length === 0}
                       >
-                      <option value="">اختر الحلقة أولاً...</option>
-                      {loadingGroups ? (
-                        <option value="" disabled>
-                          جاري التحميل...
+                        <option value="">
+                          {!formData.teacher
+                            ? '👆 اختر المعلم أولاً لرؤية الحلقات المتاحة'
+                            : filteredGroups.length === 0
+                            ? '❌ لا يوجد حلقات متاحة لهذا المعلم'
+                            : '📚 اختر الحلقة الدراسية...'}
                         </option>
-                      ) : (
-                        groups.map((group) => (
+                        {loadingGroups ? (
+                          <option value="" disabled>
+                            🔄 جاري تحميل الحلقات...
+                          </option>
+                        ) : (
+                          filteredGroups.map((group) => (
                           <option 
                             key={group._id} 
                             value={group.name}
@@ -1139,163 +1274,7 @@ const AddStudentForm: React.FC<Props> = ({
                     )}
                   </div>
 
-                  {/* اختيار المعلم بناءً على الحلقة */}
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-900 flex items-center gap-2 mb-2">
-                      <div className="w-7 h-7 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-lg flex items-center justify-center shadow-sm">
-                        <User size={14} className="text-white" />
-                      </div>
-                      <span className="text-base">اختيار المعلم المسؤول</span>
-                      <span className="text-red-500 text-lg">*</span>
-                    </label>
-                    
-                    {/* معلومات المعلمين المتاحين */}
-                    {formData.group && (
-                      <div className="bg-gradient-to-r from-teal-50 to-cyan-50 p-4 rounded-xl border-2 border-teal-200 shadow-sm">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
-                              <User size={16} className="text-teal-600" />
-                            </div>
-                            <div>
-                              <p className="text-teal-800 font-semibold text-sm">المعلمين المتاحين</p>
-                              <p className="text-teal-600 text-xs">للحلقة: {formData.group}</p>
-                            </div>
-                          </div>
-                          <div className="flex flex-col items-end gap-1">
-                            {filteredTeachers.length > 0 ? (
-                              <span className="bg-green-100 text-green-800 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-2">
-                                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                                {filteredTeachers.length} معلم متاح
-                              </span>
-                            ) : (
-                              <span className="bg-red-100 text-red-800 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-2">
-                                <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                                لا يوجد معلمين
-                              </span>
-                            )}
-                            {teachers.length > 0 && (
-                              <span className="text-teal-600 text-xs font-medium">
-                                📊 من إجمالي {teachers.length} معلم في النظام
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
 
-                    <div className="relative">
-                      <select
-                        name="teacher"
-                        value={formData.teacher || ''}
-                        onChange={handleChange}
-                        onBlur={() => handleBlur('teacher')}
-                        className={`w-full px-4 py-3.5 pr-12 border-2 rounded-xl transition-all duration-300 focus:outline-none focus:ring-4 text-right bg-white shadow-sm hover:shadow-md appearance-none ${
-                          getFieldError('teacher')
-                            ? 'border-red-400 focus:ring-red-100 focus:border-red-500 bg-red-50'
-                            : formData.group && filteredTeachers.length > 0
-                              ? 'border-teal-300 focus:ring-teal-100 focus:border-teal-500 hover:border-teal-400'
-                              : 'border-gray-300 bg-gray-50 cursor-not-allowed hover:border-gray-400'
-                        }`}
-                        title="اختر المعلم"
-                        disabled={!formData.group || filteredTeachers.length === 0}
-                      >
-                      <option value="">
-                        {!formData.group
-                          ? '👆 اختر الحلقة أولاً لرؤية المعلمين المتاحين'
-                          : filteredTeachers.length === 0
-                          ? '❌ لا يوجد معلمين متاحين لهذه الحلقة'
-                          : '👨‍🏫 اختر المعلم المسؤول...'}
-                      </option>
-                      {loadingTeachers ? (
-                        <option value="" disabled>
-                          🔄 جاري تحميل المعلمين...
-                        </option>
-                      ) : filteredTeachers.length > 0 ? (
-                        filteredTeachers.map((teacher, index) => (
-                          <option
-                            key={teacher._id}
-                            value={`${teacher.firstName} ${teacher.lastName}`}
-                            data-teacher-id={teacher._id}
-                          >
-                            {`${index + 1}. ${teacher.firstName} ${teacher.lastName}`}
-                            {teacher.specialCircle && ` - ${teacher.specialCircle}`}
-                          </option>
-                        ))
-                      ) : formData.group && !loadingTeachers ? (
-                        <option value="" disabled>
-                          ⚠️ لا يوجد معلمين مخصصين لهذه الحلقة
-                        </option>
-                      ) : null}
-                    </select>
-                    
-                    {/* أيقونة في الزاوية */}
-                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                      <User size={18} className={`${
-                        formData.teacher ? 'text-teal-500' : 'text-gray-400'
-                      } transition-colors duration-200`} />
-                    </div>
-                  </div>
-                  
-                  {getFieldError('teacher') && (
-                      <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
-                        <AlertCircle size={12} />
-                        <span>{getFieldError('teacher')}</span>
-                      </div>
-                    )}
-
-                    {/* رسالة توضيحية محسنة عند عدم وجود معلمين */}
-                    {!loadingTeachers &&
-                      formData.group &&
-                      filteredTeachers.length === 0 && (
-                        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-400 p-4 rounded-lg">
-                          <div className="flex items-start gap-3">
-                            <div className="flex-shrink-0 w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
-                              <AlertCircle className="w-4 h-4 text-amber-600" />
-                            </div>
-                            <div className="flex-grow">
-                              <h4 className="text-sm font-semibold text-amber-800 mb-2">
-                                لا يوجد معلمين متاحين لهذه الحلقة
-                              </h4>
-                              <div className="text-xs text-amber-700 space-y-2">
-                                <p>الحلقة المختارة: <span className="font-bold bg-amber-200 px-2 py-0.5 rounded">{formData.group}</span></p>
-                                <p className="text-amber-600">💡 نصيحة: تأكد من أن هناك معلمين مخصصين لهذه الحلقة أو اختر حلقة أخرى</p>
-                                <div className="flex items-center gap-2 mt-2">
-                                  <button
-                                    type="button"
-                                    onClick={() => setFilteredTeachers(teachers)}
-                                    className="text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-1.5 rounded-md transition-colors font-medium border border-amber-300"
-                                  >
-                                    🔄 عرض جميع المعلمين ({teachers.length})
-                                  </button>
-                                  <span className="text-amber-600 text-xs">أو</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setFormData(prev => ({ ...prev, group: '', teacher: '' }));
-                                      setFilteredTeachers(teachers);
-                                    }}
-                                    className="text-xs bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1.5 rounded-md transition-colors font-medium border border-blue-300"
-                                  >
-                                    🔙 اختر حلقة أخرى
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                    {/* رسالة إرشادية عندما لا يتم اختيار حلقة */}
-                    {!formData.group && (
-                      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 p-3 rounded-lg">
-                        <div className="flex items-center gap-2 text-blue-700 text-xs">
-                          <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                          <span className="font-medium">اختر الحلقة أولاً لرؤية المعلمين المرتبطين بها</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
                 </div>
               </div>
 
