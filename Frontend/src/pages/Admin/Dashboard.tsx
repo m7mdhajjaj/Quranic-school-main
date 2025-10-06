@@ -636,6 +636,7 @@
 
 // export default AdminDashboard;
 
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import LoadingSkeleton from "../../components/Loading/LoadingSkeleton";
 import { useDashboardStats } from "../../hooks/useDashboardStats";
@@ -669,6 +670,7 @@ interface PieChartProps {
   data: number[];
   labels: string[];
   colors: string[];
+  onSegmentClick?: (label: string, value: number, percentage: number, color: string, index: number) => void;
 }
 
 const AdminDashboard = () => {
@@ -682,6 +684,70 @@ const AdminDashboard = () => {
     fetchStats,
     groupsDistribution,
   } = useDashboardStats();
+
+  // State لإدارة عرض تفاصيل الحلقة المحددة
+  const [selectedGroup, setSelectedGroup] = useState<{
+    name: string;
+    count: number;
+    percentage: number;
+    color: string;
+    index: number;
+  } | null>(null);
+  const [showGroupDetails, setShowGroupDetails] = useState(false);
+  
+  // State لإدارة امتداد المعلومات
+  const [expandedGroup, setExpandedGroup] = useState<{
+    name: string;
+    count: number;
+    percentage: number;
+    color: string;
+    index: number;
+  } | null>(null);
+
+  // تطبيق الألوان والعروض ديناميكياً
+  useEffect(() => {
+    // تطبيق الألوان
+    const colorElements = document.querySelectorAll('[data-color]');
+    colorElements.forEach(element => {
+      const color = element.getAttribute('data-color');
+      if (color) {
+        (element as HTMLElement).style.backgroundColor = color;
+      }
+    });
+
+    // تطبيق العروض
+    const widthElements = document.querySelectorAll('[data-width]');
+    widthElements.forEach(element => {
+      const width = element.getAttribute('data-width');
+      if (width) {
+        (element as HTMLElement).style.width = `${width}%`;
+      }
+    });
+
+    // تطبيق الارتفاعات والتأخيرات
+    const heightElements = document.querySelectorAll('[data-height]');
+    heightElements.forEach(element => {
+      const height = element.getAttribute('data-height');
+      const delay = element.getAttribute('data-delay');
+      if (height) {
+        (element as HTMLElement).style.height = `${height}%`;
+      }
+      if (delay) {
+        (element as HTMLElement).style.animationDelay = `${delay}ms`;
+      }
+    });
+
+    // تطبيق ألوان الخلفية للـ Modal
+    const bgColorElements = document.querySelectorAll('[data-bg-color]');
+    bgColorElements.forEach(element => {
+      const bgColor = element.getAttribute('data-bg-color');
+      if (bgColor) {
+        (element as HTMLElement).style.backgroundColor = bgColor;
+      }
+    });
+
+
+  }, [groupsDistribution, selectedGroup, expandedGroup]);
 
   // Navigation handlers for statistics cards
   const handleTeachersClick = () => {
@@ -698,6 +764,38 @@ const AdminDashboard = () => {
 
   const handleExamsClick = () => {
     navigate("/admin/exams");
+  };
+
+  // دالة للتعامل مع الضغط على الحلقة
+  const handleGroupClick = (groupName: string, studentCount: number, percentage: number, color: string, index: number) => {
+    setSelectedGroup({
+      name: groupName,
+      count: studentCount,
+      percentage,
+      color,
+      index
+    });
+    setShowGroupDetails(true);
+  };
+
+  // دالة لإغلاق التفاصيل
+  const handleCloseDetails = () => {
+    setShowGroupDetails(false);
+    setSelectedGroup(null);
+  };
+
+  // دوال لإدارة امتداد المعلومات
+  const handleGroupHover = (name: string, count: number, percentage: number, color: string, index: number) => {
+    setExpandedGroup({ name, count, percentage, color, index });
+  };
+
+  const handleGroupLeave = () => {
+    // لا نقوم بإخفاء الامتداد فوراً ليبقى ظاهراً
+    // setExpandedGroup(null);
+  };
+
+  const clearExpanded = () => {
+    setExpandedGroup(null);
   };
 
   // تحويل بيانات الحلقات للرسم البياني - فقط الحلقات التي بها طلاب
@@ -871,10 +969,8 @@ const AdminDashboard = () => {
               <div className="w-full bg-gray-100 rounded-t-2xl relative h-64 overflow-hidden shadow-inner">
                 <div
                   className={`${color} rounded-t-2xl absolute bottom-0 w-full transition-all duration-1000 hover:opacity-90 flex items-end justify-center pb-3 group-hover:shadow-lg transform group-hover:scale-105`}
-                  style={{ 
-                    height: `${heightPercent}%`,
-                    animationDelay: `${i * 200}ms`
-                  }}>
+                  data-height={heightPercent}
+                  data-delay={i * 200}>
                   <span className="text-white font-bold text-sm bg-black/20 px-2 py-1 rounded backdrop-blur-sm">
                     {value.toLocaleString()}
                   </span>
@@ -893,12 +989,12 @@ const AdminDashboard = () => {
     );
   };
 
-  const PieChart: React.FC<PieChartProps> = ({ data, labels, colors }) => {
+  const PieChart: React.FC<PieChartProps> = ({ data, labels, colors, onSegmentClick }) => {
     const total = data.reduce((sum: number, val: number) => sum + val, 0);
 
     if (total === 0) {
       return (
-        <div className="flex items-center justify-center h-full text-gray-500">
+        <div className="flex items-center justify-center h-full text-gray-500 w-full overflow-hidden">
           <div className="text-center">
             <svg
               className="w-20 h-20 mx-auto mb-4 text-gray-300 animate-pulse"
@@ -922,8 +1018,8 @@ const AdminDashboard = () => {
     let currentAngle = 0;
 
     return (
-      <div className="flex flex-col items-center h-full justify-center">
-        <div className="relative w-72 h-72 mb-6">
+      <div className="flex flex-col items-center h-full justify-center w-full overflow-hidden px-4">
+        <div className="relative w-64 h-64 md:w-72 md:h-72 mb-4 flex-shrink-0">
           <svg
             viewBox="0 0 120 120"
             className="transform -rotate-90 drop-shadow-2xl hover:scale-105 transition-transform duration-300">
@@ -957,43 +1053,66 @@ const AdminDashboard = () => {
                   <path
                     d={`M 60 60 L ${x1} ${y1} A 48 48 0 ${largeArc} 1 ${x2} ${y2} Z`}
                     fill={colors[i] || "#94a3b8"}
-                    className="hover:opacity-80 transition-all duration-300 cursor-pointer hover:scale-105 filter hover:brightness-110"
+                    className="hover:opacity-80 transition-all duration-300 cursor-pointer hover:scale-105 filter hover:brightness-110 pie-chart-path"
                     stroke="white"
                     strokeWidth="3"
-                    style={{ 
-                      transformOrigin: "60px 60px",
-                      filter: "drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1))"
-                    }}
+                    onClick={() => onSegmentClick?.(labels[i], value, percentage, colors[i] || "#94a3b8", i)}
+                    onMouseEnter={() => handleGroupHover(labels[i], value, Math.round(percentage * 10) / 10, colors[i] || "#94a3b8", i)}
+                    onMouseLeave={handleGroupLeave}
                   />
 
-                  {/* النص داخل القطعة */}
-                  {percentage >= 8 && (
-                    <text
-                      x={
-                        60 +
-                        32 *
-                          Math.cos(
-                            (((startAngle + currentAngle) / 2) * Math.PI) / 180
-                          )
-                      }
-                      y={
-                        60 +
-                        32 *
-                          Math.sin(
-                            (((startAngle + currentAngle) / 2) * Math.PI) / 180
-                          )
-                      }
-                      fill="white"
-                      fontSize="10"
-                      fontWeight="bold"
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      className="transform rotate-90"
-                      style={{
-                        textShadow: "1px 1px 2px rgba(0,0,0,0.8)",
-                      }}>
-                      {value}
-                    </text>
+                  {/* النص داخل القطعة مع النسبة */}
+                  {percentage >= 10 && (
+                    <g>
+                      <text
+                        x={
+                          60 +
+                          28 *
+                            Math.cos(
+                              (((startAngle + currentAngle) / 2) * Math.PI) / 180
+                            )
+                        }
+                        y={
+                          60 +
+                          28 *
+                            Math.sin(
+                              (((startAngle + currentAngle) / 2) * Math.PI) / 180
+                            ) - 2
+                        }
+                        fill="white"
+                        fontSize="8"
+                        fontWeight="bold"
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        className="transform rotate-90 pie-chart-text"
+>
+                        {Math.round(percentage * 10) / 10}%
+                      </text>
+                      <text
+                        x={
+                          60 +
+                          28 *
+                            Math.cos(
+                              (((startAngle + currentAngle) / 2) * Math.PI) / 180
+                            )
+                        }
+                        y={
+                          60 +
+                          28 *
+                            Math.sin(
+                              (((startAngle + currentAngle) / 2) * Math.PI) / 180
+                            ) + 6
+                        }
+                        fill="white"
+                        fontSize="6"
+                        fontWeight="600"
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        className="transform rotate-90 pie-chart-value-text"
+>
+                        ({value})
+                      </text>
+                    </g>
                   )}
                 </g>
               );
@@ -1010,61 +1129,41 @@ const AdminDashboard = () => {
               filter="drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1))"
             />
 
-            {/* النص المركزي */}
+            {/* النص المركزي المحسن */}
             <text
               x="60"
-              y="52"
+              y="48"
               textAnchor="middle"
               fill="#64748b"
-              fontSize="9"
+              fontSize="8"
               fontWeight="600"
               className="transform rotate-90">
-              المجموع
+              إجمالي الطلاب
             </text>
             <text
               x="60"
-              y="68"
+              y="62"
               textAnchor="middle"
               fill="#1e293b"
-              fontSize="16"
+              fontSize="18"
               fontWeight="bold"
               className="transform rotate-90">
               {total.toLocaleString()}
             </text>
+            <text
+              x="60"
+              y="74"
+              textAnchor="middle"
+              fill="#64748b"
+              fontSize="7"
+              fontWeight="500"
+              className="transform rotate-90">
+              في {labels.length} حلقة
+            </text>
           </svg>
         </div>
 
-        {/* الأسطورة المحسنة */}
-        <div className="w-full space-y-3 max-h-32 overflow-y-auto custom-scrollbar">
-          {labels.map((label: string, i: number) => {
-            const percentage =
-              total > 0 ? Math.round((data[i] / total) * 100) : 0;
-            if (data[i] === 0) return null;
 
-            return (
-              <div
-                key={i}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-all duration-300 hover:shadow-md hover:scale-102 border border-gray-100">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-5 h-5 rounded-full shadow-lg border-2 border-white"
-                    style={{ backgroundColor: colors[i] || "#94a3b8" }}></div>
-                  <span className="text-sm font-semibold text-gray-700">
-                    {label}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-lg font-bold text-gray-900">
-                    {data[i].toLocaleString()}
-                  </span>
-                  <span className="text-xs font-semibold text-white bg-gradient-to-r from-blue-500 to-blue-600 px-3 py-1 rounded-full shadow">
-                    {percentage}%
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
       </div>
     );
   };
@@ -1298,25 +1397,28 @@ const AdminDashboard = () => {
                 <span className="font-semibold text-purple-700">{groupsWithStudents.length} حلقة نشطة</span>
               </div>
             </div>
-            <div className="h-96">
-              {groupsDistribution.length > 0 ? (
-                <PieChart
-                  data={groupDistribution.data}
-                  labels={groupDistribution.labels}
-                  colors={[
-                    "#3b82f6", // أزرق
-                    "#22c55e", // أخضر
-                    "#f59e0b", // برتقالي
-                    "#a855f7", // بنفسجي
-                    "#ef4444", // أحمر
-                    "#ec4899", // وردي
-                    "#06b6d4", // سماوي
-                    "#84cc16", // أخضر فاتح
-                    "#f97316", // برتقالي غامق
-                    "#8b5cf6", // بنفسجي فاتح
-                  ]}
-                />
-              ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-96 overflow-hidden">
+              {/* الرسم البياني الدائري */}
+              <div className="lg:col-span-2 overflow-hidden relative">
+                {groupsDistribution.length > 0 ? (
+                  <PieChart
+                    data={groupDistribution.data}
+                    labels={groupDistribution.labels}
+                    onSegmentClick={handleGroupClick}
+                    colors={[
+                      "#3b82f6", // أزرق
+                      "#22c55e", // أخضر
+                      "#f59e0b", // برتقالي
+                      "#a855f7", // بنفسجي
+                      "#ef4444", // أحمر
+                      "#ec4899", // وردي
+                      "#06b6d4", // سماوي
+                      "#84cc16", // أخضر فاتح
+                      "#f97316", // برتقالي غامق
+                      "#8b5cf6", // بنفسجي فاتح
+                    ]}
+                  />
+                ) : (
                 <div className="flex items-center justify-center h-full text-gray-500">
                   <div className="text-center">
                     <svg
@@ -1341,6 +1443,105 @@ const AdminDashboard = () => {
                   </div>
                 </div>
               )}
+              </div>
+
+              {/* امتداد معلومات الحلقة المحددة */}
+              <div className="lg:col-span-1 h-full overflow-hidden">
+                {expandedGroup ? (
+                  <div className="bg-gradient-to-br from-gray-50 to-blue-50 p-4 rounded-2xl border border-gray-200 h-full flex flex-col overflow-hidden">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-lg font-bold text-gray-900">تفاصيل الحلقة</h4>
+                      <button
+                        onClick={clearExpanded}
+                        title="إخفاء التفاصيل"
+                        className="text-gray-400 hover:text-gray-600 transition-colors">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    {/* اسم الحلقة مع أيقونة ملونة */}
+                    <div className="flex items-center gap-3 mb-6">
+                      <div
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg group-icon"
+                        data-bg-color={expandedGroup.color}>
+                        📚
+                      </div>
+                      <div>
+                        <h5 className="text-xl font-bold text-gray-900">{expandedGroup.name}</h5>
+                        <p className="text-sm text-gray-600">الحلقة رقم {expandedGroup.index + 1}</p>
+                      </div>
+                    </div>
+
+                    {/* إحصائيات مفصلة */}
+                    <div className="space-y-3 flex-1 overflow-y-auto">
+                      {/* عدد الطلاب */}
+                      <div className="bg-white p-3 rounded-xl border border-blue-200">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-gray-600">عدد الطلاب</span>
+                          <span className="text-xl font-bold text-blue-600">
+                            {expandedGroup.count.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="mt-1 text-xs text-gray-500">
+                          من إجمالي {groupsDistribution.reduce((sum, g) => sum + g.studentCount, 0).toLocaleString()} طالب
+                        </div>
+                      </div>
+
+                      {/* النسبة المئوية */}
+                      <div className="bg-white p-3 rounded-xl border border-green-200">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-medium text-gray-600">النسبة المئوية</span>
+                          <span className="text-xl font-bold text-green-600">
+                            {expandedGroup.percentage.toFixed(1)}%
+                          </span>
+                        </div>
+                        {/* شريط تقدم */}
+                        <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-1000 progress-bar"
+                            data-width={expandedGroup.percentage}
+                            data-bg-color={expandedGroup.color}></div>
+                        </div>
+                      </div>
+
+                      {/* ترتيب الحلقة */}
+                      <div className="bg-white p-3 rounded-xl border border-purple-200">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-gray-600">ترتيب الحلقة</span>
+                          <span className="text-xl font-bold text-purple-600">
+                            #{expandedGroup.index + 1}
+                          </span>
+                        </div>
+                        <div className="mt-1 text-xs text-gray-500">
+                          من أصل {groupsWithStudents.length} حلقة نشطة
+                        </div>
+                      </div>
+
+                      {/* معلومات إضافية */}
+                      <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-3 rounded-xl border border-yellow-200">
+                        <h6 className="text-sm font-bold text-gray-800 mb-2">معلومات إضافية</h6>
+                        <div className="space-y-1 text-xs text-gray-600">
+                          <div>• متوسط الطلاب: {Math.round(groupsDistribution.reduce((sum, g) => sum + g.studentCount, 0) / groupsDistribution.length)} طالب/حلقة</div>
+                          <div>• {expandedGroup.percentage > 50 / groupsDistribution.length ? 'أكبر من' : 'أصغر من'} المتوسط</div>
+                          <div>• مستوى التمثيل: {expandedGroup.percentage > 20 ? 'عالي' : expandedGroup.percentage > 10 ? 'متوسط' : 'منخفض'}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-gray-100 p-4 rounded-2xl border-2 border-dashed border-gray-300 h-full flex items-center justify-center">
+                    <div className="text-center text-gray-500">
+                      <svg className="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-base font-medium mb-1">مرر فوق أي قطعة</p>
+                      <p className="text-sm">لعرض معلومات مفصلة عن الحلقة</p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -1433,6 +1634,107 @@ const AdminDashboard = () => {
         </div>
       </div>
 
+      {/* Modal لعرض تفاصيل الحلقة */}
+      {showGroupDetails && selectedGroup && (
+        <div 
+          className="fixed inset-0 backdrop-blur-md flex items-center justify-center z-50 p-4"
+          onClick={handleCloseDetails}>
+          <div 
+            className="bg-white rounded-3xl p-8 max-w-lg w-full mx-4 transform animate-scale-in"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="text-center">
+              {/* رأس Modal */}
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold text-gray-900">تفاصيل الحلقة</h3>
+                <button
+                  onClick={handleCloseDetails}
+                  title="إغلاق"
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                  <svg
+                    className="w-6 h-6 text-gray-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              {/* أيقونة ملونة */}
+              {/* أيقونة ملونة */}
+              <div className="mb-6">
+                <div
+                  className="w-20 h-20 mx-auto rounded-full flex items-center justify-center text-white text-3xl font-bold shadow-2xl modal-group-icon"
+                  data-bg-color={selectedGroup.color}>
+                  📚
+                </div>
+              </div>
+
+              {/* معلومات الحلقة */}
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-xl font-bold text-gray-900 mb-2">
+                    {selectedGroup.name}
+                  </h4>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {selectedGroup.count.toLocaleString()}
+                    </div>
+                    <p className="text-blue-700 font-medium text-sm">عدد الطلاب</p>
+                  </div>
+
+                  <div className="bg-green-50 p-4 rounded-xl border border-green-200">
+                    <div className="text-2xl font-bold text-green-600">
+                      {selectedGroup.percentage.toFixed(1)}%
+                    </div>
+                    <p className="text-green-700 font-medium text-sm">النسبة المئوية</p>
+                  </div>
+                </div>
+
+                {/* إحصائيات إضافية */}
+                <div className="bg-gray-50 p-4 rounded-xl">
+                  <div className="text-sm text-gray-600 mb-2">التوزيع النسبي</div>
+                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-700 modal-progress-bar"
+                      data-width={selectedGroup.percentage}
+                      data-bg-color={selectedGroup.color}></div>
+                  </div>
+                  <div className="flex justify-between mt-2 text-xs text-gray-500">
+                    <span>0%</span>
+                    <span>100%</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* أزرار الإجراءات */}
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => navigate('/admin/groups')}
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 font-semibold">
+                  إدارة الحلقات
+                </button>
+                <button
+                  onClick={handleCloseDetails}
+                  className="flex-1 bg-gray-200 text-gray-700 py-3 px-4 rounded-xl hover:bg-gray-300 transition-all duration-300 font-semibold">
+                  إغلاق
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 6px;
@@ -1485,6 +1787,68 @@ const AdminDashboard = () => {
         .shimmer-effect {
           background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
           animation: shimmer 2s infinite;
+        }
+
+        /* أنماط محسنة للرسم البياني الدائري */
+        [data-color] {
+          background-color: var(--color);
+        }
+        
+        [data-width] {
+          width: calc(var(--width) * 1%);
+        }
+
+        /* تأثيرات النص في الرسم البياني */
+        .pie-chart-text {
+          text-shadow: 1px 1px 3px rgba(0,0,0,0.9);
+          filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+        }
+        
+        .pie-chart-value-text {
+          text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+
+        .pie-chart-path {
+          transform-origin: 60px 60px;
+          filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+        }
+
+        [data-height] {
+          height: var(--height);
+          animation-delay: var(--delay);
+        }
+
+        /* أنماط Modal */
+        .modal-group-icon[data-bg-color] {
+          background-color: var(--bg-color);
+        }
+
+        .modal-progress-bar[data-bg-color] {
+          background-color: var(--bg-color);
+        }
+
+        @keyframes scale-in {
+          from {
+            transform: scale(0.9);
+            opacity: 0;
+          }
+          to {
+            transform: scale(1);
+            opacity: 1;
+          }
+        }
+
+        .animate-scale-in {
+          animation: scale-in 0.3s ease-out;
+        }
+
+        /* أنماط امتداد المعلومات */
+        .group-icon[data-bg-color] {
+          background-color: var(--bg-color);
+        }
+
+        .progress-bar[data-bg-color] {
+          background-color: var(--bg-color);
         }
       `}</style>
     </div>
