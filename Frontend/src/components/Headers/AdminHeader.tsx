@@ -442,7 +442,7 @@ const AdminHeader: React.FC = () => {
               <div className="hidden md:block w-px h-6 md:h-8 bg-white/30 mx-2 md:mx-3"></div>
 
               {/* قائمة الملف الشخصي - منفصلة */}
-              <div className="relative" ref={profileMenuRef}>
+              <div className="relative hidden md:block" ref={profileMenuRef}>
                 <button
                   onClick={() => setProfileMenuOpen(!profileMenuOpen)}
                   className={`flex items-center space-x-reverse space-x-2 sm:space-x-3 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg sm:rounded-xl transition-all duration-300 transform hover:scale-105 ${
