@@ -1,4 +1,5 @@
-import { useState, useEffect, type JSX } from "react";
+import { useState, useEffect, useCallback, useMemo, type JSX } from "react";
+import { getAllSessions, createSession, updateSession, deleteSession, type Session } from "../Api/sessionApi";
 
 const Timetable = () => {
   const days = [
@@ -12,32 +13,38 @@ const Timetable = () => {
   ];
 
   // 12:00 -> 9:00 مساءً، كل خانة 30 دقيقة
-  const hours: string[] = [];
-  for (let h = 12; h <= 21; h++) {
-    const display = h > 12 ? h - 12 : h;
-    hours.push(`${display}:00`);
-    if (h < 21) hours.push(`${display}:30`);
-  }
-
-  type Session = {
-    _id?: string;
-    day: string;
-    startHour: string;
-    endHour: string;
-    note: string;
-  };
+  const hours = useMemo(() => {
+    const hoursArray: string[] = [];
+    for (let h = 12; h <= 21; h++) {
+      const display = h > 12 ? h - 12 : h;
+      hoursArray.push(`${display}:00`);
+      if (h < 21) hoursArray.push(`${display}:30`);
+    }
+    return hoursArray;
+  }, []);
 
   const [sessions, setSessions] = useState<Session[]>([]);
-  const API = `${
-    import.meta.env.VITE_API_URL || "http://localhost:5005"
-  }/api/sessions`;
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchSessions = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getAllSessions();
+      setSessions(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Error fetching sessions:", error);
+      setError("حدث خطأ في تحميل الحصص");
+      setSessions([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    fetch(API)
-      .then((r) => r.json())
-      .then((d) => setSessions(Array.isArray(d) ? d : []))
-      .catch(() => setSessions([]));
-  }, []);
+    fetchSessions();
+  }, [fetchSessions]);
 
   const [showForm, setShowForm] = useState(false);
   const [selectedDay, setSelectedDay] = useState(days[0]);
@@ -58,9 +65,9 @@ const Timetable = () => {
     }
   }
 
-  const hourIndex = (h: string) => hours.indexOf(h);
+  const hourIndex = useCallback((h: string) => hours.indexOf(h), [hours]);
 
-  const handleAddSession = async (e: React.FormEvent) => {
+  const handleAddSession = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     const si = hourIndex(startHour);
     const ei = hourIndex(endHour);
@@ -68,50 +75,46 @@ const Timetable = () => {
       alert("يجب أن تكون ساعة الانتهاء بعد ساعة الابتداء.");
       return;
     }
-    const payload: Session = { day: selectedDay, startHour, endHour, note };
+    const payload = { day: selectedDay, startHour, endHour, note };
 
-    if (editIdx !== null && sessions[editIdx]?._id) {
-      const id = sessions[editIdx]._id!;
-      const res = await fetch(`${API}/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (res.ok) {
-        const updated = await res.json();
+    try {
+      if (editIdx !== null && sessions[editIdx]?._id) {
+        const id = sessions[editIdx]._id!;
+        const updated = await updateSession(id, payload);
         setSessions((prev) =>
           prev.map((s, i) => (i === editIdx ? updated : s))
         );
-      }
-    } else {
-      const res = await fetch(API, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (res.ok) {
-        const added = await res.json();
+      } else {
+        const added = await createSession(payload);
         setSessions((prev) => [...prev, added]);
       }
+    } catch (error) {
+      console.error("Error saving session:", error);
+      alert("حدث خطأ أثناء حفظ الحلقة");
     }
 
     setShowForm(false);
     setNote("");
     setEditIdx(null);
-  };
+  }, [startHour, endHour, selectedDay, note, editIdx, sessions, hourIndex]);
 
-  const handleDeleteSession = async (idx: number) => {
+  const handleDeleteSession = useCallback(async (idx: number) => {
     if (!confirm("هل أنت متأكد من حذف هذه الحلقة؟")) return;
     const id = sessions[idx]?._id;
     if (id) {
-      const res = await fetch(`${API}/${id}`, { method: "DELETE" });
-      if (res.ok) setSessions((prev) => prev.filter((_, i) => i !== idx));
+      try {
+        await deleteSession(id);
+        setSessions((prev) => prev.filter((_, i) => i !== idx));
+      } catch (error) {
+        console.error("Error deleting session:", error);
+        alert("حدث خطأ أثناء حذف الحلقة");
+      }
     } else {
       setSessions((prev) => prev.filter((_, i) => i !== idx));
     }
-  };
+  }, [sessions]);
 
-  const handleEditSession = (idx: number) => {
+  const handleEditSession = useCallback((idx: number) => {
     const s = sessions[idx];
     setSelectedDay(s.day);
     setStartHour(s.startHour);
@@ -119,7 +122,7 @@ const Timetable = () => {
     setNote(s.note);
     setEditIdx(idx);
     setShowForm(true);
-  };
+  }, [sessions]);
 
   // يبني خلايا الصف مع دمج الأعمدة
   const renderDayRowCells = (day: string) => {
@@ -196,6 +199,23 @@ const Timetable = () => {
           </p>
         </div>
 
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-center">
+            {error}
+            <button 
+              onClick={fetchSessions}
+              className="mr-2 underline hover:no-underline">
+              إعادة المحاولة
+            </button>
+          </div>
+        )}
+
+        {loading && (
+          <div className="flex justify-center mb-4">
+            <div className="text-emerald-600">جاري تحميل الحصص...</div>
+          </div>
+        )}
+
         {(role === "teacher" || role === "admin") && (
           <div className="flex justify-center mb-4">
             <button
@@ -261,7 +281,8 @@ const Timetable = () => {
                 <select
                   className="w-full border border-emerald-300 rounded-lg px-3 py-2 bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-300"
                   value={selectedDay}
-                  onChange={(e) => setSelectedDay(e.target.value)}>
+                  onChange={(e) => setSelectedDay(e.target.value)}
+                  aria-label="اختر اليوم">
                   {days.map((d) => (
                     <option key={d} value={d}>
                       {d}
@@ -278,7 +299,8 @@ const Timetable = () => {
                   <select
                     className="w-full border border-emerald-300 rounded-lg px-3 py-2 bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-300"
                     value={startHour}
-                    onChange={(e) => setStartHour(e.target.value)}>
+                    onChange={(e) => setStartHour(e.target.value)}
+                    aria-label="اختر ساعة البداية">
                     {hours.map((h) => (
                       <option key={`s-${h}`} value={h}>
                         {h}
@@ -293,7 +315,8 @@ const Timetable = () => {
                   <select
                     className="w-full border border-emerald-300 rounded-lg px-3 py-2 bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-300"
                     value={endHour}
-                    onChange={(e) => setEndHour(e.target.value)}>
+                    onChange={(e) => setEndHour(e.target.value)}
+                    aria-label="اختر ساعة النهاية">
                     {hours.map((h) => (
                       <option key={`e-${h}`} value={h}>
                         {h}

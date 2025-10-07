@@ -1,19 +1,18 @@
-import AOS from "aos";
-import "aos/dist/aos.css";
-import { useEffect, useState, useRef } from "react";
-import type { ChangeEvent } from "react";
-import { API_URL } from "../config";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
-// استخدم User type من AuthContext
+import AOS from 'aos';
+import 'aos/dist/aos.css';
+import { useEffect, useState, useRef } from 'react';
+import type { ChangeEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+import { getHeroImage, uploadHeroImage } from '../Api/settingsApi';
 
 const Home = () => {
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
-  
+
   // State for the hero image
   const [heroImage, setHeroImage] = useState<string>(
-    "/src/images/officialPhoto.jpg"
+    '/src/images/officialPhoto.jpg'
   );
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -24,7 +23,7 @@ const Home = () => {
       duration: 1000,
       once: false,
       mirror: true,
-      easing: "ease-in-out",
+      easing: 'ease-in-out',
     });
   }, []);
 
@@ -34,20 +33,17 @@ const Home = () => {
   useEffect(() => {
     const fetchHeroImage = async () => {
       try {
-        const response = await fetch(`${API_URL}/settings/hero-image`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.heroImage) {
-            // If it's a relative path starting with /uploads/, prepend the base URL
-            if (data.heroImage.startsWith("/uploads/")) {
-              setHeroImage(`http://localhost:5005${data.heroImage}`);
-            } else {
-              setHeroImage(data.heroImage);
-            }
+        const data = await getHeroImage();
+        if (data.success && data.heroImage) {
+          // If it's a relative path starting with /uploads/, prepend the base URL
+          if (data.heroImage.startsWith('/uploads/')) {
+            setHeroImage(`http://localhost:5005${data.heroImage}`);
+          } else {
+            setHeroImage(data.heroImage);
           }
         }
       } catch (error) {
-        console.error("Error fetching hero image:", error);
+        console.error('Error fetching hero image:', error);
         // Keep default image on error
       }
     };
@@ -56,7 +52,7 @@ const Home = () => {
   }, []);
 
   const isTeacherOrAdmin =
-    currentUser?.role === "teacher" || currentUser?.role === "admin";
+    currentUser?.role === 'teacher' || currentUser?.role === 'admin';
 
   // Function to handle image change
   const handleImageChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -68,34 +64,28 @@ const Home = () => {
     try {
       // Create FormData for file upload
       const formData = new FormData();
-      formData.append("heroImage", file);
+      formData.append('heroImage', file);
 
       // Upload to server
-      const response = await fetch(`${API_URL}/settings/hero-image`, {
-        method: "POST",
-        body: formData,
-      });
+      const data = await uploadHeroImage(formData);
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.heroImage) {
-          // Update the image with the server URL
-          const imageUrl = `http://localhost:5005${data.heroImage}`;
-          setHeroImage(imageUrl);
-          console.log("Hero image updated successfully:", imageUrl);
-        }
+      if (data.success && data.heroImage) {
+        // Update the image with the server URL
+        const imageUrl = `http://localhost:5005${data.heroImage}`;
+        setHeroImage(imageUrl);
+        console.log('Hero image updated successfully:', imageUrl);
       } else {
-        console.error("Failed to upload hero image");
-        alert("فشل في رفع الصورة. يرجى المحاولة مرة أخرى.");
+        console.error('Failed to upload hero image');
+        alert('فشل في رفع الصورة. يرجى المحاولة مرة أخرى.');
       }
     } catch (error) {
-      console.error("Error uploading hero image:", error);
-      alert("حدث خطأ أثناء رفع الصورة. يرجى المحاولة مرة أخرى.");
+      console.error('Error uploading hero image:', error);
+      alert('حدث خطأ أثناء رفع الصورة. يرجى المحاولة مرة أخرى.');
     } finally {
       setUploading(false);
       // Reset the file input
       if (fileInputRef.current) {
-        fileInputRef.current.value = "";
+        fileInputRef.current.value = '';
       }
     }
   };
@@ -110,29 +100,31 @@ const Home = () => {
   return (
     <div
       className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100"
-      dir="rtl">
+      dir="rtl"
+    >
       {/* Removed personalized greeting from above hero section */}
       <div className="container mx-auto py-12 px-4">
-        {/* Hero Section */}{" "}
+        {/* Hero Section */}{' '}
         <div className="flex flex-col-reverse md:flex-row items-center justify-between bg-white rounded-2xl overflow-hidden shadow-lg">
           {/* Text Content */}
           <div
             className="w-full md:w-1/2 p-8 md:p-12"
             data-aos="fade-right"
-            data-aos-delay="200">
+            data-aos-delay="200"
+          >
             {/* Personalized Greeting inside hero section */}
             {currentUser && (
               <div className="text-center mb-8">
                 <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-emerald-700 mb-4 leading-snug">
-                  {currentUser.role === "student"
+                  {currentUser.role === 'student'
                     ? `أهلاً وسهلاً بك في أكاديمية المهاجرين، الطالب العزيز ${
-                        currentUser.firstName || ""
-                      } ${currentUser.fatherName || ""} ${
-                        currentUser.lastName || ""
+                        currentUser.firstName || ''
+                      } ${currentUser.fatherName || ''} ${
+                        currentUser.lastName || ''
                       }`.trim()
                     : `أهلاً وسهلاً بك في أكاديمية المهاجرين، المعلم الفاضل ${
-                        currentUser.firstName || currentUser.name || ""
-                      } ${currentUser.lastName || ""}`.trim()}
+                        currentUser.firstName || currentUser.name || ''
+                      } ${currentUser.lastName || ''}`.trim()}
                 </h2>
                 <div className="mx-auto max-w-2xl">
                   <p className="text-xl md:text-2xl text-gray-700 mb-3 font-medium">
@@ -144,7 +136,7 @@ const Home = () => {
                     وتصل إلى أعلى درجات التفوق في حفظ وتلاوة وفهم كتاب الله عز
                     وجل.
                   </p>
-                  {currentUser.role === "student" && currentUser.group && (
+                  {currentUser.role === 'student' && currentUser.group && (
                     <span className="block text-md text-gray-500 mt-2">
                       المجموعة: {currentUser.group}
                     </span>
@@ -154,11 +146,12 @@ const Home = () => {
             )}
             <button
               onClick={() => {
-                navigate("/soon");
+                navigate('/soon');
               }}
               className="bg-emerald-600 text-white px-8 py-3 rounded-full hover:bg-emerald-700 transition duration-300 shadow-md mx-auto block"
               data-aos="zoom-in"
-              data-aos-delay="1100">
+              data-aos-delay="1100"
+            >
               ابدأ رحلتك التعليمية
             </button>
           </div>
@@ -176,26 +169,30 @@ const Home = () => {
               {isTeacherOrAdmin && (
                 <button
                   className="absolute top-4 right-4 bg-white/80 hover:bg-white text-emerald-700 p-2 rounded-full shadow-md transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={uploading ? "جاري الرفع..." : "تعديل الصورة"}
+                  title={uploading ? 'جاري الرفع...' : 'تعديل الصورة'}
                   onClick={handleEditButtonClick}
-                  disabled={uploading}>
+                  disabled={uploading}
+                >
                   {uploading ? (
                     <svg
                       className="h-5 w-5 animate-spin"
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
-                      viewBox="0 0 24 24">
+                      viewBox="0 0 24 24"
+                    >
                       <circle
                         className="opacity-25"
                         cx="12"
                         cy="12"
                         r="10"
                         stroke="currentColor"
-                        strokeWidth="4"></circle>
+                        strokeWidth="4"
+                      ></circle>
                       <path
                         className="opacity-75"
                         fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                   ) : (
                     <svg
@@ -203,7 +200,8 @@ const Home = () => {
                       className="h-5 w-5"
                       fill="none"
                       viewBox="0 0 24 24"
-                      stroke="currentColor">
+                      stroke="currentColor"
+                    >
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -221,17 +219,17 @@ const Home = () => {
                 onChange={handleImageChange}
                 accept="image/*"
                 className="hidden"
+                aria-label="تحميل صورة البطل"
+                title="تحميل صورة البطل"
               />
             </div>
           </div>
-        </div>{" "}
+        </div>{' '}
         {/* Islamic Pattern Background */}
         <div className="relative mt-16 py-10">
           <div
-            className="absolute inset-0 opacity-5 bg-repeat"
-            style={{
-              backgroundImage: "url('/src/images/islamic-pattern.png')",
-            }}></div>
+            className="absolute inset-0 opacity-5 bg-repeat bg-[url('/src/images/islamic-pattern.png')]"
+          ></div>
 
           <div className="relative z-10 text-center">
             <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-10">
@@ -242,14 +240,16 @@ const Home = () => {
               <div
                 className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition duration-300"
                 data-aos="flip-left"
-                data-aos-delay="100">
+                data-aos-delay="100"
+              >
                 <div className="w-16 h-16 mx-auto bg-emerald-100 rounded-full flex items-center justify-center mb-4">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-8 w-8 text-emerald-600"
                     fill="none"
                     viewBox="0 0 24 24"
-                    stroke="currentColor">
+                    stroke="currentColor"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -264,18 +264,20 @@ const Home = () => {
                 <p className="text-slate-600">
                   تعلم أصول التلاوة الصحيحة وفق أحكام التجويد
                 </p>
-              </div>{" "}
+              </div>{' '}
               <div
                 className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition duration-300"
                 data-aos="flip-left"
-                data-aos-delay="300">
+                data-aos-delay="300"
+              >
                 <div className="w-16 h-16 mx-auto bg-emerald-100 rounded-full flex items-center justify-center mb-4">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-8 w-8 text-emerald-600"
                     fill="none"
                     viewBox="0 0 24 24"
-                    stroke="currentColor">
+                    stroke="currentColor"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -290,18 +292,20 @@ const Home = () => {
                 <p className="text-slate-600">
                   برامج متخصصة لحفظ القرآن الكريم بمنهجية مدروسة
                 </p>
-              </div>{" "}
+              </div>{' '}
               <div
                 className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition duration-300"
                 data-aos="flip-left"
-                data-aos-delay="500">
+                data-aos-delay="500"
+              >
                 <div className="w-16 h-16 mx-auto bg-emerald-100 rounded-full flex items-center justify-center mb-4">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-8 w-8 text-emerald-600"
                     fill="none"
                     viewBox="0 0 24 24"
-                    stroke="currentColor">
+                    stroke="currentColor"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -320,32 +324,36 @@ const Home = () => {
             </div>
           </div>
         </div>
-        {/* Values Section - Similar to the photo */}{" "}
+        {/* Values Section - Similar to the photo */}{' '}
         <div className="mt-24 mb-16">
           <div className="text-center mb-12">
             <h2
               className="text-2xl md:text-3xl font-bold text-slate-800 mb-3"
-              data-aos="fade-down">
+              data-aos="fade-down"
+            >
               قيمنا في أكاديمية ازهار الحمد
             </h2>
             <div
               className="w-24 h-1 bg-emerald-600 mx-auto"
               data-aos="zoom-in"
-              data-aos-duration="800"></div>
-          </div>{" "}
+              data-aos-duration="800"
+            ></div>
+          </div>{' '}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* First Row */}
             <div
               className="bg-teal-900 text-white p-6 rounded-lg shadow-lg"
               data-aos="zoom-in-up"
-              data-aos-delay="100">
+              data-aos-delay="100"
+            >
               <div className="w-20 h-20 bg-white rounded-full mx-auto mb-4 flex items-center justify-center">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-10 w-10 text-teal-700"
                   fill="none"
                   viewBox="0 0 24 24"
-                  stroke="currentColor">
+                  stroke="currentColor"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -359,18 +367,20 @@ const Home = () => {
                 نؤمن بأن التحفيز وجود الإنجاز فكلما زاد التحفيز زاد الإنجاز بإذن
                 الله تعالى
               </p>
-            </div>{" "}
+            </div>{' '}
             <div
               className="bg-teal-900 text-white p-6 rounded-lg shadow-lg"
               data-aos="zoom-in-up"
-              data-aos-delay="200">
+              data-aos-delay="200"
+            >
               <div className="w-20 h-20 bg-white rounded-full mx-auto mb-4 flex items-center justify-center">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-10 w-10 text-teal-700"
                   fill="none"
                   viewBox="0 0 24 24"
-                  stroke="currentColor">
+                  stroke="currentColor"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -384,18 +394,20 @@ const Home = () => {
                 العمل بالقرآن غايتنا لنكون على عقيدة نقية على خطى خير البرية ﷺ
                 نصر بالقرآن أوطاننا ونسعد به مجتمعاتنا
               </p>
-            </div>{" "}
+            </div>{' '}
             <div
               className="bg-teal-900 text-white p-6 rounded-lg shadow-lg"
               data-aos="zoom-in-up"
-              data-aos-delay="300">
+              data-aos-delay="300"
+            >
               <div className="w-20 h-20 bg-white rounded-full mx-auto mb-4 flex items-center justify-center">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-10 w-10 text-teal-700"
                   fill="none"
                   viewBox="0 0 24 24"
-                  stroke="currentColor">
+                  stroke="currentColor"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -409,18 +421,20 @@ const Home = () => {
                 سر نجاح وتميز المؤمن
               </p>
             </div>
-            {/* Second Row */}{" "}
+            {/* Second Row */}{' '}
             <div
               className="bg-teal-900 text-white p-6 rounded-lg shadow-lg"
               data-aos="zoom-in-up"
-              data-aos-delay="400">
+              data-aos-delay="400"
+            >
               <div className="w-20 h-20 bg-white rounded-full mx-auto mb-4 flex items-center justify-center">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-10 w-10 text-teal-700"
                   fill="none"
                   viewBox="0 0 24 24"
-                  stroke="currentColor">
+                  stroke="currentColor"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -433,18 +447,20 @@ const Home = () => {
               <p className="text-center text-white/90 text-sm">
                 شغف يتجدد وينجاح بتحقيق
               </p>
-            </div>{" "}
+            </div>{' '}
             <div
               className="bg-teal-900 text-white p-6 rounded-lg shadow-lg"
               data-aos="zoom-in-up"
-              data-aos-delay="500">
+              data-aos-delay="500"
+            >
               <div className="w-20 h-20 bg-white rounded-full mx-auto mb-4 flex items-center justify-center">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-10 w-10 text-teal-700"
                   fill="none"
                   viewBox="0 0 24 24"
-                  stroke="currentColor">
+                  stroke="currentColor"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -455,18 +471,20 @@ const Home = () => {
               </div>
               <h3 className="text-xl font-bold mb-2 text-center">الصبر</h3>
               <p className="text-center text-white/90 text-sm">أساس كل إنجاز</p>
-            </div>{" "}
+            </div>{' '}
             <div
               className="bg-teal-900 text-white p-6 rounded-lg shadow-lg"
               data-aos="zoom-in-up"
-              data-aos-delay="600">
+              data-aos-delay="600"
+            >
               <div className="w-20 h-20 bg-white rounded-full mx-auto mb-4 flex items-center justify-center">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-10 w-10 text-teal-700"
                   fill="none"
                   viewBox="0 0 24 24"
-                  stroke="currentColor">
+                  stroke="currentColor"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -480,18 +498,20 @@ const Home = () => {
                 به تحقق النجاحات وتكون الإنجازات
               </p>
             </div>
-            {/* Third Row */}{" "}
+            {/* Third Row */}{' '}
             <div
               className="bg-teal-900 text-white p-6 rounded-lg shadow-lg"
               data-aos="zoom-in-up"
-              data-aos-delay="700">
+              data-aos-delay="700"
+            >
               <div className="w-20 h-20 bg-white rounded-full mx-auto mb-4 flex items-center justify-center">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-10 w-10 text-teal-700"
                   fill="none"
                   viewBox="0 0 24 24"
-                  stroke="currentColor">
+                  stroke="currentColor"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -506,18 +526,20 @@ const Home = () => {
               <p className="text-center text-white/90 text-sm">
                 ثمرة من ثمرات صحبة القرآن وأجمله وأبسطه الكلمة الطيبة
               </p>
-            </div>{" "}
+            </div>{' '}
             <div
               className="bg-teal-900 text-white p-6 rounded-lg shadow-lg"
               data-aos="zoom-in-up"
-              data-aos-delay="800">
+              data-aos-delay="800"
+            >
               <div className="w-20 h-20 bg-white rounded-full mx-auto mb-4 flex items-center justify-center">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-10 w-10 text-teal-700"
                   fill="none"
                   viewBox="0 0 24 24"
-                  stroke="currentColor">
+                  stroke="currentColor"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -530,18 +552,20 @@ const Home = () => {
               <p className="text-center text-white/90 text-sm">
                 بداية كل نجاح ما رأيك أن تحلم الآن بحفظك للقرآن؟
               </p>
-            </div>{" "}
+            </div>{' '}
             <div
               className="bg-teal-900 text-white p-6 rounded-lg shadow-lg"
               data-aos="zoom-in-up"
-              data-aos-delay="900">
+              data-aos-delay="900"
+            >
               <div className="w-20 h-20 bg-white rounded-full mx-auto mb-4 flex items-center justify-center">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-10 w-10 text-teal-700"
                   fill="none"
                   viewBox="0 0 24 24"
-                  stroke="currentColor">
+                  stroke="currentColor"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"

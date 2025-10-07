@@ -2,17 +2,21 @@
 // =========================================
 // شاشة الحضور والغياب (Teacher + Student)
 // - واجهة المعلّم: تسجيل حضور/غياب يومي + فلترة حسب الحلقة + بحث
-// - واجهة الطالب: إحصائيات الغياب شهرياً + إجمالي السنة
+// - واجهة الطالب: إحصائيات الغياب شهرياً + سنوياً
 // - تحسينات: تحذير تغييرات غير محفوظة، فلترة شهر تعمل فعلياً
 // =========================================
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../Api/api";
 import { AbsenceSkeleton } from "../components/Loading/LoadingSkeleton";
+import { getAllStudents } from "../Api/studentApi";
+import {
+  getAttendanceByDate,
+  getStudentAttendance,
+  bulkSaveAttendance,
+} from "../Api/attendanceApi";
 
 // ================== الإعدادات العامة ==================
-// API_URL is now handled by the api instance
 
 // ---------- Types ----------
 interface Student {
@@ -168,8 +172,8 @@ const Absence = () => {
       setError(null);
 
       // 1) جلب جميع الطلاب
-      const studentsRes = await api.get("/students");
-      const rawStudents: Student[] = Array.isArray(studentsRes.data)
+      const studentsRes = await getAllStudents();
+      const rawStudents: Student[] = studentsRes.success && Array.isArray(studentsRes.data)
         ? studentsRes.data
         : [];
 
@@ -184,10 +188,10 @@ const Absence = () => {
 
       // 3) جلب حضور اليوم المحدد (إن وجد)
       try {
-        const attRes = await api.get(`/attendance/date/${forDate}`);
-        if (Array.isArray(attRes.data) && attRes.data.length > 0) {
+        const attData = await getAttendanceByDate(forDate);
+        if (Array.isArray(attData) && attData.length > 0) {
           const map = new Map<string, boolean>();
-          attRes.data.forEach((rec: any) =>
+          attData.forEach((rec: any) =>
             map.set(rec.studentId, rec.isPresent)
           );
           formatted = formatted.map((st) => ({
@@ -213,8 +217,7 @@ const Absence = () => {
   const fetchStudentAbsenceStats = async (studentId: string) => {
     try {
       setError(null);
-      const res = await api.get(`/attendance/student/${studentId}`);
-      const data = Array.isArray(res.data) ? res.data : [];
+      const data = await getStudentAttendance(studentId);
 
       // تجميع حسب الشهر/السنة
       const grouped: Record<string, { absences: number; total: number }> = {};
@@ -352,7 +355,7 @@ const Absence = () => {
         isPresent: s.isPresent,
       }));
 
-      await api.post("/attendance", {
+      await bulkSaveAttendance({
         date,
         records: payload,
       });

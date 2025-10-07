@@ -1,51 +1,22 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
 import { ArrangementSkeleton } from "../components/Loading/LoadingSkeleton";
+import { getAllStudents, type Student } from "../Api/studentApi";
+import {
+  getAvailablePeriods,
+  getCurrentRanking,
+  getRankingByPeriod,
+  createRanking,
+  type Ranking,
+  type RankingStudent,
+  type Period,
+  type NewRankingData
+} from "../Api/rankingApi";
 
-// Backend API URL
-const API_URL = "http://localhost:5005/api";
 
-// Interface for students from the database
-interface DbStudent {
-  _id: string;
-  firstName: string;
-  fatherName: string;
-  lastName: string;
-  group: string;
-  // Other student fields can be added as needed
-}
 
-// Interface for period selector
-interface Period {
-  month: number;
-  year: number;
-  label?: string;
-}
 
-// Interface for ranking student
-interface RankingStudent {
-  studentId: {
-    _id: string;
-    firstName: string;
-    fatherName: string;
-    lastName: string;
-    group: string;
-  };
-  score: number;
-  rank?: number;
-}
-
-// Interface for rankings
-interface Ranking {
-  _id: string;
-  month: number;
-  year: number;
-  topThree: RankingStudent[];
-  topTen: RankingStudent[];
-}
 
 // Interface for new ranking entry
 interface NewRankingEntry {
@@ -68,17 +39,17 @@ const Arrangement = () => {
   // const navigate = useNavigate(); // Reserved for future use
 
   // State for user role
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [, setCurrentUser] = useState<User | null>(null);
   const [isTeacherOrAdmin, setIsTeacherOrAdmin] = useState<boolean>(false);
 
   // State for all students from database
-  const [allDbStudents, setAllDbStudents] = useState<DbStudent[]>([]);
+  const [allDbStudents, setAllDbStudents] = useState<Student[]>([]);
 
   // State for current ranking
   const [currentRanking, setCurrentRanking] = useState<Ranking | null>(null);
 
   // State for available periods
-  const [availablePeriods, setAvailablePeriods] = useState<Period[]>([]);
+  const [, setAvailablePeriods] = useState<Period[]>([]);
 
   // State for selected period
   const [selectedPeriod, setSelectedPeriod] = useState<Period | null>(null);
@@ -114,82 +85,84 @@ const Arrangement = () => {
     _id: "",
     name: "",
     score: 0,
-  }); // Fetch all students, available periods, and current ranking
-  useEffect(() => {
-    // Check user authentication status
+  });
+
+  // Memoized user authentication check
+  const userAuth = useMemo(() => {
     const userJson = localStorage.getItem("user");
-    if (userJson) {
-      try {
-        const userData = JSON.parse(userJson) as User;
-        setCurrentUser(userData);
-
-        // Check if the user is a teacher or admin
-        if (userData.role === "teacher" || userData.role === "admin") {
-          setIsTeacherOrAdmin(true);
-        } else {
-          setIsTeacherOrAdmin(false);
-        }
-      } catch (err) {
-        console.error("Error parsing user data:", err);
-      }
-    } else {
-      // Uncomment if you want to redirect unauthenticated users
-      // navigate("/login");
+    if (!userJson) return { user: null, isTeacherOrAdmin: false };
+    
+    try {
+      const userData = JSON.parse(userJson) as User;
+      return {
+        user: userData,
+        isTeacherOrAdmin: userData.role === "teacher" || userData.role === "admin"
+      };
+    } catch (err) {
+      console.error("Error parsing user data:", err);
+      return { user: null, isTeacherOrAdmin: false };
     }
+  }, []);
 
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // Fetch all students
-        const studentsResponse = await axios.get(`${API_URL}/students`);
-        setAllDbStudents(studentsResponse.data);
+  // Update state based on authentication
+  useEffect(() => {
+    setCurrentUser(userAuth.user);
+    setIsTeacherOrAdmin(userAuth.isTeacherOrAdmin);
+  }, [userAuth]);
 
-        // Fetch available periods
-        const periodsResponse = await axios.get(`${API_URL}/rankings/periods`);
+  // Fetch all students, available periods, and current ranking
+  const fetchInitialData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Fetch all students
+      const studentsResult = await getAllStudents();
+      if (studentsResult.success && studentsResult.data) {
+        setAllDbStudents(studentsResult.data);
+      }
 
-        if (
-          periodsResponse.data.success &&
-          periodsResponse.data.data.length > 0
-        ) {
-          setAvailablePeriods(periodsResponse.data.data);
+      // Fetch available periods
+      const periods = await getAvailablePeriods();
+      
+      if (periods.length > 0) {
+        setAvailablePeriods(periods);
 
-          // Extract unique years from periods
-          const years = [
-            ...new Set(periodsResponse.data.data.map((p: Period) => p.year)),
-          ] as number[];
-          const sortedYears = years.sort((a: number, b: number) => b - a);
-          setAvailableYears(sortedYears);
+        // Extract unique years from periods
+        const years = [
+          ...new Set(periods.map((p: Period) => p.year)),
+        ] as number[];
+        const sortedYears = years.sort((a: number, b: number) => b - a);
+        setAvailableYears(sortedYears);
 
-          // Set current date as default
-          const today = new Date();
-          const currentMonth = today.getMonth() + 1;
-          const currentYear = today.getFullYear();
+        // Set current date as default
+        const today = new Date();
+        const currentMonth = today.getMonth() + 1;
+        const currentYear = today.getFullYear();
 
-          setSelectedMonth(currentMonth);
-          setSelectedYear(currentYear);
+        setSelectedMonth(currentMonth);
+        setSelectedYear(currentYear);
 
-          // Find current month/year in available periods
-          const currentPeriod = periodsResponse.data.data.find(
-            (p: Period) => p.month === currentMonth && p.year === currentYear
-          );
+        // Find current month/year in available periods
+        const currentPeriod = periods.find(
+          (p: Period) => p.month === currentMonth && p.year === currentYear
+        );
 
-          // If current month not found, use the most recent one
-          if (currentPeriod) {
-            setSelectedPeriod(currentPeriod);
-          } else {
-            const mostRecent = periodsResponse.data.data[0];
-            setSelectedPeriod(mostRecent);
-            setSelectedMonth(mostRecent.month);
-            setSelectedYear(mostRecent.year);
-          }
+        // If current month not found, use the most recent one
+        if (currentPeriod) {
+          setSelectedPeriod(currentPeriod);
+        } else {
+          const mostRecent = periods[0];
+          setSelectedPeriod(mostRecent);
+          setSelectedMonth(mostRecent.month);
+          setSelectedYear(mostRecent.year);
+        }
 
-          // Fetch current ranking
-          const rankingResponse = await axios.get(
-            `${API_URL}/rankings/current`
-          );
-          if (rankingResponse.data.success) {
-            setCurrentRanking(rankingResponse.data.data);
-          }
+        // Fetch current ranking
+        const ranking = await getCurrentRanking();
+        if (ranking) {
+          setCurrentRanking(ranking);
+        }
         } else {
           // No periods available, use current date
           const today = new Date();
@@ -206,16 +179,18 @@ const Arrangement = () => {
             label: `${currentMonth}/${currentYear}`,
           });
         }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        setError("حدث خطأ أثناء جلب البيانات");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setError("حدث خطأ أثناء جلب البيانات");
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchInitialData();
+  }, [fetchInitialData]);
 
   // Update selected period when month or year changes
   useEffect(() => {
@@ -233,12 +208,10 @@ const Arrangement = () => {
 
       setLoading(true);
       try {
-        const response = await axios.get(
-          `${API_URL}/rankings/${selectedPeriod.month}/${selectedPeriod.year}`
-        );
-
-        if (response.data.success) {
-          setCurrentRanking(response.data.data);
+        const ranking = await getRankingByPeriod(selectedPeriod.month, selectedPeriod.year);
+        
+        if (ranking) {
+          setCurrentRanking(ranking);
           setError(null);
         } else {
           setCurrentRanking(null);
@@ -246,9 +219,9 @@ const Arrangement = () => {
       } catch (error) {
         console.error("Error fetching ranking:", error);
         setCurrentRanking(null);
-        // Don't show error if 404 (no ranking for this period)
-        if (axios.isAxiosError(error) && error.response?.status !== 404) {
-          setError("حدث خطأ أثناء جلب التصنيف");
+        // Don't show error for 404 (no ranking found)
+        if (error instanceof Error && !error.message.includes('404')) {
+          setError("حدث خطأ أثناء جلب الترتيب");
         }
       } finally {
         setLoading(false);
@@ -363,14 +336,14 @@ const Arrangement = () => {
     setLoading(true);
     try {
       // Get current ranking or create a new one
-      let ranking = currentRanking;
-      let topThree: any[] =
+      const ranking = currentRanking;
+      let topThree: Array<{ studentId: string; score: number }> =
         ranking?.topThree.map((item) => ({
           studentId: item.studentId._id,
           score: item.score,
         })) || [];
 
-      let topTen: any[] =
+      let topTen: Array<{ studentId: string; score: number }> =
         ranking?.topTen.map((item) => ({
           studentId: item.studentId._id,
           score: item.score,
@@ -460,30 +433,35 @@ const Arrangement = () => {
       }
 
       // Save ranking
-      const response = await axios.post(`${API_URL}/rankings`, {
+      const rankingData: NewRankingData = {
         month: selectedPeriod.month,
         year: selectedPeriod.year,
-        topThree,
-        topTen,
-      });
-
-      if (response.data.success) {
+        topThree: topThree.map((student) => ({
+          studentId: student.studentId,
+          score: student.score || 0
+        })),
+        topTen: topTen.map((student) => ({
+          studentId: student.studentId,
+          score: student.score || 0
+        }))
+      };
+      
+      const savedRanking = await createRanking(rankingData);
+      
+      if (savedRanking) {
         // Refresh ranking data
-        const refreshResponse = await axios.get(
-          `${API_URL}/rankings/${selectedPeriod.month}/${selectedPeriod.year}`
+        const refreshedRanking = await getRankingByPeriod(
+          selectedPeriod.month,
+          selectedPeriod.year
         );
 
-        if (refreshResponse.data.success) {
-          setCurrentRanking(refreshResponse.data.data);
+        if (refreshedRanking) {
+          setCurrentRanking(refreshedRanking);
           setError(null);
 
           // Refresh available periods
-          const periodsResponse = await axios.get(
-            `${API_URL}/rankings/periods`
-          );
-          if (periodsResponse.data.success) {
-            setAvailablePeriods(periodsResponse.data.data);
-          }
+          const updatedPeriods = await getAvailablePeriods();
+          setAvailablePeriods(updatedPeriods);
         }
 
         // Close modal

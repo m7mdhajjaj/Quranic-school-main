@@ -1,36 +1,19 @@
-import { useState, useEffect, useRef } from "react";
-import type { ChangeEvent } from "react";
-import axios from "axios";
-import AOS from "aos";
-import "aos/dist/aos.css";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
-import { NewsSkeleton } from "../components/Loading/LoadingSkeleton";
-
-const API_URL = "http://localhost:5005/api";
-
-interface INews {
-  _id: string;
-  title: string;
-  content: string;
-  date: string;
-  image: string;
-  isPublished?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-interface User {
-  _id: string;
-  firstName: string;
-  lastName?: string;
-  email?: string;
-  role: string;
-  groups?: string[];
-}
+import { useState, useEffect, useRef } from 'react';
+import type { ChangeEvent } from 'react';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
+import { useAuth } from '../hooks/useAuth';
+import { NewsSkeleton } from '../components/Loading/LoadingSkeleton';
+import { API_BASE_URL } from '../config';
+import {
+  getAllNews,
+  createNews,
+  updateNews,
+  deleteNews,
+  type INews,
+} from '../Api/newsApi';
 
 const News = () => {
-  const navigate = useNavigate();
   const { user: currentUser } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -40,12 +23,12 @@ const News = () => {
 
   // Check if user is teacher or admin
   const isTeacherOrAdmin =
-    currentUser?.role === "teacher" || currentUser?.role === "admin";
+    currentUser?.role === 'teacher' || currentUser?.role === 'admin';
   const [newNews, setNewNews] = useState<Partial<INews>>({
-    title: "",
-    content: "",
-    date: new Date().toLocaleDateString("ar-SA"),
-    image: "https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+جديدة",
+    title: '',
+    content: '',
+    date: new Date().toLocaleDateString('ar-SA'),
+    image: 'https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+جديدة',
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -56,39 +39,90 @@ const News = () => {
   // Initialize AOS and fetch news from API
   useEffect(() => {
     AOS.init({ duration: 800, once: true });
-    fetchNews();
+
+    const loadNews = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await getAllNews();
+        console.log('Fetched news data:', response);
+
+        if (response && Array.isArray(response)) {
+          // Format dates and ensure proper image paths
+          const formattedNews = response.map((item: INews) => {
+            // Fix the image URL
+            let imageUrl = item.image;
+            if (item.image && !item.image.startsWith('http')) {
+              imageUrl = `${API_BASE_URL}/${item.image}`;
+            }
+            console.log('Processing image:', item.image, '->', imageUrl);
+
+            return {
+              ...item,
+              date: formatDate(item.date || item.createdAt || new Date()),
+              image: imageUrl,
+            };
+          });
+          setNewsItems(formattedNews);
+          console.log('Formatted news items:', formattedNews);
+        }
+      } catch (err) {
+        console.error('Failed to fetch news:', err);
+        setError('حدث خطأ أثناء جلب الأخبار، يرجى المحاولة مرة أخرى');
+
+        // Add default news if no data is available
+        setNewsItems([
+          {
+            _id: '1',
+            title: 'افتتاح معرض القرآن السنوي',
+            date: '10 مايو 2024',
+            content:
+              'نتشرف بدعوتكم لحضور معرض القرآن السنوي الذي سيقام في مقر المدرسة، حيث سيتم عرض إبداعات الطلاب وإنجازاتهم في حفظ وتجويد القرآن الكريم.',
+            image:
+              'https://placehold.co/600x400/e9f5f2/1f6357?text=معرض+القرآن',
+          },
+          {
+            _id: '2',
+            title: 'مسابقة التجويد والترتيل',
+            date: '15 يونيو 2024',
+            content:
+              'تعلن المدرسة عن بدء التسجيل لمسابقة التجويد والترتيل السنوية. نرحب بمشاركة جميع الطلاب من مختلف الفئات العمرية وسيتم توزيع جوائز قيمة على الفائزين.',
+            image:
+              'https://placehold.co/600x400/e9f5f2/1f6357?text=مسابقة+التجويد',
+          },
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadNews();
   }, []);
 
   // Format date function
   const formatDate = (date: string | Date) => {
-    if (!date) return new Date().toLocaleDateString("ar-SA");
+    if (!date) return new Date().toLocaleDateString('ar-SA');
 
     // If it's already a string in the correct format, return it
-    if (typeof date === "string" && !date.includes("T")) return date;
+    if (typeof date === 'string' && !date.includes('T')) return date;
 
     // Otherwise, convert to Date and format
     const dateObj = new Date(date);
-    return dateObj.toLocaleDateString("ar-SA");
+    return dateObj.toLocaleDateString('ar-SA');
   };
 
-  // Fetch news from API
-  const fetchNews = async () => {
+  // Refresh news function
+  const refreshNews = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`${API_URL}/news`);
-      console.log("Fetched news data:", response.data);
-
-      if (response.data) {
-        // Format dates and ensure proper image paths
-        const formattedNews = response.data.map((item: INews) => {
-          // Fix the image URL
+      const response = await getAllNews();
+      if (response && Array.isArray(response)) {
+        const formattedNews = response.map((item: INews) => {
           let imageUrl = item.image;
-          if (item.image && !item.image.startsWith("http")) {
+          if (item.image && !item.image.startsWith('http')) {
             imageUrl = `http://localhost:5005/${item.image}`;
           }
-          console.log("Processing image:", item.image, "->", imageUrl);
-
           return {
             ...item,
             date: formatDate(item.date || item.createdAt || new Date()),
@@ -96,35 +130,10 @@ const News = () => {
           };
         });
         setNewsItems(formattedNews);
-        console.log("Formatted news items:", formattedNews);
       }
     } catch (err) {
-      console.error("Failed to fetch news:", err);
-      setError("حدث خطأ أثناء جلب الأخبار، يرجى المحاولة مرة أخرى");
-
-      // Add default news if no data is available
-      if (newsItems.length === 0) {
-        setNewsItems([
-          {
-            _id: "1",
-            title: "افتتاح معرض القرآن السنوي",
-            date: "10 مايو 2024",
-            content:
-              "نتشرف بدعوتكم لحضور معرض القرآن السنوي الذي سيقام في مقر المدرسة، حيث سيتم عرض إبداعات الطلاب وإنجازاتهم في حفظ وتجويد القرآن الكريم.",
-            image:
-              "https://placehold.co/600x400/e9f5f2/1f6357?text=معرض+القرآن",
-          },
-          {
-            _id: "2",
-            title: "مسابقة التجويد والترتيل",
-            date: "15 يونيو 2024",
-            content:
-              "تعلن المدرسة عن بدء التسجيل لمسابقة التجويد والترتيل السنوية. نرحب بمشاركة جميع الطلاب من مختلف الفئات العمرية وسيتم توزيع جوائز قيمة على الفائزين.",
-            image:
-              "https://placehold.co/600x400/e9f5f2/1f6357?text=مسابقة+التجويد",
-          },
-        ]);
-      }
+      console.error('Failed to refresh news:', err);
+      setError('حدث خطأ أثناء تحديث الأخبار');
     } finally {
       setIsLoading(false);
     }
@@ -141,10 +150,10 @@ const News = () => {
     setEditingNewsId(null);
     setSelectedFile(null);
     setNewNews({
-      title: "",
-      content: "",
-      date: new Date().toLocaleDateString("ar-SA"),
-      image: "https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+جديدة",
+      title: '',
+      content: '',
+      date: new Date().toLocaleDateString('ar-SA'),
+      image: 'https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+جديدة',
     });
   };
 
@@ -175,25 +184,25 @@ const News = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    console.log("Adding/updating news with image:", selectedFile);
+    console.log('Adding/updating news with image:', selectedFile);
 
     try {
       const formData = new FormData();
-      formData.append("title", newNews.title || "خبر جديد");
-      formData.append("content", newNews.content || "محتوى الخبر");
+      formData.append('title', newNews.title || 'خبر جديد');
+      formData.append('content', newNews.content || 'محتوى الخبر');
       formData.append(
-        "date",
-        newNews.date || new Date().toLocaleDateString("ar-SA")
+        'date',
+        newNews.date || new Date().toLocaleDateString('ar-SA')
       );
 
       if (selectedFile) {
         console.log(
-          "Appending file to form data:",
+          'Appending file to form data:',
           selectedFile.name,
           selectedFile.type,
           selectedFile.size
         );
-        formData.append("image", selectedFile);
+        formData.append('image', selectedFile);
 
         // Log all entries in the FormData
         for (const [key, value] of formData.entries()) {
@@ -201,46 +210,36 @@ const News = () => {
         }
       } else if (newNews.image) {
         // If using a URL, we need to send it as a string
-        formData.append("imageUrl", newNews.image);
-        console.log("Using image URL:", newNews.image);
+        formData.append('imageUrl', newNews.image);
+        console.log('Using image URL:', newNews.image);
       }
 
       if (isEditMode && editingNewsId !== null) {
         // Handle edit mode - update existing news
-        const response = await axios.put(
-          `${API_URL}/news/${editingNewsId}`,
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
+        const response = await updateNews(editingNewsId, formData);
+        console.log('News updated successfully:', response);
 
-        if (response.data) {
+        if (response) {
           // Update local state with the updated news
           setNewsItems(
             newsItems.map((item) =>
-              item._id === editingNewsId ? response.data : item
+              item._id === editingNewsId ? response : item
             )
           );
         }
       } else {
         // Handle add mode - create new news
-        const response = await axios.post(`${API_URL}/news`, formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        });
+        const response = await createNews(formData);
+        console.log('News created successfully:', response);
 
-        if (response.data) {
+        if (response) {
           // Add the new news to the beginning of the array
-          setNewsItems([response.data, ...newsItems]);
+          setNewsItems([response, ...newsItems]);
         }
       }
     } catch (err) {
-      console.error("Failed to save news:", err);
-      setError("حدث خطأ أثناء حفظ الخبر، يرجى المحاولة مرة أخرى");
+      console.error('Failed to save news:', err);
+      setError('حدث خطأ أثناء حفظ الخبر، يرجى المحاولة مرة أخرى');
     } finally {
       setIsLoading(false);
       handleCloseModal();
@@ -261,14 +260,14 @@ const News = () => {
   };
 
   const handleDeleteNews = async (_id: string) => {
-    if (window.confirm("هل أنت متأكد من حذف هذا الخبر؟")) {
+    if (window.confirm('هل أنت متأكد من حذف هذا الخبر؟')) {
       setIsLoading(true);
       try {
-        await axios.delete(`${API_URL}/news/${_id}`);
+        await deleteNews(_id);
         setNewsItems(newsItems.filter((item) => item._id !== _id));
       } catch (err) {
-        console.error("Failed to delete news:", err);
-        setError("حدث خطأ أثناء حذف الخبر، يرجى المحاولة مرة أخرى");
+        console.error('Failed to delete news:', err);
+        setError('حدث خطأ أثناء حذف الخبر، يرجى المحاولة مرة أخرى');
       } finally {
         setIsLoading(false);
       }
@@ -281,7 +280,8 @@ const News = () => {
         <div className="flex justify-between items-center mb-8">
           <h1
             className="text-3xl md:text-4xl font-bold text-emerald-800"
-            data-aos="fade-down">
+            data-aos="fade-down"
+          >
             آخر الأخبار والفعاليات
           </h1>
 
@@ -289,13 +289,15 @@ const News = () => {
             <button
               onClick={handleOpenModal}
               className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition flex items-center gap-2 shadow-md"
-              data-aos="fade-left">
+              data-aos="fade-left"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-5 w-5"
                 fill="none"
                 viewBox="0 0 24 24"
-                stroke="currentColor">
+                stroke="currentColor"
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -311,7 +313,8 @@ const News = () => {
         <p
           className="text-lg mb-12 max-w-3xl text-gray-600"
           data-aos="fade-up"
-          data-aos-delay="100">
+          data-aos-delay="100"
+        >
           تابع أحدث أخبار وفعاليات مدرسة المهاجرين لتعليم القرآن الكريم، واطلع
           على الأنشطة والمسابقات القادمة
         </p>
@@ -324,8 +327,9 @@ const News = () => {
               <div className="col-span-2 bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
                 <p className="text-center">{error}</p>
                 <button
-                  onClick={fetchNews}
-                  className="mx-auto mt-2 block px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition">
+                  onClick={refreshNews}
+                  className="mx-auto mt-2 block px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
+                >
                   إعادة المحاولة
                 </button>
               </div>
@@ -339,46 +343,47 @@ const News = () => {
                   key={item._id}
                   className="bg-white rounded-lg shadow-lg overflow-hidden transition-transform hover:shadow-xl hover:-translate-y-1"
                   data-aos="fade-up"
-                  data-aos-delay={index * 100}>
+                  data-aos-delay={index * 100}
+                >
                   <img
                     src={item.image}
                     alt={item.title}
                     className="w-full h-64 object-contain bg-gray-50"
                     onError={(e) => {
-                      console.log("Error loading image:", item.image);
+                      console.log('Error loading image:', item.image);
                       // Try to modify the URL if there's an issue
                       const imgElement = e.target as HTMLImageElement;
                       const originalSrc = item.image;
 
                       // If we're already using a placeholder, don't try again
-                      if (originalSrc.includes("placehold.co")) {
+                      if (originalSrc.includes('placehold.co')) {
                         return;
                       }
 
                       // Try different URL patterns
-                      if (originalSrc.includes("uploads/news/")) {
+                      if (originalSrc.includes('uploads/news/')) {
                         // Try removing /api/ if present
-                        if (originalSrc.includes("/api/uploads/")) {
+                        if (originalSrc.includes('/api/uploads/')) {
                           imgElement.src = originalSrc.replace(
-                            "/api/uploads/",
-                            "/uploads/"
+                            '/api/uploads/',
+                            '/uploads/'
                           );
-                          console.log("Trying fallback 1:", imgElement.src);
+                          console.log('Trying fallback 1:', imgElement.src);
                           return;
                         }
 
                         // Try adding the full domain if it's a relative URL
-                        if (originalSrc.startsWith("uploads/")) {
-                          imgElement.src = `http://localhost:5005/${originalSrc}`;
-                          console.log("Trying fallback 2:", imgElement.src);
+                        if (originalSrc.startsWith('uploads/')) {
+                          imgElement.src = `${API_BASE_URL}/${originalSrc}`;
+                          console.log('Trying fallback 2:', imgElement.src);
                           return;
                         }
                       }
 
                       // If all else fails, use a placeholder
                       imgElement.src =
-                        "https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+الخبر";
-                      console.log("Using placeholder");
+                        'https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+الخبر';
+                      console.log('Using placeholder');
                     }}
                   />
                   <div className="p-6">
@@ -390,7 +395,7 @@ const News = () => {
                         {item.date}
                       </span>
                     </div>
-                    <p className="text-gray-600">{item.content}</p>{" "}
+                    <p className="text-gray-600">{item.content}</p>{' '}
                     <div className="flex flex-wrap justify-between items-center mt-4 gap-2">
                       <button className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition flex items-center gap-1">
                         <span>اقرأ المزيد</span>
@@ -399,7 +404,8 @@ const News = () => {
                           className="h-5 w-5"
                           fill="none"
                           viewBox="0 0 24 24"
-                          stroke="currentColor">
+                          stroke="currentColor"
+                        >
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -416,13 +422,15 @@ const News = () => {
                             onClick={(e) => {
                               e.stopPropagation();
                               handleEditNews(item);
-                            }}>
+                            }}
+                          >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               className="h-5 w-5"
                               fill="none"
                               viewBox="0 0 24 24"
-                              stroke="currentColor">
+                              stroke="currentColor"
+                            >
                               <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -437,13 +445,15 @@ const News = () => {
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDeleteNews(item._id);
-                            }}>
+                            }}
+                          >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               className="h-5 w-5"
                               fill="none"
                               viewBox="0 0 24 24"
-                              stroke="currentColor">
+                              stroke="currentColor"
+                            >
                               <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -492,20 +502,23 @@ const News = () => {
       {isModalOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-          onClick={handleCloseModal}>
+          onClick={handleCloseModal}
+        >
           <div
             className="bg-white rounded-lg p-6 w-full max-w-lg"
             onClick={(e) => e.stopPropagation()}
-            data-aos="zoom-in">
+            data-aos="zoom-in"
+          >
             <h3 className="text-2xl font-bold text-emerald-800 mb-6 border-b pb-3">
-              {isEditMode ? "تعديل الخبر" : "إضافة خبر جديد"}
+              {isEditMode ? 'تعديل الخبر' : 'إضافة خبر جديد'}
             </h3>
 
             <form onSubmit={handleAddNews}>
               <div className="mb-4">
                 <label
                   htmlFor="title"
-                  className="block mb-1 font-medium text-gray-700">
+                  className="block mb-1 font-medium text-gray-700"
+                >
                   عنوان الخبر
                 </label>
                 <input
@@ -523,7 +536,8 @@ const News = () => {
               <div className="mb-4">
                 <label
                   htmlFor="date"
-                  className="block mb-1 font-medium text-gray-700">
+                  className="block mb-1 font-medium text-gray-700"
+                >
                   تاريخ الخبر
                 </label>
                 <input
@@ -540,7 +554,8 @@ const News = () => {
               <div className="mb-4">
                 <label
                   htmlFor="image"
-                  className="block mb-1 font-medium text-gray-700">
+                  className="block mb-1 font-medium text-gray-700"
+                >
                   صورة الخبر
                 </label>
                 <div className="flex flex-col gap-4">
@@ -568,7 +583,8 @@ const News = () => {
               <div className="mb-4">
                 <label
                   htmlFor="content"
-                  className="block mb-1 font-medium text-gray-700">
+                  className="block mb-1 font-medium text-gray-700"
+                >
                   محتوى الخبر
                 </label>
                 <textarea
@@ -587,22 +603,24 @@ const News = () => {
                   type="button"
                   onClick={handleCloseModal}
                   className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition"
-                  disabled={isLoading}>
+                  disabled={isLoading}
+                >
                   إلغاء
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition flex items-center gap-2"
-                  disabled={isLoading}>
+                  disabled={isLoading}
+                >
                   {isLoading ? (
                     <>
                       <span className="animate-spin h-4 w-4 border-2 border-white rounded-full border-t-transparent"></span>
                       <span>جاري الحفظ...</span>
                     </>
                   ) : isEditMode ? (
-                    "تحديث الخبر"
+                    'تحديث الخبر'
                   ) : (
-                    "إضافة الخبر"
+                    'إضافة الخبر'
                   )}
                 </button>
               </div>

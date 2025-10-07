@@ -1,38 +1,14 @@
-import { useState, useEffect } from "react";
-import { toast } from "react-toastify";
-
-interface PrayerTime {
-  name: string;
-  time: string;
-  arabicName: string;
-  icon: string;
-}
-
-interface PrayerTimesData {
-  Fajr: string;
-  Sunrise: string;
-  Dhuhr: string;
-  Asr: string;
-  Sunset: string;
-  Maghrib: string;
-  Isha: string;
-}
-
-interface ApiResponse {
-  data: {
-    timings: PrayerTimesData;
-    date: {
-      readable: string;
-      hijri: {
-        date: string;
-        month: {
-          ar: string;
-        };
-        year: string;
-      };
-    };
-  };
-}
+import { useState, useEffect, useCallback, useMemo } from "react";
+import {
+  getPrayerTimes,
+  getQiblaDirection,
+  getPrayerSettings,
+  formatTime,
+  getNextPrayer,
+  type PrayerTime,
+  type PrayerTimesData,
+  type PrayerSettings
+} from "../Api/prayerTimesApi";
 
 const PrayerTimes = () => {
   const [prayerTimes, setPrayerTimes] = useState<PrayerTime[]>([]);
@@ -41,41 +17,53 @@ const PrayerTimes = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [nextPrayer, setNextPrayer] = useState<PrayerTime | null>(null);
+  const [, setSettings] = useState<PrayerSettings | null>(null);
 
   // Compass states
   const [deviceHeading, setDeviceHeading] = useState(0);
   const [isCompassSupported, setIsCompassSupported] = useState(false);
   const [compassPermission, setCompassPermission] = useState<string>("unknown");
+  const [qiblaDirection, setQiblaDirection] = useState(157); // Default for Nablus
 
-  // Qibla direction from Nablus (157 degrees)
-  const qiblaDirection = 157;
-
-  const prayerNames = [
+  const prayerNames = useMemo(() => [
     { key: "Fajr", arabicName: "الفجر", icon: "🌅" },
     { key: "Sunrise", arabicName: "الشروق", icon: "☀️" },
     { key: "Dhuhr", arabicName: "الظهر", icon: "🌞" },
     { key: "Asr", arabicName: "العصر", icon: "🌆" },
     { key: "Maghrib", arabicName: "المغرب", icon: "🌇" },
     { key: "Isha", arabicName: "العشاء", icon: "🌙" },
-  ];
+  ], []);
 
-  const fetchPrayerTimes = async () => {
+  const fetchPrayerTimes = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
 
-      // Using Aladhan API for Nablus, Palestine
-      // Coordinates for Nablus: 32.2211, 35.2544
-      const response = await fetch(
-        "https://api.aladhan.com/v1/timings?latitude=32.2211&longitude=35.2544&method=4&tune=0,0,0,0,0,0,0,0,0",
-      );
-
-      if (!response.ok) {
-        throw new Error("فشل في جلب مواقيت الصلاة");
+      // Get prayer settings first
+      const settingsResponse = await getPrayerSettings();
+      if (settingsResponse.success && settingsResponse.data) {
+        setSettings(settingsResponse.data);
+        setQiblaDirection(settingsResponse.data.qiblaDirection);
       }
 
-      const data: ApiResponse = await response.json();
-      const timings = data.data.timings;
+      // Get current settings or use defaults
+      const currentSettings = settingsResponse.data || {
+        latitude: 32.2211,
+        longitude: 35.2544,
+        qiblaDirection: 157
+      };
+
+      // Fetch prayer times using API
+      const response = await getPrayerTimes(
+        currentSettings.latitude,
+        currentSettings.longitude
+      );
+
+      if (!response.success) {
+        throw new Error(response.message || "فشل في جلب مواقيت الصلاة");
+      }
+
+      const timings = response.data.timings;
 
       // Format prayer times
       const formattedPrayerTimes: PrayerTime[] = prayerNames.map((prayer) => ({
@@ -86,58 +74,35 @@ const PrayerTimes = () => {
       }));
 
       setPrayerTimes(formattedPrayerTimes);
-      setCurrentDate(data.data.date.readable);
+      setCurrentDate(response.data.date.readable);
       setHijriDate(
-        `${data.data.date.hijri.date} ${data.data.date.hijri.month.ar} ${data.data.date.hijri.year}`,
+        `${response.data.date.hijri.date} ${response.data.date.hijri.month.ar} ${response.data.date.hijri.year}`
       );
 
-      // Find next prayer
-      findNextPrayer(formattedPrayerTimes);
+      // Find next prayer using API function
+      const next = getNextPrayer(formattedPrayerTimes);
+      setNextPrayer(next);
+
+      // Get Qibla direction
+      const qiblaResponse = await getQiblaDirection(
+        currentSettings.latitude,
+        currentSettings.longitude
+      );
+      if (qiblaResponse.success) {
+        setQiblaDirection(qiblaResponse.data.direction);
+      }
+
     } catch (err) {
       setError("حدث خطأ في جلب مواقيت الصلاة. يرجى المحاولة مرة أخرى.");
       console.error("Error fetching prayer times:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [prayerNames]);
 
-  const formatTime = (time: string): string => {
-    // Convert 24-hour format to 12-hour format
-    const [hours, minutes] = time.split(":");
-    const hour = parseInt(hours);
-    const ampm = hour >= 12 ? "مساءً" : "صباحاً";
-    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-    return `${displayHour}:${minutes} ${ampm}`;
-  };
+  // formatTime is now imported from API
 
-  const findNextPrayer = (prayers: PrayerTime[]) => {
-    const now = new Date();
-    const currentTime = now.getHours() * 60 + now.getMinutes();
-
-    // Exclude Sunrise from prayer times for next prayer calculation
-    const actualPrayers = prayers.filter((p) => p.name !== "Sunrise");
-
-    for (const prayer of actualPrayers) {
-      const [time, period] = prayer.time.split(" ");
-      const [hours, minutes] = time.split(":").map(Number);
-      let prayerMinutes = hours * 60 + minutes;
-
-      // Adjust for PM times
-      if (period === "مساءً" && hours !== 12) {
-        prayerMinutes += 12 * 60;
-      } else if (period === "صباحاً" && hours === 12) {
-        prayerMinutes = minutes;
-      }
-
-      if (prayerMinutes > currentTime) {
-        setNextPrayer(prayer);
-        return;
-      }
-    }
-
-    // If no prayer found for today, next prayer is Fajr tomorrow
-    setNextPrayer(actualPrayers[0]);
-  };
+  // findNextPrayer is now imported from API as getNextPrayer
 
   const getTimeUntilNextPrayer = (): string => {
     if (!nextPrayer) return "";
@@ -169,16 +134,16 @@ const PrayerTimes = () => {
   };
 
   // Compass functions
-  const requestCompassPermission = async () => {
+  const requestCompassPermission = useCallback(async () => {
     if ("DeviceOrientationEvent" in window) {
       try {
         // For iOS 13+ devices, we need to request permission
         if (
-          typeof (DeviceOrientationEvent as any).requestPermission ===
+          typeof (DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> }).requestPermission ===
           "function"
         ) {
           const permission = await (
-            DeviceOrientationEvent as any
+            DeviceOrientationEvent as unknown as { requestPermission: () => Promise<string> }
           ).requestPermission();
           setCompassPermission(permission);
           if (permission === "granted") {
@@ -199,7 +164,7 @@ const PrayerTimes = () => {
       setIsCompassSupported(false);
       setCompassPermission("not-supported");
     }
-  };
+  }, []);
 
   const startCompass = () => {
     const handleOrientation = (event: DeviceOrientationEvent) => {
@@ -227,21 +192,24 @@ const PrayerTimes = () => {
 
   useEffect(() => {
     fetchPrayerTimes();
+  }, [fetchPrayerTimes]);
 
-    // Update every minute
+  // Update next prayer every minute
+  useEffect(() => {
+    if (prayerTimes.length === 0) return;
+    
     const interval = setInterval(() => {
-      if (prayerTimes.length > 0) {
-        findNextPrayer(prayerTimes);
-      }
+      const next = getNextPrayer(prayerTimes);
+      setNextPrayer(next);
     }, 60000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [prayerTimes]);
 
   // Initialize compass
   useEffect(() => {
     requestCompassPermission();
-  }, []);
+  }, [requestCompassPermission]);
 
   if (loading) {
     return (

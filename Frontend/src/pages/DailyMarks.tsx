@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { DailyMarksSkeleton } from "../components/Loading/LoadingSkeleton";
-
-// Backend API URL
-const API_URL = "http://localhost:5005/api";
+import { getAllStudents } from "../Api/studentApi";
+import { getAllSections, createSection, updateSection, deleteSection } from "../Api/sectionApi";
+import { getStudentMarks, createMark } from "../Api/markApi";
 
 // Interface for Student data from backend
 interface Student {
@@ -139,14 +138,17 @@ const DailyMarks = () => {
         setCurrentUser(user);
 
         // Fetch sections for everyone
-        const sectionsResponse = await axios.get(`${API_URL}/sections`);
-        setSections(sectionsResponse.data);
+        const sectionsData = await getAllSections();
+        setSections(Array.isArray(sectionsData) ? sectionsData : []);
 
         // If user is a teacher, fetch all students
         if (user.role === "teacher" || user.role === "admin") {
           // Fetch students filtered by teacher's groups if needed
-          const studentsResponse = await axios.get(`${API_URL}/students`);
-          setStudents(studentsResponse.data);
+          const studentsResponse = await getAllStudents();
+          const students = studentsResponse.success && Array.isArray(studentsResponse.data)
+            ? studentsResponse.data
+            : [];
+          setStudents(students);
         }
       } catch (err) {
         console.error("Error fetching data:", err);
@@ -167,16 +169,12 @@ const DailyMarks = () => {
       try {
         if (currentUser.role === "student") {
           // For students, fetch only their marks
-          const response = await axios.get(
-            `${API_URL}/marks/student/${currentUser._id}`
-          );
-          setMarks(response.data);
+          const marksData = await getStudentMarks(currentUser._id);
+          setMarks(Array.isArray(marksData) ? marksData : []);
         } else if (selectedStudentId) {
           // For teachers with selected student
-          const response = await axios.get(
-            `${API_URL}/marks/student/${selectedStudentId}`
-          );
-          setMarks(response.data);
+          const marksData = await getStudentMarks(selectedStudentId);
+          setMarks(Array.isArray(marksData) ? marksData : []);
         } else {
           // For teachers initially, don't fetch any marks until a student is selected
           setMarks([]);
@@ -217,8 +215,8 @@ const DailyMarks = () => {
     e.preventDefault();
 
     try {
-      const response = await axios.post(`${API_URL}/sections`, newSection);
-      setSections((prev) => [response.data, ...prev]);
+      const createdSection = await createSection(newSection);
+      setSections((prev) => [createdSection, ...prev]);
       setIsAddSectionModalOpen(false);
 
       // Reset form
@@ -247,10 +245,10 @@ const DailyMarks = () => {
         memorizationMark: newMark.memorizationMark,
       };
 
-      const response = await axios.post(`${API_URL}/marks`, markData);
+      const createdMark = await createMark(markData as any);
 
       // Update marks array with new mark
-      setMarks((prev) => [response.data, ...prev]);
+      setMarks((prev) => [createdMark as any, ...prev]);
       setIsAddMarkModalOpen(false);
     } catch (err) {
       console.error("Error adding mark:", err);
@@ -272,12 +270,12 @@ const DailyMarks = () => {
         memorizationMark: newMark.memorizationMark,
       };
 
-      const response = await axios.post(`${API_URL}/marks`, markData);
+      const updatedMark = await createMark(markData as any);
 
       // Update marks array with updated mark
       setMarks((prev) =>
         prev.map((mark) =>
-          mark._id === editingMark._id ? response.data : mark
+          mark._id === editingMark._id ? updatedMark as any : mark
         )
       );
       setIsUpdateMarkModalOpen(false);
@@ -306,8 +304,8 @@ const DailyMarks = () => {
     if (!editingSection) return;
 
     try {
-      const response = await axios.put(
-        `${API_URL}/sections/${editingSection._id}`,
+      const updatedSectionData = await updateSection(
+        editingSection._id,
         {
           date: editingSection.date,
           memorizationSection: editingSection.memorizationSection,
@@ -318,7 +316,7 @@ const DailyMarks = () => {
       // Update sections array with edited section
       setSections((prev) =>
         prev.map((section) =>
-          section._id === editingSection._id ? response.data : section
+          section._id === editingSection._id ? updatedSectionData : section
         )
       );
       setIsEditSectionModalOpen(false);
@@ -340,7 +338,7 @@ const DailyMarks = () => {
     }
 
     try {
-      await axios.delete(`${API_URL}/sections/${sectionId}`);
+      await deleteSection(sectionId);
 
       // Remove section from sections array
       setSections((prev) =>
@@ -398,7 +396,7 @@ const DailyMarks = () => {
       // Delete each selected section
       await Promise.all(
         selectedSectionsForBulk.map((sectionId) =>
-          axios.delete(`${API_URL}/sections/${sectionId}`)
+          deleteSection(sectionId)
         )
       );
 
@@ -452,7 +450,7 @@ const DailyMarks = () => {
             sectionToUpdate.memorizationSection,
         };
 
-        return axios.put(`${API_URL}/sections/${sectionId}`, updatedData);
+        return updateSection(sectionId, updatedData);
       });
 
       const results = await Promise.all(updatePromises);
@@ -460,8 +458,8 @@ const DailyMarks = () => {
       // Update sections in state
       setSections((prev) =>
         prev.map((section) => {
-          const result = results.find((r) => r?.data._id === section._id);
-          return result ? result.data : section;
+          const result = results.find((r) => r?._id === section._id);
+          return result ? result : section;
         })
       );
 

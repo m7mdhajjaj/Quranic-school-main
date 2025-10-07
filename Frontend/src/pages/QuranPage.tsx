@@ -1,36 +1,31 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   QuranPageSkeleton,
   QuranReadingSkeleton,
 } from "../components/Loading/LoadingSkeleton";
+import {
+  getAllSurahs,
+  getSurah,
+  filterSurahs,
+  getReadingSettings,
+  saveReadingSettings,
+  saveReadingBookmark,
+  type Surah as ApiSurah,
+  type SurahData as ApiSurahData,
+  type Ayah as ApiAyah,
+} from "../Api/quranAudioApi";
 
-interface Surah {
-  number: number;
-  name: string;
-  englishName: string;
-  numberOfAyahs: number;
-  revelationType: string;
+type Surah = ApiSurah;
+interface Ayah extends ApiAyah {
+  juz?: number;
+  manzil?: number;
+  page?: number;
+  ruku?: number;
+  hizbQuarter?: number;
+  sajda?: boolean;
 }
-
-interface Ayah {
-  number: number;
-  text: string;
-  numberInSurah: number;
-  juz: number;
-  manzil: number;
-  page: number;
-  ruku: number;
-  hizbQuarter: number;
-  sajda: boolean;
-}
-
-interface SurahData {
-  number: number;
-  name: string;
-  englishName: string;
-  englishNameTranslation: string;
-  numberOfAyahs: number;
-  revelationType: string;
+interface SurahData extends ApiSurahData {
+  englishNameTranslation?: string;
   ayahs: Ayah[];
 }
 
@@ -48,60 +43,56 @@ const QuranPage = () => {
   // Number of ayahs per page
   const ayahsPerPage = 10;
 
-  // Fetch all surahs
-  useEffect(() => {
-    const fetchSurahs = async () => {
-      try {
-        setSurahsLoading(true);
-        const response = await fetch("https://api.alquran.cloud/v1/surah");
-        if (!response.ok) {
-          throw new Error("فشل في تحميل قائمة السور");
-        }
-        const data = await response.json();
-        setSurahs(data.data);
-      } catch (error) {
-        setError("خطأ في تحميل قائمة السور");
-        console.error("Error fetching surahs:", error);
-      } finally {
-        setSurahsLoading(false);
-      }
-    };
-
-    fetchSurahs();
+  // Initialize component with centralized API
+  const initializeComponent = useCallback(async () => {
+    try {
+      setSurahsLoading(true);
+      
+      // Load reading settings
+      const settings = await getReadingSettings();
+      setFontSize(settings.fontSize);
+      
+      // Load surahs using centralized API
+      const surahsData = await getAllSurahs();
+      setSurahs(surahsData);
+      
+    } catch (error) {
+      setError("خطأ في تحميل قائمة السور");
+      console.error("Error initializing component:", error);
+    } finally {
+      setSurahsLoading(false);
+    }
   }, []);
 
-  // Fetch specific surah
-  const fetchSurah = async (surahNumber: number) => {
+  useEffect(() => {
+    initializeComponent();
+  }, [initializeComponent]);
+
+  // Fetch specific surah using centralized API
+  const fetchSurah = useCallback(async (surahNumber: number) => {
     try {
       setLoading(true);
       setError("");
-      const response = await fetch(
-        `https://api.alquran.cloud/v1/surah/${surahNumber}`
-      );
-
-      if (!response.ok) {
-        throw new Error("فشل في تحميل السورة");
-      }
-
-      const data = await response.json();
-      setSelectedSurah(data.data);
+      
+      // Use centralized API
+      const surahData = await getSurah(surahNumber);
+      setSelectedSurah(surahData as SurahData);
       setCurrentPage(1);
       setShowSurahList(false);
+      
+      // Save reading bookmark
+      await saveReadingBookmark(surahNumber, 1);
+      
     } catch (error) {
-      setError("خطأ في تحميل السورة");
+      setError(error instanceof Error ? error.message : "خطأ في تحميل السورة");
       console.error("Error fetching surah:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // Filter surahs based on search
-  const filteredSurahs = surahs.filter(
-    (surah) =>
-      surah.name.includes(searchTerm) ||
-      surah.englishName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      surah.number.toString().includes(searchTerm)
-  );
+  // Filter surahs based on search using centralized function
+  const filteredSurahs = filterSurahs(surahs, searchTerm);
 
   // Function to remove Bismillah from ayah text
   const removeBismillah = (text: string, isFirstAyah: boolean) => {
@@ -197,13 +188,6 @@ const QuranPage = () => {
     }
   };
 
-  const goToPage = (page: number) => {
-    const totalPages = getTotalPages();
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  };
-
   // Reset to surah list
   const backToSurahList = () => {
     setSelectedSurah(null);
@@ -211,6 +195,27 @@ const QuranPage = () => {
     setCurrentPage(1);
     setSearchTerm("");
   };
+
+  // Save settings when fontSize changes
+  const updateSettings = useCallback(async () => {
+    try {
+      await saveReadingSettings({
+        fontSize,
+        theme: 'light',
+        ayahsPerPage: 10,
+      });
+    } catch (error) {
+      console.log('Could not save reading settings:', error);
+    }
+  }, [fontSize]);
+
+  useEffect(() => {
+    if (surahs.length > 0) { // Only save after initial load
+      updateSettings();
+    }
+  }, [fontSize, updateSettings, surahs.length]);
+
+
 
   if (surahsLoading) {
     return <QuranPageSkeleton />;
@@ -299,14 +304,16 @@ const QuranPage = () => {
                 )}
 
                 <div className="flex items-center gap-2">
-                  <label className="text-green-700">حجم الخط:</label>
+                  <label className="text-green-700" htmlFor="fontSizeInput">حجم الخط:</label>
                   <input
+                    id="fontSizeInput"
                     type="range"
                     min="16"
                     max="32"
                     value={fontSize}
                     onChange={(e) => setFontSize(Number(e.target.value))}
                     className="w-20"
+                    title="تحكم في حجم الخط"
                   />
                   <span className="text-green-700">{fontSize}px</span>
                 </div>
@@ -340,14 +347,18 @@ const QuranPage = () => {
                             <span className="inline-flex items-center justify-center w-6 h-6 bg-green-100 text-green-700 rounded-full text-sm font-bold flex-shrink-0">
                               {ayah.numberInSurah}
                             </span>
-                            <p
-                              className="text-green-900 font-medium leading-relaxed flex-1 mr-2"
-                              style={{ fontSize: fontSize, lineHeight: "2.2" }}>
+                            <div 
+                              className={`text-green-900 font-medium leading-relaxed flex-1 mr-2 ${
+                                fontSize <= 18 ? 'text-base' :
+                                fontSize <= 22 ? 'text-lg' :
+                                fontSize <= 26 ? 'text-xl' :
+                                fontSize <= 30 ? 'text-2xl' : 'text-3xl'
+                              }`}>
                               {removeBismillah(
                                 ayah.text,
                                 ayah.numberInSurah === 1
                               )}
-                            </p>
+                            </div>
                           </div>
                         </div>
                       </div>

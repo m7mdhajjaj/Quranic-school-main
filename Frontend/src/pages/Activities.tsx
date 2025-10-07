@@ -1,17 +1,8 @@
 import { useState, useEffect } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
-
-interface Activity {
-  _id: string;
-  title: string;
-  description: string;
-  date: string;
-  image: string; // URL for the image preview
-  category: string;
-}
+import { getAllActivities, createActivity, updateActivity, deleteActivity as deleteActivityApi, type Activity } from "../Api/activityApi";
+import { API_BASE_URL } from "../config";
 
 interface ActivityFormData {
   _id?: string;
@@ -31,16 +22,13 @@ interface User {
   groups?: string[];
 }
 
-const API_URL = "http://localhost:5005/api/activities";
-
 const Activities = () => {
-  const navigate = useNavigate();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   // User role management
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [, setCurrentUser] = useState<User | null>(null);
   const [isTeacherOrAdmin, setIsTeacherOrAdmin] = useState<boolean>(false);
 
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -81,8 +69,8 @@ const Activities = () => {
     const fetchActivities = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(API_URL);
-        setActivities(response.data);
+        const data = await getAllActivities();
+        setActivities(data);
         setError(null);
       } catch (err) {
         console.error("Error fetching activities:", err);
@@ -156,11 +144,11 @@ const Activities = () => {
       title: activity.title,
       description: activity.description,
       date: activity.date,
-      image: activity.image,
-      category: activity.category,
+      image: activity.image || '',
+      category: activity.category || 'درس',
     });
     setSelectedImage(null);
-    setImagePreview(activity.image);
+    setImagePreview(activity.image || null);
     setIsModalOpen(true);
   };
 
@@ -187,21 +175,18 @@ const Activities = () => {
         formData.append("image", selectedImage);
       }
 
-      let response: any;
+      let savedActivity: Activity;
 
       if (modalMode === "add") {
-        response = await axios.post(API_URL, formData);
-        setActivities([...activities, response.data.activity]);
+        savedActivity = await createActivity(formData);
+        setActivities([...activities, savedActivity]);
       } else {
         // Edit mode
-        response = await axios.put(
-          `${API_URL}/${currentActivity._id}`,
-          formData
-        );
+        savedActivity = await updateActivity(currentActivity._id!, formData);
         setActivities(
           activities.map((activity) =>
             activity._id === currentActivity._id
-              ? response.data.activity
+              ? savedActivity
               : activity
           )
         );
@@ -214,10 +199,10 @@ const Activities = () => {
     }
   };
 
-  const deleteActivity = async (_id: string) => {
+  const handleDeleteActivity = async (_id: string) => {
     if (window.confirm("هل أنت متأكد من حذف هذا النشاط؟")) {
       try {
-        await axios.delete(`${API_URL}/${_id}`);
+        await deleteActivityApi(_id);
         setActivities(activities.filter((activity) => activity._id !== _id));
       } catch (err) {
         console.error("Error deleting activity:", err);
@@ -290,7 +275,7 @@ const Activities = () => {
                   ? "bg-emerald-600 text-white"
                   : "bg-white text-slate-700 hover:bg-slate-100"
               }`}
-              onClick={() => setFilter(category)}>
+              onClick={() => setFilter(category || '')}>
               {category}
             </button>
           ))}
@@ -341,9 +326,11 @@ const Activities = () => {
                 <div className="h-80 relative overflow-hidden">
                   <img
                     src={
-                      activity.image.startsWith("http")
+                      activity.image && activity.image.startsWith("http")
                         ? activity.image
-                        : `http://localhost:5005/${activity.image}`
+                        : activity.image 
+                        ? `${API_BASE_URL}/${activity.image}`
+                        : "/src/images/default-activity.jpg"
                     }
                     alt={activity.title}
                     className="w-full h-full object-contain bg-gray-50"
@@ -380,7 +367,7 @@ const Activities = () => {
                           </svg>
                         </button>
                         <button
-                          onClick={() => deleteActivity(activity._id)}
+                          onClick={() => handleDeleteActivity(activity._id!)}
                           className="text-red-500 hover:text-red-700">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -585,7 +572,7 @@ const Activities = () => {
                           imagePreview ||
                           (currentActivity.image.startsWith("http")
                             ? currentActivity.image
-                            : `http://localhost:5005/${currentActivity.image}`)
+                            : `${API_BASE_URL}/${currentActivity.image}`)
                         }
                         alt="معاينة الصورة"
                         className="w-full h-full object-contain"

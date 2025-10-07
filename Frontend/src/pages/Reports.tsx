@@ -1,31 +1,68 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import MarksBarChart from "../components/MarksBarChart";
 import { ReportsSkeleton } from "../components/Loading/LoadingSkeleton";
+import { getStudentMarks, getAverageMarks } from '../Api/reportApi';
+import { getProfile } from '../Api/profileApi';
 
 const Reports = () => {
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [userRole, setUserRole] = useState<string>("teacher");
   const [loading, setLoading] = useState(true);
+  const [chartData, setChartData] = useState<{
+    labels: string[];
+    data: number[];
+  }>({ labels: [], data: [] });
+  const [userId, setUserId] = useState<string>('');
 
-  useEffect(() => {
-    const userJson = localStorage.getItem("user");
-    if (userJson) {
-      try {
-        const user = JSON.parse(userJson);
-        setUserRole(user.role || "teacher");
-      } catch {
-        setUserRole("teacher");
-      }
+  // Load chart data based on filters
+  const loadChartData = useCallback(async (role?: string, id?: string) => {
+    try {
+      const currentRole = role || userRole;
+      const currentUserId = id || userId;
+      
+      const params = {
+        month: selectedMonth || undefined,
+        year: selectedYear || undefined,
+        ...(currentRole === 'student' && { studentId: currentUserId })
+      };
+
+      const data = currentRole === 'student' 
+        ? await getStudentMarks(params)
+        : await getAverageMarks(params);
+      
+      setChartData(data);
+    } catch (error) {
+      console.error('خطأ في تحميل بيانات الرسم البياني:', error);
     }
+  }, [selectedMonth, selectedYear, userRole, userId]);
 
-    // محاكاة تحميل البيانات
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1500);
+  // Initialize component and load user data
+  useEffect(() => {
+    const initializeComponent = async () => {
+      try {
+        setLoading(true);
+        const profile = await getProfile();
+        setUserRole(profile.role || 'teacher');
+        setUserId(profile._id || '');
+        await loadChartData(profile.role, profile._id);
+      } catch (error) {
+        console.error('خطأ في تحميل بيانات المستخدم:', error);
+        setUserRole('teacher');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    return () => clearTimeout(timer);
-  }, []);
+    initializeComponent();
+  }, [loadChartData]);
+
+  // Reload data when filters change
+  useEffect(() => {
+    if (!loading && userId) {
+      loadChartData();
+    }
+  }, [selectedMonth, selectedYear, userRole, userId, loading, loadChartData]);
 
   if (loading) {
     return <ReportsSkeleton />;
@@ -49,6 +86,7 @@ const Reports = () => {
                 const val = e.target.value;
                 setSelectedMonth(val ? Number(val) : null);
               }}
+              title="اختر الشهر"
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500">
               <option value="">آخر 6 أشهر</option>
               <option value={1}>يناير (1)</option>
@@ -75,6 +113,7 @@ const Reports = () => {
                 const val = e.target.value;
                 setSelectedYear(val ? Number(val) : null);
               }}
+              title="اختر السنة"
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500">
               <option value="">آخر 6 أشهر</option>
               <option value={2023}>2023</option>
@@ -91,24 +130,10 @@ const Reports = () => {
         {userRole === "student" ? (
           <>
             <h2 className="text-lg font-bold mb-4 text-center">علاماتي</h2>
-            {selectedMonth && selectedYear ? (
-              <MarksBarChart
-                labels={[`${selectedMonth}/${selectedYear}`]}
-                data={[7.5]} // بيانات تجريبية لعلامات الطالب
-              />
-            ) : (
-              <MarksBarChart
-                labels={[
-                  "4/2025",
-                  "5/2025",
-                  "6/2025",
-                  "7/2025",
-                  "8/2025",
-                  "9/2025",
-                ]}
-                data={[7.2, 7.8, 8.0, 7.5, 8.1, 7.9]} // بيانات تجريبية لعلامات الطالب
-              />
-            )}
+            <MarksBarChart
+              labels={chartData.labels}
+              data={chartData.data}
+            />
             <div className="text-center mt-4 text-gray-500 text-sm">
               {selectedMonth && selectedYear
                 ? `* يتم عرض علاماتك للشهر المحدد.`
@@ -120,24 +145,10 @@ const Reports = () => {
             <h2 className="text-lg font-bold mb-4 text-center">
               متوسط العلامات لجميع الطلاب
             </h2>
-            {selectedMonth && selectedYear ? (
-              <MarksBarChart
-                labels={[`${selectedMonth}/${selectedYear}`]}
-                data={[8.1]}
-              />
-            ) : (
-              <MarksBarChart
-                labels={[
-                  "4/2025",
-                  "5/2025",
-                  "6/2025",
-                  "7/2025",
-                  "8/2025",
-                  "9/2025",
-                ]}
-                data={[7.8, 8.2, 7.5, 8.0, 7.9, 8.1]}
-              />
-            )}
+            <MarksBarChart
+              labels={chartData.labels}
+              data={chartData.data}
+            />
             <div className="text-center mt-4 text-gray-500 text-sm">
               {selectedMonth && selectedYear
                 ? `* يتم عرض متوسط العلامات لجميع الطلاب للشهر المحدد.`

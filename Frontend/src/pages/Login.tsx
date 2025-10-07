@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { API_URL } from "../config";
 import { useAuth } from "../hooks/useAuth";
+import { loginStudent, loginTeacher, loginAdmin, forgotPassword, resetPassword } from "../Api/authApi";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -140,34 +140,25 @@ const Login = () => {
       let response;
 
       console.log(
-        "📡 Making request to:",
-        `${API_URL}/auth/login`,
-        "as",
+        "📡 Making request to: /auth/login as",
         roleTab
       );
 
       if (roleTab === "student") {
-        response = await axios.post(
-          `${API_URL}/auth/login`,
-          {
-            studentId: formData.userId,
-            idNumber: formData.password,
-          },
-          {
-            timeout: 10000,
-            headers: { "Content-Type": "application/json" },
-          }
-        );
+        response = await loginStudent({
+          studentId: formData.userId,
+          idNumber: formData.password,
+        });
         console.log("✅ Student login successful!");
       } else if (roleTab === "teacher") {
-        response = await axios.post(`${API_URL}/auth/login`, {
+        response = await loginTeacher({
           teacherId: formData.userId,
           password: formData.password,
           userType: "teacher",
         });
         console.log("✅ Teacher login successful!");
       } else {
-        response = await axios.post(`${API_URL}/auth/login`, {
+        response = await loginAdmin({
           adminId: formData.userId,
           password: formData.password,
           userType: "admin",
@@ -177,12 +168,12 @@ const Login = () => {
 
       console.log(
         "👤 User logged in:",
-        response.data.user?.firstName || response.data.user?.name || "Unknown"
+        response.user?.firstName || response.user?.name || "Unknown"
       );
 
-      if (response.data && response.data.user && response.data.token) {
+      if (response && response.user && response.token) {
         // استخدام authLogin بدلاً من حفظ البيانات يدوياً
-        authLogin(response.data.user, response.data.token);
+        authLogin(response.user, response.token);
 
         // Handle remember me functionality
         if (rememberMe) {
@@ -203,7 +194,7 @@ const Login = () => {
         console.log("🚀 Navigating to appropriate page...");
 
         // Navigate to appropriate page based on role
-        const userRole = response.data.user.role;
+        const userRole = response.user.role;
         const targetPage = userRole === "admin" ? "/admin/dashboard" : "/";
 
         // Navigate with a small delay to ensure state is updated
@@ -211,7 +202,7 @@ const Login = () => {
           navigate(targetPage, { replace: true });
         }, 100);
       } else {
-        console.error("❌ Invalid response data:", response.data);
+        console.error("❌ Invalid response data:", response);
         setError("رد غير صحيح من الخادم. رجاءً تأكد من بيانات الدخول.");
       }
     } catch (error: unknown) {
@@ -235,14 +226,12 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post(`${API_URL}/auth/forgot-password`, {
-        ...forgotPasswordData,
-      });
+      const response = await forgotPassword(forgotPasswordData);
 
-      if (response.data.success) {
+      if (response.success) {
         setResetStep(2);
       } else {
-        setError(response.data.message || "فشل في التحقق من البيانات");
+        setError(response.message || "فشل في التحقق من البيانات");
       }
     } catch (error: unknown) {
       console.error("Forgot password error:", error);
@@ -279,12 +268,12 @@ const Login = () => {
     }
 
     try {
-      const response = await axios.post(`${API_URL}/auth/reset-password`, {
-        ...forgotPasswordData,
-        newPassword: newPasswordData.password,
+      const response = await resetPassword({
+        password: newPasswordData.password,
+        confirmPassword: newPasswordData.confirmPassword,
       });
 
-      if (response.data.success) {
+      if (response.success) {
         alert("تم تغيير كلمة المرور بنجاح!");
         setShowForgotPassword(false);
         setResetStep(1);
@@ -302,7 +291,7 @@ const Login = () => {
           confirmPassword: "",
         });
       } else {
-        setError(response.data.message || "فشل في تغيير كلمة المرور");
+        setError(response.message || "فشل في تغيير كلمة المرور");
       }
     } catch (error: unknown) {
       console.error("Reset password error:", error);

@@ -1,0 +1,118 @@
+// Ranking API functions
+import api from './api';
+
+export interface RankingStudent {
+  studentId: {
+    _id: string;
+    firstName: string;
+    fatherName: string;
+    lastName: string;
+    group: string;
+  };
+  score: number;
+  rank?: number;
+}
+
+export interface Ranking {
+  _id: string;
+  month: number;
+  year: number;
+  topThree: RankingStudent[];
+  topTen: RankingStudent[];
+}
+
+export interface Period {
+  month: number;
+  year: number;
+  label?: string;
+}
+
+export interface NewRankingData {
+  month: number;
+  year: number;
+  topThree: Array<{ studentId: string; score: number }>;
+  topTen: Array<{ studentId: string; score: number }>;
+}
+
+// Get all available periods
+export const getAvailablePeriods = async (): Promise<Period[]> => {
+  try {
+    const response = await api.get('/rankings/periods');
+    if (response.data.success) {
+      return response.data.data;
+    }
+    return [];
+  } catch (error) {
+    console.error('Error fetching periods:', error);
+    throw error;
+  }
+};
+
+// Get current ranking
+export const getCurrentRanking = async (): Promise<Ranking | null> => {
+  try {
+    const response = await api.get('/rankings/current');
+    if (response.data.success) {
+      return response.data.data;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error fetching current ranking:', error);
+    throw error;
+  }
+};
+
+// Get ranking by period
+export const getRankingByPeriod = async (month: number, year: number): Promise<Ranking | null> => {
+  try {
+    const response = await api.get(`/rankings/period/${year}/${month}`);
+    if (response.data.success) {
+      return response.data.data;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error fetching ranking by period:', error);
+    throw error;
+  }
+};
+
+// Create new ranking
+export const createRanking = async (rankingData: NewRankingData): Promise<Ranking> => {
+  try {
+    const response = await api.post('/rankings', rankingData);
+    if (response.data.success) {
+      return response.data.data;
+    }
+    throw new Error(response.data.message || 'Failed to create ranking');
+  } catch (error) {
+    console.error('Error creating ranking:', error);
+    throw error;
+  }
+};
+
+// Update ranking
+export const updateRanking = async (id: string, rankingData: Partial<NewRankingData>): Promise<Ranking> => {
+  try {
+    const response = await api.put(`/rankings/${id}`, rankingData);
+    if (response.data.success) {
+      return response.data.data;
+    }
+    throw new Error(response.data.message || 'Failed to update ranking');
+  } catch (error) {
+    console.error('Error updating ranking:', error);
+    throw error;
+  }
+};
+
+// Delete ranking
+export const deleteRanking = async (id: string): Promise<void> => {
+  try {
+    const response = await api.delete(`/rankings/${id}`);
+    if (!response.data.success) {
+      throw new Error(response.data.message || 'Failed to delete ranking');
+    }
+  } catch (error) {
+    console.error('Error deleting ranking:', error);
+    throw error;
+  }
+};

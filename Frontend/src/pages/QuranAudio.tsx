@@ -1,19 +1,18 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { QuranAudioSkeleton } from "../components/Loading/LoadingSkeleton";
-
-interface Surah {
-  number: number;
-  name: string;
-  englishName: string;
-  numberOfAyahs: number;
-  revelationType: string;
-}
-
-interface Ayah {
-  number: number;
-  numberInSurah: number;
-  text: string;
-}
+import {
+  getAllSurahs,
+  getSurah,
+  processAyahs,
+  getReciters,
+  getAudioUrls,
+  saveFavoriteReciter,
+  getFavoriteReciter,
+  saveListeningProgress,
+  type Surah,
+  type Ayah,
+  type Reciter,
+} from "../Api/quranAudioApi";
 
 const QuranAudio: React.FC = () => {
   const [surahs, setSurahs] = useState<Surah[]>([]);
@@ -25,146 +24,76 @@ const QuranAudio: React.FC = () => {
   const [audioError, setAudioError] = useState<string | null>(null);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [reciters, setReciters] = useState<Reciter[]>([]);
 
-  // List of available reciters with multiple server options
-  const reciters = [
-    {
-      code: "ar.alafasy",
-      name: "مشاري بن راشد العفاسي",
-      baseUrls: [
-        "https://download.quranicaudio.com/quran/mishary_rashid_alafasy/",
-        "https://server8.mp3quran.net/afs/",
-      ],
-    },
-    {
-      code: "ar.abdulbasit",
-      name: "عبد الباسط عبد الصمد",
-      baseUrls: [
-        "https://download.quranicaudio.com/quran/abdul_basit_murattal/",
-        "https://server8.mp3quran.net/basit/",
-      ],
-    },
-    {
-      code: "ar.sudais",
-      name: "عبد الرحمن السديس",
-      baseUrls: [
-        "https://server7.mp3quran.net/sudais/",
-        "https://download.quranicaudio.com/quran/abdurrahmaan_as-sudays/",
-      ],
-    },
-    {
-      code: "ar.ajmi",
-      name: "أحمد العجمي",
-      baseUrls: [
-        "https://server10.mp3quran.net/ajm/",
-        "https://download.quranicaudio.com/quran/ahmed_ibn_ali_al-ajamy/",
-      ],
-    },
-    {
-      code: "ar.ghamdi",
-      name: "سعد الغامدي",
-      baseUrls: [
-        "https://server7.mp3quran.net/s_gmd/",
-        "https://download.quranicaudio.com/quran/sa3d_al-ghaamidi/",
-      ],
-    },
-    {
-      code: "ar.muaiqly",
-      name: "ماهر المعيقلي",
-      baseUrls: [
-        "https://server12.mp3quran.net/maher/",
-        "https://download.quranicaudio.com/quran/maher_al_meaqli/",
-      ],
-    },
-    {
-      code: "ar.dossari",
-      name: "ياسر الدوسري",
-      baseUrls: [
-        "https://server11.mp3quran.net/yasser/",
-        "https://download.quranicaudio.com/quran/yasser_ad-dussary/",
-      ],
-    },
-  ];
+  const fetchSurahs = useCallback(async () => {
+    setLoading(true);
+    try {
+      const surahsData = await getAllSurahs();
+      setSurahs(surahsData);
+    } catch (error) {
+      console.error("Error fetching surahs:", error);
+      setAudioError(error instanceof Error ? error.message : "فشل في تحميل قائمة السور");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchSurahWithAudio = useCallback(async (surahNumber: number) => {
+    setLoading(true);
+    setAudioError(null);
+    try {
+      // Fetch Surah data using centralized API
+      const surahData = await getSurah(surahNumber);
+      
+      // Process ayahs to remove bismillah (except for Al-Fatiha)
+      const processedAyahs = processAyahs(surahData.ayahs, surahNumber);
+      setAyahs(processedAyahs);
+      
+      // Verify audio URLs are available
+      try {
+        getAudioUrls(surahNumber, reciter);
+        setAudioError(null);
+      } catch (audioError) {
+        console.error("Audio URL error:", audioError);
+        setAudioError(audioError instanceof Error ? audioError.message : "لا يمكن العثور على تسجيل صوتي");
+      }
+      
+    } catch (error) {
+      console.error("Error fetching surah:", error);
+      setAyahs([]);
+      setAudioError(error instanceof Error ? error.message : "حدث خطأ في تحميل السورة");
+    } finally {
+      setLoading(false);
+    }
+  }, [reciter]);
+
+  const initializeComponent = useCallback(async () => {
+    try {
+      // Initialize reciters
+      const availableReciters = getReciters();
+      setReciters(availableReciters);
+      
+      // Get favorite reciter
+      const favoriteReciter = await getFavoriteReciter();
+      setReciter(favoriteReciter);
+      
+      // Fetch surahs
+      await fetchSurahs();
+    } catch (error) {
+      console.error('Error initializing component:', error);
+    }
+  }, [fetchSurahs]);
 
   useEffect(() => {
-    fetchSurahs();
-  }, []);
+    initializeComponent();
+  }, [initializeComponent]);
 
   useEffect(() => {
     if (selectedSurah) {
       fetchSurahWithAudio(selectedSurah.number);
     }
-  }, [reciter, selectedSurah]);
-
-  const fetchSurahs = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch("https://api.alquran.cloud/v1/surah");
-      const data = await response.json();
-      setSurahs(data.data);
-    } catch (error) {
-      console.error("Error fetching surahs:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchSurahWithAudio = async (surahNumber: number) => {
-    setLoading(true);
-    setAudioError(null);
-    try {
-      // Fetch Arabic text for display
-      const textResponse = await fetch(
-        `https://api.alquran.cloud/v1/surah/${surahNumber}`
-      );
-      const textData = await textResponse.json();
-
-      // Get selected reciter info
-      const selectedReciter = reciters.find((r) => r.code === reciter);
-
-      if (selectedReciter) {
-        // Format surah number with leading zeros (001, 002, etc.)
-        const surahNumberFormatted = surahNumber.toString().padStart(3, "0");
-
-        // Try multiple servers until one works
-        let workingAudioUrl = null;
-
-        for (const baseUrl of selectedReciter.baseUrls) {
-          const testUrl = `${baseUrl}${surahNumberFormatted}.mp3`;
-          workingAudioUrl = testUrl;
-          console.log(`Setting audio URL: ${testUrl}`);
-          break; // Use first URL for now, fallback will happen in playFullSurah if needed
-        }
-
-        if (workingAudioUrl) {
-          setAudioError(null);
-        } else {
-          console.error("No audio URL available for this reciter");
-          setAudioError(
-            `لا يمكن العثور على تسجيل صوتي للقارئ ${selectedReciter.name}`
-          );
-        }
-      }
-
-      // Set the ayahs for text display (without individual audio)
-      const processedAyahs = textData.data.ayahs.map((ayah: any) => ({
-        number: ayah.number,
-        numberInSurah: ayah.numberInSurah,
-        text: ayah.text.replace(
-          /^بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِیمِ\s*/,
-          ""
-        ), // Remove bismillah
-      }));
-
-      setAyahs(processedAyahs);
-    } catch (error) {
-      console.error("Error fetching surah:", error);
-      setAyahs([]);
-      setAudioError("حدث خطأ في تحميل السورة");
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [selectedSurah, fetchSurahWithAudio]);
 
   const handleSurahSelect = (surah: Surah) => {
     setSelectedSurah(surah);
@@ -172,41 +101,45 @@ const QuranAudio: React.FC = () => {
     if (audioRef.current) {
       audioRef.current.pause();
     }
-    fetchSurahWithAudio(surah.number);
   };
 
   const playFullSurah = async () => {
     if (!selectedSurah || !audioRef.current) return;
 
-    const selectedReciterObj = reciters.find((r) => r.code === reciter);
-    if (!selectedReciterObj) return;
+    try {
+      // Get audio URLs using centralized API
+      const audioUrls = getAudioUrls(selectedSurah.number, reciter);
+      
+      // Try each URL until one works
+      for (const audioUrl of audioUrls) {
+        try {
+          console.log(`Trying to play: ${audioUrl}`);
+          audioRef.current.src = audioUrl;
 
-    const surahNumberFormatted = selectedSurah.number
-      .toString()
-      .padStart(3, "0");
-
-    // Try each URL until one works
-    for (const baseUrl of selectedReciterObj.baseUrls) {
-      const audioUrl = `${baseUrl}${surahNumberFormatted}.mp3`;
-
-      try {
-        console.log(`Trying to play: ${audioUrl}`);
-        audioRef.current.src = audioUrl;
-
-        await audioRef.current.play();
-        setIsPlaying(true);
-        setAudioError(null);
-        console.log(`Successfully playing: ${audioUrl}`);
-        return; // Exit if successful
-      } catch (error) {
-        console.log(`Failed to play ${audioUrl}:`, error);
-        continue; // Try next URL
+          await audioRef.current.play();
+          setIsPlaying(true);
+          setAudioError(null);
+          console.log(`Successfully playing: ${audioUrl}`);
+          
+          // Save listening progress
+          await saveListeningProgress(selectedSurah.number, 0);
+          
+          return; // Exit if successful
+        } catch (error) {
+          console.log(`Failed to play ${audioUrl}:`, error);
+          continue; // Try next URL
+        }
       }
-    }
 
-    // If all URLs fail
-    setAudioError(`لا يمكن تشغيل هذه السورة للقارئ ${selectedReciterObj.name}`);
-    console.error("All audio URLs failed for this reciter");
+      // If all URLs fail
+      const selectedReciterObj = reciters.find((r) => r.code === reciter);
+      setAudioError(`لا يمكن تشغيل هذه السورة للقارئ ${selectedReciterObj?.name || reciter}`);
+      console.error("All audio URLs failed for this reciter");
+      
+    } catch (error) {
+      console.error("Error getting audio URLs:", error);
+      setAudioError(error instanceof Error ? error.message : "فشل في الحصول على رابط التسجيل الصوتي");
+    }
   };
 
   const pauseAudio = () => {
@@ -220,12 +153,19 @@ const QuranAudio: React.FC = () => {
     setIsPlaying(false);
   };
 
-  const handleReciterChange = (newReciter: string) => {
+  const handleReciterChange = async (newReciter: string) => {
     setReciter(newReciter);
     setIsPlaying(false);
     setAudioError(null);
     if (audioRef.current) {
       audioRef.current.pause();
+    }
+    
+    // Save favorite reciter
+    try {
+      await saveFavoriteReciter(newReciter);
+    } catch (error) {
+      console.log('Could not save favorite reciter:', error);
     }
   };
 
@@ -249,17 +189,23 @@ const QuranAudio: React.FC = () => {
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">
             اختر القارئ
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {reciters.map((r) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {reciters.map((reciterOption) => (
               <button
-                key={r.code}
-                onClick={() => handleReciterChange(r.code)}
-                className={`p-4 rounded-lg border-2 transition-all duration-200 ${
-                  reciter === r.code
-                    ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                    : "border-gray-200 bg-gray-50 text-gray-700 hover:border-emerald-300"
-                }`}>
-                <div className="text-lg font-semibold">{r.name}</div>
+                key={reciterOption.code}
+                onClick={() => handleReciterChange(reciterOption.code)}
+                className={`p-4 rounded-lg border-2 transition-all duration-200 text-right ${
+                  reciter === reciterOption.code
+                    ? "border-emerald-500 bg-emerald-50 text-emerald-700 shadow-md"
+                    : "border-gray-200 hover:border-emerald-300 hover:bg-emerald-50"
+                }`}
+              >
+                <div className="font-semibold">{reciterOption.name}</div>
+                {reciter === reciterOption.code && (
+                  <div className="text-sm text-emerald-600 mt-1">
+                    ✓ القارئ المحدد
+                  </div>
+                )}
               </button>
             ))}
           </div>
@@ -272,34 +218,29 @@ const QuranAudio: React.FC = () => {
           </h2>
           {loading && surahs.length === 0 ? (
             <QuranAudioSkeleton />
-          ) : loading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto"></div>
-              <p className="text-gray-600 mt-4">جاري التحميل...</p>
-            </div>
           ) : (
-            <div
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-96 overflow-y-auto"
-              dir="rtl">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {surahs.map((surah) => (
                 <button
                   key={surah.number}
                   onClick={() => handleSurahSelect(surah)}
-                  className={`p-4 rounded-lg border text-right transition-all duration-200 ${
+                  className={`p-4 rounded-lg border-2 transition-all duration-200 text-right ${
                     selectedSurah?.number === surah.number
-                      ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                      : "border-gray-200 bg-gray-50 text-gray-700 hover:border-emerald-300"
-                  }`}>
+                      ? "border-emerald-500 bg-emerald-50 text-emerald-700 shadow-md"
+                      : "border-gray-200 hover:border-emerald-300 hover:bg-emerald-50"
+                  }`}
+                >
                   <div className="flex justify-between items-center">
-                    <div>
-                      <div className="font-semibold text-lg">{surah.name}</div>
-                      <div className="text-sm text-gray-500">
-                        {surah.numberOfAyahs} آية
-                      </div>
-                    </div>
-                    <div className="bg-emerald-100 text-emerald-600 rounded-full w-8 h-8 flex items-center justify-center font-bold">
+                    <span className="font-semibold">{surah.name}</span>
+                    <span className="text-sm bg-emerald-100 text-emerald-700 px-2 py-1 rounded">
                       {surah.number}
-                    </div>
+                    </span>
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">
+                    {surah.englishName} • {surah.numberOfAyahs} آية
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {surah.revelationType === "Meccan" ? "مكية" : "مدنية"}
                   </div>
                 </button>
               ))}
@@ -310,32 +251,33 @@ const QuranAudio: React.FC = () => {
         {/* Audio Controls */}
         {selectedSurah && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <div className="text-center mb-6">
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-gray-800">
                 {selectedSurah.name}
               </h3>
-              <p className="text-gray-600">
-                {selectedSurah.numberOfAyahs} آية -{" "}
-                {selectedSurah.revelationType === "Meccan" ? "مكية" : "مدنية"}
-              </p>
+              <span className="text-sm text-gray-600">
+                {selectedSurah.numberOfAyahs} آية
+              </span>
             </div>
 
-            <div className="flex flex-col justify-center items-center gap-4">
-              {audioError && (
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4">
-                  <p className="text-center">{audioError}</p>
-                </div>
-              )}
+            {audioError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+                {audioError}
+              </div>
+            )}
 
+            <div className="flex gap-4 mb-4">
               {!isPlaying ? (
                 <button
                   onClick={playFullSurah}
-                  disabled={!selectedSurah}
-                  className="bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-8 py-3 rounded-lg text-lg font-semibold transition-colors duration-200 flex items-center gap-2">
+                  disabled={loading}
+                  className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 disabled:opacity-50"
+                >
                   <svg
-                    className="w-6 h-6"
+                    className="w-5 h-5"
                     fill="currentColor"
-                    viewBox="0 0 20 20">
+                    viewBox="0 0 20 20"
+                  >
                     <path
                       fillRule="evenodd"
                       d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
@@ -347,11 +289,13 @@ const QuranAudio: React.FC = () => {
               ) : (
                 <button
                   onClick={pauseAudio}
-                  className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-lg text-lg font-semibold transition-colors duration-200 flex items-center gap-2">
+                  className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-colors duration-200"
+                >
                   <svg
-                    className="w-6 h-6"
+                    className="w-5 h-5"
                     fill="currentColor"
-                    viewBox="0 0 20 20">
+                    viewBox="0 0 20 20"
+                  >
                     <path
                       fillRule="evenodd"
                       d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z"
@@ -361,34 +305,55 @@ const QuranAudio: React.FC = () => {
                   إيقاف التشغيل
                 </button>
               )}
+
+              <div className="flex items-center text-sm text-gray-600">
+                القارئ: {reciters.find((r) => r.code === reciter)?.name}
+              </div>
             </div>
+
+            {isPlaying && (
+              <div className="flex items-center gap-2 text-emerald-600">
+                <div className="w-2 h-2 bg-emerald-600 rounded-full animate-pulse"></div>
+                <span className="text-sm">جاري التشغيل...</span>
+              </div>
+            )}
           </div>
         )}
 
         {/* Ayahs Display */}
         {ayahs.length > 0 && (
           <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">
               نص السورة
             </h3>
-            <div className="space-y-4">
-              {ayahs.map((ayah) => (
-                <div
-                  key={ayah.number}
-                  className="border-b border-gray-100 pb-4 last:border-b-0">
-                  <div className="flex items-start gap-4">
-                    <div className="bg-emerald-100 text-emerald-600 rounded-full min-w-[40px] h-10 flex items-center justify-center font-bold text-sm">
-                      {ayah.numberInSurah}
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-gray-800 text-lg leading-relaxed text-right font-arabic">
+            {loading && ayahs.length === 0 ? (
+              <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="animate-pulse">
+                    <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {ayahs.map((ayah) => (
+                  <div
+                    key={ayah.number}
+                    className="p-4 bg-gray-50 rounded-lg border border-gray-200"
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="flex-shrink-0 w-8 h-8 bg-emerald-600 text-white rounded-full flex items-center justify-center text-sm font-semibold">
+                        {ayah.numberInSurah}
+                      </span>
+                      <p className="text-lg leading-loose text-gray-800 font-amiri">
                         {ayah.text}
                       </p>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

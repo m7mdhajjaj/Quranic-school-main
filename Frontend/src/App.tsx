@@ -143,6 +143,11 @@ const AdminRoutes: React.FC = () => {
           {/* ====== Admin - Authentication ====== */}
           <Route path="/login" element={<Login />} />
 
+          {/* ====== Special Pages ====== */}
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/contact" element={<Contact />} />
+
           {/* ====== Fallback - Redirect to Dashboard ====== */}
           <Route path="*" element={<AdminDashboard />} />
         </Routes>

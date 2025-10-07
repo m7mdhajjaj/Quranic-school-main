@@ -11,8 +11,11 @@ const AdminHeader: React.FC = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('darkMode') === 'true' || 
-             (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      return (
+        localStorage.getItem('darkMode') === 'true' ||
+        (!localStorage.getItem('darkMode') &&
+          window.matchMedia('(prefers-color-scheme: dark)').matches)
+      );
     }
     return false;
   });
@@ -58,10 +61,10 @@ const AdminHeader: React.FC = () => {
 
   // Handle dark mode toggle
   const toggleDarkMode = useCallback(() => {
-    setIsDarkMode(prev => {
+    setIsDarkMode((prev) => {
       const newMode = !prev;
       localStorage.setItem('darkMode', newMode.toString());
-      
+
       // Apply dark mode to document
       if (newMode) {
         document.documentElement.classList.add('dark');
@@ -70,7 +73,7 @@ const AdminHeader: React.FC = () => {
         document.documentElement.classList.remove('dark');
         document.body.classList.remove('dark');
       }
-      
+
       return newMode;
     });
   }, []);
@@ -143,27 +146,31 @@ const AdminHeader: React.FC = () => {
   // دالة تحديد الحالة النشطة مع دعم المسارات الفرعية المحسنة
   const isActive = (path: string) => {
     const currentPath = location.pathname;
-    
+
     // تحقق من التطابق الكامل
     if (currentPath === path) {
       return true;
     }
-    
+
     // معالجة خاصة لصفحة الإحصائيات (Dashboard)
     if (path === '/admin/dashboard') {
       return (
-        currentPath === '/admin/dashboard' || 
-        currentPath === '/admin' || 
+        currentPath === '/admin/dashboard' ||
+        currentPath === '/admin' ||
         currentPath === '/' ||
         currentPath.startsWith('/admin/dashboard/')
       );
     }
-    
+
     // تحقق من المسارات الفرعية للصفحات الأخرى
-    if (path !== '/admin/dashboard' && path !== '/admin' && currentPath.startsWith(path)) {
+    if (
+      path !== '/admin/dashboard' &&
+      path !== '/admin' &&
+      currentPath.startsWith(path)
+    ) {
       return true;
     }
-    
+
     return false;
   };
 
@@ -331,10 +338,18 @@ const AdminHeader: React.FC = () => {
                 onClick={toggleDarkMode}
                 className={`relative p-2 sm:p-2.5 md:p-3 rounded-lg sm:rounded-xl transition-all duration-500 transform hover:scale-110 overflow-hidden group ${
                   scrolled
-                    ? (isDarkMode ? 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white shadow-lg hover:from-yellow-600 hover:to-amber-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200')
-                    : (isDarkMode ? 'bg-gradient-to-r from-yellow-400 to-amber-400 text-gray-900 shadow-lg hover:from-yellow-500 hover:to-amber-500' : 'bg-white/20 text-white hover:bg-white/30')
+                    ? isDarkMode
+                      ? 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white shadow-lg hover:from-yellow-600 hover:to-amber-600'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : isDarkMode
+                      ? 'bg-gradient-to-r from-yellow-400 to-amber-400 text-gray-900 shadow-lg hover:from-yellow-500 hover:to-amber-500'
+                      : 'bg-white/20 text-white hover:bg-white/30'
                 }`}
-                title={isDarkMode ? 'التبديل إلى الوضع الفاتح' : 'التبديل إلى الوضع المظلم'}
+                title={
+                  isDarkMode
+                    ? 'التبديل إلى الوضع الفاتح'
+                    : 'التبديل إلى الوضع المظلم'
+                }
               >
                 <div className="relative z-10">
                   {isDarkMode ? (
@@ -369,11 +384,13 @@ const AdminHeader: React.FC = () => {
                     </svg>
                   )}
                 </div>
-                <div className={`absolute inset-0 transition-opacity duration-300 opacity-0 group-hover:opacity-100 ${
-                  isDarkMode 
-                    ? 'bg-gradient-to-r from-yellow-300/30 to-amber-300/30'
-                    : 'bg-gradient-to-r from-blue-400/20 to-indigo-400/20'
-                }`}></div>
+                <div
+                  className={`absolute inset-0 transition-opacity duration-300 opacity-0 group-hover:opacity-100 ${
+                    isDarkMode
+                      ? 'bg-gradient-to-r from-yellow-300/30 to-amber-300/30'
+                      : 'bg-gradient-to-r from-blue-400/20 to-indigo-400/20'
+                  }`}
+                ></div>
               </button>
 
               {/* الإشعارات */}
@@ -711,14 +728,22 @@ const AdminHeader: React.FC = () => {
                       }`}
                     >
                       <div className="flex items-center space-x-reverse space-x-3">
-                        <span className={`text-xl transition-transform duration-300 ${
-                          isActive(item.path) ? 'scale-125' : ''
-                        }`}>
+                        <span
+                          className={`text-xl transition-transform duration-300 ${
+                            isActive(item.path) ? 'scale-125' : ''
+                          }`}
+                        >
                           {item.icon}
                         </span>
-                        <span className={isActive(item.path) ? 'font-black' : ''}>{item.label}</span>
+                        <span
+                          className={isActive(item.path) ? 'font-black' : ''}
+                        >
+                          {item.label}
+                        </span>
                         {isActive(item.path) && (
-                          <span className="text-xs bg-white/20 px-2 py-1 rounded-full">نشط</span>
+                          <span className="text-xs bg-white/20 px-2 py-1 rounded-full">
+                            نشط
+                          </span>
                         )}
                       </div>
                       <svg

@@ -283,7 +283,6 @@ const Goals = () => {
         </div>
       </div>
 
-      {/* <Footer /> */}
     </div>
   );
 };

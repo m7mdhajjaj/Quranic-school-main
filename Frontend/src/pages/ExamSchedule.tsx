@@ -1,95 +1,38 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  getAllExams,
+  createExam,
+  updateExam,
+  deleteExam,
+  getExamMarks,
+  getExamAverage,
+  bulkSaveMarks,
+  updateStudentMark,
+  deleteStudentMark,
+  getStudentAllMarks,
+  type Exam,
+  type MarkRow,
+  type StudentDoc,
+  type ExamAverage
+} from "../Api/examApi";
+import { getAllStudents } from "../Api/studentApi";
 
-/**
- * ExamSchedule.tsx — نسخة كاملة
- *
- * الميزات:
- * - جدول امتحانات مع تصميم لطيف (سطور متناوبة + ترويسة ثابتة)
- * - بطاقات للموبايل
- * - مودالات شفافة (الخلفية تبقى ظاهرة) لإضافة/تعديل الامتحان وإدارة العلامات
- * - جلب الطلاب عند فتح مودال العلامات + تعبئة العلامات الحالية تلقائياً
- * - حفظ علامات كل الطلاب دفعة واحدة (متوافق مع bulkWrite بالباكند)
- * - تعديل/حذف علامة طالب واحد
- * - إظهار متوسط علامات جميع الطلاب لكل امتحان (للمعلم/المشرف) عبر مسار /average
- * - إظهار نتيجة الطالب الفردية (للطلاب) عبر مسار /student/:id
- * - حالات تحميل (Skeleton) + حالات عدم وجود بيانات
- * - تحسينات صغيرة: بحث/فرز/تصفية بسيطة
- *
- * ملاحظات:
- * - يعتمد على Tailwind CSS.
- * - يعتمد على API endpoints التالية:
- *   GET  /api/exams
- *   POST /api/exams
- *   PUT  /api/exams/:examId
- *   DELETE /api/exams/:examId
- *
- *   GET  /api/students
- *
- *   GET  /api/exam-marks/:examId               -> كل العلامات لامتحان
- *   GET  /api/exam-marks/:examId/average       -> { average, count }
- *   POST /api/exam-marks/:examId               -> { marks: [{ student, mark, detail }] }
- *   PUT  /api/exam-marks/:examId/:studentId
- *   DELETE /api/exam-marks/:examId/:studentId
- */
+
 
 // =========================
-// إعدادات وروابط API
+// إعدادات API تم نقلها إلى Api/examApi.ts
 // =========================
-const API_URL = "http://localhost:5005/api/exams";
-const STUDENTS_URL = "http://localhost:5005/api/students";
-const EXAM_MARKS_URL = "http://localhost:5005/api/exam-marks";
-
-// حصول على توكن المستخدم
-const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
-  return {
-    Authorization: token ? `Bearer ${token}` : "",
-    "Content-Type": "application/json",
-  };
-};
 
 // =========================
-// الأنواع (Types)
+// الأنواع (Types) تم نقلها إلى Api/examApi.ts
 // =========================
-interface Exam {
-  _id?: string;
-  id?: number;
-  name: string;
-  date: string; // ISO (yyyy-mm-dd) أو نص
-  time: string; // HH:mm
-  result?: string; // للطالب فقط (غير مستخدمة للمعلم)
-}
-
-interface StudentDoc {
-  _id: string;
-  firstName?: string;
-  lastName?: string;
-  name?: string; // بعض الأنظمة قد ترسل حقل name موحّد
-}
-
-interface MarkRow {
-  _id?: string;
-  exam: string | Exam;
-  student: string | StudentDoc;
-  mark: string | number | null;
-  detail?: string;
-}
 
 // =========================
 // أدوات مساعدة
 // =========================
-const isNumberLike = (v: unknown) => {
-  if (v === null || v === undefined) return false;
-  const s = String(v).trim();
-  if (s === "") return false;
-  const n = Number(s);
-  return Number.isFinite(n);
-};
 
-const toNumberOrNull = (v: unknown): number | null => {
-  if (!isNumberLike(v)) return null;
-  return Number(v);
-};
+
+
 
 const cn = (...cls: Array<string | false | null | undefined>) =>
   cls.filter(Boolean).join(" ");
@@ -105,11 +48,14 @@ const safeExamId = (ex: Exam | null | undefined): string | null => {
 };
 
 // وظيفة للتعامل مع الأخطاء
-const handleFetchError = (error: any, message: string) => {
+const handleFetchError = (error: unknown, message: string) => {
   console.error(`${message}:`, error);
-  if (error.response?.status === 401) {
-    // خطأ في المصادقة
-    console.warn("Authentication error, redirecting to login...");
+  if (typeof error === 'object' && error !== null && 'response' in error) {
+    const axiosError = error as { response?: { status?: number } };
+    if (axiosError.response?.status === 401) {
+      // خطأ في المصادقة
+      console.warn("Authentication error, redirecting to login...");
+    }
   }
 };
 
@@ -265,11 +211,8 @@ const ExamSchedule: React.FC = () => {
   // ——— مساعدات API
   const fetchExamAverage = async (examId: string): Promise<number | null> => {
     try {
-      const res = await fetch(`${EXAM_MARKS_URL}/${examId}/average`);
-      if (!res.ok) return null;
-      const data = await res.json(); // { average, count }
-      const avg = typeof data?.average === "number" ? data.average : null;
-      return avg;
+      const data: ExamAverage = await getExamAverage(examId);
+      return typeof data?.average === "number" ? data.average : null;
     } catch {
       return null;
     }
@@ -280,7 +223,7 @@ const ExamSchedule: React.FC = () => {
     setExamAverages((prev) => ({ ...prev, [examId]: avg }));
   };
 
-  const refreshAllAverages = async (list: Exam[]) => {
+  const refreshAllAverages = useMemo(() => async (list: Exam[]) => {
     const entries = await Promise.all(
       list.map(async (ex) => {
         const id = String(ex._id ?? ex.id);
@@ -289,12 +232,13 @@ const ExamSchedule: React.FC = () => {
       })
     );
     setExamAverages(Object.fromEntries(entries));
-  };
+  }, []);
 
   const fillMarksFromApi = (rows: MarkRow[]) => {
     const obj: Record<string, { mark: string; detail: string }> = {};
     rows.forEach((r) => {
-      const sid = String((r.student as any)?._id ?? r.student);
+      const student = r.student as StudentDoc;
+      const sid = String(student?._id ?? r.student);
       obj[sid] = { mark: String(r.mark ?? ""), detail: String(r.detail ?? "") };
     });
     setMarks(obj);
@@ -304,25 +248,20 @@ const ExamSchedule: React.FC = () => {
   const handleAddExam = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newExam),
+      const added: Exam = await createExam(newExam);
+      setExams((prev) => {
+        const next = [...prev, added];
+        setExamAverages((p) => ({
+          ...p,
+          [String(added._id ?? added.id)]: null,
+        }));
+        return next;
       });
-      if (res.ok) {
-        const added: Exam = await res.json();
-        setExams((prev) => {
-          const next = [...prev, added];
-          setExamAverages((p) => ({
-            ...p,
-            [String(added._id ?? added.id)]: null,
-          }));
-          return next;
-        });
-        setShowAddExamModal(false);
-        setNewExam({ name: "", date: "", time: "" });
-      }
-    } catch {}
+      setShowAddExamModal(false);
+      setNewExam({ name: "", date: "", time: "" });
+    } catch (error) {
+      console.error('Error adding exam:', error);
+    }
   };
 
   const handleEditExam = async (e: React.FormEvent) => {
@@ -330,30 +269,31 @@ const ExamSchedule: React.FC = () => {
     if (!editExam) return;
     const examId = String(editExam._id ?? editExam.id);
     try {
-      await fetch(`${API_URL}/${examId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editExam),
-      });
+      const updated = await updateExam(examId, editExam);
       setExams((prev) =>
-        prev.map((ex) => (String(ex._id ?? ex.id) === examId ? editExam : ex))
+        prev.map((ex) => (String(ex._id ?? ex.id) === examId ? updated : ex))
       );
       setShowEditExamModal(false);
       setEditExam(null);
-    } catch {}
+    } catch (error) {
+      console.error('Error updating exam:', error);
+    }
   };
 
   const handleDeleteExam = async (examIdRaw: string | number) => {
     const examId = String(examIdRaw);
     if (!window.confirm("هل أنت متأكد من حذف الامتحان؟")) return;
     try {
-      await fetch(`${API_URL}/${examId}`, { method: "DELETE" });
+      await deleteExam(examId);
       setExams((prev) => prev.filter((e) => String(e._id ?? e.id) !== examId));
       setExamAverages((prev) => {
-        const { [examId]: _, ...rest } = prev;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { [examId]: removed, ...rest } = prev;
         return rest;
       });
-    } catch {}
+    } catch (error) {
+      console.error('Error deleting exam:', error);
+    }
   };
 
   // ——— CRUD (Marks)
@@ -362,21 +302,19 @@ const ExamSchedule: React.FC = () => {
     if (!selectedExam) return;
     const marksArr = students.map((s) => ({
       student: s._id,
-      mark: marks[s._id]?.mark ?? "",
-      detail: "",
+      mark: marks[s._id]?.mark ? Number(marks[s._id].mark) : null,
+      detail: marks[s._id]?.detail || "",
     }));
     try {
       const examId = String(selectedExam._id ?? selectedExam.id);
-      await fetch(`${EXAM_MARKS_URL}/${examId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ marks: marksArr }),
-      });
+      await bulkSaveMarks(examId, { marks: marksArr });
       setShowMarkModal(false);
       setMarks({});
       setSelectedExam(null);
       refreshAverageForExam(examId);
-    } catch {}
+    } catch (error) {
+      console.error('Error saving marks:', error);
+    }
   };
 
   const handleDeleteMark = async (
@@ -387,12 +325,12 @@ const ExamSchedule: React.FC = () => {
     const studentId = String(studentIdRaw);
     if (!window.confirm("هل أنت متأكد من حذف العلامة؟")) return;
     try {
-      await fetch(`${EXAM_MARKS_URL}/${examId}/${studentId}`, {
-        method: "DELETE",
-      });
+      await deleteStudentMark(examId, studentId);
       setMarks((prev) => ({ ...prev, [studentId]: { mark: "", detail: "" } }));
       refreshAverageForExam(examId);
-    } catch {}
+    } catch (error) {
+      console.error('Error deleting mark:', error);
+    }
   };
 
   // ——— فتح مودال العلامات: جلب الطلاب + علامات الامتحان الحالية
@@ -410,24 +348,9 @@ const ExamSchedule: React.FC = () => {
         const examId = String(selectedExam._id ?? selectedExam.id);
 
         // 1) الطلاب
-        console.log("Fetching students from:", STUDENTS_URL);
-        const sRes = await fetch(STUDENTS_URL, {
-          signal: ac.signal,
-          headers: getAuthHeaders(),
-        });
-        console.log("Students response status:", sRes.status);
-
-        if (!sRes.ok) {
-          console.error(
-            "Failed to fetch students:",
-            sRes.status,
-            sRes.statusText
-          );
-          if (!ac.signal.aborted) setStudents([]);
-          return;
-        }
-
-        const sData: StudentDoc[] = await sRes.json();
+        console.log("Fetching students from API...");
+        const studentResponse = await getAllStudents();
+        const sData = studentResponse.success ? studentResponse.data || [] : [];
         console.log("Students data received:", sData);
         console.log(
           "Number of students:",
@@ -437,14 +360,12 @@ const ExamSchedule: React.FC = () => {
         if (!ac.signal.aborted) setStudents(Array.isArray(sData) ? sData : []);
 
         // 2) العلامات الحالية
-        const mRes = await fetch(`${EXAM_MARKS_URL}/${examId}`, {
-          signal: ac.signal,
-          headers: getAuthHeaders(),
-        });
-        if (mRes.ok) {
-          const mData: MarkRow[] = await mRes.json();
+        try {
+          const mData: MarkRow[] = await getExamMarks(examId);
           if (!ac.signal.aborted && Array.isArray(mData))
             fillMarksFromApi(mData);
+        } catch {
+          // لا يوجد علامات بعد
         }
       } catch (error) {
         console.error("Error fetching students or marks:", error);
@@ -459,21 +380,10 @@ const ExamSchedule: React.FC = () => {
 
   // ——— عند التحميل: جلب الامتحانات + المتوسطات
   useEffect(() => {
-    setLoadingExams(true);
-    (async () => {
+    const loadExams = async () => {
+      setLoadingExams(true);
       try {
-        const res = await fetch(API_URL, {
-          headers: getAuthHeaders(),
-        });
-
-        if (!res.ok) {
-          console.error("Server responded with error:", res.status);
-          setExams([]);
-          return;
-        }
-
-        const data = await res.json();
-        const list = Array.isArray(data) ? data : [];
+        const list: Exam[] = await getAllExams();
         console.log("Fetched exams:", list.length); // لتتبع عدد الامتحانات
         setExams(list);
         await refreshAllAverages(list);
@@ -484,8 +394,10 @@ const ExamSchedule: React.FC = () => {
       } finally {
         setLoadingExams(false);
       }
-    })();
-  }, []);
+    };
+    
+    loadExams();
+  }, [refreshAllAverages]);
 
   // ——— الطالب: جلب علاماته الشخصية
   useEffect(() => {
@@ -513,23 +425,15 @@ const ExamSchedule: React.FC = () => {
 
       (async () => {
         try {
-          const res = await fetch(`${EXAM_MARKS_URL}/student/${sid}`, {
-            headers: getAuthHeaders(),
-          });
-
-          if (!res.ok) {
-            console.error("Error fetching student marks:", res.status);
-            return;
-          }
-
-          const data = await res.json();
+          const data = await getStudentAllMarks(sid);
           console.log("Student marks data received:", typeof data);
 
           const rows = Array.isArray(data) ? data : [];
           const map: Record<string, string> = {};
 
           rows.forEach((r) => {
-            const exId = String((r.exam as any)?._id ?? (r as any).exam ?? "");
+            const examData = r.exam as Exam;
+            const exId = String(examData?._id ?? examData?.id ?? "");
             if (exId) {
               map[exId] = String(r.mark ?? "");
               console.log(`Mark for exam ${exId}: ${map[exId]}`);
@@ -612,7 +516,7 @@ const ExamSchedule: React.FC = () => {
             <span className="text-sm text-emerald-800/70">فرز حسب:</span>
             <select
               value={sortKey}
-              onChange={(e) => setSortKey(e.target.value as any)}
+              onChange={(e) => setSortKey(e.target.value as "date" | "name")}
               className="border border-emerald-200 rounded-lg px-2 py-1 bg-white text-sm">
               <option value="date">التاريخ</option>
               <option value="name">الاسم</option>
@@ -1034,21 +938,14 @@ const ExamSchedule: React.FC = () => {
                               if (!examId) return;
                               const newMark = marks[sid]?.mark ?? "";
                               try {
-                                await fetch(
-                                  `${EXAM_MARKS_URL}/${examId}/${sid}`,
-                                  {
-                                    method: "PUT",
-                                    headers: {
-                                      "Content-Type": "application/json",
-                                    },
-                                    body: JSON.stringify({
-                                      mark: newMark,
-                                      detail: "",
-                                    }),
-                                  }
-                                );
+                                await updateStudentMark(examId, sid, {
+                                  mark: newMark ? Number(newMark) : null,
+                                  detail: "",
+                                });
                                 refreshAverageForExam(examId);
-                              } catch {}
+                              } catch (error) {
+                                console.error('Error updating student mark:', error);
+                              }
                             }}>
                             حفظ فردي
                           </PillButton>
