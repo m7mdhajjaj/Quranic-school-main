@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../styles/NotificationHeader.css";
+import { API_BASE_URL } from "../config";
 
 interface Notification {
   _id: string;
@@ -37,7 +38,7 @@ interface NotificationHeaderProps {
 const NotificationHeader: React.FC<NotificationHeaderProps> = ({
   userId,
   socket,
-  apiUrl = "http://localhost:5005",
+  apiUrl = API_BASE_URL,
 }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [stats, setStats] = useState<NotificationStats>({

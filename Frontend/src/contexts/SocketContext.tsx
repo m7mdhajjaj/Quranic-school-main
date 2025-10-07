@@ -1,6 +1,7 @@
 import React, { createContext, useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from '../hooks/useAuth';
+import { SOCKET_URL } from '../config';
 
 interface Student {
   _id?: string;
@@ -131,7 +132,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     }
 
     // Create socket connection with improved settings
-    const socketInstance = io('http://localhost:5005', {
+    const socketInstance = io(SOCKET_URL, {
       transports: ['polling', 'websocket'],
       timeout: 20000,
       reconnection: true,

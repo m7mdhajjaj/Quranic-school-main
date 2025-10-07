@@ -121,7 +121,7 @@ const News = () => {
         const formattedNews = response.map((item: INews) => {
           let imageUrl = item.image;
           if (item.image && !item.image.startsWith('http')) {
-            imageUrl = `http://localhost:5005/${item.image}`;
+            imageUrl = `${API_BASE_URL}/${item.image}`;
           }
           return {
             ...item,

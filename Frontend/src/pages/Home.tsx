@@ -5,6 +5,7 @@ import type { ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { getHeroImage, uploadHeroImage } from '../Api/settingsApi';
+import { API_BASE_URL } from '../config';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -37,7 +38,7 @@ const Home = () => {
         if (data.success && data.heroImage) {
           // If it's a relative path starting with /uploads/, prepend the base URL
           if (data.heroImage.startsWith('/uploads/')) {
-            setHeroImage(`http://localhost:5005${data.heroImage}`);
+            setHeroImage(`${API_BASE_URL}${data.heroImage}`);
           } else {
             setHeroImage(data.heroImage);
           }
@@ -71,7 +72,7 @@ const Home = () => {
 
       if (data.success && data.heroImage) {
         // Update the image with the server URL
-        const imageUrl = `http://localhost:5005${data.heroImage}`;
+        const imageUrl = `${API_BASE_URL}${data.heroImage}`;
         setHeroImage(imageUrl);
         console.log('Hero image updated successfully:', imageUrl);
       } else {
