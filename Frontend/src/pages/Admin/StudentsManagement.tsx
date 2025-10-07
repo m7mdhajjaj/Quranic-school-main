@@ -20,7 +20,17 @@ import {
 } from 'react-icons/fa';
 import { useAuth } from '../../hooks/useAuth';
 import { useSocket } from '../../hooks/useSocket';
-import api from '../../Api/api';
+import {
+  getAllStudents,
+  deleteStudent,
+  getStudentStats,
+  getStudentsByGroup,
+  searchStudents,
+  toggleStudentStatus,
+  bulkDeleteStudents,
+  type Student as ApiStudent,
+} from '../../Api/studentApi';
+import { getAllGroups } from '../../Api/groupApi';
 import AddStudentFormWithYup from '../../components/Forms/AddStudentForm';
 import ResponsivePagination from '../../components/Pagination/ResponsivePagination';
 import Swal from 'sweetalert2';
@@ -30,25 +40,8 @@ import {
   showWarningMessage,
 } from '../../utils/sweetalertUtils';
 
-interface Student {
-  _id?: string;
-  id?: number;
-  studentId: number;
-  idNumber: string;
-  firstName: string;
-  fatherName: string;
-  grandFatherName: string;
-  motherName: string;
-  lastName: string;
-  birthDate: string;
-  age: number;
-  gender: 'ذكر' | 'أنثى';
-  residence: string;
-  teacher: string;
-  group: string;
-  phoneNumber?: string;
-  email?: string;
-}
+// استخدام Student من API
+type Student = ApiStudent;
 
 type SortField = 'studentId' | 'firstName' | 'age' | 'group';
 type SortOrder = 'asc' | 'desc';
@@ -56,7 +49,7 @@ type ViewMode = 'table' | 'grid';
 
 const StudentsManagement: React.FC = () => {
   const { user: currentUser } = useAuth();
-  const { onStudentUpdate, offStudentUpdate } = useSocket();
+  const { onStudentUpdate, offStudentUpdate, isConnected } = useSocket();
   const userRole = currentUser?.role || '';
   const hasPermission = userRole === 'teacher' || userRole === 'admin';
 
@@ -97,17 +90,45 @@ const StudentsManagement: React.FC = () => {
     []
   );
 
+  // Load groups using the new API system
   useEffect(() => {
-    import('../../Api/groupApi').then(({ getAllGroups }) => {
-      getAllGroups().then((result) => {
+    const loadGroups = async () => {
+      try {
+        const result = await getAllGroups();
         if (result.success && result.data) {
-          setAllGroups(
-            result.data.map((g: any) => ({ _id: g._id, name: g.name }))
-          );
+          setAllGroups(result.data.map((g) => ({ _id: g._id, name: g.name })));
         }
-      });
-    });
+      } catch (error) {
+        console.error('❌ خطأ في تحميل المجموعات:', error);
+      }
+    };
+    loadGroups();
   }, []);
+
+  // Enhanced statistics with API integration
+  const [apiStats, setApiStats] = useState<{
+    totalStudents: number;
+    activeStudents: number;
+    maleStudents: number;
+    femaleStudents: number;
+    byGroup: Array<{ group: string; count: number }>;
+  } | null>(null);
+
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const result = await getStudentStats();
+        if (result.success && result.data) {
+          setApiStats(result.data);
+        }
+      } catch (error) {
+        console.error('❌ خطأ في تحميل الإحصائيات:', error);
+      }
+    };
+    if (students.length > 0) {
+      loadStats();
+    }
+  }, [students.length]);
 
   // Statistics
   const stats = useMemo(() => {
@@ -120,15 +141,31 @@ const StudentsManagement: React.FC = () => {
           ).toFixed(1)
         : 0;
 
+    // Use API stats if available, otherwise calculate from local data
+    if (apiStats) {
+      return {
+        total: apiStats.totalStudents || students.length,
+        male: apiStats.maleStudents || maleCount,
+        female: apiStats.femaleStudents || femaleCount,
+        active:
+          apiStats.activeStudents ||
+          students.filter((s) => s.isActive !== false).length,
+        inactive:
+          apiStats.totalStudents - apiStats.activeStudents ||
+          students.filter((s) => s.isActive === false).length,
+        avgAge: avgAge, // Calculate from local data as API doesn't provide this
+      };
+    }
+
     return {
       total: students.length,
       male: maleCount,
       female: femaleCount,
-      active: students.length,
-      inactive: 0,
+      active: students.filter((s) => s.isActive !== false).length,
+      inactive: students.filter((s) => s.isActive === false).length,
       avgAge,
     };
-  }, [students]);
+  }, [students, apiStats]);
 
   // Count active filters
   const activeFiltersCount = useMemo(() => {
@@ -140,7 +177,7 @@ const StudentsManagement: React.FC = () => {
     return count;
   }, [selectedGender, selectedGroup, ageRange, searchTerm]);
 
-  // Fetch students
+  // Fetch students using the new API system
   const fetchStudents = useCallback(async (retryAttempt = 0) => {
     if (isLoading) return;
 
@@ -150,19 +187,13 @@ const StudentsManagement: React.FC = () => {
 
     try {
       const startTime = performance.now();
-      const studentsResponse = await api.get('/students', {
-        timeout: 8000,
-        headers: {
-          Accept: 'application/json',
-          'Cache-Control': 'no-cache',
-        },
-      });
+      const result = await getAllStudents();
 
       const endTime = performance.now();
       const duration = (endTime - startTime).toFixed(2);
 
-      if (studentsResponse?.data && Array.isArray(studentsResponse.data)) {
-        const cleanedStudents = studentsResponse.data.map((student) => ({
+      if (result.success && result.data) {
+        const cleanedStudents = result.data.map((student) => ({
           ...student,
           firstName: student.firstName || '',
           lastName: student.lastName || '',
@@ -181,7 +212,7 @@ const StudentsManagement: React.FC = () => {
         setError(null);
         setRetryCount(0);
       } else {
-        throw new Error('البيانات المستلمة غير صحيحة');
+        throw new Error(result.message || 'البيانات المستلمة غير صحيحة');
       }
     } catch (error: unknown) {
       console.error('❌ خطأ في تحميل الطلاب:', error);
@@ -200,6 +231,7 @@ const StudentsManagement: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -207,20 +239,24 @@ const StudentsManagement: React.FC = () => {
     fetchStudents();
   }, [hasPermission, fetchStudents]);
 
-  // Socket handlers
+  // Socket handlers for real-time updates
   const [lastUpdateTime, setLastUpdateTime] = useState<number>(0);
+  // Track last refresh time for display
 
   useEffect(() => {
     if (!hasPermission) return;
 
     const handleStudentUpdate = (event: {
       type: 'created' | 'updated' | 'deleted';
-      student: Student;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      student: any;
       studentId?: string;
     }) => {
       const now = Date.now();
-      if (now - lastUpdateTime < 300) return;
+      if (now - lastUpdateTime < 300) return; // Debounce updates
       setLastUpdateTime(now);
+
+      console.log('📡 Socket event received:', event.type, event);
 
       switch (event.type) {
         case 'created':
@@ -229,6 +265,10 @@ const StudentsManagement: React.FC = () => {
               (s) => s._id === event.student._id
             );
             if (existingStudent) return prevStudents;
+            showSuccessMessage(
+              '🎉 طالب جديد - تحديث مباشر',
+              `تم إضافة الطالب ${event.student.firstName} ${event.student.lastName}`
+            );
             return [...prevStudents, event.student];
           });
           break;
@@ -236,14 +276,22 @@ const StudentsManagement: React.FC = () => {
         case 'updated':
           setStudents((prevStudents) =>
             prevStudents.map((s) =>
-              s._id === event.student._id ? event.student : s
+              s._id === event.student._id ? { ...s, ...event.student } : s
             )
+          );
+          showSuccessMessage(
+            '✏️ تم التحديث - تحديث مباشر',
+            `تم تحديث بيانات الطالب ${event.student.firstName} ${event.student.lastName}`
           );
           break;
 
         case 'deleted':
           setStudents((prevStudents) =>
             prevStudents.filter((s) => s._id !== event.studentId)
+          );
+          showWarningMessage(
+            '🗑️ تم الحذف - تحديث مباشر',
+            'تم حذف طالب من النظام'
           );
           break;
       }
@@ -252,6 +300,66 @@ const StudentsManagement: React.FC = () => {
     onStudentUpdate(handleStudentUpdate);
     return () => offStudentUpdate(handleStudentUpdate);
   }, [hasPermission, onStudentUpdate, offStudentUpdate, lastUpdateTime]);
+
+  // Auto refresh every 30 seconds when not connected to socket
+  useEffect(() => {
+    if (!hasPermission || isConnected) return;
+
+    const autoRefreshInterval = setInterval(() => {
+      console.log('🔄 Auto refreshing students data...');
+      fetchStudents();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(autoRefreshInterval);
+  }, [hasPermission, isConnected, fetchStudents]);
+
+  // Handle group filtering using API
+  const handleGroupFilter = useCallback(
+    async (groupId: string) => {
+      if (groupId === 'all') {
+        await fetchStudents();
+        return;
+      }
+
+      try {
+        const result = await getStudentsByGroup(groupId);
+        if (result.success && result.data) {
+          setStudents(result.data);
+        }
+      } catch (error) {
+        console.error('❌ خطأ في فلترة المجموعة:', error);
+      }
+    },
+    [fetchStudents]
+  );
+
+  // Handle student status toggle
+  const handleToggleStatus = useCallback(
+    async (studentId: string, currentStatus: boolean) => {
+      try {
+        const result = await toggleStudentStatus(studentId);
+        if (result.success) {
+          setStudents((prev) =>
+            prev.map((student) =>
+              student._id === studentId
+                ? { ...student, isActive: !currentStatus }
+                : student
+            )
+          );
+          showSuccessMessage(
+            'تم التحديث',
+            `تم ${!currentStatus ? 'تفعيل' : 'إلغاء تفعيل'} الطالب بنجاح`
+          );
+        } else {
+          throw new Error(result.message || 'فشل في تحديث حالة الطالب');
+        }
+      } catch (error) {
+        console.error('❌ خطأ في تحديث حالة الطالب:', error);
+        showWarningMessage('خطأ', 'حدث خطأ في تحديث حالة الطالب');
+      }
+    },
+    []
+  );
 
   // Handle sorting
   const handleSort = (field: SortField) => {
@@ -262,6 +370,39 @@ const StudentsManagement: React.FC = () => {
       setSortOrder('asc');
     }
   };
+
+  // Enhanced search function using API
+  const handleSearch = useCallback(
+    async (term: string) => {
+      if (!term.trim()) {
+        await fetchStudents();
+        return;
+      }
+
+      try {
+        const result = await searchStudents(term);
+        if (result.success && result.data) {
+          setStudents(result.data);
+        }
+      } catch (error) {
+        console.error('❌ خطأ في البحث:', error);
+      }
+    },
+    [fetchStudents]
+  );
+
+  // Handle search input change with debouncing
+  useEffect(() => {
+    const delayedSearch = setTimeout(() => {
+      if (searchTerm.length > 2) {
+        handleSearch(searchTerm);
+      } else if (searchTerm === '') {
+        fetchStudents();
+      }
+    }, 500);
+
+    return () => clearTimeout(delayedSearch);
+  }, [searchTerm, handleSearch, fetchStudents]);
 
   // Filter and sort students
   const filteredAndSortedStudents = useMemo(() => {
@@ -291,7 +432,7 @@ const StudentsManagement: React.FC = () => {
       const matchesGender =
         selectedGender === 'all' || student.gender === selectedGender;
       const matchesAge =
-        student.age >= ageRange[0] && student.age <= ageRange[1];
+        (student.age || 0) >= ageRange[0] && (student.age || 0) <= ageRange[1];
 
       return matchesSearch && matchesGender && matchesAge;
     });
@@ -304,7 +445,7 @@ const StudentsManagement: React.FC = () => {
       } else if (sortField === 'firstName') {
         compareResult = a.firstName.localeCompare(b.firstName, 'ar');
       } else if (sortField === 'age') {
-        compareResult = a.age - b.age;
+        compareResult = (a.age || 0) - (b.age || 0);
       } else if (sortField === 'group') {
         compareResult = a.group.localeCompare(b.group, 'ar');
       }
@@ -348,9 +489,7 @@ const StudentsManagement: React.FC = () => {
 
   // Handle delete
   const handleDelete = async (studentId: string | number) => {
-    const student = students.find(
-      (s) => s._id === studentId || s.id === studentId
-    );
+    const student = students.find((s) => s._id === studentId);
     const studentName = student
       ? `${student.firstName} ${student.lastName}`
       : 'الطالب';
@@ -391,14 +530,19 @@ const StudentsManagement: React.FC = () => {
     if (result.isConfirmed) {
       try {
         if (typeof studentId === 'string' && studentId.length > 10) {
-          await api.delete(`/students/${studentId}`);
-          await Swal.fire({
-            title: 'تم الحذف!',
-            text: 'تم حذف الطالب بنجاح',
-            icon: 'success',
-            confirmButtonText: 'موافق',
-            customClass: { popup: 'rtl-popup', title: 'rtl-title' },
-          });
+          const deleteResult = await deleteStudent(studentId);
+          if (deleteResult.success) {
+            setStudents((prev) => prev.filter((s) => s._id !== studentId));
+            await Swal.fire({
+              title: 'تم الحذف!',
+              text: 'تم حذف الطالب بنجاح',
+              icon: 'success',
+              confirmButtonText: 'موافق',
+              customClass: { popup: 'rtl-popup', title: 'rtl-title' },
+            });
+          } else {
+            throw new Error(deleteResult.message || 'فشل في حذف الطالب');
+          }
         }
       } catch (deleteError) {
         console.error('❌ فشل في حذف الطالب:', deleteError);
@@ -421,6 +565,7 @@ const StudentsManagement: React.FC = () => {
   };
 
   // Handle add/edit success
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleAddSuccess = async (studentData?: any) => {
     try {
       // إغلاق النموذج أولاً
@@ -520,24 +665,25 @@ const StudentsManagement: React.FC = () => {
 
     if (result.isConfirmed) {
       try {
-        await Promise.all(
-          Array.from(selectedStudents).map((id) =>
-            api.delete(`/students/${id}`)
-          )
-        );
+        const studentIds = Array.from(selectedStudents);
+        const bulkDeleteResult = await bulkDeleteStudents(studentIds);
 
-        setStudents((prev) =>
-          prev.filter((s) => !selectedStudents.has(s._id || ''))
-        );
-        setSelectedStudents(new Set());
+        if (bulkDeleteResult.success) {
+          setStudents((prev) =>
+            prev.filter((s) => !selectedStudents.has(s._id || ''))
+          );
+          setSelectedStudents(new Set());
 
-        await Swal.fire({
-          title: 'تم حذف الطلاب!',
-          text: `تم حذف ${selectedStudents.size} طالب بنجاح`,
-          icon: 'success',
-          timer: 3000,
-          showConfirmButton: false,
-        });
+          await Swal.fire({
+            title: 'تم حذف الطلاب!',
+            text: `تم حذف ${selectedStudents.size} طالب بنجاح`,
+            icon: 'success',
+            timer: 3000,
+            showConfirmButton: false,
+          });
+        } else {
+          throw new Error(bulkDeleteResult.message || 'فشل في حذف الطلاب');
+        }
       } catch (bulkDeleteError) {
         console.error('❌ فشل في حذف الطلاب:', bulkDeleteError);
         await Swal.fire({
@@ -579,13 +725,40 @@ const StudentsManagement: React.FC = () => {
                 <h1 className="text-3xl font-bold text-gray-900">
                   إدارة الطلاب
                 </h1>
-                <p className="text-gray-600 text-sm mt-1">
+                <p className="text-gray-600 text-sm mt-1 flex items-center gap-2">
                   نظام متكامل لإدارة بيانات الطلاب
+                  {/* Connection Status */}
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                      isConnected
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}
+                  >
+                    <div
+                      className={`w-2 h-2 rounded-full ${
+                        isConnected ? 'bg-green-500' : 'bg-yellow-500'
+                      }`}
+                    ></div>
+                    {isConnected ? 'متصل مباشر' : 'تحديث تلقائي'}
+                  </span>
                 </p>
               </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => fetchStudents()}
+                disabled={isLoading}
+                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                title="تحديث البيانات"
+              >
+                <FaSync
+                  className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`}
+                />
+                <span className="hidden sm:inline">تحديث</span>
+              </button>
+
               <button
                 onClick={handleExport}
                 disabled={filteredAndSortedStudents.length === 0}
@@ -625,6 +798,8 @@ const StudentsManagement: React.FC = () => {
                   <button
                     onClick={() => setSearchTerm('')}
                     className="absolute left-12 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    title="مسح البحث"
+                    aria-label="مسح البحث"
                   >
                     <FaTimes className="w-4 h-4" />
                   </button>
@@ -730,7 +905,12 @@ const StudentsManagement: React.FC = () => {
                     </label>
                     <select
                       value={selectedGroup}
-                      onChange={(e) => setSelectedGroup(e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setSelectedGroup(value);
+                        handleGroupFilter(value);
+                      }}
+                      aria-label="فلترة حسب الحلقة"
                       className="w-full px-4 py-2.5 bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
                     >
                       <option value="all">جميع الحلقات</option>
@@ -757,6 +937,7 @@ const StudentsManagement: React.FC = () => {
                         onChange={(e) =>
                           setAgeRange([ageRange[0], parseInt(e.target.value)])
                         }
+                        aria-label="الحد الأقصى للعمر"
                         className="w-full h-2 bg-gradient-to-r from-green-200 to-green-400 rounded-lg appearance-none cursor-pointer"
                       />
                       <div className="flex justify-between text-xs text-gray-500">
@@ -779,6 +960,7 @@ const StudentsManagement: React.FC = () => {
                         setStudentsPerPage(parseInt(e.target.value));
                         setCurrentPage(1);
                       }}
+                      aria-label="عدد الطلاب في الصفحة"
                       className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                     >
                       <option value="10">10 طلاب</option>
@@ -891,6 +1073,8 @@ const StudentsManagement: React.FC = () => {
                     <button
                       onClick={() => setSelectedGender('all')}
                       className="hover:bg-purple-200 rounded-full p-0.5"
+                      title="إزالة فلتر الجنس"
+                      aria-label="إزالة فلتر الجنس"
                     >
                       <FaTimes className="w-3 h-3" />
                     </button>
@@ -902,6 +1086,8 @@ const StudentsManagement: React.FC = () => {
                     <button
                       onClick={() => setSelectedGroup('all')}
                       className="hover:bg-violet-200 rounded-full p-0.5"
+                      title="إزالة فلتر الحلقة"
+                      aria-label="إزالة فلتر الحلقة"
                     >
                       <FaTimes className="w-3 h-3" />
                     </button>
@@ -913,6 +1099,8 @@ const StudentsManagement: React.FC = () => {
                     <button
                       onClick={() => setAgeRange([0, 100])}
                       className="hover:bg-amber-200 rounded-full p-0.5"
+                      title="إزالة فلتر العمر"
+                      aria-label="إزالة فلتر العمر"
                     >
                       <FaTimes className="w-3 h-3" />
                     </button>
@@ -924,6 +1112,8 @@ const StudentsManagement: React.FC = () => {
                     <button
                       onClick={() => setSearchTerm('')}
                       className="hover:bg-gray-200 rounded-full p-0.5"
+                      title="مسح البحث"
+                      aria-label="مسح البحث"
                     >
                       <FaTimes className="w-3 h-3" />
                     </button>
@@ -990,7 +1180,7 @@ const StudentsManagement: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-6">
             {currentStudents.map((student) => (
               <div
-                key={student._id || student.id}
+                key={student._id}
                 className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 transform hover:-translate-y-1"
               >
                 {/* Card Header with Gradient */}
@@ -1130,7 +1320,7 @@ const StudentsManagement: React.FC = () => {
                       <span className="font-medium">تعديل</span>
                     </button>
                     <button
-                      onClick={() => handleDelete(student._id || student.id!)}
+                      onClick={() => handleDelete(student._id!)}
                       className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-all shadow-md hover:shadow-lg transform hover:scale-105"
                     >
                       <FaTrash className="w-4 h-4" />
@@ -1185,6 +1375,7 @@ const StudentsManagement: React.FC = () => {
                             setSelectedStudents(new Set());
                           }
                         }}
+                        aria-label="اختيار جميع الطلاب"
                         className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                       />
                     </th>
@@ -1261,7 +1452,7 @@ const StudentsManagement: React.FC = () => {
                 <tbody className="divide-y divide-gray-200">
                   {currentStudents.map((student) => (
                     <tr
-                      key={student._id || student.id}
+                      key={student._id}
                       className="hover:bg-blue-50 transition-colors"
                     >
                       <td className="px-4 py-4 text-center">
@@ -1278,6 +1469,7 @@ const StudentsManagement: React.FC = () => {
                             setSelectedStudents(newSet);
                           }}
                           className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                          aria-label={`اختيار الطالب ${student.firstName} ${student.lastName}`}
                         />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -1328,15 +1520,33 @@ const StudentsManagement: React.FC = () => {
                             onClick={() => handleEdit(student)}
                             className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
                             title="تعديل"
+                            aria-label="تعديل الطالب"
                           >
                             <FaEdit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() =>
-                              handleDelete(student._id || student.id!)
+                              handleToggleStatus(student._id!, student.isActive)
                             }
+                            className={`p-2 hover:bg-gray-100 rounded-lg transition-colors ${
+                              student.isActive
+                                ? 'text-green-600'
+                                : 'text-gray-400'
+                            }`}
+                            title={student.isActive ? 'إلغاء تفعيل' : 'تفعيل'}
+                            aria-label={
+                              student.isActive
+                                ? 'إلغاء تفعيل الطالب'
+                                : 'تفعيل الطالب'
+                            }
+                          >
+                            <FaSync className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(student._id!)}
                             className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
                             title="حذف"
+                            aria-label="حذف الطالب"
                           >
                             <FaTrash className="w-4 h-4" />
                           </button>
@@ -1442,9 +1652,7 @@ const StudentsManagement: React.FC = () => {
             setSelectedStudent(null);
           }}
           onSuccess={handleAddSuccess}
-          student={
-            isEditMode && selectedStudent ? (selectedStudent as any) : undefined
-          }
+          student={isEditMode && selectedStudent ? selectedStudent : undefined}
         />
       )}
 

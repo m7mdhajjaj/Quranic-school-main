@@ -22,9 +22,17 @@ import { useAuth } from '../../hooks/useAuth';
 import { useSocket } from '../../hooks/useSocket';
 import { useSounds } from '../../hooks/useSounds';
 
-import api from '../../Api/api';
-import { getAllTeachers } from '../../Api/teacherApi';
-import type { Teacher } from '../../Api/teacherApi';
+// import api from '../../Api/api'; // Using new teacherApi instead
+import { 
+  getAllTeachers,
+  deleteTeacher,
+  // createTeacher,  // TODO: Will be used in form submission
+  // updateTeacher,  // TODO: Will be used in edit functionality  
+  // getTeacherStats,  // TODO: Can be used for enhanced stats
+  // getTeacherById,  // TODO: Will be used for details view
+  // uploadTeacherAvatar,  // TODO: Will be used for avatar upload
+  type Teacher 
+} from '../../Api/teacherApi';
 import type { TeacherFormData } from '../../Validation/teacherValidation';
 import EnhancedTeacherForm from '../../components/Forms/AddTeacherForm';
 import ResponsivePagination from '../../components/Pagination/ResponsivePagination';
@@ -52,6 +60,8 @@ const getGroupDisplayName = (
 const TeachersManagement: React.FC = () => {
   const { user: currentUser } = useAuth();
   const { socket } = useSocket();
+  // const { onTeacherUpdate, offTeacherUpdate, isConnected } = useSocket(); // TODO: Add later
+  const isConnected = false; // Fallback mode for now
   const { playAdd, playUpdate, playDelete, playError } = useSounds();
 
   const userRole = currentUser?.role || '';
@@ -94,6 +104,16 @@ const TeachersManagement: React.FC = () => {
   
   // State للتحكم في عرض منيو الحلقات
   const [openGroupsMenu, setOpenGroupsMenu] = useState<string | null>(null);
+  
+  // Statistics are computed from live data via useMemo below
+
+  // Socket.IO للتحديثات الفورية - معطل مؤقتاً للتطوير
+  // useEffect(() => {
+  //   if (isConnected && socket) {
+  //     console.log("🔌 Socket متصل - تفعيل مراقبة تحديثات المعلمين");
+  //     // TODO: Add real-time updates later
+  //   }
+  // }, [isConnected, socket]);
 
   // إغلاق المنيو عند النقر خارجه
   useEffect(() => {
@@ -190,7 +210,17 @@ const TeachersManagement: React.FC = () => {
     if (!hasPermission) return;
 
     fetchTeachers();
-  }, [hasPermission, fetchTeachers]);
+    
+    // Auto refresh every 30 seconds when socket not connected
+    const refreshInterval = setInterval(() => {
+      if (!isConnected) {
+        console.log("🔄 تحديث تلقائي للمعلمين (وضع احتياطي)");
+        fetchTeachers();
+      }
+    }, 30000);
+
+    return () => clearInterval(refreshInterval);
+  }, [hasPermission, fetchTeachers, isConnected]);
 
   // Socket event handlers for real-time updates
   useEffect(() => {
@@ -424,20 +454,24 @@ const TeachersManagement: React.FC = () => {
 
     if (result.isConfirmed) {
       try {
-        await api.delete(`/teachers/${teacherId}`);
+        const deleteResult = await deleteTeacher(teacherId);
+        
+        if (deleteResult.success) {
+          setTeachers((prevTeachers) =>
+            prevTeachers.filter((t) => t._id !== teacherId)
+          );
 
-        setTeachers((prevTeachers) =>
-          prevTeachers.filter((t) => t._id !== teacherId)
-        );
+          // تشغيل صوت الحذف الناجح
+          playDelete();
 
-        // تشغيل صوت الحذف الناجح
-        playDelete();
-
-        // رسالة نجاح الحذف
-        await showSuccessMessage(
-          'تم الحذف!',
-          `تم حذف المعلم ${teacherName} من النظام بنجاح`
-        );
+          // رسالة نجاح الحذف
+          await showSuccessMessage(
+            'تم الحذف!',
+            `تم حذف المعلم ${teacherName} من النظام بنجاح`
+          );
+        } else {
+          throw new Error(deleteResult.message || 'فشل في حذف المعلم');
+        }
       } catch (deleteError: unknown) {
         console.error('❌ فشل في حذف المعلم:', deleteError);
 
@@ -666,7 +700,7 @@ const TeachersManagement: React.FC = () => {
       try {
         await Promise.all(
           Array.from(selectedTeachers).map((id) =>
-            api.delete(`/teachers/${id}`)
+            deleteTeacher(id)
           )
         );
 
@@ -725,9 +759,17 @@ const TeachersManagement: React.FC = () => {
                       إدارة المعلمين
                     </h1>
                   </div>
-                  <p className="text-gray-600 text-sm mt-1">
-                    نظام متكامل لإدارة بيانات المعلمين
-                  </p>
+                  <div className="flex items-center gap-2 text-sm mt-1">
+                    <p className="text-gray-600">
+                      نظام متكامل لإدارة بيانات المعلمين
+                    </p>
+                    <div className="flex items-center gap-1.5">
+                      <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-yellow-500'} animate-pulse`}></div>
+                      <span className={`text-xs ${isConnected ? 'text-green-600' : 'text-yellow-600'}`}>
+                        {isConnected ? 'متصل مباشرة' : 'تحديث تلقائي'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

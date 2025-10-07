@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect, useRef, type ReactNode } fro
 import axios from 'axios';
 import { io, Socket } from 'socket.io-client';
 import { API_BASE_URL, API_URL } from '../config';
+import { verifyToken } from '../Api/authApi';
 
 // تعريف أنواع البيانات
 export interface User {
@@ -114,12 +115,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setToken(savedToken);
           axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
           
-          // تحقق من صحة التوكن في الخلفية
+          // تحقق من صحة التوكن باستخدام authApi
           try {
-            const response = await axios.get(`${API_BASE_URL}/api/auth/verify`, {
-              headers: { 'Authorization': `Bearer ${savedToken}` },
-              timeout: 3000
-            });
+            const response = await verifyToken();
             
             if (response.data.success) {
               // Connect socket and emit login with delay

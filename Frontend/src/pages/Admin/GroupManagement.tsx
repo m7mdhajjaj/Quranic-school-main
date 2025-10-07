@@ -18,9 +18,17 @@ import {
   FaSync,
 } from "react-icons/fa";
 import { useAuth } from "../../hooks/useAuth";
+// import { useSocket } from "../../hooks/useSocket"; // TODO: Add socket support later
 import AddGroupForm from "../../components/Forms/AddGroupForm";
 import ResponsivePagination from "../../components/Pagination/ResponsivePagination";
-import { getAllGroups, deleteGroup, type Group } from "../../Api/groupApi";
+import { 
+  getAllGroups, 
+  deleteGroup, 
+  // createGroup, // TODO: Will be used in form submission
+  // updateGroup, // TODO: Will be used in edit functionality
+  getGroupsByTeacher,
+  type Group 
+} from "../../Api/groupApi";
 import { type GroupFormData } from "../../Validation/groupValidation";
 import "../../styles/sweetalert.css";
 import {
@@ -34,6 +42,9 @@ type SortOrder = "asc" | "desc";
 
 const GroupManagement: React.FC = () => {
   const { user: currentUser } = useAuth();
+  // Socket temporarily disabled for groups - can be added later
+  // const { onGroupUpdate, offGroupUpdate, isConnected } = useSocket();
+  const isConnected = false; // Fallback mode - will show auto refresh indicator
   const userRole = currentUser?.role || "";
   const hasPermission = userRole === "teacher" || userRole === "admin";
 
@@ -156,7 +167,17 @@ const GroupManagement: React.FC = () => {
     if (!hasPermission) return;
 
     fetchGroups();
-  }, [hasPermission, fetchGroups]);
+    
+    // Auto refresh every 30 seconds as fallback when socket not connected
+    const refreshInterval = setInterval(() => {
+      if (!isConnected) {
+        console.log("🔄 تحديث تلقائي للحلقات (وضع احتياطي)");
+        fetchGroups();
+      }
+    }, 30000);
+
+    return () => clearInterval(refreshInterval);
+  }, [hasPermission, fetchGroups, isConnected]);
 
   // Handle sorting
   const handleSort = (field: SortField) => {
@@ -366,6 +387,36 @@ const GroupManagement: React.FC = () => {
     setCurrentPage(1);
   };
 
+  // Handle teacher filter using API
+  const handleTeacherFilter = useCallback(async (teacherName: string) => {
+    if (teacherName === 'all') {
+      await fetchGroups();
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      const result = await getGroupsByTeacher(teacherName);
+      if (result.success && result.data) {
+        setGroups(result.data);
+      } else {
+        throw new Error(result.message || 'فشل في جلب حلقات المعلم');
+      }
+    } catch (error) {
+      console.error('❌ خطأ في فلترة المعلم:', error);
+      showErrorMessage('خطأ', 'حدث خطأ في فلترة حلقات المعلم');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fetchGroups]);
+
+  // Handle teacher selection change
+  useEffect(() => {
+    if (selectedTeacher !== 'all') {
+      handleTeacherFilter(selectedTeacher);
+    }
+  }, [selectedTeacher, handleTeacherFilter]);
+
   // Bulk delete
   const handleBulkDelete = async () => {
     if (selectedGroups.size === 0) return;
@@ -454,9 +505,17 @@ const GroupManagement: React.FC = () => {
                     <h1 className="text-3xl font-bold text-gray-900">
                       إدارة الحلقات
                     </h1>
-                    <p className="text-gray-600 text-sm mt-1">
-                      إدارة وتنظيم حلقات تحفيظ القرآن الكريم
-                    </p>
+                    <div className="flex items-center gap-2 text-sm mt-1">
+                      <p className="text-gray-600">
+                        إدارة وتنظيم حلقات تحفيظ القرآن الكريم
+                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-yellow-500'} animate-pulse`}></div>
+                        <span className={`text-xs ${isConnected ? 'text-green-600' : 'text-yellow-600'}`}>
+                          {isConnected ? 'متصل مباشرة' : 'تحديث تلقائي'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -606,6 +665,7 @@ const GroupManagement: React.FC = () => {
                           setSelectedTeacher(e.target.value);
                           setCurrentPage(1);
                         }}
+                        aria-label="اختيار المعلم"
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="all">جميع المعلمين</option>
                         {teachers.map((teacher) => (

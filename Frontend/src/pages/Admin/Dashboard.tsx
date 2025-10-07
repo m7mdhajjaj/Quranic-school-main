@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoadingSkeleton from '../../components/Loading/LoadingSkeleton';
 import { useDashboardStats } from '../../hooks/useDashboardStats';
+import { useSocket } from '../../hooks/useSocket';
 import '../../styles/dashboard.css';
 
 interface StatCardProps {
@@ -52,6 +53,13 @@ const AdminDashboard = () => {
     fetchStats,
     groupsDistribution,
   } = useDashboardStats();
+  
+  // احصل على حالة الاتصال مباشرة من useSocket للمؤشر
+  const { isConnected } = useSocket();
+  
+  // عداد التحديثات التلقائية وآخر تحديث تلقائي
+  const [autoRefreshCount, setAutoRefreshCount] = useState(0);
+  const [lastAutoRefresh, setLastAutoRefresh] = useState<Date | null>(null);
 
   // State لإدارة عرض تفاصيل الحلقة المحددة
   const [selectedGroup, setSelectedGroup] = useState<{
@@ -71,6 +79,21 @@ const AdminDashboard = () => {
     color: string;
     index: number;
   } | null>(null);
+
+  // نظام التحديث التلقائي كنظام احتياطي
+  useEffect(() => {
+    // تحديث تلقائي كل 30 ثانية عندما يكون Socket غير متصل
+    const refreshInterval = setInterval(() => {
+      if (!isConnected && !refreshing) {
+        setAutoRefreshCount(count => count + 1);
+        setLastAutoRefresh(new Date());
+        console.log("🔄 تحديث تلقائي لللوحة (وضع احتياطي)");
+        fetchStats(true);
+      }
+    }, 30000);
+
+    return () => clearInterval(refreshInterval);
+  }, [isConnected, refreshing, fetchStats]);
 
   // تطبيق الألوان والعروض ديناميكياً
   useEffect(() => {
@@ -204,7 +227,15 @@ const AdminDashboard = () => {
             <h1 className="text-4xl font-bold text-gray-900 mb-2">
               لوحة الإحصائيات
             </h1>
-            <p className="text-gray-600">نظرة شاملة على أداء المنصة</p>
+            <div className="flex items-center gap-3">
+              <p className="text-gray-600">نظرة شاملة على أداء المنصة</p>
+              <div className="flex items-center gap-1.5">
+                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></div>
+                <span className={`text-sm ${isConnected ? 'text-green-600' : 'text-red-600'}`}>
+                  {isConnected ? 'متصل' : 'غير متصل'}
+                </span>
+              </div>
+            </div>
           </div>
           <div className="flex items-center justify-center py-32">
             <div className="text-center">
@@ -627,9 +658,21 @@ const AdminDashboard = () => {
             <h1 className="text-5xl font-bold bg-gradient-to-r from-gray-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent mb-3">
               لوحة الإحصائيات
             </h1>
-            <p className="text-xl text-gray-600 font-medium">
-              نظرة شاملة ومتطورة على أداء المنصة
-            </p>
+            <div className="flex items-center gap-3 text-xl">
+              <p className="text-gray-600 font-medium">
+                نظرة شاملة ومتطورة على أداء المنصة
+              </p>
+              <div className="flex items-center gap-1.5" title={
+                isConnected 
+                  ? 'البيانات تتحدث فورياً عبر Socket.IO' 
+                  : `تحديث تلقائي كل 30 ثانية${lastAutoRefresh ? ` | آخر تحديث: ${lastAutoRefresh.toLocaleTimeString('ar-SA')}` : ''}`
+              }>
+                <div className={`w-2.5 h-2.5 rounded-full ${isConnected ? 'bg-green-500' : 'bg-yellow-500'} animate-pulse`}></div>
+                <span className={`text-sm font-medium cursor-help ${isConnected ? 'text-green-600' : 'text-yellow-600'}`}>
+                  {isConnected ? 'متصل مباشرة' : `تحديث تلقائي (${autoRefreshCount})`}
+                </span>
+              </div>
+            </div>
           </div>
 
           <div className="mt-6 lg:mt-0">

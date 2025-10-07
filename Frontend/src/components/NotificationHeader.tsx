@@ -4,6 +4,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../styles/NotificationHeader.css";
 import { API_BASE_URL } from "../config";
+import { useSocket } from "../hooks/useSocket";
 
 interface Notification {
   _id: string;
@@ -40,6 +41,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
   socket,
   apiUrl = API_BASE_URL,
 }) => {
+  const { isConnected } = useSocket();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [stats, setStats] = useState<NotificationStats>({
     unreadCount: 0,
@@ -67,6 +69,21 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
       fetchNotifications(1, true);
     }
   }, [userId]);
+
+  // نظام التحديث التلقائي للإشعارات
+  useEffect(() => {
+    if (!userId) return;
+    
+    // تحديث تلقائي كل 60 ثانية عندما Socket غير متصل
+    const refreshInterval = setInterval(() => {
+      if (!isConnected && !isLoading) {
+        console.log("🔔 تحديث تلقائي للإشعارات (وضع احتياطي)");
+        fetchNotifications(1, true);
+      }
+    }, 60000);
+
+    return () => clearInterval(refreshInterval);
+  }, [userId, isConnected, isLoading]);
 
   // الاستماع للإشعارات الجديدة من Socket.IO
   useEffect(() => {
@@ -416,7 +433,30 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
       {showDropdown && (
         <div className="notification-dropdown">
           <div className="notification-header">
-            <h3>الإشعارات</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h3>الإشعارات</h3>
+              <div 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '4px',
+                  fontSize: '11px',
+                  color: isConnected ? '#10B981' : '#F59E0B'
+                }}
+                title={isConnected ? 'تحديث فوري عبر Socket' : 'تحديث تلقائي كل دقيقة'}
+              >
+                <div 
+                  style={{ 
+                    width: '6px', 
+                    height: '6px', 
+                    borderRadius: '50%',
+                    backgroundColor: isConnected ? '#10B981' : '#F59E0B',
+                    animation: 'pulse 2s infinite'
+                  }}
+                />
+                <span>{isConnected ? 'فوري' : 'تلقائي'}</span>
+              </div>
+            </div>
 
             <div className="notification-actions">
               <button
