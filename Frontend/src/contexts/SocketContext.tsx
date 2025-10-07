@@ -14,7 +14,7 @@ interface Student {
   lastName: string;
   birthDate: string;
   age: number;
-  gender: 'ذكر' | 'انثى';
+  gender: 'ذكر' | 'أنثى';
   residence: string;
   teacher: string;
   group: string;
@@ -33,7 +33,7 @@ interface Teacher {
   lastName: string;
   birthDate: string;
   age: number;
-  gender: 'ذكر' | 'انثى';
+  gender: 'ذكر' | 'أنثى';
   residence: string;
   phoneNumber?: string;
   email?: string;

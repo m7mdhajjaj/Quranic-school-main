@@ -1703,7 +1703,7 @@ interface Student {
   lastName: string;
   birthDate: string;
   age: number;
-  gender: "ذكر" | "انثى";
+  gender: "ذكر" | "أنثى";
   residence: string;
   teacher: string;
   group: string;
@@ -1773,7 +1773,7 @@ const StudentsManagement: React.FC = () => {
   // Statistics
   const stats = useMemo(() => {
     const maleCount = students.filter((s) => s.gender === "ذكر").length;
-    const femaleCount = students.filter((s) => s.gender === "انثى").length;
+    const femaleCount = students.filter((s) => s.gender === "أنثى").length;
     const avgAge =
       students.length > 0
         ? (
@@ -2346,7 +2346,7 @@ const StudentsManagement: React.FC = () => {
                       الجنس
                     </label>
                     <div className="grid grid-cols-3 gap-2">
-                      {["all", "ذكر", "انثى"].map((gender) => (
+                      {["all", "ذكر", "أنثى"].map((gender) => (
                         <button
                           key={gender}
                           onClick={() => setSelectedGender(gender)}
