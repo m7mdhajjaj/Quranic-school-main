@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DailyMarksSkeleton } from "../components/Loading/LoadingSkeleton";
 import { getAllStudents } from "../Api/studentApi";
-import { getAllSections, createSection, updateSection, deleteSection } from "../Api/sectionApi";
+import { getAllSections, createSection, updateSection, deleteSection } from "../Api/ي/sectionApi";
 import { getStudentMarks, createMark } from "../Api/markApi";
 
 // Interface for Student data from backend
