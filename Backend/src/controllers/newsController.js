@@ -1,4 +1,4 @@
-const News = require("../models/News");
+const News = require("../schema/News");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");

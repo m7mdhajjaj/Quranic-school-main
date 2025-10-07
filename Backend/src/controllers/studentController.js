@@ -1,4 +1,4 @@
-const Student = require("../models/Student");
+const Student = require("../schema/Student");
 const { validateAndCheckDuplicates } = require("../utils/duplicateChecker");
 const { notifyStudentStatsUpdate } = require("../utils/dashboardNotifications");
 
@@ -106,7 +106,7 @@ exports.createStudent = async (req, res) => {
     // التحقق من توافق المعلم مع الحلقة
     const { teacher, group } = req.body;
     if (teacher && group) {
-      const Group = require("../models/Group");
+      const Group = require("../schema/Group");
 
       // البحث بالاسم الكامل أولاً
       let groupData = await Group.findOne({ name: group });
@@ -260,7 +260,7 @@ exports.updateStudent = async (req, res) => {
     // التحقق من توافق المعلم مع الحلقة عند التعديل
     const { teacher, group } = updatedData;
     if (teacher && group) {
-      const Group = require("../models/Group");
+      const Group = require("../schema/Group");
 
       // البحث بالاسم الكامل أولاً
       let groupData = await Group.findOne({ name: group });

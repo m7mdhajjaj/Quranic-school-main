@@ -1,4 +1,4 @@
-const ExamMark = require("../models/ExamMark");
+const ExamMark = require("../schema/ExamMark");
 const mongoose = require("mongoose");
 
 // Get all marks for a specific student

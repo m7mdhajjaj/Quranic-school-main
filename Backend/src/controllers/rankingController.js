@@ -1,5 +1,5 @@
-const Ranking = require("../models/Ranking");
-const Student = require("../models/Student");
+const Ranking = require("../schema/Ranking");
+const Student = require("../schema/Student");
 
 // Get the current ranking or most recent one
 exports.getCurrentRanking = async (req, res) => {

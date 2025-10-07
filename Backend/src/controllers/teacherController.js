@@ -1,7 +1,7 @@
-const Teacher = require("../models/Teacher");
-const Student = require("../models/Student");
-const Admin = require("../models/Admin");
-const Group = require("../models/Group");
+const Teacher = require("../schema/Teacher");
+const Student = require("../schema/Student");
+const Admin = require("../schema/Admin");
+const Group = require("../schema/Group");
 const bcrypt = require("bcryptjs");
 const { validateAndCheckDuplicates } = require("../utils/duplicateChecker");
 
@@ -147,7 +147,7 @@ exports.createTeacher = async (req, res) => {
 
     // التحقق من أن الحلقات المضافة للمعلم الجديد لا تحتوي على معلمين آخرين
     if (Array.isArray(groups) && groups.length > 0) {
-      const Group = require("../models/Group");
+      const Group = require("../schema/Group");
 
       for (const groupItem of groups) {
         const groupName =
@@ -336,7 +336,7 @@ exports.updateTeacher = async (req, res) => {
     }
 
     // --- إدارة الحلقات ---
-    const Group = require("../models/Group");
+    const Group = require("../schema/Group");
     const currentTeacher = await Teacher.findById(id);
     if (!currentTeacher) {
       return res
@@ -515,8 +515,8 @@ exports.deleteTeacher = async (req, res) => {
     }
 
     // التحقق من وجود حلقات مرتبطة بالمعلم
-    const Group = require("../models/Group");
-    const Student = require("../models/Student");
+    const Group = require("../schema/Group");
+    const Student = require("../schema/Student");
 
     const teacherName = `${teacher.firstName} ${teacher.lastName}`;
 

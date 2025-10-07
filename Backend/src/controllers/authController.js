@@ -1,6 +1,6 @@
-const Student = require("../models/Student");
-const Teacher = require("../models/Teacher");
-const Admin = require("../models/Admin");
+const Student = require("../schema/Student");
+const Teacher = require("../schema/Teacher");
+const Admin = require("../schema/Admin");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 

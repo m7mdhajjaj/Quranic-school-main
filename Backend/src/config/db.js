@@ -26,7 +26,7 @@ const connectDB = async () => {
 
     // Test the Student model specifically
     try {
-      const Student = require("../models/Student");
+      const Student = require("../schema/Student");
       const count = await Student.countDocuments();
       console.log(`Current student count: ${count}`);
     } catch (modelError) {

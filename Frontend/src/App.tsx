@@ -64,7 +64,6 @@ import Activities from "./pages/Activities";
 // Page Components - Attendance & Management
 // ============================================================================
 import Absence from "./pages/Absence";
-import Managment from "./pages/managment";
 
 // ============================================================================
 // Page Components - Islamic Resources
@@ -199,7 +198,6 @@ const TeacherRoutes: React.FC = () => {
 
           {/* ====== Attendance & Management - Teacher Features ====== */}
           <Route path="/absence" element={<Absence />} />
-          <Route path="/managment" element={<Managment />} />
 
           {/* ====== Islamic Resources ====== */}
           <Route path="/prayer-times" element={<PrayerTimes />} />
@@ -291,7 +289,6 @@ const StudentRoutes: React.FC = () => {
 
           {/* ====== Protected & Fallback Routes ====== */}
           {/* Block access to management features (teacher-only) */}
-          <Route path="/managment" element={<NotFound />} />
           <Route path="/test" element={<NotFound />} />
           {/* Block access to admin routes */}
           <Route path="/admin/*" element={<NotFound />} />

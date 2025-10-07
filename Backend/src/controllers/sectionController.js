@@ -1,5 +1,5 @@
-const Section = require("../models/Section");
-const Mark = require("../models/Mark");
+const Section = require("../schema/Section");
+const Mark = require("../schema/Mark");
 
 // Get all sections, sorted by date (newest first)
 exports.getSections = async (req, res) => {

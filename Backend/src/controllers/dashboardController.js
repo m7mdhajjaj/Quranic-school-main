@@ -1,12 +1,12 @@
-const Student = require("../models/Student");
-const Teacher = require("../models/Teacher");
-const Exam = require("../models/Exam");
-const Group = require("../models/Group");
-const Activity = require("../models/Activity");
-const News = require("../models/News");
-const Mark = require("../models/Mark");
-const ExamMark = require("../models/ExamMark");
-const Attendance = require("../models/Attendance");
+const Student = require("../schema/Student");
+const Teacher = require("../schema/Teacher");
+const Exam = require("../schema/Exam");
+const Group = require("../schema/Group");
+const Activity = require("../schema/Activity");
+const News = require("../schema/News");
+const Mark = require("../schema/Mark");
+const ExamMark = require("../schema/ExamMark");
+const Attendance = require("../schema/Attendance");
 
 // Get dashboard statistics - optimized for performance
 exports.getDashboardStats = async (req, res) => {

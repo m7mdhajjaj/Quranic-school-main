@@ -6,8 +6,8 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 
-const Teacher = require("../models/Teacher");
-const Student = require("../models/Student"); // for /for-student
+const Teacher = require("../schema/Teacher");
+const Student = require("../schema/Student"); // for /for-student
 const controller = require("../controllers/teacherController");
 const { protect } = require("../middleware/authMiddleware");
 const { validateTeacherGroups, sanitizeTeacherData } = require("../middleware/validateTeacherData");

@@ -1,4 +1,4 @@
-const Activity = require("../models/Activity");
+const Activity = require("../schema/Activity");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
@@ -107,7 +107,7 @@ exports.createActivity = async (req, res) => {
     if (global.notificationService) {
       try {
         // الحصول على جميع الطلاب النشطين
-        const Student = require("../models/Student");
+        const Student = require("../schema/Student");
         const activeStudents = await Student.find({ isActive: true });
 
         // إرسال إشعار لكل طالب

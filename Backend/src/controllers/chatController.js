@@ -1,6 +1,6 @@
-const Chat = require("../models/Chat");
-const Teacher = require("../models/Teacher");
-const Student = require("../models/Student");
+const Chat = require("../schema/Chat");
+const Teacher = require("../schema/Teacher");
+const Student = require("../schema/Student");
 
 // Get all messages for a specific user (student or teacher)
 const getUserMessages = async (req, res) => {

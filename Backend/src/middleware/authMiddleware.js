@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
-const Student = require("../models/Student");
-const Teacher = require("../models/Teacher");
-const Admin = require("../models/Admin");
+const Student = require("../schema/Student");
+const Teacher = require("../schema/Teacher");
+const Admin = require("../schema/Admin");
 
 // JWT Secret - في الحالة المثالية يجب وضع هذا في ملف .env
 const JWT_SECRET = process.env.JWT_SECRET;

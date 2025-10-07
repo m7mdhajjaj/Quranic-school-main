@@ -1,4 +1,4 @@
-const Mark = require("../models/Mark");
+const Mark = require("../schema/Mark");
 
 // Get all marks
 exports.getMarks = async (req, res) => {

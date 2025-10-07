@@ -1,4 +1,4 @@
-const Admin = require("../models/Admin");
+const Admin = require("../schema/Admin");
 const bcrypt = require("bcryptjs");
 const { validateAndCheckDuplicates } = require("../utils/duplicateChecker");
 const { notifyDashboardUpdate } = require("../utils/dashboardNotifications");

@@ -1,6 +1,6 @@
-const Notification = require("../models/Notification");
-const Student = require("../models/Student");
-const Teacher = require("../models/Teacher");
+const Notification = require("../schema/Notification");
+const Student = require("../schema/Student");
+const Teacher = require("../schema/Teacher");
 const cron = require("node-cron");
 const moment = require("moment-timezone");
 

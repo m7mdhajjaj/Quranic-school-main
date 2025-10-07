@@ -1,4 +1,4 @@
-const Group = require("../models/Group");
+const Group = require("../schema/Group");
 
 // إنشاء حلقة جديدة
 exports.createGroup = async (req, res) => {
@@ -21,7 +21,7 @@ exports.createGroup = async (req, res) => {
     console.log("✅ اسم الحلقة متاح");
 
     // التحقق من وجود المعلم
-    const Teacher = require("../models/Teacher");
+    const Teacher = require("../schema/Teacher");
 
     console.log("🔍 البحث عن المعلم:", teacher);
 
@@ -157,7 +157,7 @@ let studentCountsCache = {
 
 // دالة محسّنة لحساب عدد الطلاب لجميع الحلقات في استعلام واحد مع caching
 const getStudentCountsForAllGroups = async () => {
-  const Student = require("../models/Student");
+  const Student = require("../schema/Student");
 
   try {
     // فحص الـ cache أولاً
@@ -266,7 +266,7 @@ exports.getAllGroups = async (req, res) => {
 // الحصول على حلقة بالمعرف
 exports.getGroupById = async (req, res) => {
   try {
-    const Student = require("../models/Student");
+    const Student = require("../schema/Student");
     const { id } = req.params;
     const group = await Group.findById(id);
 
@@ -329,7 +329,7 @@ exports.updateGroup = async (req, res) => {
 
       if (teacherToCheck) {
         // التحقق من أن الحلقة لن تكون لها أكثر من معلم واحد
-        const Teacher = require("../models/Teacher");
+        const Teacher = require("../schema/Teacher");
         let teacherExists = null;
 
         // البحث عن المعلم
@@ -423,7 +423,7 @@ exports.deleteGroup = async (req, res) => {
     }
 
     // التحقق من وجود طلاب في الحلقة
-    const Student = require("../models/Student");
+    const Student = require("../schema/Student");
     const relatedStudents = await Student.find({
       group: group.name,
     });
@@ -459,7 +459,7 @@ exports.deleteGroup = async (req, res) => {
 
 // دالة محسّنة لحساب عدد الطلاب لمعلم محدد
 const getStudentCountsForTeacher = async (teacherName) => {
-  const Student = require("../models/Student");
+  const Student = require("../schema/Student");
 
   try {
     const studentCounts = await Student.aggregate([
@@ -567,7 +567,7 @@ exports.renameGroup = async (req, res) => {
     await Group.findByIdAndUpdate(group._id, { name: newName });
 
     // تحديث جميع الطلاب الذين ينتمون للمجموعة القديمة
-    const Student = require("../models/Student");
+    const Student = require("../schema/Student");
     const updateResult = await Student.updateMany(
       { group: oldName },
       { group: newName }

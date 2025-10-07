@@ -4,9 +4,9 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const Student = require('../models/Student');
-const Teacher = require('../models/Teacher');
-const Admin = require('../models/Admin');
+const Student = require('../schema/Student');
+const Teacher = require('../schema/Teacher');
+const Admin = require('../schema/Admin');
 const jwt = require('jsonwebtoken');
 
 // Middleware to verify JWT token

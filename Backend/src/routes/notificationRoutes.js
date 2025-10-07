@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const Notification = require("../models/Notification");
+const Notification = require("../schema/Notification");
 
 // جلب إشعارات المستخدم مع التصفح
 router.get("/:userId", async (req, res) => {

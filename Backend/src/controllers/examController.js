@@ -21,14 +21,14 @@ exports.deleteExam = async (req, res) => {
     // Remove exam
     await Exam.findByIdAndDelete(examId);
     // Remove all marks for this exam
-    const ExamMark = require("../models/ExamMark");
+    const ExamMark = require("../schema/ExamMark");
     await ExamMark.deleteMany({ exam: examId });
     res.json({ message: "Exam and related marks deleted" });
   } catch (err) {
     res.status(500).json({ error: "Server error" });
   }
 };
-const Exam = require("../models/Exam");
+const Exam = require("../schema/Exam");
 
 // Get all exams
 exports.getExams = async (req, res) => {

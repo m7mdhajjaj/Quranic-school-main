@@ -3,7 +3,7 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 
-const Admin = require("../models/Admin");
+const Admin = require("../schema/Admin");
 const controller = require("../controllers/adminController");
 
 // ========== Multer in-memory ==========

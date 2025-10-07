@@ -5,7 +5,7 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 
-const Student = require("../models/Student");
+const Student = require("../schema/Student");
 const studentController = require("../controllers/studentController");
 const { protect } = require("../middleware/authMiddleware");
 

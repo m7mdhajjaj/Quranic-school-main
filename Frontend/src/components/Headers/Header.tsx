@@ -19,7 +19,6 @@ import {
   MessageSquare,
   Newspaper,
   PieChart,
-  Settings2,
   Sparkles,
   Target,
   User,
@@ -245,12 +244,6 @@ const Header = () => {
     if (!isTeacherOrAdmin) return base;
     return [
       ...base,
-      {
-        to: "/managment",
-        label: "الإدارة",
-        icon: Settings2,
-        color: "from-gray-500 to-slate-500",
-      },
     ];
   }, [isTeacherOrAdmin]);
 

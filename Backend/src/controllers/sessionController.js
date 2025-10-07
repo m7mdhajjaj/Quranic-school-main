@@ -1,4 +1,4 @@
-const Session = require("../models/Session");
+const Session = require("../schema/Session");
 
 // Get all sessions
 exports.getSessions = async (req, res) => {

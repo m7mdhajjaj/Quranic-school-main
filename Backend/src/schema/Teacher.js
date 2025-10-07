@@ -1,4 +1,4 @@
-// models/Teacher.js
+// schema/Teacher.js
 const mongoose = require('mongoose');
 
 // تعريف sub-schema للحلقات

@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
-const Attendance = require("../models/Attendance");
-const Student = require("../models/Student");
+const Attendance = require("../schema/Attendance");
+const Student = require("../schema/Student");
 
 // Create or update attendance records for a specific date
 exports.createAttendance = async (req, res) => {

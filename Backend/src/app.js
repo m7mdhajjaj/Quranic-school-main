@@ -4,8 +4,8 @@ const path = require("path");
 const connectDB = require("./config/db");
 const http = require("http");
 const { Server } = require("socket.io");
-const Chat = require("./models/Chat");
-const Student = require("./models/Student");
+const Chat = require("./schema/Chat");
+const Student = require("./schema/Student");
 const NotificationService = require("./services/NotificationService");
 require("dotenv").config();
 
@@ -192,14 +192,14 @@ io.on("connection", (socket) => {
           { new: true, upsert: false }
         );
       } else if (role === "admin") {
-        const Admin = require("./models/Admin");
+        const Admin = require("./schema/Admin");
         updateResult = await Admin.findByIdAndUpdate(
           userId, 
           { isActive: true, lastSeen: new Date() }, 
           { new: true, upsert: false }
         );
       } else if (role === "teacher") {
-        const Teacher = require("./models/Teacher");
+        const Teacher = require("./schema/Teacher");
         updateResult = await Teacher.findByIdAndUpdate(
           userId, 
           { isActive: true, lastSeen: new Date() }, 
@@ -264,9 +264,9 @@ io.on("connection", (socket) => {
       if (userData.role === "student") {
         await Student.findByIdAndUpdate(userData.userId, { isActive: false });
       } else if (userData.role === "admin") {
-        await require("./models/Admin").findByIdAndUpdate(userData.userId, { isActive: false });
+        await require("./schema/Admin").findByIdAndUpdate(userData.userId, { isActive: false });
       } else {
-        await require("./models/Teacher").findByIdAndUpdate(userData.userId, { isActive: false });
+        await require("./schema/Teacher").findByIdAndUpdate(userData.userId, { isActive: false });
       }
     } catch (error) {
       console.error("Error setting isActive=false on logout:", error);
@@ -646,14 +646,14 @@ io.on("connection", (socket) => {
               { new: true }
             );
           } else if (role === "admin") {
-            const Admin = require("./models/Admin");
+            const Admin = require("./schema/Admin");
             updateResult = await Admin.findByIdAndUpdate(
               userId, 
               { isActive: false, lastSeen: new Date() },
               { new: true }
             );
           } else if (role === "teacher") {
-            const Teacher = require("./models/Teacher");
+            const Teacher = require("./schema/Teacher");
             updateResult = await Teacher.findByIdAndUpdate(
               userId, 
               { isActive: false, lastSeen: new Date() },

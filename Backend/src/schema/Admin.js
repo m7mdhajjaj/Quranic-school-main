@@ -1,4 +1,4 @@
-// models/Admin.js
+// schema/Admin.js
 const mongoose = require('mongoose');
 
 /* ----------------------- Regex Patterns ----------------------- */
