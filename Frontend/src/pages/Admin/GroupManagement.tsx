@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import {
   FaEdit,
   FaTrash,
@@ -21,14 +27,15 @@ import { useAuth } from "../../hooks/useAuth";
 // import { useSocket } from "../../hooks/useSocket"; // TODO: Add socket support later
 import AddGroupForm from "../../components/Forms/AddGroupForm";
 import ResponsivePagination from "../../components/Pagination/ResponsivePagination";
-import { 
-  getAllGroups, 
-  deleteGroup, 
+import {
+  getAllGroups,
+  deleteGroup,
   // createGroup, // TODO: Will be used in form submission
   // updateGroup, // TODO: Will be used in edit functionality
   getGroupsByTeacher,
-  type Group 
+  type Group,
 } from "../../Api/groupApi";
+import { getAllTeachers } from "../../Api/teacherApi";
 import { type GroupFormData } from "../../Validation/groupValidation";
 import "../../styles/sweetalert.css";
 import {
@@ -50,6 +57,9 @@ const GroupManagement: React.FC = () => {
 
   // Core States
   const [groups, setGroups] = useState<Group[]>([]);
+  const [allTeachers, setAllTeachers] = useState<string[]>([]); // All teachers list
+  const teachersFetched = useRef(false); // Track if teachers were fetched
+  const initialLoadDone = useRef(false); // Track initial load
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
@@ -87,10 +97,50 @@ const GroupManagement: React.FC = () => {
     return count;
   }, [selectedTeacher, capacityRange, searchTerm]);
 
-  // Extract unique teachers
-  const teachers = useMemo(() => {
-    return [...new Set(groups.map((g) => g.teacher).filter(Boolean))].sort();
-  }, [groups]);
+  // Fetch all teachers for filter dropdown
+  const fetchTeachers = useCallback(async () => {
+    if (teachersFetched.current) return; // Prevent multiple fetches
+
+    try {
+      console.log("🔍 بدء جلب المعلمين للفلتر...");
+      const result = await getAllTeachers();
+      console.log("📊 نتيجة جلب المعلمين:", result);
+
+      if (result.success && result.data && Array.isArray(result.data)) {
+        console.log("✅ عدد المعلمين:", result.data.length);
+
+        if (result.data.length === 0) {
+          console.warn("⚠️ لا يوجد معلمين في قاعدة البيانات");
+          teachersFetched.current = true;
+          return;
+        }
+
+        // استخراج أسماء المعلمين: firstName + lastName
+        const teacherNames = result.data
+          .map((teacher: any) => {
+            // جرب مختلف التنسيقات
+            if (teacher.name) return teacher.name;
+            if (teacher.firstName && teacher.lastName) {
+              return `${teacher.firstName} ${teacher.lastName}`;
+            }
+            if (teacher.firstName) return teacher.firstName;
+            return null;
+          })
+          .filter(Boolean)
+          .sort();
+
+        console.log("📝 أسماء المعلمين:", teacherNames);
+        setAllTeachers(teacherNames);
+        teachersFetched.current = true;
+      } else {
+        console.warn("⚠️ استجابة غير صالحة من الخادم:", result);
+        teachersFetched.current = true;
+      }
+    } catch (error) {
+      console.error("❌ خطأ في جلب المعلمين:", error);
+      teachersFetched.current = true;
+    }
+  }, []);
 
   // Fetch groups with optimized loading and student count
   const fetchGroups = useCallback(async () => {
@@ -163,21 +213,45 @@ const GroupManagement: React.FC = () => {
     }
   }, []);
 
+  // Initial load
   useEffect(() => {
     if (!hasPermission) return;
 
     fetchGroups();
-    
+    fetchTeachers();
+    initialLoadDone.current = true;
+
     // Auto refresh every 30 seconds as fallback when socket not connected
     const refreshInterval = setInterval(() => {
       if (!isConnected) {
         console.log("🔄 تحديث تلقائي للحلقات (وضع احتياطي)");
-        fetchGroups();
+        fetchGroups(); // Always fetch all groups, filtering is done in frontend
+        // Don't refetch teachers in auto-refresh
       }
     }, 30000);
 
     return () => clearInterval(refreshInterval);
-  }, [hasPermission, fetchGroups, isConnected]);
+  }, [hasPermission, fetchGroups, fetchTeachers, isConnected]);
+
+  // Fallback: Use teachers from groups if API returns empty (only once)
+  useEffect(() => {
+    if (
+      teachersFetched.current &&
+      allTeachers.length === 0 &&
+      groups.length > 0
+    ) {
+      const teachersFromGroups = [
+        ...new Set(groups.map((g) => g.teacher).filter(Boolean)),
+      ].sort();
+      if (teachersFromGroups.length > 0) {
+        console.log(
+          "📋 استخدام المعلمين من الحلقات كخطة احتياطية:",
+          teachersFromGroups
+        );
+        setAllTeachers(teachersFromGroups);
+      }
+    }
+  }, [groups]);
 
   // Handle sorting
   const handleSort = (field: SortField) => {
@@ -189,11 +263,18 @@ const GroupManagement: React.FC = () => {
     }
   };
 
-  // Filter and sort groups
+  // Filter and sort groups (all filtering done in frontend)
   const filteredAndSortedGroups = useMemo(() => {
+    console.log("🔍 بدء فلترة الحلقات...", {
+      totalGroups: groups.length,
+      selectedTeacher,
+      searchTerm,
+    });
+
     const filtered = groups.filter((group) => {
       const searchLower = searchTerm.toLowerCase();
       const matchesSearch =
+        !searchTerm ||
         (group.name || "").toLowerCase().includes(searchLower) ||
         (group.description || "").toLowerCase().includes(searchLower) ||
         (group.teacher || "").toLowerCase().includes(searchLower) ||
@@ -201,14 +282,24 @@ const GroupManagement: React.FC = () => {
 
       const matchesTeacher =
         selectedTeacher === "all" || group.teacher === selectedTeacher;
+
       const matchesCapacity =
         (group.capacity || 0) >= capacityRange[0] &&
         (group.capacity || 0) <= capacityRange[1];
 
-      return matchesSearch && matchesTeacher && matchesCapacity;
-    });
+      const matches = matchesSearch && matchesTeacher && matchesCapacity;
 
-    // Sort
+      if (!matches && selectedTeacher !== "all") {
+        console.log("❌ حلقة لم تطابق الفلتر:", {
+          name: group.name,
+          teacher: group.teacher,
+          selectedTeacher,
+          matchesTeacher,
+        });
+      }
+
+      return matches;
+    }); // Sort
     filtered.sort((a, b) => {
       let compareResult = 0;
 
@@ -221,6 +312,13 @@ const GroupManagement: React.FC = () => {
       }
 
       return sortOrder === "asc" ? compareResult : -compareResult;
+    });
+
+    console.log("✅ نتيجة الفلترة:", {
+      إجمالي_الحلقات: groups.length,
+      الحلقات_المفلترة: filtered.length,
+      المعلم_المختار: selectedTeacher,
+      نص_البحث: searchTerm || "لا يوجد",
     });
 
     return filtered;
@@ -387,37 +485,8 @@ const GroupManagement: React.FC = () => {
     setCurrentPage(1);
   };
 
-  // Handle teacher filter using API
-  const handleTeacherFilter = useCallback(async (teacherName: string) => {
-    if (teacherName === 'all') {
-      await fetchGroups();
-      return;
-    }
-    
-    try {
-      setIsLoading(true);
-      const result = await getGroupsByTeacher(teacherName);
-      if (result.success && result.data) {
-        setGroups(result.data);
-      } else {
-        throw new Error(result.message || 'فشل في جلب حلقات المعلم');
-      }
-    } catch (error) {
-      console.error('❌ خطأ في فلترة المعلم:', error);
-      showErrorMessage('خطأ', 'حدث خطأ في فلترة حلقات المعلم');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [fetchGroups]);
-
-  // Handle teacher selection change
-  useEffect(() => {
-    if (selectedTeacher !== 'all') {
-      handleTeacherFilter(selectedTeacher);
-    }
-  }, [selectedTeacher, handleTeacherFilter]);
-
-  // Bulk delete
+  // Note: Teacher filtering is now done in frontend only (filteredAndSortedGroups)
+  // No need for API-based filtering as it causes issues with auto-refresh  // Bulk delete
   const handleBulkDelete = async () => {
     if (selectedGroups.size === 0) return;
 
@@ -510,9 +579,15 @@ const GroupManagement: React.FC = () => {
                         إدارة وتنظيم حلقات تحفيظ القرآن الكريم
                       </p>
                       <div className="flex items-center gap-1.5">
-                        <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-yellow-500'} animate-pulse`}></div>
-                        <span className={`text-xs ${isConnected ? 'text-green-600' : 'text-yellow-600'}`}>
-                          {isConnected ? 'متصل مباشرة' : 'تحديث تلقائي'}
+                        <div
+                          className={`w-2 h-2 rounded-full ${
+                            isConnected ? "bg-green-500" : "bg-yellow-500"
+                          } animate-pulse`}></div>
+                        <span
+                          className={`text-xs ${
+                            isConnected ? "text-green-600" : "text-yellow-600"
+                          }`}>
+                          {isConnected ? "متصل مباشرة" : "تحديث تلقائي"}
                         </span>
                       </div>
                     </div>
@@ -579,7 +654,9 @@ const GroupManagement: React.FC = () => {
                       }`}
                       title="عرض جدول">
                       <FaList className="w-4 h-4" />
-                      <span className="text-xs font-medium hidden sm:inline">جدول</span>
+                      <span className="text-xs font-medium hidden sm:inline">
+                        جدول
+                      </span>
                     </button>
                     <button
                       onClick={() => setViewMode("grid")}
@@ -590,7 +667,9 @@ const GroupManagement: React.FC = () => {
                       }`}
                       title="عرض شبكة">
                       <FaTh className="w-4 h-4" />
-                      <span className="text-xs font-medium hidden sm:inline">شبكة</span>
+                      <span className="text-xs font-medium hidden sm:inline">
+                        شبكة
+                      </span>
                     </button>
                   </div>
 
@@ -631,62 +710,28 @@ const GroupManagement: React.FC = () => {
                   )}
                 </div>
               </div>
+            </div>
 
-              {/* Extended Filters */}
-              {showFilters && (
-                <div className="bg-gradient-to-br from-white to-gray-50 p-6 rounded-2xl border-2 border-gray-100 shadow-lg animate-fadeIn relative">
-                  {/* Close Button */}
+            {showFilters && (
+              <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-6 rounded-2xl border-2 border-blue-100 shadow-xl animate-fadeIn">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                    <FaFilter className="text-blue-600" />
+                    الفلاتر المتقدمة
+                  </h3>
                   <button
                     onClick={() => setShowFilters(false)}
-                    className="absolute top-4 left-4 p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-full transition-all duration-200"
-                    title="إغلاق الفلاتر">
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
+                    className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-all duration-200"
+                    title="إغلاق">
+                    <FaTimes className="w-5 h-5" />
                   </button>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        المعلم
-                      </label>
-                      <select
-                        value={selectedTeacher}
-                        onChange={(e) => {
-                          setSelectedTeacher(e.target.value);
-                          setCurrentPage(1);
-                        }}
-                        aria-label="اختيار المعلم"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="all">جميع المعلمين</option>
-                        {teachers.map((teacher) => (
-                          <option key={teacher} value={teacher}>
-                            {teacher}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* أي فلاتر إضافية أخرى يمكن إضافتها هنا */}
-                  </div>
                 </div>
-            )}
-          </div>
 
-          {showFilters && (
-              <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 animate-fadeIn">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  {/* Teacher Filter */}
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-blue-100">
+                    <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3">
+                      <FaChalkboardTeacher className="text-blue-600" />
                       المعلم
                     </label>
                     <select
@@ -695,11 +740,11 @@ const GroupManagement: React.FC = () => {
                         setSelectedTeacher(e.target.value);
                         setCurrentPage(1);
                       }}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-gray-50 hover:bg-white">
                       <option value="all">
-                        جميع المعلمين ({teachers.length})
+                        جميع المعلمين ({allTeachers.length})
                       </option>
-                      {teachers.map((teacher) => (
+                      {allTeachers.map((teacher) => (
                         <option key={teacher} value={teacher}>
                           {teacher}
                         </option>
@@ -707,10 +752,41 @@ const GroupManagement: React.FC = () => {
                     </select>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      السعة: {capacityRange[0]} - {capacityRange[1]}
+                  {/* Capacity Range Filter */}
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-purple-100">
+                    <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3">
+                      <FaUsers className="text-purple-600" />
+                      نطاق السعة
                     </label>
+                    <div className="flex gap-2 items-center justify-between mb-2">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={capacityRange[0]}
+                        onChange={(e) =>
+                          setCapacityRange([
+                            parseInt(e.target.value) || 0,
+                            capacityRange[1],
+                          ])
+                        }
+                        className="w-20 px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 text-center font-bold"
+                      />
+                      <span className="text-gray-400 font-bold">←</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={capacityRange[1]}
+                        onChange={(e) =>
+                          setCapacityRange([
+                            capacityRange[0],
+                            parseInt(e.target.value) || 100,
+                          ])
+                        }
+                        className="w-20 px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 text-center font-bold"
+                      />
+                    </div>
                     <input
                       type="range"
                       min="0"
@@ -722,48 +798,18 @@ const GroupManagement: React.FC = () => {
                           parseInt(e.target.value),
                         ])
                       }
-                      className="w-full"
+                      className="w-full accent-purple-600"
                     />
+                    <p className="text-xs text-gray-500 text-center mt-1">
+                      من {capacityRange[0]} إلى {capacityRange[1]} طالب
+                    </p>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      نطاق السعة
-                    </label>
-                    <div className="flex gap-2 items-center">
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={capacityRange[0]}
-                        onChange={(e) =>
-                          setCapacityRange([
-                            parseInt(e.target.value),
-                            capacityRange[1],
-                          ])
-                        }
-                        className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      />
-                      <span>-</span>
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={capacityRange[1]}
-                        onChange={(e) =>
-                          setCapacityRange([
-                            capacityRange[0],
-                            parseInt(e.target.value),
-                          ])
-                        }
-                        className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      عرض
+                  {/* Items Per Page Filter */}
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-green-100">
+                    <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3">
+                      <FaTh className="text-green-600" />
+                      عدد العرض
                     </label>
                     <select
                       value={groupsPerPage}
@@ -771,89 +817,132 @@ const GroupManagement: React.FC = () => {
                         setGroupsPerPage(parseInt(e.target.value));
                         setCurrentPage(1);
                       }}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-gray-50 hover:bg-white font-medium">
                       <option value="5">5 حلقات</option>
                       <option value="10">10 حلقات</option>
                       <option value="25">25 حلقة</option>
                       <option value="50">50 حلقة</option>
+                      <option value="100">100 حلقة</option>
                     </select>
                   </div>
+
+                  {/* Reset Filters Button */}
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-red-100 flex items-center justify-center">
+                    <button
+                      onClick={() => {
+                        setSelectedTeacher("all");
+                        setCapacityRange([0, 100]);
+                        setSearchTerm("");
+                        setCurrentPage(1);
+                      }}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all shadow-md hover:shadow-lg transform hover:scale-105 font-medium">
+                      <FaSync className="w-4 h-4" />
+                      إعادة تعيين
+                    </button>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
-  
-          {/* Statistics Cards */}
-          <div className="max-w-7xl mx-auto">
+        </div>
+        {/* Statistics Cards */}
+        <div className="w-full">
           {isLoading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-6 w-full justify-items-stretch">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
               {Array.from({ length: 6 }).map((_, index) => (
                 <div
                   key={index}
-                  className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-gray-300 animate-pulse w-full">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-gray-200 rounded-lg">
-                      <div className="w-6 h-6 bg-gray-300 rounded"></div>
+                  className="bg-white p-5 rounded-xl shadow-md border border-gray-100 animate-pulse">
+                  <div className="flex flex-col items-center text-center gap-3">
+                    <div className="p-3 bg-gray-200 rounded-xl">
+                      <div className="w-8 h-8 bg-gray-300 rounded"></div>
                     </div>
-                    <div className="flex-1">
-                      <div className="h-4 w-16 bg-gray-200 rounded mb-2"></div>
-                      <div className="h-6 w-12 bg-gray-300 rounded"></div>
+                    <div className="w-full">
+                      <div className="h-6 w-16 bg-gray-200 rounded mb-2 mx-auto"></div>
+                      <div className="h-3 w-20 bg-gray-300 rounded mx-auto"></div>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-6 w-full justify-items-stretch">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
               {[
                 {
-                  label: "إجمالي",
+                  label: "إجمالي الحلقات",
                   value: filteredAndSortedGroups.length,
                   icon: FaUsers,
                   color: "blue",
+                  bgColor: "from-blue-500 to-blue-600",
                   total: groups.length,
                 },
                 {
-                  label: "نشطين",
-                  value: groups.filter(g => g.isActive !== false).length,
+                  label: "نشطة",
+                  value: groups.filter((g) => g.isActive !== false).length,
                   icon: FaCalendar,
                   color: "emerald",
+                  bgColor: "from-emerald-500 to-emerald-600",
                 },
                 {
-                  label: "غير نشطين",
-                  value: groups.filter(g => g.isActive === false).length,
+                  label: "غير نشطة",
+                  value: groups.filter((g) => g.isActive === false).length,
                   icon: FaTimes,
                   color: "red",
+                  bgColor: "from-red-500 to-red-600",
+                },
+                {
+                  label: "مع معلم",
+                  value: groups.filter(
+                    (g) => g.teacher && g.teacher !== "غير محدد"
+                  ).length,
+                  icon: FaChalkboardTeacher,
+                  color: "purple",
+                  bgColor: "from-purple-500 to-purple-600",
+                },
+                {
+                  label: "بدون معلم",
+                  value: groups.filter(
+                    (g) => !g.teacher || g.teacher === "غير محدد"
+                  ).length,
+                  icon: FaUserFriends,
+                  color: "orange",
+                  bgColor: "from-orange-500 to-orange-600",
+                },
+                {
+                  label: "إجمالي الطلاب",
+                  value: groups.reduce(
+                    (sum, g) => sum + (g.currentStudents || 0),
+                    0
+                  ),
+                  icon: FaUserFriends,
+                  color: "teal",
+                  bgColor: "from-teal-500 to-teal-600",
                 },
               ].map((stat, idx) => (
                 <div
                   key={idx}
-                  className={`bg-white p-4 rounded-xl shadow-lg border-l-4 border-${stat.color}-500 hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer`}>
-                  <div className="flex items-center gap-3">
+                  className="bg-white p-5 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer">
+                  <div className="flex flex-col items-center text-center gap-3">
                     <div
-                      className={`p-2 bg-gradient-to-br from-${stat.color}-400 to-${stat.color}-600 rounded-lg shadow-md`}>
-                      <stat.icon className="w-5 h-5 text-white" />
+                      className={`p-3 bg-gradient-to-br ${stat.bgColor} rounded-xl shadow-sm`}>
+                      <stat.icon className="w-8 h-8 text-white" />
                     </div>
-                    <div className="flex-1">
-                      <p className="text-xs text-gray-600 font-medium truncate">
-                        {stat.label}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <p className="text-xl font-bold text-gray-900">
-                          {stat.value}
-                        </p>
+                    <div>
+                      <p className="text-2xl font-bold text-gray-900 mb-1">
+                        {stat.value}
                         {stat.total && stat.value !== stat.total && (
-                          <span className="text-sm text-gray-500">
+                          <span className="text-sm text-gray-500 font-normal">
+                            {" "}
                             / {stat.total}
                           </span>
                         )}
-                      </div>
+                      </p>
+                      <p className="text-xs text-gray-600 font-medium">
+                        {stat.label}
+                      </p>
                       {stat.label === "إجمالي الحلقات" &&
                         stat.value !== stat.total && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            (مفلتر من {stat.total})
-                          </p>
+                          <p className="text-xs text-gray-500 mt-1">(مفلتر)</p>
                         )}
                     </div>
                   </div>
@@ -1183,7 +1272,7 @@ const GroupManagement: React.FC = () => {
         )}
         {/* Grid View Loading Skeleton */}
         {isLoading && viewMode === "grid" && (
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 justify-items-start">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: groupsPerPage }, (_, index) => (
               <div
                 key={index}
@@ -1224,145 +1313,172 @@ const GroupManagement: React.FC = () => {
         )}
         {/* Grid View */}
         {!isLoading && !error && viewMode === "grid" && (
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-6 justify-items-start">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-6">
             {currentGroups.length === 0 ? (
               <div className="col-span-full bg-white rounded-2xl shadow-xl p-16 text-center">
                 <FaUsers className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 font-medium">
-                  لا توجد حلقات
-                </p>
+                <p className="text-gray-500 font-medium">لا توجد حلقات</p>
               </div>
             ) : (
-              currentGroups.map((group, index) => (
+              currentGroups.map((group) => (
                 <div
                   key={group._id}
-                  className={`bg-white rounded-xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-200 ${
-                    index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                  } hover:bg-blue-50`}>
-                  
-                  {/* Card Header */}
-                  <div className="p-6 border-b border-gray-200">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <h3 className="font-medium text-gray-900 mb-1">
-                          {group.name}
-                        </h3>
+                  className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 transform hover:-translate-y-1">
+                  {/* Card Header with Gradient */}
+                  <div className="relative bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-700 p-6 text-center">
+                    {/* Group Icon */}
+                    <div className="relative inline-block mb-4">
+                      <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-xl ring-4 ring-white/30">
+                        <FaUsers className="w-12 h-12 text-emerald-600" />
                       </div>
-                      <input
-                        type="checkbox"
-                        checked={selectedGroups.has(group._id || "")}
-                        onChange={() => toggleGroupSelection(group._id || "")}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        title="تحديد الحلقة"
-                      />
+                      {/* Capacity Badge */}
+                      <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-white px-3 py-1 rounded-full shadow-lg">
+                        <span className="text-emerald-600 font-bold text-sm">
+                          {group.capacity} طالب
+                        </span>
+                      </div>
                     </div>
+
+                    {/* Status & Fullness Badges */}
+                    <div className="absolute top-4 right-4 flex gap-2">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-bold ${
+                          group.isFull
+                            ? "bg-red-100 text-red-800"
+                            : (group.capacityPercentage || 0) >= 80
+                            ? "bg-yellow-100 text-yellow-800"
+                            : "bg-green-100 text-green-800"
+                        }`}>
+                        {group.isFull
+                          ? "ممتلئة"
+                          : (group.capacityPercentage || 0) >= 80
+                          ? "شبه ممتلئة"
+                          : "متاحة"}
+                      </span>
+                    </div>
+
+                    {/* Group Name */}
+                    <h3 className="text-white text-xl font-bold mb-1 drop-shadow-lg">
+                      {group.name}
+                    </h3>
+                    {group.description && (
+                      <p className="text-teal-100 text-sm drop-shadow line-clamp-2">
+                        {group.description}
+                      </p>
+                    )}
                   </div>
 
                   {/* Card Body */}
                   <div className="p-6 space-y-4">
                     {/* Teacher */}
-                    <div>
-                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                        <FaChalkboardTeacher className="w-3 h-3" />
-                        {group.teacher}
-                      </span>
+                    <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <FaChalkboardTeacher className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-500">المعلم</p>
+                        <p className="text-sm font-bold text-blue-700 truncate">
+                          {group.teacher}
+                        </p>
+                      </div>
                     </div>
 
-                    {/* Capacity */}
-                    <div>
-                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
-                        <FaUsers className="w-3 h-3" />
-                        {group.capacity} طالب
-                      </span>
-                    </div>
-
-                    {/* Students Count with Progress */}
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span
-                          className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
-                            group.isFull
-                              ? "bg-red-100 text-red-700"
-                              : (group.capacityPercentage || 0) >= 80
-                              ? "bg-yellow-100 text-yellow-700"
-                              : "bg-green-100 text-green-700"
-                          }`}>
-                          <FaUserFriends className="w-3 h-3" />
-                          {group.capacityStatus ||
-                            `${group.currentStudents || 0}/${
-                              group.capacity || 30
+                    {/* Students Count with Progress Bar */}
+                    <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg">
+                      <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <FaUserFriends className="w-5 h-5 text-purple-600" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-xs text-gray-500">
+                            الطلاب المشتركين
+                          </p>
+                          <p className="text-sm font-bold text-purple-700">
+                            {group.currentStudents || 0} / {group.capacity}
+                          </p>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                          <div
+                            className={`h-2.5 rounded-full transition-all duration-500 ${
+                              group.isFull
+                                ? "bg-gradient-to-r from-red-500 to-red-600"
+                                : (group.capacityPercentage || 0) >= 80
+                                ? "bg-gradient-to-r from-yellow-500 to-orange-500"
+                                : "bg-gradient-to-r from-green-500 to-emerald-500"
                             }`}
-                        </span>
-                        {group.isFull && (
-                          <span className="text-red-500 text-xs font-bold">
-                            ممتلئة
-                          </span>
-                        )}
+                            style={{
+                              width: `${group.capacityPercentage || 0}%`,
+                            }}></div>
+                        </div>
+                        <p className="text-xs text-gray-500 text-right mt-1">
+                          {group.capacityPercentage || 0}% من السعة
+                        </p>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2 relative">
-                        <div
-                          className={`h-2 rounded-full transition-all duration-300 absolute top-0 left-0 ${
-                            group.isFull
-                              ? "bg-red-500"
-                              : (group.capacityPercentage || 0) >= 80
-                              ? "bg-yellow-500"
-                              : "bg-green-500"
-                          } ${
-                            (group.capacityPercentage || 0) >= 100
-                              ? "w-full"
-                              : (group.capacityPercentage || 0) >= 90
-                              ? "w-11/12"
-                              : (group.capacityPercentage || 0) >= 80
-                              ? "w-4/5"
-                              : (group.capacityPercentage || 0) >= 70
-                              ? "w-3/5"
-                              : (group.capacityPercentage || 0) >= 50
-                              ? "w-1/2"
-                              : (group.capacityPercentage || 0) >= 30
-                              ? "w-1/3"
-                              : (group.capacityPercentage || 0) >= 20
-                              ? "w-1/5"
-                              : (group.capacityPercentage || 0) >= 10
-                              ? "w-1/12"
-                              : "w-0"
-                          }`}></div>
-                      </div>
-                      <span className="text-xs text-gray-500 text-center block mt-1">
-                        {group.capacityPercentage || 0}%
-                      </span>
                     </div>
 
                     {/* Schedule */}
-                    <div>
-                      <span className="inline-flex items-center gap-1 text-gray-600 text-sm">
-                        <FaCalendar className="w-3 h-3" />
-                        {group.schedule || "غير محدد"}
-                      </span>
-                    </div>
-
-                    {/* Description */}
-                    <div>
-                      <div className="text-sm text-gray-600 max-w-xs truncate">
-                        {group.description || "-"}
+                    <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-lg">
+                      <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <FaCalendar className="w-5 h-5 text-amber-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-500">المواعيد</p>
+                        <p className="text-sm font-bold text-amber-700 truncate">
+                          {group.schedule || "غير محدد"}
+                        </p>
                       </div>
                     </div>
+
+                    {/* Available Spots */}
+                    {!group.isFull && (
+                      <div className="flex items-center justify-center gap-2 p-3 bg-green-50 rounded-lg border border-green-200">
+                        <svg
+                          className="w-5 h-5 text-green-600"
+                          fill="currentColor"
+                          viewBox="0 0 20 20">
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        <p className="text-sm font-bold text-green-700">
+                          {group.availableSpots || 0} مقعد متاح
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Card Footer - Actions */}
-                  <div className="p-6 pt-0">
-                    <div className="flex items-center gap-2">
+                  <div className="px-6 pb-6">
+                    <div className="flex gap-2">
                       <button
                         onClick={() => handleEdit(group)}
-                        className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                        title="تعديل">
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-all shadow-md hover:shadow-lg transform hover:scale-105">
                         <FaEdit className="w-4 h-4" />
+                        <span className="font-medium">تعديل</span>
                       </button>
                       <button
                         onClick={() => handleDelete(group._id || "")}
-                        className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                        title="حذف">
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-all shadow-md hover:shadow-lg transform hover:scale-105">
                         <FaTrash className="w-4 h-4" />
+                        <span className="font-medium">حذف</span>
                       </button>
+                    </div>
+
+                    {/* Checkbox for bulk selection */}
+                    <div className="mt-3 flex items-center justify-center">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedGroups.has(group._id || "")}
+                          onChange={() => toggleGroupSelection(group._id || "")}
+                          className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                        />
+                        <span className="text-sm text-gray-600">
+                          تحديد للحذف الجماعي
+                        </span>
+                      </label>
                     </div>
                   </div>
                 </div>
@@ -1371,17 +1487,20 @@ const GroupManagement: React.FC = () => {
           </div>
         )}
         {/* Enhanced Responsive Pagination */}
-        {!isLoading && !error && filteredAndSortedGroups.length > 0 && totalPages > 1 && (
-          <ResponsivePagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={filteredAndSortedGroups.length}
-            itemsPerPage={groupsPerPage}
-            onPageChange={setCurrentPage}
-            itemName="حلقة"
-            showQuickJump={true}
-          />
-        )}{" "}
+        {!isLoading &&
+          !error &&
+          filteredAndSortedGroups.length > 0 &&
+          totalPages > 1 && (
+            <ResponsivePagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredAndSortedGroups.length}
+              itemsPerPage={groupsPerPage}
+              onPageChange={setCurrentPage}
+              itemName="حلقة"
+              showQuickJump={true}
+            />
+          )}{" "}
         {/* Add/Edit Form Modal */}
         {isFormVisible && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

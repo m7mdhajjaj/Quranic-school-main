@@ -22,13 +22,13 @@ exports.getStudents = async (req, res) => {
     res.json({
       success: true,
       data: students,
-      message: `تم تحميل ${students.length} طالب بنجاح`
+      message: `تم تحميل ${students.length} طالب بنجاح`,
     });
   } catch (error) {
     console.error("❌ خطأ في تحميل الطلاب:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: error.message 
+      message: error.message,
     });
   }
 };
@@ -42,12 +42,12 @@ exports.getStudentsByGroup = async (req, res) => {
     res.json({
       success: true,
       data: students,
-      message: `تم تحميل ${students.length} طالب من المجموعة ${req.params.group}`
+      message: `تم تحميل ${students.length} طالب من المجموعة ${req.params.group}`,
     });
   } catch (error) {
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: error.message 
+      message: error.message,
     });
   }
 };
@@ -58,9 +58,9 @@ exports.getStudentById = async (req, res) => {
     // Always return email and phoneNumber if present
     const student = await Student.findById(req.params.id);
     if (!student) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "الطالب غير موجود" 
+      return res.status(404).json({
+        success: false,
+        message: "الطالب غير موجود",
       });
     }
     // Explicitly include email and phoneNumber in response (for clarity)
@@ -75,10 +75,10 @@ exports.getStudentById = async (req, res) => {
     });
   } catch (error) {
     console.error("خطأ في جلب الطالب:", error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: "حدث خطأ أثناء جلب بيانات الطالب",
-      error: error.message 
+      error: error.message,
     });
   }
 };
@@ -124,7 +124,11 @@ exports.createStudent = async (req, res) => {
 
     // التحقق من تكرار البيانات الفريدة عبر جميع أنواع المستخدمين
     const { idNumber, phoneNumber, email } = req.body;
-    const hasDuplicates = await validateAndCheckDuplicates(req, res, { idNumber, phoneNumber, email });
+    const hasDuplicates = await validateAndCheckDuplicates(req, res, {
+      idNumber,
+      phoneNumber,
+      email,
+    });
     if (hasDuplicates) return; // تم إرسال استجابة الخطأ بالفعل
 
     // التحقق من توافق المعلم مع الحلقة
@@ -183,9 +187,11 @@ exports.createStudent = async (req, res) => {
       }
 
       // التحقق من سعة الحلقة
-      const currentStudentCount = await Student.countDocuments({ group: group });
+      const currentStudentCount = await Student.countDocuments({
+        group: group,
+      });
       const capacity = groupData.capacity || 30; // السعة الافتراضية 30
-      
+
       if (currentStudentCount >= capacity) {
         return res.status(400).json({
           success: false,
@@ -212,7 +218,7 @@ exports.createStudent = async (req, res) => {
     console.log("Student created successfully:", newStudent._id);
 
     // إبطال cache عدد الطلاب في الحلقات
-    const { invalidateStudentCountsCache } = require('./groupController');
+    const { invalidateStudentCountsCache } = require("./groupController");
     invalidateStudentCountsCache();
 
     // Emit socket event for real-time updates
@@ -278,7 +284,13 @@ exports.updateStudent = async (req, res) => {
 
     // التحقق من تكرار البيانات الفريدة عبر جميع أنواع المستخدمين (مع استثناء المستخدم الحالي)
     const { idNumber, phoneNumber, email } = updatedData;
-    const hasDuplicates = await validateAndCheckDuplicates(req, res, { idNumber, phoneNumber, email }, req.params.id, 'student');
+    const hasDuplicates = await validateAndCheckDuplicates(
+      req,
+      res,
+      { idNumber, phoneNumber, email },
+      req.params.id,
+      "student"
+    );
     if (hasDuplicates) return; // تم إرسال استجابة الخطأ بالفعل
 
     // التحقق من توافق المعلم مع الحلقة عند التعديل
@@ -339,9 +351,11 @@ exports.updateStudent = async (req, res) => {
       // التحقق من سعة الحلقة الجديدة (فقط إذا تم تغيير الحلقة)
       const currentStudent = await Student.findById(req.params.id);
       if (currentStudent && currentStudent.group !== group) {
-        const currentStudentCount = await Student.countDocuments({ group: group });
+        const currentStudentCount = await Student.countDocuments({
+          group: group,
+        });
         const capacity = groupData.capacity || 30;
-        
+
         if (currentStudentCount >= capacity) {
           return res.status(400).json({
             success: false,
@@ -369,7 +383,7 @@ exports.updateStudent = async (req, res) => {
     }
 
     // إبطال cache عدد الطلاب في الحلقات
-    const { invalidateStudentCountsCache } = require('./groupController');
+    const { invalidateStudentCountsCache } = require("./groupController");
     invalidateStudentCountsCache();
 
     // Emit socket event for real-time updates
@@ -422,14 +436,14 @@ exports.deleteStudent = async (req, res) => {
   try {
     const deletedStudent = await Student.findByIdAndDelete(req.params.id);
     if (!deletedStudent) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "الطالب غير موجود" 
+      return res.status(404).json({
+        success: false,
+        message: "الطالب غير موجود",
       });
     }
 
     // إبطال cache عدد الطلاب في الحلقات
-    const { invalidateStudentCountsCache } = require('./groupController');
+    const { invalidateStudentCountsCache } = require("./groupController");
     invalidateStudentCountsCache();
 
     // Emit socket event for real-time updates
@@ -444,16 +458,16 @@ exports.deleteStudent = async (req, res) => {
     // إشعار تحديث إحصائيات الداشبورد
     notifyStudentStatsUpdate();
 
-    res.status(200).json({ 
-      success: true, 
-      message: "تم حذف الطالب بنجاح" 
+    res.status(200).json({
+      success: true,
+      message: "تم حذف الطالب بنجاح",
     });
   } catch (error) {
     console.error("خطأ في حذف الطالب:", error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: "حدث خطأ أثناء حذف الطالب",
-      error: error.message 
+      error: error.message,
     });
   }
 };

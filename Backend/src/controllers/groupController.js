@@ -121,7 +121,7 @@ exports.createGroup = async (req, res) => {
 
     // إنشاء حلقة جديدة
     console.log("📝 إنشاء الحلقة في قاعدة البيانات...");
-    
+
     const group = await Group.create({
       name,
       teacher: teacherFullName, // حفظ اسم المعلم الكامل
@@ -267,7 +267,7 @@ exports.getAllGroups = async (req, res) => {
         if (group.teacher) {
           try {
             const teacherStr = String(group.teacher);
-            
+
             // إذا كان teacher هو ObjectId
             if (/^[0-9a-fA-F]{24}$/.test(teacherStr)) {
               teacherInfo = await Teacher.findById(teacherStr);
@@ -492,14 +492,16 @@ exports.deleteGroup = async (req, res) => {
     });
 
     if (relatedStudents.length > 0) {
-      console.log(`📝 يوجد ${relatedStudents.length} طالب في الحلقة "${group.name}"، سيتم إزالة الحلقة منهم...`);
-      
+      console.log(
+        `📝 يوجد ${relatedStudents.length} طالب في الحلقة "${group.name}"، سيتم إزالة الحلقة منهم...`
+      );
+
       // إزالة الحلقة من جميع الطلاب المرتبطين بها
       await Student.updateMany(
         { group: group.name },
         { $unset: { group: "" } }
       );
-      
+
       console.log(`✅ تم إزالة الحلقة من ${relatedStudents.length} طالب`);
     }
 
@@ -534,7 +536,7 @@ exports.deleteGroup = async (req, res) => {
     console.error("❌ خطأ في حذف الحلقة:", error);
     console.error("📋 تفاصيل الخطأ:", error.message);
     console.error("📚 Stack trace:", error.stack);
-    
+
     res.status(500).json({
       success: false,
       message: "حدث خطأ أثناء حذف الحلقة",
