@@ -1,5 +1,4 @@
 import React, { createContext, useState, useEffect, useRef, type ReactNode } from 'react';
-import axios from 'axios';
 import { io, Socket } from 'socket.io-client';
 import { API_BASE_URL, API_URL } from '../config';
 import { verifyToken } from '../Api/authApi';
@@ -113,7 +112,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           // استخدم البيانات المحفوظة فوراً لتجنب إعادة التوجيه
           setUser(parsedUser);
           setToken(savedToken);
-          axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
           
           // تحقق من صحة التوكن باستخدام authApi
           try {
@@ -148,7 +146,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             console.log('🔄 سيتم استخدام البيانات المحفوظة مؤقتاً');
             setUser(parsedUser);
             setToken(savedToken);
-            axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
             
             // إذا كان التوكن غير صالح فعلياً، ستظهر الأخطاء في الـ API calls وسيتم التعامل معها
           }
@@ -159,7 +156,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         localStorage.removeItem('user');
         localStorage.removeItem('token');
         localStorage.removeItem('userId');
-        delete axios.defaults.headers.common['Authorization'];
       } finally {
         setIsLoading(false);
       }
@@ -176,8 +172,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(userWithActiveStatus);
       setToken(authToken);
 
-      // Set axios Authorization header for subsequent requests
-      axios.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
+      // Token will be handled automatically by api interceptor
 
       // حفظ البيانات في localStorage
       localStorage.setItem('user', JSON.stringify(userWithActiveStatus));
@@ -247,8 +242,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(null);
       setToken(null);
 
-       // Remove axios Authorization header
-       delete axios.defaults.headers.common['Authorization'];
+       // Token removal will be handled automatically by api interceptor
 
       // مسح البيانات من localStorage
       localStorage.removeItem('user');

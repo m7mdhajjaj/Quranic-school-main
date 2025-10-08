@@ -4,12 +4,12 @@ import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { useAuth } from '../hooks/useAuth';
 import { NewsSkeleton } from '../components/Loading/LoadingSkeleton';
-import { API_BASE_URL } from '../config';
 import {
   getAllNews,
   createNews,
   updateNews,
   deleteNews,
+  buildNewsImageUrl,
   type INews,
 } from '../Api/newsApi';
 
@@ -48,23 +48,9 @@ const News = () => {
         console.log('Fetched news data:', response);
 
         if (response && Array.isArray(response)) {
-          // Format dates and ensure proper image paths
-          const formattedNews = response.map((item: INews) => {
-            // Fix the image URL
-            let imageUrl = item.image;
-            if (item.image && !item.image.startsWith('http')) {
-              imageUrl = `${API_BASE_URL}/${item.image}`;
-            }
-            console.log('Processing image:', item.image, '->', imageUrl);
-
-            return {
-              ...item,
-              date: formatDate(item.date || item.createdAt || new Date()),
-              image: imageUrl,
-            };
-          });
-          setNewsItems(formattedNews);
-          console.log('Formatted news items:', formattedNews);
+          // Data is already formatted by the API layer
+          setNewsItems(response);
+          console.log('Formatted news items:', response);
         }
       } catch (err) {
         console.error('Failed to fetch news:', err);
@@ -99,18 +85,6 @@ const News = () => {
     loadNews();
   }, []);
 
-  // Format date function
-  const formatDate = (date: string | Date) => {
-    if (!date) return new Date().toLocaleDateString('ar-SA');
-
-    // If it's already a string in the correct format, return it
-    if (typeof date === 'string' && !date.includes('T')) return date;
-
-    // Otherwise, convert to Date and format
-    const dateObj = new Date(date);
-    return dateObj.toLocaleDateString('ar-SA');
-  };
-
   // Refresh news function
   const refreshNews = async () => {
     setIsLoading(true);
@@ -118,18 +92,8 @@ const News = () => {
     try {
       const response = await getAllNews();
       if (response && Array.isArray(response)) {
-        const formattedNews = response.map((item: INews) => {
-          let imageUrl = item.image;
-          if (item.image && !item.image.startsWith('http')) {
-            imageUrl = `${API_BASE_URL}/${item.image}`;
-          }
-          return {
-            ...item,
-            date: formatDate(item.date || item.createdAt || new Date()),
-            image: imageUrl,
-          };
-        });
-        setNewsItems(formattedNews);
+        // Data is already formatted by the API layer
+        setNewsItems(response);
       }
     } catch (err) {
       console.error('Failed to refresh news:', err);
@@ -374,7 +338,7 @@ const News = () => {
 
                         // Try adding the full domain if it's a relative URL
                         if (originalSrc.startsWith('uploads/')) {
-                          imgElement.src = `${API_BASE_URL}/${originalSrc}`;
+                          imgElement.src = buildNewsImageUrl(originalSrc);
                           console.log('Trying fallback 2:', imgElement.src);
                           return;
                         }
