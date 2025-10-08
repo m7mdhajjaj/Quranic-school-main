@@ -1,5 +1,5 @@
 // Validation/AuthValidation.js
-const bcrypt = require("bcryptjs");
+const bcrypt = require('bcryptjs');
 
 /**
  * Authentication data validation middleware with comprehensive rules
@@ -10,9 +10,7 @@ const bcrypt = require("bcryptjs");
  * Check if a value exists and is not empty
  */
 const isRequired = (value) => {
-  return (
-    value !== undefined && value !== null && value.toString().trim() !== ""
-  );
+  return value !== undefined && value !== null && value.toString().trim() !== '';
 };
 
 /**
@@ -20,32 +18,32 @@ const isRequired = (value) => {
  */
 const validateLoginCredentials = (identifier, password) => {
   const errors = [];
-
+  
   if (!isRequired(identifier)) {
-    errors.push("اسم المستخدم أو البريد الإلكتروني مطلوب");
+    errors.push('اسم المستخدم أو البريد الإلكتروني مطلوب');
   } else {
     const identifierStr = identifier.toString().trim();
-    if (identifierStr.length < 1) {
-      errors.push("اسم المستخدم يجب أن يكون حرف واحد على الأقل");
+    if (identifierStr.length < 3) {
+      errors.push('اسم المستخدم يجب أن يكون 3 أحرف على الأقل');
     }
   }
-
+  
   if (!isRequired(password)) {
-    errors.push("كلمة المرور مطلوبة");
+    errors.push('كلمة المرور مطلوبة');
   } else {
     const passwordStr = password.toString();
-    if (passwordStr.length < 1) {
-      errors.push("كلمة المرور مطلوبة");
+    if (passwordStr.length < 6) {
+      errors.push('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
     }
   }
-
+  
   return {
     isValid: errors.length === 0,
     errors: errors,
     data: {
       identifier: identifier?.toString().trim(),
-      password: password?.toString(),
-    },
+      password: password?.toString()
+    }
   };
 };
 
@@ -55,105 +53,94 @@ const validateLoginCredentials = (identifier, password) => {
 const validateTeacherRegistration = (data) => {
   const errors = [];
   const validatedData = {};
-
+  
   // Teacher ID validation
   if (!isRequired(data.teacherId)) {
-    errors.push("رقم المعلم مطلوب");
+    errors.push('رقم المعلم مطلوب');
   } else {
     const teacherIdStr = data.teacherId.toString().trim();
     if (!/^\d{8}$/.test(teacherIdStr)) {
-      errors.push("رقم المعلم يجب أن يكون 8 أرقام");
+      errors.push('رقم المعلم يجب أن يكون 8 أرقام');
     } else {
       validatedData.teacherId = teacherIdStr;
     }
   }
-
+  
   // First name validation
   if (!isRequired(data.firstName)) {
-    errors.push("الاسم الأول مطلوب");
+    errors.push('الاسم الأول مطلوب');
   } else {
     const firstNameStr = data.firstName.toString().trim();
     if (firstNameStr.length < 2) {
-      errors.push("الاسم الأول يجب أن يكون حرفين على الأقل");
-    } else if (
-      !/^[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\s\-'\.]+$/.test(
-        firstNameStr
-      )
-    ) {
-      errors.push("الاسم الأول يجب أن يحتوي على أحرف عربية فقط");
+      errors.push('الاسم الأول يجب أن يكون حرفين على الأقل');
+    } else if (!/^[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\s\-'\.]+$/.test(firstNameStr)) {
+      errors.push('الاسم الأول يجب أن يحتوي على أحرف عربية فقط');
     } else {
       validatedData.firstName = firstNameStr;
     }
   }
-
+  
   // Last name validation
   if (!isRequired(data.lastName)) {
-    errors.push("الاسم الأخير مطلوب");
+    errors.push('الاسم الأخير مطلوب');
   } else {
     const lastNameStr = data.lastName.toString().trim();
     if (lastNameStr.length < 2) {
-      errors.push("الاسم الأخير يجب أن يكون حرفين على الأقل");
-    } else if (
-      !/^[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\s\-'\.]+$/.test(
-        lastNameStr
-      )
-    ) {
-      errors.push("الاسم الأخير يجب أن يحتوي على أحرف عربية فقط");
+      errors.push('الاسم الأخير يجب أن يكون حرفين على الأقل');
+    } else if (!/^[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\s\-'\.]+$/.test(lastNameStr)) {
+      errors.push('الاسم الأخير يجب أن يحتوي على أحرف عربية فقط');
     } else {
       validatedData.lastName = lastNameStr;
     }
   }
-
+  
   // Email validation
   if (!isRequired(data.email)) {
-    errors.push("البريد الإلكتروني مطلوب");
+    errors.push('البريد الإلكتروني مطلوب');
   } else {
     const emailStr = data.email.toString().trim().toLowerCase();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(emailStr)) {
-      errors.push("البريد الإلكتروني غير صحيح");
+      errors.push('البريد الإلكتروني غير صحيح');
     } else {
       validatedData.email = emailStr;
     }
   }
-
+  
   // Phone validation
   if (!isRequired(data.phone)) {
-    errors.push("رقم الهاتف مطلوب");
+    errors.push('رقم الهاتف مطلوب');
   } else {
-    let phoneStr = data.phone
-      .toString()
-      .trim()
-      .replace(/[\s\-\(\)\.]/g, "");
+    let phoneStr = data.phone.toString().trim().replace(/[\s\-\(\)\.]/g, '');
     if (!/^(?:\+970|970|0)?[0-9]{9}$/.test(phoneStr)) {
-      errors.push("رقم الهاتف غير صحيح");
+      errors.push('رقم الهاتف غير صحيح');
     } else {
       // Normalize phone format
-      if (phoneStr.startsWith("+970")) phoneStr = phoneStr.substring(4);
-      else if (phoneStr.startsWith("970")) phoneStr = phoneStr.substring(3);
-      else if (phoneStr.startsWith("0")) phoneStr = phoneStr.substring(1);
+      if (phoneStr.startsWith('+970')) phoneStr = phoneStr.substring(4);
+      else if (phoneStr.startsWith('970')) phoneStr = phoneStr.substring(3);
+      else if (phoneStr.startsWith('0')) phoneStr = phoneStr.substring(1);
       validatedData.phone = phoneStr;
     }
   }
-
+  
   // Password validation
   if (!isRequired(data.password)) {
-    errors.push("كلمة المرور مطلوبة");
+    errors.push('كلمة المرور مطلوبة');
   } else {
     const passwordStr = data.password.toString();
     if (passwordStr.length < 8) {
-      errors.push("كلمة المرور يجب أن تكون 8 أحرف على الأقل");
+      errors.push('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
     } else if (passwordStr.length > 100) {
-      errors.push("كلمة المرور طويلة جداً");
+      errors.push('كلمة المرور طويلة جداً');
     } else {
       validatedData.password = passwordStr;
     }
   }
-
+  
   return {
     isValid: errors.length === 0,
     errors: errors,
-    data: validatedData,
+    data: validatedData
   };
 };
 
@@ -163,56 +150,50 @@ const validateTeacherRegistration = (data) => {
 const validatePasswordChange = (data) => {
   const errors = [];
   const validatedData = {};
-
+  
   // Current password validation
   if (!isRequired(data.currentPassword)) {
-    errors.push("كلمة المرور الحالية مطلوبة");
+    errors.push('كلمة المرور الحالية مطلوبة');
   } else {
     validatedData.currentPassword = data.currentPassword.toString();
   }
-
+  
   // New password validation
   if (!isRequired(data.newPassword)) {
-    errors.push("كلمة المرور الجديدة مطلوبة");
+    errors.push('كلمة المرور الجديدة مطلوبة');
   } else {
     const newPasswordStr = data.newPassword.toString();
     if (newPasswordStr.length < 8) {
-      errors.push("كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل");
+      errors.push('كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل');
     } else if (newPasswordStr.length > 100) {
-      errors.push("كلمة المرور الجديدة طويلة جداً");
+      errors.push('كلمة المرور الجديدة طويلة جداً');
     } else {
       validatedData.newPassword = newPasswordStr;
     }
   }
-
+  
   // Confirm password validation
   if (!isRequired(data.confirmPassword)) {
-    errors.push("تأكيد كلمة المرور مطلوب");
+    errors.push('تأكيد كلمة المرور مطلوب');
   } else {
     const confirmPasswordStr = data.confirmPassword.toString();
-    if (
-      validatedData.newPassword &&
-      confirmPasswordStr !== validatedData.newPassword
-    ) {
-      errors.push("كلمة المرور وتأكيدها غير متطابقان");
+    if (validatedData.newPassword && confirmPasswordStr !== validatedData.newPassword) {
+      errors.push('كلمة المرور وتأكيدها غير متطابقان');
     } else {
       validatedData.confirmPassword = confirmPasswordStr;
     }
   }
-
+  
   // Check if new password is different from current
-  if (
-    validatedData.currentPassword &&
-    validatedData.newPassword &&
-    validatedData.currentPassword === validatedData.newPassword
-  ) {
-    errors.push("كلمة المرور الجديدة يجب أن تكون مختلفة عن الحالية");
+  if (validatedData.currentPassword && validatedData.newPassword && 
+      validatedData.currentPassword === validatedData.newPassword) {
+    errors.push('كلمة المرور الجديدة يجب أن تكون مختلفة عن الحالية');
   }
-
+  
   return {
     isValid: errors.length === 0,
     errors: errors,
-    data: validatedData,
+    data: validatedData
   };
 };
 
@@ -222,64 +203,61 @@ const validatePasswordChange = (data) => {
 const validateIdentityVerification = (data) => {
   const errors = [];
   const validatedData = {};
-
+  
   // User identifier validation (teacherId or studentId)
   if (!isRequired(data.identifier)) {
-    errors.push("رقم المعلم أو الطالب مطلوب");
+    errors.push('رقم المعلم أو الطالب مطلوب');
   } else {
     const identifierStr = data.identifier.toString().trim();
     if (!/^\d{8}$/.test(identifierStr)) {
-      errors.push("رقم المعلم أو الطالب يجب أن يكون 8 أرقام");
+      errors.push('رقم المعلم أو الطالب يجب أن يكون 8 أرقام');
     } else {
       validatedData.identifier = identifierStr;
     }
   }
-
+  
   // User type validation
   if (!isRequired(data.userType)) {
-    errors.push("نوع المستخدم مطلوب");
+    errors.push('نوع المستخدم مطلوب');
   } else {
     const userTypeStr = data.userType.toString().trim().toLowerCase();
-    if (!["teacher", "student", "معلم", "طالب"].includes(userTypeStr)) {
-      errors.push("نوع المستخدم غير صحيح");
+    if (!['teacher', 'student', 'معلم', 'طالب'].includes(userTypeStr)) {
+      errors.push('نوع المستخدم غير صحيح');
     } else {
       // Normalize user type
-      if (userTypeStr === "معلم") validatedData.userType = "teacher";
-      else if (userTypeStr === "طالب") validatedData.userType = "student";
+      if (userTypeStr === 'معلم') validatedData.userType = 'teacher';
+      else if (userTypeStr === 'طالب') validatedData.userType = 'student';
       else validatedData.userType = userTypeStr;
     }
   }
-
+  
   // Personal information for verification (birthdate, phone, etc.)
   if (data.birthDate) {
     const birthDate = new Date(data.birthDate);
     if (isNaN(birthDate.getTime())) {
-      errors.push("تاريخ الميلاد غير صحيح");
+      errors.push('تاريخ الميلاد غير صحيح');
     } else {
       validatedData.birthDate = birthDate;
     }
   }
-
+  
   if (data.phone) {
-    let phoneStr = data.phone
-      .toString()
-      .trim()
-      .replace(/[\s\-\(\)\.]/g, "");
+    let phoneStr = data.phone.toString().trim().replace(/[\s\-\(\)\.]/g, '');
     if (!/^(?:\+970|970|0)?[0-9]{9}$/.test(phoneStr)) {
-      errors.push("رقم الهاتف غير صحيح");
+      errors.push('رقم الهاتف غير صحيح');
     } else {
       // Normalize phone format
-      if (phoneStr.startsWith("+970")) phoneStr = phoneStr.substring(4);
-      else if (phoneStr.startsWith("970")) phoneStr = phoneStr.substring(3);
-      else if (phoneStr.startsWith("0")) phoneStr = phoneStr.substring(1);
+      if (phoneStr.startsWith('+970')) phoneStr = phoneStr.substring(4);
+      else if (phoneStr.startsWith('970')) phoneStr = phoneStr.substring(3);
+      else if (phoneStr.startsWith('0')) phoneStr = phoneStr.substring(1);
       validatedData.phone = phoneStr;
     }
   }
-
+  
   return {
     isValid: errors.length === 0,
     errors: errors,
-    data: validatedData,
+    data: validatedData
   };
 };
 
@@ -289,60 +267,57 @@ const validateIdentityVerification = (data) => {
 const validatePasswordReset = (data) => {
   const errors = [];
   const validatedData = {};
-
+  
   // User identifier validation
   if (!isRequired(data.identifier)) {
-    errors.push("رقم المعلم أو الطالب مطلوب");
+    errors.push('رقم المعلم أو الطالب مطلوب');
   } else {
     const identifierStr = data.identifier.toString().trim();
     if (!/^\d{8}$/.test(identifierStr)) {
-      errors.push("رقم المعلم أو الطالب يجب أن يكون 8 أرقام");
+      errors.push('رقم المعلم أو الطالب يجب أن يكون 8 أرقام');
     } else {
       validatedData.identifier = identifierStr;
     }
   }
-
+  
   // New password validation
   if (!isRequired(data.newPassword)) {
-    errors.push("كلمة المرور الجديدة مطلوبة");
+    errors.push('كلمة المرور الجديدة مطلوبة');
   } else {
     const newPasswordStr = data.newPassword.toString();
     if (newPasswordStr.length < 8) {
-      errors.push("كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل");
+      errors.push('كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل');
     } else if (newPasswordStr.length > 100) {
-      errors.push("كلمة المرور الجديدة طويلة جداً");
+      errors.push('كلمة المرور الجديدة طويلة جداً');
     } else {
       validatedData.newPassword = newPasswordStr;
     }
   }
-
+  
   // Confirm password validation
   if (!isRequired(data.confirmPassword)) {
-    errors.push("تأكيد كلمة المرور مطلوب");
+    errors.push('تأكيد كلمة المرور مطلوب');
   } else {
     const confirmPasswordStr = data.confirmPassword.toString();
-    if (
-      validatedData.newPassword &&
-      confirmPasswordStr !== validatedData.newPassword
-    ) {
-      errors.push("كلمة المرور وتأكيدها غير متطابقان");
+    if (validatedData.newPassword && confirmPasswordStr !== validatedData.newPassword) {
+      errors.push('كلمة المرور وتأكيدها غير متطابقان');
     }
   }
-
+  
   // Verification token validation (if using tokens)
   if (data.verificationToken) {
     const tokenStr = data.verificationToken.toString().trim();
     if (tokenStr.length < 10) {
-      errors.push("رمز التحقق غير صحيح");
+      errors.push('رمز التحقق غير صحيح');
     } else {
       validatedData.verificationToken = tokenStr;
     }
   }
-
+  
   return {
     isValid: errors.length === 0,
     errors: errors,
-    data: validatedData,
+    data: validatedData
   };
 };
 
@@ -351,19 +326,18 @@ const validatePasswordReset = (data) => {
  */
 const sanitizeAuthData = (data) => {
   const sanitized = {};
-
-  Object.keys(data).forEach((key) => {
-    if (typeof data[key] === "string") {
-      sanitized[key] = data[key]
-        .trim()
-        .replace(/[<>]/g, "") // Remove potential HTML tags
-        .replace(/javascript:/gi, "") // Remove javascript: protocols
-        .replace(/on\w+=/gi, ""); // Remove event handlers
+  
+  Object.keys(data).forEach(key => {
+    if (typeof data[key] === 'string') {
+      sanitized[key] = data[key].trim()
+        .replace(/[<>]/g, '') // Remove potential HTML tags
+        .replace(/javascript:/gi, '') // Remove javascript: protocols
+        .replace(/on\w+=/gi, ''); // Remove event handlers
     } else {
       sanitized[key] = data[key];
     }
   });
-
+  
   return sanitized;
 };
 
@@ -375,7 +349,7 @@ const hashPassword = async (password) => {
     const salt = await bcrypt.genSalt(12);
     return await bcrypt.hash(password, salt);
   } catch (error) {
-    throw new Error("خطأ في تشفير كلمة المرور");
+    throw new Error('خطأ في تشفير كلمة المرور');
   }
 };
 
@@ -384,43 +358,30 @@ const hashPassword = async (password) => {
  */
 const validateLogin = async (req, res, next) => {
   try {
-    console.log("🔍 بدء التحقق من بيانات تسجيل الدخول...");
-    console.log("Request body:", req.body);
-
+    console.log('🔍 بدء التحقق من بيانات تسجيل الدخول...');
+    
     const sanitizedData = sanitizeAuthData(req.body);
-
-    // Determine identifier field based on userType or available fields
-    let identifier =
-      sanitizedData.identifier ||
-      sanitizedData.studentId ||
-      sanitizedData.teacherId ||
-      sanitizedData.adminId;
-
-    let password = sanitizedData.password || sanitizedData.idNumber;
-
-    console.log("Identifier:", identifier);
-    console.log("Password length:", password ? password.length : 0);
-
-    const validation = validateLoginCredentials(identifier, password);
-
+    const validation = validateLoginCredentials(sanitizedData.identifier, sanitizedData.password);
+    
     if (!validation.isValid) {
-      console.log("❌ أخطاء في تسجيل الدخول:", validation.errors);
+      console.log('❌ أخطاء في تسجيل الدخول:', validation.errors);
       return res.status(400).json({
         success: false,
-        message: "بيانات تسجيل الدخول غير صحيحة",
-        errors: validation.errors,
+        message: 'بيانات تسجيل الدخول غير صحيحة',
+        errors: validation.errors
       });
     }
-
+    
     req.validatedData = validation.data;
-    console.log("✅ تم التحقق من بيانات تسجيل الدخول بنجاح");
+    console.log('✅ تم التحقق من بيانات تسجيل الدخول بنجاح');
     next();
+    
   } catch (error) {
-    console.error("❌ خطأ في التحقق من بيانات تسجيل الدخول:", error);
+    console.error('❌ خطأ في التحقق من بيانات تسجيل الدخول:', error);
     res.status(500).json({
       success: false,
-      message: "خطأ في خادم التحقق من البيانات",
-      error: error.message,
+      message: 'خطأ في خادم التحقق من البيانات',
+      error: error.message
     });
   }
 };
@@ -430,34 +391,35 @@ const validateLogin = async (req, res, next) => {
  */
 const validateRegisterTeacher = async (req, res, next) => {
   try {
-    console.log("🔍 بدء التحقق من بيانات تسجيل المعلم...");
-
+    console.log('🔍 بدء التحقق من بيانات تسجيل المعلم...');
+    
     const sanitizedData = sanitizeAuthData(req.body);
     const validation = validateTeacherRegistration(sanitizedData);
-
+    
     if (!validation.isValid) {
-      console.log("❌ أخطاء في تسجيل المعلم:", validation.errors);
+      console.log('❌ أخطاء في تسجيل المعلم:', validation.errors);
       return res.status(400).json({
         success: false,
-        message: "بيانات تسجيل المعلم غير صحيحة",
-        errors: validation.errors,
+        message: 'بيانات تسجيل المعلم غير صحيحة',
+        errors: validation.errors
       });
     }
-
+    
     // Hash password before proceeding
     if (validation.data.password) {
       validation.data.password = await hashPassword(validation.data.password);
     }
-
+    
     req.validatedData = validation.data;
-    console.log("✅ تم التحقق من بيانات تسجيل المعلم بنجاح");
+    console.log('✅ تم التحقق من بيانات تسجيل المعلم بنجاح');
     next();
+    
   } catch (error) {
-    console.error("❌ خطأ في التحقق من بيانات تسجيل المعلم:", error);
+    console.error('❌ خطأ في التحقق من بيانات تسجيل المعلم:', error);
     res.status(500).json({
       success: false,
-      message: "خطأ في خادم التحقق من البيانات",
-      error: error.message,
+      message: 'خطأ في خادم التحقق من البيانات',
+      error: error.message
     });
   }
 };
@@ -467,29 +429,30 @@ const validateRegisterTeacher = async (req, res, next) => {
  */
 const validateChangePassword = async (req, res, next) => {
   try {
-    console.log("🔍 بدء التحقق من بيانات تغيير كلمة المرور...");
-
+    console.log('🔍 بدء التحقق من بيانات تغيير كلمة المرور...');
+    
     const sanitizedData = sanitizeAuthData(req.body);
     const validation = validatePasswordChange(sanitizedData);
-
+    
     if (!validation.isValid) {
-      console.log("❌ أخطاء في تغيير كلمة المرور:", validation.errors);
+      console.log('❌ أخطاء في تغيير كلمة المرور:', validation.errors);
       return res.status(400).json({
         success: false,
-        message: "بيانات تغيير كلمة المرور غير صحيحة",
-        errors: validation.errors,
+        message: 'بيانات تغيير كلمة المرور غير صحيحة',
+        errors: validation.errors
       });
     }
-
+    
     req.validatedData = validation.data;
-    console.log("✅ تم التحقق من بيانات تغيير كلمة المرور بنجاح");
+    console.log('✅ تم التحقق من بيانات تغيير كلمة المرور بنجاح');
     next();
+    
   } catch (error) {
-    console.error("❌ خطأ في التحقق من بيانات تغيير كلمة المرور:", error);
+    console.error('❌ خطأ في التحقق من بيانات تغيير كلمة المرور:', error);
     res.status(500).json({
       success: false,
-      message: "خطأ في خادم التحقق من البيانات",
-      error: error.message,
+      message: 'خطأ في خادم التحقق من البيانات',
+      error: error.message
     });
   }
 };
@@ -499,29 +462,30 @@ const validateChangePassword = async (req, res, next) => {
  */
 const validateVerifyIdentity = async (req, res, next) => {
   try {
-    console.log("🔍 بدء التحقق من بيانات التحقق من الهوية...");
-
+    console.log('🔍 بدء التحقق من بيانات التحقق من الهوية...');
+    
     const sanitizedData = sanitizeAuthData(req.body);
     const validation = validateIdentityVerification(sanitizedData);
-
+    
     if (!validation.isValid) {
-      console.log("❌ أخطاء في التحقق من الهوية:", validation.errors);
+      console.log('❌ أخطاء في التحقق من الهوية:', validation.errors);
       return res.status(400).json({
         success: false,
-        message: "بيانات التحقق من الهوية غير صحيحة",
-        errors: validation.errors,
+        message: 'بيانات التحقق من الهوية غير صحيحة',
+        errors: validation.errors
       });
     }
-
+    
     req.validatedData = validation.data;
-    console.log("✅ تم التحقق من بيانات التحقق من الهوية بنجاح");
+    console.log('✅ تم التحقق من بيانات التحقق من الهوية بنجاح');
     next();
+    
   } catch (error) {
-    console.error("❌ خطأ في التحقق من بيانات التحقق من الهوية:", error);
+    console.error('❌ خطأ في التحقق من بيانات التحقق من الهوية:', error);
     res.status(500).json({
       success: false,
-      message: "خطأ في خادم التحقق من البيانات",
-      error: error.message,
+      message: 'خطأ في خادم التحقق من البيانات',
+      error: error.message
     });
   }
 };
@@ -531,36 +495,35 @@ const validateVerifyIdentity = async (req, res, next) => {
  */
 const validateResetPassword = async (req, res, next) => {
   try {
-    console.log("🔍 بدء التحقق من بيانات إعادة تعيين كلمة المرور...");
-
+    console.log('🔍 بدء التحقق من بيانات إعادة تعيين كلمة المرور...');
+    
     const sanitizedData = sanitizeAuthData(req.body);
     const validation = validatePasswordReset(sanitizedData);
-
+    
     if (!validation.isValid) {
-      console.log("❌ أخطاء في إعادة تعيين كلمة المرور:", validation.errors);
+      console.log('❌ أخطاء في إعادة تعيين كلمة المرور:', validation.errors);
       return res.status(400).json({
         success: false,
-        message: "بيانات إعادة تعيين كلمة المرور غير صحيحة",
-        errors: validation.errors,
+        message: 'بيانات إعادة تعيين كلمة المرور غير صحيحة',
+        errors: validation.errors
       });
     }
-
+    
     // Hash new password before proceeding
     if (validation.data.newPassword) {
-      validation.data.hashedNewPassword = await hashPassword(
-        validation.data.newPassword
-      );
+      validation.data.hashedNewPassword = await hashPassword(validation.data.newPassword);
     }
-
+    
     req.validatedData = validation.data;
-    console.log("✅ تم التحقق من بيانات إعادة تعيين كلمة المرور بنجاح");
+    console.log('✅ تم التحقق من بيانات إعادة تعيين كلمة المرور بنجاح');
     next();
+    
   } catch (error) {
-    console.error("❌ خطأ في التحقق من بيانات إعادة تعيين كلمة المرور:", error);
+    console.error('❌ خطأ في التحقق من بيانات إعادة تعيين كلمة المرور:', error);
     res.status(500).json({
       success: false,
-      message: "خطأ في خادم التحقق من البيانات",
-      error: error.message,
+      message: 'خطأ في خادم التحقق من البيانات',
+      error: error.message
     });
   }
 };
@@ -577,5 +540,5 @@ module.exports = {
   validateTeacherRegistration,
   validatePasswordChange,
   validateIdentityVerification,
-  validatePasswordReset,
+  validatePasswordReset
 };

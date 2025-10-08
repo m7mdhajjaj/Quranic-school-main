@@ -15,7 +15,7 @@ const TestSkeleton: React.FC = () => {
           <div className="h-10 bg-gray-200 rounded-lg animate-pulse mb-4 w-80 mx-auto"></div>
           <div className="h-6 bg-gray-100 rounded animate-pulse w-96 mx-auto"></div>
         </div>
-
+//jojop
         <div className="bg-white rounded-2xl shadow-xl p-8">
           {/* Surah Selection Section Skeleton */}
           <div className="mb-6">
