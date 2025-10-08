@@ -805,7 +805,7 @@ const GroupManagement: React.FC = () => {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-6 w-full justify-items-stretch">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-6 w-full justify-items-stretch">
               {[
                 {
                   label: "إجمالي",
@@ -813,18 +813,6 @@ const GroupManagement: React.FC = () => {
                   icon: FaUsers,
                   color: "blue",
                   total: groups.length,
-                },
-                {
-                  label: "ذكور",
-                  value: groups.filter(g => g.teacher && g.teacher.includes('معلم')).length,
-                  icon: FaChalkboardTeacher,
-                  color: "cyan",
-                },
-                {
-                  label: "إناث",
-                  value: groups.filter(g => g.teacher && g.teacher.includes('معلمة')).length,
-                  icon: FaChalkboardTeacher,
-                  color: "pink",
                 },
                 {
                   label: "نشطين",
@@ -837,12 +825,6 @@ const GroupManagement: React.FC = () => {
                   value: groups.filter(g => g.isActive === false).length,
                   icon: FaTimes,
                   color: "red",
-                },
-                {
-                  label: "متوسط العمر",
-                  value: Math.round(groups.reduce((sum, g) => sum + (g.capacity || 0), 0) / (groups.length || 1)),
-                  icon: FaUserFriends,
-                  color: "amber",
                 },
               ].map((stat, idx) => (
                 <div
