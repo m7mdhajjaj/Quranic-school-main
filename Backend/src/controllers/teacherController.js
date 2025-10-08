@@ -575,8 +575,8 @@ exports.deleteTeacher = async (req, res) => {
             { teacher: teacher._id.toString() },
           ],
         },
-        { 
-          $unset: { teacher: "", teacherName: "" }
+        {
+          $unset: { teacher: "", teacherName: "" },
         }
       );
       console.log(`✅ تم إزالة المعلم من ${relatedGroups.length} حلقة`);

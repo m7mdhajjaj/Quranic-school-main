@@ -184,15 +184,23 @@ const Absence = () => {
       let filteredStudents = rawStudents;
 
       if (currentUser?.role === "teacher") {
-        // الحصول على اسم المعلم الكامل (مع تنظيف المسافات)
-        const teacherFullName = `${currentUser.firstName} ${
+        // تجهيز أسماء مختلفة للمقارنة (لأن الاسم قد يكون مخزن بطرق مختلفة)
+        const firstLast =
+          `${currentUser.firstName} ${currentUser.lastName}`.trim();
+        const firstFatherLast = `${currentUser.firstName} ${
           currentUser.fatherName || ""
         } ${currentUser.lastName || ""}`
           .trim()
-          .replace(/\s+/g, " "); // إزالة المسافات الزائدة
+          .replace(/\s+/g, " ");
+        const possibleNames = [
+          firstLast, // محمد حجاج
+          firstFatherLast, // محمد سعد حجاج
+          currentUser.firstName, // محمد (اسم أول فقط)
+        ].filter((name) => name.length > 0);
 
-        console.log("🔍 اسم المعلم الحالي:", teacherFullName);
-        console.log("📊 إجمالي الطلاب في النظام:", rawStudents.length);
+        console.log("🔍 أسماء المعلم المحتملة للمقارنة:", possibleNames);
+
+        console.log(" إجمالي الطلاب في النظام:", rawStudents.length);
 
         // جمع كل أسماء المعلمين الموجودة للتشخيص
         const allTeachers = new Set<string>();
@@ -213,34 +221,48 @@ const Absence = () => {
             .trim()
             .replace(/\s+/g, " ")
             .toLowerCase();
-          const currentTeacher = teacherFullName.toLowerCase();
 
-          // مقارنة الأسماء بدقة
-          const isMatch = studentTeacher === currentTeacher;
+          // مقارنة مع كل الأسماء المحتملة
+          let isMatch = false;
+          let matchedName = "";
 
-          // طباعة معلومات للطلاب غير المطابقين
-          if (!isMatch && rawStudents.indexOf(s) < 5) {
-            console.log(
-              `❌ الطالب: ${s.firstName}, معلمه: "${s.teacher}" لا يطابق "${teacherFullName}"`
-            );
-          } else if (isMatch && filteredStudents.length < 3) {
-            console.log(
-              `✅ الطالب: ${s.firstName}, معلمه: "${s.teacher}" يطابق "${teacherFullName}"`
-            );
+          for (const possibleName of possibleNames) {
+            const normalizedPossible = possibleName.toLowerCase();
+            if (
+              studentTeacher === normalizedPossible ||
+              studentTeacher.includes(normalizedPossible) ||
+              normalizedPossible.includes(studentTeacher)
+            ) {
+              isMatch = true;
+              matchedName = possibleName;
+              break;
+            }
+          }
+
+          // طباعة معلومات للتشخيص (أول 5 طلاب)
+          if (rawStudents.indexOf(s) < 5) {
+            console.log(`🔎 الطالب: ${s.firstName}`);
+            console.log(`   معلم الطالب: "${s.teacher}"`);
+            console.log(`   معلم الطالب (منسق): "${studentTeacher}"`);
+            console.log(`   الأسماء المحتملة: ${possibleNames.join(", ")}`);
+            console.log(`   اسم المطابق: "${matchedName}"`);
+            console.log(`   النتيجة: ${isMatch ? "✅ يطابق" : "❌ لا يطابق"}`);
+            console.log("---");
           }
 
           return isMatch;
         });
 
         console.log(
-          `✅ تم تصفية الطلاب: ${filteredStudents.length} من أصل ${rawStudents.length} للمعلم ${teacherFullName}`
+          `✅ تم تصفية الطلاب: ${filteredStudents.length} من أصل ${rawStudents.length}`
         );
+        console.log(`📋 الأسماء المستخدمة للمقارنة:`, possibleNames);
 
         if (filteredStudents.length === 0) {
           console.warn("⚠️ تحذير: لا يوجد طلاب لهذا المعلم!");
           console.log(
-            "💡 تحقق من أن اسم المعلم في بيانات الطلاب يطابق:",
-            teacherFullName
+            "💡 تحقق من أن اسم المعلم في بيانات الطلاب يطابق أحد هذه الأسماء:",
+            possibleNames
           );
         }
       }
@@ -335,6 +357,35 @@ const Absence = () => {
     }
   };
 
+  // helper function للحصول على أسماء المعلم المحتملة
+  const getTeacherPossibleNames = (user: LoggedInUser) => {
+    const firstLast = `${user.firstName} ${user.lastName}`.trim();
+    const firstFatherLast = `${user.firstName} ${user.fatherName || ""} ${
+      user.lastName || ""
+    }`
+      .trim()
+      .replace(/\s+/g, " ");
+    return [firstLast, firstFatherLast, user.firstName].filter(
+      (name) => name.length > 0
+    );
+  };
+
+  // helper function للتحقق من تطابق المعلم
+  const isTeacherMatch = (studentTeacher: string, possibleNames: string[]) => {
+    const studentTeacherNormalized = studentTeacher
+      .trim()
+      .replace(/\s+/g, " ")
+      .toLowerCase();
+    return possibleNames.some((possibleName) => {
+      const normalizedPossible = possibleName.toLowerCase();
+      return (
+        studentTeacherNormalized === normalizedPossible ||
+        studentTeacherNormalized.includes(normalizedPossible) ||
+        normalizedPossible.includes(studentTeacherNormalized)
+      );
+    });
+  };
+
   // ================== منطق واجهة المعلّم ==================
   const presentCount = useMemo(
     () => students.filter((s) => s.isPresent).length,
@@ -350,48 +401,78 @@ const Absence = () => {
     [students.length, presentCount]
   );
 
-  // مجموعات (Groups) موجودة عند الطلاب - فقط حلقات المعلم
-  const groupsAvailable = useMemo(() => {
-    const set = new Set<string>();
+  // حالة منفصلة لحلقات المعلم
+  const [teacherGroups, setTeacherGroups] = useState<string[]>([]);
 
-    // إذا كان المستخدم معلم، أضف فقط الحلقات التي لديه طلاب فيها
-    if (currentUser?.role === "teacher") {
-      // فلترة الطلاب حسب المعلم أولاً
-      const teacherFullName = `${currentUser.firstName} ${
-        currentUser.fatherName || ""
-      } ${currentUser.lastName || ""}`
-        .trim()
-        .replace(/\s+/g, " ");
+  // جلب حلقات المعلم من Groups API مباشرة
+  useEffect(() => {
+    const fetchTeacherGroups = async () => {
+      if (!currentUser || currentUser.role !== "teacher") {
+        setTeacherGroups([]);
+        return;
+      }
 
-      students.forEach((s) => {
-        // تأكد من أن الطالب يتبع هذا المعلم
-        if (s.group && s.teacher) {
-          const studentTeacher = s.teacher
-            .trim()
-            .replace(/\s+/g, " ")
-            .toLowerCase();
-          const currentTeacher = teacherFullName.toLowerCase();
+      try {
+        console.log("🔍 جلب حلقات المعلم من Groups API...");
 
-          if (studentTeacher === currentTeacher) {
-            set.add(s.group);
-          }
+        // جلب الحلقات مباشرة من Groups API
+        const { getAllGroups } = await import("../Api/groupApi");
+        const groupsRes = await getAllGroups();
+
+        if (!groupsRes.success || !Array.isArray(groupsRes.data)) {
+          console.error("❌ فشل في جلب الحلقات");
+          setTeacherGroups([]);
+          return;
         }
-      });
 
-      const groups = Array.from(set).sort((a, b) => a.localeCompare(b, "ar"));
-      console.log(`📋 حلقات المعلم ${teacherFullName}:`, groups);
+        const possibleNames = getTeacherPossibleNames(currentUser);
+        console.log("📋 أسماء المعلم المحتملة:", possibleNames);
+        console.log("📊 إجمالي الحلقات في النظام:", groupsRes.data.length);
 
-      // للمعلم: بدون خيار "الكل"، فقط حلقاته
-      return groups;
+        // فلترة الحلقات التي تخص هذا المعلم
+        const teacherGroupsData = groupsRes.data.filter((group: any) => {
+          if (!group.teacher) {
+            return false;
+          }
+
+          const isMatch = isTeacherMatch(group.teacher, possibleNames);
+          if (isMatch) {
+            console.log(
+              `✅ حلقة مطابقة: ${group.name} - معلمها: ${group.teacher}`
+            );
+          }
+          return isMatch;
+        });
+
+        const groupNames = teacherGroupsData
+          .map((g: any) => g.name)
+          .sort((a: string, b: string) => a.localeCompare(b, "ar"));
+        console.log(`📋 حلقات المعلم النهائية:`, groupNames);
+        setTeacherGroups(groupNames);
+      } catch (error) {
+        console.error("خطأ في جلب حلقات المعلم:", error);
+        setTeacherGroups([]);
+      }
+    };
+
+    fetchTeacherGroups();
+  }, [currentUser]);
+
+  // مجموعات (Groups) موجودة عند الطلاب
+  const groupsAvailable = useMemo(() => {
+    if (currentUser?.role === "teacher") {
+      // للمعلم: استخدم الحلقات المجلبة مسبقاً
+      return teacherGroups;
     } else {
       // للأدمن: عرض كل الحلقات مع خيار "الكل"
+      const set = new Set<string>();
       students.forEach((s) => s.group && set.add(s.group));
       return [
         "all",
         ...Array.from(set).sort((a, b) => a.localeCompare(b, "ar")),
       ];
     }
-  }, [students, currentUser]);
+  }, [currentUser, teacherGroups, students]);
 
   // تحديد أول حلقة تلقائياً للمعلم
   useEffect(() => {
@@ -794,238 +875,276 @@ const Absence = () => {
         ) : (
           /* ================== واجهة المعلّم ================== */
           <div className="grid grid-cols-1 gap-6">
-            {/* شريط أدوات */}
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-                {/* التاريخ */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    التاريخ:
-                  </label>
-                  <input
-                    type="date"
-                    value={date}
-                    onChange={(e) => safeSetDate(e.target.value)}
-                    className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full"
-                  />
-                </div>
-
-                {/* الفلترة بالمجموعة */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    الحلقة:
-                  </label>
-                  <select
-                    value={groupFilter}
-                    onChange={(e) => setGroupFilter(e.target.value)}
-                    className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full">
-                    {groupsAvailable.map((g) => (
-                      <option key={g} value={g}>
-                        {g === "all" ? "الكل" : g}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* بحث */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    بحث بالاسم:
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="مثال: أحمد..."
-                    value={nameQuery}
-                    onChange={(e) => setNameQuery(e.target.value)}
-                    className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full"
-                  />
-                </div>
-
-                {/* أزرار */}
-                <div className="flex gap-2 items-end w-full">
-                  <button
-                    onClick={() => {
-                      setSelectedAll(false);
-                      toggleAllStudents();
-                    }}
-                    className={`flex-1 px-3 py-2 rounded-lg ${
-                      selectedAll
-                        ? "bg-gray-200 text-gray-700"
-                        : "bg-emerald-600 text-white hover:bg-emerald-700"
-                    }`}
-                    disabled={!isEditing}>
-                    {selectedAll ? "إلغاء تحديد الكل" : "تحديد الكل حاضر"}
-                  </button>
-
-                  <button
-                    onClick={toggleEdit}
-                    className={`px-3 py-2 rounded-lg ${
-                      isEditing
-                        ? "bg-red-100 text-red-700 "
-                        : "bg-blue-600 text-white hover:bg-blue-700"
-                    }`}>
-                    {isEditing ? "إلغاء التعديل" : "تعديل السجل"}
-                  </button>
-                </div>
-              </div>
-
-              {/* إحصائيات اليوم */}
-              <div className="grid grid-cols-3 gap-4 text-center mt-6">
-                <div className="bg-green-50 p-3 rounded-lg">
-                  <p className="text-sm text-gray-600">الحضور</p>
-                  <p className="font-bold text-green-600 text-xl">
-                    {presentCount}
-                  </p>
-                </div>
-                <div className="bg-red-50 p-3 rounded-lg">
-                  <p className="text-sm text-gray-600">الغياب</p>
-                  <p className="font-bold text-red-600 text-xl">
-                    {absentCount}
-                  </p>
-                </div>
-                <div className="bg-blue-50 p-3 rounded-lg">
-                  <p className="text-sm text-gray-600">نسبة الحضور</p>
-                  <p className="font-bold text-blue-600 text-xl">
-                    {attendanceRate}%
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* جدول الطلاب */}
-            <div className="bg-white rounded-xl shadow-md overflow-hidden">
-              <div className="bg-gradient-to-r from-emerald-600 to-teal-500 py-4 px-6 flex justify-between items-center">
-                <h2 className="text-xl font-bold text-white">قائمة الطلاب</h2>
-                {unsavedChanges && (
-                  <span className="text-yellow-100 text-sm font-medium">
-                    لديك تغييرات غير محفوظة
-                  </span>
-                )}
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 sticky top-0 z-10">
-                    <tr>
-                      <th className="py-3 px-4 text-right text-sm font-medium text-gray-500">
-                        رقم الطالب
-                      </th>
-                      <th className="py-3 px-4 text-right text-sm font-medium text-gray-500">
-                        اسم الطالب
-                      </th>
-                      <th className="py-3 px-4 text-right text-sm font-medium text-gray-500">
-                        الحلقة
-                      </th>
-                      <th className="py-3 px-6 text-center text-sm font-medium text-gray-500">
-                        <div className="flex items-center justify-center">
-                          <input
-                            type="checkbox"
-                            checked={selectedAll}
-                            onChange={toggleAllStudents}
-                            className={`w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 ${
-                              !isEditing && "opacity-60 cursor-not-allowed"
-                            }`}
-                            disabled={!isEditing}
-                          />
-                          <span className="mr-2">الحضور</span>
-                        </div>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {visibleStudents.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={4}
-                          className="text-center py-6 text-gray-500">
-                          لا يوجد طلاب مطابقين للفلترة/البحث
-                        </td>
-                      </tr>
-                    ) : (
-                      visibleStudents.map((s) => (
-                        <tr
-                          key={s._id}
-                          className={`hover:bg-gray-50 ${
-                            isEditing ? "cursor-pointer" : ""
-                          }`}
-                          onClick={() => toggleStudentPresence(s._id)}>
-                          <td className="px-4 py-3 text-sm text-gray-500">
-                            {s.studentId}
-                          </td>
-                          <td className="px-4 py-3 font-medium text-gray-900">
-                            {s.name}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-500">
-                            {s.group ?? "-"}
-                          </td>
-                          <td className="px-6 py-3 text-center">
-                            <input
-                              type="checkbox"
-                              checked={s.isPresent}
-                              onChange={() => toggleStudentPresence(s._id)}
-                              className={`w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500 ${
-                                !isEditing && "opacity-60 cursor-not-allowed"
-                              }`}
-                              disabled={!isEditing}
-                            />
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* أزرار حفظ */}
-              <div className="p-4 bg-gray-50 flex justify-center">
-                <button
-                  onClick={handleSave}
-                  disabled={!isEditing}
-                  className={`bg-emerald-600 text-white px-8 py-2 rounded-lg shadow-md flex items-center ${
-                    !isEditing
-                      ? "opacity-60 cursor-not-allowed"
-                      : "hover:bg-emerald-700"
-                  }`}>
+            {/* تحقق من وجود حلقات للمعلم */}
+            {currentUser?.role === "teacher" && groupsAvailable.length === 0 ? (
+              <div className="bg-white rounded-xl shadow-md p-8 text-center">
+                <div className="flex flex-col items-center justify-center py-12">
                   <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 ml-2"
-                    viewBox="0 0 20 20"
-                    fill="currentColor">
+                    className="w-24 h-24 text-gray-400 mb-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24">
                     <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
                     />
                   </svg>
-                  حفظ السجل
-                </button>
+                  <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                    لا توجد حلقات
+                  </h3>
+                  <p className="text-gray-600 mb-6 max-w-md">
+                    لم يتم تعيين أي حلقات لك بعد. يرجى التواصل مع الإدارة لإضافة
+                    حلقات إلى حسابك.
+                  </p>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md">
+                    <p className="text-sm text-blue-800">
+                      💡 عند تعيين حلقات لك، ستظهر هنا مباشرة وستتمكن من تسجيل
+                      الحضور والغياب للطلاب.
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
+            ) : (
+              <>
+                {/* شريط أدوات */}
+                <div className="bg-white rounded-xl shadow-md p-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                    {/* التاريخ */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        التاريخ:
+                      </label>
+                      <input
+                        type="date"
+                        value={date}
+                        onChange={(e) => safeSetDate(e.target.value)}
+                        className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full"
+                      />
+                    </div>
 
-            {/* تعليمات سريعة */}
-            <div className="mt-2 bg-white rounded-xl p-4 shadow-md">
-              <h3 className="font-bold text-gray-700 mb-2 flex items-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 ml-1 text-amber-500"
-                  viewBox="0 0 20 20"
-                  fill="currentColor">
-                  <path
-                    fillRule="evenodd"
-                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                تعليمات:
-              </h3>
-              <ul className="text-gray-600 text-sm mr-6 list-disc space-y-1">
-                <li>اضغط "تعديل السجل" لتفعيل التعديل.</li>
-                <li>انقر على صفّ الطالب لقلب حالته (حاضر/غائب).</li>
-                <li>خانة التحديد العلوية لاختيار الكل بسرعة.</li>
-                <li>سيتم تحذيرك عند وجود تغييرات غير محفوظة قبل الخروج.</li>
-                <li>استخدم البحث والفلترة حسب الحلقة لتسريع العمل.</li>
-              </ul>
-            </div>
+                    {/* الفلترة بالمجموعة */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        الحلقة:
+                      </label>
+                      <select
+                        value={groupFilter}
+                        onChange={(e) => setGroupFilter(e.target.value)}
+                        className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full">
+                        {groupsAvailable.map((g) => (
+                          <option key={g} value={g}>
+                            {g === "all" ? "الكل" : g}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* بحث */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        بحث بالاسم:
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="مثال: أحمد..."
+                        value={nameQuery}
+                        onChange={(e) => setNameQuery(e.target.value)}
+                        className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full"
+                      />
+                    </div>
+
+                    {/* أزرار */}
+                    <div className="flex gap-2 items-end w-full">
+                      <button
+                        onClick={() => {
+                          setSelectedAll(false);
+                          toggleAllStudents();
+                        }}
+                        className={`flex-1 px-3 py-2 rounded-lg ${
+                          selectedAll
+                            ? "bg-gray-200 text-gray-700"
+                            : "bg-emerald-600 text-white hover:bg-emerald-700"
+                        }`}
+                        disabled={!isEditing}>
+                        {selectedAll ? "إلغاء تحديد الكل" : "تحديد الكل حاضر"}
+                      </button>
+
+                      <button
+                        onClick={toggleEdit}
+                        className={`px-3 py-2 rounded-lg ${
+                          isEditing
+                            ? "bg-red-100 text-red-700 "
+                            : "bg-blue-600 text-white hover:bg-blue-700"
+                        }`}>
+                        {isEditing ? "إلغاء التعديل" : "تعديل السجل"}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* إحصائيات اليوم */}
+                  <div className="grid grid-cols-3 gap-4 text-center mt-6">
+                    <div className="bg-green-50 p-3 rounded-lg">
+                      <p className="text-sm text-gray-600">الحضور</p>
+                      <p className="font-bold text-green-600 text-xl">
+                        {presentCount}
+                      </p>
+                    </div>
+                    <div className="bg-red-50 p-3 rounded-lg">
+                      <p className="text-sm text-gray-600">الغياب</p>
+                      <p className="font-bold text-red-600 text-xl">
+                        {absentCount}
+                      </p>
+                    </div>
+                    <div className="bg-blue-50 p-3 rounded-lg">
+                      <p className="text-sm text-gray-600">نسبة الحضور</p>
+                      <p className="font-bold text-blue-600 text-xl">
+                        {attendanceRate}%
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* جدول الطلاب */}
+                <div className="bg-white rounded-xl shadow-md overflow-hidden">
+                  <div className="bg-gradient-to-r from-emerald-600 to-teal-500 py-4 px-6 flex justify-between items-center">
+                    <h2 className="text-xl font-bold text-white">
+                      قائمة الطلاب
+                    </h2>
+                    {unsavedChanges && (
+                      <span className="text-yellow-100 text-sm font-medium">
+                        لديك تغييرات غير محفوظة
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 sticky top-0 z-10">
+                        <tr>
+                          <th className="py-3 px-4 text-right text-sm font-medium text-gray-500">
+                            رقم الطالب
+                          </th>
+                          <th className="py-3 px-4 text-right text-sm font-medium text-gray-500">
+                            اسم الطالب
+                          </th>
+                          <th className="py-3 px-4 text-right text-sm font-medium text-gray-500">
+                            الحلقة
+                          </th>
+                          <th className="py-3 px-6 text-center text-sm font-medium text-gray-500">
+                            <div className="flex items-center justify-center">
+                              <input
+                                type="checkbox"
+                                checked={selectedAll}
+                                onChange={toggleAllStudents}
+                                className={`w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 ${
+                                  !isEditing && "opacity-60 cursor-not-allowed"
+                                }`}
+                                disabled={!isEditing}
+                              />
+                              <span className="mr-2">الحضور</span>
+                            </div>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {visibleStudents.length === 0 ? (
+                          <tr>
+                            <td
+                              colSpan={4}
+                              className="text-center py-6 text-gray-500">
+                              لا يوجد طلاب مطابقين للفلترة/البحث
+                            </td>
+                          </tr>
+                        ) : (
+                          visibleStudents.map((s) => (
+                            <tr
+                              key={s._id}
+                              className={`hover:bg-gray-50 ${
+                                isEditing ? "cursor-pointer" : ""
+                              }`}
+                              onClick={() => toggleStudentPresence(s._id)}>
+                              <td className="px-4 py-3 text-sm text-gray-500">
+                                {s.studentId}
+                              </td>
+                              <td className="px-4 py-3 font-medium text-gray-900">
+                                {s.name}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-500">
+                                {s.group ?? "-"}
+                              </td>
+                              <td className="px-6 py-3 text-center">
+                                <input
+                                  type="checkbox"
+                                  checked={s.isPresent}
+                                  onChange={() => toggleStudentPresence(s._id)}
+                                  className={`w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500 ${
+                                    !isEditing &&
+                                    "opacity-60 cursor-not-allowed"
+                                  }`}
+                                  disabled={!isEditing}
+                                />
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* أزرار حفظ */}
+                  <div className="p-4 bg-gray-50 flex justify-center">
+                    <button
+                      onClick={handleSave}
+                      disabled={!isEditing}
+                      className={`bg-emerald-600 text-white px-8 py-2 rounded-lg shadow-md flex items-center ${
+                        !isEditing
+                          ? "opacity-60 cursor-not-allowed"
+                          : "hover:bg-emerald-700"
+                      }`}>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5 ml-2"
+                        viewBox="0 0 20 20"
+                        fill="currentColor">
+                        <path
+                          fillRule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      حفظ السجل
+                    </button>
+                  </div>
+                </div>
+
+                {/* تعليمات سريعة */}
+                <div className="mt-2 bg-white rounded-xl p-4 shadow-md">
+                  <h3 className="font-bold text-gray-700 mb-2 flex items-center">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 ml-1 text-amber-500"
+                      viewBox="0 0 20 20"
+                      fill="currentColor">
+                      <path
+                        fillRule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    تعليمات:
+                  </h3>
+                  <ul className="text-gray-600 text-sm mr-6 list-disc space-y-1">
+                    <li>اضغط "تعديل السجل" لتفعيل التعديل.</li>
+                    <li>انقر على صفّ الطالب لقلب حالته (حاضر/غائب).</li>
+                    <li>خانة التحديد العلوية لاختيار الكل بسرعة.</li>
+                    <li>سيتم تحذيرك عند وجود تغييرات غير محفوظة قبل الخروج.</li>
+                    <li>استخدم البحث والفلترة حسب الحلقة لتسريع العمل.</li>
+                  </ul>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
