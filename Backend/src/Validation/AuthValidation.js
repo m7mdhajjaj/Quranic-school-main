@@ -23,8 +23,8 @@ const validateLoginCredentials = (identifier, password) => {
     errors.push('اسم المستخدم أو البريد الإلكتروني مطلوب');
   } else {
     const identifierStr = identifier.toString().trim();
-    if (identifierStr.length < 3) {
-      errors.push('اسم المستخدم يجب أن يكون 3 أحرف على الأقل');
+    if (identifierStr.length < 1) {
+      errors.push('اسم المستخدم لا يمكن أن يكون فارغاً');
     }
   }
   
@@ -32,8 +32,8 @@ const validateLoginCredentials = (identifier, password) => {
     errors.push('كلمة المرور مطلوبة');
   } else {
     const passwordStr = password.toString();
-    if (passwordStr.length < 6) {
-      errors.push('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+    if (passwordStr.length < 1) {
+      errors.push('كلمة المرور لا يمكن أن تكون فارغة');
     }
   }
   
@@ -359,9 +359,21 @@ const hashPassword = async (password) => {
 const validateLogin = async (req, res, next) => {
   try {
     console.log('🔍 بدء التحقق من بيانات تسجيل الدخول...');
+    console.log('📝 البيانات المستلمة:', req.body);
     
     const sanitizedData = sanitizeAuthData(req.body);
-    const validation = validateLoginCredentials(sanitizedData.identifier, sanitizedData.password);
+    
+    // دعم حقول مختلفة للمعرف: identifier, adminId, teacherId, studentId
+    const identifier = sanitizedData.identifier || 
+                      sanitizedData.adminId || 
+                      sanitizedData.teacherId || 
+                      sanitizedData.studentId;
+    
+    const password = sanitizedData.password;
+    
+    console.log('🔑 المعرف:', identifier, '| كلمة المرور:', password ? '***' : 'غير موجودة');
+    
+    const validation = validateLoginCredentials(identifier, password);
     
     if (!validation.isValid) {
       console.log('❌ أخطاء في تسجيل الدخول:', validation.errors);
@@ -372,7 +384,10 @@ const validateLogin = async (req, res, next) => {
       });
     }
     
-    req.validatedData = validation.data;
+    req.validatedData = {
+      ...validation.data,
+      userType: sanitizedData.userType
+    };
     console.log('✅ تم التحقق من بيانات تسجيل الدخول بنجاح');
     next();
     
