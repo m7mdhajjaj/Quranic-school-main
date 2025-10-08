@@ -121,15 +121,41 @@ exports.createGroup = async (req, res) => {
 
     // إنشاء حلقة جديدة
     console.log("📝 إنشاء الحلقة في قاعدة البيانات...");
+    
     const group = await Group.create({
       name,
-      teacher,
+      teacher: teacherFullName, // حفظ اسم المعلم الكامل
       description,
       capacity,
       schedule,
     });
 
     console.log("✨ تم إنشاء الحلقة بنجاح:", group._id);
+
+    // تحديث المعلم لإضافة الحلقة إلى قائمة حلقاته
+    if (teacherExists) {
+      const teacherGroups = teacherExists.groups || [];
+
+      // التحقق من عدم وجود الحلقة مسبقاً
+      const groupExists = teacherGroups.some(
+        (g) => g.id && g.id.toString() === group._id.toString()
+      );
+
+      if (!groupExists) {
+        teacherGroups.push({
+          id: group._id,
+          name: group.name,
+          number: teacherGroups.length + 1,
+        });
+
+        await Teacher.findByIdAndUpdate(teacherExists._id, {
+          groups: teacherGroups,
+        });
+
+        console.log(`✅ تم إضافة الحلقة إلى المعلم ${teacherFullName}`);
+      }
+    }
+
     res.status(201).json({
       success: true,
       message: "تم إنشاء الحلقة بنجاح",
@@ -219,6 +245,7 @@ exports.invalidateStudentCountsCache = invalidateStudentCountsCache;
 exports.getAllGroups = async (req, res) => {
   try {
     const startTime = Date.now();
+    const Teacher = require("../schema/Teacher");
 
     // جلب جميع الحلقات و عدد الطلاب بشكل متوازي للسرعة
     const [groups, studentCountMap] = await Promise.all([
@@ -226,22 +253,58 @@ exports.getAllGroups = async (req, res) => {
       getStudentCountsForAllGroups(),
     ]);
 
-    // إضافة عدد الطلاب وحالة السعة لكل حلقة
-    const groupsWithStudentCount = groups.map((group) => {
-      const currentStudents = studentCountMap[group.name] || 0;
-      const capacity = group.capacity || 30;
-      const isFull = currentStudents >= capacity;
-      
-      return {
-        ...group.toObject(),
-        currentStudents,
-        capacity,
-        isFull,
-        availableSpots: Math.max(0, capacity - currentStudents),
-        capacityStatus: `${currentStudents}/${capacity}`,
-        capacityPercentage: Math.round((currentStudents / capacity) * 100),
-      };
-    });
+    // إضافة عدد الطلاب وحالة السعة ومعلومات المعلم لكل حلقة
+    const groupsWithStudentCount = await Promise.all(
+      groups.map(async (group) => {
+        const currentStudents = studentCountMap[group.name] || 0;
+        const capacity = group.capacity || 30;
+        const isFull = currentStudents >= capacity;
+
+        // جلب معلومات المعلم إذا كان موجود
+        let teacherName = group.teacher || "";
+        let teacherInfo = null;
+
+        if (group.teacher) {
+          try {
+            const teacherStr = String(group.teacher);
+            
+            // إذا كان teacher هو ObjectId
+            if (/^[0-9a-fA-F]{24}$/.test(teacherStr)) {
+              teacherInfo = await Teacher.findById(teacherStr);
+              if (teacherInfo) {
+                teacherName = `${teacherInfo.firstName} ${teacherInfo.lastName}`;
+              }
+            }
+            // إذا كان teacher هو اسم المعلم بالفعل
+            else {
+              teacherName = teacherStr;
+            }
+          } catch (err) {
+            console.error("خطأ في معالجة معلومات المعلم:", err);
+            teacherName = String(group.teacher);
+          }
+        }
+
+        return {
+          ...group.toObject(),
+          teacher: teacherName, // تأكد من أن teacher يحتوي على اسم المعلم
+          teacherInfo: teacherInfo
+            ? {
+                _id: teacherInfo._id,
+                firstName: teacherInfo.firstName,
+                lastName: teacherInfo.lastName,
+                email: teacherInfo.email,
+              }
+            : null,
+          currentStudents,
+          capacity,
+          isFull,
+          availableSpots: Math.max(0, capacity - currentStudents),
+          capacityStatus: `${currentStudents}/${capacity}`,
+          capacityPercentage: Math.round((currentStudents / capacity) * 100),
+        };
+      })
+    );
 
     const endTime = Date.now();
     const duration = endTime - startTime;

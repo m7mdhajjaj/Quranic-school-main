@@ -54,13 +54,30 @@ exports.getAllTeachers = async (req, res) => {
     const teachersWithGroups = await Promise.all(
       teachers.map(async (teacher) => {
         const teacherFullName = `${teacher.firstName} ${teacher.lastName}`;
+
         // البحث عن الحلقات التي تطابق اسم المعلم الكامل أو الـ ID
         const groups = await Group.find({
-          $or: [{ teacher: teacher._id }, { teacher: teacherFullName }],
+          $or: [
+            { teacher: teacher._id },
+            { teacher: teacher._id.toString() },
+            { teacher: teacherFullName },
+          ],
         });
+
+        // إذا كانت الحلقات موجودة في قاعدة البيانات، استخدمها
+        // وإلا استخدم الحلقات المخزنة في المعلم
+        const finalGroups =
+          groups.length > 0
+            ? groups.map((g) => ({
+                name: g.name,
+                id: g._id,
+                number: groups.indexOf(g) + 1,
+              }))
+            : teacher.groups || [];
+
         return {
           ...teacher.toObject(),
-          groups: groups.map((g) => ({ name: g.name, id: g._id })), // إرجاع اسم الحلقة والـ ID
+          groups: finalGroups,
         };
       })
     );
@@ -203,6 +220,23 @@ exports.createTeacher = async (req, res) => {
     });
 
     console.log("Teacher created successfully:", doc._id);
+
+    // تحديث الحلقات لربطها بالمعلم الجديد
+    if (Array.isArray(groups) && groups.length > 0) {
+      const teacherFullName = `${firstName} ${lastName}`;
+
+      for (const groupItem of groups) {
+        const groupId = typeof groupItem === "object" ? groupItem.id : null;
+
+        if (groupId) {
+          // تحديث الحلقة لربطها بالمعلم
+          await Group.findByIdAndUpdate(groupId, {
+            teacher: teacherFullName,
+          });
+          console.log(`✅ تم ربط الحلقة ${groupId} بالمعلم ${teacherFullName}`);
+        }
+      }
+    }
 
     // Emit socket event for real-time update
     if (global.io) {
