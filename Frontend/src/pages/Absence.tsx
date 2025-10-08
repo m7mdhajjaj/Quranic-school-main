@@ -26,6 +26,7 @@ interface Student {
   fatherName: string;
   lastName: string;
   group?: string;
+  teacher?: string;
 }
 
 interface LoggedInUser {
@@ -43,6 +44,7 @@ interface AttendanceStudent {
   studentId: number;
   name: string;
   group?: string;
+  teacher?: string;
   isPresent: boolean;
 }
 
@@ -173,27 +175,92 @@ const Absence = () => {
 
       // 1) جلب جميع الطلاب
       const studentsRes = await getAllStudents();
-      const rawStudents: Student[] = studentsRes.success && Array.isArray(studentsRes.data)
-        ? studentsRes.data
-        : [];
+      const rawStudents: Student[] =
+        studentsRes.success && Array.isArray(studentsRes.data)
+          ? studentsRes.data
+          : [];
 
-      // 2) تشكيل بيانات العرض
-      let formatted: AttendanceStudent[] = rawStudents.map((s) => ({
+      // 2) فلترة الطلاب حسب المعلم الحالي
+      let filteredStudents = rawStudents;
+
+      if (currentUser?.role === "teacher") {
+        // الحصول على اسم المعلم الكامل (مع تنظيف المسافات)
+        const teacherFullName = `${currentUser.firstName} ${
+          currentUser.fatherName || ""
+        } ${currentUser.lastName || ""}`
+          .trim()
+          .replace(/\s+/g, " "); // إزالة المسافات الزائدة
+
+        console.log("🔍 اسم المعلم الحالي:", teacherFullName);
+        console.log("📊 إجمالي الطلاب في النظام:", rawStudents.length);
+
+        // جمع كل أسماء المعلمين الموجودة للتشخيص
+        const allTeachers = new Set<string>();
+        rawStudents.forEach((s) => {
+          if (s.teacher) {
+            allTeachers.add(s.teacher.trim());
+          }
+        });
+        console.log("👥 جميع المعلمين في النظام:", Array.from(allTeachers));
+
+        // فلترة الطلاب الذين يتبعون هذا المعلم فقط
+        filteredStudents = rawStudents.filter((s) => {
+          if (!s.teacher) {
+            return false;
+          }
+
+          const studentTeacher = s.teacher
+            .trim()
+            .replace(/\s+/g, " ")
+            .toLowerCase();
+          const currentTeacher = teacherFullName.toLowerCase();
+
+          // مقارنة الأسماء بدقة
+          const isMatch = studentTeacher === currentTeacher;
+
+          // طباعة معلومات للطلاب غير المطابقين
+          if (!isMatch && rawStudents.indexOf(s) < 5) {
+            console.log(
+              `❌ الطالب: ${s.firstName}, معلمه: "${s.teacher}" لا يطابق "${teacherFullName}"`
+            );
+          } else if (isMatch && filteredStudents.length < 3) {
+            console.log(
+              `✅ الطالب: ${s.firstName}, معلمه: "${s.teacher}" يطابق "${teacherFullName}"`
+            );
+          }
+
+          return isMatch;
+        });
+
+        console.log(
+          `✅ تم تصفية الطلاب: ${filteredStudents.length} من أصل ${rawStudents.length} للمعلم ${teacherFullName}`
+        );
+
+        if (filteredStudents.length === 0) {
+          console.warn("⚠️ تحذير: لا يوجد طلاب لهذا المعلم!");
+          console.log(
+            "💡 تحقق من أن اسم المعلم في بيانات الطلاب يطابق:",
+            teacherFullName
+          );
+        }
+      }
+
+      // 3) تشكيل بيانات العرض
+      let formatted: AttendanceStudent[] = filteredStudents.map((s) => ({
         _id: s._id,
         studentId: s.studentId,
         name: `${s.firstName} ${s.fatherName ?? ""} ${s.lastName ?? ""}`.trim(),
         group: s.group,
+        teacher: s.teacher,
         isPresent: true, // افتراضياً الكل حاضر
       }));
 
-      // 3) جلب حضور اليوم المحدد (إن وجد)
+      // 4) جلب حضور اليوم المحدد (إن وجد)
       try {
         const attData = await getAttendanceByDate(forDate);
         if (Array.isArray(attData) && attData.length > 0) {
           const map = new Map<string, boolean>();
-          attData.forEach((rec: any) =>
-            map.set(rec.studentId, rec.isPresent)
-          );
+          attData.forEach((rec: any) => map.set(rec.studentId, rec.isPresent));
           formatted = formatted.map((st) => ({
             ...st,
             isPresent: map.has(st._id) ? map.get(st._id)! : true,
@@ -283,12 +350,61 @@ const Absence = () => {
     [students.length, presentCount]
   );
 
-  // مجموعات (Groups) موجودة عند الطلاب
+  // مجموعات (Groups) موجودة عند الطلاب - فقط حلقات المعلم
   const groupsAvailable = useMemo(() => {
     const set = new Set<string>();
-    students.forEach((s) => s.group && set.add(s.group));
-    return ["all", ...Array.from(set).sort((a, b) => a.localeCompare(b, "ar"))];
-  }, [students]);
+
+    // إذا كان المستخدم معلم، أضف فقط الحلقات التي لديه طلاب فيها
+    if (currentUser?.role === "teacher") {
+      // فلترة الطلاب حسب المعلم أولاً
+      const teacherFullName = `${currentUser.firstName} ${
+        currentUser.fatherName || ""
+      } ${currentUser.lastName || ""}`
+        .trim()
+        .replace(/\s+/g, " ");
+
+      students.forEach((s) => {
+        // تأكد من أن الطالب يتبع هذا المعلم
+        if (s.group && s.teacher) {
+          const studentTeacher = s.teacher
+            .trim()
+            .replace(/\s+/g, " ")
+            .toLowerCase();
+          const currentTeacher = teacherFullName.toLowerCase();
+
+          if (studentTeacher === currentTeacher) {
+            set.add(s.group);
+          }
+        }
+      });
+
+      const groups = Array.from(set).sort((a, b) => a.localeCompare(b, "ar"));
+      console.log(`📋 حلقات المعلم ${teacherFullName}:`, groups);
+
+      // للمعلم: بدون خيار "الكل"، فقط حلقاته
+      return groups;
+    } else {
+      // للأدمن: عرض كل الحلقات مع خيار "الكل"
+      students.forEach((s) => s.group && set.add(s.group));
+      return [
+        "all",
+        ...Array.from(set).sort((a, b) => a.localeCompare(b, "ar")),
+      ];
+    }
+  }, [students, currentUser]);
+
+  // تحديد أول حلقة تلقائياً للمعلم
+  useEffect(() => {
+    if (!currentUser) return;
+    if (currentUser.role === "teacher" && groupsAvailable.length > 0) {
+      // إذا كان الفلتر على "all" أو فارغ، حدد أول حلقة
+      if (groupFilter === "all" || !groupsAvailable.includes(groupFilter)) {
+        const firstGroup = groupsAvailable[0];
+        console.log(`📌 تحديد الحلقة الأولى تلقائياً: ${firstGroup}`);
+        setGroupFilter(firstGroup);
+      }
+    }
+  }, [currentUser, groupsAvailable, groupFilter]);
 
   // فلترة + بحث (Teacher)
   const visibleStudents = useMemo(() => {
@@ -422,14 +538,6 @@ const Absence = () => {
       : 0;
     return { absenceCount, totalDays, rate };
   }, [monthlyStats, selectedYear]);
-
-  // صندوق صغير يبين رقم الغياب للشهر المحدد (اختياري)
-  const selectedMonthSummary = useMemo(() => {
-    if (filteredMonthlyStats.length === 0) {
-      return { absenceCount: 0, totalDays: 0, rate: 0 };
-    }
-    return filteredMonthlyStats[0];
-  }, [filteredMonthlyStats]);
 
   // ================== واجهة المستخدم ==================
   return (

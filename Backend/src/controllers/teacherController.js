@@ -548,59 +548,78 @@ exports.deleteTeacher = async (req, res) => {
         .json({ success: false, message: "المعلم غير موجود" });
     }
 
-    // التحقق من وجود حلقات مرتبطة بالمعلم
     const Group = require("../schema/Group");
     const Student = require("../schema/Student");
 
     const teacherName = `${teacher.firstName} ${teacher.lastName}`;
 
-    // فحص الحلقات المرتبطة
+    console.log(`🗑️ جاري حذف المعلم: ${teacherName}`);
+
+    // 1. إزالة المعلم من الحلقات (الحلقات تبقى موجودة بدون معلم)
     const relatedGroups = await Group.find({
       $or: [
         { teacher: teacherName },
         { teacherName: teacherName },
         { teacher: teacher._id },
+        { teacher: teacher._id.toString() },
       ],
-      isActive: { $ne: false },
     });
 
-    // فحص الطلاب المرتبطين
-    const relatedStudents = await Student.find({
-      teacher: teacherName,
-      isActive: { $ne: false },
-    });
-
-    if (relatedGroups.length > 0 || relatedStudents.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: `لا يمكن حذف المعلم. يوجد ${relatedGroups.length} حلقة و ${relatedStudents.length} طالب مرتبطين بالمعلم. يجب نقلهم أولاً.`,
-        details: {
-          groupsCount: relatedGroups.length,
-          studentsCount: relatedStudents.length,
-          groups: relatedGroups.map((g) => g.name),
-          students: relatedStudents.map((s) => `${s.firstName} ${s.lastName}`),
+    if (relatedGroups.length > 0) {
+      await Group.updateMany(
+        {
+          $or: [
+            { teacher: teacherName },
+            { teacherName: teacherName },
+            { teacher: teacher._id },
+            { teacher: teacher._id.toString() },
+          ],
         },
-      });
+        { 
+          $unset: { teacher: "", teacherName: "" }
+        }
+      );
+      console.log(`✅ تم إزالة المعلم من ${relatedGroups.length} حلقة`);
     }
 
-    // Hard delete - permanently remove from database
+    // 2. إزالة المعلم من الطلاب (الطلاب يبقوا موجودين بدون معلم)
+    const relatedStudents = await Student.find({
+      teacher: teacherName,
+    });
+
+    if (relatedStudents.length > 0) {
+      await Student.updateMany(
+        { teacher: teacherName },
+        { $unset: { teacher: "" } }
+      );
+      console.log(`✅ تم إزالة المعلم من ${relatedStudents.length} طالب`);
+    }
+
+    // 3. حذف المعلم نهائياً من قاعدة البيانات
     await Teacher.findByIdAndDelete(id);
+    console.log(`🗑️ تم حذف المعلم ${teacherName} نهائياً من قاعدة البيانات`);
 
     // Emit socket event for real-time update
     if (global.io) {
-      global.io.emit("teacherDeleted", { _id: id });
+      global.io.emit("teacherDeleted", { _id: id, teacherName });
       console.log("📡 Teacher deleted event emitted via socket");
     }
 
     return res.status(200).json({
       success: true,
-      message: "تم حذف المعلم نهائياً من قاعدة البيانات",
+      message: `تم حذف المعلم بنجاح. تم إزالته من ${relatedGroups.length} حلقة و ${relatedStudents.length} طالب.`,
+      details: {
+        groupsUpdated: relatedGroups.length,
+        studentsUpdated: relatedStudents.length,
+      },
     });
   } catch (error) {
     console.error("Error deleting teacher:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "حدث خطأ أثناء حذف المعلم" });
+    return res.status(500).json({
+      success: false,
+      message: "حدث خطأ أثناء حذف المعلم",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
