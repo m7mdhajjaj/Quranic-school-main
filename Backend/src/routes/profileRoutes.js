@@ -8,6 +8,7 @@ const Student = require('../schema/Student');
 const Teacher = require('../schema/Teacher');
 const Admin = require('../schema/Admin');
 const jwt = require('jsonwebtoken');
+const { validateProfileData } = require('../Validation/ProfileValidation');
 
 // Middleware to verify JWT token
 const authenticateToken = (req, res, next) => {
@@ -97,7 +98,7 @@ router.get('/me', authenticateToken, async (req, res) => {
 });
 
 // Update user profile
-router.put('/me', authenticateToken, async (req, res) => {
+router.put('/me', authenticateToken, validateProfileData, async (req, res) => {
   try {
     const userId = req.user.id || req.user._id;
     const userType = req.user.role || 'student';

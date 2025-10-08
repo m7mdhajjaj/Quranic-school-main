@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const markController = require("../controllers/markController");
+const { validateMarkData } = require("../Validation/MarkValidation");
 
 // Get all marks
 router.get("/", markController.getMarks);
@@ -12,7 +13,7 @@ router.get("/student/:studentId", markController.getStudentMarks);
 router.get("/section/:sectionId", markController.getSectionMarks);
 
 // Create or update a mark
-router.post("/", markController.createOrUpdateMark);
+router.post("/", validateMarkData, markController.createOrUpdateMark);
 
 // Delete a mark
 router.delete("/:id", markController.deleteMark);

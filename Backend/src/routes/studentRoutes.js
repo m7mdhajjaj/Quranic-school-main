@@ -8,6 +8,7 @@ const multer = require("multer");
 const Student = require("../schema/Student");
 const studentController = require("../controllers/studentController");
 const { protect } = require("../middleware/authMiddleware");
+const { validateStudentData } = require("../Validation/StudentValidation");
 
 // in-memory upload
 const studentAvatarUpload = multer({
@@ -205,10 +206,10 @@ router.get("/stats", async (req, res) => {
 
 // CRUD routes - require authentication (admins and teachers can access)
 router.get("/", protect, studentController.getStudents);
-router.get("/group/:group", protect, studentController.getStudentsByGroup);
+router.get("/group/:group", protect, studentController.getStudentsByGroup); 
 router.get("/:id", protect, studentController.getStudentById);
-router.post("/", studentController.createStudent);
-router.put("/:id", studentController.updateStudent);
+router.post("/", validateStudentData, studentController.createStudent);
+router.put("/:id", validateStudentData, studentController.updateStudent);
 router.delete("/:id", studentController.deleteStudent);
 
 module.exports = router;

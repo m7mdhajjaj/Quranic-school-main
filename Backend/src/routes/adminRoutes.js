@@ -5,6 +5,7 @@ const multer = require("multer");
 
 const Admin = require("../schema/Admin");
 const controller = require("../controllers/adminController");
+const { validateAdminData } = require("../Validation/AdminValidation");
 
 // ========== Multer in-memory ==========
 const adminAvatarUpload = multer({
@@ -73,8 +74,8 @@ router.get("/:id/avatar", async (req, res) => {
 router.get("/", controller.getAllAdmins);
 router.get("/stats", controller.getAdminStats);
 router.get("/:id", controller.getAdminById);
-router.post("/", controller.createAdmin);
-router.put("/:id", controller.updateAdmin);
+router.post("/", validateAdminData, controller.createAdmin);
+router.put("/:id", validateAdminData, controller.updateAdmin);
 router.delete("/:id", controller.deleteAdmin);
 
 module.exports = router;

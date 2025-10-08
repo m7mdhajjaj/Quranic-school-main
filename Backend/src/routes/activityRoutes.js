@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const activityController = require("../controllers/activityController");
 const { protect } = require("../middleware/authMiddleware");
+const { validateActivityData } = require("../Validation/ActivityValidation");
 
 // Create directories for uploads if they don't exist
 const path = require("path");
@@ -24,6 +25,7 @@ router.get("/:id", protect, activityController.getActivityById);
 router.post(
   "/",
   activityController.uploadActivityImage,
+  validateActivityData,
   activityController.createActivity,
 );
 
@@ -31,6 +33,7 @@ router.post(
 router.put(
   "/:id",
   activityController.uploadActivityImage,
+  validateActivityData,
   activityController.updateActivity,
 );
 

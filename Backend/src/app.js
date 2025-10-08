@@ -31,31 +31,10 @@ const allowedOrigins = process.env.CORS_ORIGINS
   : ["http://localhost:5173", "http://localhost:5174"];
 app.use(
   cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin in development or from localhost
-      if (!origin) {
-        // Allow if NODE_ENV is explicitly set to development or if we're in local development
-        if (process.env.NODE_ENV === 'development' || process.env.PORT === '5005') {
-          return callback(null, true);
-        }
-        const msg = "CORS policy: Requests without origin are not allowed in production.";
-        return callback(new Error(msg), false);
-      }
-      
-      // Always allow localhost origins for development
-      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-        return callback(null, true);
-      }
-      
-      if (allowedOrigins.indexOf(origin) === -1) {
-        const msg = `CORS policy: Origin ${origin} is not allowed.`;
-        return callback(new Error(msg), false);
-      }
-      return callback(null, true);
-    },
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization", "Cache-Control", "Accept"],
-    credentials: true,
+    origin: "*", // Allow all origins in development
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cache-Control", "Accept", "X-Requested-With"],
+    credentials: false, // Disable credentials to avoid Socket.io issues
   })
 );
 
@@ -97,6 +76,8 @@ app.use("/api/exam-marks", require("./routes/examMarkRoutes"));
 app.use("/api/sessions", require("./routes/sessionRoutes"));
 app.use("/api/groups", require("./routes/groupRoutes"));
 app.use("/api/dashboard", require("./routes/dashboardRoutes"));
+app.use("/api/reports", require("./routes/reportRoutes"));
+app.use("/api/goals", require("./routes/goalRoutes"));
 app.use("/api", require("./routes/profileRoutes"));
 
 // Error handling middleware
@@ -120,18 +101,14 @@ const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-// Initialize Socket.IO with improved settings
+// Initialize Socket.IO with simple settings
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: "*", // Allow all origins in development
     methods: ["GET", "POST"],
-    credentials: true,
+    credentials: false,
   },
-  pingTimeout: 60000,
-  pingInterval: 25000,
-  upgradeTimeout: 10000,
-  maxHttpBufferSize: 1e6,
-  transports: ['polling', 'websocket'],
+  transports: ['polling', 'websocket'], // Start with polling first
   allowEIO3: true,
 });
 
@@ -158,9 +135,31 @@ global.notifyDashboardUpdate = (updateType, data = null) => {
 // Initialize Notification Service
 let notificationService;
 
+// Socket.IO error handling
+io.engine.on("connection_error", (err) => {
+  console.log('Socket.IO connection error:', err.message);
+});
+
 // Socket.IO connection
 io.on("connection", (socket) => {
   console.log(`User connected: ${socket.id}`);
+
+  // Handle socket errors
+  socket.on('error', (error) => {
+    console.error(`Socket ${socket.id} error:`, error);
+  });
+
+  socket.on('disconnect', (reason) => {
+    console.log(`User disconnected: ${socket.id}, reason: ${reason}`);
+    // Clean up user from online users when they disconnect
+    for (const [userId, userData] of onlineUsers.entries()) {
+      if (userData.socketId === socket.id) {
+        onlineUsers.delete(userId);
+        console.log(`Removed user ${userId} from online users`);
+        break;
+      }
+    }
+  });
 
   // Initialize notification service after io is ready
   if (!notificationService) {

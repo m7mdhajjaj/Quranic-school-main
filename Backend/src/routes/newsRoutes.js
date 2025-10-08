@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const newsController = require("../controllers/newsController");
 const { protect } = require("../middleware/authMiddleware");
+const { validateNewsData } = require("../Validation/NewsValidation");
 
 // Create directories for uploads if they don't exist
 const path = require("path");
@@ -21,10 +22,10 @@ router.get("/", protect, newsController.getAllNews);
 router.get("/:id", protect, newsController.getNewsById);
 
 // Create news (with image upload)
-router.post("/", newsController.uploadNewsImage, newsController.createNews);
+router.post("/", newsController.uploadNewsImage, validateNewsData, newsController.createNews);
 
 // Update news (with optional image upload)
-router.put("/:id", newsController.uploadNewsImage, newsController.updateNews);
+router.put("/:id", newsController.uploadNewsImage, validateNewsData, newsController.updateNews);
 
 // Delete news
 router.delete("/:id", newsController.deleteNews);

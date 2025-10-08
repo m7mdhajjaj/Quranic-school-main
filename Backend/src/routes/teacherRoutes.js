@@ -10,7 +10,11 @@ const Teacher = require("../schema/Teacher");
 const Student = require("../schema/Student"); // for /for-student
 const controller = require("../controllers/teacherController");
 const { protect } = require("../middleware/authMiddleware");
-const { validateTeacherGroups, sanitizeTeacherData } = require("../middleware/validateTeacherData");
+const { 
+  validateTeacherData, 
+  validateTeacherGroups, 
+  sanitizeTeacherData 
+} = require("../Validation/TeacherValidation");
 
 // ========== Multer in-memory (لا ملفات على الهارد) ==========
 const teacherAvatarUpload = multer({
@@ -88,8 +92,8 @@ router.get("/for-student/:studentId", async (req, res) => {
 });
 
 router.get("/:id", controller.getTeacherById);
-router.post("/", sanitizeTeacherData, validateTeacherGroups, controller.createTeacher);
-router.put("/:id", sanitizeTeacherData, validateTeacherGroups, controller.updateTeacher);
+router.post("/", sanitizeTeacherData, validateTeacherData, validateTeacherGroups, controller.createTeacher);
+router.put("/:id", sanitizeTeacherData, validateTeacherData, validateTeacherGroups, controller.updateTeacher);
 router.delete("/:id", controller.deleteTeacher);
 
 module.exports = router;

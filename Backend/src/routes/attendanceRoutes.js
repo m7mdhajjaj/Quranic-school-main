@@ -3,9 +3,10 @@ const router = express.Router();
 const attendanceController = require("../controllers/attendanceController");
 // Authentication middleware - CRITICAL: All attendance routes now protected
 const { protect } = require("../middleware/authMiddleware");
+const { validateAttendanceData } = require("../Validation/AttendanceValidation");
 
 // Create or update attendance records for a specific date - PROTECTED
-router.post("/", protect, attendanceController.createAttendance);
+router.post("/", protect, validateAttendanceData, attendanceController.createAttendance);
 
 // Get attendance records for a specific date - PROTECTED
 router.get("/date/:date", protect, attendanceController.getAttendanceByDate);

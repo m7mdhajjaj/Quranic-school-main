@@ -9,6 +9,13 @@ const {
   resetPassword,
 } = require("../controllers/authController");
 const { protect } = require("../middleware/authMiddleware");
+const {
+  validateLogin,
+  validateRegisterTeacher,
+  validateChangePassword,
+  validateVerifyIdentity,
+  validateResetPassword
+} = require("../Validation/AuthValidation");
 
 const router = express.Router();
 
@@ -25,7 +32,7 @@ router.get("/test", (req, res) => {
 });
 
 // مسار تسجيل الدخول للطلاب والمعلمين
-router.post("/login", login);
+router.post("/login", validateLogin, login);
 
 // مسار تسجيل الخروج
 router.post("/logout", protect, logout);
@@ -34,16 +41,16 @@ router.post("/logout", protect, logout);
 router.get("/me", getMe);
 
 // مسار لتسجيل معلم جديد (للمسؤول فقط)
-router.post("/register-teacher", protect, registerTeacher);
+router.post("/register-teacher", protect, validateRegisterTeacher, registerTeacher);
 
 // مسار تغيير كلمة المرور
-router.post("/change-password", protect, changePassword);
+router.post("/change-password", protect, validateChangePassword, changePassword);
 
 // مسار للتحقق من الهوية عند نسيان كلمة المرور
-router.post("/verify-identity", verifyIdentity);
+router.post("/verify-identity", validateVerifyIdentity, verifyIdentity);
 
 // مسار لإعادة تعيين كلمة المرور
-router.post("/reset-password", resetPassword);
+router.post("/reset-password", validateResetPassword, resetPassword);
 
 // مسار للتحقق من صحة التوكن
 router.get("/verify", protect, (req, res) => {

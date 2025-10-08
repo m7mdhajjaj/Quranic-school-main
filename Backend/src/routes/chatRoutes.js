@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const chatController = require("../controllers/chatController");
 const { protect } = require("../middleware/authMiddleware");
+const { validateChatData } = require("../Validation/ChatValidation");
 
 // Get all messages for a user
 router.get("/user/:userId/:userType", protect, chatController.getUserMessages);
@@ -17,10 +18,10 @@ router.get(
 );
 
 // Create a message
-router.post("/", protect, chatController.createMessage);
+router.post("/", protect, validateChatData, chatController.createMessage);
 
 // Send a message (with optional reply)
-router.post("/send", protect, chatController.createMessage);
+router.post("/send", protect, validateChatData, chatController.createMessage);
 
 // Mark messages as read
 router.put("/read", protect, chatController.markAsRead);

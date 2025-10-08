@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const examMarkController = require("../controllers/examMarkController");
+const { validateExamMarkData } = require("../Validation/ExamMarkValidation");
 
 // علامات طالب واحد
 router.get("/student/:studentId", examMarkController.getStudentMarks);
@@ -12,10 +13,10 @@ router.get("/:examId", examMarkController.getExamMarks);
 router.get("/:examId/average", examMarkController.getExamAverage);
 
 // إضافة أو تعديل علامات عدة طلاب دفعة واحدة
-router.post("/:examId", examMarkController.setExamMarks);
+router.post("/:examId", validateExamMarkData, examMarkController.setExamMarks);
 
 // تعديل علامة طالب واحد
-router.put("/:examId/:studentId", examMarkController.updateStudentMark);
+router.put("/:examId/:studentId", validateExamMarkData, examMarkController.updateStudentMark);
 
 // حذف علامة طالب
 router.delete("/:examId/:studentId", examMarkController.deleteStudentMark);

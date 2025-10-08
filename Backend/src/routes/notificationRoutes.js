@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Notification = require("../schema/Notification");
 const { protect } = require("../middleware/authMiddleware");
+const { validateNotificationFormData } = require("../Validation/NotificationValidation");
 
 // تحقق من حالة المصادقة (للاختبار)
 router.get("/auth-test", protect, async (req, res) => {
@@ -410,7 +411,7 @@ router.delete("/:userId/read", async (req, res) => {
 });
 
 // إنشاء إشعار جديد (للاختبار أو الإدارة)
-router.post("/", async (req, res) => {
+router.post("/", validateNotificationFormData, async (req, res) => {
   try {
     const {
       recipient,

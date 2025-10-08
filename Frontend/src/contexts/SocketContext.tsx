@@ -131,16 +131,14 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       return;
     }
 
-    // Create socket connection with improved settings
+    // Create socket connection with simple settings
     const socketInstance = io(SOCKET_URL, {
-      transports: ['polling', 'websocket'],
-      timeout: 20000,
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionAttempts: 10,
-      forceNew: false,
+      transports: ['polling', 'websocket'], // Start with polling
       autoConnect: true,
-      upgrade: true,
+      reconnection: true,
+      reconnectionAttempts: 3,
+      reconnectionDelay: 2000,
+      forceNew: true,
     });
 
     setSocket(socketInstance);
@@ -163,14 +161,24 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       setIsConnected(false);
     });
 
-    socketInstance.on('connect_error', () => {
-      console.warn('🚫 Socket connection failed - Backend server may not be running on port 5005');
+    socketInstance.on('connect_error', (error) => {
+      console.warn('🚫 Socket connection failed:', error.message);
       setIsConnected(false);
+    });
+
+    socketInstance.on('error', (error) => {
+      console.error('🚫 Socket error:', error);
     });
 
     socketInstance.on('reconnect', (attemptNumber) => {
       console.log('🔄 Socket reconnected after', attemptNumber, 'attempts');
       setIsConnected(true);
+      // Re-send login data after reconnection
+      socketInstance.emit('login', {
+        userId: user._id,
+        role: user.role,
+        firstName: user.firstName || user.name || 'مستخدم'
+      });
     });
 
     socketInstance.on('reconnect_attempt', (attemptNumber) => {
@@ -178,11 +186,12 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     });
 
     socketInstance.on('reconnect_error', (error) => {
-      console.error('🚫 Reconnection failed:', error);
+      console.error('🚫 Reconnection failed:', error.message);
     });
 
     socketInstance.on('reconnect_failed', () => {
       console.error('🚫 Failed to reconnect after maximum attempts');
+      setIsConnected(false);
     });
 
     // Student management events
