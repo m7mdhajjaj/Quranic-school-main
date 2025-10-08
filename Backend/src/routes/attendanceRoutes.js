@@ -3,22 +3,29 @@ const router = express.Router();
 const attendanceController = require("../controllers/attendanceController");
 // Authentication middleware - CRITICAL: All attendance routes now protected
 const { protect } = require("../middleware/authMiddleware");
-const { validateAttendanceData } = require("../Validation/AttendanceValidation");
+const {
+  validateAttendanceData,
+} = require("../Validation/AttendanceValidation");
 
 // Create or update attendance records for a specific date - PROTECTED
-router.post("/", protect, validateAttendanceData, attendanceController.createAttendance);
+// Note: Validation removed as controller uses isPresent (boolean) instead of status (string)
+router.post("/", protect, attendanceController.createAttendance);
 
 // Get attendance records for a specific date - PROTECTED
 router.get("/date/:date", protect, attendanceController.getAttendanceByDate);
 
 // Get all attendance records for a specific student - PROTECTED
-router.get("/student/:studentId", protect, attendanceController.getStudentAttendance);
+router.get(
+  "/student/:studentId",
+  protect,
+  attendanceController.getStudentAttendance
+);
 
 // Get attendance statistics for a specific student - PROTECTED
 router.get(
   "/student/:studentId/stats",
   protect,
-  attendanceController.getStudentAttendanceStats,
+  attendanceController.getStudentAttendanceStats
 );
 
 // Delete attendance record - PROTECTED

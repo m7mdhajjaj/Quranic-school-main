@@ -6,7 +6,7 @@
 // - تحسينات: تحذير تغييرات غير محفوظة، فلترة شهر تعمل فعلياً
 // =========================================
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { AbsenceSkeleton } from "../components/Loading/LoadingSkeleton";
 import { getAllStudents } from "../Api/studentApi";
@@ -92,9 +92,7 @@ const Absence = () => {
   // --------- حالات واجهة المعلّم ---------
   const [students, setStudents] = useState<AttendanceStudent[]>([]);
   const [date, setDate] = useState<string>(todayISO());
-  const [isEditing, setIsEditing] = useState(false);
   const [selectedAll, setSelectedAll] = useState(false);
-  const [unsavedChanges, setUnsavedChanges] = useState(false);
 
   // فلترة + بحث
   const [groupFilter, setGroupFilter] = useState<string>("all");
@@ -106,9 +104,6 @@ const Absence = () => {
     new Date().toISOString().substring(0, 7) // "YYYY-MM"
   );
   const [showYearSummary, setShowYearSummary] = useState<boolean>(false);
-
-  // لتجنّب التحذير على أول تحميل
-  const initialLoadRef = useRef(true);
 
   // ================== جلب المستخدم وتحديد الواجهة ==================
   useEffect(() => {
@@ -155,18 +150,6 @@ const Absence = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [yearMonth]);
-
-  // تحذير تغييرات غير محفوظة عند إغلاق الصفحة
-  useEffect(() => {
-    const handler = (e: BeforeUnloadEvent) => {
-      if (unsavedChanges) {
-        e.preventDefault();
-        e.returnValue = "";
-      }
-    };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, [unsavedChanges]);
 
   // ================== طلبات المعلّم ==================
   const fetchStudentsForTeacher = async (forDate: string) => {
@@ -293,8 +276,6 @@ const Absence = () => {
       }
 
       setStudents(formatted);
-      setIsEditing(false);
-      setUnsavedChanges(false);
       setSelectedAll(formatted.every((s) => s.isPresent));
     } catch (e) {
       console.error(e);
@@ -387,19 +368,6 @@ const Absence = () => {
   };
 
   // ================== منطق واجهة المعلّم ==================
-  const presentCount = useMemo(
-    () => students.filter((s) => s.isPresent).length,
-    [students]
-  );
-  const absentCount = useMemo(
-    () => students.length - presentCount,
-    [students, presentCount]
-  );
-  const attendanceRate = useMemo(
-    () =>
-      students.length ? Math.round((presentCount / students.length) * 100) : 0,
-    [students.length, presentCount]
-  );
 
   // حالة منفصلة لحلقات المعلم
   const [teacherGroups, setTeacherGroups] = useState<string[]>([]);
@@ -501,83 +469,125 @@ const Absence = () => {
     return list.sort((a, b) => a.name.localeCompare(b.name, "ar"));
   }, [students, groupFilter, nameQuery]);
 
+  // تحديث حالة "تحديد الكل" حسب الطلاب المرئيين فقط
+  useEffect(() => {
+    if (visibleStudents.length > 0) {
+      const allVisible = visibleStudents.every((s) => s.isPresent);
+      setSelectedAll(allVisible);
+    } else {
+      setSelectedAll(false);
+    }
+  }, [visibleStudents]);
+
   // قلب حالة طالب
   const toggleStudentPresence = (studentId: string) => {
-    if (!isEditing) return;
+    console.log("🔄 تغيير حالة الطالب:", studentId);
     setStudents((prev) => {
-      const next = prev.map((s) =>
-        s._id === studentId ? { ...s, isPresent: !s.isPresent } : s
-      );
-      setUnsavedChanges(true);
+      const next = prev.map((s) => {
+        if (s._id === studentId) {
+          console.log(
+            "✅ تم العثور على الطالب:",
+            s.name,
+            "الحالة الحالية:",
+            s.isPresent,
+            "→ الحالة الجديدة:",
+            !s.isPresent
+          );
+          return { ...s, isPresent: !s.isPresent };
+        }
+        return s;
+      });
       return next;
     });
   };
 
-  // اختيار/إلغاء اختيار الكل
+  // اختيار/إلغاء اختيار الكل (للطلاب المرئيين فقط)
   const toggleAllStudents = () => {
-    if (!isEditing) return;
     const newState = !selectedAll;
     setSelectedAll(newState);
+
+    // تحديث فقط الطلاب المرئيين في الحلقة المختارة
+    const visibleStudentIds = visibleStudents.map((s) => s._id);
+
     setStudents((prev) => {
-      const next = prev.map((s) => ({ ...s, isPresent: newState }));
-      setUnsavedChanges(true);
+      const next = prev.map((s) => {
+        // تحديث فقط الطلاب المرئيين
+        if (visibleStudentIds.includes(s._id)) {
+          return { ...s, isPresent: newState };
+        }
+        return s; // باقي الطلاب ما يتغيروا
+      });
       return next;
     });
+
+    console.log(
+      `🔄 تغيير حالة ${
+        visibleStudents.length
+      } طالب في الحلقة "${groupFilter}" إلى: ${newState ? "حاضر" : "غائب"}`
+    );
   };
 
-  // بدء/إلغاء وضع التعديل
-  const toggleEdit = () => {
-    if (!isEditing) {
-      setIsEditing(true);
-      initialLoadRef.current = false;
-      return;
-    }
-    // إذا في تغييرات غير محفوظة
-    if (unsavedChanges) {
-      const ok = window.confirm("لديك تعديلات غير محفوظة، هل تريد تجاهلها؟");
-      if (!ok) return;
-      // أعد التحميل من السيرفر لإلغاء أي تعديل محلي
-      fetchStudentsForTeacher(date);
-    }
-    setIsEditing(false);
-    setUnsavedChanges(false);
-  };
+  // إحصائيات الحضور للطلاب المرئيين فقط
+  const presentCount = useMemo(
+    () => visibleStudents.filter((s) => s.isPresent).length,
+    [visibleStudents]
+  );
+  const absentCount = useMemo(
+    () => visibleStudents.length - presentCount,
+    [visibleStudents, presentCount]
+  );
+  const attendanceRate = useMemo(
+    () =>
+      visibleStudents.length
+        ? Math.round((presentCount / visibleStudents.length) * 100)
+        : 0,
+    [visibleStudents.length, presentCount]
+  );
 
   // حفظ السجل
   const handleSave = async () => {
     try {
-      const payload: AttendanceRecordPayload[] = students.map((s) => ({
-        studentId: s._id,
-        date,
-        isPresent: s.isPresent,
-      }));
+      // استخدام كل الطلاب (ليس فقط المرئيين)
+      const payload: AttendanceRecordPayload[] = students
+        .filter((s) => s._id) // فقط الطلاب الذين لديهم _id
+        .map((s) => ({
+          studentId: s._id,
+          date,
+          isPresent: s.isPresent,
+        }));
+
+      console.log(
+        `💾 حفظ الحضور لـ ${payload.length} طالب من أصل ${students.length}`
+      );
+      console.log("📋 التاريخ:", date);
+      console.log(
+        "📋 البيانات المرسلة:",
+        JSON.stringify({ date, records: payload }, null, 2)
+      );
 
       await bulkSaveAttendance({
         date,
         records: payload,
       });
 
-      setIsEditing(false);
-      setUnsavedChanges(false);
       alert("تم حفظ سجل الحضور بنجاح ✅");
     } catch (e: any) {
-      console.error(e);
+      console.error("❌ خطأ في حفظ الحضور:", e);
+      console.error("📋 تفاصيل الخطأ:", e.response?.data);
       if (e.response) {
-        alert(e.response?.data?.message ?? "تعذر حفظ السجل");
+        const errorMsg =
+          e.response?.data?.message ||
+          e.response?.data?.details ||
+          "تعذر حفظ السجل";
+        alert(`خطأ: ${errorMsg}`);
       } else {
-        alert("تعذر حفظ السجل");
+        alert("تعذر حفظ السجل - تحقق من الاتصال");
       }
     }
   };
 
-  // منع تغيير التاريخ عند وجود تغييرات غير محفوظة
+  // تغيير التاريخ مباشرة
   const safeSetDate = (nextDate: string) => {
-    if (isEditing && unsavedChanges) {
-      const ok = window.confirm(
-        "لديك تغييرات غير محفوظة. تغيير التاريخ سيلغيها. المتابعة؟"
-      );
-      if (!ok) return;
-    }
     setDate(nextDate);
   };
 
@@ -966,19 +976,8 @@ const Absence = () => {
                           selectedAll
                             ? "bg-gray-200 text-gray-700"
                             : "bg-emerald-600 text-white hover:bg-emerald-700"
-                        }`}
-                        disabled={!isEditing}>
-                        {selectedAll ? "إلغاء تحديد الكل" : "تحديد الكل حاضر"}
-                      </button>
-
-                      <button
-                        onClick={toggleEdit}
-                        className={`px-3 py-2 rounded-lg ${
-                          isEditing
-                            ? "bg-red-100 text-red-700 "
-                            : "bg-blue-600 text-white hover:bg-blue-700"
                         }`}>
-                        {isEditing ? "إلغاء التعديل" : "تعديل السجل"}
+                        {selectedAll ? "إلغاء تحديد الكل" : "تحديد الكل حاضر"}
                       </button>
                     </div>
                   </div>
@@ -1012,11 +1011,6 @@ const Absence = () => {
                     <h2 className="text-xl font-bold text-white">
                       قائمة الطلاب
                     </h2>
-                    {unsavedChanges && (
-                      <span className="text-yellow-100 text-sm font-medium">
-                        لديك تغييرات غير محفوظة
-                      </span>
-                    )}
                   </div>
 
                   <div className="overflow-x-auto">
@@ -1038,10 +1032,7 @@ const Absence = () => {
                                 type="checkbox"
                                 checked={selectedAll}
                                 onChange={toggleAllStudents}
-                                className={`w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500 ${
-                                  !isEditing && "opacity-60 cursor-not-allowed"
-                                }`}
-                                disabled={!isEditing}
+                                className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
                               />
                               <span className="mr-2">الحضور</span>
                             </div>
@@ -1061,9 +1052,7 @@ const Absence = () => {
                           visibleStudents.map((s) => (
                             <tr
                               key={s._id}
-                              className={`hover:bg-gray-50 ${
-                                isEditing ? "cursor-pointer" : ""
-                              }`}
+                              className="hover:bg-gray-50 cursor-pointer"
                               onClick={() => toggleStudentPresence(s._id)}>
                               <td className="px-4 py-3 text-sm text-gray-500">
                                 {s.studentId}
@@ -1074,16 +1063,14 @@ const Absence = () => {
                               <td className="px-4 py-3 text-sm text-gray-500">
                                 {s.group ?? "-"}
                               </td>
-                              <td className="px-6 py-3 text-center">
+                              <td
+                                className="px-6 py-3 text-center"
+                                onClick={(e) => e.stopPropagation()}>
                                 <input
                                   type="checkbox"
                                   checked={s.isPresent}
                                   onChange={() => toggleStudentPresence(s._id)}
-                                  className={`w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500 ${
-                                    !isEditing &&
-                                    "opacity-60 cursor-not-allowed"
-                                  }`}
-                                  disabled={!isEditing}
+                                  className="w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500"
                                 />
                               </td>
                             </tr>
@@ -1097,12 +1084,7 @@ const Absence = () => {
                   <div className="p-4 bg-gray-50 flex justify-center">
                     <button
                       onClick={handleSave}
-                      disabled={!isEditing}
-                      className={`bg-emerald-600 text-white px-8 py-2 rounded-lg shadow-md flex items-center ${
-                        !isEditing
-                          ? "opacity-60 cursor-not-allowed"
-                          : "hover:bg-emerald-700"
-                      }`}>
+                      className="bg-emerald-600 text-white px-8 py-2 rounded-lg shadow-md flex items-center hover:bg-emerald-700">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="h-5 w-5 ml-2"
@@ -1136,9 +1118,9 @@ const Absence = () => {
                     تعليمات:
                   </h3>
                   <ul className="text-gray-600 text-sm mr-6 list-disc space-y-1">
-                    <li>اضغط "تعديل السجل" لتفعيل التعديل.</li>
                     <li>انقر على صفّ الطالب لقلب حالته (حاضر/غائب).</li>
                     <li>خانة التحديد العلوية لاختيار الكل بسرعة.</li>
+                    <li>اضغط "حفظ السجل" لحفظ التغييرات.</li>
                     <li>سيتم تحذيرك عند وجود تغييرات غير محفوظة قبل الخروج.</li>
                     <li>استخدم البحث والفلترة حسب الحلقة لتسريع العمل.</li>
                   </ul>
