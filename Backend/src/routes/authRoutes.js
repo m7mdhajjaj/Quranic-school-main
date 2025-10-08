@@ -14,7 +14,7 @@ const {
   validateRegisterTeacher,
   validateChangePassword,
   validateVerifyIdentity,
-  validateResetPassword
+  validateResetPassword,
 } = require("../Validation/AuthValidation");
 
 const router = express.Router();
@@ -27,7 +27,7 @@ router.get("/test", (req, res) => {
     timestamp: new Date().toISOString(),
     env: process.env.NODE_ENV,
     jwt_secret: process.env.JWT_SECRET ? "Set" : "Not Set",
-    mongodb_uri: process.env.MONGODB_URI ? "Set" : "Not Set"
+    mongodb_uri: process.env.MONGODB_URI ? "Set" : "Not Set",
   });
 });
 
@@ -41,10 +41,20 @@ router.post("/logout", protect, logout);
 router.get("/me", getMe);
 
 // مسار لتسجيل معلم جديد (للمسؤول فقط)
-router.post("/register-teacher", protect, validateRegisterTeacher, registerTeacher);
+router.post(
+  "/register-teacher",
+  protect,
+  validateRegisterTeacher,
+  registerTeacher
+);
 
 // مسار تغيير كلمة المرور
-router.post("/change-password", protect, validateChangePassword, changePassword);
+router.post(
+  "/change-password",
+  protect,
+  validateChangePassword,
+  changePassword
+);
 
 // مسار للتحقق من الهوية عند نسيان كلمة المرور
 router.post("/verify-identity", validateVerifyIdentity, verifyIdentity);
@@ -62,8 +72,8 @@ router.get("/verify", protect, (req, res) => {
       role: req.user.role,
       firstName: req.user.firstName,
       lastName: req.user.lastName,
-      email: req.user.email
-    }
+      email: req.user.email,
+    },
   });
 });
 

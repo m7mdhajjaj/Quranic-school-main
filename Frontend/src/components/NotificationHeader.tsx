@@ -9,7 +9,7 @@ import {
   getUnreadNotificationCount,
   markAsRead,
   markAllAsRead,
-  deleteNotification
+  deleteNotification,
 } from "../Api/notificationApi";
 
 interface Notification {
@@ -77,7 +77,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
   // نظام التحديث التلقائي للإشعارات
   useEffect(() => {
     if (!userId) return;
-    
+
     // تحديث تلقائي كل 60 ثانية عندما Socket غير متصل
     const refreshInterval = setInterval(() => {
       if (!isConnected && !isLoading) {
@@ -185,17 +185,44 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
       setIsLoading(true);
       const data = await getRecentNotifications(userId, 20);
 
-      const newNotifications: Notification[] = data.map(apiNotification => ({
-        _id: apiNotification._id,
-        type: apiNotification.type as "grade" | "message" | "prayer_time" | "activity" | "attendance" | "general",
-        title: apiNotification.title,
-        message: apiNotification.message,
-        createdAt: apiNotification.createdAt,
-        isRead: apiNotification.isRead,
-        priority: apiNotification.priority || "medium",
-        isNew: false,
-        data: apiNotification.metadata
-      }));
+      console.log("📬 البيانات المستلمة من API:", data);
+
+      // ✅ التحقق من نوع البيانات المستلمة وتحويلها لـ array
+      let notificationsArray: any[] = [];
+
+      if (Array.isArray(data)) {
+        notificationsArray = data;
+      } else if (
+        (data as any)?.notifications &&
+        Array.isArray((data as any).notifications)
+      ) {
+        notificationsArray = (data as any).notifications;
+      } else if ((data as any)?.data && Array.isArray((data as any).data)) {
+        notificationsArray = (data as any).data;
+      } else {
+        console.warn("⚠️ البيانات ليست array:", data);
+        notificationsArray = [];
+      }
+
+      const newNotifications: Notification[] = notificationsArray.map(
+        (apiNotification) => ({
+          _id: apiNotification._id,
+          type: apiNotification.type as
+            | "grade"
+            | "message"
+            | "prayer_time"
+            | "activity"
+            | "attendance"
+            | "general",
+          title: apiNotification.title,
+          message: apiNotification.message,
+          createdAt: apiNotification.createdAt,
+          isRead: apiNotification.isRead,
+          priority: apiNotification.priority || "medium",
+          isNew: false,
+          data: apiNotification.metadata,
+        })
+      );
 
       if (reset) {
         setNotifications(newNotifications);
@@ -204,18 +231,33 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
       }
 
       // جلب إحصائيات الإشعارات
-      const unreadCount = await getUnreadNotificationCount(userId);
-      setStats({
-        unreadCount,
-        newCount: 0,
-        totalCount: newNotifications.length
-      });
-      
+      try {
+        const unreadCount = await getUnreadNotificationCount(userId);
+        setStats({
+          unreadCount,
+          newCount: 0,
+          totalCount: newNotifications.length,
+        });
+      } catch (statsError) {
+        console.warn("⚠️ خطأ في جلب إحصائيات الإشعارات:", statsError);
+        setStats({
+          unreadCount: newNotifications.filter((n) => !n.isRead).length,
+          newCount: 0,
+          totalCount: newNotifications.length,
+        });
+      }
+
       setPage(pageNum);
       setHasMore(newNotifications.length === 20);
     } catch (error) {
-      console.error("Error fetching notifications:", error);
-      toast.error("خطأ في جلب الإشعارات");
+      console.error("❌ خطأ في جلب الإشعارات:", error);
+      // ✅ لا تعرض toast error إذا كان الخطأ بسبب عدم وجود إشعارات
+      if (error instanceof Error && !error.message.includes("404")) {
+        toast.error("خطأ في جلب الإشعارات");
+      }
+      // تعيين array فارغ في حالة الخطأ
+      setNotifications([]);
+      setStats({ unreadCount: 0, newCount: 0, totalCount: 0 });
     } finally {
       setIsLoading(false);
     }
@@ -237,7 +279,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
 
     try {
       await markAsRead(notificationId);
-      
+
       setNotifications((prev) =>
         prev.map((n) =>
           n._id === notificationId ? { ...n, isRead: true, isNew: false } : n
@@ -261,7 +303,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
     try {
       setIsMarkingAll(true);
       await markAllAsRead(userId);
-      
+
       // تحديث الحالة محليًا
       setNotifications((prev) =>
         prev.map((n) => ({ ...n, isRead: true, isNew: false }))
@@ -285,14 +327,12 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
 
     try {
       await deleteNotification(notificationId);
-      
+
       const deletedNotification = notifications.find(
         (n) => n._id === notificationId
       );
 
-      setNotifications((prev) =>
-        prev.filter((n) => n._id !== notificationId)
-      );
+      setNotifications((prev) => prev.filter((n) => n._id !== notificationId));
       setStats((prev) => ({
         ...prev,
         totalCount: prev.totalCount - 1,
@@ -408,28 +448,31 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
       {showDropdown && (
         <div className="notification-dropdown">
           <div className="notification-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <h3>الإشعارات</h3>
-              <div 
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '4px',
-                  fontSize: '11px',
-                  color: isConnected ? '#10B981' : '#F59E0B'
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  fontSize: "11px",
+                  color: isConnected ? "#10B981" : "#F59E0B",
                 }}
-                title={isConnected ? 'تحديث فوري عبر Socket' : 'تحديث تلقائي كل دقيقة'}
-              >
-                <div 
-                  style={{ 
-                    width: '6px', 
-                    height: '6px', 
-                    borderRadius: '50%',
-                    backgroundColor: isConnected ? '#10B981' : '#F59E0B',
-                    animation: 'pulse 2s infinite'
+                title={
+                  isConnected
+                    ? "تحديث فوري عبر Socket"
+                    : "تحديث تلقائي كل دقيقة"
+                }>
+                <div
+                  style={{
+                    width: "6px",
+                    height: "6px",
+                    borderRadius: "50%",
+                    backgroundColor: isConnected ? "#10B981" : "#F59E0B",
+                    animation: "pulse 2s infinite",
                   }}
                 />
-                <span>{isConnected ? 'فوري' : 'تلقائي'}</span>
+                <span>{isConnected ? "فوري" : "تلقائي"}</span>
               </div>
             </div>
 
@@ -505,7 +548,9 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
                     </div>
                     <button
                       className="delete-notification bg-transparent border-none text-red-500 cursor-pointer p-1 mr-2"
-                      onClick={(e) => deleteNotificationLocal(notification._id, e)}
+                      onClick={(e) =>
+                        deleteNotificationLocal(notification._id, e)
+                      }
                       title="حذف الإشعار"
                       aria-label="حذف الإشعار">
                       ✖

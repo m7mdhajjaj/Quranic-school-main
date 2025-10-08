@@ -1,4 +1,4 @@
-import api from './api';
+import api from "./api";
 
 // ============================================================================
 // Settings API - Hero Image and Site Settings
@@ -20,37 +20,43 @@ export interface HeroImageResponse {
 // Get current hero image
 export const getHeroImage = async (): Promise<HeroImageData> => {
   try {
-    const response = await api.get('/settings/hero-image');
+    const response = await api.get("/settings/hero-image");
     return {
       success: true,
-      heroImage: response.data.imageUrl || response.data.heroImage || '/src/images/officialPhoto.jpg'
+      heroImage:
+        response.data.imageUrl ||
+        response.data.heroImage ||
+        "/src/images/officialPhoto.jpg",
     };
   } catch (error) {
-    console.error('Failed to get hero image:', error);
+    // ✅ استخدام الصورة الافتراضية بدون طباعة خطأ في Console
+    // console.warn('Hero image not found, using fallback');
     return {
       success: false,
-      heroImage: '/src/images/officialPhoto.jpg' // fallback image
+      heroImage: "/src/images/officialPhoto.jpg", // fallback image
     };
   }
 };
 
 // Upload new hero image
-export const uploadHeroImage = async (formData: FormData): Promise<HeroImageResponse> => {
+export const uploadHeroImage = async (
+  formData: FormData
+): Promise<HeroImageResponse> => {
   try {
-    const response = await api.post('/settings/hero-image', formData, {
+    const response = await api.post("/settings/hero-image", formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
-    
+
     return {
       success: true,
       heroImage: response.data.heroImage || response.data.imageUrl,
       imageUrl: response.data.heroImage || response.data.imageUrl,
-      message: response.data.message
+      message: response.data.message,
     };
   } catch (error) {
-    console.error('Failed to upload hero image:', error);
+    console.error("Failed to upload hero image:", error);
     throw error;
   }
 };
@@ -58,10 +64,10 @@ export const uploadHeroImage = async (formData: FormData): Promise<HeroImageResp
 // Update site settings
 export const updateSiteSettings = async (settings: Record<string, unknown>) => {
   try {
-    const response = await api.put('/settings/site', settings);
+    const response = await api.put("/settings/site", settings);
     return response.data;
   } catch (error) {
-    console.error('Failed to update site settings:', error);
+    console.error("Failed to update site settings:", error);
     throw error;
   }
 };
@@ -69,10 +75,10 @@ export const updateSiteSettings = async (settings: Record<string, unknown>) => {
 // Get site settings
 export const getSiteSettings = async () => {
   try {
-    const response = await api.get('/settings/site');
+    const response = await api.get("/settings/site");
     return response.data;
   } catch (error) {
-    console.error('Failed to get site settings:', error);
+    console.error("Failed to get site settings:", error);
     throw error;
   }
 };
