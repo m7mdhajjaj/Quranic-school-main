@@ -73,13 +73,7 @@ const validateTeacher = (teacherId) => {
     return { isValid: true, value: teacherStr };
   }
   
-  // If it's a teacher name (Arabic text with spaces)
-  if (/^[\u0600-\u06FF\s\-'\.]+$/.test(teacherStr) && teacherStr.length >= 2) {
-    return { isValid: true, value: teacherStr };
-  }
-  
-  // If we get here, it might still be valid (allow any non-empty string for flexibility)
-  return { isValid: true, value: teacherStr };
+  return { isValid: false, message: 'معرف المعلم غير صحيح' };
 };
 
 /**
