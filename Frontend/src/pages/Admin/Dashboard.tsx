@@ -1,9 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import LoadingSkeleton from '../../components/Loading/LoadingSkeleton';
-import { useDashboardStats } from '../../hooks/useDashboardStats';
-import { useSocket } from '../../hooks/useSocket';
-import '../../styles/dashboard.css';
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import LoadingSkeleton from "../../components/Loading/LoadingSkeleton";
+import { useDashboardStats } from "../../hooks/useDashboardStats";
+import { useSocket } from "../../hooks/useSocket";
+import AddStudentForm from "../../components/Forms/AddStudentForm";
+import AddTeacherForm from "../../components/Forms/AddTeacherForm";
+import AddGroupForm from "../../components/Forms/AddGroupForm";
+import "../../styles/dashboard.css";
 
 interface StatCardProps {
   icon: React.ReactNode;
@@ -53,10 +56,10 @@ const AdminDashboard = () => {
     fetchStats,
     groupsDistribution,
   } = useDashboardStats();
-  
+
   // احصل على حالة الاتصال مباشرة من useSocket للمؤشر
   const { isConnected } = useSocket();
-  
+
   // عداد التحديثات التلقائية وآخر تحديث تلقائي
   const [autoRefreshCount, setAutoRefreshCount] = useState(0);
   const [lastAutoRefresh, setLastAutoRefresh] = useState<Date | null>(null);
@@ -80,12 +83,17 @@ const AdminDashboard = () => {
     index: number;
   } | null>(null);
 
+  // State لإدارة فتح وإغلاق الـ Forms
+  const [showAddStudentForm, setShowAddStudentForm] = useState(false);
+  const [showAddTeacherForm, setShowAddTeacherForm] = useState(false);
+  const [showAddGroupForm, setShowAddGroupForm] = useState(false);
+
   // نظام التحديث التلقائي كنظام احتياطي
   useEffect(() => {
     // تحديث تلقائي كل 30 ثانية عندما يكون Socket غير متصل
     const refreshInterval = setInterval(() => {
       if (!isConnected && !refreshing) {
-        setAutoRefreshCount(count => count + 1);
+        setAutoRefreshCount((count) => count + 1);
         setLastAutoRefresh(new Date());
         console.log("🔄 تحديث تلقائي لللوحة (وضع احتياطي)");
         fetchStats(true);
@@ -98,28 +106,28 @@ const AdminDashboard = () => {
   // تطبيق الألوان والعروض ديناميكياً
   useEffect(() => {
     // تطبيق الألوان
-    const colorElements = document.querySelectorAll('[data-color]');
+    const colorElements = document.querySelectorAll("[data-color]");
     colorElements.forEach((element) => {
-      const color = element.getAttribute('data-color');
+      const color = element.getAttribute("data-color");
       if (color) {
         (element as HTMLElement).style.backgroundColor = color;
       }
     });
 
     // تطبيق العروض
-    const widthElements = document.querySelectorAll('[data-width]');
+    const widthElements = document.querySelectorAll("[data-width]");
     widthElements.forEach((element) => {
-      const width = element.getAttribute('data-width');
+      const width = element.getAttribute("data-width");
       if (width) {
         (element as HTMLElement).style.width = `${width}%`;
       }
     });
 
     // تطبيق الارتفاعات والتأخيرات
-    const heightElements = document.querySelectorAll('[data-height]');
+    const heightElements = document.querySelectorAll("[data-height]");
     heightElements.forEach((element) => {
-      const height = element.getAttribute('data-height');
-      const delay = element.getAttribute('data-delay');
+      const height = element.getAttribute("data-height");
+      const delay = element.getAttribute("data-delay");
       if (height) {
         (element as HTMLElement).style.height = `${height}%`;
       }
@@ -129,9 +137,9 @@ const AdminDashboard = () => {
     });
 
     // تطبيق ألوان الخلفية للـ Modal
-    const bgColorElements = document.querySelectorAll('[data-bg-color]');
+    const bgColorElements = document.querySelectorAll("[data-bg-color]");
     bgColorElements.forEach((element) => {
-      const bgColor = element.getAttribute('data-bg-color');
+      const bgColor = element.getAttribute("data-bg-color");
       if (bgColor) {
         (element as HTMLElement).style.backgroundColor = bgColor;
       }
@@ -140,19 +148,32 @@ const AdminDashboard = () => {
 
   // Navigation handlers for statistics cards
   const handleTeachersClick = () => {
-    navigate('/admin/teachers');
+    navigate("/admin/teachers");
   };
 
   const handleStudentsClick = () => {
-    navigate('/admin/students');
+    navigate("/admin/students");
   };
 
   const handleGroupsClick = () => {
-    navigate('/admin/groups');
+    navigate("/admin/groups");
   };
 
   const handleExamsClick = () => {
-    navigate('/admin/exams');
+    navigate("/admin/exams");
+  };
+
+  // Handlers لفتح الـ Forms
+  const handleOpenAddStudentForm = () => {
+    setShowAddStudentForm(true);
+  };
+
+  const handleOpenAddTeacherForm = () => {
+    setShowAddTeacherForm(true);
+  };
+
+  const handleOpenAddGroupForm = () => {
+    setShowAddGroupForm(true);
   };
 
   // دالة للتعامل مع الضغط على الحلقة
@@ -230,9 +251,15 @@ const AdminDashboard = () => {
             <div className="flex items-center gap-3">
               <p className="text-gray-600">نظرة شاملة على أداء المنصة</p>
               <div className="flex items-center gap-1.5">
-                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></div>
-                <span className={`text-sm ${isConnected ? 'text-green-600' : 'text-red-600'}`}>
-                  {isConnected ? 'متصل' : 'غير متصل'}
+                <div
+                  className={`w-2 h-2 rounded-full ${
+                    isConnected ? "bg-green-500" : "bg-red-500"
+                  } animate-pulse`}></div>
+                <span
+                  className={`text-sm ${
+                    isConnected ? "text-green-600" : "text-red-600"
+                  }`}>
+                  {isConnected ? "متصل" : "غير متصل"}
                 </span>
               </div>
             </div>
@@ -244,8 +271,7 @@ const AdminDashboard = () => {
                   className="w-12 h-12 mx-auto mb-4 text-red-500 animate-pulse"
                   fill="none"
                   stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
+                  viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -256,8 +282,7 @@ const AdminDashboard = () => {
                 <p className="text-lg font-medium">{error}</p>
                 <button
                   onClick={() => fetchStats(true)}
-                  className="mt-4 px-6 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-all duration-300 transform hover:scale-105 shadow-lg"
-                >
+                  className="mt-4 px-6 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-all duration-300 transform hover:scale-105 shadow-lg">
                   إعادة المحاولة
                 </button>
               </div>
@@ -281,18 +306,16 @@ const AdminDashboard = () => {
   }) => (
     <div
       className={`${bgColor} p-6 rounded-2xl border-2 ${borderColor} transition-all duration-300 hover:shadow-xl hover:-translate-y-2 ${
-        onClick ? 'cursor-pointer hover:scale-105 group' : ''
+        onClick ? "cursor-pointer hover:scale-105 group" : ""
       } relative overflow-hidden`}
-      onClick={onClick}
-    >
+      onClick={onClick}>
       {/* خلفية متحركة */}
       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
 
       <div className="relative z-10">
         <div className="flex items-center justify-between mb-4">
           <div
-            className={`p-4 ${color} rounded-2xl shadow-lg transform transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6`}
-          >
+            className={`p-4 ${color} rounded-2xl shadow-lg transform transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6`}>
             {icon}
           </div>
 
@@ -302,8 +325,7 @@ const AdminDashboard = () => {
               <div className="w-16 h-16 relative">
                 <svg
                   className="w-16 h-16 transform -rotate-90"
-                  viewBox="0 0 64 64"
-                >
+                  viewBox="0 0 64 64">
                   <circle
                     cx="32"
                     cy="32"
@@ -346,8 +368,7 @@ const AdminDashboard = () => {
                 className="w-4 h-4 mr-1"
                 fill="none"
                 stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+                viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -366,18 +387,18 @@ const AdminDashboard = () => {
   const BarChart: React.FC<BarChartProps> = ({
     data,
     labels,
-    colors = ['bg-gradient-to-t from-blue-500 to-blue-600'],
+    colors = ["bg-gradient-to-t from-blue-500 to-blue-600"],
     maxValue = 100,
   }) => {
     const max = Math.max(...data, maxValue);
     const total = data.reduce((sum, val) => sum + val, 0);
 
     const defaultColors = [
-      'bg-gradient-to-t from-blue-500 to-blue-600',
-      'bg-gradient-to-t from-green-500 to-green-600',
-      'bg-gradient-to-t from-purple-500 to-purple-600',
-      'bg-gradient-to-t from-orange-500 to-orange-600',
-      'bg-gradient-to-t from-pink-500 to-pink-600',
+      "bg-gradient-to-t from-blue-500 to-blue-600",
+      "bg-gradient-to-t from-green-500 to-green-600",
+      "bg-gradient-to-t from-purple-500 to-purple-600",
+      "bg-gradient-to-t from-orange-500 to-orange-600",
+      "bg-gradient-to-t from-pink-500 to-pink-600",
     ];
 
     return (
@@ -390,8 +411,7 @@ const AdminDashboard = () => {
           return (
             <div
               key={i}
-              className="flex-1 flex flex-col items-center group relative"
-            >
+              className="flex-1 flex flex-col items-center group relative">
               {/* النسبة المئوية عند hover */}
               <div className="mb-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:-translate-y-1">
                 <span className="text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-purple-600 px-3 py-1.5 rounded-lg shadow-lg border border-white/20">
@@ -403,8 +423,7 @@ const AdminDashboard = () => {
                 <div
                   className={`${color} rounded-2xl absolute bottom-0 w-full transition-all duration-1000 hover:opacity-90 flex items-center justify-center group-hover:shadow-xl transform group-hover:scale-[1.02]`}
                   data-height={Math.max(heightPercent, 8)}
-                  data-delay={i * 200}
-                >
+                  data-delay={i * 200}>
                   {/* القيمة */}
                   <div className="text-center text-white">
                     <div className="font-bold text-sm bg-black/30 px-2 py-1 rounded backdrop-blur-sm">
@@ -452,8 +471,7 @@ const AdminDashboard = () => {
               className="w-20 h-20 mx-auto mb-4 text-gray-300 animate-pulse"
               fill="none"
               stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+              viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -477,8 +495,7 @@ const AdminDashboard = () => {
         <div className="relative w-64 h-64 md:w-72 md:h-72 mb-4 flex-shrink-0">
           <svg
             viewBox="0 0 120 120"
-            className="transform -rotate-90 drop-shadow-2xl hover:scale-105 transition-transform duration-300"
-          >
+            className="transform -rotate-90 drop-shadow-2xl hover:scale-105 transition-transform duration-300">
             {/* الخلفية */}
             <circle
               cx="60"
@@ -507,7 +524,7 @@ const AdminDashboard = () => {
                 <g key={i}>
                   <path
                     d={`M 60 60 L ${x1} ${y1} A 48 48 0 ${largeArc} 1 ${x2} ${y2} Z`}
-                    fill={colors[i] || '#94a3b8'}
+                    fill={colors[i] || "#94a3b8"}
                     className="hover:opacity-80 transition-all duration-300 cursor-pointer hover:scale-105 filter hover:brightness-110 pie-chart-path"
                     stroke="white"
                     strokeWidth="3"
@@ -516,7 +533,7 @@ const AdminDashboard = () => {
                         labels[i],
                         value,
                         percentage,
-                        colors[i] || '#94a3b8',
+                        colors[i] || "#94a3b8",
                         i
                       )
                     }
@@ -525,7 +542,7 @@ const AdminDashboard = () => {
                         labels[i],
                         value,
                         Math.round(percentage * 10) / 10,
-                        colors[i] || '#94a3b8',
+                        colors[i] || "#94a3b8",
                         i
                       )
                     }
@@ -558,8 +575,7 @@ const AdminDashboard = () => {
                         fontWeight="bold"
                         textAnchor="middle"
                         dominantBaseline="middle"
-                        className="transform rotate-90 pie-chart-text"
-                      >
+                        className="transform rotate-90 pie-chart-text">
                         {Math.round(percentage * 10) / 10}%
                       </text>
                       <text
@@ -585,8 +601,7 @@ const AdminDashboard = () => {
                         fontWeight="600"
                         textAnchor="middle"
                         dominantBaseline="middle"
-                        className="transform rotate-90 pie-chart-value-text"
-                      >
+                        className="transform rotate-90 pie-chart-value-text">
                         ({value})
                       </text>
                     </g>
@@ -614,8 +629,7 @@ const AdminDashboard = () => {
               fill="#64748b"
               fontSize="8"
               fontWeight="600"
-              className="transform rotate-90"
-            >
+              className="transform rotate-90">
               إجمالي الطلاب
             </text>
             <text
@@ -625,8 +639,7 @@ const AdminDashboard = () => {
               fill="#1e293b"
               fontSize="18"
               fontWeight="bold"
-              className="transform rotate-90"
-            >
+              className="transform rotate-90">
               {total.toLocaleString()}
             </text>
             <text
@@ -636,8 +649,7 @@ const AdminDashboard = () => {
               fill="#64748b"
               fontSize="7"
               fontWeight="500"
-              className="transform rotate-90"
-            >
+              className="transform rotate-90">
               في {labels.length} حلقة
             </text>
           </svg>
@@ -649,8 +661,7 @@ const AdminDashboard = () => {
   return (
     <div
       className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100"
-      dir="rtl"
-    >
+      dir="rtl">
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         {/* رأس الصفحة المحسن */}
         <div className="mb-12 flex flex-col lg:flex-row lg:items-center lg:justify-between">
@@ -662,14 +673,30 @@ const AdminDashboard = () => {
               <p className="text-gray-600 font-medium">
                 نظرة شاملة ومتطورة على أداء المنصة
               </p>
-              <div className="flex items-center gap-1.5" title={
-                isConnected 
-                  ? 'البيانات تتحدث فورياً عبر Socket.IO' 
-                  : `تحديث تلقائي كل 30 ثانية${lastAutoRefresh ? ` | آخر تحديث: ${lastAutoRefresh.toLocaleTimeString('ar-SA')}` : ''}`
-              }>
-                <div className={`w-2.5 h-2.5 rounded-full ${isConnected ? 'bg-green-500' : 'bg-yellow-500'} animate-pulse`}></div>
-                <span className={`text-sm font-medium cursor-help ${isConnected ? 'text-green-600' : 'text-yellow-600'}`}>
-                  {isConnected ? 'متصل مباشرة' : `تحديث تلقائي (${autoRefreshCount})`}
+              <div
+                className="flex items-center gap-1.5"
+                title={
+                  isConnected
+                    ? "البيانات تتحدث فورياً عبر Socket.IO"
+                    : `تحديث تلقائي كل 30 ثانية${
+                        lastAutoRefresh
+                          ? ` | آخر تحديث: ${lastAutoRefresh.toLocaleTimeString(
+                              "ar-SA"
+                            )}`
+                          : ""
+                      }`
+                }>
+                <div
+                  className={`w-2.5 h-2.5 rounded-full ${
+                    isConnected ? "bg-green-500" : "bg-yellow-500"
+                  } animate-pulse`}></div>
+                <span
+                  className={`text-sm font-medium cursor-help ${
+                    isConnected ? "text-green-600" : "text-yellow-600"
+                  }`}>
+                  {isConnected
+                    ? "متصل مباشرة"
+                    : `تحديث تلقائي (${autoRefreshCount})`}
                 </span>
               </div>
             </div>
@@ -683,8 +710,7 @@ const AdminDashboard = () => {
                     className="w-5 h-5 animate-spin"
                     fill="none"
                     stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
+                    viewBox="0 0 24 24">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -701,8 +727,7 @@ const AdminDashboard = () => {
                   className="w-5 h-5 text-green-500 animate-pulse"
                   fill="none"
                   stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
+                  viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -715,7 +740,7 @@ const AdminDashboard = () => {
 
               {lastUpdated && (
                 <p className="text-sm text-gray-500 bg-white px-3 py-1 rounded-lg shadow-sm">
-                  آخر تحديث: {lastUpdated.toLocaleTimeString('ar-SA')}
+                  آخر تحديث: {lastUpdated.toLocaleTimeString("ar-SA")}
                 </p>
               )}
             </div>
@@ -730,8 +755,7 @@ const AdminDashboard = () => {
                 className="w-8 h-8 text-white"
                 fill="none"
                 stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+                viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -756,8 +780,7 @@ const AdminDashboard = () => {
                 className="w-8 h-8 text-white"
                 fill="none"
                 stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+                viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -782,8 +805,7 @@ const AdminDashboard = () => {
                 className="w-8 h-8 text-white"
                 fill="none"
                 stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+                viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -807,8 +829,7 @@ const AdminDashboard = () => {
                 className="w-8 h-8 text-white"
                 fill="none"
                 stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+                viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -832,8 +853,7 @@ const AdminDashboard = () => {
                 className="w-8 h-8 text-white"
                 fill="none"
                 stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+                viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -867,12 +887,12 @@ const AdminDashboard = () => {
                   stats.totalGroups,
                   stats.totalExams,
                 ]}
-                labels={['الطلاب', 'المعلمين', 'الحلقات', 'الامتحانات']}
+                labels={["الطلاب", "المعلمين", "الحلقات", "الامتحانات"]}
                 colors={[
-                  'bg-gradient-to-t from-blue-500 to-blue-600',
-                  'bg-gradient-to-t from-green-500 to-green-600',
-                  'bg-gradient-to-t from-purple-500 to-purple-600',
-                  'bg-gradient-to-t from-orange-500 to-orange-600',
+                  "bg-gradient-to-t from-blue-500 to-blue-600",
+                  "bg-gradient-to-t from-green-500 to-green-600",
+                  "bg-gradient-to-t from-purple-500 to-purple-600",
+                  "bg-gradient-to-t from-orange-500 to-orange-600",
                 ]}
               />
             </div>
@@ -886,10 +906,10 @@ const AdminDashboard = () => {
             <div className="text-sm text-gray-600 mb-6 text-right grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-blue-50 px-4 py-2 rounded-xl border border-blue-200">
                 <span className="font-semibold text-blue-700">
-                  إجمالي{' '}
+                  إجمالي{" "}
                   {groupsDistribution
                     .reduce((sum, g) => sum + g.studentCount, 0)
-                    .toLocaleString()}{' '}
+                    .toLocaleString()}{" "}
                   طالب
                 </span>
               </div>
@@ -913,16 +933,16 @@ const AdminDashboard = () => {
                     labels={groupDistribution.labels}
                     onSegmentClick={handleGroupClick}
                     colors={[
-                      '#3b82f6', // أزرق
-                      '#22c55e', // أخضر
-                      '#f59e0b', // برتقالي
-                      '#a855f7', // بنفسجي
-                      '#ef4444', // أحمر
-                      '#ec4899', // وردي
-                      '#06b6d4', // سماوي
-                      '#84cc16', // أخضر فاتح
-                      '#f97316', // برتقالي غامق
-                      '#8b5cf6', // بنفسجي فاتح
+                      "#3b82f6", // أزرق
+                      "#22c55e", // أخضر
+                      "#f59e0b", // برتقالي
+                      "#a855f7", // بنفسجي
+                      "#ef4444", // أحمر
+                      "#ec4899", // وردي
+                      "#06b6d4", // سماوي
+                      "#84cc16", // أخضر فاتح
+                      "#f97316", // برتقالي غامق
+                      "#8b5cf6", // بنفسجي فاتح
                     ]}
                   />
                 ) : (
@@ -932,8 +952,7 @@ const AdminDashboard = () => {
                         className="w-16 h-16 mx-auto mb-4 text-gray-300 animate-pulse"
                         fill="none"
                         stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
+                        viewBox="0 0 24 24">
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -947,8 +966,7 @@ const AdminDashboard = () => {
                       </p>
                       <button
                         onClick={handleGroupsClick}
-                        className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors shadow-lg"
-                      >
+                        className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors shadow-lg">
                         إضافة حلقة جديدة
                       </button>
                     </div>
@@ -967,14 +985,12 @@ const AdminDashboard = () => {
                       <button
                         onClick={clearExpanded}
                         title="إخفاء التفاصيل"
-                        className="text-gray-400 hover:text-gray-600 transition-colors"
-                      >
+                        className="text-gray-400 hover:text-gray-600 transition-colors">
                         <svg
                           className="w-5 h-5"
                           fill="none"
                           stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
+                          viewBox="0 0 24 24">
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -989,8 +1005,7 @@ const AdminDashboard = () => {
                     <div className="flex items-center gap-3 mb-6">
                       <div
                         className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg group-icon"
-                        data-bg-color={expandedGroup.color}
-                      >
+                        data-bg-color={expandedGroup.color}>
                         📚
                       </div>
                       <div>
@@ -1016,10 +1031,10 @@ const AdminDashboard = () => {
                           </span>
                         </div>
                         <div className="mt-1 text-xs text-gray-500">
-                          من إجمالي{' '}
+                          من إجمالي{" "}
                           {groupsDistribution
                             .reduce((sum, g) => sum + g.studentCount, 0)
-                            .toLocaleString()}{' '}
+                            .toLocaleString()}{" "}
                           طالب
                         </div>
                       </div>
@@ -1039,8 +1054,7 @@ const AdminDashboard = () => {
                           <div
                             className="h-full rounded-full transition-all duration-1000 progress-bar"
                             data-width={expandedGroup.percentage}
-                            data-bg-color={expandedGroup.color}
-                          ></div>
+                            data-bg-color={expandedGroup.color}></div>
                         </div>
                       </div>
 
@@ -1066,30 +1080,30 @@ const AdminDashboard = () => {
                         </h6>
                         <div className="space-y-1 text-xs text-gray-600">
                           <div>
-                            • متوسط الطلاب:{' '}
+                            • متوسط الطلاب:{" "}
                             {Math.round(
                               groupsDistribution.reduce(
                                 (sum, g) => sum + g.studentCount,
                                 0
                               ) / groupsDistribution.length
-                            )}{' '}
+                            )}{" "}
                             طالب/حلقة
                           </div>
                           <div>
-                            •{' '}
+                            •{" "}
                             {expandedGroup.percentage >
                             50 / groupsDistribution.length
-                              ? 'أكبر من'
-                              : 'أصغر من'}{' '}
+                              ? "أكبر من"
+                              : "أصغر من"}{" "}
                             المتوسط
                           </div>
                           <div>
-                            • مستوى التمثيل:{' '}
+                            • مستوى التمثيل:{" "}
                             {expandedGroup.percentage > 20
-                              ? 'عالي'
+                              ? "عالي"
                               : expandedGroup.percentage > 10
-                                ? 'متوسط'
-                                : 'منخفض'}
+                              ? "متوسط"
+                              : "منخفض"}
                           </div>
                         </div>
                       </div>
@@ -1102,8 +1116,7 @@ const AdminDashboard = () => {
                         className="w-12 h-12 mx-auto mb-3 text-gray-300"
                         fill="none"
                         stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
+                        viewBox="0 0 24 24">
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -1123,60 +1136,423 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* قسم الطلاب النشطون والأنشطة */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
+        {/* قسم الحضور والغياب للحلقات */}
+        <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-500 mb-12">
+          <h3 className="text-2xl font-bold text-gray-900 mb-6 text-right flex items-center">
+            <span className="w-3 h-10 bg-gradient-to-b from-emerald-500 to-emerald-700 rounded-full mr-4"></span>
+            الحضور والغياب حسب الحلقات
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {groupsWithStudents.slice(0, 6).map((group, idx) => {
+              const attendanceRate = 75 + Math.random() * 20; // نسبة وهمية
+              const presentCount = Math.round(
+                (attendanceRate / 100) * group.studentCount
+              );
+              const absentCount = group.studentCount - presentCount;
+
+              return (
+                <div
+                  key={idx}
+                  className="bg-gradient-to-br from-gray-50 to-blue-50 p-4 rounded-xl border-2 border-blue-100 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-bold text-gray-800 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                      {group.groupName}
+                    </h4>
+                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-semibold">
+                      {attendanceRate.toFixed(0)}%
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 mb-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600 flex items-center gap-2">
+                        <span className="w-3 h-3 bg-green-500 rounded-full"></span>
+                        حاضر
+                      </span>
+                      <span className="font-bold text-green-600">
+                        {presentCount}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600 flex items-center gap-2">
+                        <span className="w-3 h-3 bg-red-500 rounded-full"></span>
+                        غائب
+                      </span>
+                      <span className="font-bold text-red-600">
+                        {absentCount}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                    <div
+                      className="bg-gradient-to-r from-green-500 to-emerald-600 h-full rounded-full transition-all duration-700"
+                      style={{ width: `${attendanceRate}%` }}></div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {groupsWithStudents.length === 0 && (
+            <div className="text-center py-12 text-gray-500">
+              <svg
+                className="w-16 h-16 mx-auto mb-4 text-gray-300"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              <p className="font-semibold">لا توجد حلقات لعرض بيانات الحضور</p>
+            </div>
+          )}
+        </div>
+
+        {/* قسم الإجراءات السريعة وأفضل الطلاب والمعلمين */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+          {/* الإجراءات السريعة */}
+          <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-500">
             <h3 className="text-2xl font-bold text-gray-900 mb-6 text-right flex items-center">
-              <span className="w-3 h-10 bg-gradient-to-b from-green-500 to-green-700 rounded-full mr-4"></span>
-              الطلاب النشطون
+              <span className="w-3 h-10 bg-gradient-to-b from-purple-500 to-purple-700 rounded-full mr-4"></span>
+              إجراءات سريعة
             </h3>
-            <div className="flex items-center justify-center h-40">
-              <div className="text-center">
-                <div className="relative inline-block mb-4">
-                  <div className="text-6xl font-bold bg-gradient-to-r from-green-500 to-green-700 bg-clip-text text-transparent animate-pulse">
-                    {stats.activeStudents.toLocaleString()}
+            <div className="space-y-4">
+              <button
+                onClick={handleOpenAddStudentForm}
+                className="group w-full flex items-center justify-between p-5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-[1.02]">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-white/25 backdrop-blur-sm rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <svg
+                      className="w-7 h-7"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      strokeWidth={2.5}>
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+                      />
+                    </svg>
                   </div>
-                  <div className="absolute -top-2 -right-2 w-4 h-4 bg-green-500 rounded-full animate-ping"></div>
-                </div>
-                <p className="text-gray-600 text-lg font-medium">
-                  طالب نشط هذا الشهر
-                </p>
-                <div className="mt-4 flex justify-center">
-                  <div className="bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-semibold">
-                    +
-                    {Math.round(
-                      (stats.activeStudents / stats.totalStudents) * 100
-                    )}
-                    % من الإجمالي
+                  <div className="text-right">
+                    <p className="font-bold text-lg mb-0.5">إضافة طالب جديد</p>
+                    <p className="text-sm text-blue-100">
+                      تسجيل طالب في النظام
+                    </p>
                   </div>
                 </div>
-              </div>
+                <svg
+                  className="w-6 h-6 text-white/70 group-hover:translate-x-1 transition-transform"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+
+              <button
+                onClick={handleOpenAddTeacherForm}
+                className="group w-full flex items-center justify-between p-5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-2xl hover:from-green-600 hover:to-green-700 transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-[1.02]">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-white/25 backdrop-blur-sm rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <svg
+                      className="w-7 h-7"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      strokeWidth={2.5}>
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                      />
+                    </svg>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-lg mb-0.5">إضافة معلم جديد</p>
+                    <p className="text-sm text-green-100">
+                      تسجيل معلم في النظام
+                    </p>
+                  </div>
+                </div>
+                <svg
+                  className="w-6 h-6 text-white/70 group-hover:translate-x-1 transition-transform"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+
+              <button
+                onClick={handleOpenAddGroupForm}
+                className="group w-full flex items-center justify-between p-5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-2xl hover:from-orange-600 hover:to-orange-700 transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:scale-[1.02]">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-white/25 backdrop-blur-sm rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                    <svg
+                      className="w-7 h-7"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      strokeWidth={2.5}>
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                      />
+                    </svg>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-lg mb-0.5">إضافة حلقة جديدة</p>
+                    <p className="text-sm text-orange-100">إنشاء حلقة تحفيظ</p>
+                  </div>
+                </div>
+                <svg
+                  className="w-6 h-6 text-white/70 group-hover:translate-x-1 transition-transform"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
             </div>
           </div>
 
-          <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-500 hover:-translate-y-1">
+          {/* أفضل 5 طلاب */}
+          <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-500">
             <h3 className="text-2xl font-bold text-gray-900 mb-6 text-right flex items-center">
-              <span className="w-3 h-10 bg-gradient-to-b from-pink-500 to-pink-700 rounded-full mr-4"></span>
-              الأنشطة التعليمية
+              <span className="w-3 h-10 bg-gradient-to-b from-yellow-500 to-yellow-700 rounded-full mr-4"></span>
+              أفضل 5 طلاب
             </h3>
-            <div className="flex items-center justify-center h-40">
-              <div className="text-center">
-                <div className="relative inline-block mb-4">
-                  <div className="text-6xl font-bold bg-gradient-to-r from-pink-500 to-pink-700 bg-clip-text text-transparent animate-pulse">
-                    {stats.totalActivities.toLocaleString()}
+            <div className="space-y-3">
+              {[
+                { name: "محمد أحمد", grade: 98, rank: 1 },
+                { name: "فاطمة علي", grade: 96, rank: 2 },
+                { name: "عمر خالد", grade: 94, rank: 3 },
+                { name: "آية حسن", grade: 92, rank: 4 },
+                { name: "يوسف إبراهيم", grade: 90, rank: 5 },
+              ].map((student, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center gap-3 p-3 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl border border-yellow-200 hover:shadow-md transition-all duration-300">
+                  <div
+                    className={`w-10 h-10 flex items-center justify-center rounded-full font-bold text-white ${
+                      student.rank === 1
+                        ? "bg-gradient-to-br from-yellow-400 to-yellow-600"
+                        : student.rank === 2
+                        ? "bg-gradient-to-br from-gray-300 to-gray-500"
+                        : student.rank === 3
+                        ? "bg-gradient-to-br from-orange-400 to-orange-600"
+                        : "bg-gradient-to-br from-blue-400 to-blue-600"
+                    }`}>
+                    {student.rank === 1
+                      ? "🥇"
+                      : student.rank === 2
+                      ? "🥈"
+                      : student.rank === 3
+                      ? "🥉"
+                      : student.rank}
                   </div>
-                  <div className="absolute -top-2 -right-2 w-4 h-4 bg-pink-500 rounded-full animate-ping"></div>
-                </div>
-                <p className="text-gray-600 text-lg font-medium">
-                  نشاط تعليمي متاح
-                </p>
-                <div className="mt-4 flex justify-center">
-                  <div className="bg-pink-100 text-pink-700 px-4 py-2 rounded-full text-sm font-semibold">
-                    أنشطة متنوعة ومفيدة
+                  <div className="flex-1">
+                    <p className="font-bold text-gray-800">{student.name}</p>
+                    <p className="text-xs text-gray-500">طالب متميز</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="font-bold text-yellow-600 text-lg">
+                      {student.grade}%
+                    </p>
+                    <p className="text-xs text-gray-500">المعدل</p>
                   </div>
                 </div>
-              </div>
+              ))}
             </div>
+          </div>
+
+          {/* أفضل 5 معلمين */}
+          <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-500">
+            <h3 className="text-2xl font-bold text-gray-900 mb-6 text-right flex items-center">
+              <span className="w-3 h-10 bg-gradient-to-b from-emerald-500 to-emerald-700 rounded-full mr-4"></span>
+              أفضل 5 معلمين
+            </h3>
+            <div className="space-y-3">
+              {groupsWithStudents
+                .sort((a, b) => b.studentCount - a.studentCount)
+                .slice(0, 5)
+                .map((group, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-3 p-3 bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl border border-emerald-200 hover:shadow-md transition-all duration-300">
+                    <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center rounded-full">
+                      <svg
+                        className="w-6 h-6 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                        />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-bold text-gray-800">
+                        معلم {group.groupName}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        حلقة {group.groupName}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="font-bold text-emerald-600 text-lg">
+                        {group.studentCount}
+                      </p>
+                      <p className="text-xs text-gray-500">طالب</p>
+                    </div>
+                  </div>
+                ))}
+              {groupsWithStudents.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  <p className="text-sm">لا توجد بيانات</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* قسم آخر الإشعارات */}
+        <div className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-500 mb-12">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-2xl font-bold text-gray-900 flex items-center">
+              <span className="w-3 h-10 bg-gradient-to-b from-red-500 to-red-700 rounded-full mr-4"></span>
+              آخر الإشعارات
+            </h3>
+            <button className="px-4 py-2 bg-blue-100 text-blue-700 rounded-xl hover:bg-blue-200 transition-colors font-semibold text-sm">
+              عرض الكل
+            </button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {[
+              {
+                type: "success",
+                icon: "✅",
+                title: "تم إضافة طالب جديد",
+                desc: "تم تسجيل محمد أحمد في حلقة الإخلاص",
+                time: "منذ 5 دقائق",
+                color: "from-green-50 to-emerald-50",
+                borderColor: "border-green-200",
+              },
+              {
+                type: "warning",
+                icon: "⚠️",
+                title: "تنبيه غياب",
+                desc: "3 طلاب غائبين اليوم عن حلقة الهدى",
+                time: "منذ 15 دقيقة",
+                color: "from-yellow-50 to-amber-50",
+                borderColor: "border-yellow-200",
+              },
+              {
+                type: "info",
+                icon: "📝",
+                title: "امتحان قادم",
+                desc: "امتحان سورة البقرة غداً الساعة 10 صباحاً",
+                time: "منذ ساعة",
+                color: "from-blue-50 to-cyan-50",
+                borderColor: "border-blue-200",
+              },
+              {
+                type: "success",
+                icon: "🎉",
+                title: "إنجاز جديد",
+                desc: "فاطمة علي أتمت حفظ جزء عم بامتياز",
+                time: "منذ 2 ساعة",
+                color: "from-purple-50 to-pink-50",
+                borderColor: "border-purple-200",
+              },
+              {
+                type: "info",
+                icon: "👤",
+                title: "معلم جديد",
+                desc: "تم تسجيل المعلم أحمد خالد في النظام",
+                time: "منذ 3 ساعات",
+                color: "from-indigo-50 to-blue-50",
+                borderColor: "border-indigo-200",
+              },
+              {
+                type: "success",
+                icon: "📚",
+                title: "حلقة جديدة",
+                desc: "تم إنشاء حلقة التوحيد بنجاح",
+                time: "منذ 4 ساعات",
+                color: "from-teal-50 to-cyan-50",
+                borderColor: "border-teal-200",
+              },
+            ].map((notification, idx) => (
+              <div
+                key={idx}
+                className={`flex items-start gap-4 p-4 bg-gradient-to-r ${notification.color} rounded-xl border ${notification.borderColor} hover:shadow-lg transition-all duration-300 cursor-pointer hover:-translate-y-1`}>
+                <div className="text-3xl">{notification.icon}</div>
+                <div className="flex-1">
+                  <p className="font-bold text-gray-800 mb-1">
+                    {notification.title}
+                  </p>
+                  <p className="text-sm text-gray-600 mb-2">
+                    {notification.desc}
+                  </p>
+                  <p className="text-xs text-gray-500 flex items-center gap-1">
+                    <svg
+                      className="w-3 h-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    {notification.time}
+                  </p>
+                </div>
+                <button className="text-gray-400 hover:text-gray-600 transition-colors">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -1228,12 +1604,10 @@ const AdminDashboard = () => {
       {showGroupDetails && selectedGroup && (
         <div
           className="fixed inset-0 backdrop-blur-md flex items-center justify-center z-50 p-4"
-          onClick={handleCloseDetails}
-        >
+          onClick={handleCloseDetails}>
           <div
             className="bg-white rounded-3xl p-8 max-w-lg w-full mx-4 transform animate-scale-in"
-            onClick={(e) => e.stopPropagation()}
-          >
+            onClick={(e) => e.stopPropagation()}>
             <div className="text-center">
               {/* رأس Modal */}
               <div className="flex items-center justify-between mb-6">
@@ -1243,14 +1617,12 @@ const AdminDashboard = () => {
                 <button
                   onClick={handleCloseDetails}
                   title="إغلاق"
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                >
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                   <svg
                     className="w-6 h-6 text-gray-600"
                     fill="none"
                     stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
+                    viewBox="0 0 24 24">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -1266,8 +1638,7 @@ const AdminDashboard = () => {
               <div className="mb-6">
                 <div
                   className="w-20 h-20 mx-auto rounded-full flex items-center justify-center text-white text-3xl font-bold shadow-2xl modal-group-icon"
-                  data-bg-color={selectedGroup.color}
-                >
+                  data-bg-color={selectedGroup.color}>
                   📚
                 </div>
               </div>
@@ -1309,8 +1680,7 @@ const AdminDashboard = () => {
                     <div
                       className="h-full rounded-full transition-all duration-700 modal-progress-bar"
                       data-width={selectedGroup.percentage}
-                      data-bg-color={selectedGroup.color}
-                    ></div>
+                      data-bg-color={selectedGroup.color}></div>
                   </div>
                   <div className="flex justify-between mt-2 text-xs text-gray-500">
                     <span>0%</span>
@@ -1322,15 +1692,13 @@ const AdminDashboard = () => {
               {/* أزرار الإجراءات */}
               <div className="flex gap-3 mt-6">
                 <button
-                  onClick={() => navigate('/admin/groups')}
-                  className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 font-semibold"
-                >
+                  onClick={() => navigate("/admin/groups")}
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-300 font-semibold">
                   إدارة الحلقات
                 </button>
                 <button
                   onClick={handleCloseDetails}
-                  className="flex-1 bg-gray-200 text-gray-700 py-3 px-4 rounded-xl hover:bg-gray-300 transition-all duration-300 font-semibold"
-                >
+                  className="flex-1 bg-gray-200 text-gray-700 py-3 px-4 rounded-xl hover:bg-gray-300 transition-all duration-300 font-semibold">
                   إغلاق
                 </button>
               </div>
@@ -1455,6 +1823,49 @@ const AdminDashboard = () => {
           background-color: var(--bg-color);
         }
       `}</style>
+
+      {/* Forms Modals */}
+      {showAddStudentForm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <AddStudentForm
+              onClose={() => setShowAddStudentForm(false)}
+              onSuccess={() => {
+                setShowAddStudentForm(false);
+                fetchStats(true);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {showAddTeacherForm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <AddTeacherForm
+              onClose={() => setShowAddTeacherForm(false)}
+              onSuccess={() => {
+                setShowAddTeacherForm(false);
+                fetchStats(true);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {showAddGroupForm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <AddGroupForm
+              onClose={() => setShowAddGroupForm(false)}
+              onSuccess={() => {
+                setShowAddGroupForm(false);
+                fetchStats(true);
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
