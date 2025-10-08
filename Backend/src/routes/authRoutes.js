@@ -31,8 +31,8 @@ router.get("/test", (req, res) => {
   });
 });
 
-// مسار تسجيل الدخول للطلاب والمعلمين
-router.post("/login", validateLogin, login);
+// مسار تسجيل الدخول للطلاب والمعلمين (بدون validation middleware لأن البيانات تأتي بأسماء مختلفة)
+router.post("/login", login);
 
 // مسار تسجيل الخروج
 router.post("/logout", protect, logout);

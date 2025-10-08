@@ -14,25 +14,37 @@ exports.login = async (req, res) => {
   try {
     console.log("=== Login called ===");
     console.log("Request body:", req.body);
+    console.log("Validated data:", req.validatedData);
 
-    const { studentId, idNumber, userType } = req.body;
+    // استخدام البيانات من req.validatedData إذا كانت موجودة، وإلا من req.body
+    const identifier =
+      req.validatedData?.identifier ||
+      req.body.studentId ||
+      req.body.teacherId ||
+      req.body.adminId;
+    const password =
+      req.validatedData?.password || req.body.idNumber || req.body.password;
+    const userType = req.validatedData?.userType || req.body.userType;
 
-    console.log("Parsed values:", { studentId, idNumber, userType });
+    console.log("Parsed values:", {
+      identifier,
+      password: password ? "***" : "none",
+      userType,
+    });
 
     // Check if it's a teacher login
     if (userType === "teacher") {
-      return await loginTeacher(req, res);
+      return await loginTeacher(req, res, identifier, password);
     }
 
     // Check if it's an admin login
     if (userType === "admin") {
-      return await loginAdmin(req, res);
+      return await loginAdmin(req, res, identifier, password);
     }
 
     // Otherwise, proceed with student login
     // التحقق من إدخال رقم الطالب ورقم الهوية
-    // (already validated above)
-    if (!studentId || !idNumber) {
+    if (!identifier || !password) {
       return res.status(400).json({
         success: false,
         message: "الرجاء إدخال رقم الطالب وكلمة المرور",
@@ -40,7 +52,7 @@ exports.login = async (req, res) => {
     }
 
     // البحث عن الطالب باستخدام رقم الطالب
-    const student = await Student.findOne({ studentId });
+    const student = await Student.findOne({ studentId: identifier });
 
     if (!student) {
       return res.status(401).json({
@@ -53,20 +65,20 @@ exports.login = async (req, res) => {
     let isPasswordValid = false;
 
     console.log("Student password field:", student.password);
-    console.log("Entered idNumber:", idNumber);
+    console.log("Entered password:", password ? "***" : "none");
 
     if (student.password && student.password.length > 20) {
       // كلمة المرور مشفرة - استخدام bcrypt للتحقق
       console.log("Checking encrypted password");
-      isPasswordValid = await bcrypt.compare(idNumber, student.password);
+      isPasswordValid = await bcrypt.compare(password, student.password);
     } else if (student.password) {
       // كلمة المرور غير مشفرة (نص عادي) - مقارنة مباشرة
       console.log("Checking plain text password");
-      isPasswordValid = student.password === idNumber;
+      isPasswordValid = student.password === password;
     } else {
       // لا يوجد حقل password - استخدام رقم الهوية
       console.log("No password field, using idNumber");
-      isPasswordValid = student.idNumber === idNumber;
+      isPasswordValid = student.idNumber === password;
     }
 
     if (!isPasswordValid) {
@@ -77,9 +89,9 @@ exports.login = async (req, res) => {
     }
 
     // Set isActive to true and update lastSeen on login
-    await Student.findByIdAndUpdate(student._id, { 
-      isActive: true, 
-      lastSeen: new Date() 
+    await Student.findByIdAndUpdate(student._id, {
+      isActive: true,
+      lastSeen: new Date(),
     });
 
     // إنشاء رمز JWT
@@ -118,23 +130,29 @@ exports.login = async (req, res) => {
     console.error("Error stack:", error.stack);
     console.error("Request body:", req.body);
     console.error("========================");
-    
+
     res.status(500).json({
       success: false,
       message: "حدث خطأ أثناء تسجيل الدخول",
-      error: process.env.NODE_ENV === "production" ? undefined : {
-        name: error.name,
-        message: error.message,
-        details: error.toString()
-      },
+      error:
+        process.env.NODE_ENV === "production"
+          ? undefined
+          : {
+              name: error.name,
+              message: error.message,
+              details: error.toString(),
+            },
     });
   }
 };
 
 // تسجيل دخول المعلم
-const loginTeacher = async (req, res) => {
+const loginTeacher = async (req, res, teacherIdParam, passwordParam) => {
   try {
-    const { teacherId, password } = req.body;
+    const teacherId =
+      teacherIdParam || req.validatedData?.identifier || req.body.teacherId;
+    const password =
+      passwordParam || req.validatedData?.password || req.body.password;
 
     // التحقق من إدخال رقم المعلم وكلمة المرور
     if (!teacherId || !password) {
@@ -165,9 +183,9 @@ const loginTeacher = async (req, res) => {
     }
 
     // Set isActive to true and update lastSeen on login
-    await Teacher.findByIdAndUpdate(teacher._id, { 
-      isActive: true, 
-      lastSeen: new Date() 
+    await Teacher.findByIdAndUpdate(teacher._id, {
+      isActive: true,
+      lastSeen: new Date(),
     });
 
     // إنشاء رمز JWT
@@ -208,9 +226,12 @@ const loginTeacher = async (req, res) => {
 };
 
 // تسجيل دخول الإداري
-const loginAdmin = async (req, res) => {
+const loginAdmin = async (req, res, adminIdParam, passwordParam) => {
   try {
-    const { adminId, password } = req.body;
+    const adminId =
+      adminIdParam || req.validatedData?.identifier || req.body.adminId;
+    const password =
+      passwordParam || req.validatedData?.password || req.body.password;
 
     // التحقق من إدخال رقم الإداري وكلمة المرور
     if (!adminId || !password) {
@@ -241,9 +262,9 @@ const loginAdmin = async (req, res) => {
     }
 
     // Set isActive to true and update lastSeen on login
-    await Admin.findByIdAndUpdate(admin._id, { 
-      isActive: true, 
-      lastSeen: new Date() 
+    await Admin.findByIdAndUpdate(admin._id, {
+      isActive: true,
+      lastSeen: new Date(),
     });
 
     // إنشاء رمز JWT
@@ -833,31 +854,40 @@ exports.logout = async (req, res) => {
     // Set isActive to false and update lastSeen based on user type
     const updateData = {
       isActive: false,
-      lastSeen: new Date()
+      lastSeen: new Date(),
     };
 
-    console.log(`🔴 Logout: تحديث lastSeen للمستخدم ${userId} في ${updateData.lastSeen.toISOString()}`);
+    console.log(
+      `🔴 Logout: تحديث lastSeen للمستخدم ${userId} في ${updateData.lastSeen.toISOString()}`
+    );
 
     let updatedUser;
     if (userRole === "student") {
-      updatedUser = await Student.findByIdAndUpdate(userId, updateData, { new: true });
+      updatedUser = await Student.findByIdAndUpdate(userId, updateData, {
+        new: true,
+      });
       console.log(`✅ Student updated - lastSeen: ${updatedUser.lastSeen}`);
     } else if (userRole === "teacher" || userRole === "admin") {
       if (userRole === "admin") {
-        updatedUser = await Admin.findByIdAndUpdate(userId, updateData, { new: true });
+        updatedUser = await Admin.findByIdAndUpdate(userId, updateData, {
+          new: true,
+        });
         console.log(`✅ Admin updated - lastSeen: ${updatedUser.lastSeen}`);
       } else {
-        updatedUser = await Teacher.findByIdAndUpdate(userId, updateData, { new: true });
+        updatedUser = await Teacher.findByIdAndUpdate(userId, updateData, {
+          new: true,
+        });
         console.log(`✅ Teacher updated - lastSeen: ${updatedUser.lastSeen}`);
       }
     }
 
     // إرسال إشعار Socket بتغيير حالة المستخدم (إذا كان هناك Socket.IO متاح)
-    if (req.app && req.app.get('io')) {
-      req.app.get('io').emit('userStatusChange', {
+    if (req.app && req.app.get("io")) {
+      req.app.get("io").emit("userStatusChange", {
         userId: userId,
         isActive: false,
-        lastSeen: updatedUser?.lastSeen?.toISOString() || new Date().toISOString()
+        lastSeen:
+          updatedUser?.lastSeen?.toISOString() || new Date().toISOString(),
       });
     }
 
