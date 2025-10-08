@@ -41,6 +41,37 @@ const groupSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+
+    // إحصائيات الحضور للشهر الحالي
+    currentMonthStats: {
+      month: {
+        type: String, // بصيغة "YYYY-MM" مثل "2025-10"
+      },
+      absenceRate: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 100,
+      },
+      attendanceRate: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 100,
+      },
+      totalDays: {
+        type: Number,
+        default: 0,
+      },
+      totalAbsences: {
+        type: Number,
+        default: 0,
+      },
+      totalPresences: {
+        type: Number,
+        default: 0,
+      },
+    },
   },
   { timestamps: true }
 );

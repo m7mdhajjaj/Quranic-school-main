@@ -680,3 +680,43 @@ exports.renameGroup = async (req, res) => {
     });
   }
 };
+
+// الحصول على إحصائيات الحلقات الشهرية
+exports.getGroupsMonthlyStats = async (req, res) => {
+  try {
+    console.log("📊 طلب الحصول على إحصائيات الحلقات الشهرية");
+
+    // جلب جميع الحلقات مع إحصائياتها
+    const groups = await Group.find({})
+      .select("name teacher teacherName currentMonthStats")
+      .sort({ name: 1 });
+
+    // تنسيق البيانات
+    const stats = groups.map((group) => ({
+      _id: group._id,
+      name: group.name,
+      teacher: group.teacherName || group.teacher,
+      currentMonthStats: group.currentMonthStats || {
+        month: null,
+        absenceRate: 0,
+        attendanceRate: 0,
+        totalDays: 0,
+        totalAbsences: 0,
+        totalPresences: 0,
+      },
+    }));
+
+    console.log(`✅ تم جلب إحصائيات ${stats.length} حلقة`);
+
+    res.status(200).json({
+      success: true,
+      data: stats,
+    });
+  } catch (error) {
+    console.error("Error getting groups monthly stats:", error);
+    res.status(500).json({
+      success: false,
+      message: "حدث خطأ أثناء جلب إحصائيات الحلقات",
+    });
+  }
+};
