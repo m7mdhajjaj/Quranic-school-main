@@ -1,19 +1,318 @@
 import React from "react";
+import './LoadingSkeleton.css';
 
 interface LoadingSkeletonProps {
   title?: string;
   description?: string;
 }
 
-// Test Page Skeleton
+// Enhanced Profile Page Skeleton
+const ProfilePageSkeleton: React.FC = () => {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100" dir="rtl">
+      {/* Hero Section Skeleton */}
+      <div className="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
+        </div>
+        
+        <div className="relative container mx-auto px-4 py-20">
+          <div className="flex flex-col md:flex-row items-center gap-12">
+            {/* Avatar Section Skeleton */}
+            <div className="flex-shrink-0">
+              <div className="relative">
+                <div className="w-40 h-40 bg-white/20 rounded-full shimmer-alt border-4 border-white/30"></div>
+                <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-green-400/80 rounded-full shimmer border-4 border-white"></div>
+              </div>
+            </div>
+            
+            {/* Profile Info Skeleton */}
+            <div className="flex-1 text-center md:text-right text-white space-y-4">
+              <div className="h-12 bg-white/20 rounded-2xl shimmer-alt w-80 mx-auto md:mx-0"></div>
+              <div className="h-6 bg-white/15 rounded-lg shimmer w-48 mx-auto md:mx-0"></div>
+              <div className="flex flex-wrap gap-3 justify-center md:justify-start mt-6">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-8 bg-white/20 rounded-full shimmer-alt w-24"></div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Cards Section Skeleton */}
+      <div className="container mx-auto px-4 -mt-16 relative z-10 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[
+            { gradient: 'from-blue-500 to-indigo-500', icon: '🎓' },
+            { gradient: 'from-orange-500 to-red-500', icon: '⚡' },
+            { gradient: 'from-emerald-500 to-teal-500', icon: '📊' }
+          ].map((config, i) => (
+            <div key={i} className="group bg-white rounded-3xl shadow-lg border-2 border-slate-100 p-8 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500">
+              <div className={`inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br ${config.gradient} rounded-2xl mb-4 shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shimmer-alt`}>
+              </div>
+              <div className="h-4 bg-gray-200 rounded shimmer w-24 mb-2"></div>
+              <div className="h-8 bg-gradient-to-r from-gray-300 to-gray-400 rounded-lg shimmer w-20"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Personal Information Section Skeleton */}
+      <div className="container mx-auto px-4 pb-12">
+        <div className="bg-white rounded-3xl shadow-xl border-2 border-slate-100 p-8 md:p-12">
+          <div className="flex items-center gap-4 mb-10">
+            <div className="p-4 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-2xl shadow-lg shimmer-alt w-16 h-16"></div>
+            <div>
+              <div className="h-8 bg-gray-200 rounded-lg shimmer w-48 mb-2"></div>
+              <div className="h-5 bg-gray-100 rounded shimmer w-40"></div>
+            </div>
+          </div>
+
+          {/* Form Fields Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <div key={i} className="space-y-3">
+                <div className="h-5 bg-gray-200 rounded shimmer w-32"></div>
+                <div className="h-12 bg-gray-100 rounded-xl shimmer w-full"></div>
+              </div>
+            ))}
+          </div>
+
+          {/* Action Buttons Skeleton */}
+          <div className="flex flex-col sm:flex-row gap-4 mt-10">
+            <div className="h-12 bg-gradient-to-r from-indigo-200 to-purple-200 rounded-xl shimmer-alt flex-1"></div>
+            <div className="h-12 bg-gray-200 rounded-xl shimmer w-32"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Chat Page Skeleton
+const ChatSkeleton: React.FC = () => {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100" dir="rtl">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header Skeleton */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-indigo-200 to-purple-200 rounded-full shimmer-alt"></div>
+              <div>
+                <div className="h-6 bg-gray-200 rounded shimmer w-32 mb-2"></div>
+                <div className="h-4 bg-gray-100 rounded shimmer w-24"></div>
+              </div>
+            </div>
+            <div className="w-8 h-8 bg-gray-200 rounded-full shimmer"></div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Chat List Skeleton */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 h-96 overflow-hidden">
+              <div className="p-4 border-b border-gray-100">
+                <div className="h-6 bg-gray-200 rounded shimmer w-24 mb-3"></div>
+                <div className="h-10 bg-gray-100 rounded-lg shimmer w-full"></div>
+              </div>
+              <div className="p-2 space-y-2">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="flex items-center p-3 hover:bg-gray-50 rounded-lg">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-200 to-indigo-200 rounded-full shimmer-alt mr-3"></div>
+                    <div className="flex-1">
+                      <div className="h-4 bg-gray-200 rounded shimmer w-24 mb-1"></div>
+                      <div className="h-3 bg-gray-100 rounded shimmer w-32"></div>
+                    </div>
+                    <div className="w-2 h-2 bg-blue-400 rounded-full shimmer-alt"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Chat Messages Skeleton */}
+          <div className="lg:col-span-3">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 h-96 flex flex-col">
+              {/* Chat Header */}
+              <div className="p-4 border-b border-gray-100 flex items-center">
+                <div className="w-10 h-10 bg-gradient-to-br from-green-200 to-emerald-200 rounded-full shimmer-alt mr-3"></div>
+                <div>
+                  <div className="h-5 bg-gray-200 rounded shimmer w-32 mb-1"></div>
+                  <div className="h-3 bg-gray-100 rounded shimmer w-20"></div>
+                </div>
+              </div>
+
+              {/* Messages Area */}
+              <div className="flex-1 p-4 space-y-4">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className={`flex ${i % 2 === 0 ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-xs p-3 rounded-2xl ${i % 2 === 0 ? 'bg-blue-100 shimmer-alt' : 'bg-gray-100 shimmer'}`}>
+                      <div className="h-4 bg-gray-200 rounded shimmer w-full mb-1"></div>
+                      <div className="h-4 bg-gray-200 rounded shimmer w-3/4"></div>
+                      <div className="h-3 bg-gray-100 rounded shimmer w-16 mt-2"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Message Input */}
+              <div className="p-4 border-t border-gray-100">
+                <div className="flex items-center space-x-2">
+                  <div className="flex-1 h-10 bg-gray-100 rounded-full shimmer"></div>
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-200 to-indigo-200 rounded-full shimmer-alt"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Dashboard Skeleton
+const DashboardSkeleton: React.FC = () => {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50" dir="rtl">
+      <div className="container mx-auto px-4 py-8">
+        {/* Welcome Section Skeleton */}
+        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-3xl p-8 mb-8 text-white relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-white/5 rounded-full blur-3xl"></div>
+          <div className="relative">
+            <div className="h-8 bg-white/20 rounded-lg shimmer-alt w-64 mb-4"></div>
+            <div className="h-6 bg-white/15 rounded shimmer w-96 mb-6"></div>
+            <div className="flex items-center space-x-4">
+              <div className="w-16 h-16 bg-white/20 rounded-full shimmer-alt"></div>
+              <div>
+                <div className="h-5 bg-white/25 rounded shimmer w-32 mb-2"></div>
+                <div className="h-4 bg-white/15 rounded shimmer w-24"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {[
+            { color: 'from-blue-500 to-cyan-500', bg: 'from-blue-50 to-cyan-50' },
+            { color: 'from-emerald-500 to-teal-500', bg: 'from-emerald-50 to-teal-50' },
+            { color: 'from-purple-500 to-pink-500', bg: 'from-purple-50 to-pink-50' },
+            { color: 'from-orange-500 to-red-500', bg: 'from-orange-50 to-red-50' }
+          ].map((config, i) => (
+            <div key={i} className={`bg-gradient-to-br ${config.bg} rounded-2xl p-6 border border-white/50 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300`}>
+              <div className="flex items-center justify-between mb-4">
+                <div className={`w-12 h-12 bg-gradient-to-br ${config.color} rounded-xl shimmer-alt`}></div>
+                <div className="text-right">
+                  <div className="h-4 bg-gray-200 rounded shimmer w-16 mb-1"></div>
+                  <div className="h-8 bg-gray-300 rounded-lg shimmer w-12"></div>
+                </div>
+              </div>
+              <div className="h-4 bg-gray-100 rounded shimmer w-24"></div>
+            </div>
+          ))}
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Recent Activity */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div className="h-6 bg-gray-200 rounded shimmer w-32"></div>
+                <div className="h-8 bg-gray-100 rounded-lg shimmer w-24"></div>
+              </div>
+              <div className="space-y-4">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="flex items-center p-4 bg-gray-50 rounded-xl">
+                    <div className="w-10 h-10 bg-gradient-to-br from-indigo-200 to-purple-200 rounded-full shimmer-alt mr-4"></div>
+                    <div className="flex-1">
+                      <div className="h-4 bg-gray-200 rounded shimmer w-48 mb-2"></div>
+                      <div className="h-3 bg-gray-100 rounded shimmer w-32"></div>
+                    </div>
+                    <div className="h-3 bg-gray-100 rounded shimmer w-16"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Quick Actions */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+              <div className="h-6 bg-gray-200 rounded shimmer w-24 mb-4"></div>
+              <div className="space-y-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="h-10 bg-gradient-to-r from-gray-100 to-gray-200 rounded-lg shimmer"></div>
+                ))}
+              </div>
+            </div>
+
+            {/* Calendar Widget */}
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+              <div className="h-6 bg-gray-200 rounded shimmer w-20 mb-4"></div>
+              <div className="grid grid-cols-7 gap-2">
+                {Array.from({ length: 35 }).map((_, i) => (
+                  <div key={i} className="h-8 bg-gray-100 rounded shimmer"></div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Enhanced Profile Card Skeleton
+const ProfileCardSkeleton: React.FC = () => {
+  return (
+    <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-xl border border-gray-100 p-8 transform hover:scale-105 transition-all duration-300">
+      <div className="flex flex-col items-center">
+        {/* Enhanced Avatar Skeleton with glow effect */}
+        <div className="relative mb-6">
+          <div className="w-24 h-24 bg-gradient-to-br from-indigo-200 to-purple-200 rounded-full shimmer-alt relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform -skew-x-12 animate-pulse"></div>
+          </div>
+          <div className="absolute -top-1 -right-1 w-8 h-8 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full shimmer border-2 border-white"></div>
+        </div>
+        
+        {/* Enhanced Name and Role */}
+        <div className="space-y-3 text-center w-full">
+          <div className="h-7 bg-gradient-to-r from-gray-200 to-gray-300 rounded-lg shimmer w-48 mx-auto"></div>
+          <div className="h-5 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-full shimmer-alt w-32 mx-auto"></div>
+        </div>
+        
+        {/* Enhanced Stats Grid */}
+        <div className="grid grid-cols-2 gap-4 mt-6 w-full">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="text-center p-3 bg-gray-50 rounded-xl">
+              <div className="h-6 bg-gradient-to-r from-emerald-200 to-teal-200 rounded shimmer-gold w-12 mx-auto mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded shimmer w-16 mx-auto"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Enhanced Test Page Skeleton
 const TestSkeleton: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-cyan-50 p-6" dir="rtl">
       <div className="max-w-4xl mx-auto">
-        {/* Header Section Skeleton */}
-        <div className="text-center mb-8">
-          <div className="h-10 bg-gray-200 rounded-lg animate-pulse mb-4 w-80 mx-auto"></div>
-          <div className="h-6 bg-gray-100 rounded animate-pulse w-96 mx-auto"></div>
+        {/* Enhanced Header Section Skeleton */}
+        <div className="text-center mb-12">
+          <div className="relative inline-block mb-6">
+            <div className="h-12 bg-gradient-to-r from-indigo-200 to-blue-200 rounded-2xl shimmer-alt w-96 mx-auto"></div>
+            <div className="absolute -top-1 -left-1 w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent rounded-2xl opacity-50"></div>
+          </div>
+          <div className="h-6 bg-gradient-to-r from-gray-200 to-gray-300 rounded-lg shimmer w-80 mx-auto"></div>
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl p-8">
@@ -1001,49 +1300,92 @@ const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({
   description = "الرجاء الانتظار",
 }) => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-green-50">
-      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        {/* Header Skeleton */}
-        <div className="mb-8">
-          <div className="h-10 bg-gray-200 rounded-lg animate-pulse mb-2 w-64"></div>
-          <div className="h-6 bg-gray-100 rounded-lg animate-pulse w-48"></div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-20 w-72 h-72 bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-20 w-96 h-96 bg-gradient-to-r from-emerald-400/20 to-teal-400/20 rounded-full blur-3xl animate-pulse float-delayed"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-r from-pink-400/20 to-rose-400/20 rounded-full blur-3xl animate-pulse float"></div>
+      </div>
+
+      <div className="relative max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8" dir="rtl">
+        {/* Enhanced Header Skeleton */}
+        <div className="mb-12 text-center">
+          <div className="relative inline-block mb-6">
+            <div className="h-12 bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 rounded-2xl shimmer-alt w-80 mx-auto"></div>
+            <div className="absolute -top-1 -left-1 w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent rounded-2xl transform -skew-x-12 opacity-50"></div>
+          </div>
+          <div className="h-6 bg-gradient-to-r from-gray-200 to-gray-300 rounded-lg shimmer w-64 mx-auto"></div>
         </div>
 
-        {/* Stats Cards Skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
+        {/* Enhanced Stats Cards Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-12">
           {[1, 2, 3, 4, 5].map((i) => (
             <div
               key={i}
-              className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+              className="group bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-white/50 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <div className="h-4 bg-gray-200 rounded animate-pulse mb-2 w-24"></div>
-                  <div className="h-8 bg-gray-200 rounded animate-pulse w-16"></div>
+                  <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 rounded-lg shimmer mb-3 w-24"></div>
+                  <div className="h-8 bg-gradient-to-r from-indigo-200 to-purple-200 rounded-xl shimmer-alt w-20"></div>
                 </div>
-                <div className="w-12 h-12 bg-gray-200 rounded-xl animate-pulse"></div>
+                <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl shimmer-alt relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent transform -skew-x-12 group-hover:animate-pulse"></div>
+                </div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Charts Skeleton */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {[1, 2, 3].map((i) => (
+        {/* Enhanced Charts Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+          {[
+            { gradient: 'from-blue-100 to-indigo-100', shimmer: 'shimmer-alt' },
+            { gradient: 'from-emerald-100 to-teal-100', shimmer: 'shimmer-gold' },
+            { gradient: 'from-purple-100 to-pink-100', shimmer: 'shimmer' }
+          ].map((config, i) => (
             <div
               key={i}
-              className="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
-              <div className="h-6 bg-gray-200 rounded animate-pulse mb-6 w-40"></div>
-              <div className="h-72 bg-gray-100 rounded-lg animate-pulse"></div>
+              className="group bg-white/90 backdrop-blur-sm p-8 rounded-3xl shadow-xl border border-white/60 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500">
+              <div className={`h-6 bg-gradient-to-r ${config.gradient} rounded-lg ${config.shimmer} mb-8 w-48`}></div>
+              <div className="relative">
+                <div className={`h-80 bg-gradient-to-br ${config.gradient} rounded-2xl ${config.shimmer} relative overflow-hidden`}>
+                  {/* Chart simulation elements */}
+                  <div className="absolute bottom-4 left-4 right-4 flex items-end justify-around">
+                    {[1, 2, 3, 4, 5, 6].map((j) => (
+                      <div key={j} className={`bg-white/40 rounded-t-lg skeleton-chart-bar w-6 ${j === 1 ? 'h-16' : j === 2 ? 'h-20' : j === 3 ? 'h-24' : j === 4 ? 'h-28' : j === 5 ? 'h-20' : 'h-16'}`}></div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           ))}
         </div>
 
-        {/* Loading Spinner */}
-        <div className="flex items-center justify-center py-16">
+        {/* Enhanced Loading Spinner Section */}
+        <div className="flex items-center justify-center py-20">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 text-lg font-medium">{title}</p>
-            <p className="text-gray-500 text-sm mt-2">{description}</p>
+            {/* Multi-layered loading spinner */}
+            <div className="relative mb-8">
+              <div className="loading-spinner animate-spin rounded-full h-20 w-20 border-4 border-blue-500 mx-auto"></div>
+              <div className="absolute inset-0 animate-spin rounded-full h-20 w-20 border-4 border-emerald-500 mx-auto rotate-slow"></div>
+            </div>
+            
+            <div className="space-y-4">
+              <h3 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                {title}
+              </h3>
+              <p className="text-gray-600 text-lg font-medium max-w-md mx-auto leading-relaxed">
+                {description}
+              </p>
+              
+              {/* Progress dots */}
+              <div className="loading-dots flex justify-center space-x-2 mt-6">
+                {[1, 2, 3, 4, 5].map((dot) => (
+                  <span key={dot} className="w-3 h-3 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full"></span>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1053,6 +1395,10 @@ const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({
 
 export default LoadingSkeleton;
 export {
+  DashboardSkeleton,
+  ChatSkeleton,
+  ProfilePageSkeleton,
+  ProfileCardSkeleton,
   ActivitySkeleton,
   ArrangementSkeleton,
   NewsSkeleton,
