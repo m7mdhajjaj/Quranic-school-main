@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { showLogoutConfirmation } from '../../utils/logoutUtils';
-import { getRecentNotifications, getUnreadNotificationCount, markAsRead } from '../../Api';
+import { getRecentNotifications, getUnreadNotificationCount, markAsRead } from '../../Api/notificationApi';
 
 interface AdminNotification {
   _id?: string;
