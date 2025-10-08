@@ -11,20 +11,26 @@ export { default as api } from './api';
 // Authentication
 export * from './authApi';
 
+// Profile
+export * from './profileApi';
+
 // News
 export * from './newsApi';
 
 // Rankings
-// export * from './rankingApi';
+export * from './rankingApi';
 
 // Exams
 export * from './examApi';
 
-// Sessions/Timetable
-export * from './ي/sessionApi';
+// Tests (Quran Tests)
+export * from './testApi';
 
-// Settings
-export * from './ي/settingsApi';
+// Sessions/Timetable
+export * from './sessionApi';
+
+// Goals
+export * from './goalsApi';
 
 // Attendance
 export * from './attendanceApi';
@@ -32,21 +38,41 @@ export * from './attendanceApi';
 // Daily Marks
 export * from './markApi';
 
-// Sections (Daily Assignments)
-export * from './ي/sectionApi';
-
-
 // Activities
 export * from './activityApi';
 
 // Chat
-export * from './ي/chatApi3';
+export * from './chatApi';
 
-// Profile
-export * from './profileApi';
+// Reports
+export * from './reportApi';
+
+// Students
+export * from './studentApi';
+
+// Teachers  
+export * from './teacherApi';
+
+// Groups
+export * from './groupApi';
+
+// Prayer Times
+export * from './prayerTimesApi';
+
+// Quran Audio
+export * from './quranAudioApi';
+
+// Admin Dashboard
+export * from './adminApi';
+
+// Contact/Settings
+export * from './contactApi';
 
 // Notifications
 export * from './ي/notificationApi';
+
+// Sections (Daily Assignments)
+export * from './ي/sectionApi';
 
 // Reports
 export { getStudentMarks as getStudentMarksReport } from './reportApi';
