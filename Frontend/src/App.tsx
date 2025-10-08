@@ -80,7 +80,6 @@ import AdminDashboard from "./pages/Admin/Dashboard";
 import StudentsManagement from "./pages/Admin/StudentsManagement";
 import TeachersManagement from "./pages/Admin/TeachersManagement";
 import GroupManagement from "./pages/Admin/GroupManagement";
-import ContactSettings from "./pages/Admin/ContactSettings";
 
 // ============================================================================
 // Other Components
@@ -132,7 +131,7 @@ const AdminRoutes: React.FC = () => {
           <Route path="/admin/students" element={<StudentsManagement />} />
           <Route path="/admin/teachers" element={<TeachersManagement />} />
           <Route path="/admin/groups" element={<GroupManagement />} />
-          <Route path="/admin/settings" element={<ContactSettings />} />
+          <Route path="/admin/settings" element={<NotFound />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/" element={<AdminDashboard />} />
 

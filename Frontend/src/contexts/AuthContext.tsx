@@ -119,7 +119,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           try {
             const response = await verifyToken();
             
-            if (response.data.success) {
+            if (response && response.success) {
               // Connect socket and emit login with delay
               if (socketRef.current) {
                 socketRef.current.connect();

@@ -82,6 +82,64 @@ router.get("/count", async (req, res) => {
   }
 });
 
+// Alternative endpoint for compatibility (same as /stats)
+router.get("/stats/summary/all", async (req, res) => {
+  try {
+    console.log('📊 تحميل إحصائيات الطلاب (ملخص شامل)...');
+    const startTime = Date.now();
+    
+    const [
+      totalCount,
+      maleCount,
+      femaleCount,
+      activeCount,
+      teachersCount,
+      avgAge
+    ] = await Promise.all([
+      Student.countDocuments(),
+      Student.countDocuments({ gender: 'ذكر' }),
+      Student.countDocuments({ gender: 'انثى' }),
+      Student.countDocuments({ isActive: { $ne: false } }),
+      Student.distinct('teacher').then(teachers => 
+        teachers.filter(teacher => teacher && teacher.trim() !== '').length
+      ),
+      Student.aggregate([
+        { $group: { _id: null, avgAge: { $avg: '$age' } } }
+      ]).then(result => result.length > 0 ? Math.round(result[0].avgAge || 0) : 0)
+    ]);
+
+    const groupsCount = await Student.distinct('group').then(groups => 
+      groups.filter(group => group && group.trim() !== '').length
+    );
+
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+
+    const stats = {
+      totalStudents: totalCount,
+      activeStudents: activeCount,
+      maleStudents: maleCount,
+      femaleStudents: femaleCount,
+      byGroup: [] // Could be populated if needed
+    };
+
+    console.log(`✅ تم تحميل الإحصائيات الشاملة في ${duration}ms:`, stats);
+    
+    res.json({ 
+      success: true, 
+      data: stats,
+      queryTime: `${duration}ms`,
+      message: `إحصائيات ${totalCount} طالب`
+    });
+  } catch (error) {
+    console.error('❌ Error getting comprehensive students stats:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'خطأ في الحصول على الإحصائيات الشاملة للطلاب'
+    });
+  }
+});
+
 // Fast endpoint for students statistics - minimal data for dashboards
 router.get("/stats", async (req, res) => {
   try {

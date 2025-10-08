@@ -3,9 +3,9 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import NotificationHeader from "../NotificationHeader";
 import { useAuth } from "../../hooks/useAuth";
 import { io, Socket } from "socket.io-client";
-import axios from "axios";
+import api from "../../Api/api";
 import { showLogoutConfirmation } from "../../utils/logoutUtils";
-import { API_BASE_URL, API_URL } from "../../config";
+import { API_BASE_URL } from "../../config";
 import {
   Award,
   BookOpen,
@@ -24,20 +24,6 @@ import {
   User,
   UserCheck,
 } from "lucide-react";
-
-const api = axios.create({
-  baseURL: API_URL,
-  withCredentials: false,
-});
-
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers = config.headers ?? {};
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
 
 const Header = () => {
   const {

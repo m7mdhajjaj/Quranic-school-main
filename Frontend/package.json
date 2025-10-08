@@ -12,6 +12,7 @@
   "dependencies": {
     "@mui/icons-material": "^7.3.4",
     "@tailwindcss/vite": "^4.1.10",
+    "@tanstack/react-query": "^5.90.2",
     "@types/react-toastify": "^4.0.2",
     "aos": "^2.3.4",
     "axios": "^1.11.0",

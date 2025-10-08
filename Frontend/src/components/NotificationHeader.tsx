@@ -3,8 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../styles/NotificationHeader.css";
-import { API_BASE_URL } from "../config";
 import { useSocket } from "../hooks/useSocket";
+import {
+  getRecentNotifications,
+  getUnreadNotificationCount,
+  markAsRead,
+  markAllAsRead,
+  deleteNotification
+} from "../Api/notificationApi";
 
 interface Notification {
   _id: string;
@@ -33,13 +39,11 @@ interface NotificationStats {
 interface NotificationHeaderProps {
   userId: string;
   socket: any;
-  apiUrl?: string;
 }
 
 const NotificationHeader: React.FC<NotificationHeaderProps> = ({
   userId,
   socket,
-  apiUrl = API_BASE_URL,
 }) => {
   const { isConnected } = useSocket();
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -68,7 +72,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
     if (userId) {
       fetchNotifications(1, true);
     }
-  }, [userId]);
+  }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // نظام التحديث التلقائي للإشعارات
   useEffect(() => {
@@ -83,7 +87,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
     }, 60000);
 
     return () => clearInterval(refreshInterval);
-  }, [userId, isConnected, isLoading]);
+  }, [userId, isConnected, isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // الاستماع للإشعارات الجديدة من Socket.IO
   useEffect(() => {
@@ -179,29 +183,36 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
 
     try {
       setIsLoading(true);
-      const response = await fetch(
-        `${apiUrl}/api/notifications/${userId}?page=${pageNum}&limit=20`
-      );
+      const data = await getRecentNotifications(userId, 20);
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch notifications");
+      const newNotifications: Notification[] = data.map(apiNotification => ({
+        _id: apiNotification._id,
+        type: apiNotification.type as "grade" | "message" | "prayer_time" | "activity" | "attendance" | "general",
+        title: apiNotification.title,
+        message: apiNotification.message,
+        createdAt: apiNotification.createdAt,
+        isRead: apiNotification.isRead,
+        priority: apiNotification.priority || "medium",
+        isNew: false,
+        data: apiNotification.metadata
+      }));
+
+      if (reset) {
+        setNotifications(newNotifications);
+      } else {
+        setNotifications((prev) => [...prev, ...newNotifications]);
       }
 
-      const data = await response.json();
-
-      if (data.success) {
-        const newNotifications: Notification[] = data.data.notifications;
-
-        if (reset) {
-          setNotifications(newNotifications);
-        } else {
-          setNotifications((prev) => [...prev, ...newNotifications]);
-        }
-
-        setStats(data.data.stats);
-        setPage(pageNum);
-        setHasMore(data.data.pagination.hasNextPage);
-      }
+      // جلب إحصائيات الإشعارات
+      const unreadCount = await getUnreadNotificationCount(userId);
+      setStats({
+        unreadCount,
+        newCount: 0,
+        totalCount: newNotifications.length
+      });
+      
+      setPage(pageNum);
+      setHasMore(newNotifications.length === 20);
     } catch (error) {
       console.error("Error fetching notifications:", error);
       toast.error("خطأ في جلب الإشعارات");
@@ -218,37 +229,25 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
   };
 
   // تحديد إشعار واحد كمقروء
-  const markAsRead = async (notificationId: string) => {
+  const markAsReadLocal = async (notificationId: string) => {
     if (!notificationId) {
       console.error("Notification ID is not provided");
       return;
     }
 
     try {
-      const response = await fetch(
-        `${apiUrl}/api/notifications/${notificationId}/read`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-        }
+      await markAsRead(notificationId);
+      
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n._id === notificationId ? { ...n, isRead: true, isNew: false } : n
+        )
       );
-
-      if (response.ok) {
-        setNotifications((prev) =>
-          prev.map((n) =>
-            n._id === notificationId ? { ...n, isRead: true, isNew: false } : n
-          )
-        );
-        setStats((prev) => ({
-          ...prev,
-          unreadCount: Math.max(0, prev.unreadCount - 1),
-          newCount: Math.max(0, prev.newCount - 1),
-        }));
-      } else {
-        const errorData = await response.json();
-        console.error("Server error in mark as read:", errorData);
-        toast.error("حدث خطأ في تحديث الإشعار");
-      }
+      setStats((prev) => ({
+        ...prev,
+        unreadCount: Math.max(0, prev.unreadCount - 1),
+        newCount: Math.max(0, prev.newCount - 1),
+      }));
     } catch (error) {
       console.error("Error marking notification as read:", error);
       toast.error("حدث خطأ في تحديث الإشعار");
@@ -256,31 +255,13 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
   };
 
   // تحديد جميع الإشعارات كمقروءة
-  const markAllAsRead = async () => {
+  const markAllAsReadLocal = async () => {
     if (stats.unreadCount === 0 || isMarkingAll) return;
 
     try {
       setIsMarkingAll(true);
-      console.log(
-        "Sending PATCH request to:",
-        `${apiUrl}/api/notifications/${userId}/read-all`
-      );
-      const response = await fetch(
-        `${apiUrl}/api/notifications/${userId}/read-all`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-      console.log("Response status:", response.status);
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        console.error("Server error in mark all as read:", err);
-        toast.error("تعذّر تحديد الكل كمقروء");
-        return;
-      }
-      const data = await response.json().catch(() => ({}));
-      console.log("Response data:", data);
+      await markAllAsRead(userId);
+      
       // تحديث الحالة محليًا
       setNotifications((prev) =>
         prev.map((n) => ({ ...n, isRead: true, isNew: false }))
@@ -296,41 +277,35 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
   };
 
   // حذف إشعار
-  const deleteNotification = async (
+  const deleteNotificationLocal = async (
     notificationId: string,
     event: React.MouseEvent
   ) => {
     event.stopPropagation();
 
     try {
-      const response = await fetch(
-        `${apiUrl}/api/notifications/${notificationId}`,
-        {
-          method: "DELETE",
-        }
+      await deleteNotification(notificationId);
+      
+      const deletedNotification = notifications.find(
+        (n) => n._id === notificationId
       );
 
-      if (response.ok) {
-        const deletedNotification = notifications.find(
-          (n) => n._id === notificationId
-        );
-
-        setNotifications((prev) =>
-          prev.filter((n) => n._id !== notificationId)
-        );
-        setStats((prev) => ({
-          ...prev,
-          totalCount: prev.totalCount - 1,
-          unreadCount:
-            deletedNotification && !deletedNotification.isRead
-              ? prev.unreadCount - 1
-              : prev.unreadCount,
-          newCount:
-            deletedNotification && deletedNotification.isNew
-              ? prev.newCount - 1
-              : prev.newCount,
-        }));
-      }
+      setNotifications((prev) =>
+        prev.filter((n) => n._id !== notificationId)
+      );
+      setStats((prev) => ({
+        ...prev,
+        totalCount: prev.totalCount - 1,
+        unreadCount:
+          deletedNotification && !deletedNotification.isRead
+            ? prev.unreadCount - 1
+            : prev.unreadCount,
+        newCount:
+          deletedNotification && deletedNotification.isNew
+            ? prev.newCount - 1
+            : prev.newCount,
+      }));
+      toast.success("تم حذف الإشعار بنجاح");
     } catch (error) {
       console.error("Error deleting notification:", error);
       toast.error("خطأ في حذف الإشعار");
@@ -461,7 +436,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
             <div className="notification-actions">
               <button
                 className="mark-all-btn"
-                onClick={markAllAsRead}
+                onClick={markAllAsReadLocal}
                 disabled={stats.unreadCount === 0 || isMarkingAll}
                 title={
                   stats.unreadCount === 0
@@ -509,7 +484,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
                         navigate("/chat");
                         setShowDropdown(false);
                       } else {
-                        markAsRead(notification._id);
+                        markAsReadLocal(notification._id);
                       }
                     }}>
                     <div className="notification-icon">
@@ -530,7 +505,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
                     </div>
                     <button
                       className="delete-notification bg-transparent border-none text-red-500 cursor-pointer p-1 mr-2"
-                      onClick={(e) => deleteNotification(notification._id, e)}
+                      onClick={(e) => deleteNotificationLocal(notification._id, e)}
                       title="حذف الإشعار"
                       aria-label="حذف الإشعار">
                       ✖

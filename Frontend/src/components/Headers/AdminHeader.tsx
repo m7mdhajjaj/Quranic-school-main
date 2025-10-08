@@ -2,6 +2,22 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { showLogoutConfirmation } from '../../utils/logoutUtils';
+import { getRecentNotifications, getUnreadNotificationCount, markAsRead } from '../../Api';
+
+interface AdminNotification {
+  _id?: string;
+  id?: number;
+  title?: string;
+  message: string;
+  type?: string;
+  priority?: string;
+  createdAt?: string;
+  isRead?: boolean;
+  unread?: boolean;
+  time?: string;
+  icon?: string;
+  color?: string;
+}
 
 const AdminHeader: React.FC = () => {
   const { user: currentUser, logout: authLogout } = useAuth();
@@ -9,6 +25,8 @@ const AdminHeader: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState<AdminNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       return (
@@ -207,42 +225,75 @@ const AdminHeader: React.FC = () => {
     },
   ];
 
-  const mockNotifications = [
-    {
-      id: 1,
-      message: 'طالب جديد تم تسجيله',
-      time: 'منذ 5 دقائق',
-      unread: true,
-      icon: '👨‍🎓',
-      color: 'bg-blue-500',
-    },
-    {
-      id: 2,
-      message: 'تحديث في النظام',
-      time: 'منذ ساعة',
-      unread: true,
-      icon: '🔔',
-      color: 'bg-purple-500',
-    },
-    {
-      id: 3,
-      message: 'طلب تغيير كلمة مرور',
-      time: 'منذ ساعتين',
-      unread: false,
-      icon: '🔐',
-      color: 'bg-orange-500',
-    },
-    {
-      id: 4,
-      message: 'تقرير جديد متاح',
-      time: 'منذ 3 ساعات',
-      unread: false,
-      icon: '📊',
-      color: 'bg-green-500',
-    },
-  ];
+  // تحميل الإشعارات من الخادم
+  const fetchNotifications = useCallback(async () => {
+    if (!currentUser?._id) return;
+    
+    try {
+      const [notificationsData, unreadCountData] = await Promise.all([
+        getRecentNotifications(currentUser._id, 5), // أحدث 5 إشعارات
+        getUnreadNotificationCount(currentUser._id)
+      ]);
+      
+      setNotifications(notificationsData || []);
+      setUnreadCount(unreadCountData || 0);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      // في حالة الخطأ، استخدم قائمة فارغة
+      setNotifications([]);
+      setUnreadCount(0);
+    }
+  }, [currentUser?._id]);
 
-  const unreadCount = mockNotifications.filter((n) => n.unread).length;
+  // تحميل الإشعارات عند تحميل المكون
+  useEffect(() => {
+    if (currentUser?._id) {
+      fetchNotifications();
+    }
+  }, [currentUser?._id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // دالة للحصول على أيقونة الإشعار حسب النوع
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'grade': return '📊';
+      case 'message': return '✉️';
+      case 'prayer_time': return '🕌';
+      case 'activity': return '🎯';
+      case 'attendance': return '✅';
+      case 'general': return '🔔';
+      default: return '📢';
+    }
+  };
+
+  // دالة للحصول على لون الإشعار حسب النوع أو الأولوية
+  const getNotificationColor = (typeOrPriority: string) => {
+    switch (typeOrPriority) {
+      case 'urgent': case 'high': return 'bg-red-500';
+      case 'grade': case 'medium': return 'bg-blue-500';
+      case 'message': return 'bg-purple-500';
+      case 'prayer_time': return 'bg-green-500';
+      case 'activity': return 'bg-orange-500';
+      case 'attendance': return 'bg-teal-500';
+      case 'low': return 'bg-gray-500';
+      default: return 'bg-blue-500';
+    }
+  };
+
+  // دالة لتعليم الإشعار كمقروء
+  const handleMarkNotificationAsRead = async (notificationId: string) => {
+    try {
+      await markAsRead(notificationId);
+      // تحديث الحالة المحلية
+      setNotifications(prev => 
+        prev.map(notif => 
+          notif._id === notificationId ? { ...notif, isRead: true } : notif
+        )
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
 
   return (
     <>
@@ -440,39 +491,69 @@ const AdminHeader: React.FC = () => {
                     </div>
 
                     <div className="max-h-96 overflow-y-auto">
-                      {mockNotifications.map((notification) => (
-                        <div
-                          key={notification.id}
-                          className={`px-6 py-4 border-b border-gray-100 cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 ${
-                            notification.unread ? 'bg-blue-50/50' : ''
-                          }`}
-                        >
-                          <div className="flex items-start space-x-reverse space-x-3">
-                            <div
-                              className={`w-10 h-10 ${notification.color} rounded-xl flex items-center justify-center text-white shadow-lg flex-shrink-0 animate-pulse`}
-                            >
-                              <span className="text-lg">
-                                {notification.icon}
-                              </span>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p
-                                className={`text-sm ${notification.unread ? 'font-semibold text-gray-900' : 'text-gray-700'}`}
+                      {notifications.map((notification) => {
+                        // تحويل إشعارات API إلى تنسيق متوافق مع التصميم
+                        const displayNotification = {
+                          id: notification._id,
+                          message: notification.title || notification.message,
+                          time: notification.createdAt ? 
+                            new Date(notification.createdAt).toLocaleString('ar-SA', {
+                              hour: 'numeric',
+                              minute: 'numeric',
+                              day: 'numeric',
+                              month: 'short'
+                            }) : 'الآن',
+                          unread: !notification.isRead,
+                          icon: getNotificationIcon(notification.type || 'general'),
+                          color: getNotificationColor(notification.type || notification.priority || 'medium'),
+                        };
+
+                        return (
+                          <div
+                            key={displayNotification.id}
+                            className={`px-6 py-4 border-b border-gray-100 cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 ${
+                              displayNotification.unread ? 'bg-blue-50/50' : ''
+                            }`}
+                            onClick={() => {
+                              if (displayNotification.unread && notification._id) {
+                                handleMarkNotificationAsRead(notification._id);
+                              }
+                            }}
+                          >
+                            <div className="flex items-start space-x-reverse space-x-3">
+                              <div
+                                className={`w-10 h-10 ${displayNotification.color} rounded-xl flex items-center justify-center text-white shadow-lg flex-shrink-0 animate-pulse`}
                               >
-                                {notification.message}
-                              </p>
-                              <div className="flex items-center space-x-reverse space-x-2 mt-1">
-                                <span className="text-xs text-gray-500">
-                                  {notification.time}
+                                <span className="text-lg">
+                                  {displayNotification.icon}
                                 </span>
-                                {notification.unread && (
-                                  <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
-                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p
+                                  className={`text-sm ${displayNotification.unread ? 'font-semibold text-gray-900' : 'text-gray-700'}`}
+                                >
+                                  {displayNotification.message}
+                                </p>
+                                <div className="flex items-center space-x-reverse space-x-2 mt-1">
+                                  <span className="text-xs text-gray-500">
+                                    {displayNotification.time}
+                                  </span>
+                                  {displayNotification.unread && (
+                                    <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>
+                        );
+                      })}
+                      
+                      {notifications.length === 0 && (
+                        <div className="px-6 py-8 text-center text-gray-500">
+                          <div className="text-4xl mb-2">🔔</div>
+                          <p className="text-sm">لا توجد إشعارات جديدة</p>
                         </div>
-                      ))}
+                      )}
                     </div>
 
                     <div className="px-6 py-3 bg-gray-50 border-t border-gray-100">

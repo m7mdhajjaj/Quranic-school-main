@@ -19,20 +19,36 @@ exports.getStudents = async (req, res) => {
     const duration = endTime - startTime;
 
     console.log(`✅ تم تحميل ${students.length} طالب في ${duration}ms`);
-    res.json(students);
+    res.json({
+      success: true,
+      data: students,
+      message: `تم تحميل ${students.length} طالب بنجاح`
+    });
   } catch (error) {
     console.error("❌ خطأ في تحميل الطلاب:", error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
   }
 };
 
 // Get students by group
 exports.getStudentsByGroup = async (req, res) => {
   try {
-    const students = await Student.find({ group: req.params.group });
-    res.json(students);
+    const students = await Student.find({ group: req.params.group })
+      .select("-avatar")
+      .lean();
+    res.json({
+      success: true,
+      data: students,
+      message: `تم تحميل ${students.length} طالب من المجموعة ${req.params.group}`
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
   }
 };
 

@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import type { ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { getHeroImage, uploadHeroImage } from '../Api/ي/settingsApi';
+import { getHeroImage, uploadHeroImage } from '../Api/settingsApi';
 import { API_BASE_URL } from '../config';
 
 const Home = () => {

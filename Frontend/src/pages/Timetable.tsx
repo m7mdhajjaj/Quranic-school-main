@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, type JSX } from "react";
-import { getAllSessions, createSession, updateSession, deleteSession, type Session } from "../Api/ي/sessionApi";
+import { getAllSessions, createSession, updateSession, deleteSession, type Session } from "../Api/sessionApi";
 
 const Timetable = () => {
   const days = [

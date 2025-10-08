@@ -735,11 +735,11 @@ const StudentsManagement: React.FC = () => {
                         : 'bg-yellow-100 text-yellow-800'
                     }`}
                   >
-                    <div
+                    <span
                       className={`w-2 h-2 rounded-full ${
                         isConnected ? 'bg-green-500' : 'bg-yellow-500'
                       }`}
-                    ></div>
+                    ></span>
                     {isConnected ? 'متصل مباشر' : 'تحديث تلقائي'}
                   </span>
                 </p>

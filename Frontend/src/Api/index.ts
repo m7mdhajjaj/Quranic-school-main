@@ -65,14 +65,14 @@ export * from './quranAudioApi';
 // Admin Dashboard
 export * from './adminApi';
 
-// Contact/Settings
-export * from './contactApi';
+
+// Settings (Hero Image)
 
 // Notifications
-export * from './ي/notificationApi';
+export * from './notificationApi';
 
 // Sections (Daily Assignments)
-export * from './ي/sectionApi';
+export * from './sectionApi';
 
 // Reports
 export { getStudentMarks as getStudentMarksReport } from './reportApi';

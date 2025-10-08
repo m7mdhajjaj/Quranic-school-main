@@ -1,6 +1,129 @@
 const express = require("express");
 const router = express.Router();
 const Notification = require("../schema/Notification");
+const { protect } = require("../middleware/authMiddleware");
+
+// تحقق من حالة المصادقة (للاختبار)
+router.get("/auth-test", protect, async (req, res) => {
+  try {
+    res.json({
+      success: true,
+      message: 'المصادقة تعمل بشكل صحيح',
+      user: {
+        id: req.user._id,
+        role: req.user.role,
+        name: req.user.firstName || req.user.name || 'غير محدد'
+      }
+    });
+  } catch (error) {
+    console.error("Error in auth test:", error);
+    res.status(500).json({
+      success: false,
+      message: "خطأ في اختبار المصادقة",
+      error: error.message,
+    });
+  }
+});
+
+// إنشاء إشعارات تجريبية للاختبار (فقط في بيئة التطوير)
+router.post("/create-test-notifications", protect, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const userModel = req.user.role === 'admin' ? 'Admin' : req.user.role === 'teacher' ? 'Teacher' : 'Student';
+    
+    // إنشاء إشعارات تجريبية
+    const testNotifications = [
+      {
+        recipient: userId,
+        recipientModel: userModel,
+        type: 'general',
+        title: 'مرحباً بك',
+        message: 'هذا إشعار تجريبي للاختبار',
+        isRead: false,
+      },
+      {
+        recipient: userId,
+        recipientModel: userModel,
+        type: 'activity',
+        title: 'نشاط جديد',
+        message: 'تم إضافة نشاط جديد للفصل',
+        isRead: false,
+      },
+      {
+        recipient: userId,
+        recipientModel: userModel,
+        type: 'message',
+        title: 'رسالة جديدة',
+        message: 'لديك رسالة جديدة من المعلم',
+        isRead: true,
+      }
+    ];
+
+    const createdNotifications = await Notification.insertMany(testNotifications);
+
+    res.json({
+      success: true,
+      message: 'تم إنشاء الإشعارات التجريبية بنجاح',
+      data: createdNotifications,
+    });
+  } catch (error) {
+    console.error("Error creating test notifications:", error);
+    res.status(500).json({
+      success: false,
+      message: "خطأ في إنشاء الإشعارات التجريبية",
+      error: error.message,
+    });
+  }
+});
+
+// جلب الإشعارات الحديثة للمستخدم المسجل الدخول (بدون userId في المسار)
+router.get("/recent", protect, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { limit = 5 } = req.query;
+
+    const notifications = await Notification.find({ recipient: userId })
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .lean();
+
+    res.json({
+      success: true,
+      data: notifications,
+    });
+  } catch (error) {
+    console.error("Error fetching recent notifications:", error);
+    res.status(500).json({
+      success: false,
+      message: "خطأ في جلب الإشعارات الحديثة",
+      error: error.message,
+    });
+  }
+});
+
+// جلب عدد الإشعارات غير المقروءة للمستخدم المسجل الدخول (بدون userId في المسار)
+router.get("/unread-count", protect, async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const count = await Notification.countDocuments({
+      recipient: userId,
+      isRead: false,
+    });
+
+    res.json({
+      success: true,
+      count,
+    });
+  } catch (error) {
+    console.error("Error getting unread count:", error);
+    res.status(500).json({
+      success: false,
+      message: "خطأ في حساب الإشعارات غير المقروءة",
+      error: error.message,
+    });
+  }
+});
 
 // جلب إشعارات المستخدم مع التصفح
 router.get("/:userId", async (req, res) => {
@@ -96,7 +219,45 @@ router.get("/:userId/unread-count", async (req, res) => {
   }
 });
 
-// تحديد إشعار واحد كمقروء
+// تحديد إشعار واحد كمقروء (PUT method for frontend compatibility)
+router.put("/:notificationId/read", protect, async (req, res) => {
+  try {
+    const { notificationId } = req.params;
+    const userId = req.user._id;
+
+    // التأكد من أن الإشعار يخص المستخدم الحالي
+    const notification = await Notification.findOneAndUpdate(
+      { _id: notificationId, recipient: userId },
+      {
+        isRead: true,
+        readAt: new Date(),
+      },
+      { new: true },
+    );
+
+    if (!notification) {
+      return res.status(404).json({
+        success: false,
+        message: "الإشعار غير موجود أو غير مسموح بالوصول إليه",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "تم تحديد الإشعار كمقروء",
+      data: notification,
+    });
+  } catch (error) {
+    console.error("Error marking notification as read:", error);
+    res.status(500).json({
+      success: false,
+      message: "خطأ في تحديد الإشعار كمقروء",
+      error: error.message,
+    });
+  }
+});
+
+// تحديد إشعار واحد كمقروء (PATCH method for backward compatibility)
 router.patch("/:notificationId/read", async (req, res) => {
   try {
     const { notificationId } = req.params;
@@ -132,6 +293,36 @@ router.patch("/:notificationId/read", async (req, res) => {
   }
 });
 
+// تحديد جميع إشعارات المستخدم المسجل الدخول كمقروءة (بدون userId في المسار)
+router.put("/read-all", protect, async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const result = await Notification.updateMany(
+      { recipient: userId, isRead: false },
+      {
+        isRead: true,
+        readAt: new Date(),
+      },
+    );
+
+    res.json({
+      success: true,
+      message: "تم تحديد جميع الإشعارات كمقروءة",
+      data: {
+        modifiedCount: result.modifiedCount,
+      },
+    });
+  } catch (error) {
+    console.error("Error marking all as read:", error);
+    res.status(500).json({
+      success: false,
+      message: "خطأ في تحديد جميع الإشعارات كمقروءة",
+      error: error.message,
+    });
+  }
+});
+
 // تحديد جميع إشعارات المستخدم كمقروءة
 router.patch("/:userId/read-all", async (req, res) => {
   try {
@@ -161,16 +352,21 @@ router.patch("/:userId/read-all", async (req, res) => {
 });
 
 // حذف إشعار واحد
-router.delete("/:notificationId", async (req, res) => {
+router.delete("/:notificationId", protect, async (req, res) => {
   try {
     const { notificationId } = req.params;
+    const userId = req.user._id;
 
-    const notification = await Notification.findByIdAndDelete(notificationId);
+    // التأكد من أن الإشعار يخص المستخدم الحالي قبل الحذف
+    const notification = await Notification.findOneAndDelete({
+      _id: notificationId,
+      recipient: userId
+    });
 
     if (!notification) {
       return res.status(404).json({
         success: false,
-        message: "الإشعار غير موجود",
+        message: "الإشعار غير موجود أو غير مسموح بحذفه",
       });
     }
 
