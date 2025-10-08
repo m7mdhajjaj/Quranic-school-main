@@ -58,7 +58,10 @@ exports.getStudentById = async (req, res) => {
     // Always return email and phoneNumber if present
     const student = await Student.findById(req.params.id);
     if (!student) {
-      return res.status(404).json({ message: "Student not found" });
+      return res.status(404).json({ 
+        success: false, 
+        message: "الطالب غير موجود" 
+      });
     }
     // Explicitly include email and phoneNumber in response (for clarity)
     const studentObj = student.toObject();
@@ -71,7 +74,12 @@ exports.getStudentById = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("خطأ في جلب الطالب:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "حدث خطأ أثناء جلب بيانات الطالب",
+      error: error.message 
+    });
   }
 };
 
@@ -414,7 +422,10 @@ exports.deleteStudent = async (req, res) => {
   try {
     const deletedStudent = await Student.findByIdAndDelete(req.params.id);
     if (!deletedStudent) {
-      return res.status(404).json({ message: "Student not found" });
+      return res.status(404).json({ 
+        success: false, 
+        message: "الطالب غير موجود" 
+      });
     }
 
     // إبطال cache عدد الطلاب في الحلقات
@@ -433,8 +444,16 @@ exports.deleteStudent = async (req, res) => {
     // إشعار تحديث إحصائيات الداشبورد
     notifyStudentStatsUpdate();
 
-    res.json({ message: "Student deleted successfully" });
+    res.status(200).json({ 
+      success: true, 
+      message: "تم حذف الطالب بنجاح" 
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("خطأ في حذف الطالب:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "حدث خطأ أثناء حذف الطالب",
+      error: error.message 
+    });
   }
 };
