@@ -170,7 +170,8 @@ const DailyMarks = () => {
               ? studentsResponse.data
               : [];
           setStudents(students);
-          setFilteredStudents(students); // Initially show all teacher's students
+          console.log("Loaded students:", students);
+          // Don't set filteredStudents here, let the useEffect handle it
         }
       } catch (err) {
         console.error("Error fetching data:", err);
@@ -185,6 +186,7 @@ const DailyMarks = () => {
   // Auto-select first group when teacher groups are loaded
   useEffect(() => {
     if (teacherGroups.length > 0 && !selectedGroup) {
+      console.log("Auto-selecting first group:", teacherGroups[0]);
       setSelectedGroup(teacherGroups[0]);
     }
   }, [teacherGroups, selectedGroup]);
@@ -192,7 +194,21 @@ const DailyMarks = () => {
   // Filter students by selected group
   useEffect(() => {
     if (selectedGroup) {
-      const filtered = students.filter((s) => s.group === selectedGroup);
+      console.log("Filtering students for group:", selectedGroup);
+      console.log("All students:", students);
+      
+      // Normalize strings for comparison (trim and compare)
+      const normalizeString = (str: string | undefined | null) => {
+        if (!str) return "";
+        return str.trim().toLowerCase();
+      };
+      const normalizedSelectedGroup = normalizeString(selectedGroup);
+      
+      const filtered = students.filter((s) => 
+        normalizeString(s.group) === normalizedSelectedGroup
+      );
+      
+      console.log("Filtered students:", filtered);
       setFilteredStudents(filtered);
       // Reset selected student when group changes
       setSelectedStudentId(null);
