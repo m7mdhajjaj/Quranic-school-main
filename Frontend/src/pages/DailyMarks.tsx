@@ -128,8 +128,8 @@ const DailyMarks = () => {
   });
 
   const [newMark, setNewMark] = useState({
-    reviewMark: 7,
-    memorizationMark: 7,
+    reviewMark: 8,
+    memorizationMark: 8,
   });
 
   // Fetch current user and data on component mount
@@ -299,8 +299,8 @@ const DailyMarks = () => {
   const openAddMarkModal = (section: Section) => {
     setSelectedSection(section);
     setNewMark({
-      reviewMark: 7,
-      memorizationMark: 7,
+      reviewMark: 8,
+      memorizationMark: 8,
     });
     setIsAddMarkModalOpen(true);
   };
@@ -310,8 +310,8 @@ const DailyMarks = () => {
     setEditingMark(mark);
     setSelectedSection(section);
     setNewMark({
-      reviewMark: mark.reviewMark || 7,
-      memorizationMark: mark.memorizationMark || 7,
+      reviewMark: mark.reviewMark || 8,
+      memorizationMark: mark.memorizationMark || 8,
     });
     setIsUpdateMarkModalOpen(true);
   };

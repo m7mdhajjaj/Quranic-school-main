@@ -40,10 +40,16 @@ exports.getSectionMarks = async (req, res) => {
 // Create or update a mark for a student
 exports.createOrUpdateMark = async (req, res) => {
   try {
+    console.log("📝 Creating/updating mark with data:", req.body);
+    console.log("✅ Using validated data:", req.validatedData);
+    
+    // Use validated data from middleware
+    const markData = req.validatedData || req.body;
+    
     // Check if mark already exists for this student and section
     let mark = await Mark.findOne({
-      studentId: req.body.studentId,
-      sectionId: req.body.sectionId,
+      studentId: markData.studentId,
+      sectionId: markData.sectionId,
     });
 
     let isNewMark = !mark;
@@ -52,8 +58,8 @@ exports.createOrUpdateMark = async (req, res) => {
       // Update existing mark
       const oldTotalMark =
         (mark.reviewMark || 0) + (mark.memorizationMark || 0);
-      mark.reviewMark = req.body.reviewMark;
-      mark.memorizationMark = req.body.memorizationMark;
+      mark.reviewMark = markData.reviewMark;
+      mark.memorizationMark = markData.memorizationMark;
       await mark.save();
 
       // Populate the references
@@ -77,13 +83,15 @@ exports.createOrUpdateMark = async (req, res) => {
     } else {
       // Create new mark
       const newMark = new Mark({
-        studentId: req.body.studentId,
-        sectionId: req.body.sectionId,
-        reviewMark: req.body.reviewMark,
-        memorizationMark: req.body.memorizationMark,
+        studentId: markData.studentId,
+        sectionId: markData.sectionId,
+        reviewMark: markData.reviewMark,
+        memorizationMark: markData.memorizationMark,
       });
 
+      console.log("✅ Mark object created:", newMark);
       const savedMark = await newMark.save();
+      console.log("✅ Mark saved successfully:", savedMark);
 
       // Populate the references
       const populatedMark = await Mark.findById(savedMark._id)
