@@ -1,7 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const sectionController = require("../controllers/sectionController");
-const { validateSectionData } = require("../Validation/SectionValidation");
+const {
+  validateDailyMarksSectionData,
+} = require("../Validation/DailyMarksSectionValidation");
 
 // Get all sections
 router.get("/", sectionController.getSections);
@@ -9,11 +11,19 @@ router.get("/", sectionController.getSections);
 // Get a single section
 router.get("/:id", sectionController.getSection);
 
-// Create a new section
-router.post("/", validateSectionData, sectionController.createSection);
+// Create a new section (for daily marks)
+router.post(
+  "/",
+  validateDailyMarksSectionData,
+  sectionController.createSection
+);
 
-// Update a section
-router.put("/:id", validateSectionData, sectionController.updateSection);
+// Update a section (for daily marks)
+router.put(
+  "/:id",
+  validateDailyMarksSectionData,
+  sectionController.updateSection
+);
 
 // Delete a section
 router.delete("/:id", sectionController.deleteSection);

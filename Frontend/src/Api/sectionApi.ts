@@ -1,4 +1,4 @@
-import api from './api';
+import api from "./api";
 
 // ============================================================================
 // Section API - Daily Assignment Sections Management
@@ -9,6 +9,8 @@ export interface Section {
   date: string;
   memorizationSection: string;
   reviewSection: string;
+  group?: string;
+  teacher?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -17,6 +19,8 @@ export interface CreateSectionData {
   date: string;
   memorizationSection: string;
   reviewSection: string;
+  group?: string;
+  teacher?: string;
 }
 
 export interface UpdateSectionData extends Partial<CreateSectionData> {
@@ -26,54 +30,63 @@ export interface UpdateSectionData extends Partial<CreateSectionData> {
 // Get all sections
 export const getAllSections = async (): Promise<Section[]> => {
   try {
-    const response = await api.get('/sections');
+    const response = await api.get("/sections");
     return response.data.data || response.data || [];
   } catch (error) {
-    console.error('Failed to get all sections:', error);
+    console.error("Failed to get all sections:", error);
     return [];
   }
 };
 
 // Get sections by group
-export const getSectionsByGroup = async (groupId: string): Promise<Section[]> => {
+export const getSectionsByGroup = async (
+  groupId: string
+): Promise<Section[]> => {
   try {
     const response = await api.get(`/sections/group/${groupId}`);
     return response.data.data || response.data || [];
   } catch (error) {
-    console.error('Failed to get sections by group:', error);
+    console.error("Failed to get sections by group:", error);
     return [];
   }
 };
 
 // Get section by ID
-export const getSectionById = async (sectionId: string): Promise<Section | null> => {
+export const getSectionById = async (
+  sectionId: string
+): Promise<Section | null> => {
   try {
     const response = await api.get(`/sections/${sectionId}`);
     return response.data.data || response.data;
   } catch (error) {
-    console.error('Failed to get section by ID:', error);
+    console.error("Failed to get section by ID:", error);
     return null;
   }
 };
 
 // Create new section
-export const createSection = async (sectionData: CreateSectionData): Promise<Section | null> => {
+export const createSection = async (
+  sectionData: CreateSectionData
+): Promise<Section | null> => {
   try {
-    const response = await api.post('/sections', sectionData);
+    const response = await api.post("/sections", sectionData);
     return response.data.data || response.data;
   } catch (error) {
-    console.error('Failed to create section:', error);
+    console.error("Failed to create section:", error);
     throw error;
   }
 };
 
 // Update section
-export const updateSection = async (sectionId: string, sectionData: Partial<CreateSectionData>): Promise<Section | null> => {
+export const updateSection = async (
+  sectionId: string,
+  sectionData: Partial<CreateSectionData>
+): Promise<Section | null> => {
   try {
     const response = await api.put(`/sections/${sectionId}`, sectionData);
     return response.data.data || response.data;
   } catch (error) {
-    console.error('Failed to update section:', error);
+    console.error("Failed to update section:", error);
     throw error;
   }
 };
@@ -84,7 +97,7 @@ export const deleteSection = async (sectionId: string): Promise<boolean> => {
     const response = await api.delete(`/sections/${sectionId}`);
     return response.data.success || true;
   } catch (error) {
-    console.error('Failed to delete section:', error);
+    console.error("Failed to delete section:", error);
     throw error;
   }
 };
@@ -92,21 +105,23 @@ export const deleteSection = async (sectionId: string): Promise<boolean> => {
 // Get active sections
 export const getActiveSections = async (): Promise<Section[]> => {
   try {
-    const response = await api.get('/sections/active');
+    const response = await api.get("/sections/active");
     return response.data.data || response.data || [];
   } catch (error) {
-    console.error('Failed to get active sections:', error);
+    console.error("Failed to get active sections:", error);
     return [];
   }
 };
 
 // Toggle section status
-export const toggleSectionStatus = async (sectionId: string): Promise<Section | null> => {
+export const toggleSectionStatus = async (
+  sectionId: string
+): Promise<Section | null> => {
   try {
     const response = await api.patch(`/sections/${sectionId}/toggle-status`);
     return response.data.data || response.data;
   } catch (error) {
-    console.error('Failed to toggle section status:', error);
+    console.error("Failed to toggle section status:", error);
     throw error;
   }
 };

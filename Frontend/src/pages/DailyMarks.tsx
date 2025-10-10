@@ -49,6 +49,8 @@ interface Section {
   date: string;
   memorizationSection: string;
   reviewSection: string;
+  group?: string;
+  teacher?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -147,14 +149,30 @@ const DailyMarks = () => {
         const user = JSON.parse(userJson);
         setCurrentUser(user);
 
-        // Fetch sections for everyone
+        // Fetch sections based on user role
         const sectionsData = await getAllSections();
-        setSections(Array.isArray(sectionsData) ? sectionsData : []);
+
+        // If user is a student, filter sections by their group
+        if (user.role === "student") {
+          const userGroup = user.group;
+          const filteredSections = Array.isArray(sectionsData)
+            ? sectionsData.filter((s: any) => s.group === userGroup)
+            : [];
+          setSections(filteredSections);
+          console.log(
+            "Loaded sections for student's group:",
+            userGroup,
+            filteredSections
+          );
+        } else {
+          // For teachers/admins, sections will be filtered later by selected group
+          setSections(Array.isArray(sectionsData) ? sectionsData : []);
+        }
 
         // If user is a teacher, fetch students by teacher name and teacher's groups
         if (user.role === "teacher" || user.role === "admin") {
           const teacherName = `${user.firstName} ${user.lastName}`;
-          
+
           // Fetch teacher's full details to get groups
           const teacherResponse = await getTeacherById(user._id);
           if (teacherResponse.success && teacherResponse.data?.groups) {
@@ -196,18 +214,18 @@ const DailyMarks = () => {
     if (selectedGroup) {
       console.log("Filtering students for group:", selectedGroup);
       console.log("All students:", students);
-      
+
       // Normalize strings for comparison (trim and compare)
       const normalizeString = (str: string | undefined | null) => {
         if (!str) return "";
         return str.trim().toLowerCase();
       };
       const normalizedSelectedGroup = normalizeString(selectedGroup);
-      
-      const filtered = students.filter((s) => 
-        normalizeString(s.group) === normalizedSelectedGroup
+
+      const filtered = students.filter(
+        (s) => normalizeString(s.group) === normalizedSelectedGroup
       );
-      
+
       console.log("Filtered students:", filtered);
       setFilteredStudents(filtered);
       // Reset selected student when group changes
@@ -216,6 +234,37 @@ const DailyMarks = () => {
       setFilteredStudents([]);
     }
   }, [selectedGroup, students]);
+
+  // Fetch sections for selected group (only for teachers/admins)
+  useEffect(() => {
+    const fetchSectionsForGroup = async () => {
+      if (!selectedGroup || !currentUser) return;
+
+      // Only fetch sections for teachers/admins, students already have their sections filtered
+      if (currentUser.role !== "teacher" && currentUser.role !== "admin")
+        return;
+
+      try {
+        const sectionsData = await getAllSections();
+
+        // Filter sections by group - only show sections for the selected group
+        const filteredSections = Array.isArray(sectionsData)
+          ? sectionsData.filter((s: any) => s.group === selectedGroup)
+          : [];
+
+        setSections(filteredSections);
+        console.log(
+          "Loaded sections for group:",
+          selectedGroup,
+          filteredSections
+        );
+      } catch (err) {
+        console.error("Error fetching sections for group:", err);
+      }
+    };
+
+    fetchSectionsForGroup();
+  }, [selectedGroup, currentUser]);
 
   // Fetch marks based on user role
   useEffect(() => {
@@ -271,20 +320,59 @@ const DailyMarks = () => {
   const handleAddSection = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    try {
-      const createdSection = await createSection(newSection);
-      setSections((prev) => [createdSection, ...prev]);
-      setIsAddSectionModalOpen(false);
+    // Validate that a group is selected
+    if (!selectedGroup) {
+      alert("الرجاء اختيار حلقة أولاً");
+      return;
+    }
 
-      // Reset form
-      setNewSection({
-        date: new Date().toISOString().split("T")[0],
-        memorizationSection: "",
-        reviewSection: "",
-      });
-    } catch (err) {
-      console.error("Error adding section:", err);
-      alert("حدث خطأ أثناء إضافة المقطع");
+    // Validate required fields
+    if (!newSection.reviewSection || !newSection.memorizationSection) {
+      alert("الرجاء ملء جميع الحقول المطلوبة");
+      return;
+    }
+
+    console.log("📝 Current user:", currentUser);
+    console.log("📝 Selected group:", selectedGroup);
+    console.log("📝 New section data:", newSection);
+
+    try {
+      // Add group and teacher info to the section
+      const sectionData = {
+        date: newSection.date,
+        reviewSection: newSection.reviewSection,
+        memorizationSection: newSection.memorizationSection,
+        group: selectedGroup,
+        teacher: currentUser
+          ? `${currentUser.firstName} ${currentUser.lastName}`
+          : "",
+      };
+
+      console.log("📤 Sending section data:", sectionData);
+      const createdSection = await createSection(sectionData);
+      console.log("✅ Section created:", createdSection);
+
+      if (createdSection) {
+        setSections((prev) => [createdSection, ...prev]);
+        setIsAddSectionModalOpen(false);
+
+        // Reset form
+        setNewSection({
+          date: new Date().toISOString().split("T")[0],
+          memorizationSection: "",
+          reviewSection: "",
+        });
+
+        alert("تم إضافة المقطع بنجاح!");
+      }
+    } catch (err: any) {
+      console.error("❌ Error adding section:", err);
+      console.error("❌ Error response:", err.response?.data);
+      alert(
+        `حدث خطأ أثناء إضافة المقطع: ${
+          err.response?.data?.message || err.message
+        }`
+      );
     }
   };
 
@@ -834,7 +922,7 @@ const DailyMarks = () => {
                           clipRule="evenodd"
                         />
                       </svg>
-                      إضافة مقطع جديد لجميع الطلاب
+                      إضافة مقطع للحلقة المختارة
                     </button>
 
                     <button
@@ -1401,7 +1489,7 @@ const DailyMarks = () => {
           <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-bold text-gray-800">
-                إضافة مقطع جديد لجميع الطلاب
+                إضافة مقطع جديد للحلقة: {selectedGroup}
               </h3>
               <button
                 onClick={() => setIsAddSectionModalOpen(false)}

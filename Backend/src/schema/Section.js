@@ -15,8 +15,17 @@ const sectionSchema = new mongoose.Schema(
       type: String,
       required: [true, "مقطع الحفظ مطلوب"],
     },
+    group: {
+      type: String,
+      required: false, // Optional for backward compatibility
+      index: true, // Index for faster queries
+    },
+    teacher: {
+      type: String,
+      required: false, // Optional for backward compatibility
+    },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 const Section = mongoose.model("Section", sectionSchema);

@@ -2,9 +2,20 @@ const Section = require("../schema/Section");
 const Mark = require("../schema/Mark");
 
 // Get all sections, sorted by date (newest first)
+// Support filtering by group and teacher via query params
 exports.getSections = async (req, res) => {
   try {
-    const sections = await Section.find().sort({ date: -1 });
+    const { group, teacher } = req.query;
+    const filter = {};
+
+    if (group) {
+      filter.group = group;
+    }
+    if (teacher) {
+      filter.teacher = teacher;
+    }
+
+    const sections = await Section.find(filter).sort({ date: -1 });
     res.json(sections);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -27,15 +38,27 @@ exports.getSection = async (req, res) => {
 // Create a new section
 exports.createSection = async (req, res) => {
   try {
-    const section = new Section({
+    console.log("📝 Creating section with original data:", req.body);
+    console.log("✅ Using validated data:", req.validatedData);
+
+    // Use validated data from middleware
+    const sectionData = req.validatedData || {
       date: req.body.date,
       reviewSection: req.body.reviewSection,
       memorizationSection: req.body.memorizationSection,
-    });
+      group: req.body.group,
+      teacher: req.body.teacher,
+    };
 
+    const section = new Section(sectionData);
+
+    console.log("✅ Section object created:", section);
     const newSection = await section.save();
+    console.log("✅ Section saved successfully:", newSection);
     res.status(201).json(newSection);
   } catch (error) {
+    console.error("❌ Error creating section:", error);
+
     // Handle validation errors
     if (error.name === "ValidationError") {
       const validationErrors = Object.keys(error.errors)
@@ -48,7 +71,7 @@ exports.createSection = async (req, res) => {
       });
     }
 
-    res.status(500).json({ message: error.message });
+    res.status(400).json({ message: error.message, error: error.toString() });
   }
 };
 
@@ -60,10 +83,13 @@ exports.updateSection = async (req, res) => {
       return res.status(404).json({ message: "المقطع غير موجود" });
     }
 
+    // Use validated data from middleware
+    const updateData = req.validatedData || req.body;
+
     const updatedSection = await Section.findByIdAndUpdate(
       req.params.id,
-      req.body,
-      { new: true },
+      updateData,
+      { new: true }
     );
 
     res.json(updatedSection);
