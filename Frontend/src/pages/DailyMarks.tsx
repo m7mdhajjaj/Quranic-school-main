@@ -319,7 +319,7 @@ const DailyMarks = () => {
   // Handle adding new section
   const handleAddSection = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    //....
     // Validate that a group is selected
     if (!selectedGroup) {
       alert("الرجاء اختيار حلقة أولاً");
