@@ -1,8 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DailyMarksSkeleton } from "../components/Loading/LoadingSkeleton";
-import { getAllStudents } from "../Api/studentApi";
-import { getAllSections, createSection, updateSection, deleteSection } from "../Api/sectionApi";
+import { getStudentsByTeacher } from "../Api/studentApi";
+import { getTeacherById } from "../Api/teacherApi";
+import {
+  getAllSections,
+  createSection,
+  updateSection,
+  deleteSection,
+} from "../Api/sectionApi";
 import { getStudentMarks, createMark } from "../Api/markApi";
 
 // Interface for Student data from backend
@@ -13,6 +19,7 @@ interface Student {
   fatherName: string;
   lastName: string;
   group: string;
+  teacher: string;
 }
 
 // Interface for Teacher data from backend
@@ -77,6 +84,8 @@ const DailyMarks = () => {
 
   // State for students, sections, and marks
   const [students, setStudents] = useState<Student[]>([]);
+  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
+  const [teacherGroups, setTeacherGroups] = useState<string[]>([]);
   const [sections, setSections] = useState<Section[]>([]);
   const [marks, setMarks] = useState<Mark[]>([]);
 
@@ -84,6 +93,7 @@ const DailyMarks = () => {
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(
     null
   );
+  const [selectedGroup, setSelectedGroup] = useState<string>("");
   const [isAddSectionModalOpen, setIsAddSectionModalOpen] = useState(false);
   const [isEditSectionModalOpen, setIsEditSectionModalOpen] = useState(false);
   const [isBulkUpdateModalOpen, setIsBulkUpdateModalOpen] = useState(false);
@@ -141,14 +151,26 @@ const DailyMarks = () => {
         const sectionsData = await getAllSections();
         setSections(Array.isArray(sectionsData) ? sectionsData : []);
 
-        // If user is a teacher, fetch all students
+        // If user is a teacher, fetch students by teacher name and teacher's groups
         if (user.role === "teacher" || user.role === "admin") {
-          // Fetch students filtered by teacher's groups if needed
-          const studentsResponse = await getAllStudents();
-          const students = studentsResponse.success && Array.isArray(studentsResponse.data)
-            ? studentsResponse.data
-            : [];
+          const teacherName = `${user.firstName} ${user.lastName}`;
+          
+          // Fetch teacher's full details to get groups
+          const teacherResponse = await getTeacherById(user._id);
+          if (teacherResponse.success && teacherResponse.data?.groups) {
+            const groups = teacherResponse.data.groups.map((g) => g.name);
+            setTeacherGroups(groups);
+            console.log("Teacher groups:", groups);
+          }
+
+          // Fetch students
+          const studentsResponse = await getStudentsByTeacher(teacherName);
+          const students =
+            studentsResponse.success && Array.isArray(studentsResponse.data)
+              ? studentsResponse.data
+              : [];
           setStudents(students);
+          setFilteredStudents(students); // Initially show all teacher's students
         }
       } catch (err) {
         console.error("Error fetching data:", err);
@@ -159,6 +181,25 @@ const DailyMarks = () => {
 
     fetchData();
   }, [navigate]);
+
+  // Auto-select first group when teacher groups are loaded
+  useEffect(() => {
+    if (teacherGroups.length > 0 && !selectedGroup) {
+      setSelectedGroup(teacherGroups[0]);
+    }
+  }, [teacherGroups, selectedGroup]);
+
+  // Filter students by selected group
+  useEffect(() => {
+    if (selectedGroup) {
+      const filtered = students.filter((s) => s.group === selectedGroup);
+      setFilteredStudents(filtered);
+      // Reset selected student when group changes
+      setSelectedStudentId(null);
+    } else {
+      setFilteredStudents([]);
+    }
+  }, [selectedGroup, students]);
 
   // Fetch marks based on user role
   useEffect(() => {
@@ -275,7 +316,7 @@ const DailyMarks = () => {
       // Update marks array with updated mark
       setMarks((prev) =>
         prev.map((mark) =>
-          mark._id === editingMark._id ? updatedMark as any : mark
+          mark._id === editingMark._id ? (updatedMark as any) : mark
         )
       );
       setIsUpdateMarkModalOpen(false);
@@ -304,14 +345,11 @@ const DailyMarks = () => {
     if (!editingSection) return;
 
     try {
-      const updatedSectionData = await updateSection(
-        editingSection._id,
-        {
-          date: editingSection.date,
-          memorizationSection: editingSection.memorizationSection,
-          reviewSection: editingSection.reviewSection,
-        }
-      );
+      const updatedSectionData = await updateSection(editingSection._id, {
+        date: editingSection.date,
+        memorizationSection: editingSection.memorizationSection,
+        reviewSection: editingSection.reviewSection,
+      });
 
       // Update sections array with edited section
       setSections((prev) =>
@@ -395,9 +433,7 @@ const DailyMarks = () => {
     try {
       // Delete each selected section
       await Promise.all(
-        selectedSectionsForBulk.map((sectionId) =>
-          deleteSection(sectionId)
-        )
+        selectedSectionsForBulk.map((sectionId) => deleteSection(sectionId))
       );
 
       // Remove sections from state
@@ -525,6 +561,16 @@ const DailyMarks = () => {
   // Handle year change
   const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedYear(Number(e.target.value));
+  };
+
+  // Get unique group names for the current teacher
+  const getTeacherGroups = () => {
+    // Use teacher's groups from database if available, otherwise fallback to student groups
+    if (teacherGroups.length > 0) {
+      return teacherGroups.sort();
+    }
+    const uniqueGroups = Array.from(new Set(students.map((s) => s.group)));
+    return uniqueGroups.sort();
   };
 
   // Calculate averages for the selected month and year
@@ -693,28 +739,69 @@ const DailyMarks = () => {
                       قائمة الطلاب
                     </h2>
                   </div>
+
+                  {/* Group Filter */}
+                  <div className="p-4 border-b bg-gray-50">
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                      اختر الحلقة:
+                    </label>
+                    <select
+                      value={selectedGroup}
+                      onChange={(e) => setSelectedGroup(e.target.value)}
+                      className="w-full shadow appearance-none border rounded py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                      {getTeacherGroups().length === 0 ? (
+                        <option value="">لا توجد حلقات</option>
+                      ) : (
+                        getTeacherGroups().map((groupName) => (
+                          <option key={groupName} value={groupName}>
+                            {groupName}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  </div>
+
                   <div className="p-4 max-h-80 overflow-y-auto">
-                    <ul className="divide-y divide-gray-200">
-                      {students
-                        .sort((a, b) =>
-                          `${a.firstName} ${a.lastName}`.localeCompare(
-                            `${b.firstName} ${b.lastName}`
+                    {getTeacherGroups().length === 0 ? (
+                      <p className="text-center text-gray-500 py-4">
+                        لا توجد حلقات مسجلة لك
+                      </p>
+                    ) : filteredStudents.length === 0 ? (
+                      <p className="text-center text-gray-500 py-4">
+                        لا يوجد طلاب في حلقة {selectedGroup}
+                      </p>
+                    ) : (
+                      <ul className="divide-y divide-gray-200">
+                        {filteredStudents
+                          .sort((a, b) =>
+                            `${a.firstName} ${a.lastName}`.localeCompare(
+                              `${b.firstName} ${b.lastName}`
+                            )
                           )
-                        )
-                        .map((student) => (
-                          <li key={student._id} className="py-3">
-                            <button
-                              onClick={() => setSelectedStudentId(student._id)}
-                              className={`w-full text-right py-2 px-4 rounded-lg transition ${
-                                selectedStudentId === student._id
-                                  ? "bg-emerald-100 text-emerald-800 font-bold"
-                                  : "hover:bg-gray-100"
-                              }`}>
-                              {`${student.firstName} ${student.fatherName} ${student.lastName}`}
-                            </button>
-                          </li>
-                        ))}
-                    </ul>
+                          .map((student) => (
+                            <li key={student._id} className="py-3">
+                              <button
+                                onClick={() =>
+                                  setSelectedStudentId(student._id)
+                                }
+                                className={`w-full text-right py-2 px-4 rounded-lg transition ${
+                                  selectedStudentId === student._id
+                                    ? "bg-emerald-100 text-emerald-800 font-bold"
+                                    : "hover:bg-gray-100"
+                                }`}>
+                                <div className="flex flex-col">
+                                  <span>
+                                    {`${student.firstName} ${student.fatherName} ${student.lastName}`}
+                                  </span>
+                                  <span className="text-xs text-gray-500 mt-1">
+                                    {student.group}
+                                  </span>
+                                </div>
+                              </button>
+                            </li>
+                          ))}
+                      </ul>
+                    )}
                   </div>
                   <div className="p-4 bg-gray-50 space-y-3">
                     <button
@@ -778,7 +865,7 @@ const DailyMarks = () => {
                 <div className="lg:col-span-2">
                   {selectedStudentId ? (
                     <div className="bg-white rounded-xl shadow-md overflow-hidden">
-                      <div className="bg-gradient-to-r from-emerald-600 to-teal-500 py-4 px-6 flex justify-between items-center">
+                      <div className="bg-gradient-to-r from-emerald-600 to-teal-500 py-4 px-6">
                         <h2 className="text-xl font-bold text-white">
                           علامات الطالب:{" "}
                           {students.find((s) => s._id === selectedStudentId)
@@ -797,6 +884,15 @@ const DailyMarks = () => {
                               }`
                             : "غير معروف"}
                         </h2>
+                        {students.find((s) => s._id === selectedStudentId) && (
+                          <p className="text-white text-sm mt-1">
+                            الحلقة:{" "}
+                            {
+                              students.find((s) => s._id === selectedStudentId)
+                                ?.group
+                            }
+                          </p>
+                        )}
                       </div>
                       <div className="overflow-x-auto">
                         <table className="w-full">
