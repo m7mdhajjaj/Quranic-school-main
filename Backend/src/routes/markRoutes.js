@@ -1,7 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const markController = require("../controllers/markController");
-const { validateDailyMarksData } = require("../Validation/DailyMarksValidation");
+const {
+  validateDailyMarksData,
+} = require("../Validation/DailyMarksValidation");
 
 // Get all marks
 router.get("/", markController.getMarks);

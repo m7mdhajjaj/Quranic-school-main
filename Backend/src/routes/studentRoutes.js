@@ -246,4 +246,26 @@ router.post("/", validateStudentData, studentController.createStudent);
 router.put("/:id", validateStudentData, studentController.updateStudent);
 router.delete("/:id", studentController.deleteStudent);
 
+// Monthly averages routes
+router.get(
+  "/:studentId/monthly-average",
+  protect,
+  studentController.getStudentMonthlyAverage
+);
+router.get(
+  "/:studentId/all-monthly-averages",
+  protect,
+  studentController.getAllStudentMonthlyAverages
+);
+router.post(
+  "/:studentId/calculate-monthly-average",
+  protect,
+  studentController.calculateStudentMonthlyAverage
+);
+router.get(
+  "/:studentId/overall-average",
+  protect,
+  studentController.getStudentOverallAverage
+);
+
 module.exports = router;
