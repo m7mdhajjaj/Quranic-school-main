@@ -132,8 +132,10 @@ const TeachersManagement: React.FC = () => {
     let count = 0;
     if (selectedGender !== "all") count++;
     if (searchTerm) count++;
+    if (groupsFilter !== "all") count++;
+    if (ageRange[0] !== 0 || ageRange[1] !== 100) count++;
     return count;
-  }, [selectedGender, searchTerm]);
+  }, [selectedGender, searchTerm, groupsFilter, ageRange]);
 
   // Statistics
   const stats = useMemo(() => {
@@ -921,7 +923,7 @@ const TeachersManagement: React.FC = () => {
                         title="عرض المعلمين الذكور فقط"
                         className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
                           selectedGender === 'ذكر'
-                            ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-md'
+                            ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                       >
@@ -1040,7 +1042,11 @@ const TeachersManagement: React.FC = () => {
                       الفلاتر النشطة:
                     </span>
                     {selectedGender !== 'all' && (
-                      <span className="px-3 py-1 bg-pink-100 text-pink-800 rounded-full text-xs font-medium">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        selectedGender === 'ذكر' 
+                          ? 'bg-blue-100 text-blue-800' 
+                          : 'bg-pink-100 text-pink-800'
+                      }`}>
                         الجنس: {selectedGender}
                       </span>
                     )}

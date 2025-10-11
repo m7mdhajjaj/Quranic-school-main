@@ -53,14 +53,11 @@ exports.getAllTeachers = async (req, res) => {
     // جلب الحلقات لكل معلم
     const teachersWithGroups = await Promise.all(
       teachers.map(async (teacher) => {
-        const teacherFullName = `${teacher.firstName} ${teacher.lastName}`;
-
-        // البحث عن الحلقات التي تطابق اسم المعلم الكامل أو الـ ID
+        // البحث عن الحلقات بناءً على ID المعلم فقط لتجنب التداخل بين معلمين بنفس الاسم
         const groups = await Group.find({
           $or: [
             { teacher: teacher._id },
             { teacher: teacher._id.toString() },
-            { teacher: teacherFullName },
           ],
         });
 
@@ -229,11 +226,12 @@ exports.createTeacher = async (req, res) => {
         const groupId = typeof groupItem === "object" ? groupItem.id : null;
 
         if (groupId) {
-          // تحديث الحلقة لربطها بالمعلم
+          // تحديث الحلقة لربطها بالمعلم باستخدام ID المعلم بدلاً من الاسم لتجنب التداخل
           await Group.findByIdAndUpdate(groupId, {
-            teacher: teacherFullName,
+            teacher: doc._id, // استخدام ID المعلم بدلاً من الاسم الكامل
+            teacherName: teacherFullName, // الاحتفاظ بالاسم للعرض فقط
           });
-          console.log(`✅ تم ربط الحلقة ${groupId} بالمعلم ${teacherFullName}`);
+          console.log(`✅ تم ربط الحلقة ${groupId} بالمعلم ${doc._id} (${teacherFullName})`);
         }
       }
     }
@@ -405,7 +403,6 @@ exports.updateTeacher = async (req, res) => {
         if (
           group &&
           group.teacher &&
-          group.teacher !== teacherFullName &&
           group.teacher.toString() !== currentTeacher._id.toString()
         ) {
           return res.status(400).json({
@@ -414,10 +411,13 @@ exports.updateTeacher = async (req, res) => {
             field: "groups",
           });
         }
-        // تعيين المعلم للحلقة
+        // تعيين المعلم للحلقة باستخدام ID بدلاً من الاسم
         await Group.updateOne(
           { _id: groupItem.id },
-          { teacher: teacherFullName }
+          { 
+            teacher: currentTeacher._id, // استخدام ID المعلم
+            teacherName: teacherFullName // الاحتفاظ بالاسم للعرض
+          }
         );
       }
     }

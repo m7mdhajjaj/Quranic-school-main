@@ -88,9 +88,8 @@ exports.createGroup = async (req, res) => {
       name: name,
       $or: [
         { teacher: teacher },
+        { teacher: teacherExists._id },
         { teacher: teacherExists._id.toString() },
-        { teacher: teacherFullName },
-        { teacherName: teacherFullName },
       ],
     });
 
@@ -106,8 +105,8 @@ exports.createGroup = async (req, res) => {
       name: name,
       $and: [
         { teacher: { $ne: teacher } },
+        { teacher: { $ne: teacherExists._id } },
         { teacher: { $ne: teacherExists._id.toString() } },
-        { teacher: { $ne: teacherFullName } },
         { teacher: { $exists: true, $ne: null, $ne: "" } },
       ],
     });
@@ -124,7 +123,8 @@ exports.createGroup = async (req, res) => {
 
     const group = await Group.create({
       name,
-      teacher: teacherFullName, // حفظ اسم المعلم الكامل
+      teacher: teacherExists._id, // حفظ ID المعلم بدلاً من الاسم لتجنب التداخل
+      teacherName: teacherFullName, // الاحتفاظ بالاسم للعرض
       description,
       capacity,
       schedule,
