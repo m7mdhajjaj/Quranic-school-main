@@ -507,8 +507,10 @@ exports.changePassword = async (req, res) => {
   try {
     console.log("=== changePassword called ===");
     console.log("Request body:", req.body);
+    console.log("Validated data:", req.validatedData);
 
-    const { currentPassword, newPassword, userId, userType } = req.body;
+    // استخدام البيانات المُتحققة من middleware
+    const { currentPassword, newPassword, userId, userType } = req.validatedData || req.body;
 
     // التحقق من المدخلات
     if (!currentPassword || !newPassword || !userId) {
@@ -519,13 +521,7 @@ exports.changePassword = async (req, res) => {
       });
     }
 
-    // التحقق من طول كلمة المرور الجديدة
-    if (newPassword.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message: "كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل",
-      });
-    }
+    // التحقق تم في middleware - لا حاجة للتحقق المكرر
 
     let user = null;
 
@@ -602,7 +598,7 @@ exports.changePassword = async (req, res) => {
         password: hashedNewPassword,
       });
     } else {
-      await Student.freezeByIdAndUpdate(userId, {
+      await Student.findByIdAndUpdate(userId, {
         password: hashedNewPassword,
       });
     }

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { showLogoutConfirmation } from '../../utils/logoutUtils';
+import ChangePasswordModal from '../../pages/ChangePass';
 import {
   getRecentNotifications,
   getUnreadNotificationCount,
@@ -32,6 +33,7 @@ const AdminHeader: React.FC = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
 
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const notificationMenuRef = useRef<HTMLDivElement>(null);
@@ -594,7 +596,7 @@ const AdminHeader: React.FC = () => {
                       <button
                         onClick={() => {
                           setProfileMenuOpen(false);
-                          navigate('/change-password');
+                          setIsChangePasswordModalOpen(true);
                         }}
                         className="w-full px-6 py-3 text-right flex items-center space-x-reverse space-x-3 text-gray-700 hover:bg-blue-50 transition-all duration-200 group"
                       >
@@ -865,7 +867,7 @@ const AdminHeader: React.FC = () => {
 
                   <button
                     onClick={() => {
-                      navigate('/change-password');
+                      setIsChangePasswordModalOpen(true);
                       setMobileMenuOpen(false);
                       setProfileMenuOpen(false);
                     }}
@@ -1140,6 +1142,12 @@ const AdminHeader: React.FC = () => {
         .nav-item-delay-4 { animation-delay: 400ms; }
         `}
       </style>
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal 
+        isOpen={isChangePasswordModalOpen}
+        onClose={() => setIsChangePasswordModalOpen(false)}
+      />
     </>
   );
 };

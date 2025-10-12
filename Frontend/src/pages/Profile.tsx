@@ -25,6 +25,7 @@ import {
 import { toast, ToastContainer } from 'react-toastify';
 import Avatar from '../components/Avatar';
 import { useAuth } from '../hooks/useAuth';
+import ChangePasswordModal from './ChangePass';
 import {
   getUserWithFallback,
   updateUserById,
@@ -136,6 +137,7 @@ const Profile: React.FC = () => {
 
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>('');
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
 
   const fullName = useMemo(
     () =>
@@ -463,7 +465,7 @@ const Profile: React.FC = () => {
                     <span className="text-xl">تعديل المعلومات</span>
                   </button>
                   <button
-                    onClick={() => navigate('/change-password')}
+                    onClick={() => setIsChangePasswordModalOpen(true)}
                     className="flex items-center gap-3 bg-white/10 backdrop-blur-md text-white font-black px-12 py-6 rounded-2xl border-2 border-white/30 shadow-2xl hover:bg-white/20 hover:scale-105 active:scale-95 transition-all duration-300"
                   >
                     <Lock className="w-7 h-7" />
@@ -791,6 +793,12 @@ const Profile: React.FC = () => {
       </div>
 
       <ToastContainer rtl position="top-center" />
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal 
+        isOpen={isChangePasswordModalOpen}
+        onClose={() => setIsChangePasswordModalOpen(false)}
+      />
 
       <style>{`
         @keyframes pulse {

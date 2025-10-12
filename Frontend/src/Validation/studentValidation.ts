@@ -149,14 +149,31 @@ export const studentValidationSchema = yup.object({
       then: (schema) => schema.required('كلمة المرور مطلوبة'),
       otherwise: (schema) => schema.nullable().notRequired(),
     })
-    .test('password-for-new-student', 'كلمة المرور مطلوبة للطلاب الجدد', function(value) {
+    .test('password-strength', 'كلمة المرور لا تلبي المتطلبات', function(value) {
       const { isNewStudent } = this.options.context || {};
-      console.log('🔍 password test - isNewStudent:', isNewStudent, 'value:', value);
       
-      // إذا كان طالب جديد يجب أن تكون كلمة المرور موجودة
-      if (isNewStudent && (!value || value.trim() === '')) {
-        return false;
+      // إذا كان طالب جديد يجب التحقق من قوة كلمة المرور
+      if (isNewStudent && value) {
+        // التحقق من الطول الأدنى
+        if (value.length < 4) {
+          return this.createError({ message: 'كلمة المرور يجب أن تكون 4 أحرف على الأقل' });
+        }
+        
+        // عد الأرقام والحروف (يدعم الأرقام العربية والإنجليزية)
+        const numbers = (value.match(/[\d٠-٩]/g) || []).length;
+        const letters = (value.match(/[a-zA-Z\u0600-\u06FF]/g) || []).length;
+        
+        // التحقق من القواعد الجديدة
+        const hasMinimumNumbers = numbers >= 4;
+        const hasMinimumLettersWithNumbers = letters >= 3 && numbers >= 1;
+        
+        if (!hasMinimumNumbers && !hasMinimumLettersWithNumbers) {
+          return this.createError({ 
+            message: 'كلمة المرور يجب أن تحتوي على 4 أرقام على الأقل، أو 3 حروف مع أرقام' 
+          });
+        }
       }
+      
       return true;
     }),
     

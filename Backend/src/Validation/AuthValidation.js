@@ -141,8 +141,9 @@ const validateTeacherRegistration = (data) => {
     errors.push("كلمة المرور مطلوبة");
   } else {
     const passwordStr = data.password.toString();
-    if (passwordStr.length < 8) {
-      errors.push("كلمة المرور يجب أن تكون 8 أحرف على الأقل");
+    const strengthValidation = validatePasswordStrength(passwordStr);
+    if (!strengthValidation.isValid) {
+      errors.push(strengthValidation.error);
     } else if (passwordStr.length > 100) {
       errors.push("كلمة المرور طويلة جداً");
     } else {
@@ -155,6 +156,51 @@ const validateTeacherRegistration = (data) => {
     errors: errors,
     data: validatedData,
   };
+};
+
+/**
+ * التحقق من قوة كلمة المرور الجديدة
+ * يجب أن تحتوي على أقل شيء 4 أرقام أو 3 حروف وباقي أرقام
+ */
+const validatePasswordStrength = (password) => {
+  if (!password || typeof password !== 'string') {
+    return { isValid: false, errors: ['كلمة المرور مطلوبة'] };
+  }
+
+  const errors = [];
+  
+  // التحقق من الطول الأدنى
+  if (password.length < 4) {
+    errors.push('كلمة المرور يجب أن تكون 4 أحرف على الأقل');
+    return { isValid: false, errors };
+  }
+
+  // التحقق من الطول الأقصى
+  if (password.length > 50) {
+    errors.push('كلمة المرور يجب ألا تتجاوز 50 حرف');
+    return { isValid: false, errors };
+  }
+
+  // عد الأرقام والحروف (يدعم الأرقام العربية والإنجليزية)
+  const numbers = password.match(/[\d٠-٩]/g) || [];
+  const letters = password.match(/[a-zA-Z\u0600-\u06FF]/g) || [];
+
+  const numberCount = numbers.length;
+  const letterCount = letters.length;
+
+  // قاعدة التحقق الجديدة:
+  // السيناريو 1: أقل شيء 4 أرقام
+  const hasMinimumNumbers = numberCount >= 4;
+  
+  // السيناريو 2: 3 حروف على الأقل وباقي أرقام  
+  const hasMinimumLettersWithNumbers = letterCount >= 3 && numberCount >= 1;
+
+  if (!hasMinimumNumbers && !hasMinimumLettersWithNumbers) {
+    errors.push('كلمة المرور يجب أن تحتوي على 4 أرقام على الأقل، أو 3 حروف مع أرقام');
+    return { isValid: false, errors };
+  }
+
+  return { isValid: true, errors: [] };
 };
 
 /**
@@ -176,19 +222,18 @@ const validatePasswordChange = (data) => {
     errors.push("كلمة المرور الجديدة مطلوبة");
   } else {
     const newPasswordStr = data.newPassword.toString();
-    if (newPasswordStr.length < 8) {
-      errors.push("كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل");
-    } else if (newPasswordStr.length > 100) {
-      errors.push("كلمة المرور الجديدة طويلة جداً");
+    
+    // استخدام دالة التحقق الجديدة
+    const strengthValidation = validatePasswordStrength(newPasswordStr);
+    if (!strengthValidation.isValid) {
+      errors.push(...strengthValidation.errors);
     } else {
       validatedData.newPassword = newPasswordStr;
     }
   }
 
-  // Confirm password validation
-  if (!isRequired(data.confirmPassword)) {
-    errors.push("تأكيد كلمة المرور مطلوب");
-  } else {
+  // Confirm password validation (optional - Frontend handles this)
+  if (data.confirmPassword && isRequired(data.confirmPassword)) {
     const confirmPasswordStr = data.confirmPassword.toString();
     if (
       validatedData.newPassword &&
@@ -207,6 +252,25 @@ const validatePasswordChange = (data) => {
     validatedData.currentPassword === validatedData.newPassword
   ) {
     errors.push("كلمة المرور الجديدة يجب أن تكون مختلفة عن الحالية");
+  }
+
+  // UserId validation
+  if (!isRequired(data.userId)) {
+    errors.push("معرف المستخدم مطلوب");
+  } else {
+    validatedData.userId = data.userId.toString();
+  }
+
+  // UserType validation
+  if (!isRequired(data.userType)) {
+    errors.push("نوع المستخدم مطلوب");
+  } else {
+    const userType = data.userType.toString().toLowerCase();
+    if (!['student', 'teacher', 'admin'].includes(userType)) {
+      errors.push("نوع المستخدم غير صحيح");
+    } else {
+      validatedData.userType = userType;
+    }
   }
 
   return {
@@ -307,8 +371,9 @@ const validatePasswordReset = (data) => {
     errors.push("كلمة المرور الجديدة مطلوبة");
   } else {
     const newPasswordStr = data.newPassword.toString();
-    if (newPasswordStr.length < 8) {
-      errors.push("كلمة المرور الجديدة يجب أن تكون 8 أحرف على الأقل");
+    const strengthValidation = validatePasswordStrength(newPasswordStr);
+    if (!strengthValidation.isValid) {
+      errors.push(strengthValidation.error);
     } else if (newPasswordStr.length > 100) {
       errors.push("كلمة المرور الجديدة طويلة جداً");
     } else {
@@ -583,6 +648,7 @@ module.exports = {
   validateLoginCredentials,
   validateTeacherRegistration,
   validatePasswordChange,
+  validatePasswordStrength,
   validateIdentityVerification,
   validatePasswordReset,
 };

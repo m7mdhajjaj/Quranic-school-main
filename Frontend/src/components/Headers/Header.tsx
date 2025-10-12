@@ -2,6 +2,7 @@ import { NavLink, useNavigate, useLocation, Link } from "react-router-dom";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import NotificationHeader from "../NotificationHeader";
 import { useAuth } from "../../hooks/useAuth";
+import ChangePasswordModal from '../../pages/ChangePass';
 import { io, Socket } from "socket.io-client";
 import api from "../../Api/api";
 import { showLogoutConfirmation } from "../../utils/logoutUtils";
@@ -39,6 +40,7 @@ const Header = () => {
   const [logoLoaded, setLogoLoaded] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
 
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -421,7 +423,7 @@ const Header = () => {
                       <button
                         onClick={() => {
                           setProfileMenuOpen(false);
-                          navigate("/change-password");
+                          setIsChangePasswordModalOpen(true);
                         }}
                         className="w-full px-6 py-3 text-right flex items-center gap-3 text-gray-700 hover:bg-blue-50 transition-all group">
                         <div className="w-10 h-10 rounded-xl bg-blue-100 group-hover:bg-blue-200 flex items-center justify-center">
@@ -741,6 +743,12 @@ const Header = () => {
           animation: gradient-slide 0.4s ease-out;
         }
       `}</style>
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal 
+        isOpen={isChangePasswordModalOpen}
+        onClose={() => setIsChangePasswordModalOpen(false)}
+      />
     </>
   );
 };

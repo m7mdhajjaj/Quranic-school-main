@@ -101,8 +101,15 @@ const validateTeacherData = (req, res, next) => {
 
     // التحقق من كلمة المرور للمعلم الجديد
     if (isNewTeacher) {
-      if (!password || typeof password !== 'string' || password.length < 6) {
-        errors.password = 'كلمة المرور مطلوبة ويجب أن تحتوي على 6 أحرف على الأقل';
+      if (!password || typeof password !== 'string' || password.trim().length === 0) {
+        errors.password = 'كلمة المرور مطلوبة للمعلمين الجدد';
+      } else {
+        // استيراد وتشغيل validatePasswordStrength من AuthValidation
+        const { validatePasswordStrength } = require('./AuthValidation');
+        const strengthValidation = validatePasswordStrength(password);
+        if (!strengthValidation.isValid) {
+          errors.password = strengthValidation.error;
+        }
       }
     }
 

@@ -118,8 +118,12 @@ const validatePassword = (password, isUpdate = false) => {
   
   const passwordStr = password.toString();
   
-  if (passwordStr.length < 6) {
-    return { isValid: false, message: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' };
+  // استخدام validatePasswordStrength من AuthValidation
+  const { validatePasswordStrength } = require('./AuthValidation');
+  const strengthValidation = validatePasswordStrength(passwordStr);
+  
+  if (!strengthValidation.isValid) {
+    return { isValid: false, message: strengthValidation.error };
   }
   
   if (passwordStr.length > 100) {

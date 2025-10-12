@@ -187,10 +187,14 @@ const validatePassword = async (password, confirmPassword = null) => {
 
   const passwordStr = password.toString();
 
-  if (passwordStr.length < 8) {
+  // استخدام validatePasswordStrength من AuthValidation
+  const { validatePasswordStrength } = require('./AuthValidation');
+  const strengthValidation = validatePasswordStrength(passwordStr);
+  
+  if (!strengthValidation.isValid) {
     return {
       isValid: false,
-      message: 'كلمة المرور يجب أن تكون 8 أحرف على الأقل',
+      message: strengthValidation.error,
     };
   }
 

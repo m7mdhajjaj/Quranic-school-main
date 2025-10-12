@@ -36,7 +36,6 @@ import Loading from "./components/Loading/Loading";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
-import ChangePass from "./pages/ChangePass";
 import NotFound from "./pages/NotFound";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
@@ -137,7 +136,6 @@ const AdminRoutes: React.FC = () => {
 
           {/* ====== Admin - User Settings ====== */}
           <Route path="/profile" element={<Profile />} />
-          <Route path="/change-password" element={<ChangePass />} />
 
           {/* ====== Admin - Authentication ====== */}
           <Route path="/login" element={<Login />} />
@@ -210,8 +208,6 @@ const TeacherRoutes: React.FC = () => {
 
           {/* ====== User Settings ====== */}
           <Route path="/profile" element={<Profile />} />
-          <Route path="/change-password" element={<ChangePass />} />
-
           {/* ====== Special Pages ====== */}
           <Route path="/soon" element={<Soon />} />
           <Route path="/privacy" element={<Privacy />} />
@@ -283,8 +279,6 @@ const StudentRoutes: React.FC = () => {
 
           {/* ====== User Settings ====== */}
           <Route path="/profile" element={<Profile />} />
-          <Route path="/change-password" element={<ChangePass />} />
-
           {/* ====== Special Pages ====== */}
           <Route path="/soon" element={<Soon />} />
           <Route path="/privacy" element={<Privacy />} />

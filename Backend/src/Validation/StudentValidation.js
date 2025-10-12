@@ -139,6 +139,13 @@ const validateStudentData = (req, res, next) => {
     if (isNewStudent) {
       if (!password || typeof password !== 'string' || password.trim().length === 0) {
         errors.password = 'كلمة المرور مطلوبة للطلاب الجدد';
+      } else {
+        // استيراد وتشغيل validatePasswordStrength من AuthValidation
+        const { validatePasswordStrength } = require('./AuthValidation');
+        const strengthValidation = validatePasswordStrength(password);
+        if (!strengthValidation.isValid) {
+          errors.password = strengthValidation.error;
+        }
       }
     }
 

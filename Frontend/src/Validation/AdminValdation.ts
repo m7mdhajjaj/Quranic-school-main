@@ -108,11 +108,37 @@ export const adminValidationSchema = yup.object().shape({
   // كلمة المرور (مطلوبة للإنشاء، اختيارية للتحديث)
   password: yup
     .string()
-    .min(6, 'كلمة المرور يجب أن تكون 6 أحرف على الأقل')
     .when('$isUpdate', {
       is: false,
       then: (schema) => schema.required('كلمة المرور مطلوبة'),
       otherwise: (schema) => schema.notRequired(),
+    })
+    .test('password-strength', 'كلمة المرور لا تلبي المتطلبات', function(value) {
+      const { isUpdate } = this.options.context || {};
+      
+      // إذا لم يكن تحديث (إنشاء جديد) يجب التحقق من قوة كلمة المرور
+      if (!isUpdate && value) {
+        // التحقق من الطول الأدنى
+        if (value.length < 4) {
+          return this.createError({ message: 'كلمة المرور يجب أن تكون 4 أحرف على الأقل' });
+        }
+        
+        // عد الأرقام والحروف (يدعم الأرقام العربية والإنجليزية)
+        const numbers = (value.match(/[\d٠-٩]/g) || []).length;
+        const letters = (value.match(/[a-zA-Z\u0600-\u06FF]/g) || []).length;
+        
+        // التحقق من القواعد الجديدة
+        const hasMinimumNumbers = numbers >= 4;
+        const hasMinimumLettersWithNumbers = letters >= 3 && numbers >= 1;
+        
+        if (!hasMinimumNumbers && !hasMinimumLettersWithNumbers) {
+          return this.createError({ 
+            message: 'كلمة المرور يجب أن تحتوي على 4 أرقام على الأقل، أو 3 حروف مع أرقام' 
+          });
+        }
+      }
+      
+      return true;
     }),
 
   // الحقول الاختيارية
