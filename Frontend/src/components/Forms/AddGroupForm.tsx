@@ -41,7 +41,7 @@ const AddGroupForm: React.FC<AddGroupFormProps> = ({
     teacher: group?.teacher || "",
     description: group?.description || "",
     capacity: group?.capacity || 30, // متطابق مع Backend default
-    schedule: group?.schedule || "",
+    // تم حذف حقل الجدول الزمني من النموذج
     isActive: group?.isActive !== undefined ? group.isActive : true,
   });
 
@@ -278,7 +278,9 @@ const AddGroupForm: React.FC<AddGroupFormProps> = ({
   // تم إزالة رسالة النجاح من هنا - ستظهر من GroupManagement بدلاً من ذلك
 
   return (
-<div className="fixed inset-0 bg-white/10 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn" dir="rtl">
+    <div
+      className="fixed inset-0 bg-white/10 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn"
+      dir="rtl">
       <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto mx-4">
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
@@ -429,32 +431,7 @@ const AddGroupForm: React.FC<AddGroupFormProps> = ({
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Schedule */}
-              <div className="space-y-1">
-                <label className="flex items-center gap-1 text-sm font-medium text-gray-700">
-                  <Clock size={14} className="text-gray-500" />
-                  الجدول الزمني
-                </label>
-                <input
-                  type="text"
-                  name="schedule"
-                  value={formData.schedule || ""}
-                  onChange={handleChange}
-                  onBlur={() => handleBlur("schedule")}
-                  placeholder="مثال: الأحد والثلاثاء 4:00 - 5:30"
-                  className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
-                    getFieldError("schedule")
-                      ? "border-red-300 focus:ring-red-500 bg-red-50"
-                      : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                  }`}
-                />
-                {getFieldError("schedule") && (
-                  <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
-                    <AlertCircle size={12} />
-                    <span>{getFieldError("schedule")}</span>
-                  </div>
-                )}
-              </div>
+              {/* تم حذف حقل الجدول الزمني */}
 
               {/* Description */}
               <div className="space-y-1 md:col-span-1">

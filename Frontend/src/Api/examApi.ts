@@ -1,4 +1,4 @@
-import api from './api';
+import api from "./api";
 
 // ============================================================================
 // Exam API
@@ -11,6 +11,7 @@ export interface Exam {
   date: string;
   time: string;
   result?: string;
+  group?: string; // اسم الحلقة
 }
 
 export interface StudentDoc {
@@ -43,18 +44,21 @@ export interface BulkMarksRequest {
 
 // Get all exams
 export const getAllExams = async (): Promise<Exam[]> => {
-  const response = await api.get('/exams');
+  const response = await api.get("/exams");
   return response.data;
 };
 
 // Create exam
-export const createExam = async (exam: Omit<Exam, '_id'>): Promise<Exam> => {
-  const response = await api.post('/exams', exam);
+export const createExam = async (exam: Omit<Exam, "_id">): Promise<Exam> => {
+  const response = await api.post("/exams", exam);
   return response.data;
 };
 
 // Update exam
-export const updateExam = async (examId: string, exam: Partial<Exam>): Promise<Exam> => {
+export const updateExam = async (
+  examId: string,
+  exam: Partial<Exam>
+): Promise<Exam> => {
   const response = await api.put(`/exams/${examId}`, exam);
   return response.data;
 };
@@ -77,7 +81,10 @@ export const getExamAverage = async (examId: string): Promise<ExamAverage> => {
 };
 
 // Bulk save marks for multiple students
-export const bulkSaveMarks = async (examId: string, data: BulkMarksRequest): Promise<MarkRow[]> => {
+export const bulkSaveMarks = async (
+  examId: string,
+  data: BulkMarksRequest
+): Promise<MarkRow[]> => {
   const response = await api.post(`/exam-marks/${examId}`, data);
   return response.data;
 };
@@ -93,18 +100,26 @@ export const updateStudentMark = async (
 };
 
 // Delete student mark
-export const deleteStudentMark = async (examId: string, studentId: string): Promise<void> => {
+export const deleteStudentMark = async (
+  examId: string,
+  studentId: string
+): Promise<void> => {
   await api.delete(`/exam-marks/${examId}/${studentId}`);
 };
 
 // Get student's exam result
-export const getStudentExamResult = async (examId: string, studentId: string): Promise<MarkRow> => {
+export const getStudentExamResult = async (
+  examId: string,
+  studentId: string
+): Promise<MarkRow> => {
   const response = await api.get(`/exam-marks/${examId}/student/${studentId}`);
   return response.data;
 };
 
 // Get all marks for a student across all exams
-export const getStudentAllMarks = async (studentId: string): Promise<MarkRow[]> => {
+export const getStudentAllMarks = async (
+  studentId: string
+): Promise<MarkRow[]> => {
   const response = await api.get(`/exam-marks/student/${studentId}`);
   return response.data;
 };

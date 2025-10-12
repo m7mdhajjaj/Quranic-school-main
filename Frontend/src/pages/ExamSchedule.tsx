@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
 import {
   getAllExams,
   createExam,
@@ -13,11 +19,9 @@ import {
   type Exam,
   type MarkRow,
   type StudentDoc,
-  type ExamAverage
+  type ExamAverage,
 } from "../Api/examApi";
 import { getAllStudents } from "../Api/studentApi";
-
-
 
 // =========================
 // إعدادات API تم نقلها إلى Api/examApi.ts
@@ -30,9 +34,6 @@ import { getAllStudents } from "../Api/studentApi";
 // =========================
 // أدوات مساعدة
 // =========================
-
-
-
 
 const cn = (...cls: Array<string | false | null | undefined>) =>
   cls.filter(Boolean).join(" ");
@@ -50,7 +51,7 @@ const safeExamId = (ex: Exam | null | undefined): string | null => {
 // وظيفة للتعامل مع الأخطاء
 const handleFetchError = (error: unknown, message: string) => {
   console.error(`${message}:`, error);
-  if (typeof error === 'object' && error !== null && 'response' in error) {
+  if (typeof error === "object" && error !== null && "response" in error) {
     const axiosError = error as { response?: { status?: number } };
     if (axiosError.response?.status === 401) {
       // خطأ في المصادقة
@@ -180,6 +181,10 @@ const ExamSchedule: React.FC = () => {
   const [showEditExamModal, setShowEditExamModal] = useState(false);
   const [editExam, setEditExam] = useState<Exam | null>(null);
 
+  // حالات الحلقات للمعلم
+  const [teacherGroups, setTeacherGroups] = useState<string[]>([]);
+  const [selectedGroupForExam, setSelectedGroupForExam] = useState<string>("");
+
   const [showMarkModal, setShowMarkModal] = useState(false);
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
 
@@ -208,6 +213,38 @@ const ExamSchedule: React.FC = () => {
   // مرجع لمنع تعدد الطلبات عند إغلاق وفتح المودال بسرعة
   const markModalAbortRef = useRef<AbortController | null>(null);
 
+  // helper function للحصول على أسماء المعلم المحتملة
+  const getTeacherPossibleNames = useCallback((user: any) => {
+    const firstLast = `${user.firstName} ${user.lastName}`.trim();
+    const firstFatherLast = `${user.firstName} ${user.fatherName || ""} ${
+      user.lastName || ""
+    }`
+      .trim()
+      .replace(/\s+/g, " ");
+    return [firstLast, firstFatherLast, user.firstName].filter(
+      (name) => name.length > 0
+    );
+  }, []);
+
+  // helper function للتحقق من تطابق المعلم
+  const isTeacherMatch = useCallback(
+    (studentTeacher: string, possibleNames: string[]) => {
+      const studentTeacherNormalized = studentTeacher
+        .trim()
+        .replace(/\s+/g, " ")
+        .toLowerCase();
+      return possibleNames.some((possibleName) => {
+        const normalizedPossible = possibleName.toLowerCase();
+        return (
+          studentTeacherNormalized === normalizedPossible ||
+          studentTeacherNormalized.includes(normalizedPossible) ||
+          normalizedPossible.includes(studentTeacherNormalized)
+        );
+      });
+    },
+    []
+  );
+
   // ——— مساعدات API
   const fetchExamAverage = async (examId: string): Promise<number | null> => {
     try {
@@ -223,16 +260,19 @@ const ExamSchedule: React.FC = () => {
     setExamAverages((prev) => ({ ...prev, [examId]: avg }));
   };
 
-  const refreshAllAverages = useMemo(() => async (list: Exam[]) => {
-    const entries = await Promise.all(
-      list.map(async (ex) => {
-        const id = String(ex._id ?? ex.id);
-        const avg = await fetchExamAverage(id);
-        return [id, avg] as const;
-      })
-    );
-    setExamAverages(Object.fromEntries(entries));
-  }, []);
+  const refreshAllAverages = useMemo(
+    () => async (list: Exam[]) => {
+      const entries = await Promise.all(
+        list.map(async (ex) => {
+          const id = String(ex._id ?? ex.id);
+          const avg = await fetchExamAverage(id);
+          return [id, avg] as const;
+        })
+      );
+      setExamAverages(Object.fromEntries(entries));
+    },
+    []
+  );
 
   const fillMarksFromApi = (rows: MarkRow[]) => {
     const obj: Record<string, { mark: string; detail: string }> = {};
@@ -247,8 +287,36 @@ const ExamSchedule: React.FC = () => {
   // ——— CRUD (Exams)
   const handleAddExam = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // التحقق من البيانات قبل الإرسال
+    if (!newExam.name || !newExam.date || !newExam.time) {
+      alert("يرجى ملء جميع الحقول المطلوبة");
+      return;
+    }
+
+    // التحقق من اختيار الحلقة للمعلم
+    if (
+      role === "teacher" &&
+      teacherGroups.length > 0 &&
+      !selectedGroupForExam
+    ) {
+      alert("يرجى اختيار الحلقة");
+      return;
+    }
+
+    console.log("📤 إرسال بيانات الامتحان:", newExam);
+    console.log("📋 الحلقة المختارة:", selectedGroupForExam);
+
     try {
-      const added: Exam = await createExam(newExam);
+      // إضافة الحلقة للمعلم
+      const examData = {
+        ...newExam,
+        group: role === "teacher" ? selectedGroupForExam : undefined,
+      };
+
+      const added: Exam = await createExam(examData);
+      console.log("✅ تم إنشاء الامتحان بنجاح:", added);
+
       setExams((prev) => {
         const next = [...prev, added];
         setExamAverages((p) => ({
@@ -257,10 +325,69 @@ const ExamSchedule: React.FC = () => {
         }));
         return next;
       });
+
+      // إذا كان المعلم هو من أضاف الامتحان، نضيف العلامات فقط لطلاب الحلقة المختارة
+      if (
+        role === "teacher" &&
+        selectedGroupForExam &&
+        teacherGroups.length > 0
+      ) {
+        try {
+          console.log("🔍 جلب طلاب الحلقة:", selectedGroupForExam);
+
+          // جلب جميع الطلاب
+          const allStudentsResponse = await getAllStudents();
+          const allStudents = allStudentsResponse.success
+            ? allStudentsResponse.data || []
+            : [];
+
+          // فلترة الطلاب حسب الحلقة المختارة
+          const groupStudents = allStudents.filter(
+            (student: any) => student.group === selectedGroupForExam
+          );
+
+          console.log(
+            `✅ عدد الطلاب في الحلقة ${selectedGroupForExam}: ${groupStudents.length}`
+          );
+
+          if (groupStudents.length > 0) {
+            // إنشاء سجلات علامات فارغة للطلاب
+            const marksArray = groupStudents.map((student: any) => ({
+              student: student._id,
+              mark: null,
+              detail: "",
+            }));
+
+            const examId = String(added._id ?? added.id);
+            await bulkSaveMarks(examId, { marks: marksArray });
+            console.log(
+              `✅ تم تهيئة الامتحان لـ ${groupStudents.length} طالب من الحلقة`
+            );
+          }
+        } catch (error) {
+          console.error("خطأ في تهيئة علامات الطلاب:", error);
+        }
+      }
+
       setShowAddExamModal(false);
       setNewExam({ name: "", date: "", time: "" });
     } catch (error) {
-      console.error('Error adding exam:', error);
+      console.error("❌ Error adding exam:", error);
+
+      // عرض رسالة خطأ واضحة للمستخدم
+      let errorMessage = "حدث خطأ أثناء إضافة الامتحان";
+
+      if (error && typeof error === "object" && "response" in error) {
+        const axiosError = error as any;
+        if (axiosError.response?.data?.error) {
+          errorMessage = axiosError.response.data.error;
+        } else if (axiosError.response?.status === 400) {
+          errorMessage =
+            "البيانات المدخلة غير صحيحة. تأكد من ملء جميع الحقول بشكل صحيح.";
+        }
+      }
+
+      alert(errorMessage);
     }
   };
 
@@ -276,7 +403,7 @@ const ExamSchedule: React.FC = () => {
       setShowEditExamModal(false);
       setEditExam(null);
     } catch (error) {
-      console.error('Error updating exam:', error);
+      console.error("Error updating exam:", error);
     }
   };
 
@@ -292,7 +419,7 @@ const ExamSchedule: React.FC = () => {
         return rest;
       });
     } catch (error) {
-      console.error('Error deleting exam:', error);
+      console.error("Error deleting exam:", error);
     }
   };
 
@@ -313,7 +440,7 @@ const ExamSchedule: React.FC = () => {
       setSelectedExam(null);
       refreshAverageForExam(examId);
     } catch (error) {
-      console.error('Error saving marks:', error);
+      console.error("Error saving marks:", error);
     }
   };
 
@@ -329,7 +456,7 @@ const ExamSchedule: React.FC = () => {
       setMarks((prev) => ({ ...prev, [studentId]: { mark: "", detail: "" } }));
       refreshAverageForExam(examId);
     } catch (error) {
-      console.error('Error deleting mark:', error);
+      console.error("Error deleting mark:", error);
     }
   };
 
@@ -350,12 +477,45 @@ const ExamSchedule: React.FC = () => {
         // 1) الطلاب
         console.log("Fetching students from API...");
         const studentResponse = await getAllStudents();
-        const sData = studentResponse.success ? studentResponse.data || [] : [];
+        let sData = studentResponse.success ? studentResponse.data || [] : [];
         console.log("Students data received:", sData);
         console.log(
           "Number of students:",
           Array.isArray(sData) ? sData.length : "Not an array"
         );
+
+        // فلترة الطلاب حسب الحلقة إذا كان المستخدم معلم
+        if (role === "teacher" && teacherGroups.length > 0) {
+          try {
+            const userStr = localStorage.getItem("user");
+            if (userStr) {
+              const currentUser = JSON.parse(userStr);
+              const possibleNames = getTeacherPossibleNames(currentUser);
+
+              console.log("🔍 فلترة الطلاب حسب حلقات المعلم:", teacherGroups);
+
+              // فلترة الطلاب الذين ينتمون لحلقات هذا المعلم
+              sData = sData.filter((student: any) => {
+                const studentGroup = student.group;
+                const studentTeacher = student.teacher;
+
+                // التحقق من أن الطالب ينتمي لإحدى حلقات المعلم
+                const inTeacherGroup = teacherGroups.includes(studentGroup);
+
+                // أو التحقق من أن معلم الطالب هو نفس المعلم الحالي
+                const hasTeacher =
+                  studentTeacher &&
+                  isTeacherMatch(studentTeacher, possibleNames);
+
+                return inTeacherGroup || hasTeacher;
+              });
+
+              console.log(`✅ عدد الطلاب بعد الفلترة: ${sData.length}`);
+            }
+          } catch (error) {
+            console.error("خطأ في فلترة طلاب المعلم:", error);
+          }
+        }
 
         if (!ac.signal.aborted) setStudents(Array.isArray(sData) ? sData : []);
 
@@ -376,15 +536,116 @@ const ExamSchedule: React.FC = () => {
     })();
 
     return () => ac.abort();
-  }, [showMarkModal, selectedExam]);
+  }, [showMarkModal, selectedExam, role, teacherGroups.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // جلب حلقات المعلم من Groups API
+  useEffect(() => {
+    const fetchTeacherGroups = async () => {
+      if (role !== "teacher") {
+        setTeacherGroups([]);
+        return;
+      }
+
+      try {
+        const userStr = localStorage.getItem("user");
+        if (!userStr) return;
+
+        const currentUser = JSON.parse(userStr);
+
+        console.log("🔍 جلب حلقات المعلم من Groups API...");
+
+        // جلب الحلقات مباشرة من Groups API
+        const { getAllGroups } = await import("../Api/groupApi");
+        const groupsRes = await getAllGroups();
+
+        if (!groupsRes.success || !Array.isArray(groupsRes.data)) {
+          console.error("❌ فشل في جلب الحلقات");
+          setTeacherGroups([]);
+          return;
+        }
+
+        const possibleNames = getTeacherPossibleNames(currentUser);
+        console.log("📋 أسماء المعلم المحتملة:", possibleNames);
+        console.log("📊 إجمالي الحلقات في النظام:", groupsRes.data.length);
+
+        // فلترة الحلقات التي تخص هذا المعلم
+        const teacherGroupsData = groupsRes.data.filter((group: any) => {
+          if (!group.teacher) {
+            return false;
+          }
+
+          const isMatch = isTeacherMatch(group.teacher, possibleNames);
+          if (isMatch) {
+            console.log(
+              `✅ حلقة مطابقة: ${group.name} - معلمها: ${group.teacher}`
+            );
+          }
+          return isMatch;
+        });
+
+        const groupNames = teacherGroupsData
+          .map((g: any) => g.name)
+          .sort((a: string, b: string) => a.localeCompare(b, "ar"));
+        console.log(`📋 حلقات المعلم النهائية:`, groupNames);
+        setTeacherGroups(groupNames);
+
+        // تحديد أول حلقة تلقائياً للفورم
+        if (groupNames.length > 0 && !selectedGroupForExam) {
+          setSelectedGroupForExam(groupNames[0]);
+        }
+      } catch (error) {
+        console.error("خطأ في جلب حلقات المعلم:", error);
+        setTeacherGroups([]);
+      }
+    };
+
+    fetchTeacherGroups();
+  }, [role]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ——— عند التحميل: جلب الامتحانات + المتوسطات
   useEffect(() => {
     const loadExams = async () => {
       setLoadingExams(true);
       try {
-        const list: Exam[] = await getAllExams();
+        let list: Exam[] = await getAllExams();
         console.log("Fetched exams:", list.length); // لتتبع عدد الامتحانات
+
+        // فلترة الامتحانات للطالب - عرض فقط امتحانات حلقته
+        if (role === "student") {
+          try {
+            const userStr = localStorage.getItem("user");
+            if (userStr) {
+              const currentUser = JSON.parse(userStr);
+              const studentGroup = currentUser.group; // حلقة الطالب
+
+              console.log("👨‍🎓 حلقة الطالب:", studentGroup);
+
+              if (studentGroup) {
+                // عرض فقط الامتحانات التي تنتمي لحلقة الطالب أو الامتحانات بدون حلقة محددة
+                list = list.filter((exam) => {
+                  // إذا لم يكن للامتحان حلقة محددة، يعني للجميع (امتحان إداري)
+                  if (!exam.group) return true;
+
+                  // إذا كان للامتحان حلقة محددة، تحقق من تطابقها مع حلقة الطالب
+                  return exam.group === studentGroup;
+                });
+
+                console.log(
+                  `✅ عدد الامتحانات بعد الفلترة للطالب: ${list.length}`
+                );
+              } else {
+                console.warn(
+                  "⚠️ الطالب ليس لديه حلقة محددة - لن يرى أي امتحانات خاصة بالحلقات"
+                );
+                // عرض فقط الامتحانات بدون حلقة (الامتحانات العامة)
+                list = list.filter((exam) => !exam.group);
+              }
+            }
+          } catch (error) {
+            console.error("خطأ في فلترة امتحانات الطالب:", error);
+          }
+        }
+
         setExams(list);
         await refreshAllAverages(list);
       } catch (error) {
@@ -395,9 +656,9 @@ const ExamSchedule: React.FC = () => {
         setLoadingExams(false);
       }
     };
-    
+
     loadExams();
-  }, [refreshAllAverages]);
+  }, [refreshAllAverages, role]);
 
   // ——— الطالب: جلب علاماته الشخصية
   useEffect(() => {
@@ -532,9 +793,20 @@ const ExamSchedule: React.FC = () => {
 
         {(role === "teacher" || role === "admin") && (
           <div className="flex items-center justify-end gap-2">
-            <PillButton onClick={() => setShowAddExamModal(true)}>
-              إضافة امتحان لكل الطلاب
-            </PillButton>
+            {role === "teacher" && teacherGroups.length === 0 ? (
+              <div className="text-amber-600 text-sm flex items-center gap-2">
+                <span>⚠️</span>
+                <span>لا يوجد لديك حلقات مسجلة</span>
+              </div>
+            ) : (
+              <PillButton
+                onClick={() => setShowAddExamModal(true)}
+                disabled={role === "teacher" && teacherGroups.length === 0}>
+                {role === "teacher"
+                  ? "إضافة امتحان للحلقة"
+                  : "إضافة امتحان لكل الطلاب"}
+              </PillButton>
+            )}
           </div>
         )}
       </div>
@@ -547,6 +819,7 @@ const ExamSchedule: React.FC = () => {
             <thead className="sticky top-0 z-10">
               <tr className="bg-gradient-to-l from-emerald-600 to-emerald-500 text-white">
                 <th className="px-4 py-3 text-sm font-bold">اسم الامتحان</th>
+                <th className="px-4 py-3 text-sm font-bold">الحلقة</th>
                 <th className="px-4 py-3 text-sm font-bold">التاريخ</th>
                 <th className="px-4 py-3 text-sm font-bold">الوقت</th>
                 <th className="px-4 py-3 text-sm font-bold">
@@ -568,6 +841,9 @@ const ExamSchedule: React.FC = () => {
                     <tr key={`sk-${i}`} className="animate-pulse">
                       <td className="px-4 py-4">
                         <div className="h-3.5 w-40 mx-auto rounded bg-emerald-100" />
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="h-3.5 w-32 mx-auto rounded bg-emerald-100" />
                       </td>
                       <td className="px-4 py-4">
                         <div className="h-3.5 w-24 mx-auto rounded bg-emerald-100" />
@@ -592,7 +868,7 @@ const ExamSchedule: React.FC = () => {
               {!loadingExams && filteredSortedExams.length === 0 && (
                 <tr>
                   <td
-                    colSpan={role === "teacher" || role === "admin" ? 5 : 4}
+                    colSpan={role === "teacher" || role === "admin" ? 6 : 5}
                     className="px-6 py-10 text-emerald-700/70">
                     لا توجد امتحانات مطابقة لبحثك.
                   </td>
@@ -613,6 +889,16 @@ const ExamSchedule: React.FC = () => {
                       )}>
                       <td className="px-4 py-3 font-semibold text-emerald-900">
                         {exam.name}
+                      </td>
+                      <td className="px-4 py-3">
+                        {exam.group ? (
+                          <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                            <span>📚</span>
+                            {exam.group}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-emerald-800">
                         {exam.date}
@@ -689,6 +975,14 @@ const ExamSchedule: React.FC = () => {
                       <div className="text-base font-extrabold text-emerald-900">
                         {exam.name}
                       </div>
+                      {exam.group && (
+                        <div className="mt-2">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                            <span>📚</span>
+                            {exam.group}
+                          </span>
+                        </div>
+                      )}
                       <div className="mt-1 text-sm text-emerald-800/80">
                         <span className="ml-2">📅 {exam.date}</span>
                         <span>⏰ {exam.time}</span>
@@ -741,6 +1035,19 @@ const ExamSchedule: React.FC = () => {
         <h3 className="text-2xl font-extrabold mb-6 text-center text-emerald-700 border-b pb-4 tracking-wide">
           إضافة امتحان جديد
         </h3>
+
+        {role === "teacher" && teacherGroups.length > 0 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <div className="flex items-start gap-3">
+              <span className="text-blue-600 text-xl">ℹ️</span>
+              <div className="text-sm text-blue-800">
+                <p className="font-semibold mb-1">ملاحظة:</p>
+                <p>سيتم إضافة هذا الامتحان فقط لطلاب الحلقة المحددة أدناه.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleAddExam} className="space-y-5">
           <Field label="اسم الامتحان" required>
             <input
@@ -779,6 +1086,23 @@ const ExamSchedule: React.FC = () => {
               />
             </Field>
           </div>
+
+          {/* اختيار الحلقة للمعلم */}
+          {role === "teacher" && teacherGroups.length > 0 && (
+            <Field label="اختر الحلقة" required>
+              <select
+                className="w-full border border-emerald-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-lg bg-emerald-50"
+                value={selectedGroupForExam}
+                onChange={(e) => setSelectedGroupForExam(e.target.value)}
+                required>
+                {teacherGroups.map((g) => (
+                  <option key={g} value={g}>
+                    {g}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          )}
 
           <div className="flex justify-between pt-2">
             <PillButton type="submit">حفظ</PillButton>
@@ -849,6 +1173,19 @@ const ExamSchedule: React.FC = () => {
                   />
                 </Field>
               </div>
+
+              {/* عرض الحلقة فقط للمعلم */}
+              {editExam.group && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 text-sm text-blue-800">
+                    <span className="font-semibold">الحلقة:</span>
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-medium">
+                      <span>📚</span>
+                      {editExam.group}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               <div className="flex justify-between pt-2">
                 <PillButton type="submit" variant="warn">
@@ -944,7 +1281,10 @@ const ExamSchedule: React.FC = () => {
                                 });
                                 refreshAverageForExam(examId);
                               } catch (error) {
-                                console.error('Error updating student mark:', error);
+                                console.error(
+                                  "Error updating student mark:",
+                                  error
+                                );
                               }
                             }}>
                             حفظ فردي

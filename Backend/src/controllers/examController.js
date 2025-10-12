@@ -2,10 +2,10 @@
 exports.updateExam = async (req, res) => {
   try {
     const examId = req.params.examId;
-    const { name, date, time } = req.body;
+    const { name, date, time, group } = req.body;
     const updated = await Exam.findByIdAndUpdate(
       examId,
-      { name, date, time },
+      { name, date, time, group },
       { new: true }
     );
     if (!updated) return res.status(404).json({ error: "Exam not found" });
@@ -43,8 +43,8 @@ exports.getExams = async (req, res) => {
 // Add new exam
 exports.addExam = async (req, res) => {
   try {
-    const { name, date, time } = req.body;
-    const exam = new Exam({ name, date, time });
+    const { name, date, time, group } = req.body;
+    const exam = new Exam({ name, date, time, group });
     await exam.save();
     res.status(201).json(exam);
   } catch (err) {
