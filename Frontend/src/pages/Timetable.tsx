@@ -33,9 +33,9 @@ const Timetable = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // حالات الفلتر
-  const [groupFilter, setGroupFilter] = useState<string>("all");
+  // حالات الحلقات
   const [teacherGroups, setTeacherGroups] = useState<string[]>([]);
+  const [selectedGroupForForm, setSelectedGroupForForm] = useState<string>("");
 
   // Fix role comparison issue
   const user = localStorage.getItem("user");
@@ -148,9 +148,9 @@ const Timetable = () => {
         console.log(`📋 حلقات المعلم النهائية:`, groupNames);
         setTeacherGroups(groupNames);
 
-        // تحديد أول حلقة تلقائياً
-        if (groupNames.length > 0 && groupFilter === "all") {
-          setGroupFilter(groupNames[0]);
+        // تحديد أول حلقة تلقائياً للفورم
+        if (groupNames.length > 0 && !selectedGroupForForm) {
+          setSelectedGroupForForm(groupNames[0]);
         }
       } catch (error) {
         console.error("خطأ في جلب حلقات المعلم:", error);
@@ -159,7 +159,7 @@ const Timetable = () => {
     };
 
     fetchTeacherGroups();
-  }, [role]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [role, selectedGroupForForm]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [showForm, setShowForm] = useState(false);
   const [selectedDay, setSelectedDay] = useState(days[0]);
@@ -169,33 +169,6 @@ const Timetable = () => {
   const [editIdx, setEditIdx] = useState<number | null>(null);
 
   const hourIndex = useCallback((h: string) => hours.indexOf(h), [hours]);
-
-  // مجموعات (Groups) موجودة عند الحلقات
-  const groupsAvailable = useMemo(() => {
-    if (role === "teacher") {
-      // للمعلم: استخدم الحلقات المجلبة مسبقاً
-      return teacherGroups;
-    } else {
-      // للأدمن: عرض كل الحلقات مع خيار "الكل"
-      const set = new Set<string>();
-      sessions.forEach((s) => s.note && set.add(s.note));
-      return [
-        "all",
-        ...Array.from(set).sort((a, b) => a.localeCompare(b, "ar")),
-      ];
-    }
-  }, [role, teacherGroups, sessions]);
-
-  // فلترة الحصص بناءً على الحلقة المختارة
-  const filteredSessions = useMemo(() => {
-    if (role === "teacher" && groupFilter !== "all") {
-      return sessions.filter((s) => s.note === groupFilter);
-    }
-    if (role === "admin" && groupFilter !== "all") {
-      return sessions.filter((s) => s.note === groupFilter);
-    }
-    return sessions;
-  }, [sessions, groupFilter, role]);
 
   const handleAddSession = useCallback(
     async (e: React.FormEvent) => {
@@ -207,9 +180,51 @@ const Timetable = () => {
         return;
       }
 
-      // استخدم الحلقة المختارة كـ note إذا كان المعلم قد اختار حلقة، أو استخدم note المدخل
+      // استخدم الحلقة المختارة كـ note
       const sessionNote =
-        role === "teacher" && groupFilter !== "all" ? groupFilter : note;
+        role === "teacher" && selectedGroupForForm
+          ? selectedGroupForForm
+          : note;
+
+      // فحص التعارض مع مواعيد أخرى لنفس المعلم في نفس اليوم
+      const hasConflict = sessions.some((session, idx) => {
+        // تجاهل الموعد الحالي عند التعديل
+        if (editIdx !== null && idx === editIdx) {
+          return false;
+        }
+
+        // تحقق فقط من مواعيد نفس اليوم
+        if (session.day !== selectedDay) {
+          return false;
+        }
+
+        // للمعلم: تحقق من كل مواعيده (كل الحلقات)
+        // للإداري: تحقق فقط إذا كان نفس اسم الحلقة
+        if (role === "admin" && session.note !== sessionNote) {
+          return false;
+        }
+
+        const existingSi = hourIndex(session.startHour);
+        const existingEi = hourIndex(session.endHour);
+
+        // تحقق من التعارض:
+        // 1. الموعد الجديد يبدأ قبل انتهاء موعد موجود
+        // 2. الموعد الجديد ينتهي بعد بداية موعد موجود
+        const overlaps = si < existingEi && ei > existingSi;
+
+        return overlaps;
+      });
+
+      if (hasConflict) {
+        const conflictMsg =
+          role === "teacher"
+            ? `⚠️ تعارض في الموعد!\n\nيوجد موعد آخر لإحدى حلقاتك في نفس الوقت يوم ${selectedDay} من ${startHour} إلى ${endHour}.\n\nيرجى اختيار وقت آخر.`
+            : `⚠️ تعارض في الموعد!\n\nيوجد موعد آخر لنفس الحلقة (${sessionNote}) في نفس الوقت يوم ${selectedDay}.\n\nيرجى اختيار وقت آخر.`;
+
+        alert(conflictMsg);
+        return;
+      }
+
       const payload = {
         day: selectedDay,
         startHour,
@@ -218,7 +233,12 @@ const Timetable = () => {
       };
 
       console.log("📤 إرسال البيانات:", payload);
-      console.log("📋 التفاصيل:", { role, groupFilter, note, sessionNote });
+      console.log("📋 التفاصيل:", {
+        role,
+        selectedGroupForForm,
+        note,
+        sessionNote,
+      });
 
       try {
         if (editIdx !== null && sessions[editIdx]?._id) {
@@ -249,6 +269,7 @@ const Timetable = () => {
 
       setShowForm(false);
       setNote("");
+      setSelectedGroupForForm(teacherGroups[0] || "");
       setEditIdx(null);
     },
     [
@@ -260,7 +281,8 @@ const Timetable = () => {
       sessions,
       hourIndex,
       role,
-      groupFilter,
+      selectedGroupForForm,
+      teacherGroups,
     ]
   );
 
@@ -302,12 +324,12 @@ const Timetable = () => {
     let i = 0;
 
     while (i < hours.length) {
-      const idx = filteredSessions.findIndex(
+      const idx = sessions.findIndex(
         (s) => s.day === day && hourIndex(s.startHour) === i
       );
 
       if (idx !== -1) {
-        const s = filteredSessions[idx];
+        const s = sessions[idx];
         const si = hourIndex(s.startHour);
         const ei = hourIndex(s.endHour);
         const span = Math.max(1, ei - si);
@@ -389,42 +411,13 @@ const Timetable = () => {
         )}
 
         {(role === "teacher" || role === "admin") && (
-          <>
-            {/* شريط الفلترة */}
-            <div className="bg-white rounded-xl shadow-md p-6 mb-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* الفلترة بالحلقة */}
-                <div>
-                  <label className="block text-sm font-medium text-emerald-700 mb-2">
-                    الحلقة:
-                  </label>
-                  <select
-                    value={groupFilter}
-                    onChange={(e) => setGroupFilter(e.target.value)}
-                    className="w-full border border-emerald-300 rounded-lg px-4 py-2 bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                    {groupsAvailable.length === 0 ? (
-                      <option value="all">لا توجد حلقات</option>
-                    ) : (
-                      groupsAvailable.map((g) => (
-                        <option key={g} value={g}>
-                          {g === "all" ? "الكل" : g}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                </div>
-
-                {/* زر إضافة موعد */}
-                <div className="flex items-end">
-                  <button
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-5 rounded-xl shadow-sm hover:shadow transition focus:outline-none focus:ring-2 focus:ring-emerald-300"
-                    onClick={() => setShowForm(true)}>
-                    إضافة موعد حلقة
-                  </button>
-                </div>
-              </div>
-            </div>
-          </>
+          <div className="flex justify-center mb-4">
+            <button
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-5 rounded-xl shadow-sm hover:shadow transition focus:outline-none focus:ring-2 focus:ring-emerald-300"
+              onClick={() => setShowForm(true)}>
+              إضافة موعد حلقة
+            </button>
+          </div>
         )}
 
         {/* بطاقة الجدول */}
@@ -527,30 +520,42 @@ const Timetable = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="block mb-1 font-bold text-emerald-700">
-                  {role === "teacher" && groupFilter !== "all"
-                    ? "اسم الحلقة"
-                    : "ملاحظة"}
-                </label>
-                {role === "teacher" && groupFilter !== "all" ? (
-                  <input
-                    className="w-full border border-emerald-300 rounded-lg px-3 py-2 bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-300"
-                    type="text"
-                    value={groupFilter}
-                    disabled
-                    readOnly
-                  />
-                ) : (
+              {/* اختيار الحلقة للمعلم */}
+              {role === "teacher" && teacherGroups.length > 0 && (
+                <div>
+                  <label className="block mb-1 font-bold text-emerald-700">
+                    اختر الحلقة
+                  </label>
+                  <select
+                    className="w-full border border-emerald-300 rounded-lg px-3 py-2 bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                    value={selectedGroupForForm}
+                    onChange={(e) => setSelectedGroupForForm(e.target.value)}
+                    required>
+                    {teacherGroups.map((g) => (
+                      <option key={g} value={g}>
+                        {g}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* ملاحظة للإداري */}
+              {role === "admin" && (
+                <div>
+                  <label className="block mb-1 font-bold text-emerald-700">
+                    اسم الحلقة
+                  </label>
                   <input
                     className="w-full border border-emerald-300 rounded-lg px-3 py-2 bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-300"
                     type="text"
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
-                    placeholder="مثلاً اسم الحلقة أو ملاحظة…"
+                    placeholder="مثلاً حلقة تثبيت لنجاح..."
+                    required
                   />
-                )}
-              </div>
+                </div>
+              )}
 
               <div className="flex justify-between pt-2">
                 <button
