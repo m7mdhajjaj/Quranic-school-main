@@ -1081,7 +1081,7 @@ const AddStudentForm: React.FC<Props> = ({
                 </h3>
                 <div className="bg-gradient-to-r from-blue-100 to-emerald-100 border-2 border-blue-300 rounded-xl p-4 mb-6 shadow-sm">
                   <p className="text-sm text-blue-800 text-center font-medium">
-                    <strong>📋 تعليمات:</strong> اختر الحلقة المطلوبة أولاً، ثم اختر المعلم المناسب
+                    <strong>📋 تعليمات:</strong> اختر المعلم المناسب أولاً، ثم اختر الحلقة المطلوبة
                   </p>
                 </div>
                 <div className="space-y-6">
