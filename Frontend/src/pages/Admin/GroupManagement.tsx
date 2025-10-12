@@ -30,9 +30,9 @@ import ResponsivePagination from "../../components/Pagination/ResponsivePaginati
 import {
   getAllGroups,
   deleteGroup,
-  // createGroup, // TODO: Will be used in form submission
-  // updateGroup, // TODO: Will be used in edit functionality
-  // getGroupsByTeacher, // Not used - filtering done in frontend
+  // getGroupsByTeacher, // Ready for future API-based filtering
+  // createGroup, // Ready for future form integration
+  // updateGroup, // Ready for future edit functionality
   type Group,
 } from "../../Api/groupApi";
 import { getAllTeachers } from "../../Api/teacherApi";
@@ -65,12 +65,14 @@ const GroupManagement: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Filter & Search States
+  // Enhanced Filter & Search States
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTeacher, setSelectedTeacher] = useState("all");
-  const [capacityRange, setCapacityRange] = useState<[number, number]>([
-    0, 100,
-  ]);
+  const [capacityFilter, setCapacityFilter] = useState("all"); // جديد: تصفية حسب السعة
+  const [statusFilter, setStatusFilter] = useState("all"); // جديد: تصفية حسب الحالة
+  const [occupancyFilter, setOccupancyFilter] = useState("all"); // جديد: تصفية حسب الإشغال
+  const [dayFilter, setDayFilter] = useState("all"); // جديد: تصفية حسب اليوم
+  const [timeFilter, setTimeFilter] = useState("all"); // جديد: تصفية حسب الوقت
   const [showFilters, setShowFilters] = useState(false);
 
   // Sorting States
@@ -87,14 +89,18 @@ const GroupManagement: React.FC = () => {
   // Selected Groups for Bulk Actions
   const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set());
 
-  // Active Filters Count
+  // Enhanced Active Filters Count
   const activeFiltersCount = useMemo(() => {
     let count = 0;
     if (selectedTeacher !== "all") count++;
-    if (capacityRange[0] !== 0 || capacityRange[1] !== 100) count++;
+    if (capacityFilter !== "all") count++;
+    if (statusFilter !== "all") count++;
+    if (occupancyFilter !== "all") count++;
+    if (dayFilter !== "all") count++;
+    if (timeFilter !== "all") count++;
     if (searchTerm) count++;
     return count;
-  }, [selectedTeacher, capacityRange, searchTerm]);
+  }, [selectedTeacher, capacityFilter, statusFilter, occupancyFilter, dayFilter, timeFilter, searchTerm]);
 
   // Fetch all teachers for filter dropdown
   const fetchTeachers = useCallback(async () => {
@@ -262,43 +268,83 @@ const GroupManagement: React.FC = () => {
     }
   };
 
-  // Filter and sort groups (all filtering done in frontend)
+  // Enhanced filtering and sorting with multiple criteria
   const filteredAndSortedGroups = useMemo(() => {
-    console.log("🔍 بدء فلترة الحلقات...", {
+    console.log("🔍 بدء الفلترة المتقدمة...", {
       totalGroups: groups.length,
-      selectedTeacher,
-      searchTerm,
+      activeFilters: {
+        teacher: selectedTeacher,
+        capacity: capacityFilter,
+        status: statusFilter,
+        occupancy: occupancyFilter,
+        day: dayFilter,
+        time: timeFilter,
+        search: searchTerm,
+      }
     });
 
     const filtered = groups.filter((group) => {
+      // 1. البحث النصي المتقدم
       const searchLower = searchTerm.toLowerCase();
-      const matchesSearch =
-        !searchTerm ||
+      const matchesSearch = !searchTerm || 
         (group.name || "").toLowerCase().includes(searchLower) ||
         (group.description || "").toLowerCase().includes(searchLower) ||
         (group.teacher || "").toLowerCase().includes(searchLower) ||
-        (group.schedule || "").toLowerCase().includes(searchLower);
+        (group.schedule || "").toLowerCase().includes(searchLower) ||
+        // البحث في جدول الأوقات
+        (group.timetable && group.timetable.some(session => 
+          session.day.toLowerCase().includes(searchLower) ||
+          session.startHour.toLowerCase().includes(searchLower) ||
+          session.endHour.toLowerCase().includes(searchLower)
+        ));
 
-      const matchesTeacher =
-        selectedTeacher === "all" || group.teacher === selectedTeacher;
+      // 2. فلتر المعلم
+      const matchesTeacher = selectedTeacher === "all" || group.teacher === selectedTeacher;
 
-      const matchesCapacity =
-        (group.capacity || 0) >= capacityRange[0] &&
-        (group.capacity || 0) <= capacityRange[1];
+      // 3. فلتر السعة
+      const matchesCapacity = capacityFilter === "all" || 
+        (capacityFilter === "small" && (group.capacity || 0) <= 15) ||
+        (capacityFilter === "medium" && (group.capacity || 0) > 15 && (group.capacity || 0) <= 25) ||
+        (capacityFilter === "large" && (group.capacity || 0) > 25);
 
-      const matches = matchesSearch && matchesTeacher && matchesCapacity;
+      // 4. فلتر الحالة (نشط/غير نشط)
+      const matchesStatus = statusFilter === "all" ||
+        (statusFilter === "active" && group.isActive) ||
+        (statusFilter === "inactive" && !group.isActive);
 
-      if (!matches && selectedTeacher !== "all") {
-        console.log("❌ حلقة لم تطابق الفلتر:", {
-          name: group.name,
-          teacher: group.teacher,
-          selectedTeacher,
-          matchesTeacher,
-        });
-      }
+      // 5. فلتر الإشغال
+      const occupancyPercentage = group.capacity ? ((group.currentStudents || 0) / group.capacity) * 100 : 0;
+      const matchesOccupancy = occupancyFilter === "all" ||
+        (occupancyFilter === "empty" && (group.currentStudents || 0) === 0) ||
+        (occupancyFilter === "low" && occupancyPercentage > 0 && occupancyPercentage <= 50) ||
+        (occupancyFilter === "medium" && occupancyPercentage > 50 && occupancyPercentage <= 80) ||
+        (occupancyFilter === "high" && occupancyPercentage > 80 && occupancyPercentage < 100) ||
+        (occupancyFilter === "full" && occupancyPercentage >= 100);
 
-      return matches;
-    }); // Sort
+      // 6. فلتر اليوم
+      const matchesDay = dayFilter === "all" ||
+        (group.timetable && group.timetable.some(session => session.day === dayFilter));
+
+      // 7. فلتر الوقت
+      const matchesTime = timeFilter === "all" ||
+        (timeFilter === "morning" && group.timetable && group.timetable.some(session => {
+          const startHour = parseInt(session.startHour.split(':')[0]);
+          return startHour >= 6 && startHour < 12;
+        })) ||
+        (timeFilter === "afternoon" && group.timetable && group.timetable.some(session => {
+          const startHour = parseInt(session.startHour.split(':')[0]);
+          return startHour >= 12 && startHour < 18;
+        })) ||
+        (timeFilter === "evening" && group.timetable && group.timetable.some(session => {
+          const startHour = parseInt(session.startHour.split(':')[0]);
+          return startHour >= 18 && startHour < 24;
+        }));
+
+      return matchesSearch && matchesTeacher && matchesCapacity && 
+             matchesStatus && matchesOccupancy && matchesDay && matchesTime;
+    });
+
+    // الترتيب المحسن
     filtered.sort((a, b) => {
       let compareResult = 0;
 
@@ -313,11 +359,10 @@ const GroupManagement: React.FC = () => {
       return sortOrder === "asc" ? compareResult : -compareResult;
     });
 
-    console.log("✅ نتيجة الفلترة:", {
+    console.log("✅ نتيجة الفلترة المتقدمة:", {
       إجمالي_الحلقات: groups.length,
       الحلقات_المفلترة: filtered.length,
-      المعلم_المختار: selectedTeacher,
-      نص_البحث: searchTerm || "لا يوجد",
+      الفلاتر_النشطة: activeFiltersCount,
     });
 
     return filtered;
@@ -325,9 +370,14 @@ const GroupManagement: React.FC = () => {
     groups,
     searchTerm,
     selectedTeacher,
-    capacityRange,
+    capacityFilter,
+    statusFilter,
+    occupancyFilter,
+    dayFilter,
+    timeFilter,
     sortField,
     sortOrder,
+    activeFiltersCount,
   ]);
 
   // Pagination
@@ -476,11 +526,15 @@ const GroupManagement: React.FC = () => {
     link.click();
   };
 
-  // Reset filters
+  // Enhanced reset filters
   const resetFilters = () => {
     setSearchTerm("");
     setSelectedTeacher("all");
-    setCapacityRange([0, 100]);
+    setCapacityFilter("all");
+    setStatusFilter("all");
+    setOccupancyFilter("all");
+    setDayFilter("all");
+    setTimeFilter("all");
     setCurrentPage(1);
   };
 
@@ -716,7 +770,7 @@ const GroupManagement: React.FC = () => {
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                     <FaFilter className="text-blue-600" />
-                    الفلاتر المتقدمة
+                    الفلاتر المتقدمة والذكية
                   </h3>
                   <button
                     onClick={() => setShowFilters(false)}
@@ -726,7 +780,7 @@ const GroupManagement: React.FC = () => {
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {/* Teacher Filter */}
                   <div className="bg-white p-4 rounded-xl shadow-sm border border-blue-100">
                     <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3">
@@ -735,88 +789,153 @@ const GroupManagement: React.FC = () => {
                     </label>
                     <select
                       value={selectedTeacher}
+                      title="اختيار المعلم للفلترة"
                       onChange={(e) => {
                         setSelectedTeacher(e.target.value);
                         setCurrentPage(1);
                       }}
-                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-gray-50 hover:bg-white">
-                      <option value="all">
-                        جميع المعلمين ({allTeachers.length})
-                      </option>
+                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm">
+                      <option value="all">جميع المعلمين</option>
                       {allTeachers.map((teacher) => (
                         <option key={teacher} value={teacher}>
-                          {teacher}
+                          {teacher} ({groups.filter(g => g.teacher === teacher).length})
                         </option>
                       ))}
                     </select>
                   </div>
 
-                  {/* Capacity Range Filter */}
+                  {/* Capacity Filter */}
                   <div className="bg-white p-4 rounded-xl shadow-sm border border-purple-100">
                     <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3">
                       <FaUsers className="text-purple-600" />
-                      نطاق السعة
+                      حجم السعة
                     </label>
-                    <div className="flex gap-2 items-center justify-between mb-2">
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={capacityRange[0]}
-                        onChange={(e) =>
-                          setCapacityRange([
-                            parseInt(e.target.value) || 0,
-                            capacityRange[1],
-                          ])
-                        }
-                        className="w-20 px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 text-center font-bold"
-                      />
-                      <span className="text-gray-400 font-bold">←</span>
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={capacityRange[1]}
-                        onChange={(e) =>
-                          setCapacityRange([
-                            capacityRange[0],
-                            parseInt(e.target.value) || 100,
-                          ])
-                        }
-                        className="w-20 px-3 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 text-center font-bold"
-                      />
-                    </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={capacityRange[1]}
-                      onChange={(e) =>
-                        setCapacityRange([
-                          capacityRange[0],
-                          parseInt(e.target.value),
-                        ])
-                      }
-                      className="w-full accent-purple-600"
-                    />
-                    <p className="text-xs text-gray-500 text-center mt-1">
-                      من {capacityRange[0]} إلى {capacityRange[1]} طالب
-                    </p>
+                    <select
+                      value={capacityFilter}
+                      title="فلترة الحلقات حسب حجم السعة"
+                      onChange={(e) => {
+                        setCapacityFilter(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm">
+                      <option value="all">جميع الأحجام</option>
+                      <option value="small">صغيرة (≤15 طالب)</option>
+                      <option value="medium">متوسطة (16-25 طالب)</option>
+                      <option value="large">كبيرة (&gt;25 طالب)</option>
+                    </select>
                   </div>
 
-                  {/* Items Per Page Filter */}
+                  {/* Status Filter */}
                   <div className="bg-white p-4 rounded-xl shadow-sm border border-green-100">
                     <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3">
-                      <FaTh className="text-green-600" />
+                      <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      الحالة
+                    </label>
+                    <select
+                      value={statusFilter}
+                      title="فلترة الحلقات حسب حالة النشاط"
+                      onChange={(e) => {
+                        setStatusFilter(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 text-sm">
+                      <option value="all">جميع الحالات</option>
+                      <option value="active">نشطة فقط</option>
+                      <option value="inactive">غير نشطة فقط</option>
+                    </select>
+                  </div>
+
+                  {/* Occupancy Filter */}
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-orange-100">
+                    <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3">
+                      <svg className="w-4 h-4 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      الإشغال
+                    </label>
+                    <select
+                      value={occupancyFilter}
+                      title="فلترة الحلقات حسب مستوى الإشغال"
+                      onChange={(e) => {
+                        setOccupancyFilter(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 text-sm">
+                      <option value="all">جميع مستويات الإشغال</option>
+                      <option value="empty">فارغة (0%)</option>
+                      <option value="low">إشغال قليل (1-50%)</option>
+                      <option value="medium">إشغال متوسط (51-80%)</option>
+                      <option value="high">إشغال عالي (81-99%)</option>
+                      <option value="full">ممتلئة (100%)</option>
+                    </select>
+                  </div>
+
+                  {/* Day Filter */}
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-cyan-100">
+                    <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3">
+                      <svg className="w-4 h-4 text-cyan-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                      </svg>
+                      اليوم
+                    </label>
+                    <select
+                      value={dayFilter}
+                      title="فلترة الحلقات حسب يوم الأسبوع"
+                      onChange={(e) => {
+                        setDayFilter(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-cyan-500 text-sm">
+                      <option value="all">جميع الأيام</option>
+                      <option value="السبت">السبت</option>
+                      <option value="الأحد">الأحد</option>
+                      <option value="الإثنين">الإثنين</option>
+                      <option value="الثلاثاء">الثلاثاء</option>
+                      <option value="الأربعاء">الأربعاء</option>
+                      <option value="الخميس">الخميس</option>
+                      <option value="الجمعة">الجمعة</option>
+                    </select>
+                  </div>
+
+                  {/* Time Filter */}
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-indigo-100">
+                    <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3">
+                      <svg className="w-4 h-4 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                      </svg>
+                      الفترة الزمنية
+                    </label>
+                    <select
+                      value={timeFilter}
+                      title="فلترة الحلقات حسب الفترة الزمنية"
+                      onChange={(e) => {
+                        setTimeFilter(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm">
+                      <option value="all">جميع الأوقات</option>
+                      <option value="morning">صباحي (6ص - 12م)</option>
+                      <option value="afternoon">بعد الظهر (12م - 6م)</option>
+                      <option value="evening">مسائي (6م - 12م)</option>
+                    </select>
+                  </div>
+
+                  {/* Items Per Page */}
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3">
+                      <FaTh className="text-gray-600" />
                       عدد العرض
                     </label>
                     <select
                       value={groupsPerPage}
+                      title="اختيار عدد الحلقات المعروضة في الصفحة الواحدة"
                       onChange={(e) => {
                         setGroupsPerPage(parseInt(e.target.value));
                         setCurrentPage(1);
                       }}
-                      className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all bg-gray-50 hover:bg-white font-medium">
+                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 text-sm">
                       <option value="5">5 حلقات</option>
                       <option value="10">10 حلقات</option>
                       <option value="25">25 حلقة</option>
@@ -824,18 +943,21 @@ const GroupManagement: React.FC = () => {
                       <option value="100">100 حلقة</option>
                     </select>
                   </div>
+                </div>
 
-                  {/* Reset Filters Button */}
-                  <div className="bg-white p-4 rounded-xl shadow-sm border border-red-100 flex items-center justify-center">
+                {/* Quick Actions */}
+                <div className="mt-6 pt-4 border-t border-gray-200 flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <span className="font-medium">الفلاتر النشطة:</span>
+                    <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full font-bold">
+                      {activeFiltersCount}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
                     <button
-                      onClick={() => {
-                        setSelectedTeacher("all");
-                        setCapacityRange([0, 100]);
-                        setSearchTerm("");
-                        setCurrentPage(1);
-                      }}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all shadow-md hover:shadow-lg transform hover:scale-105 font-medium">
-                      <FaSync className="w-4 h-4" />
+                      onClick={resetFilters}
+                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all text-sm font-medium">
+                      <FaSync className="w-4 h-4 inline ml-2" />
                       إعادة تعيين
                     </button>
                   </div>
@@ -1100,6 +1222,8 @@ const GroupManagement: React.FC = () => {
                     <th className="px-6 py-4 text-right">
                       <input
                         type="checkbox"
+                        title="تحديد جميع الحلقات"
+                        aria-label="تحديد جميع الحلقات"
                         checked={
                           selectedGroups.size === currentGroups.length &&
                           currentGroups.length > 0
@@ -1181,6 +1305,8 @@ const GroupManagement: React.FC = () => {
                         <td className="px-6 py-4">
                           <input
                             type="checkbox"
+                            title={`تحديد حلقة ${group.name}`}
+                            aria-label={`تحديد حلقة ${group.name}`}
                             checked={selectedGroups.has(group._id || "")}
                             onChange={() =>
                               toggleGroupSelection(group._id || "")
