@@ -36,7 +36,6 @@ import {
 import type { TeacherFormData } from '../../Validation/teacherValidation';
 import EnhancedTeacherForm from '../../components/Forms/AddTeacherForm';
 import ResponsivePagination from '../../components/Pagination/ResponsivePagination';
-import "../../styles/sweetalert.css";
 import { showCenteredSwal, showSuccessMessage, showErrorMessage } from "../../utils/sweetalertUtils";
 
 type SortField = 'teacherId' | 'firstName' | 'age' | 'email';

@@ -6,7 +6,6 @@ import { useSocket } from "../../hooks/useSocket";
 import AddStudentForm from "../../components/Forms/AddStudentForm";
 import AddTeacherForm from "../../components/Forms/AddTeacherForm";
 import AddGroupForm from "../../components/Forms/AddGroupForm";
-import "../../styles/dashboard.css";
 
 interface StatCardProps {
   icon: React.ReactNode;

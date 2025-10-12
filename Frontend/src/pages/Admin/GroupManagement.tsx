@@ -37,7 +37,6 @@ import {
 } from "../../Api/groupApi";
 import { getAllTeachers } from "../../Api/teacherApi";
 import { type GroupFormData } from "../../Validation/groupValidation";
-import "../../styles/sweetalert.css";
 import {
   showCenteredSwal,
   showSuccessMessage,

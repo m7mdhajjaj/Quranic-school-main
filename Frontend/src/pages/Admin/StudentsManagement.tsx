@@ -34,7 +34,6 @@ import { getAllGroups } from '../../Api/groupApi';
 import AddStudentFormWithYup from '../../components/Forms/AddStudentForm';
 import ResponsivePagination from '../../components/Pagination/ResponsivePagination';
 import Swal from 'sweetalert2';
-import '../../styles/sweetalert.css';
 import {
   showSuccessMessage,
   showWarningMessage,
