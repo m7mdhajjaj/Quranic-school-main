@@ -1,44 +1,43 @@
-import Swal from 'sweetalert2';
-import type { SweetAlertOptions } from 'sweetalert2';
+import Swal from "sweetalert2";
+import type { SweetAlertOptions } from "sweetalert2";
 
-// دالة لإعداد SweetAlert بموضع ثابت في الوسط وخلفية خفيفة
+// دالة لإعداد SweetAlert بموضع ثابت في الوسط وخلفية خفيفة - باستخدام Tailwind فقط
 export const showCenteredSwal = (options: SweetAlertOptions) => {
   return Swal.fire({
     ...options,
-    position: 'center', // تثبيت الرسالة في الوسط
-    backdrop: 'rgba(0, 0, 0, 0.2)', // تقليل شدة الخلفية المضببة
+    position: "center",
+    backdrop: "rgba(0, 0, 0, 0.2)",
     showClass: {
-      popup: 'swal2-noanimation', // إلغاء الحركة
-      backdrop: 'swal2-noanimation'
+      popup: "", // بدون animation
+      backdrop: "",
     },
     hideClass: {
-      popup: '', // إلغاء حركة الإخفاء
-      backdrop: ''
+      popup: "",
+      backdrop: "",
     },
     customClass: {
-      popup: `swal2-center-fixed ${options.customClass?.popup || ''}`,
-      ...options.customClass
+      popup: `!fixed !top-1/2 !left-1/2 !-translate-x-1/2 !-translate-y-1/2 !m-0 !rounded-xl !shadow-2xl ${
+        options.customClass?.popup || ""
+      }`,
+      container: "!z-[10000]",
+      ...options.customClass,
     },
     didOpen: () => {
       const popup = Swal.getPopup();
       if (popup) {
-        popup.style.position = 'fixed';
-        popup.style.top = '50%';
-        popup.style.left = '50%';
-        popup.style.transform = 'translate(-50%, -50%)';
-        popup.style.zIndex = '10000';
-        popup.style.margin = '0';
+        // إضافة Tailwind classes مباشرة
+        popup.style.position = "fixed";
+        popup.style.top = "50%";
+        popup.style.left = "50%";
+        popup.style.transform = "translate(-50%, -50%)";
+        popup.style.margin = "0";
       }
-      
-      // تخصيص الخلفية
-      const backdrop = document.querySelector('.swal2-backdrop') as HTMLElement;
+
+      const backdrop = document.querySelector(".swal2-backdrop") as HTMLElement;
       if (backdrop) {
-        backdrop.style.backgroundColor = 'rgba(0, 0, 0, 0.2)';
-        backdrop.style.setProperty('-webkit-backdrop-filter', 'blur(2px)');
-        backdrop.style.backdropFilter = 'blur(2px)';
+        backdrop.style.backdropFilter = "blur(2px)";
       }
-      
-      // استدعاء didOpen الأصلية إن وجدت
+
       if (options.didOpen) {
         options.didOpen(Swal.getPopup()!);
       }
@@ -46,70 +45,89 @@ export const showCenteredSwal = (options: SweetAlertOptions) => {
   });
 };
 
-// دالة لرسالة النجاح المخصصة
-export const showSuccessMessage = (title: string, message: string, studentName?: string) => {
+// دالة لرسالة النجاح المخصصة - Tailwind only
+export const showSuccessMessage = (
+  title: string,
+  message: string,
+  studentName?: string
+) => {
   return showCenteredSwal({
     title: title,
     html: `
-      <div class="text-center py-4 success-animation">
+      <div class="text-center py-4">
         <div class="mx-auto w-24 h-24 bg-gradient-to-br from-green-100 to-emerald-200 rounded-full flex items-center justify-center mb-6 shadow-lg">
           <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
           </svg>
         </div>
         <h3 class="text-xl font-bold text-gray-800 mb-3">${message}</h3>
-        ${studentName ? `
+        ${
+          studentName
+            ? `
           <div class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-full font-semibold text-lg shadow-md">
             <span class="mr-2">✨</span>
             <span>${studentName}</span>
             <span class="mr-2">✨</span>
           </div>
-        ` : ''}
+        `
+            : ""
+        }
         <p class="text-gray-600 mt-4 font-medium">تم تحديث قاعدة البيانات بنجاح</p>
       </div>
     `,
-    icon: 'success',
+    icon: "success",
     timer: 4000,
     timerProgressBar: true,
     showConfirmButton: false,
     allowOutsideClick: false,
     customClass: {
-      popup: 'swal2-success-modal rtl-popup',
-      title: 'rtl-title',
-      htmlContainer: 'rtl-content',
+      popup: "rtl:text-right",
+      title: "text-center",
+      htmlContainer: "text-center",
+      timerProgressBar: "!bg-green-500",
     },
   });
 };
 
-// دالة لرسالة الخطأ المخصصة
+// دالة لرسالة الخطأ المخصصة - Tailwind only
 export const showErrorMessage = (title: string, message: string) => {
   return showCenteredSwal({
     title: title,
     html: `
       <div class="text-center py-4">
-        <div class="mx-auto w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-4">
-          <svg class="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+        <div class="mx-auto w-24 h-24 bg-gradient-to-br from-red-100 to-rose-200 rounded-full flex items-center justify-center mb-6 shadow-lg animate-pulse">
+          <svg class="w-12 h-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
           </svg>
         </div>
-        <p class="text-lg font-semibold text-gray-800 mb-2">${title}</p>
-        <p class="text-sm text-red-600">${message}</p>
+        <h3 class="text-xl font-bold text-gray-800 mb-3">${message}</h3>
+        <div class="bg-red-50 border-r-4 border-red-500 rounded-lg p-4 mt-4">
+          <div class="flex items-center justify-center gap-3">
+            <svg class="w-6 h-6 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+            <p class="text-sm text-red-700 font-medium">يرجى المحاولة مرة أخرى أو التواصل مع الدعم الفني</p>
+          </div>
+        </div>
       </div>
     `,
-    icon: 'error',
-    timer: 4000,
+    icon: "error",
+    timer: 5000,
     timerProgressBar: true,
     showConfirmButton: true,
-    confirmButtonText: 'حسناً',
+    confirmButtonText: "✓ حسناً",
     customClass: {
-      popup: 'rtl-popup',
-      title: 'rtl-title',
-      confirmButton: 'rtl-button',
+      popup: "rtl:text-right !rounded-2xl",
+      title: "text-center !text-2xl !font-bold !text-gray-800",
+      htmlContainer: "text-center",
+      confirmButton:
+        "!bg-gradient-to-r !from-red-600 !to-rose-700 hover:!from-red-700 hover:!to-rose-800 !text-white !font-bold !px-8 !py-3 !rounded-xl !shadow-lg hover:!shadow-xl !transition-all !duration-200",
+      timerProgressBar: "!bg-red-500",
     },
   });
 };
 
-// دالة لرسالة التحذير المخصصة
+// دالة لرسالة التحذير المخصصة - Tailwind only
 export const showWarningMessage = (title: string, message: string) => {
   return showCenteredSwal({
     title: title,
@@ -124,15 +142,17 @@ export const showWarningMessage = (title: string, message: string) => {
         <p class="text-sm text-orange-600">${message}</p>
       </div>
     `,
-    icon: 'warning',
+    icon: "warning",
     timer: 4000,
     timerProgressBar: true,
     showConfirmButton: true,
-    confirmButtonText: 'حسناً',
+    confirmButtonText: "حسناً",
     customClass: {
-      popup: 'rtl-popup',
-      title: 'rtl-title',
-      confirmButton: 'rtl-button',
+      popup: "rtl:text-right",
+      title: "text-center",
+      confirmButton:
+        "!bg-orange-600 hover:!bg-orange-700 !text-white !font-semibold !px-6 !py-2 !rounded-lg !transition-colors",
+      timerProgressBar: "!bg-orange-500",
     },
   });
 };
