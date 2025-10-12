@@ -55,7 +55,35 @@ const Timetable = () => {
       setLoading(true);
       setError(null);
       const data = await getAllSessions();
-      setSessions(Array.isArray(data) ? data : []);
+      let filteredData = Array.isArray(data) ? data : [];
+
+      // للطالب: عرض مواعيد حلقته فقط
+      if (role === "student" && user) {
+        try {
+          const currentUser = JSON.parse(user);
+          const studentGroup = currentUser.group; // اسم الحلقة الخاصة بالطالب
+
+          console.log("👨‍🎓 طالب - حلقة الطالب:", studentGroup);
+
+          if (studentGroup) {
+            filteredData = filteredData.filter((session) => {
+              const match = session.note === studentGroup;
+              if (match) {
+                console.log("✅ موعد مطابق:", session);
+              }
+              return match;
+            });
+            console.log(`📋 عدد المواعيد للطالب: ${filteredData.length}`);
+          } else {
+            console.warn("⚠️ الطالب ليس لديه حلقة محددة");
+            filteredData = []; // إذا لم يكن للطالب حلقة، لا يعرض أي مواعيد
+          }
+        } catch (e) {
+          console.error("خطأ في تحليل بيانات المستخدم:", e);
+        }
+      }
+
+      setSessions(filteredData);
     } catch (error) {
       console.error("Error fetching sessions:", error);
       setError("حدث خطأ في تحميل الحصص");
@@ -63,7 +91,7 @@ const Timetable = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [role, user]);
 
   useEffect(() => {
     fetchSessions();
@@ -223,10 +251,9 @@ const Timetable = () => {
       });
 
       if (hasConflict) {
-        const conflictTitle = role === "teacher" 
-          ? "تعارض في مواعيد الحلقات!" 
-          : "تعارض في الموعد!";
-        
+        const conflictTitle =
+          role === "teacher" ? "تعارض في مواعيد الحلقات!" : "تعارض في الموعد!";
+
         const conflictMsg =
           role === "teacher"
             ? `يوجد موعد آخر لإحدى حلقاتك في نفس الوقت يوم ${selectedDay} من ${startHour} إلى ${endHour}.<br><br>يرجى اختيار وقت آخر.`
@@ -297,7 +324,7 @@ const Timetable = () => {
           error?.response?.data?.message ||
           error?.message ||
           "حدث خطأ أثناء حفظ الحلقة";
-        
+
         await Swal.fire({
           icon: "error",
           title: "حدث خطأ!",
@@ -332,7 +359,11 @@ const Timetable = () => {
       const session = sessions[idx];
       const result = await Swal.fire({
         title: "تأكيد الحذف",
-        html: `هل أنت متأكد من حذف موعد <strong>${session.note || "الحلقة"}</strong>؟<br>يوم ${session.day} من ${session.startHour} إلى ${session.endHour}`,
+        html: `هل أنت متأكد من حذف موعد <strong>${
+          session.note || "الحلقة"
+        }</strong>؟<br>يوم ${session.day} من ${session.startHour} إلى ${
+          session.endHour
+        }`,
         icon: "warning",
         showCancelButton: true,
         confirmButtonColor: "#ef4444",
