@@ -121,18 +121,18 @@ const StudentsManagement: React.FC = () => {
           ).toFixed(1)
         : 0;
 
+    // حساب الطلاب الذين لديهم حلقات وبدون حلقات
+    const withGroupCount = students.filter((s) => s.group && s.group.trim() !== '').length;
+    const withoutGroupCount = students.length - withGroupCount;
+
     // Use API stats if available, otherwise calculate from local data
     if (apiStats) {
       return {
         total: apiStats.totalStudents || students.length,
         male: apiStats.maleStudents || maleCount,
         female: apiStats.femaleStudents || femaleCount,
-        active:
-          apiStats.activeStudents ||
-          students.filter((s) => s.isActive !== false).length,
-        inactive:
-          apiStats.totalStudents - apiStats.activeStudents ||
-          students.filter((s) => s.isActive === false).length,
+        active: withGroupCount, // الطلاب الذين لديهم حلقات
+        inactive: withoutGroupCount, // الطلاب بدون حلقات
         avgAge: avgAge, // Calculate from local data as API doesn't provide this
       };
     }
@@ -141,8 +141,8 @@ const StudentsManagement: React.FC = () => {
       total: students.length,
       male: maleCount,
       female: femaleCount,
-      active: students.filter((s) => s.isActive !== false).length,
-      inactive: students.filter((s) => s.isActive === false).length,
+      active: withGroupCount, // الطلاب الذين لديهم حلقات
+      inactive: withoutGroupCount, // الطلاب بدون حلقات
       avgAge,
     };
   }, [students, apiStats]);
@@ -245,10 +245,6 @@ const StudentsManagement: React.FC = () => {
               (s) => s._id === event.student._id
             );
             if (existingStudent) return prevStudents;
-            showSuccessMessage(
-              '🎉 طالب جديد - تحديث مباشر',
-              `تم إضافة الطالب ${event.student.firstName} ${event.student.lastName}`
-            );
             return [...prevStudents, event.student];
           });
           break;
@@ -429,29 +425,22 @@ const StudentsManagement: React.FC = () => {
       : 'الطالب';
 
     const result = await showCenteredSwal({
-      title: 'تأكيد حذف الطالب 🛡️',
-      html: `
-        <div class="text-center">
-          <div class="mb-4">
-            <div class="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-              <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-              </svg>
-            </div>
-          </div>
-          <p class="text-gray-600 mb-2">هل أنت متأكد من حذف:</p>
-          <p class="font-bold text-lg text-red-600">${studentName}</p>
-          <p class="text-sm text-gray-500 mt-2">هذه العملية لا يمكن التراجع عنها</p>
-        </div>
-      `,
-      icon: 'warning',
+      title: 'حذف الطالب',
+      text: `هل تريد حذف "${studentName}" نهائياً؟`,
+      icon: 'question',
       showCancelButton: true,
-      confirmButtonColor: '#dc2626',
-      cancelButtonColor: '#6b7280',
-      confirmButtonText: '🗑️ نعم، احذف',
-      cancelButtonText: '❌ إلغاء',
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'حذف',
+      cancelButtonText: 'إلغاء',
       reverseButtons: true,
       focusCancel: true,
+      customClass: {
+        popup: 'rounded-2xl shadow-2xl',
+        title: 'text-xl font-semibold text-gray-800',
+        confirmButton: 'rounded-lg px-6 py-2 font-medium',
+        cancelButton: 'rounded-lg px-6 py-2 font-medium'
+      }
     });
 
     if (result.isConfirmed) {
@@ -508,11 +497,12 @@ const StudentsManagement: React.FC = () => {
       setCurrentPage(1);
 
       // عرض رسالة النجاح
-      await showSuccessMessage(
-        isEditMode ? '✨ تم التحديث بنجاح' : '🎉 مرحباً بالطالب الجديد',
-        isEditMode ? 'تم تحديث بيانات الطالب' : 'تم إضافة الطالب',
-        `${studentData?.firstName || 'الطالب'} ${studentData?.lastName || ''}`
-      );
+      if (!isEditMode) {
+        await showSuccessMessage(
+          'مرحباً بالطالب الجديد!',
+          `أهلاً وسهلاً! تم إضافة ${studentData?.firstName || 'الطالب الجديد'} إلى المدرسة بنجاح`
+        );
+      }
     } catch (error: unknown) {
       console.error('❌ خطأ في معالجة نجاح إضافة الطالب:', error);
 
@@ -577,29 +567,22 @@ const StudentsManagement: React.FC = () => {
     if (selectedStudents.size === 0) return;
 
     const result = await showCenteredSwal({
-      title: `حذف ${selectedStudents.size} طالب 🗑️`,
-      html: `
-        <div class="text-center">
-          <div class="mb-4">
-            <div class="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-              <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-              </svg>
-            </div>
-          </div>
-          <p class="text-gray-600 mb-2">هل أنت متأكد من حذف:</p>
-          <p class="font-bold text-lg text-red-600">${selectedStudents.size} طالب محدد</p>
-          <p class="text-sm text-gray-500 mt-2">هذه العملية لا يمكن التراجع عنها</p>
-        </div>
-      `,
-      icon: 'warning',
+      title: 'حذف متعدد',
+      text: `هل تريد حذف ${selectedStudents.size} طالب نهائياً؟`,
+      icon: 'question',
       showCancelButton: true,
-      confirmButtonColor: '#dc2626',
-      cancelButtonColor: '#6b7280',
-      confirmButtonText: '🗑️ نعم، احذف الكل',
-      cancelButtonText: '❌ إلغاء',
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'حذف الكل',
+      cancelButtonText: 'إلغاء',
       reverseButtons: true,
       focusCancel: true,
+      customClass: {
+        popup: 'rounded-2xl shadow-2xl',
+        title: 'text-xl font-semibold text-gray-800',
+        confirmButton: 'rounded-lg px-6 py-2 font-medium',
+        cancelButton: 'rounded-lg px-6 py-2 font-medium'
+      }
     });
 
     if (result.isConfirmed) {
@@ -1031,13 +1014,13 @@ const StudentsManagement: React.FC = () => {
                 color: 'pink',
               },
               {
-                label: 'نشطين',
+                label: 'لديهم حلقات',
                 value: stats.active,
                 icon: FaUserGraduate,
                 color: 'emerald',
               },
               {
-                label: 'غير نشطين',
+                label: 'بلا حلقات',
                 value: stats.inactive,
                 icon: FaUserGraduate,
                 color: 'red',
@@ -1242,17 +1225,47 @@ const StudentsManagement: React.FC = () => {
 
                   {/* Teacher & Group */}
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 bg-indigo-50 rounded-lg">
+                    <div className={`p-3 rounded-lg ${
+                      student.teacher && student.teacher.trim() !== '' && student.teacher !== 'غير محدد'
+                        ? 'bg-blue-50 border border-blue-200' 
+                        : 'bg-gray-50 border border-gray-200'
+                    }`}>
                       <p className="text-xs text-gray-500 mb-1">المعلم</p>
-                      <p className="text-sm font-bold text-indigo-700 truncate">
-                        {student.teacher}
-                      </p>
+                      <div className="flex items-center gap-1">
+                        <span className={`w-2 h-2 rounded-full ${
+                          student.teacher && student.teacher.trim() !== '' && student.teacher !== 'غير محدد'
+                            ? 'bg-blue-500' 
+                            : 'bg-gray-500'
+                        }`}></span>
+                        <p className={`text-sm font-bold truncate ${
+                          student.teacher && student.teacher.trim() !== '' && student.teacher !== 'غير محدد'
+                            ? 'text-blue-700' 
+                            : 'text-gray-700'
+                        }`}>
+                          {student.teacher || 'غير محدد'}
+                        </p>
+                      </div>
                     </div>
-                    <div className="p-3 bg-violet-50 rounded-lg">
+                    <div className={`p-3 rounded-lg ${
+                      student.group && student.group.trim() !== '' && student.group !== 'غير محدد'
+                        ? 'bg-green-50 border border-green-200' 
+                        : 'bg-red-50 border border-red-200'
+                    }`}>
                       <p className="text-xs text-gray-500 mb-1">الحلقة</p>
-                      <p className="text-sm font-bold text-violet-700 truncate">
-                        {student.group}
-                      </p>
+                      <div className="flex items-center gap-1">
+                        <span className={`w-2 h-2 rounded-full ${
+                          student.group && student.group.trim() !== '' && student.group !== 'غير محدد'
+                            ? 'bg-green-500' 
+                            : 'bg-red-500'
+                        }`}></span>
+                        <p className={`text-sm font-bold truncate ${
+                          student.group && student.group.trim() !== '' && student.group !== 'غير محدد'
+                            ? 'text-green-700' 
+                            : 'text-red-700'
+                        }`}>
+                          {student.group || 'غير محدد'}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1401,7 +1414,22 @@ const StudentsManagement: React.FC = () => {
                   {currentStudents.map((student) => (
                     <tr
                       key={student._id}
-                      className="hover:bg-blue-50 transition-colors"
+                      className={`transition-colors ${
+                        (() => {
+                          const hasGroup = student.group && student.group.trim() !== '' && student.group !== 'غير محدد';
+                          const hasTeacher = student.teacher && student.teacher.trim() !== '' && student.teacher !== 'غير محدد';
+                          
+                          if (hasGroup && hasTeacher) {
+                            return 'hover:bg-green-50 bg-green-25 border-l-3 border-l-green-300'; // لديه حلقة ومعلم - أخضر شفاف أكثر
+                          } else if (hasGroup) {
+                            return 'hover:bg-green-50 bg-green-25 border-l-2 border-l-green-400'; // لديه حلقة فقط - أخضر فاتح
+                          } else if (hasTeacher) {
+                            return 'hover:bg-blue-50 bg-blue-25 border-l-2 border-l-blue-400'; // لديه معلم فقط - أزرق فاتح
+                          } else {
+                            return 'hover:bg-red-50 bg-red-25 border-l-2 border-l-red-400'; // لا يوجد حلقة ولا معلم - أحمر
+                          }
+                        })()
+                      }`}
                     >
                       <td className="px-4 py-4 text-center">
                         <input
@@ -1454,12 +1482,32 @@ const StudentsManagement: React.FC = () => {
                           {student.age}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {student.teacher}
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          student.teacher && student.teacher.trim() !== '' && student.teacher !== 'غير محدد'
+                            ? 'bg-blue-100 text-blue-800' // لديه معلم
+                            : 'bg-gray-100 text-gray-800'  // بدون معلم
+                        }`}>
+                          <span className={`w-2 h-2 rounded-full ${
+                            student.teacher && student.teacher.trim() !== '' && student.teacher !== 'غير محدد'
+                              ? 'bg-blue-500' // نقطة زرقاء
+                              : 'bg-gray-500' // نقطة رمادية
+                          }`}></span>
+                          {student.teacher || 'غير محدد'}
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                          {student.group}
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          student.group && student.group.trim() !== '' && student.group !== 'غير محدد'
+                            ? 'bg-green-100 text-green-800' // لديه حلقة
+                            : 'bg-red-100 text-red-800'     // بدون حلقة
+                        }`}>
+                          <span className={`w-2 h-2 rounded-full ${
+                            student.group && student.group.trim() !== '' && student.group !== 'غير محدد'
+                              ? 'bg-green-500' // نقطة خضراء
+                              : 'bg-red-500'   // نقطة حمراء
+                          }`}></span>
+                          {student.group || 'غير محدد'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
