@@ -1364,189 +1364,253 @@ const GroupManagement: React.FC = () => {
         )}
         {/* Grid View */}
         {!isLoading && !error && viewMode === "grid" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-6">
             {currentGroups.length === 0 ? (
-              <div className="col-span-full bg-white rounded-2xl shadow-xl p-16 text-center">
-                <FaUsers className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 font-medium">لا توجد حلقات</p>
+              <div className="col-span-full bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl shadow-xl p-16 text-center border-2 border-dashed border-gray-300">
+                <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <FaUsers className="w-12 h-12 text-gray-400" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-600 mb-2">لا توجد حلقات</h3>
+                <p className="text-gray-500">ابدأ بإضافة حلقة جديدة لتظهر هنا</p>
               </div>
             ) : (
               currentGroups.map((group) => (
                 <div
                   key={group._id}
-                  className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200 transform hover:-translate-y-1">
-                  {/* Card Header with Gradient */}
-                  <div className="relative bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-700 p-6 text-center">
-                    {/* Group Icon */}
-                    <div className="relative inline-block mb-4">
-                      <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-xl ring-4 ring-white/30">
-                        <FaUsers className="w-12 h-12 text-emerald-600" />
+                  className="group bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border-2 border-gray-100 hover:border-blue-300 transform hover:-translate-y-2 hover:scale-105">
+                  
+                  {/* Card Header - Islamic Design */}
+                  <div className="relative bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800 p-6">
+                    {/* Decorative Pattern */}
+                    <div className="absolute inset-0 opacity-10">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full -translate-y-16 translate-x-16"></div>
+                      <div className="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full translate-y-12 -translate-x-12"></div>
+                    </div>
+                    
+                    {/* Status Badge */}
+                    <div className="absolute top-4 right-4">
+                      <span className={`px-3 py-1.5 rounded-full text-xs font-bold shadow-lg ${
+                        group.isFull
+                          ? "bg-red-500 text-white"
+                          : (group.capacityPercentage || 0) >= 80
+                          ? "bg-yellow-500 text-white"
+                          : "bg-green-500 text-white"
+                      }`}>
+                        {group.isFull ? "ممتلئة" : (group.capacityPercentage || 0) >= 80 ? "شبه ممتلئة" : "متاحة"}
+                      </span>
+                    </div>
+
+                    {/* Main Icon */}
+                    <div className="text-center relative z-10">
+                      <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-2xl shadow-xl mb-4">
+                        <FaUsers className="w-10 h-10 text-blue-600" />
                       </div>
-                      {/* Capacity Badge */}
-                      <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-white px-3 py-1 rounded-full shadow-lg">
-                        <span className="text-emerald-600 font-bold text-sm">
+                      
+                      {/* Group Name */}
+                      <h3 className="text-white text-xl font-bold mb-2 drop-shadow-lg">
+                        {group.name}
+                      </h3>
+                      
+                      {/* Capacity Info */}
+                      <div className="flex items-center justify-center gap-2 text-white/90 text-sm">
+                        <span>السعة:</span>
+                        <span className="bg-white/20 px-2 py-1 rounded-full font-semibold">
                           {group.capacity} طالب
                         </span>
                       </div>
                     </div>
-
-                    {/* Status & Fullness Badges */}
-                    <div className="absolute top-4 right-4 flex gap-2">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-bold ${
-                          group.isFull
-                            ? "bg-red-100 text-red-800"
-                            : (group.capacityPercentage || 0) >= 80
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-green-100 text-green-800"
-                        }`}>
-                        {group.isFull
-                          ? "ممتلئة"
-                          : (group.capacityPercentage || 0) >= 80
-                          ? "شبه ممتلئة"
-                          : "متاحة"}
-                      </span>
-                    </div>
-
-                    {/* Group Name */}
-                    <h3 className="text-white text-xl font-bold mb-1 drop-shadow-lg">
-                      {group.name}
-                    </h3>
-                    {group.description && (
-                      <p className="text-teal-100 text-sm drop-shadow line-clamp-2">
-                        {group.description}
-                      </p>
-                    )}
                   </div>
 
                   {/* Card Body */}
-                  <div className="p-6 space-y-4">
-                    {/* Teacher */}
-                    <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <FaChalkboardTeacher className="w-5 h-5 text-blue-600" />
+                  <div className="p-6 space-y-5">
+                    {/* Teacher Section */}
+                    <div className={`flex items-center gap-4 p-4 rounded-2xl ${
+                      group.teacher === "غير محدد" 
+                        ? "bg-gray-50 border-2 border-gray-200 border-dashed" 
+                        : "bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200"
+                    }`}>
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                        group.teacher === "غير محدد" 
+                          ? "bg-gray-200" 
+                          : "bg-gradient-to-br from-blue-500 to-indigo-600"
+                      }`}>
+                        <FaChalkboardTeacher className={`w-6 h-6 ${
+                          group.teacher === "غير محدد" ? "text-gray-500" : "text-white"
+                        }`} />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-gray-500">المعلم</p>
-                        <p className="text-sm font-bold text-blue-700 truncate">
+                      <div className="flex-1">
+                        <p className="text-xs font-semibold text-gray-500 mb-1">المعلم المسؤول</p>
+                        <p className={`font-bold text-lg ${
+                          group.teacher === "غير محدد" 
+                            ? "text-gray-600" 
+                            : "text-blue-700"
+                        }`}>
                           {group.teacher}
                         </p>
                       </div>
                     </div>
 
-                    {/* Students Count with Progress Bar */}
-                    <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg">
-                      <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <FaUserFriends className="w-5 h-5 text-purple-600" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <p className="text-xs text-gray-500">
-                            الطلاب المشتركين
-                          </p>
-                          <p className="text-sm font-bold text-purple-700">
-                            {group.currentStudents || 0} / {group.capacity}
-                          </p>
+                    {/* Students Progress */}
+                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-2xl border border-purple-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center">
+                            <FaUserFriends className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-gray-600">الطلاب المسجلين</p>
+                            <p className="text-lg font-bold text-purple-700">
+                              {group.currentStudents || 0} / {group.capacity}
+                            </p>
+                          </div>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
-                          <div
-                            className={`h-2.5 rounded-full transition-all duration-500 ${
-                              group.isFull
-                                ? "bg-gradient-to-r from-red-500 to-red-600"
-                                : (group.capacityPercentage || 0) >= 80
-                                ? "bg-gradient-to-r from-yellow-500 to-orange-500"
-                                : "bg-gradient-to-r from-green-500 to-emerald-500"
-                            }`}
-                            style={{
-                              width: `${group.capacityPercentage || 0}%`,
-                            }}></div>
+                        <div className="text-right">
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                            (group.currentStudents || 0) === 0 
+                              ? "bg-gray-100 text-gray-600" 
+                              : group.isFull 
+                              ? "bg-red-100 text-red-700"
+                              : (group.capacityPercentage || 0) >= 80
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "bg-green-100 text-green-700"
+                          }`}>
+                            {(group.currentStudents || 0) === 0 ? "فارغة" : group.isFull ? "ممتلئة" : "متاحة"}
+                          </span>
                         </div>
-                        <p className="text-xs text-gray-500 text-right mt-1">
-                          {group.capacityPercentage || 0}% من السعة
-                        </p>
                       </div>
+                      
+                      <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
+                        <div
+                          className={`h-3 rounded-full transition-all duration-700 ${
+                            (group.currentStudents || 0) === 0
+                              ? "bg-gray-400"
+                              : group.isFull
+                              ? "bg-gradient-to-r from-red-400 to-red-600"
+                              : (group.capacityPercentage || 0) >= 80
+                              ? "bg-gradient-to-r from-yellow-400 to-orange-500"
+                              : "bg-gradient-to-r from-green-400 to-emerald-600"
+                          }`}
+                          style={{ width: `${group.capacityPercentage || 0}%` }}>
+                        </div>
+                      </div>
+                      
+                      <p className="text-xs text-gray-600 text-center mt-2 font-medium">
+                        {group.capacityPercentage || 0}% من السعة الإجمالية
+                      </p>
                     </div>
 
-                    {/* Schedule / Timetable */}
-                    <div className="p-3 bg-amber-50 rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
-                          <FaCalendar className="w-4 h-4 text-amber-600" />
+                    {/* Schedule Section */}
+                    <div className="bg-gradient-to-r from-amber-50 to-yellow-50 p-4 rounded-2xl border border-amber-200">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-yellow-600 rounded-xl flex items-center justify-center">
+                          <FaCalendar className="w-5 h-5 text-white" />
                         </div>
-                        <p className="text-xs font-semibold text-gray-700">
-                          الجدول الأسبوعي
-                        </p>
+                        <div>
+                          <p className="font-bold text-amber-800">المواعيد الأسبوعية</p>
+                          <p className="text-xs text-amber-600">جدول الحصص</p>
+                        </div>
                       </div>
+                      
                       {group.timetable && group.timetable.length > 0 ? (
-                        <div className="space-y-2 mt-2">
+                        <div className="space-y-2">
                           {group.timetable.map((session: any, idx: number) => (
                             <div
                               key={idx}
-                              className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-amber-200 shadow-sm">
-                              <span className="text-xs font-bold text-amber-800 min-w-[60px]">
-                                {session.day}
-                              </span>
-                              <span className="text-amber-400">•</span>
-                              <span className="text-xs font-semibold text-amber-700">
-                                {session.startHour} - {session.endHour}
-                              </span>
+                              className="flex items-center justify-between bg-white p-3 rounded-xl border border-amber-300 shadow-sm">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                                  <span className="text-xs font-bold text-amber-800">
+                                    {session.day.charAt(0)}
+                                  </span>
+                                </div>
+                                <span className="font-semibold text-amber-800">
+                                  {session.day}
+                                </span>
+                              </div>
+                              <div className="bg-amber-100 px-3 py-1 rounded-full">
+                                <span className="text-xs font-bold text-amber-700">
+                                  {session.startHour} - {session.endHour}
+                                </span>
+                              </div>
                             </div>
                           ))}
                         </div>
                       ) : (
-                        <p className="text-xs text-gray-500 mt-2">
-                          لا يوجد جدول محدد
-                        </p>
+                        <div className="text-center py-3">
+                          <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <span className="text-amber-600 text-lg">📅</span>
+                          </div>
+                          <p className="text-sm text-amber-700 font-medium">لم يتم تحديد مواعيد</p>
+                          <p className="text-xs text-amber-600">يمكن إضافة المواعيد لاحقاً</p>
+                        </div>
                       )}
                     </div>
 
-                    {/* Available Spots */}
-                    {!group.isFull && (
-                      <div className="flex items-center justify-center gap-2 p-3 bg-green-50 rounded-lg border border-green-200">
-                        <svg
-                          className="w-5 h-5 text-green-600"
-                          fill="currentColor"
-                          viewBox="0 0 20 20">
-                          <path
-                            fillRule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                        <p className="text-sm font-bold text-green-700">
-                          {group.availableSpots || 0} مقعد متاح
+                    {/* Description */}
+                    {group.description && (
+                      <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                        <p className="text-sm text-slate-700 leading-relaxed">
+                          {group.description}
                         </p>
                       </div>
                     )}
+
                   </div>
 
-                  {/* Card Footer - Actions */}
-                  <div className="px-6 pb-6">
-                    <div className="flex gap-2">
+                  {/* Card Footer */}
+                  <div className="bg-gray-50 px-6 py-5 border-t border-gray-100">
+                    {/* Available Spots Alert */}
+                    {(group.currentStudents || 0) === 0 ? (
+                      <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-xl">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center">
+                            <span className="text-orange-600 text-sm">⚠️</span>
+                          </div>
+                          <p className="text-sm font-semibold text-orange-700">حلقة فارغة - تحتاج لطلاب</p>
+                        </div>
+                      </div>
+                    ) : !group.isFull && (
+                      <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center">
+                              <span className="text-emerald-600 text-sm">✓</span>
+                            </div>
+                            <p className="text-sm font-semibold text-emerald-700">مقاعد متاحة</p>
+                          </div>
+                          <span className="bg-emerald-100 px-3 py-1 rounded-full text-xs font-bold text-emerald-700">
+                            {(group.capacity || 0) - (group.currentStudents || 0)} مقعد
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-3 mb-4">
                       <button
                         onClick={() => handleEdit(group)}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-all shadow-md hover:shadow-lg transform hover:scale-105">
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
                         <FaEdit className="w-4 h-4" />
-                        <span className="font-medium">تعديل</span>
+                        <span className="font-bold">تعديل</span>
                       </button>
                       <button
                         onClick={() => handleDelete(group._id || "")}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-all shadow-md hover:shadow-lg transform hover:scale-105">
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-xl hover:from-red-600 hover:to-pink-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
                         <FaTrash className="w-4 h-4" />
-                        <span className="font-medium">حذف</span>
+                        <span className="font-bold">حذف</span>
                       </button>
                     </div>
 
-                    {/* Checkbox for bulk selection */}
-                    <div className="mt-3 flex items-center justify-center">
-                      <label className="flex items-center gap-2 cursor-pointer">
+                    {/* Selection Checkbox */}
+                    <div className="flex items-center justify-center">
+                      <label className="flex items-center gap-3 cursor-pointer group p-2 hover:bg-gray-100 rounded-lg transition-colors">
                         <input
                           type="checkbox"
                           checked={selectedGroups.has(group._id || "")}
                           onChange={() => toggleGroupSelection(group._id || "")}
-                          className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 cursor-pointer"
+                          className="w-5 h-5 text-blue-600 rounded border-2 border-gray-300 focus:ring-2 focus:ring-blue-500 cursor-pointer transition-colors"
                         />
-                        <span className="text-sm text-gray-600">
+                        <span className="text-sm text-gray-600 font-medium group-hover:text-gray-800">
                           تحديد للحذف الجماعي
                         </span>
                       </label>
