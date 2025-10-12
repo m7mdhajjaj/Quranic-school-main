@@ -188,8 +188,10 @@ exports.createStudent = async (req, res) => {
       }
 
       // التحقق من تطابق المعلم مع معلم الحلقة
-      const normalizeTeacherName = (name) =>
-        name?.trim().toLowerCase().replace(/\s+/g, " ") || "";
+      const normalizeTeacherName = (name) => {
+        if (!name || typeof name !== 'string') return "";
+        return name.trim().toLowerCase().replace(/\s+/g, " ");
+      };
       const normalizedStudentTeacher = normalizeTeacherName(teacher);
       const normalizedGroupTeacher = normalizeTeacherName(
         groupData.teacher || ""
@@ -350,8 +352,10 @@ exports.updateStudent = async (req, res) => {
       }
 
       // التحقق من تطابق المعلم مع معلم الحلقة
-      const normalizeTeacherName = (name) =>
-        name?.trim().toLowerCase().replace(/\s+/g, " ") || "";
+      const normalizeTeacherName = (name) => {
+        if (!name || typeof name !== 'string') return "";
+        return name.trim().toLowerCase().replace(/\s+/g, " ");
+      };
       const normalizedStudentTeacher = normalizeTeacherName(teacher);
       const normalizedGroupTeacher = normalizeTeacherName(
         groupData.teacher || ""
