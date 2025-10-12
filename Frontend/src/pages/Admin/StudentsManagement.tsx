@@ -122,17 +122,26 @@ const StudentsManagement: React.FC = () => {
         : 0;
 
     // حساب الطلاب الذين لديهم حلقات وبدون حلقات
-    const withGroupCount = students.filter((s) => s.group && s.group.trim() !== '').length;
+    const withGroupCount = students.filter((s) => 
+      s.group && 
+      s.group.trim() !== '' && 
+      s.group.toLowerCase() !== 'غير محدد' &&
+      s.group.toLowerCase() !== 'undefined' &&
+      s.group !== null
+    ).length;
     const withoutGroupCount = students.length - withGroupCount;
 
     // Use API stats if available, otherwise calculate from local data
     if (apiStats) {
+      const apiActiveStudents = apiStats.activeStudents || withGroupCount;
+      const apiInactiveStudents = (apiStats.totalStudents || students.length) - apiActiveStudents;
+      
       return {
         total: apiStats.totalStudents || students.length,
         male: apiStats.maleStudents || maleCount,
         female: apiStats.femaleStudents || femaleCount,
-        active: withGroupCount, // الطلاب الذين لديهم حلقات
-        inactive: withoutGroupCount, // الطلاب بدون حلقات
+        active: apiActiveStudents, // الطلاب الذين لديهم حلقات
+        inactive: apiInactiveStudents, // الطلاب بدون حلقات
         avgAge: avgAge, // Calculate from local data as API doesn't provide this
       };
     }
@@ -1047,7 +1056,7 @@ const StudentsManagement: React.FC = () => {
                       {stat.label}
                     </p>
                     <p className="text-lg font-bold text-gray-900">
-                      {stat.value}
+                      {typeof stat.value === 'number' || typeof stat.value === 'string' ? stat.value : 0}
                     </p>
                   </div>
                 </div>

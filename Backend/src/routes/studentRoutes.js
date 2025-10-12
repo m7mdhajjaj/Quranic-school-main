@@ -114,7 +114,15 @@ router.get("/stats/summary/all", async (req, res) => {
       Student.countDocuments(),
       Student.countDocuments({ gender: "ذكر" }),
       Student.countDocuments({ gender: "انثى" }),
-      Student.countDocuments({ isActive: { $ne: false } }),
+      Student.countDocuments({
+        group: { 
+          $exists: true, 
+          $ne: null, 
+          $ne: "", 
+          $ne: "غير محدد",
+          $ne: "undefined"
+        }
+      }),
       Student.distinct("teacher").then(
         (teachers) =>
           teachers.filter((teacher) => teacher && teacher.trim() !== "").length
@@ -134,11 +142,11 @@ router.get("/stats/summary/all", async (req, res) => {
     const duration = endTime - startTime;
 
     const stats = {
-      totalStudents: totalCount,
-      activeStudents: activeCount,
-      maleStudents: maleCount,
-      femaleStudents: femaleCount,
-      byGroup: [], // Could be populated if needed
+      totalStudents: totalCount, // إجمالي الطلاب
+      activeStudents: activeCount, // الطلاب الذين لديهم حلقات
+      maleStudents: maleCount, // عدد الذكور
+      femaleStudents: femaleCount, // عدد الإناث
+      byGroup: [], // توزيع الطلاب حسب الحلقات (يمكن تطويره لاحقاً)
     };
 
     console.log(`✅ تم تحميل الإحصائيات الشاملة في ${duration}ms:`, stats);
@@ -175,7 +183,15 @@ router.get("/stats", async (req, res) => {
       Student.countDocuments(),
       Student.countDocuments({ gender: "ذكر" }),
       Student.countDocuments({ gender: "انثى" }),
-      Student.countDocuments({ isActive: { $ne: false } }), // النشطين (افتراضياً نشطين)
+      Student.countDocuments({
+        group: { 
+          $exists: true, 
+          $ne: null, 
+          $ne: "", 
+          $ne: "غير محدد",
+          $ne: "undefined"
+        }
+      }), // الطلاب الذين لديهم حلقات فعلية
       Student.distinct("teacher").then(
         (teachers) =>
           teachers.filter((teacher) => teacher && teacher.trim() !== "").length
@@ -196,14 +212,14 @@ router.get("/stats", async (req, res) => {
     const duration = endTime - startTime;
 
     const stats = {
-      total: totalCount,
-      male: maleCount,
-      female: femaleCount,
-      active: activeCount,
-      inactive: totalCount - activeCount,
-      groups: groupsCount,
-      teachers: teachersCount,
-      avgAge: avgAge,
+      total: totalCount, // إجمالي الطلاب
+      male: maleCount, // عدد الذكور
+      female: femaleCount, // عدد الإناث
+      active: activeCount, // الطلاب الذين لديهم حلقات
+      inactive: totalCount - activeCount, // الطلاب بدون حلقات
+      groups: groupsCount, // عدد الحلقات
+      teachers: teachersCount, // عدد المعلمين
+      avgAge: avgAge, // متوسط العمر
     };
 
     console.log(`✅ تم تحميل الإحصائيات في ${duration}ms:`, stats);
