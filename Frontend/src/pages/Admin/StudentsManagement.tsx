@@ -724,40 +724,13 @@ const StudentsManagement: React.FC = () => {
                 <h1 className="text-3xl font-bold text-gray-900">
                   إدارة الطلاب
                 </h1>
-                <p className="text-gray-600 text-sm mt-1 flex items-center gap-2">
+                <p className="text-gray-600 text-sm mt-1">
                   نظام متكامل لإدارة بيانات الطلاب
-                  {/* Connection Status */}
-                  <span
-                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                      isConnected
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}
-                  >
-                    <span
-                      className={`w-2 h-2 rounded-full ${
-                        isConnected ? 'bg-green-500' : 'bg-yellow-500'
-                      }`}
-                    ></span>
-                    {isConnected ? 'متصل مباشر' : 'تحديث تلقائي'}
-                  </span>
                 </p>
               </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <button
-                onClick={() => fetchStudents()}
-                disabled={isLoading}
-                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                title="تحديث البيانات"
-              >
-                <FaSync
-                  className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`}
-                />
-                <span className="hidden sm:inline">تحديث</span>
-              </button>
-
               <button
                 onClick={handleExport}
                 disabled={filteredAndSortedStudents.length === 0}
@@ -1522,24 +1495,6 @@ const StudentsManagement: React.FC = () => {
                             aria-label="تعديل الطالب"
                           >
                             <FaEdit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() =>
-                              handleToggleStatus(student._id!, student.isActive)
-                            }
-                            className={`p-2 hover:bg-gray-100 rounded-lg transition-colors ${
-                              student.isActive
-                                ? 'text-green-600'
-                                : 'text-gray-400'
-                            }`}
-                            title={student.isActive ? 'إلغاء تفعيل' : 'تفعيل'}
-                            aria-label={
-                              student.isActive
-                                ? 'إلغاء تفعيل الطالب'
-                                : 'تفعيل الطالب'
-                            }
-                          >
-                            <FaSync className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(student._id!)}
