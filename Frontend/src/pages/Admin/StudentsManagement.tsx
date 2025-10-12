@@ -300,14 +300,14 @@ const StudentsManagement: React.FC = () => {
     return () => offStudentUpdate(handleStudentUpdate);
   }, [hasPermission, onStudentUpdate, offStudentUpdate, lastUpdateTime]);
 
-  // Auto refresh every 30 seconds when not connected to socket
+  // Auto refresh every 60 seconds when not connected to socket
   useEffect(() => {
     if (!hasPermission || isConnected) return;
 
     const autoRefreshInterval = setInterval(() => {
       console.log('🔄 Auto refreshing students data...');
       fetchStudents();
-    }, 30000); // 30 seconds
+    }, 60000); // 60 seconds - reduced frequency to improve performance
 
     return () => clearInterval(autoRefreshInterval);
   }, [hasPermission, isConnected, fetchStudents]);
@@ -398,7 +398,7 @@ const StudentsManagement: React.FC = () => {
       } else if (searchTerm === '') {
         fetchStudents();
       }
-    }, 500);
+    }, 800); // Increased debounce time to reduce frequent calls
 
     return () => clearTimeout(delayedSearch);
   }, [searchTerm, handleSearch, fetchStudents]);
