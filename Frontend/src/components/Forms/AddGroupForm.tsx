@@ -292,6 +292,7 @@ const AddGroupForm: React.FC<AddGroupFormProps> = ({
               {group ? "تعديل بيانات الحلقة" : "إضافة حلقة جديدة"}
             </h2>
           </div>
+          {/* dsdsd */}
           <button
             onClick={onClose}
             title="إغلاق النموذج"
@@ -299,7 +300,6 @@ const AddGroupForm: React.FC<AddGroupFormProps> = ({
             <X size={20} />
           </button>
         </div>
-
         {/* Error Messages */}
         {(errors.submit || Object.keys(errors).length > 0) && (
           <div className="p-6 border-b border-gray-200">

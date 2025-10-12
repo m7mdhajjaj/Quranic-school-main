@@ -115,13 +115,13 @@ router.get("/stats/summary/all", async (req, res) => {
       Student.countDocuments({ gender: "ذكر" }),
       Student.countDocuments({ gender: "انثى" }),
       Student.countDocuments({
-        group: { 
-          $exists: true, 
-          $ne: null, 
-          $ne: "", 
+        group: {
+          $exists: true,
+          $ne: null,
+          $ne: "",
           $ne: "غير محدد",
-          $ne: "undefined"
-        }
+          $ne: "undefined",
+        },
       }),
       Student.distinct("teacher").then(
         (teachers) =>
@@ -184,13 +184,13 @@ router.get("/stats", async (req, res) => {
       Student.countDocuments({ gender: "ذكر" }),
       Student.countDocuments({ gender: "انثى" }),
       Student.countDocuments({
-        group: { 
-          $exists: true, 
-          $ne: null, 
-          $ne: "", 
+        group: {
+          $exists: true,
+          $ne: null,
+          $ne: "",
           $ne: "غير محدد",
-          $ne: "undefined"
-        }
+          $ne: "undefined",
+        },
       }), // الطلاب الذين لديهم حلقات فعلية
       Student.distinct("teacher").then(
         (teachers) =>
@@ -260,6 +260,7 @@ router.get(
 router.get("/:id", protect, studentController.getStudentById);
 router.post("/", validateStudentData, studentController.createStudent);
 router.put("/:id", validateStudentData, studentController.updateStudent);
+router.delete("/bulk", studentController.bulkDeleteStudents); // Bulk delete - must be before /:id
 router.delete("/:id", studentController.deleteStudent);
 
 // Monthly averages routes

@@ -189,7 +189,7 @@ exports.createStudent = async (req, res) => {
 
       // التحقق من تطابق المعلم مع معلم الحلقة
       const normalizeTeacherName = (name) => {
-        if (!name || typeof name !== 'string') return "";
+        if (!name || typeof name !== "string") return "";
         return name.trim().toLowerCase().replace(/\s+/g, " ");
       };
       const normalizedStudentTeacher = normalizeTeacherName(teacher);
@@ -353,7 +353,7 @@ exports.updateStudent = async (req, res) => {
 
       // التحقق من تطابق المعلم مع معلم الحلقة
       const normalizeTeacherName = (name) => {
-        if (!name || typeof name !== 'string') return "";
+        if (!name || typeof name !== "string") return "";
         return name.trim().toLowerCase().replace(/\s+/g, " ");
       };
       const normalizedStudentTeacher = normalizeTeacherName(teacher);
@@ -498,6 +498,62 @@ exports.deleteStudent = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "حدث خطأ أثناء حذف الطالب",
+      error: error.message,
+    });
+  }
+};
+
+// Bulk delete students
+exports.bulkDeleteStudents = async (req, res) => {
+  try {
+    const { studentIds } = req.body;
+
+    // التحقق من وجود معرفات الطلاب
+    if (!studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "يجب تحديد معرفات الطلاب المراد حذفهم",
+      });
+    }
+
+    console.log(`🗑️ محاولة حذف ${studentIds.length} طالب...`);
+
+    // حذف الطلاب باستخدام deleteMany
+    const result = await Student.deleteMany({
+      _id: { $in: studentIds },
+    });
+
+    console.log(
+      `✅ تم حذف ${result.deletedCount} طالب من أصل ${studentIds.length}`
+    );
+
+    // إبطال cache عدد الطلاب في الحلقات
+    const { invalidateStudentCountsCache } = require("./groupController");
+    invalidateStudentCountsCache();
+
+    // Emit socket events for real-time updates
+    if (global.io) {
+      console.log("📡 Broadcasting bulk students deleted event");
+      studentIds.forEach((studentId) => {
+        global.io.emit("studentDeleted", {
+          studentId: studentId,
+        });
+      });
+    }
+
+    // إشعار تحديث إحصائيات الداشبورد
+    notifyStudentStatsUpdate();
+
+    res.status(200).json({
+      success: true,
+      message: `تم حذف ${result.deletedCount} طالب بنجاح`,
+      deletedCount: result.deletedCount,
+    });
+  } catch (error) {
+    console.error("❌ خطأ في حذف الطلاب:", error);
+    res.status(500).json({
+      success: false,
+      message: "حدث خطأ أثناء حذف الطلاب",
       error: error.message,
     });
   }
