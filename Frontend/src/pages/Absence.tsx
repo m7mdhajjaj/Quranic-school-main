@@ -8,6 +8,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { showSuccessMessage, showErrorMessage } from "../utils/sweetalertUtils";
 import { AbsenceSkeleton } from "../components/Loading/LoadingSkeleton";
 import { getAllStudents } from "../Api/studentApi";
 import {
@@ -549,7 +550,7 @@ const Absence = () => {
     try {
       // استخدام كل الطلاب (ليس فقط المرئيين)
       const payload: AttendanceRecordPayload[] = students
-        .filter((s) => s._id) // فقط الطلاب الذين لديهم _id
+        .filter((s) => s._id)
         .map((s) => ({
           studentId: s._id,
           date,
@@ -570,7 +571,7 @@ const Absence = () => {
         records: payload,
       });
 
-      alert("تم حفظ سجل الحضور بنجاح ✅");
+      showSuccessMessage("تم الحفظ!", "تم حفظ سجل الحضور بنجاح ✅");
     } catch (e: any) {
       console.error("❌ خطأ في حفظ الحضور:", e);
       console.error("📋 تفاصيل الخطأ:", e.response?.data);
@@ -579,9 +580,9 @@ const Absence = () => {
           e.response?.data?.message ||
           e.response?.data?.details ||
           "تعذر حفظ السجل";
-        alert(`خطأ: ${errorMsg}`);
+        showErrorMessage("خطأ في الحفظ", errorMsg);
       } else {
-        alert("تعذر حفظ السجل - تحقق من الاتصال");
+        showErrorMessage("خطأ في الحفظ", "تعذر حفظ السجل - تحقق من الاتصال");
       }
     }
   };
