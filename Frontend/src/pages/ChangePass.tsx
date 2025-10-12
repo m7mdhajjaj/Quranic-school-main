@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { changePassword } from '../Api/authApi';
+import { showSuccessMessage, showErrorMessage } from '../utils/sweetalertUtils';
 
 interface FormData {
   currentPassword: string;
@@ -34,8 +35,6 @@ const ChangePass = () => {
     newPassword: '',
     confirmPassword: '',
   });
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -54,6 +53,34 @@ const ChangePass = () => {
       special: false,
     },
   });
+
+  // Handle ESC key to close modal
+  useEffect(() => {
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        navigate(-1);
+      }
+    };
+
+    document.addEventListener('keydown', handleEscKey);
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+    };
+  }, [navigate]);
+
+  // Handle ESC key to close modal
+  useEffect(() => {
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        navigate(-1);
+      }
+    };
+
+    document.addEventListener('keydown', handleEscKey);
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+    };
+  }, [navigate]);
 
   // Update password strength bar width dynamically
   useEffect(() => {
@@ -150,9 +177,7 @@ const ChangePass = () => {
     const fieldError = validateField(name, value);
     setValidationErrors(prev => ({ ...prev, [name]: fieldError }));
 
-    // Clear messages
-    if (error) setError('');
-    if (success) setSuccess('');
+    // Clear any existing messages (handled by SweetAlert now)
   };
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -183,12 +208,10 @@ const ChangePass = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
 
     // Validate form
     if (!validateForm()) {
-      setError('يرجى تصحيح الأخطاء في النموذج');
+      showErrorMessage('خطأ في النموذج! ❌', 'يرجى تصحيح الأخطاء في النموذج');
       return;
     }
 
@@ -199,8 +222,9 @@ const ChangePass = () => {
       const userJson = localStorage.getItem('user');
 
       if (!token || !userJson) {
-        setError('يجب تسجيل الدخول أولاً');
-        navigate('/login');
+        showErrorMessage('خطأ في الدخول! ❌', 'يجب تسجيل الدخول أولاً').then(() => {
+          navigate('/login');
+        });
         return;
       }
 
@@ -214,7 +238,7 @@ const ChangePass = () => {
       });
 
       if (response.success) {
-        setSuccess('تم تغيير كلمة المرور بنجاح! جاري التحويل...');
+        // Reset form
         setFormData({
           currentPassword: '',
           newPassword: '',
@@ -235,51 +259,64 @@ const ChangePass = () => {
         setValidationErrors({});
         setStep(1);
 
-        setTimeout(() => {
+        // Show success message with SweetAlert
+        showSuccessMessage(
+          'تم بنجاح! ✅',
+          'تم تغيير كلمة المرور بنجاح'
+        ).then(() => {
           navigate('/');
-        }, 2000);
+        });
       }
     } catch (error: unknown) {
       console.error('Change password error:', error);
+      
+      let errorMessage = 'حدث خطأ أثناء تغيير كلمة المرور';
       
       // Type-safe error handling
       if (typeof error === 'object' && error !== null && 'response' in error) {
         const axiosError = error as { response?: { status?: number; data?: { message?: string } } };
         if (axiosError.response?.status === 401) {
-          setError('انتهت صلاحية جلسة العمل. يرجى تسجيل الدخول مرة أخرى');
-          setTimeout(() => navigate('/login'), 2000);
+          errorMessage = 'انتهت صلاحية جلسة العمل. يرجى تسجيل الدخول مرة أخرى';
+          showErrorMessage('خطأ في الجلسة! ❌', errorMessage).then(() => {
+            navigate('/login');
+          });
+          return;
         } else if (axiosError.response?.data?.message) {
-          setError(axiosError.response.data.message);
+          errorMessage = axiosError.response.data.message;
         } else {
-          setError(`خطأ من الخادم: ${axiosError.response?.status || 'غير معروف'}`);
+          errorMessage = `خطأ من الخادم: ${axiosError.response?.status || 'غير معروف'}`;
         }
       } else if (typeof error === 'object' && error !== null && 'request' in error) {
-        setError('لا يمكن الوصول إلى الخادم. تأكد من أن الخادم يعمل');
+        errorMessage = 'لا يمكن الوصول إلى الخادم. تأكد من أن الخادم يعمل';
       } else if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('حدث خطأ أثناء تغيير كلمة المرور');
+        errorMessage = error.message;
       }
+
+      // Show error message with SweetAlert
+      showErrorMessage('فشل تغيير كلمة المرور! ❌', errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div
-      className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-800 px-4 py-8 relative overflow-hidden"
-      dir="rtl"
-    >
-      {/* Animated Background */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -inset-10 opacity-20">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse" />
-          <div className="absolute top-1/3 right-1/3 w-96 h-96 bg-emerald-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-1000" />
-          <div className="absolute bottom-1/4 left-1/3 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-2000" />
-        </div>
-      </div>
-
-      <div className="bg-white/10 backdrop-blur-lg p-8 rounded-3xl shadow-2xl w-full max-w-md border border-white/20 relative z-10">
+    <>
+      {/* Modal Overlay - Less transparent backdrop */}
+      <div
+        className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        dir="rtl"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            navigate(-1); // Go back to previous page
+          }
+        }}
+      >
+        {/* Modal Container - Wide and less transparent */}
+        <div
+          className="bg-gradient-to-br from-white/90 to-white/85 backdrop-blur-md p-8 rounded-3xl shadow-2xl w-full max-w-4xl border border-white/50 relative animate-fadeIn transform transition-all duration-300"
+          onClick={(e) => e.stopPropagation()}
+          dir="rtl"
+        >
         <div className="flex justify-center mb-6">
           <div className="relative">
             <img
@@ -305,52 +342,43 @@ const ChangePass = () => {
           </div>
         </div>
 
-        <h1 className="text-3xl font-bold text-center mb-2 text-white">
+        {/* Close Button - RTL positioned */}
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="absolute top-4 right-4 w-8 h-8 bg-gray-200/80 hover:bg-gray-300/80 rounded-full flex items-center justify-center text-gray-600 hover:text-gray-800 transition-all duration-200 border border-gray-300/50"
+          aria-label="إغلاق"
+        >
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+
+        <h1 className="text-3xl font-bold text-center mb-2 text-gray-800">
           تغيير كلمة المرور
         </h1>
-        <p className="text-center text-white/80 text-sm mb-6">
+        <p className="text-center text-gray-600 text-sm mb-8">
           يرجى إدخال كلمة المرور الحالية والجديدة
         </p>
-
-        {error && (
-          <div className="mb-4 p-4 bg-red-500/20 border border-red-400/30 backdrop-blur-sm text-red-200 rounded-xl flex items-start gap-3 animate-fadeIn">
-            <svg
-              className="w-5 h-5 mt-0.5 flex-shrink-0"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <span className="text-sm">{error}</span>
-          </div>
-        )}
-
-        {success && (
-          <div className="mb-4 p-4 bg-green-500/20 border border-green-400/30 backdrop-blur-sm text-green-200 rounded-xl flex items-start gap-3 animate-fadeIn">
-            <svg
-              className="w-5 h-5 mt-0.5 flex-shrink-0"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <span className="text-sm">{success}</span>
-          </div>
-        )}
-
-        <form className="space-y-5" onSubmit={handleSubmit}>
+        
+        <form onSubmit={handleSubmit} className="text-right">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+          {/* Right Column - Password Fields */}
+          <div className="space-y-5">
           {/* Current Password */}
           <div>
             <label
-              className="block text-sm font-semibold text-gray-700 mb-2"
+              className="block text-sm font-semibold text-gray-800 mb-2"
               htmlFor="currentPassword"
             >
               كلمة المرور الحالية
@@ -363,11 +391,11 @@ const ChangePass = () => {
                 value={formData.currentPassword}
                 onChange={handleChange}
                 onBlur={handleBlur}
-                className={`w-full px-4 py-3 pr-12 rounded-xl border-0 bg-white/20 backdrop-blur-sm text-white placeholder-white/60 ${
+                className={`w-full px-4 py-3 pr-12 rounded-xl border text-right ${
                   validationErrors.currentPassword
-                    ? 'ring-2 ring-red-400/50'
-                    : 'ring-1 ring-white/30 focus:ring-2 focus:ring-emerald-400/50'
-                } focus:outline-none transition-all duration-300`}
+                    ? 'border-red-300 bg-red-50 focus:ring-red-500 focus:border-red-500'
+                    : 'border-gray-300 bg-white focus:ring-emerald-500 focus:border-emerald-500'
+                } text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 transition-all duration-300`}
                 placeholder="أدخل كلمة المرور الحالية"
                 autoComplete="current-password"
               />
@@ -434,7 +462,7 @@ const ChangePass = () => {
           {/* New Password */}
           <div>
             <label
-              className="block text-sm font-semibold text-gray-700 mb-2"
+              className="block text-sm font-semibold text-gray-800 mb-2"
               htmlFor="newPassword"
             >
               كلمة المرور الجديدة
@@ -447,11 +475,11 @@ const ChangePass = () => {
                 value={formData.newPassword}
                 onChange={handleChange}
                 onBlur={handleBlur}
-                className={`w-full px-4 py-3 pr-12 rounded-xl border-0 bg-white/20 backdrop-blur-sm text-white placeholder-white/60 ${
+                className={`w-full px-4 py-3 pr-12 rounded-xl border text-right ${
                   validationErrors.newPassword
-                    ? 'ring-2 ring-red-400/50'
-                    : 'ring-1 ring-white/30 focus:ring-2 focus:ring-emerald-400/50'
-                } focus:outline-none transition-all duration-300`}
+                    ? 'border-red-300 bg-red-50 focus:ring-red-500 focus:border-red-500'
+                    : 'border-gray-300 bg-white focus:ring-emerald-500 focus:border-emerald-500'
+                } text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 transition-all duration-300`}
                 placeholder="أدخل كلمة المرور الجديدة"
                 autoComplete="new-password"
               />
@@ -502,16 +530,16 @@ const ChangePass = () => {
             {formData.newPassword && (
               <div className="mt-2">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-gray-600">
+                  <span className="text-xs text-gray-700">
                     قوة كلمة المرور:
                   </span>
-                  <span className={`text-xs font-semibold ${passwordStrength.color}`}>
+                  <span className={`text-xs font-semibold ${passwordStrength.color.replace('bg-', 'text-')}`}>
                     {passwordStrength.label}
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                   <div
-                    className={`h-full ${passwordStrength.color.replace('text-', 'bg-')} transition-all duration-300 ease-out rounded-full`}
+                    className={`h-full ${passwordStrength.color} transition-all duration-300 ease-out rounded-full`}
                     data-width={passwordStrength.score * 25}
                   />
                 </div>
@@ -536,11 +564,11 @@ const ChangePass = () => {
             )}
 
             {/* Password Requirements */}
-            <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-              <p className="text-xs font-semibold text-gray-700 mb-2">
+            <div className="mt-3 p-3 bg-emerald-50/80 backdrop-blur-sm rounded-lg border border-emerald-200/50">
+              <p className="text-xs font-semibold text-emerald-900 mb-2">
                 متطلبات كلمة المرور:
               </p>
-              <ul className="space-y-1 text-xs text-gray-600">
+              <ul className="space-y-1 text-xs text-emerald-800">
                 <li
                   className={`flex items-center gap-2 ${formData.newPassword.length >= 6 ? 'text-green-600' : ''}`}
                 >
@@ -580,7 +608,7 @@ const ChangePass = () => {
           {/* Confirm Password */}
           <div>
             <label
-              className="block text-sm font-semibold text-gray-700 mb-2"
+              className="block text-sm font-semibold text-gray-800 mb-2"
               htmlFor="confirmPassword"
             >
               تأكيد كلمة المرور الجديدة
@@ -593,14 +621,14 @@ const ChangePass = () => {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 onBlur={handleBlur}
-                className={`w-full px-4 py-3 pr-12 rounded-lg border ${
+                className={`w-full px-4 py-3 pr-12 rounded-xl border bg-white text-right ${
                   validationErrors.confirmPassword
-                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                    ? 'border-red-300 bg-red-50 focus:ring-red-500 focus:border-red-500'
                     : formData.confirmPassword &&
                         !validationErrors.confirmPassword
-                      ? 'border-green-300 focus:ring-green-500 focus:border-green-500'
+                      ? 'border-green-300 bg-green-50 focus:ring-green-500 focus:border-green-500'
                       : 'border-gray-300 focus:ring-emerald-500 focus:border-emerald-500'
-                } focus:outline-none focus:ring-2 transition duration-200`}
+                } text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 transition-all duration-300`}
                 placeholder="أعد إدخال كلمة المرور الجديدة"
                 autoComplete="new-password"
               />
@@ -679,6 +707,65 @@ const ChangePass = () => {
               </p>
             )}
           </div>
+          </div>
+
+          {/* Left Column - Security Info and Actions */}
+          <div className="space-y-6">
+            {/* Security Tips */}
+            <div className="p-4 bg-blue-50/80 backdrop-blur-sm border border-blue-200/50 rounded-lg">
+              <div className="flex items-start gap-3">
+                <svg
+                  className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <div>
+                  <h3 className="text-sm font-semibold text-blue-900 mb-1">
+                    نصائح الأمان
+                  </h3>
+                  <ul className="text-xs text-blue-800 space-y-1">
+                    <li>• لا تشارك كلمة المرور مع أي شخص</li>
+                    <li>• استخدم كلمة مرور فريدة لكل حساب</li>
+                    <li>• غيّر كلمة المرور بانتظام</li>
+                    <li>• استخدم أحرف وأرقام ورموز متنوعة</li>
+                    <li>• تجنب المعلومات الشخصية الواضحة</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Password Strength Guide */}
+            <div className="p-4 bg-emerald-50/80 backdrop-blur-sm border border-emerald-200/50 rounded-lg">
+              <div className="flex items-start gap-3">
+                <svg
+                  className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <div>
+                  <h3 className="text-sm font-semibold text-emerald-900 mb-1">
+                    كلمة مرور قوية
+                  </h3>
+                  <p className="text-xs text-emerald-800">
+                    استخدم 8 أحرف على الأقل مع مزيج من الأحرف الكبيرة والصغيرة والأرقام والرموز الخاصة لحماية أفضل
+                  </p>
+                </div>
+              </div>
+            </div>
 
           <div className="flex gap-3 pt-2">
             <button
@@ -687,7 +774,7 @@ const ChangePass = () => {
                 isLoading ||
                 Object.values(validationErrors).some((e) => e !== '')
               }
-              className="flex-1 bg-gradient-to-r from-emerald-500/80 to-teal-500/80 backdrop-blur-sm text-white py-3 rounded-xl hover:from-emerald-400/90 hover:to-teal-400/90 transition-all duration-300 shadow-lg hover:shadow-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98] border border-white/20"
+              className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-3 rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all duration-300 shadow-lg hover:shadow-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
             >
               {isLoading ? (
                 <span className="flex items-center justify-center">
@@ -737,7 +824,7 @@ const ChangePass = () => {
               type="button"
               onClick={() => navigate('/')}
               disabled={isLoading}
-              className="flex-1 bg-white/20 backdrop-blur-sm text-white py-3 rounded-xl hover:bg-white/30 transition-all duration-300 shadow-lg hover:shadow-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98] border border-white/20"
+              className="flex-1 bg-gray-200 text-gray-800 py-3 rounded-xl hover:bg-gray-300 transition-all duration-300 shadow-lg hover:shadow-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
             >
               <span className="flex items-center justify-center gap-2">
                 <svg
@@ -757,37 +844,34 @@ const ChangePass = () => {
               </span>
             </button>
           </div>
-        </form>
-
-        {/* Security Tips */}
-        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <div className="flex items-start gap-3">
-            <svg
-              className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <div>
-              <h3 className="text-sm font-semibold text-blue-900 mb-1">
-                نصائح الأمان
-              </h3>
-              <ul className="text-xs text-blue-800 space-y-1">
-                <li>• لا تشارك كلمة المرور مع أي شخص</li>
-                <li>• استخدم كلمة مرور فريدة لكل حساب</li>
-                <li>• غيّر كلمة المرور بانتظام</li>
-              </ul>
-            </div>
           </div>
         </div>
-      </div>
+        </form>
 
-      <style>{`
+        {/* Close Button */}
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="absolute top-4 left-4 w-8 h-8 bg-gray-200/80 backdrop-blur-sm hover:bg-gray-300/80 rounded-full flex items-center justify-center text-gray-600 hover:text-gray-800 transition-all duration-200 border border-gray-300/50"
+          aria-label="إغلاق"
+        >
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+        </div>
+
+        <style>{`
         @keyframes fadeIn {
           from {
             opacity: 0;
@@ -868,7 +952,8 @@ const ChangePass = () => {
           animation: shake 0.5s;
         }
       `}</style>
-    </div>
+      </div>
+    </>
   );
 };
 
