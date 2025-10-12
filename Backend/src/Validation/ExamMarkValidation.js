@@ -193,23 +193,20 @@ const validateExamMarks = (marks, maxMark = 100) => {
   for (let i = 0; i < marks.length; i++) {
     const mark = marks[i];
     const markErrors = [];
-    
-    // Validate each mark record
-    const studentValidation = validateStudentId(mark.studentId);
+    // يدعم studentId أو student
+    const studentId = mark.studentId || mark.student;
+    const studentValidation = validateStudentId(studentId);
     if (!studentValidation.isValid) {
       markErrors.push(`الدرجة ${i + 1}: ${studentValidation.message}`);
     }
-    
     const markValidation = validateMarkValue(mark.mark, maxMark);
     if (!markValidation.isValid) {
       markErrors.push(`الدرجة ${i + 1}: ${markValidation.message}`);
     }
-    
     const statusValidation = validateExamStatus(mark.status);
     if (!statusValidation.isValid) {
       markErrors.push(`الدرجة ${i + 1}: ${statusValidation.message}`);
     }
-    
     if (markErrors.length === 0) {
       const validatedMark = {
         studentId: studentValidation.value,
@@ -219,11 +216,9 @@ const validateExamMarks = (marks, maxMark = 100) => {
         submissionTime: mark.submissionTime || null,
         attemptNumber: mark.attemptNumber ? validateAttemptNumber(mark.attemptNumber).value : 1
       };
-      
       // Calculate percentage and grade
       if (validatedMark.mark !== null) {
         validatedMark.percentage = Math.round((validatedMark.mark / maxMark) * 100 * 100) / 100;
-        
         // Determine grade based on percentage
         if (validatedMark.percentage >= 90) validatedMark.grade = 'ممتاز';
         else if (validatedMark.percentage >= 80) validatedMark.grade = 'جيد جداً';
@@ -234,7 +229,6 @@ const validateExamMarks = (marks, maxMark = 100) => {
         validatedMark.percentage = null;
         validatedMark.grade = validatedMark.status === 'غائب' ? 'غائب' : 'غير مكتمل';
       }
-      
       validatedMarks.push(validatedMark);
     } else {
       errors.push(...markErrors);
