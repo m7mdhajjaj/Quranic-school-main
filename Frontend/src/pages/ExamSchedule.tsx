@@ -484,8 +484,18 @@ const ExamSchedule: React.FC = () => {
           Array.isArray(sData) ? sData.length : "Not an array"
         );
 
-        // فلترة الطلاب حسب الحلقة إذا كان المستخدم معلم
-        if (role === "teacher" && teacherGroups.length > 0) {
+        // فلترة الطلاب حسب حلقة الامتحان المحدد
+        if (selectedExam.group) {
+          // إذا كان للامتحان حلقة محددة، عرض فقط طلاب هذه الحلقة
+          console.log("🔍 فلترة الطلاب حسب حلقة الامتحان:", selectedExam.group);
+          
+          sData = sData.filter((student: any) => {
+            return student.group === selectedExam.group;
+          });
+          
+          console.log(`✅ عدد الطلاب في حلقة "${selectedExam.group}": ${sData.length}`);
+        } else if (role === "teacher" && teacherGroups.length > 0) {
+          // إذا لم يكن للامتحان حلقة محددة (امتحان قديم)، عرض طلاب جميع حلقات المعلم
           try {
             const userStr = localStorage.getItem("user");
             if (userStr) {
