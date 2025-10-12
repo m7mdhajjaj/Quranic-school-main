@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback, useMemo, type JSX } from "react";
-import { getAllSessions, createSession, updateSession, deleteSession, type Session } from "../Api/sessionApi";
+import {
+  getAllSessions,
+  createSession,
+  updateSession,
+  deleteSession,
+  type Session,
+} from "../Api/sessionApi";
 
 const Timetable = () => {
   const days = [
@@ -27,6 +33,22 @@ const Timetable = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // حالات الفلتر
+  const [groupFilter, setGroupFilter] = useState<string>("all");
+  const [teacherGroups, setTeacherGroups] = useState<string[]>([]);
+
+  // Fix role comparison issue
+  const user = localStorage.getItem("user");
+  let role: "student" | "teacher" | "admin" = "student";
+  if (user) {
+    try {
+      const parsedUser = JSON.parse(user);
+      role = parsedUser.role as "student" | "teacher" | "admin";
+    } catch {
+      console.error("Error parsing user role");
+    }
+  }
+
   const fetchSessions = useCallback(async () => {
     try {
       setLoading(true);
@@ -46,6 +68,99 @@ const Timetable = () => {
     fetchSessions();
   }, [fetchSessions]);
 
+  // helper function للحصول على أسماء المعلم المحتملة
+  const getTeacherPossibleNames = (user: any) => {
+    const firstLast = `${user.firstName} ${user.lastName}`.trim();
+    const firstFatherLast = `${user.firstName} ${user.fatherName || ""} ${
+      user.lastName || ""
+    }`
+      .trim()
+      .replace(/\s+/g, " ");
+    return [firstLast, firstFatherLast, user.firstName].filter(
+      (name) => name.length > 0
+    );
+  };
+
+  // helper function للتحقق من تطابق المعلم
+  const isTeacherMatch = (studentTeacher: string, possibleNames: string[]) => {
+    const studentTeacherNormalized = studentTeacher
+      .trim()
+      .replace(/\s+/g, " ")
+      .toLowerCase();
+    return possibleNames.some((possibleName) => {
+      const normalizedPossible = possibleName.toLowerCase();
+      return (
+        studentTeacherNormalized === normalizedPossible ||
+        studentTeacherNormalized.includes(normalizedPossible) ||
+        normalizedPossible.includes(studentTeacherNormalized)
+      );
+    });
+  };
+
+  // جلب حلقات المعلم من Groups API
+  useEffect(() => {
+    const fetchTeacherGroups = async () => {
+      if (role !== "teacher") {
+        setTeacherGroups([]);
+        return;
+      }
+
+      try {
+        const userStr = localStorage.getItem("user");
+        if (!userStr) return;
+
+        const currentUser = JSON.parse(userStr);
+
+        console.log("🔍 جلب حلقات المعلم من Groups API...");
+
+        // جلب الحلقات مباشرة من Groups API
+        const { getAllGroups } = await import("../Api/groupApi");
+        const groupsRes = await getAllGroups();
+
+        if (!groupsRes.success || !Array.isArray(groupsRes.data)) {
+          console.error("❌ فشل في جلب الحلقات");
+          setTeacherGroups([]);
+          return;
+        }
+
+        const possibleNames = getTeacherPossibleNames(currentUser);
+        console.log("📋 أسماء المعلم المحتملة:", possibleNames);
+        console.log("📊 إجمالي الحلقات في النظام:", groupsRes.data.length);
+
+        // فلترة الحلقات التي تخص هذا المعلم
+        const teacherGroupsData = groupsRes.data.filter((group: any) => {
+          if (!group.teacher) {
+            return false;
+          }
+
+          const isMatch = isTeacherMatch(group.teacher, possibleNames);
+          if (isMatch) {
+            console.log(
+              `✅ حلقة مطابقة: ${group.name} - معلمها: ${group.teacher}`
+            );
+          }
+          return isMatch;
+        });
+
+        const groupNames = teacherGroupsData
+          .map((g: any) => g.name)
+          .sort((a: string, b: string) => a.localeCompare(b, "ar"));
+        console.log(`📋 حلقات المعلم النهائية:`, groupNames);
+        setTeacherGroups(groupNames);
+
+        // تحديد أول حلقة تلقائياً
+        if (groupNames.length > 0 && groupFilter === "all") {
+          setGroupFilter(groupNames[0]);
+        }
+      } catch (error) {
+        console.error("خطأ في جلب حلقات المعلم:", error);
+        setTeacherGroups([]);
+      }
+    };
+
+    fetchTeacherGroups();
+  }, [role]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const [showForm, setShowForm] = useState(false);
   const [selectedDay, setSelectedDay] = useState(days[0]);
   const [startHour, setStartHour] = useState(hours[0]);
@@ -53,76 +168,133 @@ const Timetable = () => {
   const [note, setNote] = useState("");
   const [editIdx, setEditIdx] = useState<number | null>(null);
 
-  // Fix role comparison issue
-  const user = localStorage.getItem("user");
-  let role: "student" | "teacher" | "admin" = "student";
-  if (user) {
-    try {
-      const parsedUser = JSON.parse(user);
-      role = parsedUser.role as "student" | "teacher" | "admin";
-    } catch {
-      console.error("Error parsing user role");
-    }
-  }
-
   const hourIndex = useCallback((h: string) => hours.indexOf(h), [hours]);
 
-  const handleAddSession = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    const si = hourIndex(startHour);
-    const ei = hourIndex(endHour);
-    if (si === -1 || ei === -1 || ei <= si) {
-      alert("يجب أن تكون ساعة الانتهاء بعد ساعة الابتداء.");
-      return;
-    }
-    const payload = { day: selectedDay, startHour, endHour, note };
-
-    try {
-      if (editIdx !== null && sessions[editIdx]?._id) {
-        const id = sessions[editIdx]._id!;
-        const updated = await updateSession(id, payload);
-        setSessions((prev) =>
-          prev.map((s, i) => (i === editIdx ? updated : s))
-        );
-      } else {
-        const added = await createSession(payload);
-        setSessions((prev) => [...prev, added]);
-      }
-    } catch (error) {
-      console.error("Error saving session:", error);
-      alert("حدث خطأ أثناء حفظ الحلقة");
-    }
-
-    setShowForm(false);
-    setNote("");
-    setEditIdx(null);
-  }, [startHour, endHour, selectedDay, note, editIdx, sessions, hourIndex]);
-
-  const handleDeleteSession = useCallback(async (idx: number) => {
-    if (!confirm("هل أنت متأكد من حذف هذه الحلقة؟")) return;
-    const id = sessions[idx]?._id;
-    if (id) {
-      try {
-        await deleteSession(id);
-        setSessions((prev) => prev.filter((_, i) => i !== idx));
-      } catch (error) {
-        console.error("Error deleting session:", error);
-        alert("حدث خطأ أثناء حذف الحلقة");
-      }
+  // مجموعات (Groups) موجودة عند الحلقات
+  const groupsAvailable = useMemo(() => {
+    if (role === "teacher") {
+      // للمعلم: استخدم الحلقات المجلبة مسبقاً
+      return teacherGroups;
     } else {
-      setSessions((prev) => prev.filter((_, i) => i !== idx));
+      // للأدمن: عرض كل الحلقات مع خيار "الكل"
+      const set = new Set<string>();
+      sessions.forEach((s) => s.note && set.add(s.note));
+      return [
+        "all",
+        ...Array.from(set).sort((a, b) => a.localeCompare(b, "ar")),
+      ];
     }
-  }, [sessions]);
+  }, [role, teacherGroups, sessions]);
 
-  const handleEditSession = useCallback((idx: number) => {
-    const s = sessions[idx];
-    setSelectedDay(s.day);
-    setStartHour(s.startHour);
-    setEndHour(s.endHour);
-    setNote(s.note);
-    setEditIdx(idx);
-    setShowForm(true);
-  }, [sessions]);
+  // فلترة الحصص بناءً على الحلقة المختارة
+  const filteredSessions = useMemo(() => {
+    if (role === "teacher" && groupFilter !== "all") {
+      return sessions.filter((s) => s.note === groupFilter);
+    }
+    if (role === "admin" && groupFilter !== "all") {
+      return sessions.filter((s) => s.note === groupFilter);
+    }
+    return sessions;
+  }, [sessions, groupFilter, role]);
+
+  const handleAddSession = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      const si = hourIndex(startHour);
+      const ei = hourIndex(endHour);
+      if (si === -1 || ei === -1 || ei <= si) {
+        alert("يجب أن تكون ساعة الانتهاء بعد ساعة الابتداء.");
+        return;
+      }
+
+      // استخدم الحلقة المختارة كـ note إذا كان المعلم قد اختار حلقة، أو استخدم note المدخل
+      const sessionNote =
+        role === "teacher" && groupFilter !== "all" ? groupFilter : note;
+      const payload = {
+        day: selectedDay,
+        startHour,
+        endHour,
+        note: sessionNote,
+      };
+
+      console.log("📤 إرسال البيانات:", payload);
+      console.log("📋 التفاصيل:", { role, groupFilter, note, sessionNote });
+
+      try {
+        if (editIdx !== null && sessions[editIdx]?._id) {
+          const id = sessions[editIdx]._id!;
+          console.log("✏️ تحديث موعد:", id);
+          const updated = await updateSession(id, payload);
+          setSessions((prev) =>
+            prev.map((s, i) => (i === editIdx ? updated : s))
+          );
+          alert("تم تحديث الموعد بنجاح ✅");
+        } else {
+          console.log("➕ إضافة موعد جديد");
+          const added = await createSession(payload);
+          console.log("✅ تمت الإضافة:", added);
+          setSessions((prev) => [...prev, added]);
+          alert("تم إضافة الموعد بنجاح ✅");
+        }
+      } catch (error: any) {
+        console.error("❌ خطأ في حفظ الموعد:", error);
+        console.error("📋 تفاصيل الخطأ:", error?.response?.data);
+        const errorMsg =
+          error?.response?.data?.message ||
+          error?.message ||
+          "حدث خطأ أثناء حفظ الحلقة";
+        alert(`خطأ: ${errorMsg}`);
+        return;
+      }
+
+      setShowForm(false);
+      setNote("");
+      setEditIdx(null);
+    },
+    [
+      startHour,
+      endHour,
+      selectedDay,
+      note,
+      editIdx,
+      sessions,
+      hourIndex,
+      role,
+      groupFilter,
+    ]
+  );
+
+  const handleDeleteSession = useCallback(
+    async (idx: number) => {
+      if (!confirm("هل أنت متأكد من حذف هذه الحلقة؟")) return;
+      const id = sessions[idx]?._id;
+      if (id) {
+        try {
+          await deleteSession(id);
+          setSessions((prev) => prev.filter((_, i) => i !== idx));
+        } catch (error) {
+          console.error("Error deleting session:", error);
+          alert("حدث خطأ أثناء حذف الحلقة");
+        }
+      } else {
+        setSessions((prev) => prev.filter((_, i) => i !== idx));
+      }
+    },
+    [sessions]
+  );
+
+  const handleEditSession = useCallback(
+    (idx: number) => {
+      const s = sessions[idx];
+      setSelectedDay(s.day);
+      setStartHour(s.startHour);
+      setEndHour(s.endHour);
+      setNote(s.note);
+      setEditIdx(idx);
+      setShowForm(true);
+    },
+    [sessions]
+  );
 
   // يبني خلايا الصف مع دمج الأعمدة
   const renderDayRowCells = (day: string) => {
@@ -130,12 +302,12 @@ const Timetable = () => {
     let i = 0;
 
     while (i < hours.length) {
-      const idx = sessions.findIndex(
+      const idx = filteredSessions.findIndex(
         (s) => s.day === day && hourIndex(s.startHour) === i
       );
 
       if (idx !== -1) {
-        const s = sessions[idx];
+        const s = filteredSessions[idx];
         const si = hourIndex(s.startHour);
         const ei = hourIndex(s.endHour);
         const span = Math.max(1, ei - si);
@@ -202,7 +374,7 @@ const Timetable = () => {
         {error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-center">
             {error}
-            <button 
+            <button
               onClick={fetchSessions}
               className="mr-2 underline hover:no-underline">
               إعادة المحاولة
@@ -217,13 +389,42 @@ const Timetable = () => {
         )}
 
         {(role === "teacher" || role === "admin") && (
-          <div className="flex justify-center mb-4">
-            <button
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-5 rounded-xl shadow-sm hover:shadow transition focus:outline-none focus:ring-2 focus:ring-emerald-300"
-              onClick={() => setShowForm(true)}>
-              إضافة موعد حلقة
-            </button>
-          </div>
+          <>
+            {/* شريط الفلترة */}
+            <div className="bg-white rounded-xl shadow-md p-6 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* الفلترة بالحلقة */}
+                <div>
+                  <label className="block text-sm font-medium text-emerald-700 mb-2">
+                    الحلقة:
+                  </label>
+                  <select
+                    value={groupFilter}
+                    onChange={(e) => setGroupFilter(e.target.value)}
+                    className="w-full border border-emerald-300 rounded-lg px-4 py-2 bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    {groupsAvailable.length === 0 ? (
+                      <option value="all">لا توجد حلقات</option>
+                    ) : (
+                      groupsAvailable.map((g) => (
+                        <option key={g} value={g}>
+                          {g === "all" ? "الكل" : g}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
+
+                {/* زر إضافة موعد */}
+                <div className="flex items-end">
+                  <button
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-5 rounded-xl shadow-sm hover:shadow transition focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                    onClick={() => setShowForm(true)}>
+                    إضافة موعد حلقة
+                  </button>
+                </div>
+              </div>
+            </div>
+          </>
         )}
 
         {/* بطاقة الجدول */}
@@ -328,15 +529,27 @@ const Timetable = () => {
 
               <div>
                 <label className="block mb-1 font-bold text-emerald-700">
-                  ملاحظة
+                  {role === "teacher" && groupFilter !== "all"
+                    ? "اسم الحلقة"
+                    : "ملاحظة"}
                 </label>
-                <input
-                  className="w-full border border-emerald-300 rounded-lg px-3 py-2 bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-300"
-                  type="text"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder="مثلاً اسم الحلقة أو ملاحظة…"
-                />
+                {role === "teacher" && groupFilter !== "all" ? (
+                  <input
+                    className="w-full border border-emerald-300 rounded-lg px-3 py-2 bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                    type="text"
+                    value={groupFilter}
+                    disabled
+                    readOnly
+                  />
+                ) : (
+                  <input
+                    className="w-full border border-emerald-300 rounded-lg px-3 py-2 bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                    type="text"
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder="مثلاً اسم الحلقة أو ملاحظة…"
+                  />
+                )}
               </div>
 
               <div className="flex justify-between pt-2">

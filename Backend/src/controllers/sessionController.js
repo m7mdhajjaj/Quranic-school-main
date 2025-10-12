@@ -14,11 +14,25 @@ exports.getSessions = async (req, res) => {
 exports.addSession = async (req, res) => {
   try {
     const { day, startHour, endHour, note } = req.body;
-    const session = new Session({ day, startHour, endHour, note });
+
+    // Validate required fields
+    if (!day || !startHour || !endHour) {
+      return res.status(400).json({
+        error: "Invalid data",
+        message: "اليوم وساعة البداية وساعة النهاية مطلوبة",
+        details: { day, startHour, endHour, note },
+      });
+    }
+
+    const session = new Session({ day, startHour, endHour, note: note || "" });
     await session.save();
     res.status(201).json(session);
   } catch (err) {
-    res.status(400).json({ error: "Invalid data" });
+    console.error("Error adding session:", err);
+    res.status(400).json({
+      error: "Invalid data",
+      message: err.message || "حدث خطأ أثناء إضافة الموعد",
+    });
   }
 };
 
@@ -27,15 +41,32 @@ exports.updateSession = async (req, res) => {
   try {
     const { id } = req.params;
     const { day, startHour, endHour, note } = req.body;
+
+    // Validate required fields
+    if (!day || !startHour || !endHour) {
+      return res.status(400).json({
+        error: "Invalid data",
+        message: "اليوم وساعة البداية وساعة النهاية مطلوبة",
+      });
+    }
+
     const session = await Session.findByIdAndUpdate(
       id,
-      { day, startHour, endHour, note },
+      { day, startHour, endHour, note: note || "" },
       { new: true }
     );
-    if (!session) return res.status(404).json({ error: "Not found" });
+    if (!session)
+      return res.status(404).json({
+        error: "Not found",
+        message: "لم يتم العثور على الموعد",
+      });
     res.json(session);
   } catch (err) {
-    res.status(400).json({ error: "Invalid data" });
+    console.error("Error updating session:", err);
+    res.status(400).json({
+      error: "Invalid data",
+      message: err.message || "حدث خطأ أثناء تحديث الموعد",
+    });
   }
 };
 
@@ -44,9 +75,17 @@ exports.deleteSession = async (req, res) => {
   try {
     const { id } = req.params;
     const session = await Session.findByIdAndDelete(id);
-    if (!session) return res.status(404).json({ error: "Not found" });
-    res.json({ success: true });
+    if (!session)
+      return res.status(404).json({
+        error: "Not found",
+        message: "لم يتم العثور على الموعد",
+      });
+    res.json({ success: true, message: "تم حذف الموعد بنجاح" });
   } catch (err) {
-    res.status(400).json({ error: "Invalid data" });
+    console.error("Error deleting session:", err);
+    res.status(400).json({
+      error: "Invalid data",
+      message: err.message || "حدث خطأ أثناء حذف الموعد",
+    });
   }
 };
