@@ -37,6 +37,28 @@ const groupSchema = new mongoose.Schema(
       maxlength: [100, "الجدول الزمني يجب ألا يتجاوز 100 حرف"],
     },
 
+    // مواعيد الحلقة (مرتبطة بـ Sessions)
+    timetable: [
+      {
+        day: {
+          type: String,
+          required: true,
+        },
+        startHour: {
+          type: String,
+          required: true,
+        },
+        endHour: {
+          type: String,
+          required: true,
+        },
+        sessionId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Session",
+        },
+      },
+    ],
+
     isActive: {
       type: Boolean,
       default: true,

@@ -32,7 +32,7 @@ import {
   deleteGroup,
   // createGroup, // TODO: Will be used in form submission
   // updateGroup, // TODO: Will be used in edit functionality
-  getGroupsByTeacher,
+  // getGroupsByTeacher, // Not used - filtering done in frontend
   type Group,
 } from "../../Api/groupApi";
 import { getAllTeachers } from "../../Api/teacherApi";
@@ -1125,7 +1125,7 @@ const GroupManagement: React.FC = () => {
                       الطلاب المشتركين
                     </th>
                     <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">
-                      المواعيد
+                      الجدول الأسبوعي
                     </th>
                     <th className="px-6 py-4 text-right text-sm font-bold text-gray-700">
                       الوصف
@@ -1236,10 +1236,31 @@ const GroupManagement: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className="inline-flex items-center gap-1 text-gray-600 text-sm">
-                            <FaCalendar className="w-3 h-3" />
-                            {group.schedule || "غير محدد"}
-                          </span>
+                          {group.timetable && group.timetable.length > 0 ? (
+                            <div className="space-y-1">
+                              {group.timetable.map(
+                                (session: any, idx: number) => (
+                                  <div
+                                    key={idx}
+                                    className="flex items-center gap-2 text-xs bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100">
+                                    <FaCalendar className="w-3 h-3 text-blue-600 flex-shrink-0" />
+                                    <span className="font-medium text-blue-900">
+                                      {session.day}
+                                    </span>
+                                    <span className="text-gray-400">•</span>
+                                    <span className="text-blue-700 font-semibold">
+                                      {session.startHour} - {session.endHour}
+                                    </span>
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-gray-500 text-sm">
+                              <FaCalendar className="w-3 h-3" />
+                              لا يوجد جدول
+                            </span>
+                          )}
                         </td>
                         <td className="px-6 py-4">
                           <div className="text-sm text-gray-600 max-w-xs truncate">
@@ -1416,17 +1437,37 @@ const GroupManagement: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Schedule */}
-                    <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-lg">
-                      <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <FaCalendar className="w-5 h-5 text-amber-600" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-gray-500">المواعيد</p>
-                        <p className="text-sm font-bold text-amber-700 truncate">
-                          {group.schedule || "غير محدد"}
+                    {/* Schedule / Timetable */}
+                    <div className="p-3 bg-amber-50 rounded-lg">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <FaCalendar className="w-4 h-4 text-amber-600" />
+                        </div>
+                        <p className="text-xs font-semibold text-gray-700">
+                          الجدول الأسبوعي
                         </p>
                       </div>
+                      {group.timetable && group.timetable.length > 0 ? (
+                        <div className="space-y-2 mt-2">
+                          {group.timetable.map((session: any, idx: number) => (
+                            <div
+                              key={idx}
+                              className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-amber-200 shadow-sm">
+                              <span className="text-xs font-bold text-amber-800 min-w-[60px]">
+                                {session.day}
+                              </span>
+                              <span className="text-amber-400">•</span>
+                              <span className="text-xs font-semibold text-amber-700">
+                                {session.startHour} - {session.endHour}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-gray-500 mt-2">
+                          لا يوجد جدول محدد
+                        </p>
+                      )}
                     </div>
 
                     {/* Available Spots */}

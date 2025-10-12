@@ -16,6 +16,12 @@ export interface Group {
   availableSpots?: number; // عدد الأماكن المتاحة
   capacityStatus?: string; // حالة السعة مثل "25/30"
   capacityPercentage?: number; // نسبة الإشغال المئوية
+  timetable?: Array<{
+    day: string;
+    startHour: string;
+    endHour: string;
+    sessionId?: string;
+  }>;
   createdAt: Date;
   updatedAt: Date;
 }
