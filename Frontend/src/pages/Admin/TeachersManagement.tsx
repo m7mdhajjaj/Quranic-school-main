@@ -692,15 +692,35 @@ const TeachersManagement: React.FC = () => {
   const handleBulkDelete = async () => {
     if (selectedTeachers.size === 0) return;
 
+    const teachersCount = selectedTeachers.size;
+    const teachersText = teachersCount === 1 ? 'معلم واحد' : `${teachersCount} معلم`;
+
     const result = await showCenteredSwal({
-      title: `حذف ${selectedTeachers.size} معلم`,
-      text: 'هل أنت متأكد من حذف المعلمين المحددين؟',
-      icon: 'warning',
+      title: 'حذف المعلمين المحددين 🗑️',
+      html: `
+        <div class="text-center py-4">
+          <div class="mx-auto w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-6">
+            <svg class="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+            </svg>
+          </div>
+          <p class="text-lg font-semibold text-gray-800 mb-2">هل أنت متأكد من الحذف؟</p>
+          <p class="text-gray-600 mb-4">سيتم حذف <span class="font-bold text-red-600">${teachersText}</span></p>
+          <p class="text-sm text-gray-500">لا يمكن التراجع عن هذه العملية</p>
+        </div>
+      `,
       showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'نعم، احذف الكل',
-      cancelButtonText: 'إلغاء',
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: '🗑️ نعم، احذف',
+      cancelButtonText: '❌ إلغاء',
+      reverseButtons: true,
+      focusCancel: true,
+      customClass: {
+        popup: 'rtl-popup swal2-rtl-popup',
+        title: 'rtl-title',
+        htmlContainer: 'rtl-content',
+      },
     });
 
     if (result.isConfirmed) {
@@ -714,13 +734,21 @@ const TeachersManagement: React.FC = () => {
         setTeachers((prev) => prev.filter((t) => !selectedTeachers.has(t._id)));
         setSelectedTeachers(new Set());
 
+        // تشغيل صوت الحذف الناجح
+        playDelete();
+
+        // رسالة نجاح الحذف
         await showSuccessMessage(
-          '🎉 تمت العملية بنجاح 🎉',
-          'تم حذف المعلمين المحددين',
-          `${selectedTeachers.size} معلم`
+          'تم الحذف بنجاح! 🎉',
+          `تم حذف ${teachersText} من النظام بنجاح`
         );
       } catch (bulkDeleteError) {
         console.error('❌ فشل في حذف المعلمين:', bulkDeleteError);
+
+        // تشغيل صوت الخطأ
+        playError();
+
+        // رسالة خطأ الحذف
         await showErrorMessage(
           '❌ فشل في العملية',
           'حدث خطأ أثناء حذف المعلمين - يرجى المحاولة مرة أخرى'
