@@ -6,6 +6,7 @@ import {
   deleteSession,
   type Session,
 } from "../Api/sessionApi";
+import Swal from "sweetalert2";
 
 const Timetable = () => {
   const days = [
@@ -176,7 +177,13 @@ const Timetable = () => {
       const si = hourIndex(startHour);
       const ei = hourIndex(endHour);
       if (si === -1 || ei === -1 || ei <= si) {
-        alert("يجب أن تكون ساعة الانتهاء بعد ساعة الابتداء.");
+        await Swal.fire({
+          icon: "warning",
+          title: "تنبيه",
+          text: "يجب أن تكون ساعة الانتهاء بعد ساعة الابتداء.",
+          confirmButtonText: "حسناً",
+          confirmButtonColor: "#10b981",
+        });
         return;
       }
 
@@ -216,12 +223,23 @@ const Timetable = () => {
       });
 
       if (hasConflict) {
+        const conflictTitle = role === "teacher" 
+          ? "تعارض في مواعيد الحلقات!" 
+          : "تعارض في الموعد!";
+        
         const conflictMsg =
           role === "teacher"
-            ? `⚠️ تعارض في الموعد!\n\nيوجد موعد آخر لإحدى حلقاتك في نفس الوقت يوم ${selectedDay} من ${startHour} إلى ${endHour}.\n\nيرجى اختيار وقت آخر.`
-            : `⚠️ تعارض في الموعد!\n\nيوجد موعد آخر لنفس الحلقة (${sessionNote}) في نفس الوقت يوم ${selectedDay}.\n\nيرجى اختيار وقت آخر.`;
+            ? `يوجد موعد آخر لإحدى حلقاتك في نفس الوقت يوم ${selectedDay} من ${startHour} إلى ${endHour}.<br><br>يرجى اختيار وقت آخر.`
+            : `يوجد موعد آخر لنفس الحلقة <strong>(${sessionNote})</strong> في نفس الوقت يوم ${selectedDay}.<br><br>يرجى اختيار وقت آخر.`;
 
-        alert(conflictMsg);
+        await Swal.fire({
+          icon: "error",
+          title: conflictTitle,
+          html: conflictMsg,
+          confirmButtonText: "حسناً",
+          confirmButtonColor: "#10b981",
+          iconColor: "#ef4444",
+        });
         return;
       }
 
@@ -248,13 +266,29 @@ const Timetable = () => {
           setSessions((prev) =>
             prev.map((s, i) => (i === editIdx ? updated : s))
           );
-          alert("تم تحديث الموعد بنجاح ✅");
+          await Swal.fire({
+            icon: "success",
+            title: "نجح التحديث!",
+            text: "تم تحديث موعد الحلقة بنجاح",
+            timer: 2000,
+            showConfirmButton: false,
+            toast: true,
+            position: "top-end",
+          });
         } else {
           console.log("➕ إضافة موعد جديد");
           const added = await createSession(payload);
           console.log("✅ تمت الإضافة:", added);
           setSessions((prev) => [...prev, added]);
-          alert("تم إضافة الموعد بنجاح ✅");
+          await Swal.fire({
+            icon: "success",
+            title: "تمت الإضافة بنجاح!",
+            text: `تم إضافة موعد ${sessionNote} يوم ${selectedDay}`,
+            timer: 2000,
+            showConfirmButton: false,
+            toast: true,
+            position: "top-end",
+          });
         }
       } catch (error: any) {
         console.error("❌ خطأ في حفظ الموعد:", error);
@@ -263,7 +297,14 @@ const Timetable = () => {
           error?.response?.data?.message ||
           error?.message ||
           "حدث خطأ أثناء حفظ الحلقة";
-        alert(`خطأ: ${errorMsg}`);
+        
+        await Swal.fire({
+          icon: "error",
+          title: "حدث خطأ!",
+          text: errorMsg,
+          confirmButtonText: "حسناً",
+          confirmButtonColor: "#10b981",
+        });
         return;
       }
 
@@ -288,15 +329,44 @@ const Timetable = () => {
 
   const handleDeleteSession = useCallback(
     async (idx: number) => {
-      if (!confirm("هل أنت متأكد من حذف هذه الحلقة؟")) return;
+      const session = sessions[idx];
+      const result = await Swal.fire({
+        title: "تأكيد الحذف",
+        html: `هل أنت متأكد من حذف موعد <strong>${session.note || "الحلقة"}</strong>؟<br>يوم ${session.day} من ${session.startHour} إلى ${session.endHour}`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#ef4444",
+        cancelButtonColor: "#6b7280",
+        confirmButtonText: "نعم، احذف",
+        cancelButtonText: "إلغاء",
+        reverseButtons: true,
+      });
+
+      if (!result.isConfirmed) return;
+
       const id = sessions[idx]?._id;
       if (id) {
         try {
           await deleteSession(id);
           setSessions((prev) => prev.filter((_, i) => i !== idx));
+          await Swal.fire({
+            icon: "success",
+            title: "تم الحذف!",
+            text: "تم حذف الموعد بنجاح",
+            timer: 2000,
+            showConfirmButton: false,
+            toast: true,
+            position: "top-end",
+          });
         } catch (error) {
           console.error("Error deleting session:", error);
-          alert("حدث خطأ أثناء حذف الحلقة");
+          await Swal.fire({
+            icon: "error",
+            title: "حدث خطأ!",
+            text: "حدث خطأ أثناء حذف الحلقة",
+            confirmButtonText: "حسناً",
+            confirmButtonColor: "#10b981",
+          });
         }
       } else {
         setSessions((prev) => prev.filter((_, i) => i !== idx));
