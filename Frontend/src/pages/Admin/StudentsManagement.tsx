@@ -24,19 +24,18 @@ import {
   getAllStudents,
   deleteStudent,
   getStudentStats,
-  getStudentsByGroup,
   searchStudents,
-  toggleStudentStatus,
   bulkDeleteStudents,
   type Student as ApiStudent,
 } from '../../Api/studentApi';
-import { getAllGroups } from '../../Api/groupApi';
+
 import AddStudentFormWithYup from '../../components/Forms/AddStudentForm';
 import ResponsivePagination from '../../components/Pagination/ResponsivePagination';
-import Swal from 'sweetalert2';
 import {
+  showCenteredSwal,
   showSuccessMessage,
   showWarningMessage,
+  showErrorMessage,
 } from '../../utils/sweetalertUtils';
 
 // استخدام Student من API
@@ -64,7 +63,6 @@ const StudentsManagement: React.FC = () => {
   // Filter & Search States
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGender, setSelectedGender] = useState('all');
-  const [selectedGroup, setSelectedGroup] = useState('all');
   const [groupsFilter, setGroupsFilter] = useState<'all' | 'withGroups' | 'withoutGroups'>('all');
   const [ageRange, setAgeRange] = useState<[number, number]>([0, 100]);
   const [showFilters, setShowFilters] = useState(false);
@@ -85,25 +83,7 @@ const StudentsManagement: React.FC = () => {
     new Set()
   );
 
-  // Groups
-  const [allGroups, setAllGroups] = useState<{ _id: string; name: string }[]>(
-    []
-  );
 
-  // Load groups using the new API system
-  useEffect(() => {
-    const loadGroups = async () => {
-      try {
-        const result = await getAllGroups();
-        if (result.success && result.data) {
-          setAllGroups(result.data.map((g) => ({ _id: g._id, name: g.name })));
-        }
-      } catch (error) {
-        console.error('❌ خطأ في تحميل المجموعات:', error);
-      }
-    };
-    loadGroups();
-  }, []);
 
   // Enhanced statistics with API integration
   const [apiStats, setApiStats] = useState<{
@@ -313,53 +293,7 @@ const StudentsManagement: React.FC = () => {
     return () => clearInterval(autoRefreshInterval);
   }, [hasPermission, isConnected, fetchStudents]);
 
-  // Handle group filtering using API
-  const handleGroupFilter = useCallback(
-    async (groupId: string) => {
-      if (groupId === 'all') {
-        await fetchStudents();
-        return;
-      }
 
-      try {
-        const result = await getStudentsByGroup(groupId);
-        if (result.success && result.data) {
-          setStudents(result.data);
-        }
-      } catch (error) {
-        console.error('❌ خطأ في فلترة المجموعة:', error);
-      }
-    },
-    [fetchStudents]
-  );
-
-  // Handle student status toggle
-  const handleToggleStatus = useCallback(
-    async (studentId: string, currentStatus: boolean) => {
-      try {
-        const result = await toggleStudentStatus(studentId);
-        if (result.success) {
-          setStudents((prev) =>
-            prev.map((student) =>
-              student._id === studentId
-                ? { ...student, isActive: !currentStatus }
-                : student
-            )
-          );
-          showSuccessMessage(
-            'تم التحديث',
-            `تم ${!currentStatus ? 'تفعيل' : 'إلغاء تفعيل'} الطالب بنجاح`
-          );
-        } else {
-          throw new Error(result.message || 'فشل في تحديث حالة الطالب');
-        }
-      } catch (error) {
-        console.error('❌ خطأ في تحديث حالة الطالب:', error);
-        showWarningMessage('خطأ', 'حدث خطأ في تحديث حالة الطالب');
-      }
-    },
-    []
-  );
 
   // Handle sorting
   const handleSort = (field: SortField) => {
@@ -470,7 +404,7 @@ const StudentsManagement: React.FC = () => {
   }, [
     searchTerm,
     selectedGender,
-    selectedGroup,
+    groupsFilter,
     ageRange,
     sortField,
     sortOrder,
@@ -494,7 +428,7 @@ const StudentsManagement: React.FC = () => {
       ? `${student.firstName} ${student.lastName}`
       : 'الطالب';
 
-    const result = await Swal.fire({
+    const result = await showCenteredSwal({
       title: 'تأكيد حذف الطالب 🛡️',
       html: `
         <div class="text-center">
@@ -518,13 +452,6 @@ const StudentsManagement: React.FC = () => {
       cancelButtonText: '❌ إلغاء',
       reverseButtons: true,
       focusCancel: true,
-      customClass: {
-        popup: 'rtl-popup swal2-rtl-popup',
-        title: 'rtl-title',
-        htmlContainer: 'rtl-content',
-        confirmButton: 'swal2-confirm-delete',
-        cancelButton: 'swal2-cancel-delete',
-      },
     });
 
     if (result.isConfirmed) {
@@ -533,26 +460,23 @@ const StudentsManagement: React.FC = () => {
           const deleteResult = await deleteStudent(studentId);
           if (deleteResult.success) {
             setStudents((prev) => prev.filter((s) => s._id !== studentId));
-            await Swal.fire({
-              title: 'تم الحذف!',
-              text: 'تم حذف الطالب بنجاح',
-              icon: 'success',
-              confirmButtonText: 'موافق',
-              customClass: { popup: 'rtl-popup', title: 'rtl-title' },
-            });
+            
+            // رسالة نجاح الحذف
+            await showSuccessMessage(
+              'تم الحذف!',
+              `تم حذف الطالب ${studentName} من النظام بنجاح`
+            );
           } else {
             throw new Error(deleteResult.message || 'فشل في حذف الطالب');
           }
         }
       } catch (deleteError) {
         console.error('❌ فشل في حذف الطالب:', deleteError);
-        await Swal.fire({
-          title: 'خطأ!',
-          text: 'حدث خطأ أثناء حذف الطالب',
-          icon: 'error',
-          confirmButtonText: 'موافق',
-          customClass: { popup: 'rtl-popup', title: 'rtl-title' },
-        });
+        
+        await showErrorMessage(
+          'خطأ في الحذف!',
+          'حدث خطأ أثناء حذف الطالب. يرجى المحاولة مرة أخرى'
+        );
       }
     }
   };
@@ -579,7 +503,7 @@ const StudentsManagement: React.FC = () => {
       // إعادة تعيين البحث والفلاتر لإظهار الطالب الجديد
       setSearchTerm('');
       setSelectedGender('all');
-      setSelectedGroup('all');
+      setGroupsFilter('all');
       setAgeRange([0, 100]);
       setCurrentPage(1);
 
@@ -652,15 +576,30 @@ const StudentsManagement: React.FC = () => {
   const handleBulkDelete = async () => {
     if (selectedStudents.size === 0) return;
 
-    const result = await Swal.fire({
-      title: `حذف ${selectedStudents.size} طالب`,
-      text: 'هل أنت متأكد من حذف الطلاب المحددين؟',
+    const result = await showCenteredSwal({
+      title: `حذف ${selectedStudents.size} طالب 🗑️`,
+      html: `
+        <div class="text-center">
+          <div class="mb-4">
+            <div class="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+              <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+              </svg>
+            </div>
+          </div>
+          <p class="text-gray-600 mb-2">هل أنت متأكد من حذف:</p>
+          <p class="font-bold text-lg text-red-600">${selectedStudents.size} طالب محدد</p>
+          <p class="text-sm text-gray-500 mt-2">هذه العملية لا يمكن التراجع عنها</p>
+        </div>
+      `,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'نعم، احذف الكل',
-      cancelButtonText: 'إلغاء',
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: '🗑️ نعم، احذف الكل',
+      cancelButtonText: '❌ إلغاء',
+      reverseButtons: true,
+      focusCancel: true,
     });
 
     if (result.isConfirmed) {
@@ -669,28 +608,26 @@ const StudentsManagement: React.FC = () => {
         const bulkDeleteResult = await bulkDeleteStudents(studentIds);
 
         if (bulkDeleteResult.success) {
+          const deletedCount = selectedStudents.size;
           setStudents((prev) =>
             prev.filter((s) => !selectedStudents.has(s._id || ''))
           );
           setSelectedStudents(new Set());
 
-          await Swal.fire({
-            title: 'تم حذف الطلاب!',
-            text: `تم حذف ${selectedStudents.size} طالب بنجاح`,
-            icon: 'success',
-            timer: 3000,
-            showConfirmButton: false,
-          });
+          await showSuccessMessage(
+            'تم حذف الطلاب!',
+            `تم حذف ${deletedCount} طالب من النظام بنجاح`
+          );
         } else {
           throw new Error(bulkDeleteResult.message || 'فشل في حذف الطلاب');
         }
       } catch (bulkDeleteError) {
         console.error('❌ فشل في حذف الطلاب:', bulkDeleteError);
-        await Swal.fire({
-          title: 'فشل في الحذف!',
-          text: 'حدث خطأ أثناء حذف الطلاب',
-          icon: 'error',
-        });
+        
+        await showErrorMessage(
+          'فشل في الحذف!',
+          'حدث خطأ أثناء حذف الطلاب المحددين. يرجى المحاولة مرة أخرى'
+        );
       }
     }
   };
