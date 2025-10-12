@@ -65,6 +65,7 @@ const StudentsManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGender, setSelectedGender] = useState('all');
   const [selectedGroup, setSelectedGroup] = useState('all');
+  const [groupsFilter, setGroupsFilter] = useState<'all' | 'withGroups' | 'withoutGroups'>('all');
   const [ageRange, setAgeRange] = useState<[number, number]>([0, 100]);
   const [showFilters, setShowFilters] = useState(false);
 
@@ -170,11 +171,11 @@ const StudentsManagement: React.FC = () => {
   const activeFiltersCount = useMemo(() => {
     let count = 0;
     if (selectedGender !== 'all') count++;
-    if (selectedGroup !== 'all') count++;
+    if (groupsFilter !== 'all') count++;
     if (ageRange[0] !== 0 || ageRange[1] !== 100) count++;
     if (searchTerm) count++;
     return count;
-  }, [selectedGender, selectedGroup, ageRange, searchTerm]);
+  }, [selectedGender, groupsFilter, ageRange, searchTerm]);
 
   // Fetch students using the new API system
   const fetchStudents = useCallback(async (retryAttempt = 0) => {
@@ -406,13 +407,13 @@ const StudentsManagement: React.FC = () => {
   // Filter and sort students
   const filteredAndSortedStudents = useMemo(() => {
     const filtered = students.filter((student) => {
-      if (selectedGroup !== 'all') {
-        const normalizeGroupName = (name: string) =>
-          (name || '').trim().replace(/\s+/g, ' ').toLowerCase();
-        if (
-          normalizeGroupName(student.group) !==
-          normalizeGroupName(selectedGroup)
-        ) {
+      // Groups filter logic
+      if (groupsFilter === 'withGroups') {
+        if (!student.group || student.group.trim() === '' || student.group === 'غير محدد') {
+          return false;
+        }
+      } else if (groupsFilter === 'withoutGroups') {
+        if (student.group && student.group.trim() !== '' && student.group !== 'غير محدد') {
           return false;
         }
       }
@@ -457,7 +458,7 @@ const StudentsManagement: React.FC = () => {
     students,
     searchTerm,
     selectedGender,
-    selectedGroup,
+    groupsFilter,
     ageRange,
     sortField,
     sortOrder,
@@ -642,7 +643,7 @@ const StudentsManagement: React.FC = () => {
   const resetFilters = () => {
     setSearchTerm('');
     setSelectedGender('all');
-    setSelectedGroup('all');
+    setGroupsFilter('all');
     setAgeRange([0, 100]);
     setCurrentPage(1);
   };
@@ -844,54 +845,111 @@ const StudentsManagement: React.FC = () => {
 
             {/* Extended Filters */}
             {showFilters && (
-              <div className="bg-gradient-to-br from-white to-gray-50 p-6 rounded-2xl border-2 border-gray-100 shadow-lg animate-fadeIn">
+              <div className="bg-gradient-to-br from-white to-gray-50 p-6 rounded-2xl border-2 border-gray-100 shadow-lg animate-fadeIn relative">
+                {/* Close Button */}
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="absolute top-4 left-4 p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-full transition-all duration-200"
+                  title="إغلاق الفلاتر">
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {/* Gender Filter */}
                   <div className="space-y-3">
                     <label className="flex items-center gap-2 text-sm font-semibold text-gray-800">
                       <div className="w-2 h-2 rounded-full bg-pink-500"></div>
-                      الجنس
+                      تصفية حسب الجنس
                     </label>
                     <div className="grid grid-cols-3 gap-2">
-                      {['all', 'ذكر', 'أنثى'].map((gender) => (
-                        <button
-                          key={gender}
-                          onClick={() => setSelectedGender(gender)}
-                          className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                            selectedGender === gender
-                              ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md'
-                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                          }`}
-                        >
-                          {gender === 'all' ? 'الكل' : gender}
-                        </button>
-                      ))}
+                      <button
+                        onClick={() => setSelectedGender('all')}
+                        title="عرض جميع الطلاب"
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                          selectedGender === 'all'
+                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        الكل
+                      </button>
+                      <button
+                        onClick={() => setSelectedGender('ذكر')}
+                        title="عرض الطلاب الذكور فقط"
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                          selectedGender === 'ذكر'
+                            ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        ذكر
+                      </button>
+                      <button
+                        onClick={() => setSelectedGender('أنثى')}
+                        title="عرض الطالبات الإناث فقط"
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                          selectedGender === 'أنثى'
+                            ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        أنثى
+                      </button>
                     </div>
                   </div>
 
-                  {/* Group Filter */}
+                  {/* Groups Filter */}
                   <div className="space-y-3">
                     <label className="flex items-center gap-2 text-sm font-semibold text-gray-800">
-                      <div className="w-2 h-2 rounded-full bg-purple-500"></div>
-                      الحلقة
+                      <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                      تصفية حسب الحلقات
                     </label>
-                    <select
-                      value={selectedGroup}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        setSelectedGroup(value);
-                        handleGroupFilter(value);
-                      }}
-                      aria-label="فلترة حسب الحلقة"
-                      className="w-full px-4 py-2.5 bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-                    >
-                      <option value="all">جميع الحلقات</option>
-                      {allGroups.map((group) => (
-                        <option key={group._id} value={group.name}>
-                          {group.name}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="grid grid-cols-1 gap-2">
+                      <button
+                        onClick={() => setGroupsFilter('all')}
+                        title="عرض جميع الطلاب"
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                          groupsFilter === 'all'
+                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        الكل
+                      </button>
+                      <button
+                        onClick={() => setGroupsFilter('withGroups')}
+                        title="عرض الطلاب الذين لديهم حلقات"
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                          groupsFilter === 'withGroups'
+                            ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        🎯 لديهم حلقات
+                      </button>
+                      <button
+                        onClick={() => setGroupsFilter('withoutGroups')}
+                        title="عرض الطلاب الذين لا ينتمون لأي حلقة"
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                          groupsFilter === 'withoutGroups'
+                            ? 'bg-gradient-to-r from-red-500 to-pink-600 text-white shadow-md'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        🚫 بلا حلقات
+                      </button>
+                    </div>
                   </div>
 
                   {/* Age Range Filter */}
@@ -942,6 +1000,53 @@ const StudentsManagement: React.FC = () => {
                     </select>
                   </div>
                 </div>
+
+                {/* Filter Summary */}
+                <div className="mt-6 pt-4 border-t border-gray-200">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm text-gray-600 font-medium">
+                      الفلاتر النشطة:
+                    </span>
+                    {selectedGender !== 'all' && (
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        selectedGender === 'ذكر' 
+                          ? 'bg-blue-100 text-blue-800' 
+                          : 'bg-pink-100 text-pink-800'
+                      }`}>
+                        الجنس: {selectedGender}
+                      </span>
+                    )}
+
+                    {groupsFilter !== 'all' && (
+                      <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-medium">
+                        الحلقات:{' '}
+                        {groupsFilter === 'withGroups'
+                          ? 'لديهم حلقات'
+                          : 'بلا حلقات'}
+                      </span>
+                    )}
+
+                    {(ageRange[0] !== 0 || ageRange[1] !== 100) && (
+                      <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                        العمر: {ageRange[0]}-{ageRange[1]}
+                      </span>
+                    )}
+
+                    {searchTerm && (
+                      <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">
+                        البحث: "{searchTerm}"
+                      </span>
+                    )}
+
+                    {activeFiltersCount === 0 && (
+                      <span className="text-xs text-gray-400 italic">
+                        لا توجد فلاتر مطبقة
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+
               </div>
             )}
           </div>
@@ -1031,73 +1136,7 @@ const StudentsManagement: React.FC = () => {
           </div>
         )}
 
-        {/* Active Filters Display */}
-        {activeFiltersCount > 0 && (
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 mb-6">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex flex-wrap gap-2 items-center">
-                <span className="text-blue-700 font-medium">
-                  الفلاتر المطبقة:
-                </span>
-                {selectedGender !== 'all' && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-full">
-                    {selectedGender}
-                    <button
-                      onClick={() => setSelectedGender('all')}
-                      className="hover:bg-purple-200 rounded-full p-0.5"
-                      title="إزالة فلتر الجنس"
-                      aria-label="إزالة فلتر الجنس"
-                    >
-                      <FaTimes className="w-3 h-3" />
-                    </button>
-                  </span>
-                )}
-                {selectedGroup !== 'all' && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-violet-100 text-violet-800 text-sm rounded-full">
-                    {selectedGroup}
-                    <button
-                      onClick={() => setSelectedGroup('all')}
-                      className="hover:bg-violet-200 rounded-full p-0.5"
-                      title="إزالة فلتر الحلقة"
-                      aria-label="إزالة فلتر الحلقة"
-                    >
-                      <FaTimes className="w-3 h-3" />
-                    </button>
-                  </span>
-                )}
-                {(ageRange[0] !== 0 || ageRange[1] !== 100) && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-100 text-amber-800 text-sm rounded-full">
-                    {ageRange[0]}-{ageRange[1]} سنة
-                    <button
-                      onClick={() => setAgeRange([0, 100])}
-                      className="hover:bg-amber-200 rounded-full p-0.5"
-                      title="إزالة فلتر العمر"
-                      aria-label="إزالة فلتر العمر"
-                    >
-                      <FaTimes className="w-3 h-3" />
-                    </button>
-                  </span>
-                )}
-                {searchTerm && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-800 text-sm rounded-full">
-                    "{searchTerm}"
-                    <button
-                      onClick={() => setSearchTerm('')}
-                      className="hover:bg-gray-200 rounded-full p-0.5"
-                      title="مسح البحث"
-                      aria-label="مسح البحث"
-                    >
-                      <FaTimes className="w-3 h-3" />
-                    </button>
-                  </span>
-                )}
-              </div>
-              <span className="text-blue-600 text-sm font-medium">
-                {filteredAndSortedStudents.length} من {students.length} طالب
-              </span>
-            </div>
-          </div>
-        )}
+
 
         {/* Bulk Actions */}
         {selectedStudents.size > 0 && (
