@@ -22,7 +22,6 @@ import { useAuth } from '../../hooks/useAuth';
 import { useSocket } from '../../hooks/useSocket';
 import { useSounds } from '../../hooks/useSounds';
 
-// import api from '../../Api/api'; // Using new teacherApi instead
 import { 
   getAllTeachers,
   deleteTeacher,
@@ -567,6 +566,13 @@ const TeachersManagement: React.FC = () => {
           // للمعلمين الجدد سيتم إضافتهم بواسطة الـ API
           await fetchTeachers(); // إعادة تحميل القائمة
 
+          // مسح جميع الفلاتر لعرض جميع المعلمين بما فيهم الجديد
+          setSearchTerm('');
+          setSelectedGender('all');
+          setGroupsFilter('all');
+          setAgeRange([0, 100]);
+          setCurrentPage(1); // العودة للصفحة الأولى
+
           // تشغيل صوت الإضافة الناجحة
           playAdd();
 
@@ -804,7 +810,7 @@ const TeachersManagement: React.FC = () => {
               <div className="relative md:col-span-8">
                 <input
                   type="text"
-                  placeholder="ابحث عن معلم (الاسم، البريد الإلكتروني، رقم الهاتف...)"
+                  placeholder="ابحث عن معلم (الاسم، هوية المعلم، البريد الإلكتروني، رقم الهاتف...)"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
