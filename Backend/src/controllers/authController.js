@@ -61,25 +61,12 @@ exports.login = async (req, res) => {
       });
     }
 
-    // التحقق من صحة رقم الهوية أو كلمة المرور
-    let isPasswordValid = false;
-
-    console.log("Student password field:", student.password);
+    // التحقق من صحة كلمة المرور المشفرة
+    console.log("Student password field:", student.password ? "***" : "none");
     console.log("Entered password:", password ? "***" : "none");
 
-    if (student.password && student.password.length > 20) {
-      // كلمة المرور مشفرة - استخدام bcrypt للتحقق
-      console.log("Checking encrypted password");
-      isPasswordValid = await bcrypt.compare(password, student.password);
-    } else if (student.password) {
-      // كلمة المرور غير مشفرة (نص عادي) - مقارنة مباشرة
-      console.log("Checking plain text password");
-      isPasswordValid = student.password === password;
-    } else {
-      // لا يوجد حقل password - استخدام رقم الهوية
-      console.log("No password field, using idNumber");
-      isPasswordValid = student.idNumber === password;
-    }
+    // استخدام bcrypt للتحقق من كلمة المرور المشفرة
+    const isPasswordValid = await bcrypt.compare(password, student.password);
 
     if (!isPasswordValid) {
       return res.status(401).json({

@@ -1,4 +1,5 @@
 const Student = require("../schema/Student");
+const bcrypt = require("bcryptjs");
 const { validateAndCheckDuplicates } = require("../utils/duplicateChecker");
 const { notifyStudentStatsUpdate } = require("../utils/dashboardNotifications");
 const {
@@ -229,16 +230,21 @@ exports.createStudent = async (req, res) => {
       }
     }
 
+    // تشفير كلمة المرور
+    const rawPassword = req.body.password || req.body.idNumber;
+    const hashedPassword = await bcrypt.hash(rawPassword, 10);
+
     const studentData = {
       ...req.body,
       studentId: studentId,
+      password: hashedPassword, // استخدام كلمة المرور المشفرة
       // Ensure age is a number
       age: parseInt(req.body.age || 0, 10) || 0,
     };
 
     console.log(
       "Creating student with data:",
-      JSON.stringify(studentData, null, 2)
+      JSON.stringify({ ...studentData, password: "***" }, null, 2)
     );
 
     // Create student - simple approach without complex retry logic
@@ -309,6 +315,9 @@ exports.updateStudent = async (req, res) => {
     if (!updatedData.password || updatedData.password.trim() === "") {
       // If no password provided, remove it from update data
       delete updatedData.password;
+    } else {
+      // تشفير كلمة المرور الجديدة
+      updatedData.password = await bcrypt.hash(updatedData.password, 10);
     }
 
     // التحقق من تكرار البيانات الفريدة عبر جميع أنواع المستخدمين (مع استثناء المستخدم الحالي)
