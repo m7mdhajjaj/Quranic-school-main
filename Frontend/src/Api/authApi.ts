@@ -21,6 +21,16 @@ interface LoginAdminRequest {
   userType: 'admin';
 }
 
+interface VerifyIdentityRequest {
+  firstName: string;
+  fatherName: string;
+  grandFatherName: string;
+  lastName: string;
+  motherName: string;
+  idNumber: string;
+  birthDate: string;
+}
+
 interface ForgotPasswordRequest {
   firstName: string;
   fatherName: string;
@@ -32,13 +42,20 @@ interface ForgotPasswordRequest {
 }
 
 interface ResetPasswordRequest {
-  password: string;
-  confirmPassword: string;
+  firstName: string;
+  fatherName: string;
+  grandFatherName: string;
+  lastName: string;
+  motherName: string;
+  idNumber: string;
+  birthDate: string;
+  newPassword: string;
+  confirmPassword?: string;
 }
 
 interface AuthResponse {
   success: boolean;
-  user: any;
+  user: Record<string, unknown>;
   token: string;
   message?: string;
 }
@@ -64,13 +81,19 @@ export const loginAdmin = async (data: LoginAdminRequest): Promise<AuthResponse>
   return response.data;
 };
 
-// Forgot Password
-export const forgotPassword = async (data: ForgotPasswordRequest) => {
-  const response = await api.post('/auth/forgot-password', data);
+// Verify Identity (Step 1 of forgot password)
+export const verifyIdentity = async (data: VerifyIdentityRequest) => {
+  const response = await api.post('/auth/verify-identity', data);
   return response.data;
 };
 
-// Reset Password
+// Forgot Password (Deprecated - use verifyIdentity instead)
+export const forgotPassword = async (data: ForgotPasswordRequest) => {
+  const response = await api.post('/auth/verify-identity', data);
+  return response.data;
+};
+
+// Reset Password (Step 2 - requires all data + new password)
 export const resetPassword = async (data: ResetPasswordRequest) => {
   const response = await api.post('/auth/reset-password', data);
   return response.data;

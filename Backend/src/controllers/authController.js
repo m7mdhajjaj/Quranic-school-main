@@ -705,6 +705,39 @@ exports.verifyIdentity = async (req, res) => {
       }
     }
 
+    // البحث في جدول المسؤولين (Admin)
+    const admin = await Admin.findOne({
+      $or: [{ idNumber: idNumber }, { adminId: idNumber }],
+    });
+
+    if (admin) {
+      // التحقق من البيانات الشخصية للمسؤول
+      const birthDateMatch = admin.birthDate
+        ? new Date(admin.birthDate).toISOString().split("T")[0] === birthDate
+        : false;
+
+      if (
+        admin.firstName.toLowerCase() === firstName.toLowerCase() &&
+        admin.fatherName &&
+        admin.fatherName.toLowerCase() === fatherName.toLowerCase() &&
+        admin.grandFatherName &&
+        admin.grandFatherName.toLowerCase() ===
+          grandFatherName.toLowerCase() &&
+        admin.lastName.toLowerCase() === lastName.toLowerCase() &&
+        admin.motherName &&
+        admin.motherName.toLowerCase() === motherName.toLowerCase() &&
+        (admin.idNumber === idNumber || admin.adminId === idNumber) &&
+        birthDateMatch
+      ) {
+        return res.json({
+          success: true,
+          message: "تم التحقق من البيانات بنجاح",
+          userType: "admin",
+          userId: admin._id,
+        });
+      }
+    }
+
     return res.status(400).json({
       success: false,
       message: "البيانات المدخلة غير صحيحة. تأكد من جميع البيانات الشخصية.",
@@ -793,6 +826,37 @@ exports.resetPassword = async (req, res) => {
       }
     }
 
+    // إذا لم نجد في المعلمين، ابحث في المسؤولين
+    if (!user) {
+      const admin = await Admin.findOne({
+        $or: [{ idNumber: idNumber }, { adminId: idNumber }],
+      });
+
+      if (admin) {
+        const birthDateMatch = admin.birthDate
+          ? new Date(admin.birthDate).toISOString().split("T")[0] ===
+            birthDate
+          : false;
+
+        if (
+          admin.firstName.toLowerCase() === firstName.toLowerCase() &&
+          admin.fatherName &&
+          admin.fatherName.toLowerCase() === fatherName.toLowerCase() &&
+          admin.grandFatherName &&
+          admin.grandFatherName.toLowerCase() ===
+            grandFatherName.toLowerCase() &&
+          admin.lastName.toLowerCase() === lastName.toLowerCase() &&
+          admin.motherName &&
+          admin.motherName.toLowerCase() === motherName.toLowerCase() &&
+          (admin.idNumber === idNumber || admin.adminId === idNumber) &&
+          birthDateMatch
+        ) {
+          user = admin;
+          userType = "admin";
+        }
+      }
+    }
+
     if (!user) {
       return res.status(400).json({
         success: false,
@@ -809,8 +873,12 @@ exports.resetPassword = async (req, res) => {
       await Student.findByIdAndUpdate(user._id, {
         password: hashedPassword,
       });
-    } else {
+    } else if (userType === "teacher") {
       await Teacher.findByIdAndUpdate(user._id, {
+        password: hashedPassword,
+      });
+    } else if (userType === "admin") {
+      await Admin.findByIdAndUpdate(user._id, {
         password: hashedPassword,
       });
     }

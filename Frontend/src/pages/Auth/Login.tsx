@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../hooks/useAuth";
-import { loginStudent, loginTeacher, loginAdmin, forgotPassword, resetPassword } from "../../Api/authApi";
+import { loginStudent, loginTeacher, loginAdmin } from "../../Api/authApi";
+import ForgotPasswordModal from "./ForgotPasswordModal";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -21,21 +22,7 @@ const Login = () => {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [forgotPasswordData, setForgotPasswordData] = useState({
-    firstName: "",
-    fatherName: "",
-    grandFatherName: "",
-    lastName: "",
-    motherName: "",
-    idNumber: "",
-    birthDate: "",
-  });
-  const [resetStep, setResetStep] = useState(1);
-  const [newPasswordData, setNewPasswordData] = useState({
-    password: "",
-    confirmPassword: "",
-  });
+  const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
 
   // Load saved credentials and check authentication on component mount
   useEffect(() => {
@@ -106,26 +93,6 @@ const Login = () => {
     if (!checked) {
       localStorage.removeItem("savedCredentials");
     }
-  };
-
-  const handleForgotPasswordChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const { name, value } = e.target;
-    setForgotPasswordData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    if (error) setError("");
-  };
-
-  const handleNewPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setNewPasswordData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    if (error) setError("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -219,312 +186,6 @@ const Login = () => {
       setIsLoading(false);
     }
   };
-
-  const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setIsLoading(true);
-
-    try {
-      const response = await forgotPassword(forgotPasswordData);
-
-      if (response.success) {
-        setResetStep(2);
-      } else {
-        setError(response.message || "فشل في التحقق من البيانات");
-      }
-    } catch (error: unknown) {
-      console.error("Forgot password error:", error);
-      if (axios.isAxiosError(error)) {
-        const message = error.response?.data?.message || error.message;
-        setError(
-          message || "فشل في التحقق من البيانات. رجاءً تأكد من صحة المعلومات."
-        );
-      } else if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError("فشل في التحقق من البيانات. رجاءً تأكد من صحة المعلومات.");
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleNewPasswordSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setIsLoading(true);
-
-    if (newPasswordData.password !== newPasswordData.confirmPassword) {
-      setError("كلمة المرور وتأكيد كلمة المرور غير متطابقتين");
-      setIsLoading(false);
-      return;
-    }
-
-    if (newPasswordData.password.length < 6) {
-      setError("كلمة المرور يجب أن تكون 6 أحرف على الأقل");
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const response = await resetPassword({
-        password: newPasswordData.password,
-        confirmPassword: newPasswordData.confirmPassword,
-      });
-
-      if (response.success) {
-        alert("تم تغيير كلمة المرور بنجاح!");
-        setShowForgotPassword(false);
-        setResetStep(1);
-        setForgotPasswordData({
-          firstName: "",
-          fatherName: "",
-          grandFatherName: "",
-          lastName: "",
-          motherName: "",
-          idNumber: "",
-          birthDate: "",
-        });
-        setNewPasswordData({
-          password: "",
-          confirmPassword: "",
-        });
-      } else {
-        setError(response.message || "فشل في تغيير كلمة المرور");
-      }
-    } catch (error: unknown) {
-      console.error("Reset password error:", error);
-      if (axios.isAxiosError(error)) {
-        const message = error.response?.data?.message || error.message;
-        setError(
-          message || "فشل في تغيير كلمة المرور. رجاءً المحاولة مرة أخرى."
-        );
-      } else if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError("فشل في تغيير كلمة المرور. رجاءً المحاولة مرة أخرى.");
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (showForgotPassword) {
-    return (
-      <div
-        className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50"
-        dir="rtl">
-        <div className="bg-white/90 backdrop-blur-sm p-10 rounded-3xl shadow-2xl w-full max-w-md border border-white/20">
-          <div className="flex justify-center mb-8">
-            <div className="relative">
-              <img
-                src="/src/images/logo.jpg"
-                alt="مدرسة القرآن"
-                className="h-20 w-20 rounded-full border-4 border-emerald-500 shadow-xl"
-              />
-              <div className="absolute -inset-1 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-full blur opacity-20"></div>
-            </div>
-          </div>
-
-          <h1 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-            {resetStep === 1 ? "نسيت كلمة المرور" : "كلمة مرور جديدة"}
-          </h1>
-
-          {error && (
-            <div className="mb-6 p-4 bg-red-50/80 backdrop-blur-sm border border-red-200 text-red-700 rounded-xl text-center shadow-sm">
-              {error}
-            </div>
-          )}
-
-          {resetStep === 1 ? (
-            <form className="space-y-6" onSubmit={handleForgotPasswordSubmit}>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    الاسم الأول
-                  </label>
-                  <input
-                    type="text"
-                    name="firstName"
-                    value={forgotPasswordData.firstName}
-                    onChange={handleForgotPasswordChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-right"
-                    required
-                    placeholder="أدخل الاسم الأول"
-                    title="الرجاء إدخال الاسم الأول"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    اسم الأب
-                  </label>
-                  <input
-                    type="text"
-                    name="fatherName"
-                    value={forgotPasswordData.fatherName}
-                    onChange={handleForgotPasswordChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-right"
-                    required
-                    placeholder="أدخل اسم الأب"
-                    title="الرجاء إدخال اسم الأب"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    اسم الجد
-                  </label>
-                  <input
-                    type="text"
-                    name="grandFatherName"
-                    value={forgotPasswordData.grandFatherName}
-                    onChange={handleForgotPasswordChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-right"
-                    required
-                    placeholder="أدخل اسم الجد"
-                    title="الرجاء إدخال اسم الجد"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    اسم العائلة
-                  </label>
-                  <input
-                    type="text"
-                    name="lastName"
-                    value={forgotPasswordData.lastName}
-                    onChange={handleForgotPasswordChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-right"
-                    required
-                    placeholder="أدخل اسم العائلة"
-                    title="الرجاء إدخال اسم العائلة"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  اسم الأم
-                </label>
-                <input
-                  type="text"
-                  name="motherName"
-                  value={forgotPasswordData.motherName}
-                  onChange={handleForgotPasswordChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-right"
-                  required
-                  placeholder="أدخل اسم الأم"
-                  title="الرجاء إدخال اسم الأم"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  رقم الهوية
-                </label>
-                <input
-                  type="text"
-                  name="idNumber"
-                  value={forgotPasswordData.idNumber}
-                  onChange={handleForgotPasswordChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-right"
-                  required
-                  placeholder="أدخل رقم الهوية"
-                  title="الرجاء إدخال رقم الهوية"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  تاريخ الميلاد
-                </label>
-                <input
-                  type="date"
-                  name="birthDate"
-                  value={forgotPasswordData.birthDate}
-                  onChange={handleForgotPasswordChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-right"
-                  required
-                  title="الرجاء اختيار تاريخ الميلاد"
-                />
-              </div>
-
-              <div className="space-y-4">
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-emerald-700 hover:to-teal-700 focus:ring-4 focus:ring-emerald-300 focus:outline-none transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg">
-                  {isLoading ? "جارٍ التحقق..." : "تحقق من البيانات"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setShowForgotPassword(false)}
-                  className="w-full bg-gray-200 text-gray-700 py-3 px-6 rounded-xl font-semibold hover:bg-gray-300 focus:ring-4 focus:ring-gray-300 focus:outline-none transition-all duration-200">
-                  العودة لتسجيل الدخول
-                </button>
-              </div>
-            </form>
-          ) : (
-            <form className="space-y-6" onSubmit={handleNewPasswordSubmit}>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  كلمة المرور الجديدة
-                </label>
-                <input
-                  type="password"
-                  name="password"
-                  value={newPasswordData.password}
-                  onChange={handleNewPasswordChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-right"
-                  required
-                  minLength={6}
-                  placeholder="أدخل كلمة المرور الجديدة"
-                  title="كلمة المرور الجديدة"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  تأكيد كلمة المرور
-                </label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={newPasswordData.confirmPassword}
-                  onChange={handleNewPasswordChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-right"
-                  required
-                  minLength={6}
-                  placeholder="أدخل تأكيد كلمة المرور"
-                  title="تأكيد كلمة المرور"
-                />
-              </div>
-
-              <div className="space-y-4">
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 px-6 rounded-xl font-semibold hover:from-emerald-700 hover:to-teal-700 focus:ring-4 focus:ring-emerald-300 focus:outline-none transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg">
-                  {isLoading ? "جارٍ التحديث..." : "تحديث كلمة المرور"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setResetStep(1);
-                    setShowForgotPassword(false);
-                  }}
-                  className="w-full bg-gray-200 text-gray-700 py-3 px-6 rounded-xl font-semibold hover:bg-gray-300 focus:ring-4 focus:ring-gray-300 focus:outline-none transition-all duration-200">
-                  إلغاء
-                </button>
-              </div>
-            </form>
-          )}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div
@@ -724,7 +385,7 @@ const Login = () => {
 
               <button
                 type="button"
-                onClick={() => setShowForgotPassword(true)}
+                onClick={() => setShowForgotPasswordModal(true)}
                 className="text-sm text-emerald-600 hover:text-emerald-800 font-medium transition-colors duration-200">
                 نسيت كلمة المرور؟
               </button>
@@ -770,6 +431,12 @@ const Login = () => {
           </p>
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal
+        isOpen={showForgotPasswordModal}
+        onClose={() => setShowForgotPasswordModal(false)}
+      />
     </div>
   );
 };
