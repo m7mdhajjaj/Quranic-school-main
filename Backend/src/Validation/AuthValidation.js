@@ -281,62 +281,129 @@ const validatePasswordChange = (data) => {
 };
 
 /**
- * Validate identity verification data
+ * Validate identity verification data (Forgot Password Step 1)
  */
 const validateIdentityVerification = (data) => {
   const errors = [];
   const validatedData = {};
 
-  // User identifier validation (teacherId or studentId)
-  if (!isRequired(data.identifier)) {
-    errors.push("رقم المعلم أو الطالب مطلوب");
+  // First name validation
+  if (!isRequired(data.firstName)) {
+    errors.push("الاسم الأول مطلوب");
   } else {
-    const identifierStr = data.identifier.toString().trim();
-    if (!/^\d{8}$/.test(identifierStr)) {
-      errors.push("رقم المعلم أو الطالب يجب أن يكون 8 أرقام");
+    const firstNameStr = data.firstName.toString().trim();
+    if (firstNameStr.length < 2) {
+      errors.push("الاسم الأول يجب أن يكون حرفين على الأقل");
+    } else if (
+      !/^[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\s\-'\.]+$/.test(
+        firstNameStr
+      )
+    ) {
+      errors.push("الاسم الأول يجب أن يحتوي على أحرف عربية فقط");
     } else {
-      validatedData.identifier = identifierStr;
+      validatedData.firstName = firstNameStr;
     }
   }
 
-  // User type validation
-  if (!isRequired(data.userType)) {
-    errors.push("نوع المستخدم مطلوب");
+  // Father name validation
+  if (!isRequired(data.fatherName)) {
+    errors.push("اسم الأب مطلوب");
   } else {
-    const userTypeStr = data.userType.toString().trim().toLowerCase();
-    if (!["teacher", "student", "معلم", "طالب"].includes(userTypeStr)) {
-      errors.push("نوع المستخدم غير صحيح");
+    const fatherNameStr = data.fatherName.toString().trim();
+    if (fatherNameStr.length < 2) {
+      errors.push("اسم الأب يجب أن يكون حرفين على الأقل");
+    } else if (
+      !/^[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\s\-'\.]+$/.test(
+        fatherNameStr
+      )
+    ) {
+      errors.push("اسم الأب يجب أن يحتوي على أحرف عربية فقط");
     } else {
-      // Normalize user type
-      if (userTypeStr === "معلم") validatedData.userType = "teacher";
-      else if (userTypeStr === "طالب") validatedData.userType = "student";
-      else validatedData.userType = userTypeStr;
+      validatedData.fatherName = fatherNameStr;
     }
   }
 
-  // Personal information for verification (birthdate, phone, etc.)
-  if (data.birthDate) {
+  // Grandfather name validation
+  if (!isRequired(data.grandFatherName)) {
+    errors.push("اسم الجد مطلوب");
+  } else {
+    const grandFatherNameStr = data.grandFatherName.toString().trim();
+    if (grandFatherNameStr.length < 2) {
+      errors.push("اسم الجد يجب أن يكون حرفين على الأقل");
+    } else if (
+      !/^[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\s\-'\.]+$/.test(
+        grandFatherNameStr
+      )
+    ) {
+      errors.push("اسم الجد يجب أن يحتوي على أحرف عربية فقط");
+    } else {
+      validatedData.grandFatherName = grandFatherNameStr;
+    }
+  }
+
+  // Last name validation
+  if (!isRequired(data.lastName)) {
+    errors.push("اسم العائلة مطلوب");
+  } else {
+    const lastNameStr = data.lastName.toString().trim();
+    if (lastNameStr.length < 2) {
+      errors.push("اسم العائلة يجب أن يكون حرفين على الأقل");
+    } else if (
+      !/^[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\s\-'\.]+$/.test(
+        lastNameStr
+      )
+    ) {
+      errors.push("اسم العائلة يجب أن يحتوي على أحرف عربية فقط");
+    } else {
+      validatedData.lastName = lastNameStr;
+    }
+  }
+
+  // Mother name validation
+  if (!isRequired(data.motherName)) {
+    errors.push("اسم الأم مطلوب");
+  } else {
+    const motherNameStr = data.motherName.toString().trim();
+    if (motherNameStr.length < 2) {
+      errors.push("اسم الأم يجب أن يكون حرفين على الأقل");
+    } else if (
+      !/^[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\s\-'\.]+$/.test(
+        motherNameStr
+      )
+    ) {
+      errors.push("اسم الأم يجب أن يحتوي على أحرف عربية فقط");
+    } else {
+      validatedData.motherName = motherNameStr;
+    }
+  }
+
+  // ID number validation
+  if (!isRequired(data.idNumber)) {
+    errors.push("رقم الهوية مطلوب");
+  } else {
+    const idNumberStr = data.idNumber.toString().trim();
+    if (!/^\d{9}$/.test(idNumberStr)) {
+      errors.push("رقم الهوية يجب أن يكون 9 أرقام");
+    } else {
+      validatedData.idNumber = idNumberStr;
+    }
+  }
+
+  // Birth date validation
+  if (!isRequired(data.birthDate)) {
+    errors.push("تاريخ الميلاد مطلوب");
+  } else {
     const birthDate = new Date(data.birthDate);
     if (isNaN(birthDate.getTime())) {
       errors.push("تاريخ الميلاد غير صحيح");
     } else {
-      validatedData.birthDate = birthDate;
-    }
-  }
-
-  if (data.phone) {
-    let phoneStr = data.phone
-      .toString()
-      .trim()
-      .replace(/[\s\-\(\)\.]/g, "");
-    if (!/^(?:\+970|970|0)?[0-9]{9}$/.test(phoneStr)) {
-      errors.push("رقم الهاتف غير صحيح");
-    } else {
-      // Normalize phone format
-      if (phoneStr.startsWith("+970")) phoneStr = phoneStr.substring(4);
-      else if (phoneStr.startsWith("970")) phoneStr = phoneStr.substring(3);
-      else if (phoneStr.startsWith("0")) phoneStr = phoneStr.substring(1);
-      validatedData.phone = phoneStr;
+      const today = new Date();
+      const age = today.getFullYear() - birthDate.getFullYear();
+      if (age < 5 || age > 100) {
+        errors.push("تاريخ الميلاد غير منطقي");
+      } else {
+        validatedData.birthDate = data.birthDate;
+      }
     }
   }
 
@@ -348,22 +415,64 @@ const validateIdentityVerification = (data) => {
 };
 
 /**
- * Validate password reset data
+ * Validate password reset data (Forgot Password Step 2)
  */
 const validatePasswordReset = (data) => {
   const errors = [];
   const validatedData = {};
 
-  // User identifier validation
-  if (!isRequired(data.identifier)) {
-    errors.push("رقم المعلم أو الطالب مطلوب");
+  // First name validation
+  if (!isRequired(data.firstName)) {
+    errors.push("الاسم الأول مطلوب");
   } else {
-    const identifierStr = data.identifier.toString().trim();
-    if (!/^\d{8}$/.test(identifierStr)) {
-      errors.push("رقم المعلم أو الطالب يجب أن يكون 8 أرقام");
+    validatedData.firstName = data.firstName.toString().trim();
+  }
+
+  // Father name validation
+  if (!isRequired(data.fatherName)) {
+    errors.push("اسم الأب مطلوب");
+  } else {
+    validatedData.fatherName = data.fatherName.toString().trim();
+  }
+
+  // Grandfather name validation
+  if (!isRequired(data.grandFatherName)) {
+    errors.push("اسم الجد مطلوب");
+  } else {
+    validatedData.grandFatherName = data.grandFatherName.toString().trim();
+  }
+
+  // Last name validation
+  if (!isRequired(data.lastName)) {
+    errors.push("اسم العائلة مطلوب");
+  } else {
+    validatedData.lastName = data.lastName.toString().trim();
+  }
+
+  // Mother name validation
+  if (!isRequired(data.motherName)) {
+    errors.push("اسم الأم مطلوب");
+  } else {
+    validatedData.motherName = data.motherName.toString().trim();
+  }
+
+  // ID number validation
+  if (!isRequired(data.idNumber)) {
+    errors.push("رقم الهوية مطلوب");
+  } else {
+    const idNumberStr = data.idNumber.toString().trim();
+    if (!/^\d{9}$/.test(idNumberStr)) {
+      errors.push("رقم الهوية يجب أن يكون 9 أرقام");
     } else {
-      validatedData.identifier = identifierStr;
+      validatedData.idNumber = idNumberStr;
     }
+  }
+
+  // Birth date validation
+  if (!isRequired(data.birthDate)) {
+    errors.push("تاريخ الميلاد مطلوب");
+  } else {
+    validatedData.birthDate = data.birthDate;
   }
 
   // New password validation
@@ -373,34 +482,22 @@ const validatePasswordReset = (data) => {
     const newPasswordStr = data.newPassword.toString();
     const strengthValidation = validatePasswordStrength(newPasswordStr);
     if (!strengthValidation.isValid) {
-      errors.push(strengthValidation.error);
-    } else if (newPasswordStr.length > 100) {
+      errors.push(...strengthValidation.errors);
+    } else if (newPasswordStr.length > 50) {
       errors.push("كلمة المرور الجديدة طويلة جداً");
     } else {
       validatedData.newPassword = newPasswordStr;
     }
   }
 
-  // Confirm password validation
-  if (!isRequired(data.confirmPassword)) {
-    errors.push("تأكيد كلمة المرور مطلوب");
-  } else {
+  // Confirm password validation (optional - frontend usually handles this)
+  if (data.confirmPassword) {
     const confirmPasswordStr = data.confirmPassword.toString();
     if (
       validatedData.newPassword &&
       confirmPasswordStr !== validatedData.newPassword
     ) {
       errors.push("كلمة المرور وتأكيدها غير متطابقان");
-    }
-  }
-
-  // Verification token validation (if using tokens)
-  if (data.verificationToken) {
-    const tokenStr = data.verificationToken.toString().trim();
-    if (tokenStr.length < 10) {
-      errors.push("رمز التحقق غير صحيح");
-    } else {
-      validatedData.verificationToken = tokenStr;
     }
   }
 

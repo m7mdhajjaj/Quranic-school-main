@@ -2,6 +2,10 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { forgotPassword, resetPassword } from '../../Api/authApi';
+import {
+  validateForgotPasswordData,
+  validateResetPasswordData,
+} from '../../Validation/forgotPasswordValidation';
 
 interface ForgotPasswordModalProps {
   isOpen: boolean;
@@ -26,6 +30,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = useState(false);
 
   const handleForgotPasswordChange = (
@@ -36,7 +41,16 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
       ...prev,
       [name]: value,
     }));
+    
+    // Clear errors when user types
     if (error) setError('');
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
   };
 
   const handleNewPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,12 +59,32 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
       ...prev,
       [name]: value,
     }));
+    
+    // Clear errors when user types
     if (error) setError('');
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
   };
 
   const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setFieldErrors({});
+
+    // Frontend validation
+    const validation = validateForgotPasswordData(forgotPasswordData);
+    if (!validation.isValid) {
+      setFieldErrors(validation.errors);
+      const firstError = Object.values(validation.errors)[0];
+      setError(firstError);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -81,19 +115,23 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
   const handleNewPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setFieldErrors({});
+
+    // Frontend validation
+    const validation = validateResetPasswordData({
+      ...forgotPasswordData,
+      password: newPasswordData.password,
+      confirmPassword: newPasswordData.confirmPassword,
+    });
+
+    if (!validation.isValid) {
+      setFieldErrors(validation.errors);
+      const firstError = Object.values(validation.errors)[0];
+      setError(firstError);
+      return;
+    }
+
     setIsLoading(true);
-
-    if (newPasswordData.password !== newPasswordData.confirmPassword) {
-      setError('كلمة المرور وتأكيد كلمة المرور غير متطابقتين');
-      setIsLoading(false);
-      return;
-    }
-
-    if (newPasswordData.password.length < 6) {
-      setError('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
-      setIsLoading(false);
-      return;
-    }
 
     try {
       const response = await resetPassword({
@@ -141,6 +179,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
       confirmPassword: '',
     });
     setError('');
+    setFieldErrors({});
     setShowPassword(false);
     setShowConfirmPassword(false);
     onClose();
@@ -400,10 +439,19 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
                             ]
                           }
                           onChange={handleForgotPasswordChange}
-                          className="w-full px-4 py-3 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none transition-all duration-300 text-right bg-white hover:border-emerald-300 group-hover:shadow-sm"
+                          className={`w-full px-4 py-3 text-sm border-2 rounded-xl focus:ring-2 focus:outline-none transition-all duration-300 text-right bg-white group-hover:shadow-sm ${
+                            fieldErrors[field.name]
+                              ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                              : 'border-gray-200 focus:ring-emerald-500 focus:border-emerald-500 hover:border-emerald-300'
+                          }`}
                           required
                           placeholder={field.placeholder}
                         />
+                        {fieldErrors[field.name] && (
+                          <p className="mt-1 text-xs text-red-600">
+                            {fieldErrors[field.name]}
+                          </p>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -420,10 +468,19 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
                       name="motherName"
                       value={forgotPasswordData.motherName}
                       onChange={handleForgotPasswordChange}
-                      className="w-full px-4 py-3 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none transition-all duration-300 text-right bg-white hover:border-emerald-300 group-hover:shadow-sm"
+                      className={`w-full px-4 py-3 text-sm border-2 rounded-xl focus:ring-2 focus:outline-none transition-all duration-300 text-right bg-white group-hover:shadow-sm ${
+                        fieldErrors.motherName
+                          ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                          : 'border-gray-200 focus:ring-emerald-500 focus:border-emerald-500 hover:border-emerald-300'
+                      }`}
                       required
                       placeholder="أدخل اسم الأم الكامل"
                     />
+                    {fieldErrors.motherName && (
+                      <p className="mt-1 text-xs text-red-600">
+                        {fieldErrors.motherName}
+                      </p>
+                    )}
                   </div>
 
                   <div className="group">
@@ -436,10 +493,19 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
                       name="idNumber"
                       value={forgotPasswordData.idNumber}
                       onChange={handleForgotPasswordChange}
-                      className="w-full px-4 py-3 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none transition-all duration-300 text-right bg-white hover:border-emerald-300 group-hover:shadow-sm"
+                      className={`w-full px-4 py-3 text-sm border-2 rounded-xl focus:ring-2 focus:outline-none transition-all duration-300 text-right bg-white group-hover:shadow-sm ${
+                        fieldErrors.idNumber
+                          ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                          : 'border-gray-200 focus:ring-emerald-500 focus:border-emerald-500 hover:border-emerald-300'
+                      }`}
                       required
                       placeholder="أدخل رقم الهوية (9 أرقام)"
                     />
+                    {fieldErrors.idNumber && (
+                      <p className="mt-1 text-xs text-red-600">
+                        {fieldErrors.idNumber}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -453,11 +519,20 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
                     name="birthDate"
                     value={forgotPasswordData.birthDate}
                     onChange={handleForgotPasswordChange}
-                    className="w-full px-4 py-3 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none transition-all duration-300 text-right bg-white hover:border-emerald-300 group-hover:shadow-sm"
+                    className={`w-full px-4 py-3 text-sm border-2 rounded-xl focus:ring-2 focus:outline-none transition-all duration-300 text-right bg-white group-hover:shadow-sm ${
+                      fieldErrors.birthDate
+                        ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                        : 'border-gray-200 focus:ring-emerald-500 focus:border-emerald-500 hover:border-emerald-300'
+                    }`}
                     required
                     placeholder="أدخل تاريخ الميلاد"
                     title="تاريخ الميلاد"
                   />
+                  {fieldErrors.birthDate && (
+                    <p className="mt-1 text-xs text-red-600">
+                      {fieldErrors.birthDate}
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex gap-4 pt-4">
@@ -472,7 +547,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
                       {isLoading ? (
                         <>
                           <svg
-                            className="animate-spin h-5 w-5 ml-3"
+                            className="animate-spin h-5 w-5 mr-3"
                             fill="none"
                             viewBox="0 0 24 24"
                           >
@@ -495,7 +570,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
                       ) : (
                         <>
                           <svg
-                            className="w-5 h-5 ml-2"
+                            className="w-5 h-5 mr-2"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -556,14 +631,14 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
                   <p className="text-sm font-semibold text-amber-800 mb-2">
                     متطلبات كلمة المرور:
                   </p>
-                  <ul className="text-xs text-amber-700 space-y-1 mr-5">
+                  <ul className="text-xs text-amber-700 space-y-1 list-none">
                     <li className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                      يجب أن تحتوي على 6 أحرف على الأقل
+                      يجب أن تحتوي على 4 أحرف على الأقل
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                      يُفضل استخدام مزيج من الأحرف والأرقام
+                      يجب أن تحتوي على 4 أرقام على الأقل، أو 3 حروف مع أرقام
                     </li>
                   </ul>
                 </div>
@@ -580,16 +655,20 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
                         name="password"
                         value={newPasswordData.password}
                         onChange={handleNewPasswordChange}
-                        className="w-full px-4 py-3.5 pl-12 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none transition-all duration-300 text-right bg-white hover:border-emerald-300 group-hover:shadow-sm"
+                        className={`w-full px-4 py-3.5 pr-12 text-sm border-2 rounded-xl focus:ring-2 focus:outline-none transition-all duration-300 text-right bg-white group-hover:shadow-sm ${
+                          fieldErrors.password
+                            ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                            : 'border-gray-200 focus:ring-emerald-500 focus:border-emerald-500 hover:border-emerald-300'
+                        }`}
                         required
-                        minLength={6}
-                        placeholder="أدخل كلمة المرور الجديدة (6 أحرف على الأقل)"
+                        minLength={4}
+                        placeholder="أدخل كلمة المرور الجديدة (4 أحرف على الأقل)"
                       />
                       {newPasswordData.password && (
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-emerald-600 transition-colors duration-200"
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-emerald-600 transition-colors duration-200"
                         >
                           {showPassword ? (
                             <svg
@@ -628,6 +707,11 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
                           )}
                         </button>
                       )}
+                      {fieldErrors.password && (
+                        <p className="mt-1 text-xs text-red-600">
+                          {fieldErrors.password}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -642,9 +726,13 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
                         name="confirmPassword"
                         value={newPasswordData.confirmPassword}
                         onChange={handleNewPasswordChange}
-                        className="w-full px-4 py-3.5 pl-12 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none transition-all duration-300 text-right bg-white hover:border-emerald-300 group-hover:shadow-sm"
+                        className={`w-full px-4 py-3.5 pr-12 text-sm border-2 rounded-xl focus:ring-2 focus:outline-none transition-all duration-300 text-right bg-white group-hover:shadow-sm ${
+                          fieldErrors.confirmPassword
+                            ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                            : 'border-gray-200 focus:ring-emerald-500 focus:border-emerald-500 hover:border-emerald-300'
+                        }`}
                         required
-                        minLength={6}
+                        minLength={4}
                         placeholder="أعد إدخال كلمة المرور للتأكيد"
                       />
                       {newPasswordData.confirmPassword && (
@@ -653,7 +741,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
                           onClick={() =>
                             setShowConfirmPassword(!showConfirmPassword)
                           }
-                          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-emerald-600 transition-colors duration-200"
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-emerald-600 transition-colors duration-200"
                         >
                           {showConfirmPassword ? (
                             <svg
@@ -692,6 +780,11 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
                           )}
                         </button>
                       )}
+                      {fieldErrors.confirmPassword && (
+                        <p className="mt-1 text-xs text-red-600">
+                          {fieldErrors.confirmPassword}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -708,7 +801,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
                       {isLoading ? (
                         <>
                           <svg
-                            className="animate-spin h-5 w-5 ml-3"
+                            className="animate-spin h-5 w-5 mr-3"
                             fill="none"
                             viewBox="0 0 24 24"
                           >
@@ -731,7 +824,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
                       ) : (
                         <>
                           <svg
-                            className="w-5 h-5 ml-2"
+                            className="w-5 h-5 mr-2"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
