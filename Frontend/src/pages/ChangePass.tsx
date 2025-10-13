@@ -319,7 +319,17 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
         const axiosError = error as {
           response?: { status?: number; data?: { message?: string } };
         };
-        if (axiosError.response?.status === 401) {
+        if (axiosError.response?.status === 400) {
+          // Handle bad request - usually wrong current password
+          errorMessage = 'كلمة المرور الحالية غير صحيحة';
+          // Set validation error for current password field
+          setValidationErrors({
+            ...validationErrors,
+            currentPassword: 'كلمة المرور الحالية غير صحيحة'
+          });
+          showErrorMessage('خطأ في كلمة المرور! ❌', errorMessage);
+          return;
+        } else if (axiosError.response?.status === 401) {
           errorMessage = 'انتهت صلاحية جلسة العمل. يرجى تسجيل الدخول مرة أخرى';
           showErrorMessage('خطأ في الجلسة! ❌', errorMessage).then(() => {
             onClose();
@@ -391,28 +401,6 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
               </div>
             </div>
           </div>
-
-          {/* Close Button - RTL positioned */}
-          <button
-            type="button"
-            onClick={() => onClose()}
-            className="absolute top-4 right-4 w-8 h-8 bg-gray-200/80 hover:bg-gray-300/80 rounded-full flex items-center justify-center text-gray-600 hover:text-gray-800 transition-all duration-200 border border-gray-300/50"
-            aria-label="إغلاق"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
 
           <h1 className="text-3xl font-bold text-center mb-2 text-gray-800">
             تغيير كلمة المرور
@@ -587,86 +575,6 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
                       )}
                     </button>
                   </div>
-
-                  {/* Password Strength Indicator */}
-                  {formData.newPassword && (
-                    <div className="mt-2">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs text-gray-700">
-                          قوة كلمة المرور:
-                        </span>
-                        <span
-                          className={`text-xs font-semibold ${passwordStrength.color.replace('bg-', 'text-')}`}
-                        >
-                          {passwordStrength.label}
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                        <div
-                          className={`h-full ${passwordStrength.color} transition-all duration-300 ease-out rounded-full`}
-                          data-width={passwordStrength.score * 25}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {validationErrors.newPassword && (
-                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
-                      <svg
-                        className="w-3 h-3"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                      {validationErrors.newPassword}
-                    </p>
-                  )}
-
-                  {/* Password Requirements */}
-                  <div className="mt-3 p-3 bg-emerald-50/80 backdrop-blur-sm rounded-lg border border-emerald-200/50">
-                    <p className="text-xs font-semibold text-emerald-900 mb-2">
-                      متطلبات كلمة المرور الجديدة:
-                    </p>
-                    <ul className="space-y-1 text-xs text-emerald-800">
-                      <li
-                        className={`flex items-center gap-2 ${formData.newPassword.length >= 4 ? 'text-green-600' : ''}`}
-                      >
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${formData.newPassword.length >= 4 ? 'bg-green-500' : 'bg-gray-300'}`}
-                        />
-                        4 أحرف على الأقل
-                      </li>
-                      <li
-                        className={`flex items-center gap-2 ${(formData.newPassword.match(/\d/g) || []).length >= 4 ? 'text-green-600' : ''}`}
-                      >
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${(formData.newPassword.match(/\d/g) || []).length >= 4 ? 'bg-green-500' : 'bg-gray-300'}`}
-                        />
-                        4 أرقام على الأقل، أو
-                      </li>
-                      <li
-                        className={`flex items-center gap-2 ${(formData.newPassword.match(/[a-zA-Z\u0600-\u06FF]/g) || []).length >= 3 && /\d/.test(formData.newPassword) ? 'text-green-600' : ''}`}
-                      >
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${(formData.newPassword.match(/[a-zA-Z\u0600-\u06FF]/g) || []).length >= 3 && /\d/.test(formData.newPassword) ? 'bg-green-500' : 'bg-gray-300'}`}
-                        />
-                        3 حروف مع أرقام
-                      </li>
-                      <li
-                        className={`flex items-center gap-2 ${/[!@#$%^&*(),.?":{}|<>]/.test(formData.newPassword) ? 'text-green-600' : ''}`}
-                      >
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${/[!@#$%^&*(),.?":{}|<>]/.test(formData.newPassword) ? 'bg-green-500' : 'bg-gray-300'}`}
-                        />
-                        رموز خاصة (اختياري للقوة)
-                      </li>
-                    </ul>
-                  </div>
                 </div>
 
                 {/* Confirm Password */}
@@ -773,10 +681,172 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
                     </p>
                   )}
                 </div>
+
+                {/* New Password Details */}
+                <div>
+                  {/* Password Strength Indicator */}
+                  {formData.newPassword && (
+                    <div className="mt-2">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs text-gray-700">
+                          قوة كلمة المرور:
+                        </span>
+                        <span
+                          className={`text-xs font-semibold ${passwordStrength.color.replace('bg-', 'text-')}`}
+                        >
+                          {passwordStrength.label}
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                        <div
+                          className={`h-full ${passwordStrength.color} transition-all duration-300 ease-out rounded-full`}
+                          data-width={passwordStrength.score * 25}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {validationErrors.newPassword && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                      <svg
+                        className="w-3 h-3"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      {validationErrors.newPassword}
+                    </p>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="mt-6 flex gap-3">
+                    <button
+                      type="submit"
+                      disabled={
+                        isLoading ||
+                        Object.values(validationErrors).some((e) => e !== '')
+                      }
+                      className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-3 rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all duration-300 shadow-lg hover:shadow-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      {isLoading ? (
+                        <span className="flex items-center justify-center">
+                          <svg
+                            className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                          جاري التغيير...
+                        </span>
+                      ) : (
+                        <span className="flex items-center justify-center gap-2">
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          تغيير كلمة المرور
+                        </span>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => onClose()}
+                      disabled={isLoading}
+                      className="flex-1 bg-gray-200 text-gray-800 py-3 rounded-xl hover:bg-gray-300 transition-all duration-300 shadow-lg hover:shadow-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      <span className="flex items-center justify-center gap-2">
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                        إلغاء
+                      </span>
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              {/* Left Column - Security Info and Actions */}
+              {/* Left Column - Password Requirements */}
               <div className="space-y-6">
+                {/* Password Requirements */}
+                <div className="p-4 bg-emerald-50/80 backdrop-blur-sm rounded-lg border border-emerald-200/50">
+                  <p className="text-sm font-semibold text-emerald-900 mb-3">
+                    متطلبات كلمة المرور الجديدة:
+                  </p>
+                  <ul className="space-y-2 text-sm text-emerald-800">
+                    <li
+                      className={`flex items-center gap-2 ${formData.newPassword.length >= 4 ? 'text-green-600' : ''}`}
+                    >
+                      <span
+                        className={`w-2 h-2 rounded-full ${formData.newPassword.length >= 4 ? 'bg-green-500' : 'bg-gray-300'}`}
+                      />
+                      4 أحرف على الأقل
+                    </li>
+                    <li
+                      className={`flex items-center gap-2 ${(formData.newPassword.match(/\d/g) || []).length >= 4 ? 'text-green-600' : ''}`}
+                    >
+                      <span
+                        className={`w-2 h-2 rounded-full ${(formData.newPassword.match(/\d/g) || []).length >= 4 ? 'bg-green-500' : 'bg-gray-300'}`}
+                      />
+                      أو 4 أرقام على الأقل
+                    </li>
+                    <li
+                      className={`flex items-center gap-2 ${(formData.newPassword.match(/[a-zA-Z\u0600-\u06FF]/g) || []).length >= 3 && /\d/.test(formData.newPassword) ? 'text-green-600' : ''}`}
+                    >
+                      <span
+                        className={`w-2 h-2 rounded-full ${(formData.newPassword.match(/[a-zA-Z\u0600-\u06FF]/g) || []).length >= 3 && /\d/.test(formData.newPassword) ? 'bg-green-500' : 'bg-gray-300'}`}
+                      />
+                      3 حروف مع أرقام
+                    </li>
+                    <li
+                      className={`flex items-center gap-2 ${/[!@#$%^&*(),.?":{}|<>]/.test(formData.newPassword) ? 'text-green-600' : ''}`}
+                    >
+                      <span
+                        className={`w-2 h-2 rounded-full ${/[!@#$%^&*(),.?":{}|<>]/.test(formData.newPassword) ? 'bg-green-500' : 'bg-gray-300'}`}
+                      />
+                      رموز خاصة (اختياري للقوة)
+                    </li>
+                  </ul>
+                </div>
+
                 {/* Security Tips */}
                 <div className="p-4 bg-blue-50/80 backdrop-blur-sm border border-blue-200/50 rounded-lg">
                   <div className="flex items-start gap-3">
@@ -792,10 +862,10 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
                       />
                     </svg>
                     <div>
-                      <h3 className="text-sm font-semibold text-blue-900 mb-1">
+                      <h3 className="text-sm font-semibold text-blue-900 mb-2">
                         نصائح الأمان
                       </h3>
-                      <ul className="text-xs text-blue-800 space-y-1">
+                      <ul className="text-sm text-blue-800 space-y-1">
                         <li>• لا تشارك كلمة المرور مع أي شخص</li>
                         <li>• استخدم كلمة مرور فريدة لكل حساب</li>
                         <li>• غيّر كلمة المرور بانتظام</li>
@@ -805,121 +875,15 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
                     </div>
                   </div>
                 </div>
-
-                {/* Password Strength Guide */}
-                <div className="p-4 bg-emerald-50/80 backdrop-blur-sm border border-emerald-200/50 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <svg
-                      className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                    <div>
-                      <h3 className="text-sm font-semibold text-emerald-900 mb-1">
-                        كلمة مرور قوية
-                      </h3>
-                      <p className="text-xs text-emerald-800">
-                        استخدم 8 أحرف على الأقل مع مزيج من الأحرف الكبيرة
-                        والصغيرة والأرقام والرموز الخاصة لحماية أفضل
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex gap-3 pt-2">
-                  <button
-                    type="submit"
-                    disabled={
-                      isLoading ||
-                      Object.values(validationErrors).some((e) => e !== '')
-                    }
-                    className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-3 rounded-xl hover:from-emerald-600 hover:to-teal-600 transition-all duration-300 shadow-lg hover:shadow-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    {isLoading ? (
-                      <span className="flex items-center justify-center">
-                        <svg
-                          className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                        جاري التغيير...
-                      </span>
-                    ) : (
-                      <span className="flex items-center justify-center gap-2">
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        تغيير كلمة المرور
-                      </span>
-                    )}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => onClose()}
-                    disabled={isLoading}
-                    className="flex-1 bg-gray-200 text-gray-800 py-3 rounded-xl hover:bg-gray-300 transition-all duration-300 shadow-lg hover:shadow-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    <span className="flex items-center justify-center gap-2">
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                      إلغاء
-                    </span>
-                  </button>
-                </div>
               </div>
             </div>
           </form>
 
-          {/* Close Button */}
+          {/* Close Button - RTL positioned */}
           <button
             type="button"
             onClick={() => onClose()}
-            className="absolute top-4 left-4 w-8 h-8 bg-gray-200/80 backdrop-blur-sm hover:bg-gray-300/80 rounded-full flex items-center justify-center text-gray-600 hover:text-gray-800 transition-all duration-200 border border-gray-300/50"
+            className="absolute top-4 right-4 w-8 h-8 bg-gray-200/80 hover:bg-gray-300/80 rounded-full flex items-center justify-center text-gray-600 hover:text-gray-800 transition-all duration-200 border border-gray-300/50"
             aria-label="إغلاق"
           >
             <svg
