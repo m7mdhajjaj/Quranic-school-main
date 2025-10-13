@@ -2,7 +2,7 @@ import { NavLink, useNavigate, useLocation, Link } from "react-router-dom";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import NotificationHeader from "../NotificationHeader";
 import { useAuth } from "../../hooks/useAuth";
-import ChangePasswordModal from '../../pages/ChangePass';
+import ChangePasswordModal from '../../pages/Auth/ChangePass';
 import { io, Socket } from "socket.io-client";
 import api from "../../Api/api";
 import { showLogoutConfirmation } from "../../utils/logoutUtils";

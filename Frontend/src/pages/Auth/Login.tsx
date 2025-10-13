@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useAuth } from "../hooks/useAuth";
-import { loginStudent, loginTeacher, loginAdmin, forgotPassword, resetPassword } from "../Api/authApi";
+import { useAuth } from "../../hooks/useAuth";
+import { loginStudent, loginTeacher, loginAdmin, forgotPassword, resetPassword } from "../../Api/authApi";
 
 const Login = () => {
   const navigate = useNavigate();

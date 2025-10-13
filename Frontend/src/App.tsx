@@ -34,7 +34,7 @@ import Loading from "./components/Loading/Loading";
 // Page Components - General
 // ============================================================================
 import Home from "./pages/Home";
-import Login from "./pages/Login";
+import Login from "./pages/Auth/Login";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import Privacy from "./pages/Privacy";

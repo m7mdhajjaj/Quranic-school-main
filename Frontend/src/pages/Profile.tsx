@@ -25,7 +25,7 @@ import {
 import { toast, ToastContainer } from 'react-toastify';
 import Avatar from '../components/Avatar';
 import { useAuth } from '../hooks/useAuth';
-import ChangePasswordModal from './ChangePass';
+import ChangePasswordModal from './Auth/ChangePass';
 import {
   getUserWithFallback,
   updateUserById,
