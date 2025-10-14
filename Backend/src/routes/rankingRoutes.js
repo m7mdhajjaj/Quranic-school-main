@@ -2,6 +2,11 @@ const express = require("express");
 const router = express.Router();
 const rankingController = require("../controllers/rankingController");
 const { validateRankingData } = require("../Validation/RankingValidation");
+const {
+  protect,
+  teacherProtect,
+  adminProtect,
+} = require("../middleware/authMiddleware");
 
 // Get current ranking (current month or most recent)
 router.get("/current", rankingController.getCurrentRanking);
@@ -10,12 +15,23 @@ router.get("/current", rankingController.getCurrentRanking);
 router.get("/periods", rankingController.getAvailableRankingPeriods);
 
 // Get ranking by month and year
-router.get("/:month/:year", rankingController.getRankingByMonthYear);
+router.get("/period/:year/:month", rankingController.getRankingByMonthYear);
 
-// Create or update ranking
-router.post("/", validateRankingData, rankingController.createOrUpdateRanking);
+// Create or update ranking (teachers and admins only)
+router.post(
+  "/",
+  protect,
+  teacherProtect,
+  validateRankingData,
+  rankingController.createOrUpdateRanking
+);
 
-// Delete ranking for a specific month/year
-router.delete("/:month/:year", rankingController.deleteRanking);
+// Delete ranking for a specific month/year (admins only)
+router.delete(
+  "/:month/:year",
+  protect,
+  adminProtect,
+  rankingController.deleteRanking
+);
 
 module.exports = router;

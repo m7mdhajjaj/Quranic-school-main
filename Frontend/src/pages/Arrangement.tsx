@@ -21,6 +21,13 @@ interface NewRankingEntry {
   score: number;
 }
 
+// Interface for Group
+interface Group {
+  id: string;
+  name: string;
+  number: number;
+}
+
 // Interface for User
 interface User {
   _id: string;
@@ -28,7 +35,7 @@ interface User {
   lastName?: string;
   email?: string;
   role: string;
-  groups?: string[];
+  groups?: Group[];
 }
 
 const Arrangement = () => {
@@ -40,6 +47,12 @@ const Arrangement = () => {
 
   // State for all students from database
   const [allDbStudents, setAllDbStudents] = useState<Student[]>([]);
+
+  // State for filtered students (based on selected group)
+  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
+
+  // State for selected group (for teachers)
+  const [selectedGroup, setSelectedGroup] = useState<string>("");
 
   // State for current ranking
   const [currentRanking, setCurrentRanking] = useState<Ranking | null>(null);
@@ -105,6 +118,15 @@ const Arrangement = () => {
   useEffect(() => {
     setCurrentUser(userAuth.user);
     setIsTeacherOrAdmin(userAuth.isTeacherOrAdmin);
+
+    // If teacher has groups, set the first group as default
+    if (
+      userAuth.user?.role === "teacher" &&
+      userAuth.user.groups &&
+      userAuth.user.groups.length > 0
+    ) {
+      setSelectedGroup(userAuth.user.groups[0].name);
+    }
   }, [userAuth]);
 
   // Fetch all students, available periods, and current ranking
@@ -117,6 +139,22 @@ const Arrangement = () => {
       const studentsResult = await getAllStudents();
       if (studentsResult.success && studentsResult.data) {
         setAllDbStudents(studentsResult.data);
+
+        // If teacher, filter students by their first group
+        if (
+          userAuth.user?.role === "teacher" &&
+          userAuth.user.groups &&
+          userAuth.user.groups.length > 0
+        ) {
+          const firstGroupName = userAuth.user.groups[0].name;
+          const filtered = studentsResult.data.filter(
+            (student: Student) => student.group === firstGroupName
+          );
+          setFilteredStudents(filtered);
+        } else {
+          // Admin sees all students
+          setFilteredStudents(studentsResult.data);
+        }
       }
 
       // Fetch available periods
@@ -188,6 +226,19 @@ const Arrangement = () => {
   useEffect(() => {
     fetchInitialData();
   }, [fetchInitialData]);
+
+  // Filter students when selected group changes
+  useEffect(() => {
+    if (userAuth.user?.role === "teacher" && selectedGroup) {
+      const filtered = allDbStudents.filter(
+        (student: Student) => student.group === selectedGroup
+      );
+      setFilteredStudents(filtered);
+    } else if (userAuth.user?.role === "admin") {
+      // Admin sees all students
+      setFilteredStudents(allDbStudents);
+    }
+  }, [selectedGroup, allDbStudents, userAuth.user]);
 
   // Update selected period when month or year changes
   useEffect(() => {
@@ -268,6 +319,12 @@ const Arrangement = () => {
     setSelectedMonth(month);
   };
 
+  // Function to handle group change (for teachers)
+  const handleGroupChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const groupName = e.target.value;
+    setSelectedGroup(groupName);
+  };
+
   // Function to handle period change (removed - using separate month/year handlers now)
 
   // Function to open the modal for adding a student
@@ -315,7 +372,7 @@ const Arrangement = () => {
     setSelectedStudent(studentId);
 
     if (studentId) {
-      const student = allDbStudents.find((s) => s._id === studentId);
+      const student = filteredStudents.find((s) => s._id === studentId);
       if (student) {
         setNewRankingEntry({
           _id: student._id,
@@ -353,16 +410,20 @@ const Arrangement = () => {
       // Get current ranking or create a new one
       const ranking = currentRanking;
       let topThree: Array<{ studentId: string; score: number }> =
-        ranking?.topThree.map((item) => ({
-          studentId: item.studentId._id,
-          score: item.score,
-        })) || [];
+        ranking?.topThree
+          .filter((item) => item && item.studentId && item.studentId._id)
+          .map((item) => ({
+            studentId: item.studentId._id,
+            score: item.score,
+          })) || [];
 
       let topTen: Array<{ studentId: string; score: number }> =
-        ranking?.topTen.map((item) => ({
-          studentId: item.studentId._id,
-          score: item.score,
-        })) || [];
+        ranking?.topTen
+          .filter((item) => item && item.studentId && item.studentId._id)
+          .map((item) => ({
+            studentId: item.studentId._id,
+            score: item.score,
+          })) || [];
 
       // Add new entry to appropriate list
       if (modalType === "top3") {
@@ -582,6 +643,41 @@ const Arrangement = () => {
                 ))}
               </select>
             </div>
+
+            {/* Group selector for teachers with multiple groups */}
+            {userAuth.user?.role === "teacher" &&
+              userAuth.user.groups &&
+              userAuth.user.groups.length > 1 && (
+                <div className="relative">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 text-center">
+                    الحلقة
+                  </label>
+                  <select
+                    value={selectedGroup}
+                    onChange={handleGroupChange}
+                    className="w-48 px-4 py-3 bg-white border-2 border-emerald-200 rounded-xl shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-300 font-semibold text-center">
+                    {userAuth.user.groups.map((group) => (
+                      <option key={group.id} value={group.name}>
+                        {group.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+            {/* Display group name for teachers with single group */}
+            {userAuth.user?.role === "teacher" &&
+              userAuth.user.groups &&
+              userAuth.user.groups.length === 1 && (
+                <div className="relative">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 text-center">
+                    الحلقة
+                  </label>
+                  <div className="w-48 px-4 py-3 bg-emerald-50 border-2 border-emerald-300 rounded-xl shadow-md font-bold text-emerald-800 text-center">
+                    {userAuth.user.groups[0].name}
+                  </div>
+                </div>
+              )}
 
             {isTeacherOrAdmin && (
               <>
@@ -1040,6 +1136,18 @@ const Arrangement = () => {
                   : "إضافة طالب للقائمة"}
               </h2>
 
+              {/* Show selected group for teachers */}
+              {userAuth.user?.role === "teacher" && selectedGroup && (
+                <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                  <p className="text-sm text-emerald-800 text-center">
+                    <span className="font-bold">الحلقة:</span> {selectedGroup}
+                  </p>
+                  <p className="text-xs text-emerald-600 text-center mt-1">
+                    ({filteredStudents.length} طالب في هذه الحلقة)
+                  </p>
+                </div>
+              )}
+
               <div className="mb-4">
                 <label
                   className="block text-gray-700 text-sm font-bold mb-2"
@@ -1053,6 +1161,12 @@ const Arrangement = () => {
                     readOnly
                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline bg-gray-100"
                   />
+                ) : filteredStudents.length === 0 ? (
+                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-center">
+                    <p className="text-sm text-yellow-800">
+                      لا يوجد طلاب في هذه الحلقة
+                    </p>
+                  </div>
                 ) : (
                   <select
                     id="student"
@@ -1061,7 +1175,7 @@ const Arrangement = () => {
                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                     required>
                     <option value="">-- اختر الطالب --</option>
-                    {allDbStudents.map((student) => (
+                    {filteredStudents.map((student) => (
                       <option key={student._id} value={student._id}>
                         {`${student.firstName} ${student.fatherName} ${student.lastName}`}
                       </option>
@@ -1091,8 +1205,18 @@ const Arrangement = () => {
               <div className="flex gap-4">
                 <button
                   onClick={saveRanking}
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center"
-                  disabled={!selectedStudent || newRankingEntry.score <= 0}>
+                  className={`flex-1 font-bold py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center ${
+                    !selectedStudent ||
+                    newRankingEntry.score <= 0 ||
+                    filteredStudents.length === 0
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                  }`}
+                  disabled={
+                    !selectedStudent ||
+                    newRankingEntry.score <= 0 ||
+                    filteredStudents.length === 0
+                  }>
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-5 w-5 mr-2"
