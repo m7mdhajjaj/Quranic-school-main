@@ -548,8 +548,8 @@ const Absence = () => {
   // حفظ السجل
   const handleSave = async () => {
     try {
-      // استخدام كل الطلاب (ليس فقط المرئيين)
-      const payload: AttendanceRecordPayload[] = students
+      // استخدام فقط الطلاب المرئيين في الحلقة المختارة
+      const payload: AttendanceRecordPayload[] = visibleStudents
         .filter((s) => s._id)
         .map((s) => ({
           studentId: s._id,
@@ -558,7 +558,7 @@ const Absence = () => {
         }));
 
       console.log(
-        `💾 حفظ الحضور لـ ${payload.length} طالب من أصل ${students.length}`
+        `💾 حفظ الحضور لـ ${payload.length} طالب من الحلقة "${groupFilter}"`
       );
       console.log("📋 التاريخ:", date);
       console.log(
@@ -571,7 +571,10 @@ const Absence = () => {
         records: payload,
       });
 
-      showSuccessMessage("تم الحفظ!", "تم حفظ سجل الحضور بنجاح ✅");
+      showSuccessMessage(
+        "تم الحفظ!",
+        `تم حفظ حضور ${payload.length} طالب من الحلقة "${groupFilter}" بنجاح ✅`
+      );
     } catch (e: any) {
       console.error("❌ خطأ في حفظ الحضور:", e);
       console.error("📋 تفاصيل الخطأ:", e.response?.data);

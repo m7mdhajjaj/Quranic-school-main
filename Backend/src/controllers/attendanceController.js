@@ -36,9 +36,19 @@ exports.createAttendance = async (req, res) => {
       return res.status(400).json({ message: "خطأ في تنسيق التاريخ" });
     }
 
+    // Create new attendance records
+    const attendanceRecords = records.map((record) => ({
+      studentId: record.studentId,
+      date: formattedDate,
+      isPresent: record.isPresent,
+    }));
+
     try {
-      // First, delete any existing records for this date to avoid duplicates
+      // حذف السجلات الموجودة فقط لهؤلاء الطلاب في هذا التاريخ (ليس كل السجلات!)
+      const studentIds = attendanceRecords.map((r) => r.studentId);
+
       const deleteResult = await Attendance.deleteMany({
+        studentId: { $in: studentIds },
         date: {
           $gte: formattedDate,
           $lt: new Date(formattedDate.getTime() + 24 * 60 * 60 * 1000),
@@ -46,19 +56,12 @@ exports.createAttendance = async (req, res) => {
       });
 
       console.log(
-        `Deleted ${deleteResult.deletedCount} existing records for this date`
+        `🗑️ حذف ${deleteResult.deletedCount} سجل موجود مسبقاً لـ ${studentIds.length} طالب في هذا التاريخ`
       );
     } catch (deleteError) {
       console.error("Error deleting existing records:", deleteError);
       // Continue with the process even if delete fails
     }
-
-    // Create new attendance records
-    const attendanceRecords = records.map((record) => ({
-      studentId: record.studentId,
-      date: formattedDate,
-      isPresent: record.isPresent,
-    }));
 
     console.log(
       `Prepared ${attendanceRecords.length} attendance records for insertion`
