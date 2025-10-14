@@ -119,35 +119,38 @@ exports.createStudent = async (req, res) => {
       JSON.stringify(req.body, null, 2)
     );
 
-    // Generate unique studentId - simple and safe approach
+    // Generate sequential studentId - starts from 100000 and increments by 1
     let studentId;
 
     try {
-      // Use timestamp + random number for uniqueness
-      const timestamp = Date.now();
-      const random = Math.floor(Math.random() * 1000);
-      const baseId = 100000 + (timestamp % 100000);
+      // Find the highest studentId in the database
+      const lastStudent = await Student.findOne()
+        .sort({ studentId: -1 })
+        .select("studentId");
 
-      // Try the base ID first
-      studentId = baseId;
-      let existingStudent = await Student.findOne({ studentId });
+      if (!lastStudent || !lastStudent.studentId) {
+        // No students yet, start from 100000
+        studentId = 100000;
+      } else {
+        // Increment the last studentId by 1
+        studentId = lastStudent.studentId + 1;
 
-      // If exists, try with random suffix
-      if (existingStudent) {
-        studentId = baseId + random;
-        existingStudent = await Student.findOne({ studentId });
-
-        // If still exists, use timestamp + process ID + random
-        if (existingStudent) {
-          studentId = 100000 + ((timestamp + process.pid + random) % 899999);
+        // Safety check: ensure it's within valid range (100000-999999)
+        if (studentId > 999999) {
+          return res.status(400).json({
+            success: false,
+            message: "تم الوصول للحد الأقصى من أرقام الطلاب (999999)",
+          });
         }
       }
 
-      console.log(`Generated studentId: ${studentId}`);
+      console.log(`✅ Generated sequential studentId: ${studentId}`);
     } catch (idError) {
-      console.error("Error generating student ID:", idError);
-      // Ultimate fallback
-      studentId = 100000 + (Date.now() % 100000);
+      console.error("❌ Error generating student ID:", idError);
+      return res.status(500).json({
+        success: false,
+        message: "خطأ في إنشاء رقم الطالب",
+      });
     }
 
     // التحقق من تكرار البيانات الفريدة عبر جميع أنواع المستخدمين

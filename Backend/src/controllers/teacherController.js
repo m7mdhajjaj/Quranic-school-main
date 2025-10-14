@@ -34,14 +34,21 @@ const generateTeacherId = async () => {
       .sort({ teacherId: -1 })
       .select("teacherId");
 
-    if (!lastTeacher) {
-      return 200001; // Start teacher IDs from 200001
+    if (!lastTeacher || !lastTeacher.teacherId) {
+      return 1000; // Start teacher IDs from 1000
     }
 
-    return lastTeacher.teacherId + 1;
+    const nextId = lastTeacher.teacherId + 1;
+
+    // Safety check: ensure it's within valid range (1000-9999)
+    if (nextId > 9999) {
+      throw new Error("تم الوصول للحد الأقصى من أرقام المعلمين (9999)");
+    }
+
+    return nextId;
   } catch (error) {
     console.error("Error generating teacher ID:", error);
-    return 200001;
+    throw error; // Re-throw to handle in the calling function
   }
 };
 
@@ -55,10 +62,7 @@ exports.getAllTeachers = async (req, res) => {
       teachers.map(async (teacher) => {
         // البحث عن الحلقات بناءً على ID المعلم فقط لتجنب التداخل بين معلمين بنفس الاسم
         const groups = await Group.find({
-          $or: [
-            { teacher: teacher._id },
-            { teacher: teacher._id.toString() },
-          ],
+          $or: [{ teacher: teacher._id }, { teacher: teacher._id.toString() }],
         });
 
         // إذا كانت الحلقات موجودة في قاعدة البيانات، استخدمها
@@ -146,7 +150,17 @@ exports.createTeacher = async (req, res) => {
     if (hasDuplicates) return; // تم إرسال استجابة الخطأ بالفعل
 
     // teacherId + password
-    const teacherId = await generateTeacherId();
+    let teacherId;
+    try {
+      teacherId = await generateTeacherId();
+      console.log(`✅ Generated sequential teacherId: ${teacherId}`);
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.message || "خطأ في إنشاء رقم المعلم",
+      });
+    }
+
     const rawPass = password || String(teacherId);
     const hashed = await bcrypt.hash(rawPass, 10);
 
@@ -231,7 +245,9 @@ exports.createTeacher = async (req, res) => {
             teacher: doc._id, // استخدام ID المعلم بدلاً من الاسم الكامل
             teacherName: teacherFullName, // الاحتفاظ بالاسم للعرض فقط
           });
-          console.log(`✅ تم ربط الحلقة ${groupId} بالمعلم ${doc._id} (${teacherFullName})`);
+          console.log(
+            `✅ تم ربط الحلقة ${groupId} بالمعلم ${doc._id} (${teacherFullName})`
+          );
         }
       }
     }
@@ -414,9 +430,9 @@ exports.updateTeacher = async (req, res) => {
         // تعيين المعلم للحلقة باستخدام ID بدلاً من الاسم
         await Group.updateOne(
           { _id: groupItem.id },
-          { 
+          {
             teacher: currentTeacher._id, // استخدام ID المعلم
-            teacherName: teacherFullName // الاحتفاظ بالاسم للعرض
+            teacherName: teacherFullName, // الاحتفاظ بالاسم للعرض
           }
         );
       }
