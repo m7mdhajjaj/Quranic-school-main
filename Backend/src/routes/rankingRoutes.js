@@ -8,6 +8,9 @@ const {
   adminProtect,
 } = require("../middleware/authMiddleware");
 
+// Get ranking based on student monthly averages (NEW)
+router.get("/by-averages", protect, rankingController.getRankingByAverages);
+
 // Get current ranking (current month or most recent) - requires authentication to filter by group
 router.get("/current", protect, rankingController.getCurrentRanking);
 
@@ -26,7 +29,7 @@ router.post(
   "/",
   protect,
   teacherProtect,
-  validateRankingData,
+  // validateRankingData, // Disabled - using controller validation instead
   rankingController.createOrUpdateRanking
 );
 

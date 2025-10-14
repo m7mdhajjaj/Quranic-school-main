@@ -1,6 +1,89 @@
 const Ranking = require("../schema/Ranking");
 const Student = require("../schema/Student");
 
+// Get ranking based on student monthly averages
+exports.getRankingByAverages = async (req, res) => {
+  try {
+    const { month, year, group } = req.query;
+    const today = new Date();
+    const currentMonth = month ? parseInt(month) : today.getMonth() + 1;
+    const currentYear = year ? parseInt(year) : today.getFullYear();
+
+    // Get user's group
+    let userGroup = group || null;
+    if (req.user) {
+      if (req.user.role === "student") {
+        userGroup = req.user.group;
+      } else if (req.user.role === "teacher") {
+        const Teacher = require("../schema/Teacher");
+        const teacher = await Teacher.findById(req.user._id).select("groups");
+        if (teacher && teacher.groups && teacher.groups.length > 0) {
+          userGroup = userGroup || teacher.groups[0].name;
+        }
+      }
+      // Admin can see all groups or specific group
+    }
+
+    // Build query filter
+    const filter = {};
+    if (userGroup && req.user && req.user.role !== "admin") {
+      filter.group = userGroup;
+    } else if (userGroup) {
+      filter.group = userGroup;
+    }
+
+    // Get all students from the group
+    const students = await Student.find(filter).select(
+      "studentId firstName fatherName lastName group monthlyAverages"
+    );
+
+    // Process students and get their averages for the specified month/year
+    const studentsWithAverages = students
+      .map((student) => {
+        // Find the monthly average for the specified period
+        const monthlyAvg = student.monthlyAverages.find(
+          (avg) => avg.month === currentMonth && avg.year === currentYear
+        );
+
+        return {
+          _id: student._id,
+          studentId: student.studentId,
+          firstName: student.firstName,
+          fatherName: student.fatherName,
+          lastName: student.lastName,
+          group: student.group,
+          overallAverage: monthlyAvg?.overallAverage || 0,
+          reviewAverage: monthlyAvg?.reviewAverage || 0,
+          memorizationAverage: monthlyAvg?.memorizationAverage || 0,
+          totalMarks: monthlyAvg?.totalMarks || 0,
+        };
+      })
+      // Sort by overall average descending
+      .sort((a, b) => b.overallAverage - a.overallAverage)
+      // Add rank
+      .map((student, index) => ({
+        ...student,
+        rank: index + 1,
+      }));
+
+    res.status(200).json({
+      success: true,
+      data: studentsWithAverages,
+      month: currentMonth,
+      year: currentYear,
+      group: userGroup,
+      totalStudents: studentsWithAverages.length,
+    });
+  } catch (error) {
+    console.error("Error fetching ranking by averages:", error);
+    res.status(500).json({
+      success: false,
+      message: "حدث خطأ أثناء استرجاع الترتيب",
+      error: error.message,
+    });
+  }
+};
+
 // Get the current ranking or most recent one
 exports.getCurrentRanking = async (req, res) => {
   try {
@@ -235,6 +318,8 @@ exports.createOrUpdateRanking = async (req, res) => {
   try {
     const { month, year, topThree, topTen } = req.body;
 
+    console.log("Received ranking data:", { month, year, topThree, topTen });
+
     if (!month || !year) {
       return res.status(400).json({
         success: false,
@@ -282,10 +367,28 @@ exports.createOrUpdateRanking = async (req, res) => {
       ...topTen.map((item) => item.studentId),
     ];
 
-    const uniqueStudentIds = [...new Set(allStudentIds)];
+    // Filter out undefined/null values
+    const validStudentIds = allStudentIds.filter((id) => id);
+
+    if (validStudentIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "يجب إضافة طالب واحد على الأقل",
+      });
+    }
+
+    const uniqueStudentIds = [...new Set(validStudentIds)];
+
+    console.log("Checking student IDs:", uniqueStudentIds);
+
     const existingStudents = await Student.find({
       _id: { $in: uniqueStudentIds },
     }).select("_id group");
+
+    console.log(
+      "Found students:",
+      existingStudents.map((s) => ({ id: s._id, group: s.group }))
+    );
 
     const existingStudentIds = existingStudents.map((s) => s._id.toString());
     const invalidStudentIds = uniqueStudentIds.filter(
@@ -377,14 +480,18 @@ exports.createOrUpdateRanking = async (req, res) => {
     const ranking = await Ranking.findOneAndUpdate(
       { month: monthNum, year: yearNum, group: studentGroup },
       {
-        month: monthNum,
-        year: yearNum,
-        group: studentGroup,
-        topThree: processedTopThree,
-        topTen: processedTopTen,
+        $set: {
+          month: monthNum,
+          year: yearNum,
+          group: studentGroup,
+          topThree: processedTopThree,
+          topTen: processedTopTen,
+        },
       },
-      { new: true, upsert: true }
+      { new: true, upsert: true, runValidators: true }
     );
+
+    console.log("✅ تم حفظ/تحديث الترتيب بنجاح");
 
     res.status(200).json({
       success: true,
@@ -392,13 +499,38 @@ exports.createOrUpdateRanking = async (req, res) => {
       data: ranking,
     });
   } catch (error) {
-    console.error("Error creating/updating ranking:", error);
+    console.error("❌ Error creating/updating ranking:", error);
 
-    // Handle duplicate key error
+    // Handle duplicate key error - this shouldn't happen with proper upsert, but just in case
     if (error.code === 11000) {
+      console.log("⚠️ Duplicate key error, trying direct update...");
+
+      try {
+        // Try direct update if upsert failed
+        const existingRanking = await Ranking.findOne({
+          month: monthNum,
+          year: yearNum,
+          group: studentGroup,
+        });
+
+        if (existingRanking) {
+          existingRanking.topThree = processedTopThree;
+          existingRanking.topTen = processedTopTen;
+          await existingRanking.save();
+
+          return res.status(200).json({
+            success: true,
+            message: "تم تحديث التصنيف بنجاح",
+            data: existingRanking,
+          });
+        }
+      } catch (retryError) {
+        console.error("❌ Retry failed:", retryError);
+      }
+
       return res.status(400).json({
         success: false,
-        message: `التصنيف لشهر ${req.body.month}/${req.body.year} موجود بالفعل`,
+        message: `حدث خطأ في تحديث التصنيف لشهر ${req.body.month}/${req.body.year}`,
       });
     }
 

@@ -35,6 +35,29 @@ export interface NewRankingData {
   topTen: Array<{ studentId: string; score: number }>;
 }
 
+export interface StudentWithAverage {
+  _id: string;
+  studentId: number;
+  firstName: string;
+  fatherName: string;
+  lastName: string;
+  group: string;
+  overallAverage: number;
+  reviewAverage: number;
+  memorizationAverage: number;
+  totalMarks: number;
+  rank: number;
+}
+
+export interface RankingByAveragesResponse {
+  success: boolean;
+  data: StudentWithAverage[];
+  month: number;
+  year: number;
+  group: string;
+  totalStudents: number;
+}
+
 // Get all available periods
 export const getAvailablePeriods = async (): Promise<Period[]> => {
   try {
@@ -97,7 +120,7 @@ export const getRankingByPeriod = async (
   }
 };
 
-// Create new ranking
+// Create or update ranking
 export const createRanking = async (
   rankingData: NewRankingData
 ): Promise<Ranking> => {
@@ -107,8 +130,21 @@ export const createRanking = async (
       return response.data.data;
     }
     throw new Error(response.data.message || "Failed to create ranking");
-  } catch (error) {
-    console.error("Error creating ranking:", error);
+  } catch (error: unknown) {
+    const axiosError = error as {
+      response?: {
+        status?: number;
+        data?: { message?: string };
+      };
+    };
+
+    // Log detailed error for debugging
+    console.error("Error creating/updating ranking:", {
+      status: axiosError?.response?.status,
+      message: axiosError?.response?.data?.message,
+      data: rankingData,
+    });
+
     throw error;
   }
 };
@@ -139,6 +175,26 @@ export const deleteRanking = async (id: string): Promise<void> => {
     }
   } catch (error) {
     console.error("Error deleting ranking:", error);
+    throw error;
+  }
+};
+
+// Get ranking by monthly averages (NEW)
+export const getRankingByAverages = async (
+  month?: number,
+  year?: number,
+  group?: string
+): Promise<RankingByAveragesResponse> => {
+  try {
+    const params: Record<string, string | number> = {};
+    if (month) params.month = month;
+    if (year) params.year = year;
+    if (group) params.group = group;
+
+    const response = await api.get("/rankings/by-averages", { params });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching ranking by averages:", error);
     throw error;
   }
 };
