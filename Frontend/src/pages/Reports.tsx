@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import MarksBarChart from "../components/MarksBarChart";
 import { ReportsSkeleton } from "../components/Loading/LoadingSkeleton";
-import { getStudentMarks, getAverageMarks } from '../Api/reportApi';
-import { getProfile } from '../Api/profileApi';
+import { getStudentMarks, getAverageMarks } from "../Api/reportApi";
+import { getProfile } from "../Api/profileApi";
 
 const Reports = () => {
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
@@ -13,29 +13,33 @@ const Reports = () => {
     labels: string[];
     data: number[];
   }>({ labels: [], data: [] });
-  const [userId, setUserId] = useState<string>('');
+  const [userId, setUserId] = useState<string>("");
 
   // Load chart data based on filters
-  const loadChartData = useCallback(async (role?: string, id?: string) => {
-    try {
-      const currentRole = role || userRole;
-      const currentUserId = id || userId;
-      
-      const params = {
-        month: selectedMonth || undefined,
-        year: selectedYear || undefined,
-        ...(currentRole === 'student' && { studentId: currentUserId })
-      };
+  const loadChartData = useCallback(
+    async (role?: string, id?: string) => {
+      try {
+        const currentRole = role || userRole;
+        const currentUserId = id || userId;
 
-      const data = currentRole === 'student' 
-        ? await getStudentMarks(params)
-        : await getAverageMarks(params);
-      
-      setChartData(data);
-    } catch (error) {
-      console.error('خطأ في تحميل بيانات الرسم البياني:', error);
-    }
-  }, [selectedMonth, selectedYear, userRole, userId]);
+        const params = {
+          month: selectedMonth || undefined,
+          year: selectedYear || undefined,
+          ...(currentRole === "student" && { studentId: currentUserId }),
+        };
+
+        const data =
+          currentRole === "student"
+            ? await getStudentMarks(params)
+            : await getAverageMarks(params);
+
+        setChartData(data);
+      } catch (error) {
+        console.error("خطأ في تحميل بيانات الرسم البياني:", error);
+      }
+    },
+    [selectedMonth, selectedYear, userRole, userId]
+  );
 
   // Initialize component and load user data
   useEffect(() => {
@@ -43,12 +47,12 @@ const Reports = () => {
       try {
         setLoading(true);
         const profile = await getProfile();
-        setUserRole(profile.role || 'teacher');
-        setUserId(profile._id || '');
+        setUserRole(profile.role || "teacher");
+        setUserId(profile._id || "");
         await loadChartData(profile.role, profile._id);
       } catch (error) {
-        console.error('خطأ في تحميل بيانات المستخدم:', error);
-        setUserRole('teacher');
+        console.error("خطأ في تحميل بيانات المستخدم:", error);
+        setUserRole("teacher");
       } finally {
         setLoading(false);
       }
@@ -126,34 +130,80 @@ const Reports = () => {
         </div>
       </div>
       {/* يمكنك هنا عرض النتائج حسب الفلترة */}
-      <div className="bg-white rounded-xl shadow-md p-6 max-w-2xl mx-auto mt-8">
+      <div className="bg-white rounded-xl shadow-lg p-8 max-w-4xl mx-auto mt-8">
         {userRole === "student" ? (
           <>
-            <h2 className="text-lg font-bold mb-4 text-center">علاماتي</h2>
-            <MarksBarChart
-              labels={chartData.labels}
-              data={chartData.data}
-            />
-            <div className="text-center mt-4 text-gray-500 text-sm">
-              {selectedMonth && selectedYear
-                ? `* يتم عرض علاماتك للشهر المحدد.`
-                : `* يتم عرض علاماتك لآخر 6 أشهر.`}
-            </div>
+            <h2 className="text-xl font-bold mb-6 text-center text-gray-800">
+              📊 معدلاتي الشهرية
+            </h2>
+            {chartData.labels.length > 0 ? (
+              <>
+                <MarksBarChart
+                  labels={chartData.labels}
+                  data={chartData.data}
+                />
+                <div className="text-center mt-6 text-gray-600 text-sm bg-gray-50 p-3 rounded-lg">
+                  {selectedMonth && selectedYear
+                    ? `📅 يتم عرض معدلك للشهر ${selectedMonth}/${selectedYear}`
+                    : `📅 يتم عرض معدلاتك لآخر 6 أشهر`}
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-12 text-gray-500">
+                <svg
+                  className="w-16 h-16 mx-auto mb-4 text-gray-300"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  />
+                </svg>
+                <p className="text-lg font-medium">لا توجد بيانات لعرضها</p>
+                <p className="text-sm mt-2">لم يتم تسجيل أي معدلات شهرية بعد</p>
+              </div>
+            )}
           </>
         ) : (
           <>
-            <h2 className="text-lg font-bold mb-4 text-center">
-              متوسط العلامات لجميع الطلاب
+            <h2 className="text-xl font-bold mb-6 text-center text-gray-800">
+              📈 متوسط معدلات الحلقة
             </h2>
-            <MarksBarChart
-              labels={chartData.labels}
-              data={chartData.data}
-            />
-            <div className="text-center mt-4 text-gray-500 text-sm">
-              {selectedMonth && selectedYear
-                ? `* يتم عرض متوسط العلامات لجميع الطلاب للشهر المحدد.`
-                : `* يتم عرض متوسط العلامات لجميع الطلاب لآخر 6 أشهر.`}
-            </div>
+            {chartData.labels.length > 0 ? (
+              <>
+                <MarksBarChart
+                  labels={chartData.labels}
+                  data={chartData.data}
+                />
+                <div className="text-center mt-6 text-gray-600 text-sm bg-gray-50 p-3 rounded-lg">
+                  {selectedMonth && selectedYear
+                    ? `📅 يتم عرض متوسط معدلات جميع الطلاب للشهر ${selectedMonth}/${selectedYear}`
+                    : `📅 يتم عرض متوسط معدلات جميع الطلاب لآخر 6 أشهر`}
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-12 text-gray-500">
+                <svg
+                  className="w-16 h-16 mx-auto mb-4 text-gray-300"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  />
+                </svg>
+                <p className="text-lg font-medium">لا توجد بيانات لعرضها</p>
+                <p className="text-sm mt-2">
+                  لم يتم تسجيل أي معدلات شهرية للطلاب بعد
+                </p>
+              </div>
+            )}
           </>
         )}
       </div>
