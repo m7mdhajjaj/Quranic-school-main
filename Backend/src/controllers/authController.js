@@ -25,6 +25,7 @@ exports.login = async (req, res) => {
     const password =
       req.validatedData?.password || req.body.idNumber || req.body.password;
     const userType = req.validatedData?.userType || req.body.userType;
+    const rememberMe = req.body.rememberMe === true || req.body.rememberMe === 'true';
 
     console.log("Parsed values:", {
       identifier,
@@ -34,12 +35,12 @@ exports.login = async (req, res) => {
 
     // Check if it's a teacher login
     if (userType === "teacher") {
-      return await loginTeacher(req, res, identifier, password);
+      return await loginTeacher(req, res, identifier, password, rememberMe);
     }
 
     // Check if it's an admin login
     if (userType === "admin") {
-      return await loginAdmin(req, res, identifier, password);
+      return await loginAdmin(req, res, identifier, password, rememberMe);
     }
 
     // Otherwise, proceed with student login
@@ -81,6 +82,11 @@ exports.login = async (req, res) => {
       lastSeen: new Date(),
     });
 
+    // تحديد مدة الجلسة بناءً على "تذكرني"
+    // rememberMe = true: 7 أيام
+    // rememberMe = false: 30 دقيقة
+    const tokenExpiry = rememberMe ? "7d" : "30m";
+
     // إنشاء رمز JWT
     const token = jwt.sign(
       {
@@ -91,7 +97,7 @@ exports.login = async (req, res) => {
         role: "student",
       },
       JWT_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: tokenExpiry }
     );
 
     // إرسال البيانات المصادق عليها
@@ -134,12 +140,14 @@ exports.login = async (req, res) => {
 };
 
 // تسجيل دخول المعلم
-const loginTeacher = async (req, res, teacherIdParam, passwordParam) => {
+const loginTeacher = async (req, res, teacherIdParam, passwordParam, rememberMeParam) => {
   try {
     const teacherId =
       teacherIdParam || req.validatedData?.identifier || req.body.teacherId;
     const password =
       passwordParam || req.validatedData?.password || req.body.password;
+    const rememberMe = rememberMeParam !== undefined ? rememberMeParam : 
+      (req.body.rememberMe === true || req.body.rememberMe === 'true');
 
     // التحقق من إدخال رقم المعلم وكلمة المرور
     if (!teacherId || !password) {
@@ -175,6 +183,9 @@ const loginTeacher = async (req, res, teacherIdParam, passwordParam) => {
       lastSeen: new Date(),
     });
 
+    // تحديد مدة الجلسة بناءً على "تذكرني"
+    const tokenExpiry = rememberMe ? "7d" : "30m";
+
     // إنشاء رمز JWT
     const token = jwt.sign(
       {
@@ -185,7 +196,7 @@ const loginTeacher = async (req, res, teacherIdParam, passwordParam) => {
         role: teacher.role,
       },
       JWT_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: tokenExpiry }
     );
 
     // إرسال البيانات المصادق عليها
@@ -213,12 +224,14 @@ const loginTeacher = async (req, res, teacherIdParam, passwordParam) => {
 };
 
 // تسجيل دخول الإداري
-const loginAdmin = async (req, res, adminIdParam, passwordParam) => {
+const loginAdmin = async (req, res, adminIdParam, passwordParam, rememberMeParam) => {
   try {
     const adminId =
       adminIdParam || req.validatedData?.identifier || req.body.adminId;
     const password =
       passwordParam || req.validatedData?.password || req.body.password;
+    const rememberMe = rememberMeParam !== undefined ? rememberMeParam : 
+      (req.body.rememberMe === true || req.body.rememberMe === 'true');
 
     // التحقق من إدخال رقم الإداري وكلمة المرور
     if (!adminId || !password) {
@@ -254,6 +267,9 @@ const loginAdmin = async (req, res, adminIdParam, passwordParam) => {
       lastSeen: new Date(),
     });
 
+    // تحديد مدة الجلسة بناءً على "تذكرني"
+    const tokenExpiry = rememberMe ? "7d" : "30m";
+
     // إنشاء رمز JWT
     const token = jwt.sign(
       {
@@ -263,7 +279,7 @@ const loginAdmin = async (req, res, adminIdParam, passwordParam) => {
         role: "admin",
       },
       JWT_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: tokenExpiry }
     );
 
     // إرسال البيانات المصادق عليها

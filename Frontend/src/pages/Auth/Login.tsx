@@ -554,6 +554,7 @@ const Login = () => {
         response = await loginStudent({
           studentId: formData.userId,
           idNumber: formData.password,
+          rememberMe: rememberMe,
         });
         console.log("✅ Student login successful!");
       } catch {
@@ -565,6 +566,7 @@ const Login = () => {
             teacherId: formData.userId,
             password: formData.password,
             userType: "teacher",
+            rememberMe: rememberMe,
           });
           console.log("✅ Teacher login successful!");
         } catch {
@@ -575,6 +577,7 @@ const Login = () => {
             adminId: formData.userId,
             password: formData.password,
             userType: "admin",
+            rememberMe: rememberMe,
           });
           console.log("✅ Admin login successful!");
         }
@@ -813,20 +816,67 @@ const Login = () => {
 
                 {/* Remember Me & Forgot Password */}
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <input
-                      id="remember-me"
-                      name="remember-me"
-                      type="checkbox"
-                      checked={rememberMe}
-                      onChange={handleRememberMeChange}
-                      className="h-5 w-5 text-emerald-500 focus:ring-emerald-400 border-white/30 rounded-lg bg-white/10 backdrop-blur-sm"
-                    />
-                    <label
-                      htmlFor="remember-me"
-                      className="mr-3 block text-sm text-emerald-100 font-medium">
-                      تذكرني
+                  <div className="flex items-center gap-3">
+                    {/* Toggle Switch */}
+                    <label htmlFor="remember-me" className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        id="remember-me"
+                        checked={rememberMe}
+                        onChange={handleRememberMeChange}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-600/50 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                      <span className="ms-3 text-sm font-medium text-emerald-100">تذكرني</span>
                     </label>
+
+                    {/* Info Icon with Tooltip */}
+                    <div className="relative group/info">
+                      <button
+                        type="button"
+                        className="p-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/20 hover:border-emerald-400/50 transition-all duration-300"
+                        aria-label="معلومات الجلسة">
+                        <svg className="w-4 h-4 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </button>
+                      
+                      {/* Tooltip */}
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 opacity-0 invisible group-hover/info:opacity-100 group-hover/info:visible transition-all duration-300 z-50">
+                        <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-emerald-400/30 rounded-xl shadow-2xl p-4 backdrop-blur-xl">
+                          {/* Arrow */}
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px">
+                            <div className="border-8 border-transparent border-t-slate-800"></div>
+                          </div>
+                          
+                          {/* Content */}
+                          <div className="space-y-2 text-right">
+                            <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              <span>مدة الجلسة</span>
+                            </div>
+                            
+                            {rememberMe ? (
+                              <div className="space-y-1">
+                                <p className="text-white text-xs font-semibold">✅ مفعّل: 7 أيام</p>
+                                <p className="text-emerald-200/70 text-xs">
+                                  ستبقى متصلاً حتى تسجيل الخروج
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="space-y-1">
+                                <p className="text-white text-xs font-semibold">⏰ غير مفعّل: 30 دقيقة</p>
+                                <p className="text-yellow-200/70 text-xs">
+                                  سيتم تسجيل الخروج تلقائياً بعد 30 دقيقة
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   <button

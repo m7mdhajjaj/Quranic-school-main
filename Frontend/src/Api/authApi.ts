@@ -7,18 +7,21 @@ import api from './api';
 interface LoginStudentRequest {
   studentId: string;
   idNumber: string;
+  rememberMe?: boolean;
 }
 
 interface LoginTeacherRequest {
   teacherId: string;
   password: string;
   userType: 'teacher';
+  rememberMe?: boolean;
 }
 
 interface LoginAdminRequest {
   adminId: string;
   password: string;
   userType: 'admin';
+  rememberMe?: boolean;
 }
 
 interface VerifyIdentityRequest {

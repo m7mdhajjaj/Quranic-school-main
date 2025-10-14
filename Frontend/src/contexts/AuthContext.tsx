@@ -164,6 +164,42 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializeAuth();
   }, []);
 
+  // مراقبة انتهاء صلاحية الجلسة
+  useEffect(() => {
+    const checkTokenExpiry = async () => {
+      if (!token || !user) return;
+
+      try {
+        // محاولة التحقق من صلاحية التوكن
+        const response = await verifyToken();
+        if (!response || !response.success) {
+          console.log('⏰ انتهت صلاحية الجلسة - تسجيل خروج تلقائي');
+          // تنظيف البيانات
+          setUser(null);
+          setToken(null);
+          localStorage.clear();
+          sessionStorage.clear();
+          window.location.href = '/login';
+        }
+      } catch {
+        // في حالة فشل التحقق (التوكن منتهي أو غير صالح)
+        console.log('⏰ انتهت صلاحية الجلسة - تسجيل خروج تلقائي');
+        // تنظيف البيانات
+        setUser(null);
+        setToken(null);
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = '/login';
+      }
+    };
+
+    // التحقق كل 5 دقائق
+    const intervalId = setInterval(checkTokenExpiry, 5 * 60 * 1000);
+
+    // تنظيف عند unmount
+    return () => clearInterval(intervalId);
+  }, [token, user]);
+
   // وظيفة تسجيل الدخول
   const login = (userData: User, authToken: string) => {
     try {
@@ -178,6 +214,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('user', JSON.stringify(userWithActiveStatus));
       localStorage.setItem('token', authToken);
       localStorage.setItem('userId', userData._id);
+      localStorage.setItem('loginTime', Date.now().toString());
 
       // Connect socket and emit login
       if (socketRef.current && !socketRef.current.connected) {
