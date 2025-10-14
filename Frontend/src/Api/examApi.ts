@@ -12,6 +12,7 @@ export interface Exam {
   time: string;
   result?: string;
   group?: string; // اسم الحلقة
+  examAverage?: number | null; // متوسط علامات الامتحان
 }
 
 export interface StudentDoc {

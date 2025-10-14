@@ -43,6 +43,9 @@ exports.setExamMarks = async (req, res) => {
 
     await ExamMark.bulkWrite(operations);
 
+    // تحديث متوسط الامتحان
+    await updateExamAverage(examId);
+
     const updated = await ExamMark.find({ exam: examId }).populate("student");
     res.json(updated);
   } catch (err) {
@@ -63,6 +66,9 @@ exports.updateStudentMark = async (req, res) => {
       { new: true, upsert: true }
     );
 
+    // تحديث متوسط الامتحان
+    await updateExamAverage(examId);
+
     res.json(updated);
   } catch (err) {
     res.status(500).json({ error: "Server error" });
@@ -74,9 +80,45 @@ exports.deleteStudentMark = async (req, res) => {
   try {
     const { examId, studentId } = req.params;
     await ExamMark.findOneAndDelete({ exam: examId, student: studentId });
+
+    // تحديث متوسط الامتحان بعد الحذف
+    await updateExamAverage(examId);
+
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: "Server error" });
+  }
+};
+
+// Helper function to calculate and update exam average
+const updateExamAverage = async (examId) => {
+  try {
+    const Exam = require("../schema/Exam");
+
+    const result = await ExamMark.aggregate([
+      { $match: { exam: new mongoose.Types.ObjectId(examId) } },
+      {
+        $group: {
+          _id: "$exam",
+          avgMark: { $avg: { $toDouble: "$mark" } },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    let average = null;
+    if (result.length > 0 && result[0].avgMark != null) {
+      // تقريب المتوسط إلى رقمين عشريين
+      average = Math.round(result[0].avgMark * 100) / 100;
+    }
+
+    // تحديث الامتحان بالمتوسط الجديد
+    await Exam.findByIdAndUpdate(examId, { examAverage: average });
+
+    return average;
+  } catch (err) {
+    console.error("Error updating exam average:", err);
+    return null;
   }
 };
 
@@ -84,7 +126,20 @@ exports.deleteStudentMark = async (req, res) => {
 exports.getExamAverage = async (req, res) => {
   try {
     const examId = req.params.examId;
+    const Exam = require("../schema/Exam");
 
+    // جلب الامتحان من قاعدة البيانات
+    const exam = await Exam.findById(examId);
+    if (!exam) {
+      return res.status(404).json({ error: "Exam not found" });
+    }
+
+    // إذا كان المتوسط محفوظاً، أرجعه
+    if (exam.examAverage !== null && exam.examAverage !== undefined) {
+      return res.json({ average: exam.examAverage, count: 0 });
+    }
+
+    // إذا لم يكن محفوظاً، احسبه وحدّثه
     const result = await ExamMark.aggregate([
       { $match: { exam: new mongoose.Types.ObjectId(examId) } },
       {
@@ -100,7 +155,12 @@ exports.getExamAverage = async (req, res) => {
       return res.json({ average: null, count: 0 });
     }
 
-    res.json({ average: result[0].avgMark, count: result[0].count });
+    const average = Math.round(result[0].avgMark * 100) / 100;
+
+    // حفظ المتوسط في قاعدة البيانات
+    await Exam.findByIdAndUpdate(examId, { examAverage: average });
+
+    res.json({ average: average, count: result[0].count });
   } catch (err) {
     console.error("Error in getExamAverage:", err);
     res.status(500).json({ error: "Server error" });

@@ -6,6 +6,7 @@ const examSchema = new mongoose.Schema({
   time: { type: String, required: true },
   result: { type: String },
   group: { type: String }, // اسم الحلقة التي ينتمي لها الامتحان
+  examAverage: { type: Number, default: null }, // متوسط علامات الامتحان
 });
 
 module.exports = mongoose.model("Exam", examSchema);

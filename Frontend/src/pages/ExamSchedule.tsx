@@ -262,14 +262,31 @@ const ExamSchedule: React.FC = () => {
 
   const refreshAllAverages = useMemo(
     () => async (list: Exam[]) => {
-      const entries = await Promise.all(
-        list.map(async (ex) => {
-          const id = String(ex._id ?? ex.id);
-          const avg = await fetchExamAverage(id);
-          return [id, avg] as const;
-        })
-      );
+      // استخدام المتوسط المحفوظ في قاعدة البيانات
+      const entries = list.map((ex) => {
+        const id = String(ex._id ?? ex.id);
+        const avg = ex.examAverage ?? null;
+        return [id, avg] as const;
+      });
       setExamAverages(Object.fromEntries(entries));
+
+      // إذا كان هناك امتحانات بدون متوسط، جلبه من الـ API
+      const examsWithoutAverage = list.filter(
+        (ex) => ex.examAverage === null || ex.examAverage === undefined
+      );
+      if (examsWithoutAverage.length > 0) {
+        const fetchedAverages = await Promise.all(
+          examsWithoutAverage.map(async (ex) => {
+            const id = String(ex._id ?? ex.id);
+            const avg = await fetchExamAverage(id);
+            return [id, avg] as const;
+          })
+        );
+        setExamAverages((prev) => ({
+          ...prev,
+          ...Object.fromEntries(fetchedAverages),
+        }));
+      }
     },
     []
   );
