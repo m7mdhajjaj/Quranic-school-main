@@ -163,9 +163,16 @@ export const adminValidationSchema = yup.object().shape({
   idNumber: yup
     .string()
     .trim()
-    .min(10, 'رقم الهوية يجب أن يكون 10 أرقام على الأقل')
-    .max(15, 'رقم الهوية يجب أن يكون 15 رقم على الأكثر')
-    .nullable(),
+    .nullable()
+    .test('only-numbers', 'رقم الهوية يجب أن يحتوي على أرقام فقط', function(value) {
+      if (!value) return true; // nullable
+      return /^\d+$/.test(value);
+    })
+    .test('exactly-nine-digits', 'رقم الهوية يجب أن يتكون من 9 أرقام بالضبط', function(value) {
+      if (!value) return true; // nullable
+      return value.length === 9;
+    })
+    .matches(/^\d{9}$/, 'رقم الهوية يجب أن يتكون من 9 أرقام فقط'),
 
   birthDate: yup
     .date()

@@ -9,7 +9,7 @@ export interface AvatarProps {
   /** Alt text for the image */
   alt?: string;
   /** Size of the avatar */
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl';
   /** User's name for fallback initial */
   userName?: string;
   /** User ID for status checking */
@@ -50,6 +50,7 @@ const sizeClasses = {
   xl: 'w-16 h-16',
   '2xl': 'w-20 h-20',
   '3xl': 'w-24 h-24 md:w-28 md:h-28',
+  '4xl': 'w-32 h-32 md:w-40 md:h-40',
 };
 
 const iconSizeClasses = {
@@ -60,6 +61,7 @@ const iconSizeClasses = {
   xl: 'w-8 h-8',
   '2xl': 'w-10 h-10',
   '3xl': 'w-12 h-12',
+  '4xl': 'w-16 h-16',
 };
 
 const borderClasses = {
@@ -77,6 +79,7 @@ const textSizeClasses = {
   xl: 'text-xl',
   '2xl': 'text-2xl',
   '3xl': 'text-2xl md:text-3xl',
+  '4xl': 'text-3xl md:text-5xl',
 };
 
 // أحجام نقطة الحالة
@@ -88,6 +91,7 @@ const statusDotSizeClasses = {
   xl: 'w-4 h-4',
   '2xl': 'w-5 h-5',
   '3xl': 'w-6 h-6',
+  '4xl': 'w-7 h-7',
 };
 
 // موضع نقطة الحالة
@@ -99,6 +103,7 @@ const statusDotPositionClasses = {
   xl: 'bottom-1 right-1',
   '2xl': 'bottom-1 right-1',
   '3xl': 'bottom-1.5 right-1.5',
+  '4xl': 'bottom-2 right-2',
 };
 
 const Avatar: React.FC<AvatarProps> = React.memo(({

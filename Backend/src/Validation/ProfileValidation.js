@@ -73,7 +73,7 @@ const validateEmail = (email) => {
 };
 
 /**
- * Validate phone number
+ * Validate phone number (10 digits for Saudi Arabia)
  */
 const validatePhoneNumber = (phone) => {
   if (!phone || phone.toString().trim() === '') {
@@ -85,9 +85,9 @@ const validatePhoneNumber = (phone) => {
   // Remove common separators
   const cleanPhone = phoneStr.replace(/[\s\-\(\)]/g, '');
 
-  // Check for valid phone number (international or local format)
-  if (!/^(\+?\d{1,3})?[0-9]{8,15}$/.test(cleanPhone)) {
-    return { isValid: false, message: 'رقم الهاتف غير صحيح' };
+  // Check for Saudi phone number (10 digits starting with 05 or 5)
+  if (!/^(05|5)\d{8}$/.test(cleanPhone)) {
+    return { isValid: false, message: 'رقم الهاتف يجب أن يكون 10 أرقام ويبدأ بـ 05' };
   }
 
   return { isValid: true, value: cleanPhone };
@@ -295,6 +295,24 @@ const validateProfileImage = (image) => {
   }
 
   return { isValid: true, value: validatedImage };
+};
+
+/**
+ * Validate ID number (9 digits for Saudi Arabia)
+ */
+const validateIdNumber = (idNumber) => {
+  if (!idNumber || idNumber.toString().trim() === '') {
+    return { isValid: true, value: null }; // Optional field
+  }
+
+  const idStr = idNumber.toString().trim();
+
+  // Check for Saudi ID number (9 digits)
+  if (!/^\d{9}$/.test(idStr)) {
+    return { isValid: false, message: 'رقم الهوية يجب أن يكون 9 أرقام' };
+  }
+
+  return { isValid: true, value: idStr };
 };
 
 /**
@@ -650,6 +668,16 @@ const validateProfileData = async (req, res, next) => {
       }
     }
 
+    // Validate ID number
+    if (data.idNumber !== undefined) {
+      const idValidation = validateIdNumber(data.idNumber);
+      if (!idValidation.isValid) {
+        errors.push(idValidation.message);
+      } else {
+        validatedData.idNumber = idValidation.value;
+      }
+    }
+
     // Validate password (if changing)
     if (data.password !== undefined) {
       const passwordValidation = await validatePassword(
@@ -762,6 +790,7 @@ module.exports = {
   validateDateOfBirth,
   validateGender,
   validateAddress,
+  validateIdNumber,
   validatePassword,
   validateProfileImage,
   validateSocialLinks,

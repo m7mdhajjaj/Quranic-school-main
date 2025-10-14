@@ -74,7 +74,7 @@ const validateEmail = (email) => {
 };
 
 /**
- * Validate phone number format
+ * Validate phone number format (Saudi Arabia)
  */
 const validatePhone = (phone) => {
   if (!isRequired(phone)) {
@@ -86,18 +86,14 @@ const validatePhone = (phone) => {
   // Remove common separators
   phoneStr = phoneStr.replace(/[\s\-\(\)\.]/g, '');
   
-  // Validate format (Palestinian/Jordanian numbers)
-  if (!/^(?:\+970|970|0)?[0-9]{9}$/.test(phoneStr)) {
-    return { isValid: false, message: 'رقم الهاتف غير صحيح (يجب أن يكون 9 أرقام)' };
+  // Validate format (Saudi numbers - 10 digits starting with 05)
+  if (!/^(05|5)\d{8}$/.test(phoneStr)) {
+    return { isValid: false, message: 'الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام' };
   }
   
-  // Normalize format
-  if (phoneStr.startsWith('+970')) {
-    phoneStr = phoneStr.substring(4);
-  } else if (phoneStr.startsWith('970')) {
-    phoneStr = phoneStr.substring(3);
-  } else if (phoneStr.startsWith('0')) {
-    phoneStr = phoneStr.substring(1);
+  // Normalize format to start with 0
+  if (phoneStr.startsWith('5') && phoneStr.length === 9) {
+    phoneStr = '0' + phoneStr;
   }
   
   return { isValid: true, value: phoneStr };
@@ -131,6 +127,24 @@ const validatePassword = (password, isUpdate = false) => {
   }
   
   return { isValid: true, value: passwordStr };
+};
+
+/**
+ * Validate ID number (9 digits for Saudi Arabia)
+ */
+const validateIdNumber = (idNumber) => {
+  if (!idNumber || idNumber.toString().trim() === '') {
+    return { isValid: true, value: null }; // Optional field
+  }
+
+  const idStr = idNumber.toString().trim();
+
+  // Check for Saudi ID number (9 digits)
+  if (!/^\d{9}$/.test(idStr)) {
+    return { isValid: false, message: 'رقم الهوية يجب أن يتكون من 9 أرقام' };
+  }
+
+  return { isValid: true, value: idStr };
 };
 
 /**
@@ -303,6 +317,16 @@ const validateAdminData = async (req, res, next) => {
       }
     }
     
+    // Validate ID number (optional)
+    if (data.idNumber !== undefined) {
+      const idValidation = validateIdNumber(data.idNumber);
+      if (!idValidation.isValid) {
+        errors.push(idValidation.message);
+      } else {
+        validatedData.idNumber = idValidation.value;
+      }
+    }
+    
     // Additional fields
     if (data.isActive !== undefined) {
       validatedData.isActive = Boolean(data.isActive);
@@ -345,6 +369,7 @@ module.exports = {
   validateName,
   validateEmail,
   validatePhone,
+  validateIdNumber,
   validatePassword,
   validateRole,
   validatePermissions,

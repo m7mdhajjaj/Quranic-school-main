@@ -18,13 +18,12 @@ import {
   CheckCircle2,
   AlertCircle,
   Camera,
-  Award,
-  TrendingUp,
   ShieldCheck,
 } from 'lucide-react';
-import { toast, ToastContainer } from 'react-toastify';
 import Avatar from '../components/Avatar';
 import { useAuth } from '../hooks/useAuth';
+import { showSuccessMessage, showErrorMessage } from '../utils/sweetalertUtils';
+import { ProfileSkeleton } from '../components/Loading/LoadingSkeleton';
 import ChangePasswordModal from './Auth/ChangePass';
 import {
   getUserWithFallback,
@@ -33,9 +32,9 @@ import {
   uploadUserAvatar,
   type UserProfile,
 } from '../Api/profileApi';
+import { validateProfileData, validateField, type FieldErrors } from '../Validation/profileValidation';
 
 type Endpoint = 'students' | 'teachers' | 'admins';
-import 'react-toastify/dist/ReactToastify.css';
 
 // Local helper functions
 const getUserGender = (user: UserProfile): 'male' | 'ذكر' | 'أنثى' | 'female' | undefined => {
@@ -138,6 +137,7 @@ const Profile: React.FC = () => {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>('');
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const fullName = useMemo(
     () =>
@@ -210,10 +210,49 @@ const Profile: React.FC = () => {
     setIsEditing(false);
     setEdited(null);
     setAvatarFile(null);
+    setFieldErrors({});
+  };
+
+  const handleFieldBlur = (fieldName: string, value: string | undefined) => {
+    const result = validateField(fieldName, value);
+    if (!result.isValid) {
+      setFieldErrors(prev => ({ ...prev, [fieldName]: result.error }));
+    } else {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[fieldName as keyof FieldErrors];
+        return newErrors;
+      });
+    }
   };
 
   const saveProfile = async () => {
     if (!user || !edited) return;
+    
+    // Clear previous errors
+    setFieldErrors({});
+    
+    // Validate profile data
+    const validation = validateProfileData({
+      firstName: edited.firstName,
+      fatherName: edited.fatherName,
+      grandFatherName: edited.grandFatherName,
+      lastName: edited.lastName,
+      motherName: edited.motherName,
+      email: edited.email,
+      phoneNumber: edited.phoneNumber,
+      birthDate: edited.birthDate,
+      gender: edited.gender,
+      residence: edited.residence,
+      idNumber: edited.idNumber,
+    });
+
+    if (!validation.isValid) {
+      setFieldErrors(validation.errors);
+      await showErrorMessage('خطأ في البيانات', 'يرجى تصحيح الأخطاء في النموذج');
+      return;
+    }
+
     setIsSaving(true);
 
     const payload: Partial<UserProfile> = {
@@ -236,7 +275,8 @@ const Profile: React.FC = () => {
     if (changingBirth) {
       const b = canEditFieldLocal('birthDate', user._id);
       if (!b.allowed) {
-        toast.error(
+        await showErrorMessage(
+          'غير مسموح بالتعديل',
           'لا يمكنك تعديل تاريخ الميلاد أكثر من مرتين خلال شهر كامل من آخر تعديلاتك'
         );
         setIsSaving(false);
@@ -246,7 +286,8 @@ const Profile: React.FC = () => {
     if (changingGender) {
       const g = canEditFieldLocal('gender', user._id);
       if (!g.allowed) {
-        toast.error(
+        await showErrorMessage(
+          'غير مسموح بالتعديل',
           'لا يمكنك تعديل الجنس أكثر من مرتين خلال شهر كامل من آخر تعديلاتك'
         );
         setIsSaving(false);
@@ -277,11 +318,11 @@ const Profile: React.FC = () => {
       setUser({ ...user, ...payload });
       setEdited(null);
       setIsEditing(false);
-      toast.success('تم حفظ التعديلات بنجاح');
+      await showSuccessMessage('تم الحفظ!', 'تم حفظ التعديلات بنجاح');
     } catch (error: unknown) {
       const axiosError = error as { response?: { data?: { message?: string } } };
       const msg = axiosError?.response?.data?.message || 'تعذّر حفظ التعديلات';
-      toast.error(msg);
+      await showErrorMessage('خطأ في الحفظ!', msg);
     } finally {
       setIsSaving(false);
     }
@@ -293,20 +334,7 @@ const Profile: React.FC = () => {
   };
 
   if (fetchState.status === 'loading') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="relative inline-block mb-8">
-            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full blur-3xl opacity-30 animate-pulse"></div>
-            <Loader2 className="relative w-24 h-24 text-indigo-600 animate-spin" />
-          </div>
-          <h2 className="text-2xl font-black text-slate-900 mb-3">
-            جارِ تحميل ملفك الشخصي
-          </h2>
-          <p className="text-slate-600">انتظر قليلاً من فضلك</p>
-        </div>
-      </div>
-    );
+    return <ProfileSkeleton />;
   }
 
   if (fetchState.status === 'error') {
@@ -321,14 +349,13 @@ const Profile: React.FC = () => {
             <p className="text-red-600 text-lg mb-8">{fetchState.message}</p>
             <button
               onClick={loadUser}
-              className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold px-8 py-5 rounded-2xl hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+              className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold px-8 py-5 rounded-2xl hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
             >
               <RefreshCw className="w-6 h-6" />
               <span>إعادة المحاولة</span>
             </button>
           </div>
         </div>
-        <ToastContainer rtl position="top-center" />
       </div>
     );
   }
@@ -341,24 +368,24 @@ const Profile: React.FC = () => {
     const configs = {
       student: {
         label: 'طالب',
-        gradient: 'from-blue-600 via-indigo-600 to-purple-600',
-        lightGradient: 'from-blue-500 to-indigo-500',
+        gradient: 'from-emerald-600 to-teal-600',
+        lightGradient: 'from-emerald-500 to-teal-500',
         icon: '🎓',
-        pattern: 'from-blue-100 to-indigo-100',
+        pattern: 'from-emerald-100 to-teal-100',
       },
       teacher: {
         label: 'معلم',
-        gradient: 'from-purple-600 via-pink-600 to-rose-600',
-        lightGradient: 'from-purple-500 to-pink-500',
+        gradient: 'from-teal-600 to-cyan-600',
+        lightGradient: 'from-teal-500 to-cyan-500',
         icon: '👨‍🏫',
-        pattern: 'from-purple-100 to-pink-100',
+        pattern: 'from-teal-100 to-cyan-100',
       },
       admin: {
         label: 'مدير',
-        gradient: 'from-orange-600 via-red-600 to-pink-600',
-        lightGradient: 'from-orange-500 to-red-500',
+        gradient: 'from-emerald-700 to-emerald-900',
+        lightGradient: 'from-emerald-600 to-emerald-800',
         icon: '⚡',
-        pattern: 'from-orange-100 to-red-100',
+        pattern: 'from-emerald-100 to-emerald-200',
       },
     };
     return configs[user.role || 'student'];
@@ -372,7 +399,7 @@ const Profile: React.FC = () => {
       dir="rtl"
     >
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 overflow-hidden">
+      <div className="relative bg-gradient-to-r from-emerald-600 to-teal-600 overflow-hidden">
         {/* Animated Background */}
         <div className="absolute inset-0">
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
@@ -396,10 +423,10 @@ const Profile: React.FC = () => {
                   }
                   userName={user.firstName}
                   gender={getUserGender(user)}
-                  size="3xl"
+                  size="4xl"
                   border="ring"
                   showStatus={true}
-                  fallbackIcon={<UserIcon className="w-20 h-20 text-white" />}
+                  fallbackIcon={<UserIcon className="w-24 h-24 text-white" />}
                 />
 
                 {/* Camera Button */}
@@ -408,7 +435,7 @@ const Profile: React.FC = () => {
                     type="button"
                     onClick={() => document.getElementById('avatar')?.click()}
                     title="تغيير الصورة الشخصية"
-                    className="absolute bottom-4 right-4 bg-white text-indigo-600 p-5 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300"
+                    className="absolute bottom-4 right-4 bg-white text-emerald-600 p-5 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300"
                   >
                     <Camera className="w-7 h-7" />
                   </button>
@@ -459,7 +486,7 @@ const Profile: React.FC = () => {
                 <>
                   <button
                     onClick={beginEdit}
-                    className="flex items-center gap-3 bg-white text-indigo-700 font-black px-12 py-6 rounded-2xl shadow-2xl hover:shadow-white/20 hover:scale-105 active:scale-95 transition-all duration-300"
+                    className="flex items-center gap-3 bg-white text-emerald-700 font-black px-12 py-6 rounded-2xl shadow-2xl hover:shadow-white/20 hover:scale-105 active:scale-95 transition-all duration-300"
                   >
                     <Edit className="w-7 h-7" />
                     <span className="text-xl">تعديل المعلومات</span>
@@ -516,26 +543,11 @@ const Profile: React.FC = () => {
       {/* Content Section */}
       <div className="container mx-auto px-4 -mt-8 pb-20">
         {/* Stats Cards */}
-        <div className="grid md:grid-cols-3 gap-6 mb-12">
-          {/* Account Type */}
-          <div className="group bg-white rounded-3xl shadow-lg border-2 border-slate-100 p-8 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500">
-            <div
-              className={`inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br ${roleConfig.lightGradient} rounded-2xl mb-4 shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300`}
-            >
-              <Award className="w-8 h-8 text-white" />
-            </div>
-            <h3 className="text-sm font-bold text-slate-600 mb-2">
-              نوع الحساب
-            </h3>
-            <p className="text-3xl font-black text-slate-900">
-              {roleConfig.label}
-            </p>
-          </div>
-
+        <div className="grid md:grid-cols-1 gap-6 mb-12">
           {/* Student ID */}
           {user.role === 'student' && user.studentId && (
-            <div className="group bg-white rounded-3xl shadow-lg border-2 border-slate-100 p-8 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl mb-4 shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+            <div className="group bg-white rounded-3xl shadow-lg border-2 border-slate-100 p-8 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 max-w-md mx-auto">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-2xl mb-4 shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
                 <IdCard className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-sm font-bold text-slate-600 mb-2">
@@ -546,23 +558,12 @@ const Profile: React.FC = () => {
               </p>
             </div>
           )}
-
-          {/* Age */}
-          {age && (
-            <div className="group bg-white rounded-3xl shadow-lg border-2 border-slate-100 p-8 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl mb-4 shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
-                <TrendingUp className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-sm font-bold text-slate-600 mb-2">العمر</h3>
-              <p className="text-3xl font-black text-slate-900">{age} سنة</p>
-            </div>
-          )}
         </div>
 
         {/* Personal Information Section */}
         <div className="bg-white rounded-3xl shadow-xl border-2 border-slate-100 p-8 md:p-12">
           <div className="flex items-center gap-4 mb-10">
-            <div className="p-4 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-2xl shadow-lg">
+            <div className="p-4 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl shadow-lg">
               <ShieldCheck className="w-8 h-8 text-white" />
             </div>
             <div>
@@ -588,6 +589,9 @@ const Profile: React.FC = () => {
                         onChange={(v) =>
                           setEdited((p) => (p ? { ...p, firstName: v } : p))
                         }
+                        onBlur={() => handleFieldBlur('firstName', edited?.firstName)}
+                        error={fieldErrors.firstName}
+                        fieldName="firstName"
                       />
                       <TextInput
                         placeholder="اسم الأب"
@@ -595,6 +599,9 @@ const Profile: React.FC = () => {
                         onChange={(v) =>
                           setEdited((p) => (p ? { ...p, fatherName: v } : p))
                         }
+                        onBlur={() => handleFieldBlur('fatherName', edited?.fatherName)}
+                        error={fieldErrors.fatherName}
+                        fieldName="fatherName"
                       />
                       <TextInput
                         placeholder="اسم الجد"
@@ -604,6 +611,9 @@ const Profile: React.FC = () => {
                             p ? { ...p, grandFatherName: v } : p
                           )
                         }
+                        onBlur={() => handleFieldBlur('grandFatherName', edited?.grandFatherName)}
+                        error={fieldErrors.grandFatherName}
+                        fieldName="grandFatherName"
                       />
                       <TextInput
                         placeholder="اسم العائلة"
@@ -611,6 +621,9 @@ const Profile: React.FC = () => {
                         onChange={(v) =>
                           setEdited((p) => (p ? { ...p, lastName: v } : p))
                         }
+                        onBlur={() => handleFieldBlur('lastName', edited?.lastName)}
+                        error={fieldErrors.lastName}
+                        fieldName="lastName"
                       />
                     </div>
                   ) : (
@@ -628,11 +641,17 @@ const Profile: React.FC = () => {
                 value={
                   isEditing ? (
                     <TextInput
+                      inputMode="numeric"
                       value={edited?.idNumber ?? ''}
-                      onChange={(v) =>
-                        setEdited((p) => (p ? { ...p, idNumber: v } : p))
-                      }
-                      placeholder="رقم الهوية"
+                      onChange={(v) => {
+                        // Accept only numbers
+                        const numbersOnly = v.replace(/\D/g, '');
+                        setEdited((p) => (p ? { ...p, idNumber: numbersOnly } : p));
+                      }}
+                      onBlur={() => handleFieldBlur('idNumber', edited?.idNumber)}
+                      error={fieldErrors.idNumber}
+                      placeholder="رقم الهوية (9 أرقام)"
+                      maxLength={9}
                     />
                   ) : (
                     nv(user.idNumber)
@@ -664,6 +683,8 @@ const Profile: React.FC = () => {
                               : p
                           )
                         }
+                        onBlur={() => handleFieldBlur('birthDate', edited?.birthDate)}
+                        error={fieldErrors.birthDate}
                       />
                       {remainingBirth < 2 && (
                         <div className="flex items-center gap-2 text-xs bg-amber-50 text-amber-700 px-3 py-2 rounded-lg border border-amber-200">
@@ -703,6 +724,8 @@ const Profile: React.FC = () => {
                       onChange={(v) =>
                         setEdited((p) => (p ? { ...p, residence: v } : p))
                       }
+                      onBlur={() => handleFieldBlur('residence', edited?.residence)}
+                      error={fieldErrors.residence}
                     />
                   ) : (
                     nv(user.residence)
@@ -728,11 +751,18 @@ const Profile: React.FC = () => {
                 value={
                   isEditing ? (
                     <TextInput
-                      placeholder="05xxxxxxxx"
+                      type="tel"
+                      inputMode="numeric"
+                      placeholder="05xxxxxxxx (10 أرقام)"
                       value={edited?.phoneNumber ?? ''}
-                      onChange={(v) =>
-                        setEdited((p) => (p ? { ...p, phoneNumber: v } : p))
-                      }
+                      onChange={(v) => {
+                        // Accept only numbers
+                        const numbersOnly = v.replace(/\D/g, '');
+                        setEdited((p) => (p ? { ...p, phoneNumber: numbersOnly } : p));
+                      }}
+                      onBlur={() => handleFieldBlur('phoneNumber', edited?.phoneNumber)}
+                      error={fieldErrors.phoneNumber}
+                      maxLength={10}
                     />
                   ) : (
                     nv(user.phoneNumber)
@@ -754,6 +784,8 @@ const Profile: React.FC = () => {
                       onChange={(v) =>
                         setEdited((p) => (p ? { ...p, motherName: v } : p))
                       }
+                      onBlur={() => handleFieldBlur('motherName', edited?.motherName)}
+                      error={fieldErrors.motherName}
                     />
                   ) : (
                     nv(user.motherName)
@@ -792,8 +824,6 @@ const Profile: React.FC = () => {
         </div>
       </div>
 
-      <ToastContainer rtl position="top-center" />
-
       {/* Change Password Modal */}
       <ChangePasswordModal 
         isOpen={isChangePasswordModalOpen}
@@ -821,9 +851,9 @@ const InfoField: React.FC<{
   label: string;
   value: React.ReactNode;
 }> = ({ icon, label, value }) => (
-  <div className="group p-6 bg-gradient-to-br from-slate-50 to-white rounded-2xl border-2 border-slate-100 hover:border-indigo-200 hover:shadow-lg transition-all duration-300">
+  <div className="group p-6 bg-gradient-to-br from-slate-50 to-white rounded-2xl border-2 border-slate-100 hover:border-emerald-200 hover:shadow-lg transition-all duration-300">
     <div className="flex items-center gap-3 mb-3">
-      <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg text-white group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+      <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg text-white group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
         {icon}
       </div>
       <span className="font-bold text-slate-600 text-sm">{label}</span>
@@ -837,14 +867,32 @@ const TextInput: React.FC<{
   onChange: (v: string) => void;
   placeholder?: string;
   type?: string;
-}> = ({ value, onChange, placeholder, type = 'text' }) => (
-  <input
-    type={type}
-    value={value}
-    onChange={(e) => onChange(e.target.value)}
-    placeholder={placeholder}
-    className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/30 focus:border-indigo-500 hover:border-indigo-300 transition-all duration-300 text-slate-900 placeholder-slate-400 font-medium"
-  />
+  error?: string;
+  fieldName?: string;
+  onBlur?: () => void;
+  maxLength?: number;
+  inputMode?: 'text' | 'numeric' | 'tel' | 'email' | 'url';
+}> = ({ value, onChange, placeholder, type = 'text', error, onBlur, maxLength, inputMode }) => (
+  <div className="w-full">
+    <input
+      type={type}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      onBlur={onBlur}
+      placeholder={placeholder}
+      maxLength={maxLength}
+      inputMode={inputMode}
+      className={`w-full border-2 ${
+        error ? 'border-red-300 focus:border-red-500 focus:ring-red-500/30' : 'border-slate-200 focus:border-emerald-500 focus:ring-emerald-500/30'
+      } rounded-xl px-4 py-3 bg-white focus:outline-none focus:ring-4 hover:border-emerald-300 transition-all duration-300 text-slate-900 placeholder-slate-400 font-medium`}
+    />
+    {error && (
+      <p className="text-red-600 text-sm mt-1 mr-2 flex items-center gap-1">
+        <AlertCircle className="w-4 h-4" />
+        {error}
+      </p>
+    )}
+  </div>
 );
 
 const GenderBadge: React.FC<{ gender?: string }> = ({ gender }) => {
@@ -853,12 +901,12 @@ const GenderBadge: React.FC<{ gender?: string }> = ({ gender }) => {
   const getGenderStyle = () => {
     if (arabicGender === 'ذكر') {
       return {
-        bg: 'bg-gradient-to-r from-blue-500 to-cyan-500',
+        bg: 'bg-gradient-to-r from-teal-500 to-cyan-500',
         icon: '👨',
       };
     } else if (arabicGender === 'أنثى') {
       return {
-        bg: 'bg-gradient-to-r from-pink-500 to-rose-500',
+        bg: 'bg-gradient-to-r from-emerald-500 to-teal-500',
         icon: '👩',
       };
     } else {
