@@ -488,12 +488,14 @@ const ExamSchedule: React.FC = () => {
         if (selectedExam.group) {
           // إذا كان للامتحان حلقة محددة، عرض فقط طلاب هذه الحلقة
           console.log("🔍 فلترة الطلاب حسب حلقة الامتحان:", selectedExam.group);
-          
+
           sData = sData.filter((student: any) => {
             return student.group === selectedExam.group;
           });
-          
-          console.log(`✅ عدد الطلاب في حلقة "${selectedExam.group}": ${sData.length}`);
+
+          console.log(
+            `✅ عدد الطلاب في حلقة "${selectedExam.group}": ${sData.length}`
+          );
         } else if (role === "teacher" && teacherGroups.length > 0) {
           // إذا لم يكن للامتحان حلقة محددة (امتحان قديم)، عرض طلاب جميع حلقات المعلم
           try {
@@ -656,6 +658,71 @@ const ExamSchedule: React.FC = () => {
           }
         }
 
+        // فلترة الامتحانات للمعلم - عرض فقط امتحانات حلقاته
+        if (role === "teacher") {
+          try {
+            const userStr = localStorage.getItem("user");
+            if (userStr) {
+              const currentUser = JSON.parse(userStr);
+
+              console.log("👨‍🏫 معلم - جلب حلقات المعلم...");
+
+              // جلب الحلقات من Groups API
+              const { getAllGroups } = await import("../Api/groupApi");
+              const groupsRes = await getAllGroups();
+
+              if (groupsRes.success && Array.isArray(groupsRes.data)) {
+                const possibleNames = getTeacherPossibleNames(currentUser);
+                console.log("📋 أسماء المعلم المحتملة:", possibleNames);
+
+                // فلترة الحلقات التي تخص هذا المعلم
+                const teacherGroupsData = groupsRes.data.filter(
+                  (group: any) => {
+                    if (!group.teacher) return false;
+                    return isTeacherMatch(group.teacher, possibleNames);
+                  }
+                );
+
+                const teacherGroupNames = teacherGroupsData.map(
+                  (g: any) => g.name
+                );
+                console.log(`📋 حلقات المعلم:`, teacherGroupNames);
+
+                if (teacherGroupNames.length > 0) {
+                  // فلترة الامتحانات لتظهر فقط امتحانات حلقات هذا المعلم أو الامتحانات العامة
+                  list = list.filter((exam) => {
+                    // إذا لم يكن للامتحان حلقة محددة، يعني للجميع (امتحان إداري)
+                    if (!exam.group) return true;
+
+                    // إذا كان للامتحان حلقة محددة، تحقق من أنها من حلقات المعلم
+                    const match = teacherGroupNames.includes(exam.group);
+                    if (match) {
+                      console.log(
+                        "✅ امتحان مطابق للمعلم:",
+                        exam.name,
+                        "-",
+                        exam.group
+                      );
+                    }
+                    return match;
+                  });
+                  console.log(`📋 عدد الامتحانات للمعلم: ${list.length}`);
+                } else {
+                  console.warn("⚠️ المعلم ليس لديه حلقات محددة");
+                  // عرض فقط الامتحانات العامة (بدون حلقة)
+                  list = list.filter((exam) => !exam.group);
+                }
+              } else {
+                console.error("❌ فشل في جلب الحلقات");
+                // عرض فقط الامتحانات العامة
+                list = list.filter((exam) => !exam.group);
+              }
+            }
+          } catch (error) {
+            console.error("خطأ في فلترة امتحانات المعلم:", error);
+          }
+        }
+
         setExams(list);
         await refreshAllAverages(list);
       } catch (error) {
@@ -668,7 +735,7 @@ const ExamSchedule: React.FC = () => {
     };
 
     loadExams();
-  }, [refreshAllAverages, role]);
+  }, [refreshAllAverages, role, getTeacherPossibleNames, isTeacherMatch]);
 
   // ——— الطالب: جلب علاماته الشخصية
   useEffect(() => {
