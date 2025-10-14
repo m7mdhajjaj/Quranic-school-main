@@ -358,7 +358,7 @@ const AdminDashboard = () => {
 
         <div>
           <p className="text-sm font-medium text-gray-600 mb-2">{title}</p>
-          <p className="text-4xl font-bold text-gray-900 mb-2 animate-pulse">
+          <p className="text-4xl font-bold text-gray-900 mb-2">
             {value.toLocaleString()}
           </p>
           {trend && (
