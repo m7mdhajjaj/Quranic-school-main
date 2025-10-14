@@ -545,7 +545,7 @@ const Login = () => {
 
     try {
       let response;
-      let loginErrors: string[] = [];
+      const loginErrors: string[] = [];
 
       console.log("📡 Attempting auto-login detection...");
 
@@ -673,13 +673,13 @@ const Login = () => {
 
   return (
     <div
-      className="relative flex flex-col items-center justify-center min-h-screen overflow-hidden bg-gradient-to-br from-slate-900 via-emerald-900 to-teal-900"
+      className="relative flex flex-col items-center justify-center min-h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-emerald-50 to-teal-50"
       dir="rtl">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-500/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-1/2 -left-40 w-96 h-96 bg-teal-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute -bottom-40 right-1/3 w-80 h-80 bg-cyan-500/20 rounded-full blur-3xl animate-pulse delay-2000"></div>
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-200/30 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute top-1/2 -left-40 w-96 h-96 bg-teal-200/30 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute -bottom-40 right-1/3 w-80 h-80 bg-cyan-200/30 rounded-full blur-3xl animate-pulse delay-2000"></div>
       </div>
 
       {/* Decorative Islamic Pattern Overlay */}
@@ -697,24 +697,24 @@ const Login = () => {
         <div className="text-center mb-12">
           <div className="flex justify-center mb-6">
             <div className="relative group">
-              <div className="absolute -inset-4 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 rounded-full blur-2xl opacity-60 group-hover:opacity-80 transition-opacity duration-500 animate-pulse"></div>
+              <div className="absolute -inset-4 bg-gradient-to-r from-emerald-300/40 via-teal-300/40 to-cyan-300/40 rounded-full blur-2xl opacity-50 group-hover:opacity-70 transition-opacity duration-500 animate-pulse"></div>
               <img
                 src="/src/images/logo.jpg"
                 alt="مدرسة القرآن"
-                className="relative h-32 w-32 rounded-full border-4 border-white/30 shadow-2xl backdrop-blur-sm"
+                className="relative h-32 w-32 rounded-full border-4 border-emerald-500/40 shadow-2xl backdrop-blur-sm"
               />
             </div>
           </div>
 
-          <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-emerald-300 via-teal-200 to-cyan-300 bg-clip-text text-transparent drop-shadow-2xl">
+          <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent drop-shadow-lg">
             مدرسة القرآن الكريم
           </h1>
 
-          <p className="text-xl md:text-2xl text-emerald-100/90 font-semibold mb-2 drop-shadow-lg">
+          <p className="text-xl md:text-2xl text-emerald-700 font-semibold mb-2 drop-shadow-md">
             نظام إدارة الطلاب المتكامل
           </p>
 
-          <div className="flex items-center justify-center gap-2 text-teal-200/70">
+          <div className="flex items-center justify-center gap-2 text-teal-600">
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
             </svg>
@@ -725,16 +725,16 @@ const Login = () => {
         {/* Login Card */}
         <div className="relative max-w-xl mx-auto">
           {/* Card Glow Effect */}
-          <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-3xl blur-xl opacity-40 group-hover:opacity-60 transition duration-500"></div>
+          <div className="absolute -inset-1 bg-gradient-to-r from-emerald-300/30 via-teal-300/30 to-cyan-300/30 rounded-3xl blur-xl opacity-40 transition duration-500"></div>
 
-          <div className="relative bg-white/10 backdrop-blur-xl p-12 rounded-3xl shadow-2xl border border-white/20">
+          <div className="relative bg-white/95 backdrop-blur-xl p-12 rounded-3xl shadow-2xl border border-emerald-200/50">
             {/* Title */}
             <div className="text-center mb-10">
-              <h2 className="text-4xl font-bold text-white mb-3">
+              <h2 className="text-4xl font-bold text-emerald-700 mb-3">
                 تسجيل الدخول
               </h2>
-              <div className="h-1 w-24 mx-auto bg-gradient-to-r from-emerald-400 to-teal-400 rounded-full"></div>
-              <p className="text-emerald-200/80 text-sm mt-4">
+              <div className="h-1 w-24 mx-auto bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full"></div>
+              <p className="text-emerald-600 text-sm mt-4">
                 قم بإدخال معلومات الدخول الخاصة بك
               </p>
             </div>
@@ -763,7 +763,7 @@ const Login = () => {
               <form className="space-y-7" onSubmit={handleSubmit}>
                 <div>
                   <label
-                    className="block text-base font-semibold text-emerald-100 mb-3"
+                    className="block text-base font-semibold text-gray-700 mb-3"
                     htmlFor="userId">
                     رقم المستخدم
                   </label>
@@ -773,7 +773,7 @@ const Login = () => {
                     name="userId"
                     value={formData.userId}
                     onChange={handleChange}
-                    className="w-full px-6 py-4 bg-white/10 backdrop-blur-sm border-2 border-white/20 rounded-2xl focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 transition-all duration-200 text-right placeholder-white/40 text-white text-lg shadow-lg"
+                    className="w-full px-6 py-4 bg-white border-2 border-emerald-300 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 text-right placeholder-gray-400 text-gray-900 text-lg shadow-sm"
                     placeholder="أدخل رقم المستخدم"
                     autoComplete="username"
                     required
@@ -782,7 +782,7 @@ const Login = () => {
 
                 <div>
                   <label
-                    className="block text-base font-semibold text-emerald-100 mb-3"
+                    className="block text-base font-semibold text-gray-700 mb-3"
                     htmlFor="password">
                     كلمة المرور / رقم الهوية
                   </label>
@@ -793,7 +793,7 @@ const Login = () => {
                       name="password"
                       value={formData.password}
                       onChange={handleChange}
-                      className="w-full py-4 pr-6 pl-14 bg-white/10 backdrop-blur-sm border-2 border-white/20 rounded-2xl focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 transition-all duration-200 text-right placeholder-white/40 text-white text-lg shadow-lg"
+                      className="w-full py-4 pr-6 pl-14 bg-white border-2 border-emerald-300 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 text-right placeholder-gray-400 text-gray-900 text-lg shadow-sm"
                       placeholder="أدخل كلمة المرور أو رقم الهوية"
                       autoComplete="current-password"
                       required
@@ -803,7 +803,7 @@ const Login = () => {
                         type="button"
                         tabIndex={-1}
                         onClick={() => setShowPassword((prev) => !prev)}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-400 hover:text-emerald-300 focus:outline-none transition-colors duration-200"
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-600 hover:text-emerald-700 focus:outline-none transition-colors duration-200"
                         aria-label={
                           showPassword ? "إخفاء كلمة المرور" : "عرض كلمة المرور"
                         }>
@@ -869,8 +869,8 @@ const Login = () => {
                         onChange={handleRememberMeChange}
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-gray-600/50 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                      <span className="ms-3 text-sm font-medium text-emerald-100">
+                      <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                      <span className="ms-3 text-sm font-medium text-gray-700">
                         تذكرني
                       </span>
                     </label>
@@ -879,10 +879,10 @@ const Login = () => {
                     <div className="relative group/info">
                       <button
                         type="button"
-                        className="p-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/20 hover:border-emerald-400/50 transition-all duration-300"
+                        className="p-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 hover:border-emerald-400 transition-all duration-300"
                         aria-label="معلومات الجلسة">
                         <svg
-                          className="w-4 h-4 text-emerald-300"
+                          className="w-4 h-4 text-emerald-600"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24">
@@ -897,15 +897,15 @@ const Login = () => {
 
                       {/* Tooltip */}
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 opacity-0 invisible group-hover/info:opacity-100 group-hover/info:visible transition-all duration-300 z-50">
-                        <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-emerald-400/30 rounded-xl shadow-2xl p-4 backdrop-blur-xl">
+                        <div className="bg-white border-2 border-emerald-300 rounded-xl shadow-2xl p-4 backdrop-blur-xl">
                           {/* Arrow */}
                           <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px">
-                            <div className="border-8 border-transparent border-t-slate-800"></div>
+                            <div className="border-8 border-transparent border-t-white"></div>
                           </div>
 
                           {/* Content */}
                           <div className="space-y-2 text-right">
-                            <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
+                            <div className="flex items-center gap-2 text-emerald-600 font-bold text-sm">
                               <svg
                                 className="w-4 h-4"
                                 fill="none"
@@ -923,19 +923,19 @@ const Login = () => {
 
                             {rememberMe ? (
                               <div className="space-y-1">
-                                <p className="text-white text-xs font-semibold">
+                                <p className="text-gray-800 text-xs font-semibold">
                                   ✅ مفعّل: 7 أيام
                                 </p>
-                                <p className="text-emerald-200/70 text-xs">
+                                <p className="text-emerald-600 text-xs">
                                   ستبقى متصلاً حتى تسجيل الخروج
                                 </p>
                               </div>
                             ) : (
                               <div className="space-y-1">
-                                <p className="text-white text-xs font-semibold">
+                                <p className="text-gray-800 text-xs font-semibold">
                                   ⏰ غير مفعّل: 30 دقيقة
                                 </p>
-                                <p className="text-yellow-200/70 text-xs">
+                                <p className="text-orange-600 text-xs">
                                   سيتم تسجيل الخروج تلقائياً بعد 30 دقيقة
                                 </p>
                               </div>
@@ -949,7 +949,7 @@ const Login = () => {
                   <button
                     type="button"
                     onClick={() => setShowForgotPasswordModal(true)}
-                    className="text-sm text-emerald-300 hover:text-emerald-200 font-semibold transition-colors duration-200 underline-offset-4 hover:underline">
+                    className="text-sm text-emerald-600 hover:text-emerald-700 font-semibold transition-colors duration-200 underline-offset-4 hover:underline">
                     نسيت كلمة المرور؟
                   </button>
                 </div>
@@ -958,8 +958,8 @@ const Login = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="relative w-full group overflow-hidden bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white py-4 px-6 rounded-2xl font-bold text-lg hover:shadow-2xl hover:shadow-emerald-500/50 focus:ring-4 focus:ring-emerald-300/50 focus:outline-none transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
-                  <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+                  className="relative w-full group overflow-hidden bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-white py-4 px-6 rounded-2xl font-bold text-lg hover:shadow-xl hover:shadow-emerald-500/30 focus:ring-4 focus:ring-emerald-400/30 focus:outline-none transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+                  <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
                   <span className="relative flex items-center justify-center">
                     {isLoading ? (
                       <>
@@ -1008,10 +1008,10 @@ const Login = () => {
 
         {/* Footer */}
         <div className="text-center mt-10">
-          <p className="text-emerald-200/70 text-sm font-medium">
+          <p className="text-gray-600 text-sm font-medium">
             جميع الحقوق محفوظة © {new Date().getFullYear()} مدرسة القرآن الكريم
           </p>
-          <p className="text-teal-300/50 text-xs mt-2">
+          <p className="text-gray-500 text-xs mt-2">
             نظام إدارة متطور لخدمة التعليم القرآني
           </p>
         </div>
