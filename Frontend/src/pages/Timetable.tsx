@@ -486,10 +486,10 @@ const Timetable = () => {
           <td
             key={`${day}-${s.startHour}-${s.endHour}`}
             colSpan={span}
-            className="border border-emerald-100/70 bg-gradient-to-b from-yellow-200 via-yellow-200/90 to-yellow-100 text-yellow-900 font-semibold text-center align-middle relative rounded-md shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]">
+            className="border border-emerald-100/70 bg-gradient-to-b from-yellow-200 via-yellow-200/90 to-yellow-100 text-yellow-900 font-semibold text-center align-middle relative rounded-md shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] animate-fadeIn">
             <div className="flex flex-col items-center justify-center py-2">
               <div className="inline-flex items-center gap-2">
-                <span className="inline-block h-2 w-2 rounded-full bg-yellow-500 shadow" />
+                <span className="inline-block h-2 w-2 rounded-full bg-yellow-500 shadow animate-pulse" />
                 <span className="tracking-wide">
                   {s.note
                     ? `${s.note} (${s.startHour} - ${s.endHour})`
@@ -552,12 +552,6 @@ const Timetable = () => {
           </div>
         )}
 
-        {loading && (
-          <div className="flex justify-center mb-4">
-            <div className="text-emerald-600">جاري تحميل الحصص...</div>
-          </div>
-        )}
-
         {(role === "teacher" || role === "admin") && (
           <div className="flex justify-center mb-4">
             <button
@@ -589,16 +583,39 @@ const Timetable = () => {
               </thead>
 
               <tbody>
-                {days.map((day, r) => (
-                  <tr
-                    key={day}
-                    className={r % 2 ? "bg-emerald-50/20" : "bg-white"}>
-                    <td className="sticky right-0 bg-emerald-50/90 backdrop-blur px-2 md:px-4 py-2 md:py-3 font-bold text-emerald-800 border-t border-b border-emerald-100 text-[13px] md:text-base">
-                      {day}
-                    </td>
-                    {renderDayRowCells(day)}
-                  </tr>
-                ))}
+                {loading
+                  ? // Skeleton loader للحصص أثناء التحميل
+                    days.map((day, r) => (
+                      <tr
+                        key={day}
+                        className={r % 2 ? "bg-emerald-50/20" : "bg-white"}>
+                        <td className="sticky right-0 bg-emerald-50/90 backdrop-blur px-2 md:px-4 py-2 md:py-3 font-bold text-emerald-800 border-t border-b border-emerald-100 text-[13px] md:text-base">
+                          {day}
+                        </td>
+                        {hours.map((hour, idx) => (
+                          <td
+                            key={`skeleton-${day}-${hour}`}
+                            className="border border-emerald-100/60 bg-white h-12 min-w-[54px]">
+                            {idx % 4 === 0 && (
+                              <div className="animate-pulse">
+                                <div className="h-8 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 rounded-md mx-1"></div>
+                              </div>
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    ))
+                  : // عرض الحصص الفعلية
+                    days.map((day, r) => (
+                      <tr
+                        key={day}
+                        className={r % 2 ? "bg-emerald-50/20" : "bg-white"}>
+                        <td className="sticky right-0 bg-emerald-50/90 backdrop-blur px-2 md:px-4 py-2 md:py-3 font-bold text-emerald-800 border-t border-b border-emerald-100 text-[13px] md:text-base">
+                          {day}
+                        </td>
+                        {renderDayRowCells(day)}
+                      </tr>
+                    ))}
               </tbody>
             </table>
           </div>
