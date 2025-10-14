@@ -1008,6 +1008,116 @@ const ExamSchedule: React.FC = () => {
     value,
   }) => <ResultBadge text={formatAvg(value) ?? ""} />;
 
+  // مكون محسّن لعرض علامة الطالب مع Progress Bar
+  const StudentMarkDisplay: React.FC<{ 
+    mark: string | undefined; 
+    isDesktop?: boolean 
+  }> = ({ mark, isDesktop = false }) => {
+    if (!mark || mark.trim() === "") {
+      return (
+        <div className={cn(
+          "flex items-center justify-center",
+          isDesktop ? "gap-2" : "flex-col gap-1"
+        )}>
+          <span className="text-gray-400 text-sm font-medium">
+            لم يتم التصحيح
+          </span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5 text-gray-300"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </div>
+      );
+    }
+
+    const markNum = parseFloat(mark);
+    const percentage = (markNum / 100) * 100;
+    
+    // تحديد اللون حسب العلامة
+    let colorClasses = {
+      bg: "bg-emerald-500",
+      text: "text-emerald-700",
+      ring: "ring-emerald-200",
+      gradient: "from-emerald-400 to-emerald-600"
+    };
+
+    if (markNum < 50) {
+      colorClasses = {
+        bg: "bg-red-500",
+        text: "text-red-700",
+        ring: "ring-red-200",
+        gradient: "from-red-400 to-red-600"
+      };
+    } else if (markNum < 75) {
+      colorClasses = {
+        bg: "bg-amber-500",
+        text: "text-amber-700",
+        ring: "ring-amber-200",
+        gradient: "from-amber-400 to-amber-600"
+      };
+    }
+
+    if (isDesktop) {
+      return (
+        <div className="flex items-center gap-3 min-w-[120px]">
+          <div className="flex flex-col items-center">
+            <div className={cn(
+              "text-2xl font-bold mb-1",
+              colorClasses.text
+            )}>
+              {markNum}
+            </div>
+            <div className="text-xs text-gray-500">من 100</div>
+          </div>
+          <div className="flex-1 min-w-[60px]">
+            <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className={cn(
+                  "h-full rounded-full transition-all duration-500 bg-gradient-to-r",
+                  colorClasses.gradient
+                )}
+                style={{ width: `${percentage}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Mobile view
+    return (
+      <div className="w-full space-y-2">
+        <div className="flex items-center justify-between">
+          <span className={cn("text-xl font-bold", colorClasses.text)}>
+            {markNum}
+          </span>
+          <span className="text-sm text-gray-500">من 100</span>
+        </div>
+        <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden">
+          <div
+            className={cn(
+              "h-full rounded-full transition-all duration-500 bg-gradient-to-r shadow-sm",
+              colorClasses.gradient
+            )}
+            style={{ width: `${percentage}%` }}
+          />
+        </div>
+        <div className="text-xs text-center text-gray-600">
+          {percentage >= 75 ? "ممتاز" : percentage >= 50 ? "جيد" : "يحتاج تحسين"}
+        </div>
+      </div>
+    );
+  };
+
   // ——— واجهة المستخدم
   return (
     <div
@@ -1095,29 +1205,33 @@ const ExamSchedule: React.FC = () => {
             </thead>
 
             <tbody className="divide-y divide-emerald-50">
-              {/* Skeleton */}
+              {/* Skeleton with Shimmer */}
               {loadingExams && (
                 <>
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <tr key={`sk-${i}`} className="animate-pulse">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={`sk-${i}`} className="animate-fadeIn">
                       <td className="px-4 py-4">
-                        <div className="h-3.5 w-40 mx-auto rounded bg-emerald-100" />
+                        <div className="h-4 w-40 mx-auto rounded-lg bg-gradient-to-r from-emerald-100 via-emerald-200 to-emerald-100 bg-[length:200%_100%] animate-shimmer" />
                       </td>
                       <td className="px-4 py-4">
-                        <div className="h-3.5 w-32 mx-auto rounded bg-emerald-100" />
+                        <div className="h-6 w-20 mx-auto rounded-full bg-gradient-to-r from-blue-100 via-blue-200 to-blue-100 bg-[length:200%_100%] animate-shimmer" />
                       </td>
                       <td className="px-4 py-4">
-                        <div className="h-3.5 w-24 mx-auto rounded bg-emerald-100" />
+                        <div className="h-4 w-24 mx-auto rounded-lg bg-gradient-to-r from-emerald-100 via-emerald-200 to-emerald-100 bg-[length:200%_100%] animate-shimmer" />
                       </td>
                       <td className="px-4 py-4">
-                        <div className="h-3.5 w-16 mx-auto rounded bg-emerald-100" />
+                        <div className="h-4 w-16 mx-auto rounded-lg bg-gradient-to-r from-emerald-100 via-emerald-200 to-emerald-100 bg-[length:200%_100%] animate-shimmer" />
                       </td>
                       <td className="px-4 py-4">
-                        <div className="h-6 w-10 mx-auto rounded-full bg-emerald-100" />
+                        <div className="h-6 w-12 mx-auto rounded-full bg-gradient-to-r from-emerald-100 via-emerald-200 to-emerald-100 bg-[length:200%_100%] animate-shimmer" />
                       </td>
                       {(role === "teacher" || role === "admin") && (
                         <td className="px-4 py-4">
-                          <div className="h-8 w-28 mx-auto rounded bg-emerald-100" />
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="h-8 w-32 rounded-lg bg-gradient-to-r from-emerald-100 via-emerald-200 to-emerald-100 bg-[length:200%_100%] animate-shimmer" />
+                            <div className="h-8 w-16 rounded-lg bg-gradient-to-r from-amber-100 via-amber-200 to-amber-100 bg-[length:200%_100%] animate-shimmer" />
+                            <div className="h-8 w-14 rounded-lg bg-gradient-to-r from-red-100 via-red-200 to-red-100 bg-[length:200%_100%] animate-shimmer" />
+                          </div>
                         </td>
                       )}
                     </tr>
@@ -1130,8 +1244,33 @@ const ExamSchedule: React.FC = () => {
                 <tr>
                   <td
                     colSpan={role === "teacher" || role === "admin" ? 6 : 5}
-                    className="px-6 py-10 text-emerald-700/70">
-                    لا توجد امتحانات مطابقة لبحثك.
+                    className="px-6 py-16">
+                    <div className="flex flex-col items-center justify-center text-center animate-fadeIn">
+                      <div className="bg-emerald-50 w-20 h-20 rounded-full flex items-center justify-center mb-4">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-10 w-10 text-emerald-400"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
+                        </svg>
+                      </div>
+                      <h3 className="text-xl font-bold text-emerald-700 mb-2">
+                        {query ? "لا توجد نتائج" : "لا توجد امتحانات"}
+                      </h3>
+                      <p className="text-emerald-600/70 text-sm">
+                        {query 
+                          ? "جرّب البحث بكلمات أخرى"
+                          : "لم يتم إضافة أي امتحانات بعد"
+                        }
+                      </p>
+                    </div>
                   </td>
                 </tr>
               )}
@@ -1171,7 +1310,7 @@ const ExamSchedule: React.FC = () => {
                         {role === "teacher" || role === "admin" ? (
                           <AvgBadge value={examAverages[examId]} />
                         ) : (
-                          <ResultBadge text={studentMarks[examId] ?? ""} />
+                          <StudentMarkDisplay mark={studentMarks[examId]} isDesktop={true} />
                         )}
                       </td>
                       {(role === "teacher" || role === "admin") && (
@@ -1210,19 +1349,55 @@ const ExamSchedule: React.FC = () => {
         {/* بطاقات للموبايل */}
         <div className="md:hidden divide-y divide-emerald-50">
           {loadingExams &&
-            Array.from({ length: 3 }).map((_, i) => (
-              <div key={`m-sk-${i}`} className="p-4 animate-pulse">
-                <div className="h-4 w-48 rounded bg-emerald-100 mb-3" />
-                <div className="flex items-center gap-3 text-sm">
-                  <div className="h-3 w-20 rounded bg-emerald-100" />
-                  <div className="h-3 w-14 rounded bg-emerald-100" />
+            Array.from({ length: 5 }).map((_, i) => (
+              <div key={`m-sk-${i}`} className="p-4 animate-fadeIn">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1 space-y-3">
+                    <div className="h-5 w-48 rounded-lg bg-gradient-to-r from-emerald-100 via-emerald-200 to-emerald-100 bg-[length:200%_100%] animate-shimmer" />
+                    <div className="h-5 w-24 rounded-full bg-gradient-to-r from-blue-100 via-blue-200 to-blue-100 bg-[length:200%_100%] animate-shimmer" />
+                    <div className="flex items-center gap-3">
+                      <div className="h-4 w-20 rounded-lg bg-gradient-to-r from-emerald-100 via-emerald-200 to-emerald-100 bg-[length:200%_100%] animate-shimmer" />
+                      <div className="h-4 w-14 rounded-lg bg-gradient-to-r from-emerald-100 via-emerald-200 to-emerald-100 bg-[length:200%_100%] animate-shimmer" />
+                    </div>
+                  </div>
+                  <div className="h-7 w-12 rounded-full bg-gradient-to-r from-emerald-100 via-emerald-200 to-emerald-100 bg-[length:200%_100%] animate-shimmer" />
                 </div>
+                {(role === "teacher" || role === "admin") && (
+                  <div className="flex gap-2 mt-3">
+                    <div className="h-10 flex-1 rounded-lg bg-gradient-to-r from-emerald-100 via-emerald-200 to-emerald-100 bg-[length:200%_100%] animate-shimmer" />
+                    <div className="h-10 w-16 rounded-lg bg-gradient-to-r from-amber-100 via-amber-200 to-amber-100 bg-[length:200%_100%] animate-shimmer" />
+                    <div className="h-10 w-14 rounded-lg bg-gradient-to-r from-red-100 via-red-200 to-red-100 bg-[length:200%_100%] animate-shimmer" />
+                  </div>
+                )}
               </div>
             ))}
 
           {!loadingExams && filteredSortedExams.length === 0 && (
-            <div className="p-6 text-center text-emerald-700/70">
-              لا توجد امتحانات حالياً.
+            <div className="p-8 flex flex-col items-center justify-center text-center animate-fadeIn">
+              <div className="bg-emerald-50 w-20 h-20 rounded-full flex items-center justify-center mb-4">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-10 w-10 text-emerald-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-emerald-700 mb-2">
+                {query ? "لا توجد نتائج" : "لا توجد امتحانات"}
+              </h3>
+              <p className="text-emerald-600/70 text-sm">
+                {query 
+                  ? "جرّب البحث بكلمات أخرى"
+                  : "لم يتم إضافة أي امتحانات بعد"
+                }
+              </p>
             </div>
           )}
 
@@ -1231,28 +1406,34 @@ const ExamSchedule: React.FC = () => {
               const examId = String(exam._id ?? exam.id ?? "");
               return (
                 <div key={`m-${examId}`} className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="text-base font-extrabold text-emerald-900">
-                        {exam.name}
-                      </div>
-                      {exam.group && (
-                        <div className="mt-2">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
-                            <span>📚</span>
-                            {exam.group}
-                          </span>
-                        </div>
-                      )}
-                      <div className="mt-1 text-sm text-emerald-800/80">
-                        <span className="ml-2">📅 {exam.date}</span>
-                        <span>⏰ {exam.time}</span>
-                      </div>
+                  <div>
+                    <div className="text-base font-extrabold text-emerald-900 mb-2">
+                      {exam.name}
                     </div>
+                    {exam.group && (
+                      <div className="mb-2">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                          <span>📚</span>
+                          {exam.group}
+                        </span>
+                      </div>
+                    )}
+                    <div className="mb-3 text-sm text-emerald-800/80">
+                      <span className="ml-2">📅 {exam.date}</span>
+                      <span>⏰ {exam.time}</span>
+                    </div>
+
+                    {/* عرض العلامة أو المتوسط */}
                     {role === "teacher" || role === "admin" ? (
-                      <AvgBadge value={examAverages[examId]} />
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600">المتوسط:</span>
+                        <AvgBadge value={examAverages[examId]} />
+                      </div>
                     ) : (
-                      <ResultBadge text={studentMarks[examId] ?? ""} />
+                      <div className="mt-3 bg-gray-50 rounded-xl p-3">
+                        <div className="text-xs text-gray-600 mb-2 font-medium">علامتك:</div>
+                        <StudentMarkDisplay mark={studentMarks[examId]} isDesktop={false} />
+                      </div>
                     )}
                   </div>
 
@@ -1775,6 +1956,37 @@ const ExamSchedule: React.FC = () => {
           </form>
         )}
       </TransparentModal>
+
+      {/* Custom CSS for animations */}
+      <style>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: scale(0.98);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        @keyframes shimmer {
+          0% {
+            background-position: -200% 0;
+          }
+          100% {
+            background-position: 200% 0;
+          }
+        }
+
+        .animate-fadeIn {
+          animation: fadeIn 0.4s ease-out;
+        }
+
+        .animate-shimmer {
+          animation: shimmer 2s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 };
