@@ -608,20 +608,78 @@ const Timetable = () => {
       {/* نموذج الإضافة / التعديل */}
       {showForm && (
         <div
-          className="fixed inset-0 bg-transparent flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
           aria-modal="true"
           role="dialog">
-          <div className="bg-white/95 rounded-2xl shadow-2xl p-6 w-full max-w-md border border-emerald-200">
-            <h3 className="text-xl font-bold mb-4 text-center text-emerald-700">
-              {editIdx !== null ? "تعديل موعد حلقة" : "إضافة موعد حلقة"}
-            </h3>
-            <form onSubmit={handleAddSession} className="space-y-3">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fadeIn">
+            {/* Gradient Header */}
+            <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-6">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-white">
+                    {editIdx !== null ? "تعديل موعد حلقة" : "إضافة موعد حلقة"}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowForm(false);
+                    setEditIdx(null);
+                  }}
+                  className="text-white/80 hover:text-white hover:bg-white/20 p-2 rounded-lg transition">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <form onSubmit={handleAddSession} className="p-6 space-y-5">
+              {/* Day Selection */}
               <div>
-                <label className="block mb-1 font-bold text-emerald-700">
+                <label className="flex items-center gap-2 text-gray-700 text-sm font-bold mb-3">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-emerald-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
                   اليوم
                 </label>
                 <select
-                  className="w-full border border-emerald-300 rounded-lg px-3 py-2 bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition duration-200 outline-none bg-white"
                   value={selectedDay}
                   onChange={(e) => setSelectedDay(e.target.value)}
                   aria-label="اختر اليوم">
@@ -633,13 +691,27 @@ const Timetable = () => {
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              {/* Time Selection */}
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block mb-1 font-bold text-emerald-700">
+                  <label className="flex items-center gap-2 text-gray-700 text-sm font-bold mb-3">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 text-emerald-600"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
                     ساعة الابتداء
                   </label>
                   <select
-                    className="w-full border border-emerald-300 rounded-lg px-3 py-2 bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition duration-200 outline-none bg-white"
                     value={startHour}
                     onChange={(e) => setStartHour(e.target.value)}
                     aria-label="اختر ساعة البداية">
@@ -651,11 +723,24 @@ const Timetable = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block mb-1 font-bold text-emerald-700">
+                  <label className="flex items-center gap-2 text-gray-700 text-sm font-bold mb-3">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 text-emerald-600"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
                     ساعة الانتهاء
                   </label>
                   <select
-                    className="w-full border border-emerald-300 rounded-lg px-3 py-2 bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition duration-200 outline-none bg-white"
                     value={endHour}
                     onChange={(e) => setEndHour(e.target.value)}
                     aria-label="اختر ساعة النهاية">
@@ -671,11 +756,24 @@ const Timetable = () => {
               {/* اختيار الحلقة للمعلم */}
               {role === "teacher" && teacherGroups.length > 0 && (
                 <div>
-                  <label className="block mb-1 font-bold text-emerald-700">
+                  <label className="flex items-center gap-2 text-gray-700 text-sm font-bold mb-3">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 text-emerald-600"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                      />
+                    </svg>
                     اختر الحلقة
                   </label>
                   <select
-                    className="w-full border border-emerald-300 rounded-lg px-3 py-2 bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition duration-200 outline-none bg-white"
                     value={selectedGroupForForm}
                     onChange={(e) => setSelectedGroupForForm(e.target.value)}
                     required>
@@ -691,11 +789,24 @@ const Timetable = () => {
               {/* ملاحظة للإداري */}
               {role === "admin" && (
                 <div>
-                  <label className="block mb-1 font-bold text-emerald-700">
+                  <label className="flex items-center gap-2 text-gray-700 text-sm font-bold mb-3">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 text-emerald-600"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                      />
+                    </svg>
                     اسم الحلقة
                   </label>
                   <input
-                    className="w-full border border-emerald-300 rounded-lg px-3 py-2 bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition duration-200 outline-none"
                     type="text"
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
@@ -705,20 +816,21 @@ const Timetable = () => {
                 </div>
               )}
 
-              <div className="flex justify-between pt-2">
-                <button
-                  type="submit"
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-300">
-                  حفظ
-                </button>
+              {/* Action buttons */}
+              <div className="flex gap-3 mt-6">
                 <button
                   type="button"
-                  className="bg-gray-200 hover:bg-gray-300 text-emerald-700 font-bold py-2 px-4 rounded-xl shadow-sm"
                   onClick={() => {
                     setShowForm(false);
                     setEditIdx(null);
-                  }}>
+                  }}
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-6 rounded-xl transition duration-200 border-2 border-gray-200">
                   إلغاء
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-medium py-3 px-6 rounded-xl transition duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02]">
+                  {editIdx !== null ? "حفظ التعديل" : "إضافة الموعد"}
                 </button>
               </div>
             </form>
