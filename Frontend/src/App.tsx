@@ -28,7 +28,6 @@ import { useAuth } from "./hooks/useAuth";
 import Header from "./components/Headers/Header";
 import AdminHeader from "./components/Headers/AdminHeader";
 import Footer from "./components/Footer";
-import Loading from "./components/Loading/Loading";
 
 // ============================================================================
 // Page Components - General
@@ -317,7 +316,14 @@ function AppContent() {
   // ====== Loading State ======
   // Show loading spinner while authentication data is being fetched
   if (isLoading) {
-    return <Loading fullscreen message="جاري تحميل بيانات المستخدم..." />;
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-emerald-600 mx-auto mb-4"></div>
+          <p className="text-emerald-700 text-lg font-semibold">جاري تحميل بيانات المستخدم...</p>
+        </div>
+      </div>
+    );
   }
 
   // ====== Unauthenticated State ======

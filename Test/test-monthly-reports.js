@@ -11,10 +11,10 @@ const mongoose = require("mongoose");
 require("dotenv").config();
 
 // Import schemas
-const Student = require("./src/schema/Student");
-const Teacher = require("./src/schema/Teacher");
-const Group = require("./src/schema/Group");
-const Mark = require("./src/schema/Mark");
+const Student = require("../Backend/src/schema/Student");
+const Teacher = require("../Backend/src/schema/Teacher");
+const Group = require("../Backend/src/schema/Group");
+const Mark = require("../Backend/src/schema/Mark");
 
 // Colors for console
 const colors = {
