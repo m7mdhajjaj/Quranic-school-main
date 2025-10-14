@@ -35,13 +35,13 @@ exports.getActivityById = async (req, res) => {
 exports.createActivity = async (req, res) => {
   try {
     const { title, description, date, category, imageUrl } = req.body;
-    
+
     console.log("Creating activity with data:", req.body);
 
     if (!title || !description || !date) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: "جميع بيانات النشاط مطلوبة (العنوان، الوصف، التاريخ)" 
+        message: "جميع بيانات النشاط مطلوبة (العنوان، الوصف، التاريخ)",
       });
     }
 
@@ -61,7 +61,7 @@ exports.createActivity = async (req, res) => {
 
     console.log("Saving activity with data:", activityData);
 
-    const activity = await Activity.create(activityData);    // إرسال إشعار النشاط الجديد لجميع الطلاب
+    const activity = await Activity.create(activityData); // إرسال إشعار النشاط الجديد لجميع الطلاب
     if (global.notificationService) {
       try {
         // الحصول على جميع الطلاب النشطين
@@ -106,10 +106,10 @@ exports.createActivity = async (req, res) => {
   } catch (error) {
     console.error("Error creating activity:", error);
     console.error("Full error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: "حدث خطأ أثناء إضافة النشاط", 
-      error: error.message 
+      message: "حدث خطأ أثناء إضافة النشاط",
+      error: error.message,
     });
   }
 };
@@ -126,9 +126,9 @@ exports.updateActivity = async (req, res) => {
     const activity = await Activity.findById(activityId);
 
     if (!activity) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: "النشاط غير موجود" 
+        message: "النشاط غير موجود",
       });
     }
 
@@ -152,10 +152,10 @@ exports.updateActivity = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating activity:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: "حدث خطأ أثناء تحديث النشاط", 
-      error: error.message 
+      message: "حدث خطأ أثناء تحديث النشاط",
+      error: error.message,
     });
   }
 };

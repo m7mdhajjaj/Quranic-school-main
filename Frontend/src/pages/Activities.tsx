@@ -544,195 +544,364 @@ const Activities = () => {
 
         {/* Add/Edit Activity Modal */}
         {isModalOpen && (
-          <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black/50 backdrop-blur-sm">
             <div
-              className="bg-black opacity-50 absolute inset-0"
-              onClick={closeModal}></div>
-            <div className="bg-white rounded-lg shadow-lg p-5 max-w-md mx-auto relative z-10 w-full">
-              <button
-                onClick={closeModal}
-                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
+              className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-auto relative overflow-hidden animate-fadeIn"
+              onClick={(e) => e.stopPropagation()}>
+              {/* Header */}
+              <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-4 flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-8 w-8"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                    />
+                  </svg>
+                  {modalMode === "add" ? "إضافة نشاط جديد" : "تعديل النشاط"}
+                </h2>
+                <button
+                  onClick={closeModal}
+                  className="text-white/90 hover:text-white hover:bg-white/20 rounded-lg p-2 transition-all">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
 
-              <h2 className="text-xl font-bold mb-4 text-center">
-                {modalMode === "add" ? "إضافة نشاط جديد" : "تعديل النشاط"}
-              </h2>
-
-              <div className="grid grid-cols-1 gap-3">
-                <div>
-                  <label
-                    className="block text-gray-700 text-sm font-bold mb-1"
-                    htmlFor="title">
-                    عنوان النشاط
-                  </label>
-                  <input
-                    type="text"
-                    id="title"
-                    name="title"
-                    value={currentActivity.title}
-                    onChange={handleInputChange}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    placeholder="عنوان النشاط"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
+              {/* Form Content */}
+              <div className="p-6 max-h-[calc(100vh-200px)] overflow-y-auto">
+                <form className="space-y-6">
+                  {/* Title Field */}
+                  <div className="space-y-2">
                     <label
-                      className="block text-gray-700 text-sm font-bold mb-1"
-                      htmlFor="category">
-                      التصنيف
-                    </label>
-                    <select
-                      id="category"
-                      name="category"
-                      value={currentActivity.category}
-                      onChange={handleInputChange}
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                      <option value="درس">درس</option>
-                      <option value="رحلة">رحلة</option>
-                      <option value="مسابقة">مسابقة</option>
-                      <option value="محاضرة">محاضرة</option>
-                      <option value="فعالية">فعالية</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label
-                      className="block text-gray-700 text-sm font-bold mb-1"
-                      htmlFor="date">
-                      تاريخ النشاط
+                      htmlFor="title"
+                      className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5 text-emerald-600"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
+                        />
+                      </svg>
+                      عنوان النشاط
                     </label>
                     <input
-                      type="date"
-                      id="date"
-                      name="date"
-                      value={currentActivity.date}
+                      type="text"
+                      id="title"
+                      name="title"
+                      value={currentActivity.title}
                       onChange={handleInputChange}
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all outline-none"
+                      placeholder="أدخل عنوان النشاط"
+                      required
                     />
                   </div>
-                </div>
 
-                <div>
-                  <label
-                    className="block text-gray-700 text-sm font-bold mb-1"
-                    htmlFor="description">
-                    وصف النشاط
-                  </label>
-                  <textarea
-                    id="description"
-                    name="description"
-                    value={currentActivity.description}
-                    onChange={handleInputChange}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    placeholder="وصف النشاط"
-                    rows={3}></textarea>
-                </div>
-
-                <div>
-                  <label
-                    className="block text-gray-700 text-sm font-bold mb-1"
-                    htmlFor="image">
-                    صورة النشاط
-                  </label>
-                  <input
-                    type="file"
-                    id="image"
-                    name="image"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  />
-
-                  {/* Image Preview */}
-                  <div className="mt-2 h-48 overflow-hidden rounded-lg bg-gray-100 flex items-center justify-center">
-                    {imagePreview || currentActivity.image ? (
-                      <img
-                        src={
-                          imagePreview ||
-                          (currentActivity.image.startsWith("http")
-                            ? currentActivity.image
-                            : `${API_BASE_URL}/${currentActivity.image}`)
-                        }
-                        alt="معاينة الصورة"
-                        className="w-full h-full object-contain"
-                      />
-                    ) : (
-                      <div className="text-gray-400 text-center p-4">
+                  {/* Category and Date */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label
+                        htmlFor="category"
+                        className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
-                          className="h-8 w-8 mx-auto mb-1"
+                          className="h-5 w-5 text-emerald-600"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor">
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
-                            strokeWidth={1.5}
-                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            strokeWidth={2}
+                            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
                           />
                         </svg>
-                        اختر صورة للمعاينة
+                        التصنيف
+                      </label>
+                      <select
+                        id="category"
+                        name="category"
+                        value={currentActivity.category}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all outline-none bg-white">
+                        <option value="درس">درس</option>
+                        <option value="رحلة">رحلة</option>
+                        <option value="مسابقة">مسابقة</option>
+                        <option value="محاضرة">محاضرة</option>
+                        <option value="فعالية">فعالية</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label
+                        htmlFor="date"
+                        className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-5 w-5 text-emerald-600"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          />
+                        </svg>
+                        تاريخ النشاط
+                      </label>
+                      <input
+                        type="date"
+                        id="date"
+                        name="date"
+                        value={currentActivity.date}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all outline-none"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Description Field */}
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="description"
+                      className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5 text-emerald-600"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 6h16M4 12h16M4 18h7"
+                        />
+                      </svg>
+                      وصف النشاط
+                    </label>
+                    <textarea
+                      id="description"
+                      name="description"
+                      value={currentActivity.description}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all outline-none resize-none"
+                      placeholder="أدخل وصف النشاط"
+                      rows={4}
+                      required
+                    />
+                  </div>
+
+                  {/* Image Upload */}
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="image"
+                      className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5 text-emerald-600"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                      صورة النشاط
+                    </label>
+
+                    <label
+                      htmlFor="image"
+                      className="block w-full p-6 border-2 border-dashed border-emerald-300 rounded-lg text-center cursor-pointer hover:border-emerald-500 hover:bg-emerald-50/30 transition-all group">
+                      <input
+                        type="file"
+                        id="image"
+                        name="image"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="hidden"
+                      />
+
+                      <div className="flex flex-col items-center gap-2">
+                        <svg
+                          className="w-12 h-12 text-emerald-400 group-hover:text-emerald-500 transition-colors"
+                          stroke="currentColor"
+                          fill="none"
+                          viewBox="0 0 48 48">
+                          <path
+                            d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                            strokeWidth={2}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                        <p className="text-sm text-emerald-700 font-medium">
+                          اضغط لاختيار صورة أو اسحبها هنا
+                        </p>
+                        <p className="text-xs text-emerald-600">
+                          PNG, JPG, GIF حتى 5MB
+                        </p>
+                      </div>
+                    </label>
+
+                    {/* Image Preview */}
+                    {(imagePreview || currentActivity.image) && (
+                      <div className="relative h-64 w-full rounded-lg overflow-hidden border-2 border-emerald-200 bg-gray-50">
+                        <img
+                          src={
+                            imagePreview ||
+                            (currentActivity.image.startsWith("http")
+                              ? currentActivity.image
+                              : `${API_BASE_URL}/${currentActivity.image}`)
+                          }
+                          alt="معاينة الصورة"
+                          className="w-full h-full object-contain"
+                        />
+                        {selectedImage && (
+                          <div className="absolute top-2 right-2 bg-emerald-600 text-white px-3 py-1 rounded-full text-xs font-medium shadow-lg">
+                            صورة جديدة
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
-                </div>
+                </form>
+              </div>
 
-                <div className="flex gap-3 mt-2">
-                  <button
-                    onClick={handleSubmit}
-                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5 ml-1"
-                      viewBox="0 0 20 20"
-                      fill="currentColor">
-                      <path
-                        fillRule="evenodd"
-                        d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    {modalMode === "add" ? "إضافة" : "تحديث"}
-                  </button>
-                  <button
-                    onClick={closeModal}
-                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5 ml-1"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                    إلغاء
-                  </button>
-                </div>
+              {/* Footer Actions */}
+              <div className="bg-gray-50 px-6 py-4 flex gap-3 border-t">
+                <button
+                  onClick={closeModal}
+                  disabled={loading}
+                  className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                  إلغاء
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-700 hover:to-teal-700 transition-all font-semibold shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+                  {loading ? (
+                    <>
+                      <svg
+                        className="animate-spin h-5 w-5"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24">
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>جاري الحفظ...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5"
+                        viewBox="0 0 20 20"
+                        fill="currentColor">
+                        <path
+                          fillRule="evenodd"
+                          d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      {modalMode === "add" ? "إضافة النشاط" : "تحديث النشاط"}
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>
         )}
       </div>
+
+      {/* Custom CSS for animations */}
+      <style>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out;
+        }
+
+        /* Custom scrollbar for modal */
+        .overflow-y-auto::-webkit-scrollbar {
+          width: 8px;
+        }
+
+        .overflow-y-auto::-webkit-scrollbar-track {
+          background: #f1f5f9;
+          border-radius: 4px;
+        }
+
+        .overflow-y-auto::-webkit-scrollbar-thumb {
+          background: #10b981;
+          border-radius: 4px;
+        }
+
+        .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+          background: #059669;
+        }
+      `}</style>
     </div>
   );
 };
