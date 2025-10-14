@@ -10,6 +10,12 @@ import {
   deleteSection,
 } from "../Api/sectionApi";
 import { getStudentMarks, createMark } from "../Api/markApi";
+import {
+  showCenteredSwal,
+  showSuccessMessage,
+  showWarningMessage,
+  showErrorMessage,
+} from "../utils/sweetalertUtils";
 
 // Interface for Student data from backend
 interface Student {
@@ -322,13 +328,13 @@ const DailyMarks = () => {
     //....
     // Validate that a group is selected
     if (!selectedGroup) {
-      alert("الرجاء اختيار حلقة أولاً");
+      showWarningMessage("الرجاء اختيار حلقة أولاً", "تنبيه");
       return;
     }
 
     // Validate required fields
     if (!newSection.reviewSection || !newSection.memorizationSection) {
-      alert("الرجاء ملء جميع الحقول المطلوبة");
+      showWarningMessage("الرجاء ملء جميع الحقول المطلوبة", "تنبيه");
       return;
     }
 
@@ -363,15 +369,16 @@ const DailyMarks = () => {
           reviewSection: "",
         });
 
-        alert("تم إضافة المقطع بنجاح!");
+        showSuccessMessage("تم إضافة المقطع بنجاح!", "نجاح");
       }
     } catch (err: any) {
       console.error("❌ Error adding section:", err);
       console.error("❌ Error response:", err.response?.data);
-      alert(
+      showErrorMessage(
         `حدث خطأ أثناء إضافة المقطع: ${
           err.response?.data?.message || err.message
-        }`
+        }`,
+        "خطأ"
       );
     }
   };
@@ -397,7 +404,7 @@ const DailyMarks = () => {
       setIsAddMarkModalOpen(false);
     } catch (err) {
       console.error("Error adding mark:", err);
-      alert("حدث خطأ أثناء إضافة العلامة");
+      showErrorMessage("حدث خطأ أثناء إضافة العلامة", "خطأ");
     }
   };
 
@@ -427,7 +434,7 @@ const DailyMarks = () => {
       setEditingMark(null);
     } catch (err) {
       console.error("Error updating mark:", err);
-      alert("حدث خطأ أثناء تحديث العلامة");
+      showErrorMessage("حدث خطأ أثناء تحديث العلامة", "خطأ");
     }
   };
 
@@ -463,19 +470,27 @@ const DailyMarks = () => {
       );
       setIsEditSectionModalOpen(false);
       setEditingSection(null);
+      showSuccessMessage("تم تحديث المقطع بنجاح!", "نجاح");
     } catch (err) {
       console.error("Error updating section:", err);
-      alert("حدث خطأ أثناء تحديث المقطع");
+      showErrorMessage("حدث خطأ أثناء تحديث المقطع", "خطأ");
     }
   };
 
   // Handle deleting section
   const handleDeleteSection = async (sectionId: string) => {
-    if (
-      !confirm(
-        "هل أنت متأكد من حذف هذا المقطع؟ سيتم حذف جميع العلامات المرتبطة به."
-      )
-    ) {
+    const result = await showCenteredSwal({
+      title: "تأكيد الحذف",
+      text: "هل أنت متأكد من حذف هذا المقطع؟ سيتم حذف جميع العلامات المرتبطة به.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "نعم، احذف",
+      cancelButtonText: "إلغاء",
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
+    });
+
+    if (!result.isConfirmed) {
       return;
     }
 
@@ -497,9 +512,11 @@ const DailyMarks = () => {
           }
         })
       );
+
+      showSuccessMessage("تم حذف المقطع بنجاح!", "نجاح");
     } catch (err) {
       console.error("Error deleting section:", err);
-      alert("حدث خطأ أثناء حذف المقطع");
+      showErrorMessage("حدث خطأ أثناء حذف المقطع", "خطأ");
     }
   };
 
@@ -522,15 +539,22 @@ const DailyMarks = () => {
   // Handle bulk delete execution
   const executeBulkDelete = async () => {
     if (selectedSectionsForBulk.length === 0) {
-      alert("الرجاء اختيار مقطع واحد على الأقل للحذف");
+      showWarningMessage("الرجاء اختيار مقطع واحد على الأقل للحذف", "تنبيه");
       return;
     }
 
-    if (
-      !confirm(
-        `هل أنت متأكد من حذف ${selectedSectionsForBulk.length} مقطع؟ سيتم حذف جميع العلامات المرتبطة بهم.`
-      )
-    ) {
+    const result = await showCenteredSwal({
+      title: "تأكيد الحذف الجماعي",
+      text: `هل أنت متأكد من حذف ${selectedSectionsForBulk.length} مقطع؟ سيتم حذف جميع العلامات المرتبطة بهم.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "نعم، احذف الكل",
+      cancelButtonText: "إلغاء",
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
+    });
+
+    if (!result.isConfirmed) {
       return;
     }
 
@@ -558,10 +582,10 @@ const DailyMarks = () => {
 
       setIsBulkDeleteModalOpen(false);
       setSelectedSectionsForBulk([]);
-      alert("تم حذف المقاطع بنجاح");
+      showSuccessMessage("تم حذف المقاطع بنجاح!", "نجاح");
     } catch (err) {
       console.error("Error bulk deleting sections:", err);
-      alert("حدث خطأ أثناء حذف المقاطع");
+      showErrorMessage("حدث خطأ أثناء حذف المقاطع", "خطأ");
     }
   };
 
@@ -571,7 +595,7 @@ const DailyMarks = () => {
     memorizationSection?: string;
   }) => {
     if (selectedSectionsForBulk.length === 0) {
-      alert("الرجاء اختيار مقطع واحد على الأقل للتحديث");
+      showWarningMessage("الرجاء اختيار مقطع واحد على الأقل للتحديث", "تنبيه");
       return;
     }
 
@@ -605,10 +629,10 @@ const DailyMarks = () => {
 
       setIsBulkUpdateModalOpen(false);
       setSelectedSectionsForBulk([]);
-      alert("تم تحديث المقاطع بنجاح");
+      showSuccessMessage("تم تحديث المقاطع بنجاح!", "نجاح");
     } catch (err) {
       console.error("Error bulk updating sections:", err);
-      alert("حدث خطأ أثناء تحديث المقاطع");
+      showErrorMessage("حدث خطأ أثناء تحديث المقاطع", "خطأ");
     }
   };
 
