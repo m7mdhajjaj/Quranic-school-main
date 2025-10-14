@@ -73,15 +73,19 @@ const Reports = () => {
   }
 
   return (
-    <div className="container mx-auto py-8" dir="rtl">
-      <h1 className="text-2xl font-bold mb-6 text-center">الحلقات</h1>
-      <div className="bg-white rounded-xl shadow-md p-4 mb-8 max-w-md mx-auto">
-        <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">
+    <div
+      className="container mx-auto py-4 sm:py-6 md:py-8 px-2 sm:px-4"
+      dir="rtl">
+      <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 sm:mb-6 text-center text-gray-800">
+        الحلقات
+      </h1>
+      <div className="bg-white rounded-xl shadow-md p-3 sm:p-4 md:p-6 mb-6 sm:mb-8 max-w-md mx-auto">
+        <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4 text-center">
           فلترة حسب الشهر والسنة
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2">
+            <label className="block text-gray-700 text-xs sm:text-sm font-bold mb-2">
               اختر الشهر (اختياري):
             </label>
             <select
@@ -91,7 +95,7 @@ const Reports = () => {
                 setSelectedMonth(val ? Number(val) : null);
               }}
               title="اختر الشهر"
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-sm sm:text-base text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500">
               <option value="">آخر 6 أشهر</option>
               <option value={1}>يناير (1)</option>
               <option value={2}>فبراير (2)</option>
@@ -108,7 +112,7 @@ const Reports = () => {
             </select>
           </div>
           <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2">
+            <label className="block text-gray-700 text-xs sm:text-sm font-bold mb-2">
               اختر السنة (اختياري):
             </label>
             <select
@@ -118,7 +122,7 @@ const Reports = () => {
                 setSelectedYear(val ? Number(val) : null);
               }}
               title="اختر السنة"
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-sm sm:text-base text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500">
               <option value="">آخر 6 أشهر</option>
               <option value={2023}>2023</option>
               <option value={2024}>2024</option>
@@ -130,10 +134,10 @@ const Reports = () => {
         </div>
       </div>
       {/* يمكنك هنا عرض النتائج حسب الفلترة */}
-      <div className="bg-white rounded-xl shadow-lg p-8 max-w-4xl mx-auto mt-8">
+      <div className="bg-white rounded-xl shadow-lg p-3 sm:p-4 md:p-6 lg:p-8 max-w-4xl mx-auto mt-6 sm:mt-8">
         {userRole === "student" ? (
           <>
-            <h2 className="text-xl font-bold mb-6 text-center text-gray-800">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 text-center text-gray-800">
               📊 معدلاتي الشهرية
             </h2>
             {chartData.labels.length > 0 ? (
@@ -142,16 +146,16 @@ const Reports = () => {
                   labels={chartData.labels}
                   data={chartData.data}
                 />
-                <div className="text-center mt-6 text-gray-600 text-sm bg-gray-50 p-3 rounded-lg">
+                <div className="text-center mt-4 sm:mt-6 text-gray-600 text-xs sm:text-sm bg-gray-50 p-2 sm:p-3 rounded-lg">
                   {selectedMonth && selectedYear
                     ? `📅 يتم عرض معدلك للشهر ${selectedMonth}/${selectedYear}`
                     : `📅 يتم عرض معدلاتك لآخر 6 أشهر`}
                 </div>
               </>
             ) : (
-              <div className="text-center py-12 text-gray-500">
+              <div className="text-center py-8 sm:py-12 text-gray-500">
                 <svg
-                  className="w-16 h-16 mx-auto mb-4 text-gray-300"
+                  className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 text-gray-300"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24">
@@ -162,14 +166,18 @@ const Reports = () => {
                     d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                   />
                 </svg>
-                <p className="text-lg font-medium">لا توجد بيانات لعرضها</p>
-                <p className="text-sm mt-2">لم يتم تسجيل أي معدلات شهرية بعد</p>
+                <p className="text-base sm:text-lg font-medium">
+                  لا توجد بيانات لعرضها
+                </p>
+                <p className="text-xs sm:text-sm mt-2">
+                  لم يتم تسجيل أي معدلات شهرية بعد
+                </p>
               </div>
             )}
           </>
         ) : (
           <>
-            <h2 className="text-xl font-bold mb-6 text-center text-gray-800">
+            <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 text-center text-gray-800">
               📈 متوسط معدلات الحلقة
             </h2>
             {chartData.labels.length > 0 ? (
@@ -178,16 +186,16 @@ const Reports = () => {
                   labels={chartData.labels}
                   data={chartData.data}
                 />
-                <div className="text-center mt-6 text-gray-600 text-sm bg-gray-50 p-3 rounded-lg">
+                <div className="text-center mt-4 sm:mt-6 text-gray-600 text-xs sm:text-sm bg-gray-50 p-2 sm:p-3 rounded-lg">
                   {selectedMonth && selectedYear
                     ? `📅 يتم عرض متوسط معدلات جميع الطلاب للشهر ${selectedMonth}/${selectedYear}`
                     : `📅 يتم عرض متوسط معدلات جميع الطلاب لآخر 6 أشهر`}
                 </div>
               </>
             ) : (
-              <div className="text-center py-12 text-gray-500">
+              <div className="text-center py-8 sm:py-12 text-gray-500">
                 <svg
-                  className="w-16 h-16 mx-auto mb-4 text-gray-300"
+                  className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 text-gray-300"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24">
@@ -198,8 +206,10 @@ const Reports = () => {
                     d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                   />
                 </svg>
-                <p className="text-lg font-medium">لا توجد بيانات لعرضها</p>
-                <p className="text-sm mt-2">
+                <p className="text-base sm:text-lg font-medium">
+                  لا توجد بيانات لعرضها
+                </p>
+                <p className="text-xs sm:text-sm mt-2">
                   لم يتم تسجيل أي معدلات شهرية للطلاب بعد
                 </p>
               </div>

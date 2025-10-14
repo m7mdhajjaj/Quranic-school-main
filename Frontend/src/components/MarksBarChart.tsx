@@ -36,16 +36,15 @@ const MarksBarChart = ({
         borderColor: "#059669",
         borderWidth: 2,
         borderRadius: 6,
-        barThickness: 50, // عرض البار
-        maxBarThickness: 60, // أقصى عرض
+        barThickness: window.innerWidth < 640 ? 40 : 50, // عرض البار responsive
+        maxBarThickness: window.innerWidth < 640 ? 50 : 60, // أقصى عرض
       },
     ],
   };
 
   const options: ChartOptions<"bar"> = {
     responsive: true,
-    maintainAspectRatio: true,
-    aspectRatio: 2.5,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         display: false,
@@ -54,7 +53,7 @@ const MarksBarChart = ({
         display: true,
         text: "مخطط المعدلات",
         font: {
-          size: 16,
+          size: window.innerWidth < 640 ? 14 : 16,
           weight: "bold",
         },
         color: "#1f2937",
@@ -82,9 +81,9 @@ const MarksBarChart = ({
         min: 0,
         max: 100,
         ticks: {
-          stepSize: 10,
+          stepSize: 20,
           font: {
-            size: 11,
+            size: window.innerWidth < 640 ? 9 : 11,
           },
           color: "#6b7280",
           callback: function (value) {
@@ -95,10 +94,10 @@ const MarksBarChart = ({
           color: "#e5e7eb",
         },
         title: {
-          display: true,
+          display: window.innerWidth >= 640,
           text: "المعدل (من 100)",
           font: {
-            size: 13,
+            size: 12,
             weight: "bold",
           },
           color: "#374151",
@@ -110,9 +109,11 @@ const MarksBarChart = ({
         },
         ticks: {
           font: {
-            size: 12,
+            size: window.innerWidth < 640 ? 10 : 12,
           },
           color: "#374151",
+          maxRotation: 45,
+          minRotation: 0,
         },
       },
     },
@@ -123,14 +124,28 @@ const MarksBarChart = ({
   };
 
   return (
-    <div className="w-full relative">
-      <Bar data={chartData} options={options} />
-      {/* Display values on top of bars */}
-      <div className="flex justify-around mt-2 px-8">
+    <div className="w-full">
+      {/* Chart Container with responsive height */}
+      <div className="w-full h-[250px] sm:h-[300px] md:h-[350px]">
+        <Bar data={chartData} options={options} />
+      </div>
+
+      {/* Display values below chart - bigger and more visible */}
+      <div className="flex flex-wrap justify-center items-center mt-4 sm:mt-6 px-1 sm:px-2 gap-2 sm:gap-3">
         {data.map((value, index) => (
-          <div key={index} className="text-center">
-            <span className="text-sm font-bold text-emerald-600">
-              {value ? value.toFixed(1) : "0"}
+          <div
+            key={index}
+            className="flex flex-col items-center justify-center bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl shadow-sm p-3 sm:p-4 min-w-[70px] sm:min-w-[90px] md:min-w-[110px] border-2 border-emerald-200 hover:shadow-md transition-shadow">
+            <span className="text-xs sm:text-sm font-medium text-gray-700 mb-1">
+              {labels[index]}
+            </span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl sm:text-4xl md:text-5xl font-black text-emerald-600 tracking-tight">
+                {value ? value.toFixed(1) : "0"}
+              </span>
+            </div>
+            <span className="text-xs sm:text-sm text-emerald-700 mt-1 font-medium">
+              من 100
             </span>
           </div>
         ))}
