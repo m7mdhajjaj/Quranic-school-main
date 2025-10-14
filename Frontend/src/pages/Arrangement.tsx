@@ -11,12 +11,8 @@ import {
   type Ranking,
   type RankingStudent,
   type Period,
-  type NewRankingData
+  type NewRankingData,
 } from "../Api/rankingApi";
-
-
-
-
 
 // Interface for new ranking entry
 interface NewRankingEntry {
@@ -91,12 +87,13 @@ const Arrangement = () => {
   const userAuth = useMemo(() => {
     const userJson = localStorage.getItem("user");
     if (!userJson) return { user: null, isTeacherOrAdmin: false };
-    
+
     try {
       const userData = JSON.parse(userJson) as User;
       return {
         user: userData,
-        isTeacherOrAdmin: userData.role === "teacher" || userData.role === "admin"
+        isTeacherOrAdmin:
+          userData.role === "teacher" || userData.role === "admin",
       };
     } catch (err) {
       console.error("Error parsing user data:", err);
@@ -114,7 +111,7 @@ const Arrangement = () => {
   const fetchInitialData = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       // Fetch all students
       const studentsResult = await getAllStudents();
@@ -124,7 +121,7 @@ const Arrangement = () => {
 
       // Fetch available periods
       const periods = await getAvailablePeriods();
-      
+
       if (periods.length > 0) {
         setAvailablePeriods(periods);
 
@@ -163,22 +160,22 @@ const Arrangement = () => {
         if (ranking) {
           setCurrentRanking(ranking);
         }
-        } else {
-          // No periods available, use current date
-          const today = new Date();
-          const currentMonth = today.getMonth() + 1;
-          const currentYear = today.getFullYear();
+      } else {
+        // No periods available, use current date
+        const today = new Date();
+        const currentMonth = today.getMonth() + 1;
+        const currentYear = today.getFullYear();
 
-          setSelectedMonth(currentMonth);
-          setSelectedYear(currentYear);
-          setAvailableYears([currentYear, currentYear - 1, currentYear + 1]); // Add some default years
+        setSelectedMonth(currentMonth);
+        setSelectedYear(currentYear);
+        setAvailableYears([currentYear, currentYear - 1, currentYear + 1]); // Add some default years
 
-          setSelectedPeriod({
-            month: currentMonth,
-            year: currentYear,
-            label: `${currentMonth}/${currentYear}`,
-          });
-        }
+        setSelectedPeriod({
+          month: currentMonth,
+          year: currentYear,
+          label: `${currentMonth}/${currentYear}`,
+        });
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
       setError("حدث خطأ أثناء جلب البيانات");
@@ -203,32 +200,50 @@ const Arrangement = () => {
 
   // Fetch ranking when selected period changes
   useEffect(() => {
+    let isMounted = true;
+
     const fetchRanking = async () => {
-      if (!selectedPeriod) return;
+      if (!selectedPeriod || !isMounted) return;
 
       setLoading(true);
+      setError(null);
       try {
-        const ranking = await getRankingByPeriod(selectedPeriod.month, selectedPeriod.year);
-        
-        if (ranking) {
+        const ranking = await getRankingByPeriod(
+          selectedPeriod.month,
+          selectedPeriod.year
+        );
+
+        if (isMounted && ranking) {
           setCurrentRanking(ranking);
-          setError(null);
-        } else {
+        } else if (isMounted) {
           setCurrentRanking(null);
         }
-      } catch (error) {
-        console.error("Error fetching ranking:", error);
-        setCurrentRanking(null);
-        // Don't show error for 404 (no ranking found)
-        if (error instanceof Error && !error.message.includes('404')) {
-          setError("حدث خطأ أثناء جلب الترتيب");
+      } catch (error: unknown) {
+        // Silently handle 404 - no ranking exists for this period
+        const axiosError = error as { response?: { status?: number } };
+
+        if (isMounted) {
+          setCurrentRanking(null);
+
+          // Only show error message for non-404 errors
+          if (axiosError?.response?.status !== 404) {
+            console.error("Error fetching ranking:", error);
+            setError("حدث خطأ أثناء جلب الترتيب");
+          }
         }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchRanking();
+
+    // Cleanup function to prevent state updates after unmount
+    return () => {
+      isMounted = false;
+    };
   }, [selectedPeriod]);
 
   // Initialize AOS
@@ -438,16 +453,16 @@ const Arrangement = () => {
         year: selectedPeriod.year,
         topThree: topThree.map((student) => ({
           studentId: student.studentId,
-          score: student.score || 0
+          score: student.score || 0,
         })),
         topTen: topTen.map((student) => ({
           studentId: student.studentId,
-          score: student.score || 0
-        }))
+          score: student.score || 0,
+        })),
       };
-      
+
       const savedRanking = await createRanking(rankingData);
-      
+
       if (savedRanking) {
         // Refresh ranking data
         const refreshedRanking = await getRankingByPeriod(
@@ -476,7 +491,8 @@ const Arrangement = () => {
   };
 
   // Get top three students for the podium
-  const topThreeStudents = currentRanking?.topThree || [];
+  const topThreeStudents =
+    currentRanking?.topThree?.filter((s) => s && s.studentId) || [];
 
   // Order the top three students for display
   const orderedTopThree = [
@@ -486,12 +502,16 @@ const Arrangement = () => {
   ];
 
   // Get top ten students for the table
-  const topTenStudents = currentRanking?.topTen || [];
+  const topTenStudents =
+    currentRanking?.topTen?.filter((s) => s && s.studentId) || [];
 
   // Helper function to get student full name
   const getFullName = (student: RankingStudent | undefined) => {
-    if (!student || !student.studentId) return "طالب";
-    return `${student.studentId.firstName} ${student.studentId.fatherName} ${student.studentId.lastName}`;
+    if (!student || !student.studentId) return "-";
+    const firstName = student.studentId.firstName || "";
+    const fatherName = student.studentId.fatherName || "";
+    const lastName = student.studentId.lastName || "";
+    return `${firstName} ${fatherName} ${lastName}`.trim() || "-";
   };
 
   // Convert month number to Arabic name
@@ -630,235 +650,292 @@ const Arrangement = () => {
         {/* Main content when data is loaded */}
         {!loading && !error && (
           <>
-            {/* Olympic-style podium for top 3 */}
-            <div className="mb-20 relative" data-aos="fade-up">
-              <div className="flex justify-center items-end h-96 mb-8">
-                {/* Second place - left */}
-                <div
-                  className="w-1/4 flex flex-col items-center mx-2"
-                  data-aos="fade-up"
-                  data-aos-delay="200">
-                  <div className="relative">
-                    <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-[#e9f5f2] border-4 border-[#a0a0a0] mb-4 flex items-center justify-center">
-                      <div className="text-[#1f6357] font-bold text-4xl">2</div>
-                    </div>
-                    <div className="absolute -top-3 -right-3 w-10 h-10 bg-[#a0a0a0] rounded-full flex items-center justify-center text-white font-bold shadow-lg">
-                      2
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <h3 className="font-bold text-lg">
-                      {getFullName(orderedTopThree[0])}
-                    </h3>
-                    <p className="text-emerald-700">
-                      {orderedTopThree[0]?.score || 0} درجة
-                    </p>
-                  </div>
-                  <div className="w-full bg-[#a0a0a0] h-40 rounded-t-lg mt-4 flex items-center justify-center">
-                    <span className="text-3xl font-bold text-white">2</span>
-                  </div>
-                </div>
-
-                {/* First place - center */}
-                <div
-                  className="w-1/3 flex flex-col items-center mx-2 -mt-10"
-                  data-aos="fade-up"
-                  data-aos-delay="100">
-                  <div className="relative">
-                    <div className="w-28 h-28 md:w-36 md:h-36 rounded-full bg-[#e9f5f2] border-4 border-[#FFD700] mb-4 flex items-center justify-center">
-                      <div className="text-[#1f6357] font-bold text-5xl">1</div>
-                    </div>
-                    <div className="absolute -top-5 -right-3 w-12 h-12 bg-[#FFD700] rounded-full flex items-center justify-center text-white font-bold shadow-lg text-xl">
-                      1
-                    </div>
-                    <div className="absolute top-0 left-0 right-0 -mt-8 flex justify-center">
+            {/* Show message if no ranking data */}
+            {!currentRanking || topTenStudents.length === 0 ? (
+              <div className="text-center py-16" data-aos="fade-up">
+                <div className="bg-white rounded-xl shadow-lg p-8 max-w-md mx-auto">
+                  <svg
+                    className="w-20 h-20 mx-auto mb-4 text-gray-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  <h3 className="text-xl font-bold text-gray-700 mb-2">
+                    لا يوجد ترتيب لهذا الشهر
+                  </h3>
+                  <p className="text-gray-500 mb-6">
+                    لم يتم إضافة أي طلاب للترتيب في{" "}
+                    {getMonthName(selectedMonth)} {selectedYear}
+                  </p>
+                  {isTeacherOrAdmin && (
+                    <button
+                      onClick={() => openAddModal("general")}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-lg transition shadow-md inline-flex items-center">
                       <svg
-                        className="w-10 h-10 text-[#FFD700]"
-                        fill="currentColor"
-                        viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5 mr-2"
+                        viewBox="0 0 20 20"
+                        fill="currentColor">
+                        <path
+                          fillRule="evenodd"
+                          d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                          clipRule="evenodd"
+                        />
                       </svg>
+                      إضافة طالب للترتيب
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Olympic-style podium for top 3 */}
+                <div className="mb-20 relative" data-aos="fade-up">
+                  <div className="flex justify-center items-end h-96 mb-8">
+                    {/* Second place - left */}
+                    <div
+                      className="w-1/4 flex flex-col items-center mx-2"
+                      data-aos="fade-up"
+                      data-aos-delay="200">
+                      <div className="relative">
+                        <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-[#e9f5f2] border-4 border-[#a0a0a0] mb-4 flex items-center justify-center">
+                          <div className="text-[#1f6357] font-bold text-4xl">
+                            2
+                          </div>
+                        </div>
+                        <div className="absolute -top-3 -right-3 w-10 h-10 bg-[#a0a0a0] rounded-full flex items-center justify-center text-white font-bold shadow-lg">
+                          2
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <h3 className="font-bold text-lg">
+                          {getFullName(orderedTopThree[0])}
+                        </h3>
+                        <p className="text-emerald-700">
+                          {orderedTopThree[0]?.score || 0} درجة
+                        </p>
+                      </div>
+                      <div className="w-full bg-[#a0a0a0] h-40 rounded-t-lg mt-4 flex items-center justify-center">
+                        <span className="text-3xl font-bold text-white">2</span>
+                      </div>
+                    </div>
+
+                    {/* First place - center */}
+                    <div
+                      className="w-1/3 flex flex-col items-center mx-2 -mt-10"
+                      data-aos="fade-up"
+                      data-aos-delay="100">
+                      <div className="relative">
+                        <div className="w-28 h-28 md:w-36 md:h-36 rounded-full bg-[#e9f5f2] border-4 border-[#FFD700] mb-4 flex items-center justify-center">
+                          <div className="text-[#1f6357] font-bold text-5xl">
+                            1
+                          </div>
+                        </div>
+                        <div className="absolute -top-5 -right-3 w-12 h-12 bg-[#FFD700] rounded-full flex items-center justify-center text-white font-bold shadow-lg text-xl">
+                          1
+                        </div>
+                        <div className="absolute top-0 left-0 right-0 -mt-8 flex justify-center">
+                          <svg
+                            className="w-10 h-10 text-[#FFD700]"
+                            fill="currentColor"
+                            viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <h3 className="font-bold text-xl">
+                          {getFullName(orderedTopThree[1])}
+                        </h3>
+                        <p className="text-emerald-700 font-bold">
+                          {orderedTopThree[1]?.score || 0} درجة
+                        </p>
+                      </div>
+                      <div className="w-full bg-[#FFD700] h-52 rounded-t-lg mt-4 flex items-center justify-center">
+                        <span className="text-4xl font-bold text-white">1</span>
+                      </div>
+                    </div>
+
+                    {/* Third place - right */}
+                    <div
+                      className="w-1/4 flex flex-col items-center mx-2"
+                      data-aos="fade-up"
+                      data-aos-delay="300">
+                      <div className="relative">
+                        <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-[#e9f5f2] border-4 border-[#CD7F32] mb-4 flex items-center justify-center">
+                          <div className="text-[#1f6357] font-bold text-4xl">
+                            3
+                          </div>
+                        </div>
+                        <div className="absolute -top-3 -right-3 w-10 h-10 bg-[#CD7F32] rounded-full flex items-center justify-center text-white font-bold shadow-lg">
+                          3
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <h3 className="font-bold text-lg">
+                          {getFullName(orderedTopThree[2])}
+                        </h3>
+                        <p className="text-emerald-700">
+                          {orderedTopThree[2]?.score || 0} درجة
+                        </p>
+                      </div>
+                      <div className="w-full bg-[#CD7F32] h-32 rounded-t-lg mt-4 flex items-center justify-center">
+                        <span className="text-3xl font-bold text-white">3</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="text-center">
-                    <h3 className="font-bold text-xl">
-                      {getFullName(orderedTopThree[1])}
-                    </h3>
-                    <p className="text-emerald-700 font-bold">
-                      {orderedTopThree[1]?.score || 0} درجة
-                    </p>
-                  </div>
-                  <div className="w-full bg-[#FFD700] h-52 rounded-t-lg mt-4 flex items-center justify-center">
-                    <span className="text-4xl font-bold text-white">1</span>
-                  </div>
+                  <div className="h-6 bg-gradient-to-r from-emerald-600 to-teal-500 rounded-lg shadow-lg"></div>
                 </div>
 
-                {/* Third place - right */}
+                {/* Top 10 students table */}
                 <div
-                  className="w-1/4 flex flex-col items-center mx-2"
+                  className="bg-white rounded-xl shadow-lg overflow-hidden mb-8"
                   data-aos="fade-up"
-                  data-aos-delay="300">
-                  <div className="relative">
-                    <div className="w-24 h-24 md:w-32 md:h-32 rounded-full bg-[#e9f5f2] border-4 border-[#CD7F32] mb-4 flex items-center justify-center">
-                      <div className="text-[#1f6357] font-bold text-4xl">3</div>
-                    </div>
-                    <div className="absolute -top-3 -right-3 w-10 h-10 bg-[#CD7F32] rounded-full flex items-center justify-center text-white font-bold shadow-lg">
-                      3
-                    </div>
+                  data-aos-delay="400">
+                  <div className="bg-gradient-to-r from-emerald-600 to-teal-500 py-4 px-6">
+                    <h2 className="text-xl font-bold text-white">
+                      أفضل 10 طلاب
+                    </h2>
                   </div>
-                  <div className="text-center">
-                    <h3 className="font-bold text-lg">
-                      {getFullName(orderedTopThree[2])}
-                    </h3>
-                    <p className="text-emerald-700">
-                      {orderedTopThree[2]?.score || 0} درجة
-                    </p>
-                  </div>
-                  <div className="w-full bg-[#CD7F32] h-32 rounded-t-lg mt-4 flex items-center justify-center">
-                    <span className="text-3xl font-bold text-white">3</span>
-                  </div>
-                </div>
-              </div>
-              <div className="h-6 bg-gradient-to-r from-emerald-600 to-teal-500 rounded-lg shadow-lg"></div>
-            </div>
-
-            {/* Top 10 students table */}
-            <div
-              className="bg-white rounded-xl shadow-lg overflow-hidden mb-8"
-              data-aos="fade-up"
-              data-aos-delay="400">
-              <div className="bg-gradient-to-r from-emerald-600 to-teal-500 py-4 px-6">
-                <h2 className="text-xl font-bold text-white">أفضل 10 طلاب</h2>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-100">
-                    <tr className="text-right">
-                      <th className="py-3 px-6 text-sm font-medium text-gray-600">
-                        الترتيب
-                      </th>
-                      <th className="py-3 px-6 text-sm font-medium text-gray-600">
-                        الطالب
-                      </th>
-                      <th className="py-3 px-6 text-sm font-medium text-gray-600">
-                        المجموعة
-                      </th>
-                      <th className="py-3 px-6 text-sm font-medium text-gray-600">
-                        الدرجة
-                      </th>
-                      {isTeacherOrAdmin && (
-                        <th className="py-3 px-6 text-sm font-medium text-gray-600">
-                          إجراءات
-                        </th>
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {topTenStudents.map((student, index) => (
-                      <tr
-                        key={student.studentId._id}
-                        className={`hover:bg-gray-50 ${
-                          index < 3 ? "bg-emerald-50/50" : ""
-                        }`}>
-                        <td className="py-4 px-6">
-                          <div className="flex items-center">
-                            {index === 0 && (
-                              <span className="font-bold flex items-center justify-center w-8 h-8 rounded-full bg-[#FFD700] text-white mr-2">
-                                1
-                              </span>
-                            )}
-                            {index === 1 && (
-                              <span className="font-bold flex items-center justify-center w-8 h-8 rounded-full bg-[#a0a0a0] text-white mr-2">
-                                2
-                              </span>
-                            )}
-                            {index === 2 && (
-                              <span className="font-bold flex items-center justify-center w-8 h-8 rounded-full bg-[#CD7F32] text-white mr-2">
-                                3
-                              </span>
-                            )}
-                            {index > 2 && (
-                              <span className="font-bold flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 text-gray-700 mr-2">
-                                {index + 1}
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          <div className="flex items-center">
-                            <div className="w-10 h-10 rounded-full bg-[#e9f5f2] flex items-center justify-center mr-3">
-                              <span className="text-[#1f6357] font-bold">
-                                {index + 1}
-                              </span>
-                            </div>
-                            <span className="font-medium">
-                              {getFullName(student)}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6 text-gray-700">
-                          {student.studentId.group}
-                        </td>
-                        <td className="py-4 px-6 font-semibold">
-                          <span
-                            className={`${
-                              index < 3 ? "text-emerald-700" : ""
-                            }`}>
-                            {student.score} درجة
-                          </span>
-                        </td>
-                        <td className="py-4 px-6">
-                          {isTeacherOrAdmin ? (
-                            <button
-                              onClick={() => openAddModal("update", student)}
-                              className="bg-amber-500 hover:bg-amber-600 text-white font-medium py-1 px-3 rounded transition-colors duration-200 flex items-center text-sm">
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-4 w-4 mr-1"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                                />
-                              </svg>
-                              تعديل
-                            </button>
-                          ) : (
-                            <span className="text-gray-400">-</span>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-100">
+                        <tr className="text-right">
+                          <th className="py-3 px-6 text-sm font-medium text-gray-600">
+                            الترتيب
+                          </th>
+                          <th className="py-3 px-6 text-sm font-medium text-gray-600">
+                            الطالب
+                          </th>
+                          <th className="py-3 px-6 text-sm font-medium text-gray-600">
+                            المجموعة
+                          </th>
+                          <th className="py-3 px-6 text-sm font-medium text-gray-600">
+                            الدرجة
+                          </th>
+                          {isTeacherOrAdmin && (
+                            <th className="py-3 px-6 text-sm font-medium text-gray-600">
+                              إجراءات
+                            </th>
                           )}
-                        </td>
-                      </tr>
-                    ))}
-
-                    {/* Show empty rows if less than 10 students */}
-                    {topTenStudents.length < 10 &&
-                      Array(10 - topTenStudents.length)
-                        .fill(0)
-                        .map((_, index) => (
-                          <tr key={`empty-${index}`}>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {topTenStudents.map((student, index) => (
+                          <tr
+                            key={student.studentId?._id || `student-${index}`}
+                            className={`hover:bg-gray-50 ${
+                              index < 3 ? "bg-emerald-50/50" : ""
+                            }`}>
                             <td className="py-4 px-6">
                               <div className="flex items-center">
-                                <span className="font-bold flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 text-gray-500 mr-2">
-                                  {topTenStudents.length + index + 1}
+                                {index === 0 && (
+                                  <span className="font-bold flex items-center justify-center w-8 h-8 rounded-full bg-[#FFD700] text-white mr-2">
+                                    1
+                                  </span>
+                                )}
+                                {index === 1 && (
+                                  <span className="font-bold flex items-center justify-center w-8 h-8 rounded-full bg-[#a0a0a0] text-white mr-2">
+                                    2
+                                  </span>
+                                )}
+                                {index === 2 && (
+                                  <span className="font-bold flex items-center justify-center w-8 h-8 rounded-full bg-[#CD7F32] text-white mr-2">
+                                    3
+                                  </span>
+                                )}
+                                {index > 2 && (
+                                  <span className="font-bold flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 text-gray-700 mr-2">
+                                    {index + 1}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-4 px-6">
+                              <div className="flex items-center">
+                                <div className="w-10 h-10 rounded-full bg-[#e9f5f2] flex items-center justify-center mr-3">
+                                  <span className="text-[#1f6357] font-bold">
+                                    {index + 1}
+                                  </span>
+                                </div>
+                                <span className="font-medium">
+                                  {getFullName(student)}
                                 </span>
                               </div>
                             </td>
-                            <td className="py-4 px-6 text-gray-400">-</td>
-                            <td className="py-4 px-6 text-gray-400">-</td>
-                            <td className="py-4 px-6 text-gray-400">-</td>
-                            {isTeacherOrAdmin && (
-                              <td className="py-4 px-6 text-gray-400">-</td>
-                            )}
+                            <td className="py-4 px-6 text-gray-700">
+                              {student.studentId?.group || "-"}
+                            </td>
+                            <td className="py-4 px-6 font-semibold">
+                              <span
+                                className={`${
+                                  index < 3 ? "text-emerald-700" : ""
+                                }`}>
+                                {student.score} درجة
+                              </span>
+                            </td>
+                            <td className="py-4 px-6">
+                              {isTeacherOrAdmin ? (
+                                <button
+                                  onClick={() =>
+                                    openAddModal("update", student)
+                                  }
+                                  className="bg-amber-500 hover:bg-amber-600 text-white font-medium py-1 px-3 rounded transition-colors duration-200 flex items-center text-sm">
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-4 w-4 mr-1"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                                    />
+                                  </svg>
+                                  تعديل
+                                </button>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </td>
                           </tr>
                         ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+
+                        {/* Show empty rows if less than 10 students */}
+                        {topTenStudents.length < 10 &&
+                          Array(10 - topTenStudents.length)
+                            .fill(0)
+                            .map((_, index) => (
+                              <tr key={`empty-${index}`}>
+                                <td className="py-4 px-6">
+                                  <div className="flex items-center">
+                                    <span className="font-bold flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 text-gray-500 mr-2">
+                                      {topTenStudents.length + index + 1}
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="py-4 px-6 text-gray-400">-</td>
+                                <td className="py-4 px-6 text-gray-400">-</td>
+                                <td className="py-4 px-6 text-gray-400">-</td>
+                                {isTeacherOrAdmin && (
+                                  <td className="py-4 px-6 text-gray-400">-</td>
+                                )}
+                              </tr>
+                            ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            )}
           </>
         )}
 
