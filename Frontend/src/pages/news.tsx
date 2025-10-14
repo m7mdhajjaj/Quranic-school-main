@@ -335,7 +335,7 @@ const News = () => {
           {isTeacherOrAdmin && (
             <button
               onClick={handleOpenModal}
-              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition flex items-center gap-2 shadow-md"
+              className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-700 hover:to-teal-700 transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg font-semibold"
               data-aos="fade-left">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -368,30 +368,108 @@ const News = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {error && newsItems.length === 0 ? (
-              <div className="col-span-2 bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
-                <p className="text-center">{error}</p>
-                <button
-                  onClick={refreshNews}
-                  className="mx-auto mt-2 block px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition">
-                  إعادة المحاولة
-                </button>
+              <div className="col-span-2 animate-fadeIn">
+                <div className="bg-gradient-to-r from-red-50 to-rose-50 border-2 border-red-200 rounded-xl p-8 shadow-lg max-w-2xl mx-auto">
+                  <div className="flex items-start gap-4">
+                    <div className="bg-red-100 p-3 rounded-full flex-shrink-0">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-6 w-6 text-red-600"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-red-800 mb-1">
+                        حدث خطأ!
+                      </h3>
+                      <p className="text-red-700 mb-4">{error}</p>
+                      <button
+                        onClick={refreshNews}
+                        className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-700 hover:to-teal-700 transition-all shadow-md hover:shadow-lg flex items-center gap-2">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-5 w-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                          />
+                        </svg>
+                        إعادة المحاولة
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : newsItems.length === 0 ? (
-              <div className="col-span-2 bg-yellow-50 border border-yellow-200 text-yellow-700 p-4 rounded-lg">
-                <p className="text-center">لا توجد أخبار متاحة حالياً</p>
+              <div className="col-span-2 text-center py-20 animate-fadeIn">
+                <div className="bg-white rounded-2xl shadow-lg p-12 max-w-md mx-auto border border-emerald-100">
+                  <div className="bg-emerald-50 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-12 w-12 text-emerald-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-700 mb-3">
+                    لا توجد أخبار متاحة حالياً
+                  </h3>
+                  <p className="text-slate-500 mb-6">
+                    لم يتم نشر أي أخبار بعد. تابعنا للحصول على آخر المستجدات!
+                  </p>
+                  {isTeacherOrAdmin && (
+                    <button
+                      onClick={handleOpenModal}
+                      className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold py-3 px-6 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center gap-2 mx-auto">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5"
+                        viewBox="0 0 20 20"
+                        fill="currentColor">
+                        <path
+                          fillRule="evenodd"
+                          d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      إضافة خبر جديد
+                    </button>
+                  )}
+                </div>
               </div>
             ) : (
               newsItems.map((item, index) => (
                 <div
                   key={item._id}
-                  className="bg-white rounded-lg shadow-lg overflow-hidden transition-transform hover:shadow-xl hover:-translate-y-1"
+                  className="bg-white rounded-lg shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-2 animate-fadeIn group"
                   data-aos="fade-up"
                   data-aos-delay={index * 100}>
-                  <img
-                    src={item.image}
-                    alt={item.title}
-                    className="w-full h-64 object-contain bg-gray-50"
-                    onError={(e) => {
+                  <div className="relative overflow-hidden h-64">
+                    <img
+                      src={item.image}
+                      alt={item.title}
+                      className="w-full h-full object-contain bg-gray-50 group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
                       console.log("Error loading image:", item.image);
                       // Try to modify the URL if there's an issue
                       const imgElement = e.target as HTMLImageElement;
@@ -427,23 +505,38 @@ const News = () => {
                         "https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+الخبر";
                       console.log("Using placeholder");
                     }}
-                  />
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  </div>
                   <div className="p-6">
-                    <div className="flex justify-between items-center mb-3">
-                      <h2 className="text-xl font-bold text-emerald-700">
+                    <div className="flex justify-between items-start mb-3 gap-3">
+                      <h2 className="text-xl font-bold text-emerald-700 group-hover:text-emerald-800 transition-colors flex-1">
                         {item.title}
                       </h2>
-                      <span className="text-sm bg-emerald-50 text-emerald-800 px-3 py-1 rounded-full">
+                      <span className="text-sm bg-emerald-50 text-emerald-800 px-3 py-1.5 rounded-full shadow-sm font-medium flex-shrink-0 flex items-center gap-1">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          />
+                        </svg>
                         {item.date}
                       </span>
                     </div>
                     <p className="text-gray-600">{item.content}</p>{" "}
                     <div className="flex flex-wrap justify-between items-center mt-4 gap-2">
-                      <button className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition flex items-center gap-1">
+                      <button className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-700 hover:to-teal-700 transition-all duration-200 flex items-center gap-1 shadow-md hover:shadow-lg group/btn">
                         <span>اقرأ المزيد</span>
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5"
+                          className="h-5 w-5 group-hover/btn:translate-x-1 transition-transform"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor">
@@ -459,7 +552,8 @@ const News = () => {
                       {isTeacherOrAdmin && (
                         <div className="flex gap-2">
                           <button
-                            className="px-3 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition flex items-center gap-1"
+                            title="تعديل الخبر"
+                            className="px-3 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg hover:from-amber-600 hover:to-orange-600 transition-all duration-200 flex items-center gap-1 shadow-md hover:shadow-lg"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleEditNews(item);
@@ -480,7 +574,8 @@ const News = () => {
                             <span>تعديل</span>
                           </button>
                           <button
-                            className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-1"
+                            title="حذف الخبر"
+                            className="px-3 py-2 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-lg hover:from-red-700 hover:to-rose-700 transition-all duration-200 flex items-center gap-1 shadow-md hover:shadow-lg"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDeleteNews(item._id);
@@ -837,8 +932,21 @@ const News = () => {
           }
         }
 
+        @keyframes shimmer {
+          0% {
+            background-position: -200% 0;
+          }
+          100% {
+            background-position: 200% 0;
+          }
+        }
+
         .animate-fadeIn {
           animation: fadeIn 0.3s ease-out;
+        }
+
+        .animate-shimmer {
+          animation: shimmer 2s ease-in-out infinite;
         }
 
         /* Custom scrollbar for modal */
