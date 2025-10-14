@@ -163,21 +163,21 @@ const validateTeacherRegistration = (data) => {
  * يجب أن تحتوي على أقل شيء 4 أرقام أو 3 حروف وباقي أرقام
  */
 const validatePasswordStrength = (password) => {
-  if (!password || typeof password !== 'string') {
-    return { isValid: false, errors: ['كلمة المرور مطلوبة'] };
+  if (!password || typeof password !== "string") {
+    return { isValid: false, errors: ["كلمة المرور مطلوبة"] };
   }
 
   const errors = [];
-  
+
   // التحقق من الطول الأدنى
   if (password.length < 4) {
-    errors.push('كلمة المرور يجب أن تكون 4 أحرف على الأقل');
+    errors.push("كلمة المرور يجب أن تكون 4 أحرف على الأقل");
     return { isValid: false, errors };
   }
 
   // التحقق من الطول الأقصى
   if (password.length > 50) {
-    errors.push('كلمة المرور يجب ألا تتجاوز 50 حرف');
+    errors.push("كلمة المرور يجب ألا تتجاوز 50 حرف");
     return { isValid: false, errors };
   }
 
@@ -191,12 +191,14 @@ const validatePasswordStrength = (password) => {
   // قاعدة التحقق الجديدة:
   // السيناريو 1: أقل شيء 4 أرقام
   const hasMinimumNumbers = numberCount >= 4;
-  
-  // السيناريو 2: 3 حروف على الأقل وباقي أرقام  
+
+  // السيناريو 2: 3 حروف على الأقل وباقي أرقام
   const hasMinimumLettersWithNumbers = letterCount >= 3 && numberCount >= 1;
 
   if (!hasMinimumNumbers && !hasMinimumLettersWithNumbers) {
-    errors.push('كلمة المرور يجب أن تحتوي على 4 أرقام على الأقل، أو 3 حروف مع أرقام');
+    errors.push(
+      "كلمة المرور يجب أن تحتوي على 4 أرقام على الأقل، أو 3 حروف مع أرقام"
+    );
     return { isValid: false, errors };
   }
 
@@ -222,7 +224,7 @@ const validatePasswordChange = (data) => {
     errors.push("كلمة المرور الجديدة مطلوبة");
   } else {
     const newPasswordStr = data.newPassword.toString();
-    
+
     // استخدام دالة التحقق الجديدة
     const strengthValidation = validatePasswordStrength(newPasswordStr);
     if (!strengthValidation.isValid) {
@@ -266,7 +268,7 @@ const validatePasswordChange = (data) => {
     errors.push("نوع المستخدم مطلوب");
   } else {
     const userType = data.userType.toString().toLowerCase();
-    if (!['student', 'teacher', 'admin'].includes(userType)) {
+    if (!["student", "teacher", "admin"].includes(userType)) {
       errors.push("نوع المستخدم غير صحيح");
     } else {
       validatedData.userType = userType;
@@ -558,7 +560,8 @@ const validateLogin = async (req, res, next) => {
       sanitizedData.teacherId ||
       sanitizedData.studentId;
 
-    const password = sanitizedData.password;
+    // دعم password و idNumber (للطلاب)
+    const password = sanitizedData.password || sanitizedData.idNumber;
 
     console.log(
       "🔑 المعرف:",

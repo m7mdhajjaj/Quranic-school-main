@@ -14,7 +14,11 @@ connectDB();
 
 const app = express();
 
-// Request logging middleware
+// Middleware - IMPORTANT: Parse body BEFORE logging it!
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true }));
+
+// Request logging middleware - NOW body is parsed!
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   if (req.method === "POST" || req.method === "PUT") {
@@ -22,10 +26,6 @@ app.use((req, res, next) => {
   }
   next();
 });
-
-// Middleware
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true }));
 const allowedOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(",")
   : ["http://localhost:5173", "http://localhost:5174"];
@@ -33,7 +33,13 @@ app.use(
   cors({
     origin: "*", // Allow all origins in development
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Cache-Control", "Accept", "X-Requested-With"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "Cache-Control",
+      "Accept",
+      "X-Requested-With",
+    ],
     credentials: false, // Disable credentials to avoid Socket.io issues
   })
 );
@@ -108,12 +114,12 @@ const io = new Server(server, {
     methods: ["GET", "POST"],
     credentials: false,
   },
-  transports: ['polling', 'websocket'], // Start with polling first
+  transports: ["polling", "websocket"], // Start with polling first
   allowEIO3: true,
 });
 
 // Make io available to routes
-app.set('io', io);
+app.set("io", io);
 
 // Store online users
 const onlineUsers = new Map();
@@ -124,11 +130,11 @@ global.notifyDashboardUpdate = (updateType, data = null) => {
     const payload = {
       type: updateType, // 'stats', 'groups', 'full'
       data: data,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
-    
+
     console.log(`📊 Broadcasting dashboard update: ${updateType}`);
-    io.to('dashboard').emit('dashboardUpdate', payload);
+    io.to("dashboard").emit("dashboardUpdate", payload);
   }
 };
 
@@ -137,7 +143,7 @@ let notificationService;
 
 // Socket.IO error handling
 io.engine.on("connection_error", (err) => {
-  console.log('Socket.IO connection error:', err.message);
+  console.log("Socket.IO connection error:", err.message);
 });
 
 // Socket.IO connection
@@ -145,11 +151,11 @@ io.on("connection", (socket) => {
   console.log(`User connected: ${socket.id}`);
 
   // Handle socket errors
-  socket.on('error', (error) => {
+  socket.on("error", (error) => {
     console.error(`Socket ${socket.id} error:`, error);
   });
 
-  socket.on('disconnect', (reason) => {
+  socket.on("disconnect", (reason) => {
     console.log(`User disconnected: ${socket.id}, reason: ${reason}`);
     // Clean up user from online users when they disconnect
     for (const [userId, userData] of onlineUsers.entries()) {
@@ -172,7 +178,7 @@ io.on("connection", (socket) => {
   // User login - store their user ID and socket ID with improved handling
   socket.on("login", async (userData) => {
     const { userId, role, firstName } = userData;
-    
+
     // Store user in online users map
     onlineUsers.set(userId, {
       socketId: socket.id,
@@ -180,49 +186,54 @@ io.on("connection", (socket) => {
       firstName: firstName || "مستخدم",
       loginTime: new Date().toISOString(),
     });
-    
+
     // Set isActive to true in database with better error handling
     try {
       let updateResult;
       if (role === "student") {
         updateResult = await Student.findByIdAndUpdate(
-          userId, 
-          { isActive: true, lastSeen: new Date() }, 
+          userId,
+          { isActive: true, lastSeen: new Date() },
           { new: true, upsert: false }
         );
       } else if (role === "admin") {
         const Admin = require("./schema/Admin");
         updateResult = await Admin.findByIdAndUpdate(
-          userId, 
-          { isActive: true, lastSeen: new Date() }, 
+          userId,
+          { isActive: true, lastSeen: new Date() },
           { new: true, upsert: false }
         );
       } else if (role === "teacher") {
         const Teacher = require("./schema/Teacher");
         updateResult = await Teacher.findByIdAndUpdate(
-          userId, 
-          { isActive: true, lastSeen: new Date() }, 
+          userId,
+          { isActive: true, lastSeen: new Date() },
           { new: true, upsert: false }
         );
       }
-      
+
       if (updateResult) {
-        console.log(`✅ User ${firstName} (${userId}) logged in successfully as ${role}`);
-        
+        console.log(
+          `✅ User ${firstName} (${userId}) logged in successfully as ${role}`
+        );
+
         // إرسال إشعار لجميع العملاء بتغيير حالة المستخدم إلى متصل
-        io.emit('userStatusChange', {
+        io.emit("userStatusChange", {
           userId: userId,
           isActive: true,
-          lastSeen: updateResult?.lastSeen?.toISOString() || new Date().toISOString()
+          lastSeen:
+            updateResult?.lastSeen?.toISOString() || new Date().toISOString(),
         });
-        
       } else {
         console.warn(`⚠️  User ${userId} not found in ${role} collection`);
       }
     } catch (error) {
-      console.error(`❌ Error setting isActive for user ${userId}:`, error.message);
+      console.error(
+        `❌ Error setting isActive for user ${userId}:`,
+        error.message
+      );
     }
-    
+
     console.log(`📊 Online users: ${onlineUsers.size}`);
   });
 
@@ -241,15 +252,15 @@ io.on("connection", (socket) => {
     console.log(`📊 Dashboard update requested by ${socket.id}`);
     try {
       // يمكن إضافة منطق لجلب البيانات المحدثة وإرسالها
-      socket.emit('dashboardUpdate', {
-        type: 'full',
-        timestamp: new Date().toISOString()
+      socket.emit("dashboardUpdate", {
+        type: "full",
+        timestamp: new Date().toISOString(),
       });
     } catch (error) {
-      console.error('Error handling dashboard update request:', error);
-      socket.emit('error', {
-        message: 'فشل في تحديث الداشبورد',
-        timestamp: new Date().toISOString()
+      console.error("Error handling dashboard update request:", error);
+      socket.emit("error", {
+        message: "فشل في تحديث الداشبورد",
+        timestamp: new Date().toISOString(),
       });
     }
   });
@@ -257,20 +268,24 @@ io.on("connection", (socket) => {
   // Handle logout
   socket.on("logout", async (userData) => {
     console.log(`User logging out: ${userData.userId}`);
-    
+
     // Set isActive to false in database
     try {
       if (userData.role === "student") {
         await Student.findByIdAndUpdate(userData.userId, { isActive: false });
       } else if (userData.role === "admin") {
-        await require("./schema/Admin").findByIdAndUpdate(userData.userId, { isActive: false });
+        await require("./schema/Admin").findByIdAndUpdate(userData.userId, {
+          isActive: false,
+        });
       } else {
-        await require("./schema/Teacher").findByIdAndUpdate(userData.userId, { isActive: false });
+        await require("./schema/Teacher").findByIdAndUpdate(userData.userId, {
+          isActive: false,
+        });
       }
     } catch (error) {
       console.error("Error setting isActive=false on logout:", error);
     }
-    
+
     // Remove from online users
     onlineUsers.delete(userData.userId);
     console.log(`User logged out: ${userData.userId}`);
@@ -328,7 +343,7 @@ io.on("connection", (socket) => {
           select: "firstName lastName",
         })
         .populate({
-          path: "recipient", 
+          path: "recipient",
           select: "firstName lastName",
         })
         .populate({
@@ -336,8 +351,8 @@ io.on("connection", (socket) => {
           select: "text sender createdAt",
           populate: {
             path: "sender",
-            select: "firstName lastName"
-          }
+            select: "firstName lastName",
+          },
         });
 
       // إرسال إشعار للمستلم عبر خدمة الإشعارات
@@ -355,7 +370,7 @@ io.on("connection", (socket) => {
       console.log("Looking for recipient:", recipient, "in online users");
       console.log("Current online users:", [...onlineUsers.entries()]);
       console.log("Recipient data found:", recipientData);
-      
+
       let recipientOnline = false;
       if (recipientData) {
         console.log(
@@ -400,7 +415,8 @@ io.on("connection", (socket) => {
   // Handle group messages (for teachers sending to students)
   socket.on("sendGroupMessage", async (messageData) => {
     try {
-      const { sender, senderModel, group, text, senderName, replyTo } = messageData;
+      const { sender, senderModel, group, text, senderName, replyTo } =
+        messageData;
 
       // Create and save the message
       const newMessage = new Chat({
@@ -425,8 +441,8 @@ io.on("connection", (socket) => {
           select: "text sender createdAt",
           populate: {
             path: "sender",
-            select: "firstName lastName"
-          }
+            select: "firstName lastName",
+          },
         });
 
       // Emit to all students in the group who are online
@@ -455,30 +471,32 @@ io.on("connection", (socket) => {
   socket.on("editMessage", async (data) => {
     try {
       const { messageId, text } = data;
-      
-      if (!messageId || !text || text.trim() === '') {
-        socket.emit("messageEditError", { error: "Message ID and text are required" });
+
+      if (!messageId || !text || text.trim() === "") {
+        socket.emit("messageEditError", {
+          error: "Message ID and text are required",
+        });
         return;
       }
-      
+
       const message = await Chat.findById(messageId);
       if (!message) {
         socket.emit("messageEditError", { error: "Message not found" });
         return;
       }
-      
+
       // Update the message
       message.text = text.trim();
       message.editedAt = new Date();
       await message.save();
-      
+
       // Get populated message
       const updatedMessage = await Chat.findById(messageId)
-        .populate('sender', 'firstName lastName')
-        .populate('recipient', 'firstName lastName');
-        
+        .populate("sender", "firstName lastName")
+        .populate("recipient", "firstName lastName");
+
       socket.emit("messageEdited", updatedMessage);
-      
+
       // Find recipient's socket and emit to them
       const recipientData = onlineUsers.get(message.recipient.toString());
       if (recipientData) {
@@ -489,32 +507,32 @@ io.on("connection", (socket) => {
       socket.emit("messageEditError", { error: "Failed to edit message" });
     }
   });
-  
+
   // Handle message deletion
   socket.on("deleteMessage", async (data) => {
     try {
       const { messageId } = data;
-      
+
       if (!messageId) {
         socket.emit("messageDeleteError", { error: "Message ID is required" });
         return;
       }
-      
+
       const message = await Chat.findById(messageId);
       if (!message) {
         socket.emit("messageDeleteError", { error: "Message not found" });
         return;
       }
-      
+
       // Store recipient ID before deletion
       const recipientId = message.recipient.toString();
-      
+
       // Delete the message
       await Chat.findByIdAndDelete(messageId);
-      
+
       // Emit to both sender and recipient
       socket.emit("messageDeleted", { messageId });
-      
+
       // Find recipient's socket and emit to them
       const recipientData = onlineUsers.get(recipientId);
       if (recipientData) {
@@ -541,27 +559,27 @@ io.on("connection", (socket) => {
   socket.on("chatOpened", async (data) => {
     const { userId, chatWith } = data;
     console.log(`📖 User ${userId} opened chat with ${chatWith}`);
-    
+
     // إشعار الطرف الآخر بفتح المحادثة
     const otherUserData = onlineUsers.get(chatWith);
     if (otherUserData) {
       io.to(otherUserData.socketId).emit("chatOpened", {
         userId: userId,
-        chatWith: chatWith
+        chatWith: chatWith,
       });
     }
 
     // تحديث حالة الرسائل إلى "تم التوصيل" للرسائل غير المقروءة
     try {
       await Chat.updateMany(
-        { 
+        {
           sender: chatWith,
           recipient: userId,
-          delivered: { $ne: true }
+          delivered: { $ne: true },
         },
-        { 
-          delivered: true, 
-          deliveredAt: new Date() 
+        {
+          delivered: true,
+          deliveredAt: new Date(),
         }
       );
     } catch (error) {
@@ -573,22 +591,22 @@ io.on("connection", (socket) => {
   socket.on("messageDeliveredConfirm", async (data) => {
     const { messageId, recipientId, deliveredAt } = data;
     console.log(`✅ Message ${messageId} delivered to ${recipientId}`);
-    
+
     try {
       // تحديث قاعدة البيانات
       await Chat.findByIdAndUpdate(messageId, {
         delivered: true,
-        deliveredAt: new Date(deliveredAt)
+        deliveredAt: new Date(deliveredAt),
       });
 
       // إشعار المرسل بالتوصيل
       for (const [userId, userData] of onlineUsers.entries()) {
-        const message = await Chat.findById(messageId).populate('sender');
+        const message = await Chat.findById(messageId).populate("sender");
         if (message && message.sender._id.toString() === userId) {
           io.to(userData.socketId).emit("messageDelivered", {
             messageId: messageId,
             recipientOnline: true,
-            deliveredAt: deliveredAt
+            deliveredAt: deliveredAt,
           });
           break;
         }
@@ -602,21 +620,21 @@ io.on("connection", (socket) => {
   socket.on("messageReadConfirm", async (data) => {
     const { messageId, recipientId, readAt } = data;
     console.log(`👁️ Message ${messageId} read by ${recipientId}`);
-    
+
     try {
       // تحديث قاعدة البيانات
       await Chat.findByIdAndUpdate(messageId, {
         read: true,
-        readAt: new Date(readAt)
+        readAt: new Date(readAt),
       });
 
       // إشعار المرسل بالقراءة
       for (const [userId, userData] of onlineUsers.entries()) {
-        const message = await Chat.findById(messageId).populate('sender');
+        const message = await Chat.findById(messageId).populate("sender");
         if (message && message.sender._id.toString() === userId) {
           io.to(userData.socketId).emit("messageRead", {
             messageId: messageId,
-            readAt: readAt
+            readAt: readAt,
           });
           break;
         }
@@ -634,45 +652,48 @@ io.on("connection", (socket) => {
     for (const [userId, userData] of onlineUsers.entries()) {
       if (userData.socketId === socket.id) {
         const { role, firstName } = userData;
-        
+
         // Set isActive to false in database
         try {
           let updateResult;
           if (role === "student") {
             updateResult = await Student.findByIdAndUpdate(
-              userId, 
+              userId,
               { isActive: false, lastSeen: new Date() },
               { new: true }
             );
           } else if (role === "admin") {
             const Admin = require("./schema/Admin");
             updateResult = await Admin.findByIdAndUpdate(
-              userId, 
+              userId,
               { isActive: false, lastSeen: new Date() },
               { new: true }
             );
           } else if (role === "teacher") {
             const Teacher = require("./schema/Teacher");
             updateResult = await Teacher.findByIdAndUpdate(
-              userId, 
+              userId,
               { isActive: false, lastSeen: new Date() },
               { new: true }
             );
           }
-          
+
           console.log(`✅ User ${firstName} (${userId}) marked as inactive`);
-          
+
           // إرسال إشعار لجميع العملاء بتغيير حالة المستخدم
-          io.emit('userStatusChange', {
+          io.emit("userStatusChange", {
             userId: userId,
             isActive: false,
-            lastSeen: updateResult?.lastSeen?.toISOString() || new Date().toISOString()
+            lastSeen:
+              updateResult?.lastSeen?.toISOString() || new Date().toISOString(),
           });
-          
         } catch (error) {
-          console.error(`❌ Error setting isActive=false for user ${userId}:`, error.message);
+          console.error(
+            `❌ Error setting isActive=false for user ${userId}:`,
+            error.message
+          );
         }
-        
+
         onlineUsers.delete(userId);
         console.log(`👋 User ${firstName} removed from online list`);
         console.log(`📊 Remaining online users: ${onlineUsers.size}`);

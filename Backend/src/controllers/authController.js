@@ -25,7 +25,8 @@ exports.login = async (req, res) => {
     const password =
       req.validatedData?.password || req.body.idNumber || req.body.password;
     const userType = req.validatedData?.userType || req.body.userType;
-    const rememberMe = req.body.rememberMe === true || req.body.rememberMe === 'true';
+    const rememberMe =
+      req.body.rememberMe === true || req.body.rememberMe === "true";
 
     console.log("Parsed values:", {
       identifier,
@@ -33,15 +34,20 @@ exports.login = async (req, res) => {
       userType,
     });
 
-    // Check if it's a teacher login
+    // إذا في userType، استخدمه مباشرة
+    // لكن إذا ما فيش، حاول تسجيل دخول الطالب أولاً
     if (userType === "teacher") {
+      console.log("🎓 Attempting teacher login (explicit userType)");
       return await loginTeacher(req, res, identifier, password, rememberMe);
     }
 
-    // Check if it's an admin login
     if (userType === "admin") {
+      console.log("👔 Attempting admin login (explicit userType)");
       return await loginAdmin(req, res, identifier, password, rememberMe);
     }
+
+    // إذا ما في userType محدد، حاول الطالب أولاً (default behavior)
+    console.log("🎒 No userType specified, attempting student login first");
 
     // Otherwise, proceed with student login
     // التحقق من إدخال رقم الطالب ورقم الهوية
@@ -53,28 +59,120 @@ exports.login = async (req, res) => {
     }
 
     // البحث عن الطالب باستخدام رقم الطالب
-    const student = await Student.findOne({ studentId: identifier });
+    console.log("🔍 البحث عن طالب برقم:", identifier);
+    console.log("🔍 نوع البيانات:", typeof identifier);
+
+    // تحويل إلى رقم إذا كان string
+    const studentIdNumber = parseInt(identifier);
+    console.log(
+      "🔍 بعد التحويل:",
+      studentIdNumber,
+      "- نوع:",
+      typeof studentIdNumber
+    );
+
+    const student = await Student.findOne({ studentId: studentIdNumber });
 
     if (!student) {
+      console.log("❌ لم يتم العثور على طالب برقم:", identifier);
       return res.status(401).json({
         success: false,
-        message: "رقم الطالب غير موجود",
+        message: "رقم الطالب غير صحيح أو غير موجود",
       });
     }
 
-    // التحقق من صحة كلمة المرور المشفرة
-    console.log("Student password field:", student.password ? "***" : "none");
-    console.log("Entered password:", password ? "***" : "none");
+    console.log(
+      "✅ تم العثور على الطالب:",
+      student.firstName,
+      student.lastName
+    );
+    console.log("📋 معلومات الطالب:");
+    console.log("   - studentId:", student.studentId);
+    console.log("   - idNumber:", student.idNumber);
+    console.log("   - كلمة المرور موجودة:", !!student.password);
+    console.log(
+      "   - طول كلمة المرور:",
+      student.password ? student.password.length : 0
+    );
+    console.log(
+      "   - كلمة المرور تبدأ بـ:",
+      student.password ? student.password.substring(0, 4) : "none"
+    );
+    console.log("📥 كلمة المرور المُدخلة:", password ? "(موجودة)" : "(فارغة)");
 
-    // استخدام bcrypt للتحقق من كلمة المرور المشفرة
-    const isPasswordValid = await bcrypt.compare(password, student.password);
+    let isPasswordValid = false;
+
+    // التحقق مما إذا كانت كلمة المرور مشفرة أم لا
+    // كلمات المرور المشفرة بـ bcrypt تبدأ بـ $2a$ أو $2b$ وطولها 60 حرف
+    if (
+      student.password &&
+      student.password.startsWith("$2") &&
+      student.password.length === 60
+    ) {
+      // كلمة المرور مشفرة - استخدام bcrypt للمقارنة
+      console.log("🔐 كلمة المرور مشفرة - استخدام bcrypt للمقارنة");
+      console.log("   - رقم الهوية المُدخل:", password);
+      console.log(
+        "   - كلمة المرور المشفرة في DB:",
+        student.password.substring(0, 20) + "..."
+      );
+      isPasswordValid = await bcrypt.compare(password, student.password);
+      console.log(
+        "   - نتيجة المقارنة:",
+        isPasswordValid ? "✅ صحيح" : "❌ خاطئ"
+      );
+    } else if (student.password) {
+      // كلمة المرور غير مشفرة (نص عادي) - مقارنة مباشرة
+      console.log("📝 كلمة المرور غير مشفرة - مقارنة مباشرة");
+      console.log("   - رقم الهوية المُدخل:", password);
+      console.log("   - كلمة المرور في DB:", student.password);
+      isPasswordValid = password === student.password;
+      console.log(
+        "   - نتيجة المقارنة:",
+        isPasswordValid ? "✅ صحيح" : "❌ خاطئ"
+      );
+
+      // تشفير كلمة المرور للمرة القادمة
+      if (isPasswordValid) {
+        console.log("🔒 كلمة المرور صحيحة - تشفيرها للمرة القادمة");
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await Student.findByIdAndUpdate(student._id, {
+          password: hashedPassword,
+        });
+        console.log("✅ تم تشفير كلمة المرور بنجاح");
+      }
+    } else {
+      console.log("❌ لا يوجد حقل password في قاعدة البيانات");
+    }
 
     if (!isPasswordValid) {
+      console.log("❌ فشل التحقق من كلمة المرور");
+      console.log("💡 تأكد من:");
+      console.log("   1. رقم الطالب صحيح:", studentIdNumber);
+      console.log("   2. رقم الهوية المُدخل:", password);
+      console.log("   3. رقم الهوية الصحيح في DB:", student.idNumber);
+      console.log("   4. هل يتطابقان؟", password === student.idNumber);
+
+      // محاولة أخيرة: جرب بـ idNumber مباشرة
+      console.log("\n🔄 محاولة أخيرة: المقارنة مع idNumber مباشرة");
+      const directMatch = await bcrypt.compare(
+        student.idNumber,
+        student.password
+      );
+      console.log("   - النتيجة:", directMatch ? "✅ صحيح" : "❌ خاطئ");
+
+      if (directMatch) {
+        console.log("⚠️ المشكلة: كلمة المرور في DB مشفرة من idNumber");
+        console.log("💡 الحل: استخدم رقم الهوية:", student.idNumber);
+      }
+
       return res.status(401).json({
         success: false,
-        message: "كلمة المرور غير صحيحة",
+        message: `رقم الهوية (كلمة المرور) غير صحيح. رقم الهوية الصحيح هو: ${student.idNumber}`,
       });
     }
+
+    console.log("✅✅✅ تم التحقق من كلمة المرور بنجاح!");
 
     // Set isActive to true and update lastSeen on login
     await Student.findByIdAndUpdate(student._id, {
@@ -140,14 +238,22 @@ exports.login = async (req, res) => {
 };
 
 // تسجيل دخول المعلم
-const loginTeacher = async (req, res, teacherIdParam, passwordParam, rememberMeParam) => {
+const loginTeacher = async (
+  req,
+  res,
+  teacherIdParam,
+  passwordParam,
+  rememberMeParam
+) => {
   try {
     const teacherId =
       teacherIdParam || req.validatedData?.identifier || req.body.teacherId;
     const password =
       passwordParam || req.validatedData?.password || req.body.password;
-    const rememberMe = rememberMeParam !== undefined ? rememberMeParam : 
-      (req.body.rememberMe === true || req.body.rememberMe === 'true');
+    const rememberMe =
+      rememberMeParam !== undefined
+        ? rememberMeParam
+        : req.body.rememberMe === true || req.body.rememberMe === "true";
 
     // التحقق من إدخال رقم المعلم وكلمة المرور
     if (!teacherId || !password) {
@@ -163,7 +269,7 @@ const loginTeacher = async (req, res, teacherIdParam, passwordParam, rememberMeP
     if (!teacher) {
       return res.status(401).json({
         success: false,
-        message: "رقم المعلم غير موجود",
+        message: "رقم المعلم غير صحيح أو غير موجود",
       });
     }
 
@@ -173,7 +279,7 @@ const loginTeacher = async (req, res, teacherIdParam, passwordParam, rememberMeP
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: "كلمة المرور غير صحيحة",
+        message: "كلمة مرور المعلم غير صحيحة",
       });
     }
 
@@ -224,14 +330,22 @@ const loginTeacher = async (req, res, teacherIdParam, passwordParam, rememberMeP
 };
 
 // تسجيل دخول الإداري
-const loginAdmin = async (req, res, adminIdParam, passwordParam, rememberMeParam) => {
+const loginAdmin = async (
+  req,
+  res,
+  adminIdParam,
+  passwordParam,
+  rememberMeParam
+) => {
   try {
     const adminId =
       adminIdParam || req.validatedData?.identifier || req.body.adminId;
     const password =
       passwordParam || req.validatedData?.password || req.body.password;
-    const rememberMe = rememberMeParam !== undefined ? rememberMeParam : 
-      (req.body.rememberMe === true || req.body.rememberMe === 'true');
+    const rememberMe =
+      rememberMeParam !== undefined
+        ? rememberMeParam
+        : req.body.rememberMe === true || req.body.rememberMe === "true";
 
     // التحقق من إدخال رقم الإداري وكلمة المرور
     if (!adminId || !password) {
@@ -247,7 +361,7 @@ const loginAdmin = async (req, res, adminIdParam, passwordParam, rememberMeParam
     if (!admin) {
       return res.status(401).json({
         success: false,
-        message: "رقم الإداري غير موجود",
+        message: "رقم الإداري غير صحيح أو غير موجود",
       });
     }
 
@@ -257,7 +371,7 @@ const loginAdmin = async (req, res, adminIdParam, passwordParam, rememberMeParam
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: "كلمة المرور غير صحيحة",
+        message: "كلمة مرور الإداري غير صحيحة",
       });
     }
 
@@ -513,7 +627,8 @@ exports.changePassword = async (req, res) => {
     console.log("Validated data:", req.validatedData);
 
     // استخدام البيانات المُتحققة من middleware
-    const { currentPassword, newPassword, userId, userType } = req.validatedData || req.body;
+    const { currentPassword, newPassword, userId, userType } =
+      req.validatedData || req.body;
 
     // التحقق من المدخلات
     if (!currentPassword || !newPassword || !userId) {
@@ -737,8 +852,7 @@ exports.verifyIdentity = async (req, res) => {
         admin.fatherName &&
         admin.fatherName.toLowerCase() === fatherName.toLowerCase() &&
         admin.grandFatherName &&
-        admin.grandFatherName.toLowerCase() ===
-          grandFatherName.toLowerCase() &&
+        admin.grandFatherName.toLowerCase() === grandFatherName.toLowerCase() &&
         admin.lastName.toLowerCase() === lastName.toLowerCase() &&
         admin.motherName &&
         admin.motherName.toLowerCase() === motherName.toLowerCase() &&
@@ -850,8 +964,7 @@ exports.resetPassword = async (req, res) => {
 
       if (admin) {
         const birthDateMatch = admin.birthDate
-          ? new Date(admin.birthDate).toISOString().split("T")[0] ===
-            birthDate
+          ? new Date(admin.birthDate).toISOString().split("T")[0] === birthDate
           : false;
 
         if (

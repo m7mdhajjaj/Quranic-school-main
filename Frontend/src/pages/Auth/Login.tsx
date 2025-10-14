@@ -443,7 +443,6 @@
 
 // export default Login;
 
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -546,20 +545,34 @@ const Login = () => {
 
     try {
       let response;
+      let loginErrors: string[] = [];
 
       console.log("📡 Attempting auto-login detection...");
 
       // Try student login first (studentId + idNumber)
       try {
+        console.log("🔹 Attempting student login with:");
+        console.log("   - studentId:", formData.userId);
+        console.log("   - studentId type:", typeof formData.userId);
+        console.log("   - idNumber:", formData.password);
+        console.log("   - idNumber type:", typeof formData.password);
+        console.log("   - idNumber length:", formData.password?.length);
+        console.log("   - rememberMe:", rememberMe);
+
         response = await loginStudent({
           studentId: formData.userId,
           idNumber: formData.password,
           rememberMe: rememberMe,
         });
         console.log("✅ Student login successful!");
-      } catch {
+      } catch (studentError) {
+        console.error("❌ Student login failed:", studentError);
+        const studentMsg = axios.isAxiosError(studentError)
+          ? studentError.response?.data?.message
+          : "خطأ في تسجيل دخول الطالب";
+        loginErrors.push(`طالب: ${studentMsg}`);
         console.log("❌ Not a student, trying teacher...");
-        
+
         // Try teacher login
         try {
           response = await loginTeacher({
@@ -569,17 +582,35 @@ const Login = () => {
             rememberMe: rememberMe,
           });
           console.log("✅ Teacher login successful!");
-        } catch {
+        } catch (teacherError) {
+          const teacherMsg = axios.isAxiosError(teacherError)
+            ? teacherError.response?.data?.message
+            : "خطأ في تسجيل دخول المعلم";
+          loginErrors.push(`معلم: ${teacherMsg}`);
           console.log("❌ Not a teacher, trying admin...");
-          
+
           // Try admin login
-          response = await loginAdmin({
-            adminId: formData.userId,
-            password: formData.password,
-            userType: "admin",
-            rememberMe: rememberMe,
-          });
-          console.log("✅ Admin login successful!");
+          try {
+            response = await loginAdmin({
+              adminId: formData.userId,
+              password: formData.password,
+              userType: "admin",
+              rememberMe: rememberMe,
+            });
+            console.log("✅ Admin login successful!");
+          } catch (adminError) {
+            const adminMsg = axios.isAxiosError(adminError)
+              ? adminError.response?.data?.message
+              : "خطأ في تسجيل دخول الإداري";
+            loginErrors.push(`إداري: ${adminMsg}`);
+
+            // All login attempts failed
+            console.error("❌ All login attempts failed");
+            throw new Error(
+              `فشل تسجيل الدخول. البيانات غير صحيحة أو المستخدم غير موجود.\n\n` +
+                `محاولات تسجيل الدخول:\n${loginErrors.join("\n")}`
+            );
+          }
         }
       }
 
@@ -619,11 +650,19 @@ const Login = () => {
       }
     } catch (error: unknown) {
       console.error("❌ Login error:", error);
-      if (axios.isAxiosError(error)) {
+      if (error instanceof Error) {
+        // استخدام رسالة خطأ مبسطة بدلاً من تفاصيل كل محاولة
+        const errorMsg = error.message;
+        if (errorMsg.includes("محاولات تسجيل الدخول")) {
+          setError(
+            "البيانات المدخلة غير صحيحة. تأكد من رقم المستخدم وكلمة المرور."
+          );
+        } else {
+          setError(errorMsg);
+        }
+      } else if (axios.isAxiosError(error)) {
         const message = error.response?.data?.message || error.message;
         setError(message || "فشل تسجيل الدخول. رجاءً تأكد من بيانات الدخول.");
-      } else if (error instanceof Error) {
-        setError(error.message);
       } else {
         setError("فشل تسجيل الدخول. رجاءً تأكد من بيانات الدخول.");
       }
@@ -645,9 +684,11 @@ const Login = () => {
 
       {/* Decorative Islamic Pattern Overlay */}
       <div className="absolute inset-0 opacity-5">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }}></div>
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }}></div>
       </div>
 
       {/* Main Content */}
@@ -664,15 +705,15 @@ const Login = () => {
               />
             </div>
           </div>
-          
+
           <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-emerald-300 via-teal-200 to-cyan-300 bg-clip-text text-transparent drop-shadow-2xl">
             مدرسة القرآن الكريم
           </h1>
-          
+
           <p className="text-xl md:text-2xl text-emerald-100/90 font-semibold mb-2 drop-shadow-lg">
             نظام إدارة الطلاب المتكامل
           </p>
-          
+
           <div className="flex items-center justify-center gap-2 text-teal-200/70">
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
@@ -685,7 +726,7 @@ const Login = () => {
         <div className="relative max-w-xl mx-auto">
           {/* Card Glow Effect */}
           <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-3xl blur-xl opacity-40 group-hover:opacity-60 transition duration-500"></div>
-          
+
           <div className="relative bg-white/10 backdrop-blur-xl p-12 rounded-3xl shadow-2xl border border-white/20">
             {/* Title */}
             <div className="text-center mb-10">
@@ -818,7 +859,9 @@ const Login = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     {/* Toggle Switch */}
-                    <label htmlFor="remember-me" className="relative inline-flex items-center cursor-pointer">
+                    <label
+                      htmlFor="remember-me"
+                      className="relative inline-flex items-center cursor-pointer">
                       <input
                         type="checkbox"
                         id="remember-me"
@@ -827,7 +870,9 @@ const Login = () => {
                         className="sr-only peer"
                       />
                       <div className="w-11 h-6 bg-gray-600/50 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                      <span className="ms-3 text-sm font-medium text-emerald-100">تذكرني</span>
+                      <span className="ms-3 text-sm font-medium text-emerald-100">
+                        تذكرني
+                      </span>
                     </label>
 
                     {/* Info Icon with Tooltip */}
@@ -836,11 +881,20 @@ const Login = () => {
                         type="button"
                         className="p-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/20 hover:border-emerald-400/50 transition-all duration-300"
                         aria-label="معلومات الجلسة">
-                        <svg className="w-4 h-4 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <svg
+                          className="w-4 h-4 text-emerald-300"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
                         </svg>
                       </button>
-                      
+
                       {/* Tooltip */}
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 opacity-0 invisible group-hover/info:opacity-100 group-hover/info:visible transition-all duration-300 z-50">
                         <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-emerald-400/30 rounded-xl shadow-2xl p-4 backdrop-blur-xl">
@@ -848,26 +902,39 @@ const Login = () => {
                           <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px">
                             <div className="border-8 border-transparent border-t-slate-800"></div>
                           </div>
-                          
+
                           {/* Content */}
                           <div className="space-y-2 text-right">
                             <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
                               </svg>
                               <span>مدة الجلسة</span>
                             </div>
-                            
+
                             {rememberMe ? (
                               <div className="space-y-1">
-                                <p className="text-white text-xs font-semibold">✅ مفعّل: 7 أيام</p>
+                                <p className="text-white text-xs font-semibold">
+                                  ✅ مفعّل: 7 أيام
+                                </p>
                                 <p className="text-emerald-200/70 text-xs">
                                   ستبقى متصلاً حتى تسجيل الخروج
                                 </p>
                               </div>
                             ) : (
                               <div className="space-y-1">
-                                <p className="text-white text-xs font-semibold">⏰ غير مفعّل: 30 دقيقة</p>
+                                <p className="text-white text-xs font-semibold">
+                                  ⏰ غير مفعّل: 30 دقيقة
+                                </p>
                                 <p className="text-yellow-200/70 text-xs">
                                   سيتم تسجيل الخروج تلقائياً بعد 30 دقيقة
                                 </p>

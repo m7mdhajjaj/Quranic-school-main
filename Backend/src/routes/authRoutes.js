@@ -77,4 +77,69 @@ router.get("/verify", protect, (req, res) => {
   });
 });
 
+// مسار لتشفير كلمات مرور الطلاب القديمة (للإدارة فقط)
+router.post("/encrypt-student-passwords", protect, async (req, res) => {
+  try {
+    // التحقق من أن المستخدم هو admin
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "غير مصرح لك بتنفيذ هذا الأمر",
+      });
+    }
+
+    const Student = require("../schema/Student");
+    const bcrypt = require("bcryptjs");
+
+    // جلب جميع الطلاب
+    const students = await Student.find();
+
+    let updatedCount = 0;
+    let alreadyEncryptedCount = 0;
+
+    for (const student of students) {
+      // التحقق مما إذا كانت كلمة المرور مشفرة بالفعل
+      if (
+        student.password &&
+        student.password.startsWith("$2") &&
+        student.password.length === 60
+      ) {
+        alreadyEncryptedCount++;
+        continue;
+      }
+
+      // تشفير كلمة المرور
+      if (student.password) {
+        const hashedPassword = await bcrypt.hash(student.password, 10);
+        await Student.findByIdAndUpdate(student._id, {
+          password: hashedPassword,
+        });
+        updatedCount++;
+      } else if (student.idNumber) {
+        // إذا لم تكن هناك كلمة مرور، استخدام رقم الهوية
+        const hashedPassword = await bcrypt.hash(student.idNumber, 10);
+        await Student.findByIdAndUpdate(student._id, {
+          password: hashedPassword,
+        });
+        updatedCount++;
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `تم تشفير كلمات المرور بنجاح`,
+      totalStudents: students.length,
+      updatedCount: updatedCount,
+      alreadyEncryptedCount: alreadyEncryptedCount,
+    });
+  } catch (error) {
+    console.error("خطأ في تشفير كلمات المرور:", error);
+    res.status(500).json({
+      success: false,
+      message: "حدث خطأ أثناء تشفير كلمات المرور",
+      error: error.message,
+    });
+  }
+});
+
 module.exports = router;

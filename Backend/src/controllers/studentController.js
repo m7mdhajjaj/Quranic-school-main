@@ -232,7 +232,23 @@ exports.createStudent = async (req, res) => {
 
     // تشفير كلمة المرور
     const rawPassword = req.body.password || req.body.idNumber;
+    console.log("🔐 تشفير كلمة المرور:");
+    console.log(
+      "   - كلمة المرور الأولية (password):",
+      req.body.password ? "موجودة" : "غير موجودة"
+    );
+    console.log("   - رقم الهوية (idNumber):", req.body.idNumber);
+    console.log(
+      "   - سيتم استخدام:",
+      rawPassword === req.body.password ? "password" : "idNumber"
+    );
+    console.log("   - القيمة:", rawPassword);
+
     const hashedPassword = await bcrypt.hash(rawPassword, 10);
+    console.log(
+      "   - كلمة المرور بعد التشفير:",
+      hashedPassword.substring(0, 20) + "..."
+    );
 
     const studentData = {
       ...req.body,
@@ -243,8 +259,8 @@ exports.createStudent = async (req, res) => {
     };
 
     console.log(
-      "Creating student with data:",
-      JSON.stringify({ ...studentData, password: "***" }, null, 2)
+      "✅ إنشاء طالب بالبيانات:",
+      JSON.stringify({ ...studentData, password: "***ENCRYPTED***" }, null, 2)
     );
 
     // Create student - simple approach without complex retry logic
