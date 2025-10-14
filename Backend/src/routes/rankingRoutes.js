@@ -8,14 +8,18 @@ const {
   adminProtect,
 } = require("../middleware/authMiddleware");
 
-// Get current ranking (current month or most recent)
-router.get("/current", rankingController.getCurrentRanking);
+// Get current ranking (current month or most recent) - requires authentication to filter by group
+router.get("/current", protect, rankingController.getCurrentRanking);
 
 // Get all available months/years that have rankings
 router.get("/periods", rankingController.getAvailableRankingPeriods);
 
-// Get ranking by month and year
-router.get("/period/:year/:month", rankingController.getRankingByMonthYear);
+// Get ranking by month and year - requires authentication to filter by group
+router.get(
+  "/period/:year/:month",
+  protect,
+  rankingController.getRankingByMonthYear
+);
 
 // Create or update ranking (teachers and admins only)
 router.post(

@@ -35,7 +35,8 @@ interface User {
   lastName?: string;
   email?: string;
   role: string;
-  groups?: Group[];
+  group?: string; // For students
+  groups?: Group[]; // For teachers
 }
 
 const Arrangement = () => {
@@ -119,14 +120,19 @@ const Arrangement = () => {
     setCurrentUser(userAuth.user);
     setIsTeacherOrAdmin(userAuth.isTeacherOrAdmin);
 
-    // If teacher has groups, set the first group as default
-    if (
+    // Set selected group based on user role
+    if (userAuth.user?.role === "student") {
+      // For students, set their group
+      setSelectedGroup(userAuth.user.group || "");
+    } else if (
       userAuth.user?.role === "teacher" &&
       userAuth.user.groups &&
       userAuth.user.groups.length > 0
     ) {
+      // For teachers, set the first group as default
       setSelectedGroup(userAuth.user.groups[0].name);
     }
+    // Admin doesn't need selectedGroup (sees all)
   }, [userAuth]);
 
   // Fetch all students, available periods, and current ranking
@@ -140,12 +146,20 @@ const Arrangement = () => {
       if (studentsResult.success && studentsResult.data) {
         setAllDbStudents(studentsResult.data);
 
-        // If teacher, filter students by their first group
-        if (
+        // Filter students based on user role
+        if (userAuth.user?.role === "student") {
+          // Students see only their group students (for viewing purposes)
+          const studentGroup = userAuth.user.group;
+          const filtered = studentsResult.data.filter(
+            (student: Student) => student.group === studentGroup
+          );
+          setFilteredStudents(filtered);
+        } else if (
           userAuth.user?.role === "teacher" &&
           userAuth.user.groups &&
           userAuth.user.groups.length > 0
         ) {
+          // Teachers see students from their first group
           const firstGroupName = userAuth.user.groups[0].name;
           const filtered = studentsResult.data.filter(
             (student: Student) => student.group === firstGroupName
@@ -193,8 +207,8 @@ const Arrangement = () => {
           setSelectedYear(mostRecent.year);
         }
 
-        // Fetch current ranking
-        const ranking = await getCurrentRanking();
+        // Fetch current ranking with selected group
+        const ranking = await getCurrentRanking(selectedGroup);
         if (ranking) {
           setCurrentRanking(ranking);
         }
@@ -229,7 +243,14 @@ const Arrangement = () => {
 
   // Filter students when selected group changes
   useEffect(() => {
-    if (userAuth.user?.role === "teacher" && selectedGroup) {
+    if (userAuth.user?.role === "student" && selectedGroup) {
+      // Students see only their group
+      const filtered = allDbStudents.filter(
+        (student: Student) => student.group === selectedGroup
+      );
+      setFilteredStudents(filtered);
+    } else if (userAuth.user?.role === "teacher" && selectedGroup) {
+      // Teachers see students from selected group
       const filtered = allDbStudents.filter(
         (student: Student) => student.group === selectedGroup
       );
@@ -249,7 +270,7 @@ const Arrangement = () => {
     });
   }, [selectedMonth, selectedYear]);
 
-  // Fetch ranking when selected period changes
+  // Fetch ranking when selected period or group changes
   useEffect(() => {
     let isMounted = true;
 
@@ -261,7 +282,8 @@ const Arrangement = () => {
       try {
         const ranking = await getRankingByPeriod(
           selectedPeriod.month,
-          selectedPeriod.year
+          selectedPeriod.year,
+          selectedGroup
         );
 
         if (isMounted && ranking) {
@@ -295,7 +317,7 @@ const Arrangement = () => {
     return () => {
       isMounted = false;
     };
-  }, [selectedPeriod]);
+  }, [selectedPeriod, selectedGroup]);
 
   // Initialize AOS
   useEffect(() => {
@@ -528,7 +550,8 @@ const Arrangement = () => {
         // Refresh ranking data
         const refreshedRanking = await getRankingByPeriod(
           selectedPeriod.month,
-          selectedPeriod.year
+          selectedPeriod.year,
+          selectedGroup
         );
 
         if (refreshedRanking) {

@@ -13,6 +13,11 @@ const rankingSchema = new mongoose.Schema(
       required: [true, "السنة مطلوبة"],
       min: 2020,
     },
+    group: {
+      type: String,
+      required: [true, "اسم الحلقة مطلوب"],
+      trim: true,
+    },
     topThree: [
       {
         studentId: {
@@ -56,11 +61,11 @@ const rankingSchema = new mongoose.Schema(
       },
     ],
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
-// Create a compound index for month and year to ensure uniqueness
-rankingSchema.index({ month: 1, year: 1 }, { unique: true });
+// Create a compound index for month, year, and group to ensure uniqueness per group
+rankingSchema.index({ month: 1, year: 1, group: 1 }, { unique: true });
 
 const Ranking = mongoose.model("Ranking", rankingSchema);
 

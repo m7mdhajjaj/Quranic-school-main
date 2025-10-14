@@ -8,24 +8,70 @@ exports.getCurrentRanking = async (req, res) => {
     const currentMonth = today.getMonth() + 1; // JavaScript months are 0-based
     const currentYear = today.getFullYear();
 
-    // First try to find ranking for current month
-    let ranking = await Ranking.findOne({
-      month: currentMonth,
-      year: currentYear,
-    }).populate({
-      path: "topThree.studentId topTen.studentId",
-      select: "firstName lastName fatherName group", // Fields to include from Student model
-    });
+    // Get user's group
+    let userGroup = null;
+    if (req.user) {
+      if (req.user.role === "student") {
+        userGroup = req.user.group;
+      } else if (req.user.role === "teacher") {
+        // If teacher, get their first group (or from query)
+        const Teacher = require("../schema/Teacher");
+        const teacher = await Teacher.findById(req.user._id).select("groups");
+        if (teacher && teacher.groups && teacher.groups.length > 0) {
+          userGroup = req.query.group || teacher.groups[0].name;
+        }
+      }
+      // Admin sees all groups, no filter
+    }
+
+    // Build query - try with group first, then without (for backward compatibility)
+    let ranking = null;
+
+    // Try to find ranking with group filter (new schema)
+    if (userGroup && req.user.role !== "admin") {
+      ranking = await Ranking.findOne({
+        month: currentMonth,
+        year: currentYear,
+        group: userGroup,
+      }).populate({
+        path: "topThree.studentId topTen.studentId",
+        select: "firstName lastName fatherName group",
+      });
+    } else {
+      // Admin or no group - find any ranking for this period
+      ranking = await Ranking.findOne({
+        month: currentMonth,
+        year: currentYear,
+      }).populate({
+        path: "topThree.studentId topTen.studentId",
+        select: "firstName lastName fatherName group",
+      });
+    }
 
     // If no ranking for current month, find the most recent one
     if (!ranking) {
-      // Get all rankings
-      const allRankings = await Ranking.find()
-        .sort({ year: -1, month: -1 })
-        .limit(1);
+      let allRankings;
+
+      if (userGroup && req.user.role !== "admin") {
+        // Try to find rankings with group filter
+        allRankings = await Ranking.find({ group: userGroup })
+          .sort({ year: -1, month: -1 })
+          .limit(1);
+
+        // If no rankings with group, find any ranking and filter later
+        if (allRankings.length === 0) {
+          allRankings = await Ranking.find()
+            .sort({ year: -1, month: -1 })
+            .limit(1);
+        }
+      } else {
+        // Admin sees any ranking
+        allRankings = await Ranking.find()
+          .sort({ year: -1, month: -1 })
+          .limit(1);
+      }
 
       if (allRankings.length > 0) {
-        // Get the first (most recent) ranking
         ranking = await Ranking.findById(allRankings[0]._id).populate({
           path: "topThree.studentId topTen.studentId",
           select: "firstName lastName fatherName group",
@@ -38,6 +84,19 @@ exports.getCurrentRanking = async (req, res) => {
         success: false,
         message: "لم يتم العثور على تصنيف للشهر الحالي أو الشهور السابقة",
       });
+    }
+
+    // Filter students by group if not admin
+    if (userGroup && req.user.role !== "admin") {
+      // Filter topThree to show only students from the user's group
+      ranking.topThree = ranking.topThree.filter(
+        (item) => item.studentId && item.studentId.group === userGroup
+      );
+
+      // Filter topTen to show only students from the user's group
+      ranking.topTen = ranking.topTen.filter(
+        (item) => item.studentId && item.studentId.group === userGroup
+      );
     }
 
     res.status(200).json({
@@ -61,19 +120,73 @@ exports.getRankingByMonthYear = async (req, res) => {
   try {
     const { month, year } = req.params;
 
-    const ranking = await Ranking.findOne({
-      month: parseInt(month),
-      year: parseInt(year),
-    }).populate({
-      path: "topThree.studentId topTen.studentId",
-      select: "firstName lastName fatherName group",
-    });
+    // Get user's group
+    let userGroup = null;
+    if (req.user) {
+      if (req.user.role === "student") {
+        userGroup = req.user.group;
+      } else if (req.user.role === "teacher") {
+        const Teacher = require("../schema/Teacher");
+        const teacher = await Teacher.findById(req.user._id).select("groups");
+        if (teacher && teacher.groups && teacher.groups.length > 0) {
+          userGroup = req.query.group || teacher.groups[0].name;
+        }
+      }
+    }
+
+    // Build query - try with group first for better filtering
+    let ranking = null;
+
+    if (userGroup && req.user && req.user.role !== "admin") {
+      // Try to find ranking with group filter
+      ranking = await Ranking.findOne({
+        month: parseInt(month),
+        year: parseInt(year),
+        group: userGroup,
+      }).populate({
+        path: "topThree.studentId topTen.studentId",
+        select: "firstName lastName fatherName group",
+      });
+
+      // If not found with group, try without group (old rankings) and filter later
+      if (!ranking) {
+        ranking = await Ranking.findOne({
+          month: parseInt(month),
+          year: parseInt(year),
+        }).populate({
+          path: "topThree.studentId topTen.studentId",
+          select: "firstName lastName fatherName group",
+        });
+      }
+    } else {
+      // Admin sees any ranking
+      ranking = await Ranking.findOne({
+        month: parseInt(month),
+        year: parseInt(year),
+      }).populate({
+        path: "topThree.studentId topTen.studentId",
+        select: "firstName lastName fatherName group",
+      });
+    }
 
     if (!ranking) {
       return res.status(404).json({
         success: false,
         message: `لم يتم العثور على تصنيف لشهر ${month}/${year}`,
       });
+    }
+
+    // Filter students by group if not admin
+    if (userGroup && req.user && req.user.role !== "admin") {
+      // Filter topThree to show only students from the user's group
+      ranking.topThree = ranking.topThree.filter(
+        (item) => item.studentId && item.studentId.group === userGroup
+      );
+
+      // Filter topTen to show only students from the user's group
+      ranking.topTen = ranking.topTen.filter(
+        (item) => item.studentId && item.studentId.group === userGroup
+      );
     }
 
     res.status(200).json({
@@ -224,6 +337,28 @@ exports.createOrUpdateRanking = async (req, res) => {
       }
     }
 
+    // Determine the group for this ranking
+    // All students should be from the same group
+    const studentGroup = existingStudents[0]?.group;
+
+    if (!studentGroup) {
+      return res.status(400).json({
+        success: false,
+        message: "يجب أن يكون جميع الطلاب من نفس الحلقة",
+      });
+    }
+
+    // Verify all students are from the same group
+    const differentGroups = existingStudents.some(
+      (s) => s.group !== studentGroup
+    );
+    if (differentGroups) {
+      return res.status(400).json({
+        success: false,
+        message: "يجب أن يكون جميع الطلاب من نفس الحلقة",
+      });
+    }
+
     // Prepare the topThree data with ranks
     const processedTopThree = topThree.map((item, index) => ({
       studentId: item.studentId,
@@ -238,12 +373,13 @@ exports.createOrUpdateRanking = async (req, res) => {
       score: item.score,
     }));
 
-    // Find and update or create new ranking
+    // Find and update or create new ranking (now with group filter)
     const ranking = await Ranking.findOneAndUpdate(
-      { month: monthNum, year: yearNum },
+      { month: monthNum, year: yearNum, group: studentGroup },
       {
         month: monthNum,
         year: yearNum,
+        group: studentGroup,
         topThree: processedTopThree,
         topTen: processedTopTen,
       },

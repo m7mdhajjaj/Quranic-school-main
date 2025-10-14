@@ -17,6 +17,7 @@ export interface Ranking {
   _id: string;
   month: number;
   year: number;
+  group: string;
   topThree: RankingStudent[];
   topTen: RankingStudent[];
 }
@@ -49,9 +50,13 @@ export const getAvailablePeriods = async (): Promise<Period[]> => {
 };
 
 // Get current ranking
-export const getCurrentRanking = async (): Promise<Ranking | null> => {
+export const getCurrentRanking = async (
+  group?: string
+): Promise<Ranking | null> => {
   try {
-    const response = await api.get("/rankings/current");
+    // Only include group param if it's a non-empty string
+    const params = group && group.trim() ? { group } : {};
+    const response = await api.get("/rankings/current", { params });
     if (response.data.success) {
       return response.data.data;
     }
@@ -69,10 +74,15 @@ export const getCurrentRanking = async (): Promise<Ranking | null> => {
 // Get ranking by period
 export const getRankingByPeriod = async (
   month: number,
-  year: number
+  year: number,
+  group?: string
 ): Promise<Ranking | null> => {
   try {
-    const response = await api.get(`/rankings/period/${year}/${month}`);
+    // Only include group param if it's a non-empty string
+    const params = group && group.trim() ? { group } : {};
+    const response = await api.get(`/rankings/period/${year}/${month}`, {
+      params,
+    });
     if (response.data.success) {
       return response.data.data;
     }
