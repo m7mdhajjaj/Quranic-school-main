@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
-import type { ChangeEvent } from 'react';
-import AOS from 'aos';
-import 'aos/dist/aos.css';
-import { useAuth } from '../hooks/useAuth';
-import { NewsSkeleton } from '../components/Loading/LoadingSkeleton';
+import { useState, useEffect, useRef } from "react";
+import type { ChangeEvent } from "react";
+import AOS from "aos";
+import "aos/dist/aos.css";
+import Swal from "sweetalert2";
+import { useAuth } from "../hooks/useAuth";
+import { NewsSkeleton } from "../components/Loading/LoadingSkeleton";
 import {
   getAllNews,
   createNews,
@@ -11,7 +12,8 @@ import {
   deleteNews,
   buildNewsImageUrl,
   type INews,
-} from '../Api/newsApi';
+} from "../Api/newsApi";
+import { uploadNewsImage } from "../Api/uploadApi";
 
 const News = () => {
   const { user: currentUser } = useAuth();
@@ -23,12 +25,12 @@ const News = () => {
 
   // Check if user is teacher or admin
   const isTeacherOrAdmin =
-    currentUser?.role === 'teacher' || currentUser?.role === 'admin';
+    currentUser?.role === "teacher" || currentUser?.role === "admin";
   const [newNews, setNewNews] = useState<Partial<INews>>({
-    title: '',
-    content: '',
-    date: new Date().toLocaleDateString('ar-SA'),
-    image: 'https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+جديدة',
+    title: "",
+    content: "",
+    date: new Date().toLocaleDateString("ar-SA"),
+    image: "https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+جديدة",
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -45,36 +47,36 @@ const News = () => {
       setError(null);
       try {
         const response = await getAllNews();
-        console.log('Fetched news data:', response);
+        console.log("Fetched news data:", response);
 
         if (response && Array.isArray(response)) {
           // Data is already formatted by the API layer
           setNewsItems(response);
-          console.log('Formatted news items:', response);
+          console.log("Formatted news items:", response);
         }
       } catch (err) {
-        console.error('Failed to fetch news:', err);
-        setError('حدث خطأ أثناء جلب الأخبار، يرجى المحاولة مرة أخرى');
+        console.error("Failed to fetch news:", err);
+        setError("حدث خطأ أثناء جلب الأخبار، يرجى المحاولة مرة أخرى");
 
         // Add default news if no data is available
         setNewsItems([
           {
-            _id: '1',
-            title: 'افتتاح معرض القرآن السنوي',
-            date: '10 مايو 2024',
+            _id: "1",
+            title: "افتتاح معرض القرآن السنوي",
+            date: "10 مايو 2024",
             content:
-              'نتشرف بدعوتكم لحضور معرض القرآن السنوي الذي سيقام في مقر المدرسة، حيث سيتم عرض إبداعات الطلاب وإنجازاتهم في حفظ وتجويد القرآن الكريم.',
+              "نتشرف بدعوتكم لحضور معرض القرآن السنوي الذي سيقام في مقر المدرسة، حيث سيتم عرض إبداعات الطلاب وإنجازاتهم في حفظ وتجويد القرآن الكريم.",
             image:
-              'https://placehold.co/600x400/e9f5f2/1f6357?text=معرض+القرآن',
+              "https://placehold.co/600x400/e9f5f2/1f6357?text=معرض+القرآن",
           },
           {
-            _id: '2',
-            title: 'مسابقة التجويد والترتيل',
-            date: '15 يونيو 2024',
+            _id: "2",
+            title: "مسابقة التجويد والترتيل",
+            date: "15 يونيو 2024",
             content:
-              'تعلن المدرسة عن بدء التسجيل لمسابقة التجويد والترتيل السنوية. نرحب بمشاركة جميع الطلاب من مختلف الفئات العمرية وسيتم توزيع جوائز قيمة على الفائزين.',
+              "تعلن المدرسة عن بدء التسجيل لمسابقة التجويد والترتيل السنوية. نرحب بمشاركة جميع الطلاب من مختلف الفئات العمرية وسيتم توزيع جوائز قيمة على الفائزين.",
             image:
-              'https://placehold.co/600x400/e9f5f2/1f6357?text=مسابقة+التجويد',
+              "https://placehold.co/600x400/e9f5f2/1f6357?text=مسابقة+التجويد",
           },
         ]);
       } finally {
@@ -96,8 +98,8 @@ const News = () => {
         setNewsItems(response);
       }
     } catch (err) {
-      console.error('Failed to refresh news:', err);
-      setError('حدث خطأ أثناء تحديث الأخبار');
+      console.error("Failed to refresh news:", err);
+      setError("حدث خطأ أثناء تحديث الأخبار");
     } finally {
       setIsLoading(false);
     }
@@ -114,10 +116,10 @@ const News = () => {
     setEditingNewsId(null);
     setSelectedFile(null);
     setNewNews({
-      title: '',
-      content: '',
-      date: new Date().toLocaleDateString('ar-SA'),
-      image: 'https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+جديدة',
+      title: "",
+      content: "",
+      date: new Date().toLocaleDateString("ar-SA"),
+      image: "https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+جديدة",
     });
   };
 
@@ -131,57 +133,94 @@ const News = () => {
     }));
   };
 
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      // Create a temporary URL for preview
-      const imageUrl = URL.createObjectURL(file);
-      setNewNews((prev) => ({
-        ...prev,
-        image: imageUrl,
-      }));
+    if (!file) return;
+
+    // التحقق من نوع الملف
+    if (!file.type.startsWith("image/")) {
+      await Swal.fire({
+        icon: "error",
+        title: "خطأ",
+        text: "يجب اختيار صورة فقط",
+        confirmButtonColor: "#DC2626",
+      });
+      return;
     }
+
+    // التحقق من حجم الملف (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      await Swal.fire({
+        icon: "error",
+        title: "خطأ",
+        text: "حجم الصورة يجب أن يكون أقل من 5 ميجابايت",
+        confirmButtonColor: "#DC2626",
+      });
+      return;
+    }
+
+    setSelectedFile(file);
+    // Create a temporary URL for preview
+    const imageUrl = URL.createObjectURL(file);
+    setNewNews((prev) => ({
+      ...prev,
+      image: imageUrl,
+    }));
   };
 
   const handleAddNews = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    console.log('Adding/updating news with image:', selectedFile);
+    console.log("Adding/updating news with image:", selectedFile);
 
     try {
-      const formData = new FormData();
-      formData.append('title', newNews.title || 'خبر جديد');
-      formData.append('content', newNews.content || 'محتوى الخبر');
-      formData.append(
-        'date',
-        newNews.date || new Date().toLocaleDateString('ar-SA')
-      );
+      let imageUrl = newNews.image;
 
+      // رفع الصورة على Cloudinary إذا تم اختيار ملف جديد
       if (selectedFile) {
-        console.log(
-          'Appending file to form data:',
-          selectedFile.name,
-          selectedFile.type,
-          selectedFile.size
-        );
-        formData.append('image', selectedFile);
+        try {
+          console.log("Uploading image to Cloudinary...");
+          const uploadResult = await uploadNewsImage(selectedFile);
 
-        // Log all entries in the FormData
-        for (const [key, value] of formData.entries()) {
-          console.log(`FormData Entry: ${key}:`, value);
+          if (uploadResult.success && uploadResult.url) {
+            imageUrl = uploadResult.url;
+            console.log("Image uploaded successfully:", imageUrl);
+
+            await Swal.fire({
+              icon: "success",
+              title: "تم رفع الصورة",
+              text: "تم رفع الصورة بنجاح",
+              confirmButtonColor: "#059669",
+              timer: 1500,
+              showConfirmButton: false,
+            });
+          }
+        } catch (uploadError) {
+          console.error("Failed to upload image:", uploadError);
+          await Swal.fire({
+            icon: "error",
+            title: "خطأ في رفع الصورة",
+            text: "فشل رفع الصورة، سيتم استخدام صورة افتراضية",
+            confirmButtonColor: "#DC2626",
+          });
+          imageUrl =
+            "https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+الخبر";
         }
-      } else if (newNews.image) {
-        // If using a URL, we need to send it as a string
-        formData.append('imageUrl', newNews.image);
-        console.log('Using image URL:', newNews.image);
       }
+
+      // إعداد بيانات الخبر
+      const newsData = {
+        title: newNews.title || "خبر جديد",
+        content: newNews.content || "محتوى الخبر",
+        date: newNews.date || new Date().toLocaleDateString("ar-SA"),
+        imageUrl: imageUrl || "", // Use imageUrl not image
+      };
 
       if (isEditMode && editingNewsId !== null) {
         // Handle edit mode - update existing news
-        const response = await updateNews(editingNewsId, formData);
-        console.log('News updated successfully:', response);
+        const response = await updateNews(editingNewsId, newsData);
+        console.log("News updated successfully:", response);
 
         if (response) {
           // Update local state with the updated news
@@ -190,20 +229,41 @@ const News = () => {
               item._id === editingNewsId ? response : item
             )
           );
+
+          await Swal.fire({
+            icon: "success",
+            title: "تم التحديث",
+            text: "تم تحديث الخبر بنجاح",
+            confirmButtonColor: "#059669",
+            timer: 2000,
+          });
         }
       } else {
         // Handle add mode - create new news
-        const response = await createNews(formData);
-        console.log('News created successfully:', response);
+        const response = await createNews(newsData);
+        console.log("News created successfully:", response);
 
         if (response) {
           // Add the new news to the beginning of the array
           setNewsItems([response, ...newsItems]);
+
+          await Swal.fire({
+            icon: "success",
+            title: "تم الإضافة",
+            text: "تم إضافة الخبر بنجاح",
+            confirmButtonColor: "#059669",
+            timer: 2000,
+          });
         }
       }
     } catch (err) {
-      console.error('Failed to save news:', err);
-      setError('حدث خطأ أثناء حفظ الخبر، يرجى المحاولة مرة أخرى');
+      console.error("Failed to save news:", err);
+      await Swal.fire({
+        icon: "error",
+        title: "خطأ",
+        text: "حدث خطأ أثناء حفظ الخبر، يرجى المحاولة مرة أخرى",
+        confirmButtonColor: "#DC2626",
+      });
     } finally {
       setIsLoading(false);
       handleCloseModal();
@@ -224,17 +284,41 @@ const News = () => {
   };
 
   const handleDeleteNews = async (_id: string) => {
-    if (window.confirm('هل أنت متأكد من حذف هذا الخبر؟')) {
-      setIsLoading(true);
-      try {
-        await deleteNews(_id);
-        setNewsItems(newsItems.filter((item) => item._id !== _id));
-      } catch (err) {
-        console.error('Failed to delete news:', err);
-        setError('حدث خطأ أثناء حذف الخبر، يرجى المحاولة مرة أخرى');
-      } finally {
-        setIsLoading(false);
-      }
+    const result = await Swal.fire({
+      icon: "warning",
+      title: "تأكيد الحذف",
+      text: "هل أنت متأكد من حذف هذا الخبر؟ لا يمكن التراجع عن هذا الإجراء!",
+      showCancelButton: true,
+      confirmButtonText: "نعم، احذف",
+      cancelButtonText: "إلغاء",
+      confirmButtonColor: "#DC2626",
+      cancelButtonColor: "#6B7280",
+    });
+
+    if (!result.isConfirmed) return;
+
+    setIsLoading(true);
+    try {
+      await deleteNews(_id);
+      setNewsItems(newsItems.filter((item) => item._id !== _id));
+
+      await Swal.fire({
+        icon: "success",
+        title: "تم الحذف",
+        text: "تم حذف الخبر بنجاح",
+        confirmButtonColor: "#059669",
+        timer: 2000,
+      });
+    } catch (err) {
+      console.error("Failed to delete news:", err);
+      await Swal.fire({
+        icon: "error",
+        title: "خطأ",
+        text: "حدث خطأ أثناء حذف الخبر، يرجى المحاولة مرة أخرى",
+        confirmButtonColor: "#DC2626",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -244,8 +328,7 @@ const News = () => {
         <div className="flex justify-between items-center mb-8">
           <h1
             className="text-3xl md:text-4xl font-bold text-emerald-800"
-            data-aos="fade-down"
-          >
+            data-aos="fade-down">
             آخر الأخبار والفعاليات
           </h1>
 
@@ -253,15 +336,13 @@ const News = () => {
             <button
               onClick={handleOpenModal}
               className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition flex items-center gap-2 shadow-md"
-              data-aos="fade-left"
-            >
+              data-aos="fade-left">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-5 w-5"
                 fill="none"
                 viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
+                stroke="currentColor">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -277,8 +358,7 @@ const News = () => {
         <p
           className="text-lg mb-12 max-w-3xl text-gray-600"
           data-aos="fade-up"
-          data-aos-delay="100"
-        >
+          data-aos-delay="100">
           تابع أحدث أخبار وفعاليات مدرسة المهاجرين لتعليم القرآن الكريم، واطلع
           على الأنشطة والمسابقات القادمة
         </p>
@@ -292,8 +372,7 @@ const News = () => {
                 <p className="text-center">{error}</p>
                 <button
                   onClick={refreshNews}
-                  className="mx-auto mt-2 block px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
-                >
+                  className="mx-auto mt-2 block px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition">
                   إعادة المحاولة
                 </button>
               </div>
@@ -307,47 +386,46 @@ const News = () => {
                   key={item._id}
                   className="bg-white rounded-lg shadow-lg overflow-hidden transition-transform hover:shadow-xl hover:-translate-y-1"
                   data-aos="fade-up"
-                  data-aos-delay={index * 100}
-                >
+                  data-aos-delay={index * 100}>
                   <img
                     src={item.image}
                     alt={item.title}
                     className="w-full h-64 object-contain bg-gray-50"
                     onError={(e) => {
-                      console.log('Error loading image:', item.image);
+                      console.log("Error loading image:", item.image);
                       // Try to modify the URL if there's an issue
                       const imgElement = e.target as HTMLImageElement;
                       const originalSrc = item.image;
 
                       // If we're already using a placeholder, don't try again
-                      if (originalSrc.includes('placehold.co')) {
+                      if (originalSrc.includes("placehold.co")) {
                         return;
                       }
 
                       // Try different URL patterns
-                      if (originalSrc.includes('uploads/news/')) {
+                      if (originalSrc.includes("uploads/news/")) {
                         // Try removing /api/ if present
-                        if (originalSrc.includes('/api/uploads/')) {
+                        if (originalSrc.includes("/api/uploads/")) {
                           imgElement.src = originalSrc.replace(
-                            '/api/uploads/',
-                            '/uploads/'
+                            "/api/uploads/",
+                            "/uploads/"
                           );
-                          console.log('Trying fallback 1:', imgElement.src);
+                          console.log("Trying fallback 1:", imgElement.src);
                           return;
                         }
 
                         // Try adding the full domain if it's a relative URL
-                        if (originalSrc.startsWith('uploads/')) {
+                        if (originalSrc.startsWith("uploads/")) {
                           imgElement.src = buildNewsImageUrl(originalSrc);
-                          console.log('Trying fallback 2:', imgElement.src);
+                          console.log("Trying fallback 2:", imgElement.src);
                           return;
                         }
                       }
 
                       // If all else fails, use a placeholder
                       imgElement.src =
-                        'https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+الخبر';
-                      console.log('Using placeholder');
+                        "https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+الخبر";
+                      console.log("Using placeholder");
                     }}
                   />
                   <div className="p-6">
@@ -359,7 +437,7 @@ const News = () => {
                         {item.date}
                       </span>
                     </div>
-                    <p className="text-gray-600">{item.content}</p>{' '}
+                    <p className="text-gray-600">{item.content}</p>{" "}
                     <div className="flex flex-wrap justify-between items-center mt-4 gap-2">
                       <button className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition flex items-center gap-1">
                         <span>اقرأ المزيد</span>
@@ -368,8 +446,7 @@ const News = () => {
                           className="h-5 w-5"
                           fill="none"
                           viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
+                          stroke="currentColor">
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -386,15 +463,13 @@ const News = () => {
                             onClick={(e) => {
                               e.stopPropagation();
                               handleEditNews(item);
-                            }}
-                          >
+                            }}>
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               className="h-5 w-5"
                               fill="none"
                               viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
+                              stroke="currentColor">
                               <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -409,15 +484,13 @@ const News = () => {
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDeleteNews(item._id);
-                            }}
-                          >
+                            }}>
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               className="h-5 w-5"
                               fill="none"
                               viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
+                              stroke="currentColor">
                               <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -466,23 +539,20 @@ const News = () => {
       {isModalOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-          onClick={handleCloseModal}
-        >
+          onClick={handleCloseModal}>
           <div
             className="bg-white rounded-lg p-6 w-full max-w-lg"
             onClick={(e) => e.stopPropagation()}
-            data-aos="zoom-in"
-          >
+            data-aos="zoom-in">
             <h3 className="text-2xl font-bold text-emerald-800 mb-6 border-b pb-3">
-              {isEditMode ? 'تعديل الخبر' : 'إضافة خبر جديد'}
+              {isEditMode ? "تعديل الخبر" : "إضافة خبر جديد"}
             </h3>
 
             <form onSubmit={handleAddNews}>
               <div className="mb-4">
                 <label
                   htmlFor="title"
-                  className="block mb-1 font-medium text-gray-700"
-                >
+                  className="block mb-1 font-medium text-gray-700">
                   عنوان الخبر
                 </label>
                 <input
@@ -500,8 +570,7 @@ const News = () => {
               <div className="mb-4">
                 <label
                   htmlFor="date"
-                  className="block mb-1 font-medium text-gray-700"
-                >
+                  className="block mb-1 font-medium text-gray-700">
                   تاريخ الخبر
                 </label>
                 <input
@@ -518,27 +587,57 @@ const News = () => {
               <div className="mb-4">
                 <label
                   htmlFor="image"
-                  className="block mb-1 font-medium text-gray-700"
-                >
+                  className="block mb-2 font-medium text-gray-700">
                   صورة الخبر
                 </label>
                 <div className="flex flex-col gap-4">
-                  <input
-                    type="file"
-                    id="image"
-                    ref={fileInputRef}
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="w-full px-4 py-2 rounded border focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    disabled={isLoading}
-                  />
+                  <label
+                    htmlFor="image"
+                    className="block w-full p-4 border-2 border-dashed border-emerald-300 rounded-lg text-center cursor-pointer hover:border-emerald-500 transition-colors bg-emerald-50/30">
+                    <input
+                      type="file"
+                      id="image"
+                      ref={fileInputRef}
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                      disabled={isLoading}
+                    />
+
+                    <div className="flex flex-col items-center gap-2">
+                      <svg
+                        className="w-12 h-12 text-emerald-400"
+                        stroke="currentColor"
+                        fill="none"
+                        viewBox="0 0 48 48">
+                        <path
+                          d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                          strokeWidth={2}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      <p className="text-sm text-emerald-700 font-medium">
+                        اضغط لاختيار صورة أو اسحبها هنا
+                      </p>
+                      <p className="text-xs text-emerald-600">
+                        PNG, JPG, GIF حتى 5MB
+                      </p>
+                    </div>
+                  </label>
+
                   {newNews.image && (
-                    <div className="h-48 w-full rounded overflow-hidden border border-gray-200">
+                    <div className="relative h-48 w-full rounded-lg overflow-hidden border-2 border-emerald-200 bg-gray-50">
                       <img
                         src={newNews.image}
                         alt="معاينة"
                         className="h-full w-full object-contain"
                       />
+                      {selectedFile && (
+                        <div className="absolute top-2 right-2 bg-emerald-600 text-white px-3 py-1 rounded-full text-xs font-medium shadow-lg">
+                          صورة جديدة
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -547,8 +646,7 @@ const News = () => {
               <div className="mb-4">
                 <label
                   htmlFor="content"
-                  className="block mb-1 font-medium text-gray-700"
-                >
+                  className="block mb-1 font-medium text-gray-700">
                   محتوى الخبر
                 </label>
                 <textarea
@@ -567,24 +665,22 @@ const News = () => {
                   type="button"
                   onClick={handleCloseModal}
                   className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition"
-                  disabled={isLoading}
-                >
+                  disabled={isLoading}>
                   إلغاء
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition flex items-center gap-2"
-                  disabled={isLoading}
-                >
+                  disabled={isLoading}>
                   {isLoading ? (
                     <>
                       <span className="animate-spin h-4 w-4 border-2 border-white rounded-full border-t-transparent"></span>
                       <span>جاري الحفظ...</span>
                     </>
                   ) : isEditMode ? (
-                    'تحديث الخبر'
+                    "تحديث الخبر"
                   ) : (
-                    'إضافة الخبر'
+                    "إضافة الخبر"
                   )}
                 </button>
               </div>

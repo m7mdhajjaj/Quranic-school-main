@@ -228,148 +228,32 @@ const sanitizeNewsData = (data) => {
  */
 const validateNewsData = async (req, res, next) => {
   try {
-    console.log('🔍 بدء التحقق من بيانات الخبر...');
-    
-    const isUpdate = req.method === 'PUT';
-    const rawData = req.body;
-    
-    // Sanitize input data
-    const data = sanitizeNewsData(rawData);
-    
+    const { title, content } = req.body;
     const errors = [];
-    const validatedData = {};
-    
-    // Validate required fields for creation, optional for updates
-    if (!isUpdate || data.title !== undefined) {
-      const titleValidation = validateNewsTitle(data.title);
-      if (!titleValidation.isValid) {
-        errors.push(titleValidation.message);
-      } else {
-        validatedData.title = titleValidation.value;
-      }
+
+    if (!title || title.trim() === "") {
+      errors.push("عنوان الخبر مطلوب");
     }
-    
-    if (!isUpdate || data.content !== undefined) {
-      const contentValidation = validateContent(data.content);
-      if (!contentValidation.isValid) {
-        errors.push(contentValidation.message);
-      } else {
-        validatedData.content = contentValidation.value;
-      }
+    if (!content || content.trim() === "") {
+      errors.push("محتوى الخبر مطلوب");
     }
-    
-    if (!isUpdate || data.author !== undefined) {
-      const authorValidation = validateAuthor(data.author);
-      if (!authorValidation.isValid) {
-        errors.push(authorValidation.message);
-      } else {
-        validatedData.author = authorValidation.value;
-      }
-    }
-    
-    // Validate optional fields
-    if (data.summary !== undefined) {
-      const summaryValidation = validateSummary(data.summary);
-      if (!summaryValidation.isValid) {
-        errors.push(summaryValidation.message);
-      } else {
-        validatedData.summary = summaryValidation.value;
-      }
-    }
-    
-    if (data.category !== undefined) {
-      const categoryValidation = validateCategory(data.category);
-      if (!categoryValidation.isValid) {
-        errors.push(categoryValidation.message);
-      } else {
-        validatedData.category = categoryValidation.value;
-      }
-    }
-    
-    if (data.priority !== undefined) {
-      const priorityValidation = validatePriority(data.priority);
-      if (!priorityValidation.isValid) {
-        errors.push(priorityValidation.message);
-      } else {
-        validatedData.priority = priorityValidation.value;
-      }
-    }
-    
-    if (data.publishDate !== undefined) {
-      const publishDateValidation = validatePublishDate(data.publishDate);
-      if (!publishDateValidation.isValid) {
-        errors.push(publishDateValidation.message);
-      } else {
-        validatedData.publishDate = publishDateValidation.value;
-      }
-    }
-    
-    if (data.tags !== undefined) {
-      const tagsValidation = validateTags(data.tags);
-      if (!tagsValidation.isValid) {
-        errors.push(tagsValidation.message);
-      } else {
-        validatedData.tags = tagsValidation.value;
-      }
-    }
-    
-    // Validate uploaded image file if present
-    if (req.file) {
-      const imageValidation = validateImageFile(req.file);
-      if (!imageValidation.isValid) {
-        errors.push(imageValidation.message);
-      }
-    }
-    
-    // Boolean fields
-    if (data.isPublished !== undefined) {
-      validatedData.isPublished = Boolean(data.isPublished);
-    }
-    
-    if (data.isFeatured !== undefined) {
-      validatedData.isFeatured = Boolean(data.isFeatured);
-    }
-    
-    if (data.allowComments !== undefined) {
-      validatedData.allowComments = Boolean(data.allowComments);
-    }
-    
-    // Check for validation errors
+
     if (errors.length > 0) {
-      console.log('❌ أخطاء في التحقق من بيانات الخبر:', errors);
       return res.status(400).json({
-        success: false,
-        message: 'بيانات الخبر غير صحيحة',
-        errors: errors
+        message: "بيانات الخبر غير صحيحة",
+        errors: errors,
       });
     }
-    
-    // Add validated data to request
-    req.validatedData = validatedData;
-    
-    console.log('✅ تم التحقق من بيانات الخبر بنجاح');
+
     next();
-    
   } catch (error) {
-    console.error('❌ خطأ في التحقق من بيانات الخبر:', error);
     res.status(500).json({
-      success: false,
-      message: 'خطأ في خادم التحقق من البيانات',
-      error: error.message
+      message: "خطأ في خادم التحقق من البيانات",
+      error: error.message,
     });
   }
 };
 
 module.exports = {
   validateNewsData,
-  sanitizeNewsData,
-  validateNewsTitle,
-  validateContent,
-  validateSummary,
-  validateCategory,
-  validatePriority,
-  validateAuthor,
-  validatePublishDate,
-  validateTags,
-  validateImageFile
 };

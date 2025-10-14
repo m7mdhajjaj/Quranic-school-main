@@ -14,24 +14,18 @@ connectDB();
 
 const app = express();
 
-// Middleware - IMPORTANT: Parse body BEFORE logging it!
+// Middleware to parse JSON and URL-encoded bodies.
+// This MUST come before any routes that need to access req.body.
 app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// Request logging middleware - NOW body is parsed!
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
-  if (req.method === "POST" || req.method === "PUT") {
-    console.log("Request body:", JSON.stringify(req.body, null, 2));
-  }
-  next();
-});
+// CORS configuration
 const allowedOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(",")
   : ["http://localhost:5173", "http://localhost:5174"];
 app.use(
   cors({
-    origin: "*", // Allow all origins in development
+    origin: "*", // Allow all origins for development
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: [
       "Content-Type",
@@ -40,9 +34,32 @@ app.use(
       "Accept",
       "X-Requested-With",
     ],
-    credentials: false, // Disable credentials to avoid Socket.io issues
+    credentials: false,
   })
 );
+
+// Centralized request logging middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    console.log(
+      `[${new Date().toISOString()}] ${req.method} ${req.originalUrl} ${
+        res.statusCode
+      } - ${duration}ms`
+    );
+  });
+
+  if (req.method === "POST" || req.method === "PUT") {
+    // Only log body if it exists and has keys
+    if (req.body && Object.keys(req.body).length > 0) {
+      console.log("Request Body:", JSON.stringify(req.body, null, 2));
+    } else {
+      console.log("Request Body: [Empty or Not Parsed]");
+    }
+  }
+  next();
+});
 
 // Add request logging for uploaded files
 app.use((req, res, next) => {

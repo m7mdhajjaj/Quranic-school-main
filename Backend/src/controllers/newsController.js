@@ -1,44 +1,4 @@
 const News = require("../schema/News");
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
-
-// Configure multer for news images
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadDir = path.join(__dirname, "../../public/uploads/news");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    console.log("File will be uploaded to:", uploadDir);
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const fileExt = path.extname(file.originalname);
-    const filename = "news-" + uniqueSuffix + fileExt;
-    console.log("Generated filename:", filename);
-    cb(null, filename);
-  },
-});
-
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit to accommodate larger images
-  fileFilter: (req, file, cb) => {
-    const filetypes = /jpeg|jpg|png|gif/;
-    const extname = filetypes.test(
-      path.extname(file.originalname).toLowerCase(),
-    );
-    const mimetype = filetypes.test(file.mimetype);
-
-    if (mimetype && extname) {
-      return cb(null, true);
-    } else {
-      cb(new Error("Only images are allowed!"));
-    }
-  },
-});
 
 // Get all news items
 exports.getAllNews = async (req, res) => {
@@ -74,33 +34,26 @@ exports.getNewsById = async (req, res) => {
 // Create a new news item
 exports.createNews = async (req, res) => {
   try {
-    const { title, content, date } = req.body;
-    console.log("Creating news with:", { title, content, date });
-    console.log("Uploaded file:", req.file);
+    const { title, content, date, imageUrl } = req.body;
 
     if (!title || !content) {
       return res.status(400).json({ message: "عنوان الخبر ومحتواه مطلوبان" });
     }
 
-    let imageUrl = "https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+خبر";
-
-    // If file was uploaded, use its path
-    if (req.file) {
-      imageUrl = `uploads/news/${req.file.filename}`;
-      console.log("Image URL saved:", imageUrl);
-    }
+    // Use the provided Cloudinary URL or a default placeholder
+    const finalImageUrl =
+      imageUrl && imageUrl.startsWith("http")
+        ? imageUrl
+        : "https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+خبر";
 
     const news = await News.create({
       title,
       content,
       date: date || new Date().toLocaleDateString("ar-SA"),
-      image: imageUrl,
+      image: finalImageUrl,
     });
 
-    res.status(201).json({
-      message: "تم إضافة الخبر بنجاح",
-      news,
-    });
+    res.status(201).json(news);
   } catch (error) {
     console.error("Error creating news:", error);
     res
@@ -112,10 +65,9 @@ exports.createNews = async (req, res) => {
 // Update news item
 exports.updateNews = async (req, res) => {
   try {
-    const { title, content, date, isPublished } = req.body;
+    const { title, content, date, isPublished, imageUrl } = req.body;
     const newsId = req.params.id;
 
-    // Get existing news item
     const news = await News.findById(newsId);
 
     if (!news) {
@@ -128,17 +80,14 @@ exports.updateNews = async (req, res) => {
     if (date) news.date = date;
     if (isPublished !== undefined) news.isPublished = isPublished;
 
-    // Update image if a new file was uploaded
-    if (req.file) {
-      news.image = `uploads/news/${req.file.filename}`;
+    // Update image only if a new Cloudinary URL was provided
+    if (imageUrl && imageUrl.startsWith("http")) {
+      news.image = imageUrl;
     }
 
     await news.save();
 
-    res.status(200).json({
-      message: "تم تحديث الخبر بنجاح",
-      news,
-    });
+    res.status(200).json(news);
   } catch (error) {
     console.error("Error updating news:", error);
     res
@@ -156,11 +105,10 @@ exports.deleteNews = async (req, res) => {
       return res.status(404).json({ message: "الخبر غير موجود" });
     }
 
-    // Delete the news item
     await News.findByIdAndDelete(req.params.id);
 
-    // TODO: Delete associated image file from the filesystem if it's not a placeholder
-    // This requires more complex code to safely delete files and handle errors
+    // Note: Deleting the image from Cloudinary should be handled separately
+    // via the /api/upload route if needed.
 
     res.status(200).json({ message: "تم حذف الخبر بنجاح" });
   } catch (error) {
@@ -171,5 +119,3 @@ exports.deleteNews = async (req, res) => {
   }
 };
 
-// Upload middleware for news image
-exports.uploadNewsImage = upload.single("image");
