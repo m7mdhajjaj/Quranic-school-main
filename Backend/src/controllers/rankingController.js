@@ -172,20 +172,56 @@ exports.createOrUpdateRanking = async (req, res) => {
     const uniqueStudentIds = [...new Set(allStudentIds)];
     const existingStudents = await Student.find({
       _id: { $in: uniqueStudentIds },
-    }).select("_id");
+    }).select("_id group");
 
     const existingStudentIds = existingStudents.map((s) => s._id.toString());
     const invalidStudentIds = uniqueStudentIds.filter(
-      (id) => !existingStudentIds.includes(id),
+      (id) => !existingStudentIds.includes(id)
     );
 
     if (invalidStudentIds.length > 0) {
       return res.status(400).json({
         success: false,
         message: `الطلاب بالمعرفات التالية غير موجودين: ${invalidStudentIds.join(
-          ", ",
+          ", "
         )}`,
       });
+    }
+
+    // If user is a teacher, verify that all students belong to their groups
+    if (req.user && req.user.role === "teacher") {
+      const Teacher = require("../schema/Teacher");
+      const teacher = await Teacher.findById(req.user._id).select("groups");
+
+      if (!teacher || !teacher.groups || teacher.groups.length === 0) {
+        return res.status(403).json({
+          success: false,
+          message: "ليس لديك حلقات مسجلة. يرجى التواصل مع المسؤول",
+        });
+      }
+
+      // Get teacher's group names
+      const teacherGroupNames = teacher.groups.map((g) => g.name);
+
+      // Check if all students belong to teacher's groups
+      const unauthorizedStudents = existingStudents.filter(
+        (student) => !teacherGroupNames.includes(student.group)
+      );
+
+      if (unauthorizedStudents.length > 0) {
+        const studentNames = await Student.find({
+          _id: { $in: unauthorizedStudents.map((s) => s._id) },
+        }).select("firstName fatherName lastName");
+
+        const names = studentNames
+          .map((s) => `${s.firstName} ${s.fatherName} ${s.lastName}`)
+          .join("، ");
+
+        return res.status(403).json({
+          success: false,
+          message: `لا يمكنك إضافة الطلاب التالية لأنهم ليسوا في حلقاتك: ${names}`,
+        });
+      }
     }
 
     // Prepare the topThree data with ranks
@@ -211,7 +247,7 @@ exports.createOrUpdateRanking = async (req, res) => {
         topThree: processedTopThree,
         topTen: processedTopTen,
       },
-      { new: true, upsert: true },
+      { new: true, upsert: true }
     );
 
     res.status(200).json({
