@@ -119,6 +119,10 @@ const TransparentModal: React.FC<{
   children: React.ReactNode;
   cardClassName?: string;
   ariaLabel?: string;
+  title?: string;
+  icon?: React.ReactNode;
+  gradientFrom?: string;
+  gradientTo?: string;
 }> = ({
   open,
   onClose,
@@ -126,11 +130,15 @@ const TransparentModal: React.FC<{
   children,
   cardClassName,
   ariaLabel,
+  title,
+  icon,
+  gradientFrom = "emerald-500",
+  gradientTo = "teal-600",
 }) => {
   if (!open) return null;
   return (
     <div
-      className="fixed inset-0 bg-transparent flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
       role="dialog"
       aria-label={ariaLabel ?? "Modal"}
       aria-modal
@@ -140,11 +148,47 @@ const TransparentModal: React.FC<{
       }}>
       <div
         className={cn(
-          "bg-white/90 backdrop-blur rounded-2xl border shadow-2xl p-6 w-full",
+          "bg-white rounded-2xl shadow-2xl w-full overflow-hidden animate-fadeIn",
           maxWidth,
-          cardClassName ?? "border-emerald-200"
+          cardClassName
         )}>
-        {children}
+        {title && (
+          <div
+            className={cn(
+              "p-6",
+              `bg-gradient-to-r from-${gradientFrom} to-${gradientTo}`
+            )}>
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                {icon && (
+                  <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
+                    {icon}
+                  </div>
+                )}
+                <h3 className="text-xl font-bold text-white">{title}</h3>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="text-white/80 hover:text-white hover:bg-white/20 p-2 rounded-lg transition">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
+        <div className="p-6">{children}</div>
       </div>
     </div>
   );
@@ -1248,41 +1292,103 @@ const ExamSchedule: React.FC = () => {
         open={showAddExamModal}
         onClose={() => setShowAddExamModal(false)}
         maxWidth="max-w-lg"
-        ariaLabel="إضافة امتحان جديد">
-        <h3 className="text-2xl font-extrabold mb-6 text-center text-emerald-700 border-b pb-4 tracking-wide">
-          إضافة امتحان جديد
-        </h3>
-
+        ariaLabel="إضافة امتحان جديد"
+        title="إضافة امتحان جديد"
+        gradientFrom="emerald-500"
+        gradientTo="teal-600"
+        icon={
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6 text-white"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+            />
+          </svg>
+        }>
         {role === "teacher" && teacherGroups.length > 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4 mb-6">
             <div className="flex items-start gap-3">
-              <span className="text-blue-600 text-xl">ℹ️</span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6 text-blue-600 flex-shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
               <div className="text-sm text-blue-800">
-                <p className="font-semibold mb-1">ملاحظة:</p>
+                <p className="font-bold mb-1">ملاحظة:</p>
                 <p>سيتم إضافة هذا الامتحان فقط لطلاب الحلقة المحددة أدناه.</p>
               </div>
             </div>
           </div>
         )}
 
-        <form onSubmit={handleAddExam} className="space-y-5">
-          <Field label="اسم الامتحان" required>
+        <form onSubmit={handleAddExam} className="space-y-6">
+          {/* اسم الامتحان */}
+          <div>
+            <label className="flex items-center gap-2 text-gray-700 text-sm font-bold mb-3">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 text-emerald-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              اسم الامتحان
+              <span className="text-rose-600">*</span>
+            </label>
             <input
-              className="w-full border border-emerald-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-lg bg-emerald-50 placeholder:text-emerald-400"
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition duration-200 outline-none"
               type="text"
               value={newExam.name}
               onChange={(e) =>
                 setNewExam((p) => ({ ...p, name: e.target.value }))
               }
-              placeholder="مثلاً اختبار القرآن"
+              placeholder="مثلاً: اختبار القرآن الشهري"
               required
             />
-          </Field>
+          </div>
 
+          {/* التاريخ والوقت */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="التاريخ" required>
+            <div>
+              <label className="flex items-center gap-2 text-gray-700 text-sm font-bold mb-3">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 text-emerald-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+                التاريخ
+                <span className="text-rose-600">*</span>
+              </label>
               <input
-                className="w-full border border-emerald-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-lg bg-emerald-50"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition duration-200 outline-none"
                 type="date"
                 value={newExam.date}
                 onChange={(e) =>
@@ -1290,10 +1396,27 @@ const ExamSchedule: React.FC = () => {
                 }
                 required
               />
-            </Field>
-            <Field label="الوقت" required>
+            </div>
+            <div>
+              <label className="flex items-center gap-2 text-gray-700 text-sm font-bold mb-3">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 text-emerald-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                الوقت
+                <span className="text-rose-600">*</span>
+              </label>
               <input
-                className="w-full border border-emerald-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-lg bg-emerald-50"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition duration-200 outline-none"
                 type="time"
                 value={newExam.time}
                 onChange={(e) =>
@@ -1301,14 +1424,31 @@ const ExamSchedule: React.FC = () => {
                 }
                 required
               />
-            </Field>
+            </div>
           </div>
 
           {/* اختيار الحلقة للمعلم */}
           {role === "teacher" && teacherGroups.length > 0 && (
-            <Field label="اختر الحلقة" required>
+            <div>
+              <label className="flex items-center gap-2 text-gray-700 text-sm font-bold mb-3">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 text-emerald-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
+                </svg>
+                اختر الحلقة
+                <span className="text-rose-600">*</span>
+              </label>
               <select
-                className="w-full border border-emerald-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-lg bg-emerald-50"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition duration-200 outline-none bg-white"
                 value={selectedGroupForExam}
                 onChange={(e) => setSelectedGroupForExam(e.target.value)}
                 required>
@@ -1318,17 +1458,22 @@ const ExamSchedule: React.FC = () => {
                   </option>
                 ))}
               </select>
-            </Field>
+            </div>
           )}
 
-          <div className="flex justify-between pt-2">
-            <PillButton type="submit">حفظ</PillButton>
-            <PillButton
+          {/* Action buttons */}
+          <div className="flex gap-3 mt-8">
+            <button
               type="button"
-              variant="neutral"
-              onClick={() => setShowAddExamModal(false)}>
+              onClick={() => setShowAddExamModal(false)}
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-6 rounded-xl transition duration-200 border-2 border-gray-200">
               إلغاء
-            </PillButton>
+            </button>
+            <button
+              type="submit"
+              className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-medium py-3 px-8 rounded-xl transition duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02]">
+              إضافة الامتحان
+            </button>
           </div>
         </form>
       </TransparentModal>
@@ -1342,81 +1487,158 @@ const ExamSchedule: React.FC = () => {
         }
         onClose={() => setShowEditExamModal(false)}
         maxWidth="max-w-lg"
-        cardClassName="border-yellow-200"
-        ariaLabel="تعديل الامتحان">
+        ariaLabel="تعديل الامتحان"
+        title="تعديل الامتحان"
+        gradientFrom="amber-500"
+        gradientTo="orange-600"
+        icon={
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6 text-white"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+            />
+          </svg>
+        }>
         {editExam ? (
-          <>
-            <h3 className="text-2xl font-extrabold mb-6 text-center text-yellow-700 border-b pb-4 tracking-wide">
-              تعديل الامتحان
-            </h3>
-            <form onSubmit={handleEditExam} className="space-y-5">
-              <Field label="اسم الامتحان" required>
+          <form onSubmit={handleEditExam} className="space-y-6">
+            {/* اسم الامتحان */}
+            <div>
+              <label className="flex items-center gap-2 text-gray-700 text-sm font-bold mb-3">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 text-amber-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+                اسم الامتحان
+                <span className="text-rose-600">*</span>
+              </label>
+              <input
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-500 focus:ring-4 focus:ring-amber-100 transition duration-200 outline-none"
+                type="text"
+                value={editExam.name}
+                onChange={(e) =>
+                  setEditExam((p) => (p ? { ...p, name: e.target.value } : p))
+                }
+                required
+              />
+            </div>
+
+            {/* التاريخ والوقت */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="flex items-center gap-2 text-gray-700 text-sm font-bold mb-3">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-amber-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                  التاريخ
+                  <span className="text-rose-600">*</span>
+                </label>
                 <input
-                  className="w-full border border-yellow-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-lg bg-yellow-50 placeholder:text-yellow-400"
-                  type="text"
-                  value={editExam.name}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-500 focus:ring-4 focus:ring-amber-100 transition duration-200 outline-none"
+                  type="date"
+                  value={editExam.date}
                   onChange={(e) =>
-                    setEditExam((p) => (p ? { ...p, name: e.target.value } : p))
+                    setEditExam((p) => (p ? { ...p, date: e.target.value } : p))
                   }
                   required
                 />
-              </Field>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label="التاريخ" required>
-                  <input
-                    className="w-full border border-yellow-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-lg bg-yellow-50"
-                    type="date"
-                    value={editExam.date}
-                    onChange={(e) =>
-                      setEditExam((p) =>
-                        p ? { ...p, date: e.target.value } : p
-                      )
-                    }
-                    required
-                  />
-                </Field>
-                <Field label="الوقت" required>
-                  <input
-                    className="w-full border border-yellow-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-lg bg-yellow-50"
-                    type="time"
-                    value={editExam.time}
-                    onChange={(e) =>
-                      setEditExam((p) =>
-                        p ? { ...p, time: e.target.value } : p
-                      )
-                    }
-                    required
-                  />
-                </Field>
               </div>
+              <div>
+                <label className="flex items-center gap-2 text-gray-700 text-sm font-bold mb-3">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-amber-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  الوقت
+                  <span className="text-rose-600">*</span>
+                </label>
+                <input
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-500 focus:ring-4 focus:ring-amber-100 transition duration-200 outline-none"
+                  type="time"
+                  value={editExam.time}
+                  onChange={(e) =>
+                    setEditExam((p) => (p ? { ...p, time: e.target.value } : p))
+                  }
+                  required
+                />
+              </div>
+            </div>
 
-              {/* عرض الحلقة فقط للمعلم */}
-              {editExam.group && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-center gap-2 text-sm text-blue-800">
-                    <span className="font-semibold">الحلقة:</span>
-                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-medium">
-                      <span>📚</span>
-                      {editExam.group}
-                    </span>
-                  </div>
+            {/* عرض الحلقة فقط للمعلم */}
+            {editExam.group && (
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4">
+                <div className="flex items-center gap-2 text-sm text-blue-800">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-blue-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                    />
+                  </svg>
+                  <span className="font-semibold">الحلقة:</span>
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-medium">
+                    <span>📚</span>
+                    {editExam.group}
+                  </span>
                 </div>
-              )}
-
-              <div className="flex justify-between pt-2">
-                <PillButton type="submit" variant="warn">
-                  حفظ التعديل
-                </PillButton>
-                <PillButton
-                  type="button"
-                  variant="neutral"
-                  onClick={() => setShowEditExamModal(false)}>
-                  إلغاء
-                </PillButton>
               </div>
-            </form>
-          </>
+            )}
+
+            {/* Action buttons */}
+            <div className="flex gap-3 mt-8">
+              <button
+                type="button"
+                onClick={() => setShowEditExamModal(false)}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-6 rounded-xl transition duration-200 border-2 border-gray-200">
+                إلغاء
+              </button>
+              <button
+                type="submit"
+                className="flex-1 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-medium py-3 px-8 rounded-xl transition duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02]">
+                حفظ التعديل
+              </button>
+            </div>
+          </form>
         ) : null}
       </TransparentModal>
 
