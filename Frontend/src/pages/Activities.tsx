@@ -46,7 +46,7 @@ const Activities = () => {
   const [currentActivity, setCurrentActivity] = useState<ActivityFormData>({
     title: "",
     description: "",
-    date: "",
+    date: new Date().toISOString().split("T")[0], // تاريخ اليوم بصيغة YYYY-MM-DD
     image: "",
     category: "درس",
   });
@@ -159,7 +159,7 @@ const Activities = () => {
     setCurrentActivity({
       title: "",
       description: "",
-      date: "",
+      date: new Date().toISOString().split('T')[0], // تاريخ اليوم بصيغة YYYY-MM-DD
       image: "",
       category: "درس",
     });
