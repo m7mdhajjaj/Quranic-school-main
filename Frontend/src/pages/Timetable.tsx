@@ -83,6 +83,53 @@ const Timetable = () => {
         }
       }
 
+      // للمعلم: عرض مواعيد حلقاته فقط
+      if (role === "teacher" && user) {
+        try {
+          const currentUser = JSON.parse(user);
+
+          console.log("👨‍🏫 معلم - جلب حلقات المعلم...");
+
+          // جلب الحلقات من Groups API
+          const { getAllGroups } = await import("../Api/groupApi");
+          const groupsRes = await getAllGroups();
+
+          if (groupsRes.success && Array.isArray(groupsRes.data)) {
+            const possibleNames = getTeacherPossibleNames(currentUser);
+            console.log("📋 أسماء المعلم المحتملة:", possibleNames);
+
+            // فلترة الحلقات التي تخص هذا المعلم
+            const teacherGroupsData = groupsRes.data.filter((group: any) => {
+              if (!group.teacher) return false;
+              return isTeacherMatch(group.teacher, possibleNames);
+            });
+
+            const teacherGroupNames = teacherGroupsData.map((g: any) => g.name);
+            console.log(`📋 حلقات المعلم:`, teacherGroupNames);
+
+            if (teacherGroupNames.length > 0) {
+              // فلترة المواعيد لتظهر فقط مواعيد حلقات هذا المعلم
+              filteredData = filteredData.filter((session) => {
+                const match = teacherGroupNames.includes(session.note);
+                if (match) {
+                  console.log("✅ موعد مطابق للمعلم:", session);
+                }
+                return match;
+              });
+              console.log(`📋 عدد المواعيد للمعلم: ${filteredData.length}`);
+            } else {
+              console.warn("⚠️ المعلم ليس لديه حلقات محددة");
+              filteredData = [];
+            }
+          } else {
+            console.error("❌ فشل في جلب الحلقات");
+            filteredData = [];
+          }
+        } catch (e) {
+          console.error("خطأ في تحليل بيانات المعلم:", e);
+        }
+      }
+
       setSessions(filteredData);
     } catch (error) {
       console.error("Error fetching sessions:", error);
