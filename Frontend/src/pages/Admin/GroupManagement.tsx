@@ -4,7 +4,7 @@ import React, {
   useCallback,
   useMemo,
   useRef,
-} from "react";
+} from 'react';
 import {
   FaEdit,
   FaTrash,
@@ -23,36 +23,29 @@ import {
   FaTimes,
   FaSync,
   FaUserGraduate,
-} from "react-icons/fa";
-import { useAuth } from "../../hooks/useAuth";
-import AddGroupForm from "../../components/Forms/AddGroupForm";
-import ResponsivePagination from "../../components/Pagination/ResponsivePagination";
-import {
-  getAllGroups,
-  deleteGroup,
-  // getGroupsByTeacher, // Ready for future API-based filtering
-  // createGroup, // Ready for future form integration
-  // updateGroup, // Ready for future edit functionality
-  type Group,
-} from "../../Api/groupApi";
-import { getAllTeachers } from "../../Api/teacherApi";
-import { type GroupFormData } from "../../Validation/groupValidation";
+} from 'react-icons/fa';
+import { useAuth } from '../../hooks/useAuth';
+import AddGroupForm from '../../components/Forms/AddGroupForm';
+import ResponsivePagination from '../../components/Pagination/ResponsivePagination';
+import { getAllGroups, deleteGroup, type Group } from '../../Api/groupApi';
+import { getAllTeachers } from '../../Api/teacherApi';
+import { type GroupFormData } from '../../Validation/groupValidation';
 import {
   showCenteredSwal,
   showSuccessMessage,
   showErrorMessage,
-} from "../../utils/sweetalertUtils";
+} from '../../utils/sweetalertUtils';
 
-type SortField = "name" | "teacher" | "capacity";
-type SortOrder = "asc" | "desc";
+type SortField = 'name' | 'teacher' | 'capacity';
+type SortOrder = 'asc' | 'desc';
 
 const GroupManagement: React.FC = () => {
   const { user: currentUser } = useAuth();
   // Socket temporarily disabled for groups - can be added later
   // const { onGroupUpdate, offGroupUpdate, isConnected } = useSocket();
   const isConnected = false; // Fallback mode - will show auto refresh indicator
-  const userRole = currentUser?.role || "";
-  const hasPermission = userRole === "teacher" || userRole === "admin";
+  const userRole = currentUser?.role || '';
+  const hasPermission = userRole === 'teacher' || userRole === 'admin';
 
   // Core States
   const [groups, setGroups] = useState<Group[]>([]);
@@ -66,25 +59,25 @@ const GroupManagement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Enhanced Filter & Search States
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedTeacher, setSelectedTeacher] = useState("all");
-  const [capacityFilter, setCapacityFilter] = useState("all"); // جديد: تصفية حسب السعة
-  const [statusFilter, setStatusFilter] = useState("all"); // جديد: تصفية حسب الحالة
-  const [occupancyFilter, setOccupancyFilter] = useState("all"); // جديد: تصفية حسب الإشغال
-  const [dayFilter, setDayFilter] = useState("all"); // جديد: تصفية حسب اليوم
-  const [timeFilter, setTimeFilter] = useState("all"); // جديد: تصفية حسب الوقت
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTeacher, setSelectedTeacher] = useState('all');
+  const [capacityFilter, setCapacityFilter] = useState('all'); // جديد: تصفية حسب السعة
+  const [statusFilter, setStatusFilter] = useState('all'); // جديد: تصفية حسب الحالة
+  const [occupancyFilter, setOccupancyFilter] = useState('all'); // جديد: تصفية حسب الإشغال
+  const [dayFilter, setDayFilter] = useState('all'); // جديد: تصفية حسب اليوم
+  const [timeFilter, setTimeFilter] = useState('all'); // جديد: تصفية حسب الوقت
   const [showFilters, setShowFilters] = useState(false);
 
   // Sorting States
-  const [sortField, setSortField] = useState<SortField>("name");
-  const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
+  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
 
   // Pagination States
   const [currentPage, setCurrentPage] = useState(1);
   const [groupsPerPage, setGroupsPerPage] = useState(10);
 
   // View Mode State
-  const [viewMode, setViewMode] = useState<"table" | "grid">("table");
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
 
   // Selected Groups for Bulk Actions
   const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set());
@@ -92,30 +85,38 @@ const GroupManagement: React.FC = () => {
   // Enhanced Active Filters Count
   const activeFiltersCount = useMemo(() => {
     let count = 0;
-    if (selectedTeacher !== "all") count++;
-    if (capacityFilter !== "all") count++;
-    if (statusFilter !== "all") count++;
-    if (occupancyFilter !== "all") count++;
-    if (dayFilter !== "all") count++;
-    if (timeFilter !== "all") count++;
+    if (selectedTeacher !== 'all') count++;
+    if (capacityFilter !== 'all') count++;
+    if (statusFilter !== 'all') count++;
+    if (occupancyFilter !== 'all') count++;
+    if (dayFilter !== 'all') count++;
+    if (timeFilter !== 'all') count++;
     if (searchTerm) count++;
     return count;
-  }, [selectedTeacher, capacityFilter, statusFilter, occupancyFilter, dayFilter, timeFilter, searchTerm]);
+  }, [
+    selectedTeacher,
+    capacityFilter,
+    statusFilter,
+    occupancyFilter,
+    dayFilter,
+    timeFilter,
+    searchTerm,
+  ]);
 
   // Fetch all teachers for filter dropdown
   const fetchTeachers = useCallback(async () => {
     if (teachersFetched.current) return; // Prevent multiple fetches
 
     try {
-      console.log("🔍 بدء جلب المعلمين للفلتر...");
+      console.log('🔍 بدء جلب المعلمين للفلتر...');
       const result = await getAllTeachers();
-      console.log("📊 نتيجة جلب المعلمين:", result);
+      console.log('📊 نتيجة جلب المعلمين:', result);
 
       if (result.success && result.data && Array.isArray(result.data)) {
-        console.log("✅ عدد المعلمين:", result.data.length);
+        console.log('✅ عدد المعلمين:', result.data.length);
 
         if (result.data.length === 0) {
-          console.warn("⚠️ لا يوجد معلمين في قاعدة البيانات");
+          console.warn('⚠️ لا يوجد معلمين في قاعدة البيانات');
           teachersFetched.current = true;
           return;
         }
@@ -134,15 +135,15 @@ const GroupManagement: React.FC = () => {
           .filter(Boolean)
           .sort();
 
-        console.log("📝 أسماء المعلمين:", teacherNames);
+        console.log('📝 أسماء المعلمين:', teacherNames);
         setAllTeachers(teacherNames);
         teachersFetched.current = true;
       } else {
-        console.warn("⚠️ استجابة غير صالحة من الخادم:", result);
+        console.warn('⚠️ استجابة غير صالحة من الخادم:', result);
         teachersFetched.current = true;
       }
     } catch (error) {
-      console.error("❌ خطأ في جلب المعلمين:", error);
+      console.error('❌ خطأ في جلب المعلمين:', error);
       teachersFetched.current = true;
     }
   }, []);
@@ -153,7 +154,7 @@ const GroupManagement: React.FC = () => {
     setError(null);
 
     try {
-      console.log("🚀 بدء تحميل بيانات الحلقات مع عدد الطلاب المحسن...");
+      console.log('🚀 بدء تحميل بيانات الحلقات مع عدد الطلاب المحسن...');
       const startTime = performance.now();
 
       const result = await getAllGroups();
@@ -165,12 +166,12 @@ const GroupManagement: React.FC = () => {
         const cleanedGroups = result.data.map(
           (group: Group & { teacherName?: string }) => ({
             ...group,
-            name: group.name || "",
+            name: group.name || '',
             // دعم البيانات القديمة: استخدم teacherName إذا كان teacher غير موجود
-            teacher: group.teacher || group.teacherName || "غير محدد",
+            teacher: group.teacher || group.teacherName || 'غير محدد',
             capacity: group.capacity || 30,
-            description: group.description || "",
-            schedule: group.schedule || "غير محدد",
+            description: group.description || '',
+            schedule: group.schedule || 'غير محدد',
             isActive: group.isActive !== false,
             currentStudents: group.currentStudents || 0, // عدد الطلاب المشتركين
           })
@@ -189,7 +190,7 @@ const GroupManagement: React.FC = () => {
             1000
           ).toFixed(0)} حلقة/ثانية`
         );
-        console.log("📊 إحصائيات سريعة:", {
+        console.log('📊 إحصائيات سريعة:', {
           totalGroups: cleanedGroups.length,
           totalStudents,
           avgStudentsPerGroup: (totalStudents / cleanedGroups.length).toFixed(
@@ -200,15 +201,15 @@ const GroupManagement: React.FC = () => {
         setGroups(cleanedGroups);
         setError(null);
       } else {
-        throw new Error(result.message || "البيانات المستلمة غير صحيحة");
+        throw new Error(result.message || 'البيانات المستلمة غير صحيحة');
       }
     } catch (error: unknown) {
       console.error(`❌ خطأ في تحميل الحلقات:`, error);
 
-      let errorMessage = "حدث خطأ في تحميل البيانات";
+      let errorMessage = 'حدث خطأ في تحميل البيانات';
 
       if (error instanceof Error) {
-        errorMessage = error.message || "خطأ غير محدد";
+        errorMessage = error.message || 'خطأ غير محدد';
       }
 
       setError(errorMessage);
@@ -229,7 +230,7 @@ const GroupManagement: React.FC = () => {
     // Auto refresh every 30 seconds as fallback when socket not connected
     const refreshInterval = setInterval(() => {
       if (!isConnected) {
-        console.log("🔄 تحديث تلقائي للحلقات (وضع احتياطي)");
+        console.log('🔄 تحديث تلقائي للحلقات (وضع احتياطي)');
         fetchGroups(); // Always fetch all groups, filtering is done in frontend
         // Don't refetch teachers in auto-refresh
       }
@@ -250,7 +251,7 @@ const GroupManagement: React.FC = () => {
       ].sort();
       if (teachersFromGroups.length > 0) {
         console.log(
-          "📋 استخدام المعلمين من الحلقات كخطة احتياطية:",
+          '📋 استخدام المعلمين من الحلقات كخطة احتياطية:',
           teachersFromGroups
         );
         setAllTeachers(teachersFromGroups);
@@ -261,16 +262,16 @@ const GroupManagement: React.FC = () => {
   // Handle sorting
   const handleSort = (field: SortField) => {
     if (sortField === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
       setSortField(field);
-      setSortOrder("asc");
+      setSortOrder('asc');
     }
   };
 
   // Enhanced filtering and sorting with multiple criteria
   const filteredAndSortedGroups = useMemo(() => {
-    console.log("🔍 بدء الفلترة المتقدمة...", {
+    console.log('🔍 بدء الفلترة المتقدمة...', {
       totalGroups: groups.length,
       activeFilters: {
         teacher: selectedTeacher,
@@ -280,86 +281,119 @@ const GroupManagement: React.FC = () => {
         day: dayFilter,
         time: timeFilter,
         search: searchTerm,
-      }
+      },
     });
 
     const filtered = groups.filter((group) => {
       // 1. البحث النصي المتقدم
       const searchLower = searchTerm.toLowerCase();
-      const matchesSearch = !searchTerm || 
-        (group.name || "").toLowerCase().includes(searchLower) ||
-        (group.description || "").toLowerCase().includes(searchLower) ||
-        (group.teacher || "").toLowerCase().includes(searchLower) ||
-        (group.schedule || "").toLowerCase().includes(searchLower) ||
+      const matchesSearch =
+        !searchTerm ||
+        (group.name || '').toLowerCase().includes(searchLower) ||
+        (group.description || '').toLowerCase().includes(searchLower) ||
+        (group.teacher || '').toLowerCase().includes(searchLower) ||
+        (group.schedule || '').toLowerCase().includes(searchLower) ||
         // البحث في جدول الأوقات
-        (group.timetable && group.timetable.some(session => 
-          session.day.toLowerCase().includes(searchLower) ||
-          session.startHour.toLowerCase().includes(searchLower) ||
-          session.endHour.toLowerCase().includes(searchLower)
-        ));
+        (group.timetable &&
+          group.timetable.some(
+            (session) =>
+              session.day.toLowerCase().includes(searchLower) ||
+              session.startHour.toLowerCase().includes(searchLower) ||
+              session.endHour.toLowerCase().includes(searchLower)
+          ));
 
       // 2. فلتر المعلم
-      const matchesTeacher = selectedTeacher === "all" || group.teacher === selectedTeacher;
+      const matchesTeacher =
+        selectedTeacher === 'all' || group.teacher === selectedTeacher;
 
       // 3. فلتر السعة
-      const matchesCapacity = capacityFilter === "all" || 
-        (capacityFilter === "small" && (group.capacity || 0) <= 15) ||
-        (capacityFilter === "medium" && (group.capacity || 0) > 15 && (group.capacity || 0) <= 25) ||
-        (capacityFilter === "large" && (group.capacity || 0) > 25);
+      const matchesCapacity =
+        capacityFilter === 'all' ||
+        (capacityFilter === 'small' && (group.capacity || 0) <= 15) ||
+        (capacityFilter === 'medium' &&
+          (group.capacity || 0) > 15 &&
+          (group.capacity || 0) <= 25) ||
+        (capacityFilter === 'large' && (group.capacity || 0) > 25);
 
       // 4. فلتر الحالة (نشط/غير نشط)
-      const matchesStatus = statusFilter === "all" ||
-        (statusFilter === "active" && group.isActive) ||
-        (statusFilter === "inactive" && !group.isActive);
+      const matchesStatus =
+        statusFilter === 'all' ||
+        (statusFilter === 'active' && group.isActive) ||
+        (statusFilter === 'inactive' && !group.isActive);
 
       // 5. فلتر الإشغال
-      const occupancyPercentage = group.capacity ? ((group.currentStudents || 0) / group.capacity) * 100 : 0;
-      const matchesOccupancy = occupancyFilter === "all" ||
-        (occupancyFilter === "empty" && (group.currentStudents || 0) === 0) ||
-        (occupancyFilter === "low" && occupancyPercentage > 0 && occupancyPercentage <= 50) ||
-        (occupancyFilter === "medium" && occupancyPercentage > 50 && occupancyPercentage <= 80) ||
-        (occupancyFilter === "high" && occupancyPercentage > 80 && occupancyPercentage < 100) ||
-        (occupancyFilter === "full" && occupancyPercentage >= 100);
+      const occupancyPercentage = group.capacity
+        ? ((group.currentStudents || 0) / group.capacity) * 100
+        : 0;
+      const matchesOccupancy =
+        occupancyFilter === 'all' ||
+        (occupancyFilter === 'empty' && (group.currentStudents || 0) === 0) ||
+        (occupancyFilter === 'low' &&
+          occupancyPercentage > 0 &&
+          occupancyPercentage <= 50) ||
+        (occupancyFilter === 'medium' &&
+          occupancyPercentage > 50 &&
+          occupancyPercentage <= 80) ||
+        (occupancyFilter === 'high' &&
+          occupancyPercentage > 80 &&
+          occupancyPercentage < 100) ||
+        (occupancyFilter === 'full' && occupancyPercentage >= 100);
 
       // 6. فلتر اليوم
-      const matchesDay = dayFilter === "all" ||
-        (group.timetable && group.timetable.some(session => session.day === dayFilter));
+      const matchesDay =
+        dayFilter === 'all' ||
+        (group.timetable &&
+          group.timetable.some((session) => session.day === dayFilter));
 
       // 7. فلتر الوقت
-      const matchesTime = timeFilter === "all" ||
-        (timeFilter === "morning" && group.timetable && group.timetable.some(session => {
-          const startHour = parseInt(session.startHour.split(':')[0]);
-          return startHour >= 6 && startHour < 12;
-        })) ||
-        (timeFilter === "afternoon" && group.timetable && group.timetable.some(session => {
-          const startHour = parseInt(session.startHour.split(':')[0]);
-          return startHour >= 12 && startHour < 18;
-        })) ||
-        (timeFilter === "evening" && group.timetable && group.timetable.some(session => {
-          const startHour = parseInt(session.startHour.split(':')[0]);
-          return startHour >= 18 && startHour < 24;
-        }));
+      const matchesTime =
+        timeFilter === 'all' ||
+        (timeFilter === 'morning' &&
+          group.timetable &&
+          group.timetable.some((session) => {
+            const startHour = parseInt(session.startHour.split(':')[0]);
+            return startHour >= 6 && startHour < 12;
+          })) ||
+        (timeFilter === 'afternoon' &&
+          group.timetable &&
+          group.timetable.some((session) => {
+            const startHour = parseInt(session.startHour.split(':')[0]);
+            return startHour >= 12 && startHour < 18;
+          })) ||
+        (timeFilter === 'evening' &&
+          group.timetable &&
+          group.timetable.some((session) => {
+            const startHour = parseInt(session.startHour.split(':')[0]);
+            return startHour >= 18 && startHour < 24;
+          }));
 
-      return matchesSearch && matchesTeacher && matchesCapacity && 
-             matchesStatus && matchesOccupancy && matchesDay && matchesTime;
+      return (
+        matchesSearch &&
+        matchesTeacher &&
+        matchesCapacity &&
+        matchesStatus &&
+        matchesOccupancy &&
+        matchesDay &&
+        matchesTime
+      );
     });
 
     // الترتيب المحسن
     filtered.sort((a, b) => {
       let compareResult = 0;
 
-      if (sortField === "name") {
-        compareResult = (a.name || "").localeCompare(b.name || "", "ar");
-      } else if (sortField === "teacher") {
-        compareResult = (a.teacher || "").localeCompare(b.teacher || "", "ar");
-      } else if (sortField === "capacity") {
+      if (sortField === 'name') {
+        compareResult = (a.name || '').localeCompare(b.name || '', 'ar');
+      } else if (sortField === 'teacher') {
+        compareResult = (a.teacher || '').localeCompare(b.teacher || '', 'ar');
+      } else if (sortField === 'capacity') {
         compareResult = (a.capacity || 0) - (b.capacity || 0);
       }
 
-      return sortOrder === "asc" ? compareResult : -compareResult;
+      return sortOrder === 'asc' ? compareResult : -compareResult;
     });
 
-    console.log("✅ نتيجة الفلترة المتقدمة:", {
+    console.log('✅ نتيجة الفلترة المتقدمة:', {
       إجمالي_الحلقات: groups.length,
       الحلقات_المفلترة: filtered.length,
       الفلاتر_النشطة: activeFiltersCount,
@@ -392,18 +426,18 @@ const GroupManagement: React.FC = () => {
   // Handle delete
   const handleDelete = async (groupId: string) => {
     const result = await showCenteredSwal({
-      title: "تأكيد حذف الحلقة",
-      text: "هل أنت متأكد من حذف هذه الحلقة؟",
-      icon: "warning",
+      title: 'تأكيد حذف الحلقة',
+      text: 'هل أنت متأكد من حذف هذه الحلقة؟',
+      icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "نعم، احذف",
-      cancelButtonText: "إلغاء",
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'نعم، احذف',
+      cancelButtonText: 'إلغاء',
       reverseButtons: true,
       customClass: {
-        popup: "rtl-popup",
-        title: "rtl-title",
+        popup: 'rtl-popup',
+        title: 'rtl-title',
       },
     });
 
@@ -413,9 +447,9 @@ const GroupManagement: React.FC = () => {
 
         setGroups((prevGroups) => prevGroups.filter((g) => g._id !== groupId));
 
-        await showSuccessMessage("تم الحذف!", "تم حذف الحلقة بنجاح");
+        await showSuccessMessage('تم الحذف!', 'تم حذف الحلقة بنجاح');
       } catch (deleteError: unknown) {
-        console.error("❌ فشل في حذف الحلقة:", deleteError);
+        console.error('❌ فشل في حذف الحلقة:', deleteError);
 
         // التعامل مع خطأ وجود طلاب مرتبطين
         const error = deleteError as {
@@ -428,7 +462,7 @@ const GroupManagement: React.FC = () => {
           const { studentsCount } = error.response.data.details;
 
           await showCenteredSwal({
-            title: "⚠️ لا يمكن حذف الحلقة ⚠️",
+            title: '⚠️ لا يمكن حذف الحلقة ⚠️',
             html: `
               <div class="text-center py-4">
                 <div class="mx-auto w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mb-4 animate-pulse">
@@ -442,22 +476,22 @@ const GroupManagement: React.FC = () => {
                 <p class="text-xs text-yellow-600">أو إلغاء تسجيلهم من الحلقة</p>
               </div>
             `,
-            icon: "warning",
+            icon: 'warning',
             timer: 7000,
             timerProgressBar: true,
             showConfirmButton: true,
-            confirmButtonText: "فهمت",
+            confirmButtonText: 'فهمت',
             customClass: {
-              popup: "rtl-popup swal2-rtl-popup swal2-center-popup",
-              title: "rtl-title",
-              htmlContainer: "rtl-content",
+              popup: 'rtl-popup swal2-rtl-popup swal2-center-popup',
+              title: 'rtl-title',
+              htmlContainer: 'rtl-content',
             },
           });
         } else {
           // خطأ عام
           await showErrorMessage(
-            "خطأ!",
-            error.response?.data?.message || "حدث خطأ أثناء حذف الحلقة"
+            'خطأ!',
+            error.response?.data?.message || 'حدث خطأ أثناء حذف الحلقة'
           );
         }
       }
@@ -474,7 +508,7 @@ const GroupManagement: React.FC = () => {
   // Handle add/edit success
   const handleAddSuccess = async (data?: Group | GroupFormData) => {
     try {
-      console.log("تمت العملية بنجاح:", data);
+      console.log('تمت العملية بنجاح:', data);
       fetchGroups();
       setIsFormVisible(false);
       setIsEditMode(false);
@@ -482,59 +516,59 @@ const GroupManagement: React.FC = () => {
 
       // SweetAlert for success
       await showSuccessMessage(
-        isEditMode ? "تم التحديث!" : "تم الإضافة!",
+        isEditMode ? 'تم التحديث!' : 'تم الإضافة!',
         isEditMode
-          ? "تم تحديث بيانات الحلقة بنجاح"
-          : "تم إضافة الحلقة الجديدة بنجاح"
+          ? 'تم تحديث بيانات الحلقة بنجاح'
+          : 'تم إضافة الحلقة الجديدة بنجاح'
       );
     } catch (error) {
-      console.error("خطأ في حفظ الحلقة:", error);
+      console.error('خطأ في حفظ الحلقة:', error);
 
-      await showErrorMessage("خطأ!", "حدث خطأ أثناء حفظ بيانات الحلقة");
+      await showErrorMessage('خطأ!', 'حدث خطأ أثناء حفظ بيانات الحلقة');
     }
   };
 
   // Export to CSV
   const handleExport = () => {
     const headers = [
-      "اسم الحلقة",
-      "المعلم",
-      "السعة",
-      "الطلاب المشتركين",
-      "المواعيد",
-      "الوصف",
+      'اسم الحلقة',
+      'المعلم',
+      'السعة',
+      'الطلاب المشتركين',
+      'المواعيد',
+      'الوصف',
     ];
     const rows = filteredAndSortedGroups.map((g) => [
       g.name,
       g.teacher,
       g.capacity,
       g.currentStudents || 0,
-      g.schedule || "",
-      g.description || "",
+      g.schedule || '',
+      g.description || '',
     ]);
 
     const csvContent = [headers, ...rows]
-      .map((row) => row.join(","))
-      .join("\n");
+      .map((row) => row.join(','))
+      .join('\n');
 
-    const blob = new Blob(["\ufeff" + csvContent], {
-      type: "text/csv;charset=utf-8;",
+    const blob = new Blob(['\ufeff' + csvContent], {
+      type: 'text/csv;charset=utf-8;',
     });
-    const link = document.createElement("a");
+    const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `groups_${new Date().toISOString().split("T")[0]}.csv`;
+    link.download = `groups_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
   };
 
   // Enhanced reset filters
   const resetFilters = () => {
-    setSearchTerm("");
-    setSelectedTeacher("all");
-    setCapacityFilter("all");
-    setStatusFilter("all");
-    setOccupancyFilter("all");
-    setDayFilter("all");
-    setTimeFilter("all");
+    setSearchTerm('');
+    setSelectedTeacher('all');
+    setCapacityFilter('all');
+    setStatusFilter('all');
+    setOccupancyFilter('all');
+    setDayFilter('all');
+    setTimeFilter('all');
     setCurrentPage(1);
   };
 
@@ -545,13 +579,13 @@ const GroupManagement: React.FC = () => {
 
     const result = await showCenteredSwal({
       title: `حذف ${selectedGroups.size} حلقة`,
-      text: "هل أنت متأكد من حذف الحلقات المحددة؟",
-      icon: "warning",
+      text: 'هل أنت متأكد من حذف الحلقات المحددة؟',
+      icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "نعم، احذف الكل",
-      cancelButtonText: "إلغاء",
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'نعم، احذف الكل',
+      cancelButtonText: 'إلغاء',
     });
 
     if (result.isConfirmed) {
@@ -561,18 +595,18 @@ const GroupManagement: React.FC = () => {
         );
 
         setGroups((prev) =>
-          prev.filter((g) => !selectedGroups.has(g._id || ""))
+          prev.filter((g) => !selectedGroups.has(g._id || ''))
         );
         setSelectedGroups(new Set());
 
         await showSuccessMessage(
-          "تم الحذف!",
-          "تم حذف الحلقات بنجاح",
+          'تم الحذف!',
+          'تم حذف الحلقات بنجاح',
           `${selectedGroups.size} حلقة`
         );
       } catch (bulkDeleteError) {
-        console.error("❌ فشل في حذف الحلقات:", bulkDeleteError);
-        await showErrorMessage("خطأ!", "حدث خطأ أثناء حذف الحلقات");
+        console.error('❌ فشل في حذف الحلقات:', bulkDeleteError);
+        await showErrorMessage('خطأ!', 'حدث خطأ أثناء حذف الحلقات');
       }
     }
   };
@@ -593,7 +627,7 @@ const GroupManagement: React.FC = () => {
     if (selectedGroups.size === currentGroups.length) {
       setSelectedGroups(new Set());
     } else {
-      setSelectedGroups(new Set(currentGroups.map((g) => g._id || "")));
+      setSelectedGroups(new Set(currentGroups.map((g) => g._id || '')));
     }
   };
 
@@ -613,7 +647,8 @@ const GroupManagement: React.FC = () => {
     <>
       <div
         className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4 md:p-6"
-        dir="rtl">
+        dir="rtl"
+      >
         <div className="max-w-full mx-auto px-2">
           {/* Header Section */}
           <div className="bg-white rounded-2xl shadow-xl p-6 mb-6 border border-gray-100">
@@ -634,13 +669,15 @@ const GroupManagement: React.FC = () => {
                       <div className="flex items-center gap-1.5">
                         <div
                           className={`w-2 h-2 rounded-full ${
-                            isConnected ? "bg-green-500" : "bg-yellow-500"
-                          } animate-pulse`}></div>
+                            isConnected ? 'bg-green-500' : 'bg-yellow-500'
+                          } animate-pulse`}
+                        ></div>
                         <span
                           className={`text-xs ${
-                            isConnected ? "text-green-600" : "text-yellow-600"
-                          }`}>
-                          {isConnected ? "متصل مباشرة" : "تحديث تلقائي"}
+                            isConnected ? 'text-green-600' : 'text-yellow-600'
+                          }`}
+                        >
+                          {isConnected ? 'متصل مباشرة' : 'تحديث تلقائي'}
                         </span>
                       </div>
                     </div>
@@ -652,7 +689,8 @@ const GroupManagement: React.FC = () => {
                 <button
                   onClick={handleExport}
                   disabled={filteredAndSortedGroups.length === 0}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl hover:from-purple-600 hover:to-pink-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed">
+                  className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl hover:from-purple-600 hover:to-pink-700 transition-all duration-200 shadow-md hover:shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed"
+                >
                   <FaDownload className="w-4 h-4" />
                   تصدير
                 </button>
@@ -663,7 +701,8 @@ const GroupManagement: React.FC = () => {
                     setIsEditMode(false);
                     setIsFormVisible(true);
                   }}
-                  className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg">
+                  className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                >
                   <FaPlus className="w-4 h-4" />
                   إضافة حلقة جديدة
                 </button>
@@ -687,9 +726,10 @@ const GroupManagement: React.FC = () => {
                   <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   {searchTerm && (
                     <button
-                      onClick={() => setSearchTerm("")}
+                      onClick={() => setSearchTerm('')}
                       className="absolute left-12 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      title="مسح البحث">
+                      title="مسح البحث"
+                    >
                       <FaTimes className="w-4 h-4" />
                     </button>
                   )}
@@ -699,26 +739,28 @@ const GroupManagement: React.FC = () => {
                   {/* View Mode Toggle */}
                   <div className="flex-1 flex items-center border border-gray-300 rounded-xl p-1">
                     <button
-                      onClick={() => setViewMode("table")}
+                      onClick={() => setViewMode('table')}
                       className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all ${
-                        viewMode === "table"
-                          ? "bg-blue-500 text-white shadow-sm"
-                          : "text-gray-600 hover:bg-gray-100"
+                        viewMode === 'table'
+                          ? 'bg-blue-500 text-white shadow-sm'
+                          : 'text-gray-600 hover:bg-gray-100'
                       }`}
-                      title="عرض جدول">
+                      title="عرض جدول"
+                    >
                       <FaList className="w-4 h-4" />
                       <span className="text-xs font-medium hidden sm:inline">
                         جدول
                       </span>
                     </button>
                     <button
-                      onClick={() => setViewMode("grid")}
+                      onClick={() => setViewMode('grid')}
                       className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all ${
-                        viewMode === "grid"
-                          ? "bg-blue-500 text-white shadow-sm"
-                          : "text-gray-600 hover:bg-gray-100"
+                        viewMode === 'grid'
+                          ? 'bg-blue-500 text-white shadow-sm'
+                          : 'text-gray-600 hover:bg-gray-100'
                       }`}
-                      title="عرض شبكة">
+                      title="عرض شبكة"
+                    >
                       <FaTh className="w-4 h-4" />
                       <span className="text-xs font-medium hidden sm:inline">
                         شبكة
@@ -731,9 +773,10 @@ const GroupManagement: React.FC = () => {
                     onClick={() => setShowFilters(!showFilters)}
                     className={`relative flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-xl transition-all ${
                       showFilters
-                        ? "border-blue-500 bg-blue-50 text-blue-600"
-                        : "border-gray-300 hover:border-blue-400"
-                    }`}>
+                        ? 'border-blue-500 bg-blue-50 text-blue-600'
+                        : 'border-gray-300 hover:border-blue-400'
+                    }`}
+                  >
                     <FaFilter className="w-4 h-4" />
                     <span className="hidden sm:inline">فلاتر</span>
                     {activeFiltersCount > 0 && (
@@ -748,7 +791,8 @@ const GroupManagement: React.FC = () => {
                     <button
                       onClick={resetFilters}
                       className="px-4 py-3 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all"
-                      title="إعادة تعيين الفلاتر">
+                      title="إعادة تعيين الفلاتر"
+                    >
                       <FaSync className="w-5 h-5 text-gray-600" />
                     </button>
                   )}
@@ -756,7 +800,8 @@ const GroupManagement: React.FC = () => {
                   {selectedGroups.size > 0 && (
                     <button
                       onClick={handleBulkDelete}
-                      className="flex items-center justify-center gap-2 px-4 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all">
+                      className="flex items-center justify-center gap-2 px-4 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all"
+                    >
                       <FaTrash className="w-4 h-4" />
                       <span>حذف ({selectedGroups.size})</span>
                     </button>
@@ -775,7 +820,8 @@ const GroupManagement: React.FC = () => {
                   <button
                     onClick={() => setShowFilters(false)}
                     className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-full transition-all duration-200"
-                    title="إغلاق">
+                    title="إغلاق"
+                  >
                     <FaTimes className="w-5 h-5" />
                   </button>
                 </div>
@@ -794,11 +840,13 @@ const GroupManagement: React.FC = () => {
                         setSelectedTeacher(e.target.value);
                         setCurrentPage(1);
                       }}
-                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm">
+                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                    >
                       <option value="all">جميع المعلمين</option>
                       {allTeachers.map((teacher) => (
                         <option key={teacher} value={teacher}>
-                          {teacher} ({groups.filter(g => g.teacher === teacher).length})
+                          {teacher} (
+                          {groups.filter((g) => g.teacher === teacher).length})
                         </option>
                       ))}
                     </select>
@@ -817,7 +865,8 @@ const GroupManagement: React.FC = () => {
                         setCapacityFilter(e.target.value);
                         setCurrentPage(1);
                       }}
-                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm">
+                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
+                    >
                       <option value="all">جميع الأحجام</option>
                       <option value="small">صغيرة (≤15 طالب)</option>
                       <option value="medium">متوسطة (16-25 طالب)</option>
@@ -828,8 +877,16 @@ const GroupManagement: React.FC = () => {
                   {/* Status Filter */}
                   <div className="bg-white p-4 rounded-xl shadow-sm border border-green-100">
                     <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3">
-                      <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      <svg
+                        className="w-4 h-4 text-green-600"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                       الحالة
                     </label>
@@ -840,7 +897,8 @@ const GroupManagement: React.FC = () => {
                         setStatusFilter(e.target.value);
                         setCurrentPage(1);
                       }}
-                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 text-sm">
+                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 text-sm"
+                    >
                       <option value="all">جميع الحالات</option>
                       <option value="active">نشطة فقط</option>
                       <option value="inactive">غير نشطة فقط</option>
@@ -850,7 +908,11 @@ const GroupManagement: React.FC = () => {
                   {/* Occupancy Filter */}
                   <div className="bg-white p-4 rounded-xl shadow-sm border border-orange-100">
                     <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3">
-                      <svg className="w-4 h-4 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                      <svg
+                        className="w-4 h-4 text-orange-600"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
                         <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       الإشغال
@@ -862,7 +924,8 @@ const GroupManagement: React.FC = () => {
                         setOccupancyFilter(e.target.value);
                         setCurrentPage(1);
                       }}
-                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 text-sm">
+                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 text-sm"
+                    >
                       <option value="all">جميع مستويات الإشغال</option>
                       <option value="empty">فارغة (0%)</option>
                       <option value="low">إشغال قليل (1-50%)</option>
@@ -875,8 +938,16 @@ const GroupManagement: React.FC = () => {
                   {/* Day Filter */}
                   <div className="bg-white p-4 rounded-xl shadow-sm border border-cyan-100">
                     <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3">
-                      <svg className="w-4 h-4 text-cyan-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                      <svg
+                        className="w-4 h-4 text-cyan-600"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                       اليوم
                     </label>
@@ -887,7 +958,8 @@ const GroupManagement: React.FC = () => {
                         setDayFilter(e.target.value);
                         setCurrentPage(1);
                       }}
-                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-cyan-500 text-sm">
+                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-cyan-500 text-sm"
+                    >
                       <option value="all">جميع الأيام</option>
                       <option value="السبت">السبت</option>
                       <option value="الأحد">الأحد</option>
@@ -902,8 +974,16 @@ const GroupManagement: React.FC = () => {
                   {/* Time Filter */}
                   <div className="bg-white p-4 rounded-xl shadow-sm border border-indigo-100">
                     <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3">
-                      <svg className="w-4 h-4 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                      <svg
+                        className="w-4 h-4 text-indigo-600"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                       الفترة الزمنية
                     </label>
@@ -914,7 +994,8 @@ const GroupManagement: React.FC = () => {
                         setTimeFilter(e.target.value);
                         setCurrentPage(1);
                       }}
-                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm">
+                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                    >
                       <option value="all">جميع الأوقات</option>
                       <option value="morning">صباحي (6ص - 12م)</option>
                       <option value="afternoon">بعد الظهر (12م - 6م)</option>
@@ -935,7 +1016,8 @@ const GroupManagement: React.FC = () => {
                         setGroupsPerPage(parseInt(e.target.value));
                         setCurrentPage(1);
                       }}
-                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 text-sm">
+                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-500 text-sm"
+                    >
                       <option value="5">5 حلقات</option>
                       <option value="10">10 حلقات</option>
                       <option value="25">25 حلقة</option>
@@ -956,7 +1038,8 @@ const GroupManagement: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={resetFilters}
-                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all text-sm font-medium">
+                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all text-sm font-medium"
+                    >
                       <FaSync className="w-4 h-4 inline ml-2" />
                       إعادة تعيين
                     </button>
@@ -966,7 +1049,6 @@ const GroupManagement: React.FC = () => {
             )}
           </div>
         </div>
-
         {/* Statistics Cards */}
         {!isLoading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
@@ -995,7 +1077,10 @@ const GroupManagement: React.FC = () => {
                     إجمالي الطلاب
                   </p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {groups.reduce((total, group) => total + (group.currentStudents || 0), 0)}
+                    {groups.reduce(
+                      (total, group) => total + (group.currentStudents || 0),
+                      0
+                    )}
                   </p>
                 </div>
                 <div className="p-3 bg-gradient-to-br from-amber-400 to-amber-600 rounded-lg shadow-md">
@@ -1008,9 +1093,19 @@ const GroupManagement: React.FC = () => {
             <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-green-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <p className="text-sm text-gray-600 font-medium mb-1">حلقات ممتلئة</p>
+                  <p className="text-sm text-gray-600 font-medium mb-1">
+                    حلقات ممتلئة
+                  </p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {groups.filter(g => g.isFull || (g.currentStudents && g.capacity && g.currentStudents >= g.capacity)).length}
+                    {
+                      groups.filter(
+                        (g) =>
+                          g.isFull ||
+                          (g.currentStudents &&
+                            g.capacity &&
+                            g.currentStudents >= g.capacity)
+                      ).length
+                    }
                   </p>
                 </div>
                 <div className="p-3 bg-gradient-to-br from-green-400 to-green-600 rounded-lg shadow-md">
@@ -1019,7 +1114,11 @@ const GroupManagement: React.FC = () => {
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </div>
               </div>
@@ -1033,7 +1132,10 @@ const GroupManagement: React.FC = () => {
                     حلقات فارغة
                   </p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {groups.filter(g => (g.currentStudents || 0) === 0).length}
+                    {
+                      groups.filter((g) => (g.currentStudents || 0) === 0)
+                        .length
+                    }
                   </p>
                 </div>
                 <div className="p-3 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg shadow-md">
@@ -1042,7 +1144,11 @@ const GroupManagement: React.FC = () => {
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
-                    <path fillRule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clipRule="evenodd" />
+                    <path
+                      fillRule="evenodd"
+                      d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </div>
               </div>
@@ -1056,7 +1162,10 @@ const GroupManagement: React.FC = () => {
                     السعة الإجمالية
                   </p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {groups.reduce((total, group) => total + (group.capacity || 0), 0)}
+                    {groups.reduce(
+                      (total, group) => total + (group.capacity || 0),
+                      0
+                    )}
                   </p>
                 </div>
                 <div className="p-3 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg shadow-md">
@@ -1065,7 +1174,11 @@ const GroupManagement: React.FC = () => {
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
-                    <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clipRule="evenodd" />
+                    <path
+                      fillRule="evenodd"
+                      d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </div>
               </div>
@@ -1075,11 +1188,19 @@ const GroupManagement: React.FC = () => {
             <div className="bg-white p-4 rounded-xl shadow-lg border-l-4 border-cyan-500 hover:shadow-xl transition-all duration-300 hover:scale-105">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <p className="text-sm text-gray-600 font-medium mb-1">مقاعد متاحة</p>
+                  <p className="text-sm text-gray-600 font-medium mb-1">
+                    مقاعد متاحة
+                  </p>
                   <p className="text-2xl font-bold text-gray-900">
                     {(() => {
-                      const totalCapacity = groups.reduce((total, group) => total + (group.capacity || 0), 0);
-                      const totalStudents = groups.reduce((total, group) => total + (group.currentStudents || 0), 0);
+                      const totalCapacity = groups.reduce(
+                        (total, group) => total + (group.capacity || 0),
+                        0
+                      );
+                      const totalStudents = groups.reduce(
+                        (total, group) => total + (group.currentStudents || 0),
+                        0
+                      );
                       return Math.max(0, totalCapacity - totalStudents);
                     })()}
                   </p>
@@ -1090,7 +1211,11 @@ const GroupManagement: React.FC = () => {
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
-                    <path fillRule="evenodd" d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clipRule="evenodd" />
+                    <path
+                      fillRule="evenodd"
+                      d="M6 6V5a3 3 0 013-3h2a3 3 0 013 3v1h2a2 2 0 012 2v3.57A22.952 22.952 0 0110 13a22.95 22.95 0 01-8-1.43V8a2 2 0 012-2h2zm2-1a1 1 0 011-1h2a1 1 0 011 1v1H8V5zm1 5a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z"
+                      clipRule="evenodd"
+                    />
                     <path d="M2 13.692V16a2 2 0 002 2h12a2 2 0 002-2v-2.308A24.974 24.974 0 0110 15c-2.796 0-5.487-.46-8-1.308z" />
                   </svg>
                 </div>
@@ -1098,7 +1223,6 @@ const GroupManagement: React.FC = () => {
             </div>
           </div>
         )}
-
         {/* Loading State - Table Skeleton */}
         {isLoading && (
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
@@ -1139,7 +1263,8 @@ const GroupManagement: React.FC = () => {
                   {Array.from({ length: groupsPerPage }, (_, index) => (
                     <tr
                       key={index}
-                      className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                      className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
+                    >
                       <td className="px-6 py-4">
                         <div className="w-4 h-4 bg-gray-200 rounded animate-pulse"></div>
                       </td>
@@ -1187,7 +1312,8 @@ const GroupManagement: React.FC = () => {
                     {Array.from({ length: 3 }, (_, i) => (
                       <div
                         key={i}
-                        className="w-10 h-10 bg-gray-200 rounded animate-pulse"></div>
+                        className="w-10 h-10 bg-gray-200 rounded animate-pulse"
+                      ></div>
                     ))}
                   </div>
                   <div className="w-16 h-8 bg-gray-200 rounded animate-pulse"></div>
@@ -1207,13 +1333,14 @@ const GroupManagement: React.FC = () => {
             <p className="text-red-600 mb-4">{error}</p>
             <button
               onClick={() => fetchGroups()}
-              className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all">
+              className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all"
+            >
               إعادة المحاولة
             </button>
           </div>
         )}
         {/* Table View */}
-        {!isLoading && !error && viewMode === "table" && (
+        {!isLoading && !error && viewMode === 'table' && (
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -1234,11 +1361,12 @@ const GroupManagement: React.FC = () => {
                     </th>
                     <th
                       className="px-6 py-4 text-right text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors"
-                      onClick={() => handleSort("name")}>
+                      onClick={() => handleSort('name')}
+                    >
                       <div className="flex items-center gap-2">
                         <span>اسم الحلقة</span>
-                        {sortField === "name" &&
-                          (sortOrder === "asc" ? (
+                        {sortField === 'name' &&
+                          (sortOrder === 'asc' ? (
                             <FaSortAmountUp />
                           ) : (
                             <FaSortAmountDown />
@@ -1247,11 +1375,12 @@ const GroupManagement: React.FC = () => {
                     </th>
                     <th
                       className="px-6 py-4 text-right text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors"
-                      onClick={() => handleSort("teacher")}>
+                      onClick={() => handleSort('teacher')}
+                    >
                       <div className="flex items-center gap-2">
                         <span>المعلم</span>
-                        {sortField === "teacher" &&
-                          (sortOrder === "asc" ? (
+                        {sortField === 'teacher' &&
+                          (sortOrder === 'asc' ? (
                             <FaSortAmountUp />
                           ) : (
                             <FaSortAmountDown />
@@ -1260,11 +1389,12 @@ const GroupManagement: React.FC = () => {
                     </th>
                     <th
                       className="px-6 py-4 text-right text-sm font-bold text-gray-700 cursor-pointer hover:bg-gray-200 transition-colors"
-                      onClick={() => handleSort("capacity")}>
+                      onClick={() => handleSort('capacity')}
+                    >
                       <div className="flex items-center gap-2">
                         <span>السعة القصوى</span>
-                        {sortField === "capacity" &&
-                          (sortOrder === "asc" ? (
+                        {sortField === 'capacity' &&
+                          (sortOrder === 'asc' ? (
                             <FaSortAmountUp />
                           ) : (
                             <FaSortAmountDown />
@@ -1300,16 +1430,17 @@ const GroupManagement: React.FC = () => {
                       <tr
                         key={group._id}
                         className={`${
-                          index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                        } hover:bg-blue-50 transition-colors`}>
+                          index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                        } hover:bg-blue-50 transition-colors`}
+                      >
                         <td className="px-6 py-4">
                           <input
                             type="checkbox"
                             title={`تحديد حلقة ${group.name}`}
                             aria-label={`تحديد حلقة ${group.name}`}
-                            checked={selectedGroups.has(group._id || "")}
+                            checked={selectedGroups.has(group._id || '')}
                             onChange={() =>
-                              toggleGroupSelection(group._id || "")
+                              toggleGroupSelection(group._id || '')
                             }
                             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                           />
@@ -1320,11 +1451,13 @@ const GroupManagement: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
-                            group.teacher === "غير محدد" 
-                              ? "bg-gray-100 text-gray-600" 
-                              : "bg-blue-100 text-blue-700"
-                          }`}>
+                          <span
+                            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
+                              group.teacher === 'غير محدد'
+                                ? 'bg-gray-100 text-gray-600'
+                                : 'bg-blue-100 text-blue-700'
+                            }`}
+                          >
                             <FaChalkboardTeacher className="w-3 h-3" />
                             {group.teacher}
                           </span>
@@ -1341,11 +1474,12 @@ const GroupManagement: React.FC = () => {
                               <span
                                 className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
                                   group.isFull
-                                    ? "bg-red-100 text-red-700"
+                                    ? 'bg-red-100 text-red-700'
                                     : (group.capacityPercentage || 0) >= 80
-                                    ? "bg-yellow-100 text-yellow-700"
-                                    : "bg-green-100 text-green-700"
-                                }`}>
+                                      ? 'bg-yellow-100 text-yellow-700'
+                                      : 'bg-green-100 text-green-700'
+                                }`}
+                              >
                                 <FaUserFriends className="w-3 h-3" />
                                 {group.capacityStatus ||
                                   `${group.currentStudents || 0}/${
@@ -1362,29 +1496,34 @@ const GroupManagement: React.FC = () => {
                               <div
                                 className={`h-2 rounded-full transition-all duration-300 absolute top-0 left-0 ${
                                   group.isFull
-                                    ? "bg-red-500"
+                                    ? 'bg-red-500'
                                     : (group.capacityPercentage || 0) >= 80
-                                    ? "bg-yellow-500"
-                                    : "bg-green-500"
+                                      ? 'bg-yellow-500'
+                                      : 'bg-green-500'
                                 } ${
                                   (group.capacityPercentage || 0) >= 100
-                                    ? "w-full"
+                                    ? 'w-full'
                                     : (group.capacityPercentage || 0) >= 90
-                                    ? "w-11/12"
-                                    : (group.capacityPercentage || 0) >= 80
-                                    ? "w-4/5"
-                                    : (group.capacityPercentage || 0) >= 70
-                                    ? "w-3/5"
-                                    : (group.capacityPercentage || 0) >= 50
-                                    ? "w-1/2"
-                                    : (group.capacityPercentage || 0) >= 30
-                                    ? "w-1/3"
-                                    : (group.capacityPercentage || 0) >= 20
-                                    ? "w-1/5"
-                                    : (group.capacityPercentage || 0) >= 10
-                                    ? "w-1/12"
-                                    : "w-0"
-                                }`}></div>
+                                      ? 'w-11/12'
+                                      : (group.capacityPercentage || 0) >= 80
+                                        ? 'w-4/5'
+                                        : (group.capacityPercentage || 0) >= 70
+                                          ? 'w-3/5'
+                                          : (group.capacityPercentage || 0) >=
+                                              50
+                                            ? 'w-1/2'
+                                            : (group.capacityPercentage || 0) >=
+                                                30
+                                              ? 'w-1/3'
+                                              : (group.capacityPercentage ||
+                                                    0) >= 20
+                                                ? 'w-1/5'
+                                                : (group.capacityPercentage ||
+                                                      0) >= 10
+                                                  ? 'w-1/12'
+                                                  : 'w-0'
+                                }`}
+                              ></div>
                             </div>
                             <span className="text-xs text-gray-500 text-center">
                               {group.capacityPercentage || 0}%
@@ -1398,7 +1537,8 @@ const GroupManagement: React.FC = () => {
                                 (session: any, idx: number) => (
                                   <div
                                     key={idx}
-                                    className="flex items-center gap-2 text-xs bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100">
+                                    className="flex items-center gap-2 text-xs bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100"
+                                  >
                                     <FaCalendar className="w-3 h-3 text-blue-600 flex-shrink-0" />
                                     <span className="font-medium text-blue-900">
                                       {session.day}
@@ -1420,7 +1560,7 @@ const GroupManagement: React.FC = () => {
                         </td>
                         <td className="px-6 py-4">
                           <div className="text-sm text-gray-600 max-w-xs truncate">
-                            {group.description || "-"}
+                            {group.description || '-'}
                           </div>
                         </td>
                         <td className="px-6 py-4">
@@ -1429,14 +1569,16 @@ const GroupManagement: React.FC = () => {
                               onClick={() => handleEdit(group)}
                               className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
                               title="تعديل"
-                              aria-label="تعديل الحلقة">
+                              aria-label="تعديل الحلقة"
+                            >
                               <FaEdit className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={() => handleDelete(group._id || "")}
+                              onClick={() => handleDelete(group._id || '')}
                               className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
                               title="حذف"
-                              aria-label="حذف الحلقة">
+                              aria-label="حذف الحلقة"
+                            >
                               <FaTrash className="w-4 h-4" />
                             </button>
                           </div>
@@ -1450,12 +1592,13 @@ const GroupManagement: React.FC = () => {
           </div>
         )}
         {/* Grid View Loading Skeleton */}
-        {isLoading && viewMode === "grid" && (
+        {isLoading && viewMode === 'grid' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: groupsPerPage }, (_, index) => (
               <div
                 key={index}
-                className="bg-white rounded-xl shadow-lg border border-gray-100 w-full">
+                className="bg-white rounded-xl shadow-lg border border-gray-100 w-full"
+              >
                 {/* Card Header */}
                 <div className="p-6 border-b border-gray-200">
                   <div className="flex items-start justify-between mb-4">
@@ -1491,22 +1634,26 @@ const GroupManagement: React.FC = () => {
           </div>
         )}
         {/* Grid View */}
-        {!isLoading && !error && viewMode === "grid" && (
+        {!isLoading && !error && viewMode === 'grid' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-6">
             {currentGroups.length === 0 ? (
               <div className="col-span-full bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl shadow-xl p-16 text-center border-2 border-dashed border-gray-300">
                 <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
                   <FaUsers className="w-12 h-12 text-gray-400" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-600 mb-2">لا توجد حلقات</h3>
-                <p className="text-gray-500">ابدأ بإضافة حلقة جديدة لتظهر هنا</p>
+                <h3 className="text-xl font-bold text-gray-600 mb-2">
+                  لا توجد حلقات
+                </h3>
+                <p className="text-gray-500">
+                  ابدأ بإضافة حلقة جديدة لتظهر هنا
+                </p>
               </div>
             ) : (
               currentGroups.map((group) => (
                 <div
                   key={group._id}
-                  className="group bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border-2 border-gray-100 hover:border-blue-300 transform hover:-translate-y-2 hover:scale-105">
-                  
+                  className="group bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden border-2 border-gray-100 hover:border-blue-300 transform hover:-translate-y-2 hover:scale-105"
+                >
                   {/* Card Header - Islamic Design */}
                   <div className="relative bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800 p-6">
                     {/* Decorative Pattern */}
@@ -1514,17 +1661,23 @@ const GroupManagement: React.FC = () => {
                       <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full -translate-y-16 translate-x-16"></div>
                       <div className="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full translate-y-12 -translate-x-12"></div>
                     </div>
-                    
+
                     {/* Status Badge */}
                     <div className="absolute top-4 right-4">
-                      <span className={`px-3 py-1.5 rounded-full text-xs font-bold shadow-lg ${
-                        group.isFull
-                          ? "bg-red-500 text-white"
+                      <span
+                        className={`px-3 py-1.5 rounded-full text-xs font-bold shadow-lg ${
+                          group.isFull
+                            ? 'bg-red-500 text-white'
+                            : (group.capacityPercentage || 0) >= 80
+                              ? 'bg-yellow-500 text-white'
+                              : 'bg-green-500 text-white'
+                        }`}
+                      >
+                        {group.isFull
+                          ? 'ممتلئة'
                           : (group.capacityPercentage || 0) >= 80
-                          ? "bg-yellow-500 text-white"
-                          : "bg-green-500 text-white"
-                      }`}>
-                        {group.isFull ? "ممتلئة" : (group.capacityPercentage || 0) >= 80 ? "شبه ممتلئة" : "متاحة"}
+                            ? 'شبه ممتلئة'
+                            : 'متاحة'}
                       </span>
                     </div>
 
@@ -1533,12 +1686,12 @@ const GroupManagement: React.FC = () => {
                       <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-2xl shadow-xl mb-4">
                         <FaUsers className="w-10 h-10 text-blue-600" />
                       </div>
-                      
+
                       {/* Group Name */}
                       <h3 className="text-white text-xl font-bold mb-2 drop-shadow-lg">
                         {group.name}
                       </h3>
-                      
+
                       {/* Capacity Info */}
                       <div className="flex items-center justify-center gap-2 text-white/90 text-sm">
                         <span>السعة:</span>
@@ -1552,27 +1705,39 @@ const GroupManagement: React.FC = () => {
                   {/* Card Body */}
                   <div className="p-6 space-y-5">
                     {/* Teacher Section */}
-                    <div className={`flex items-center gap-4 p-4 rounded-2xl ${
-                      group.teacher === "غير محدد" 
-                        ? "bg-gray-50 border-2 border-gray-200 border-dashed" 
-                        : "bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200"
-                    }`}>
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                        group.teacher === "غير محدد" 
-                          ? "bg-gray-200" 
-                          : "bg-gradient-to-br from-blue-500 to-indigo-600"
-                      }`}>
-                        <FaChalkboardTeacher className={`w-6 h-6 ${
-                          group.teacher === "غير محدد" ? "text-gray-500" : "text-white"
-                        }`} />
+                    <div
+                      className={`flex items-center gap-4 p-4 rounded-2xl ${
+                        group.teacher === 'غير محدد'
+                          ? 'bg-gray-50 border-2 border-gray-200 border-dashed'
+                          : 'bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200'
+                      }`}
+                    >
+                      <div
+                        className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                          group.teacher === 'غير محدد'
+                            ? 'bg-gray-200'
+                            : 'bg-gradient-to-br from-blue-500 to-indigo-600'
+                        }`}
+                      >
+                        <FaChalkboardTeacher
+                          className={`w-6 h-6 ${
+                            group.teacher === 'غير محدد'
+                              ? 'text-gray-500'
+                              : 'text-white'
+                          }`}
+                        />
                       </div>
                       <div className="flex-1">
-                        <p className="text-xs font-semibold text-gray-500 mb-1">المعلم المسؤول</p>
-                        <p className={`font-bold text-lg ${
-                          group.teacher === "غير محدد" 
-                            ? "text-gray-600" 
-                            : "text-blue-700"
-                        }`}>
+                        <p className="text-xs font-semibold text-gray-500 mb-1">
+                          المعلم المسؤول
+                        </p>
+                        <p
+                          className={`font-bold text-lg ${
+                            group.teacher === 'غير محدد'
+                              ? 'text-gray-600'
+                              : 'text-blue-700'
+                          }`}
+                        >
                           {group.teacher}
                         </p>
                       </div>
@@ -1586,42 +1751,50 @@ const GroupManagement: React.FC = () => {
                             <FaUserFriends className="w-5 h-5 text-white" />
                           </div>
                           <div>
-                            <p className="text-xs font-semibold text-gray-600">الطلاب المسجلين</p>
+                            <p className="text-xs font-semibold text-gray-600">
+                              الطلاب المسجلين
+                            </p>
                             <p className="text-lg font-bold text-purple-700">
                               {group.currentStudents || 0} / {group.capacity}
                             </p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                            (group.currentStudents || 0) === 0 
-                              ? "bg-gray-100 text-gray-600" 
-                              : group.isFull 
-                              ? "bg-red-100 text-red-700"
-                              : (group.capacityPercentage || 0) >= 80
-                              ? "bg-yellow-100 text-yellow-700"
-                              : "bg-green-100 text-green-700"
-                          }`}>
-                            {(group.currentStudents || 0) === 0 ? "فارغة" : group.isFull ? "ممتلئة" : "متاحة"}
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-bold ${
+                              (group.currentStudents || 0) === 0
+                                ? 'bg-gray-100 text-gray-600'
+                                : group.isFull
+                                  ? 'bg-red-100 text-red-700'
+                                  : (group.capacityPercentage || 0) >= 80
+                                    ? 'bg-yellow-100 text-yellow-700'
+                                    : 'bg-green-100 text-green-700'
+                            }`}
+                          >
+                            {(group.currentStudents || 0) === 0
+                              ? 'فارغة'
+                              : group.isFull
+                                ? 'ممتلئة'
+                                : 'متاحة'}
                           </span>
                         </div>
                       </div>
-                      
+
                       <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
                         <div
                           className={`h-3 rounded-full transition-all duration-700 ${
                             (group.currentStudents || 0) === 0
-                              ? "bg-gray-400"
+                              ? 'bg-gray-400'
                               : group.isFull
-                              ? "bg-gradient-to-r from-red-400 to-red-600"
-                              : (group.capacityPercentage || 0) >= 80
-                              ? "bg-gradient-to-r from-yellow-400 to-orange-500"
-                              : "bg-gradient-to-r from-green-400 to-emerald-600"
+                                ? 'bg-gradient-to-r from-red-400 to-red-600'
+                                : (group.capacityPercentage || 0) >= 80
+                                  ? 'bg-gradient-to-r from-yellow-400 to-orange-500'
+                                  : 'bg-gradient-to-r from-green-400 to-emerald-600'
                           }`}
-                          style={{ width: `${group.capacityPercentage || 0}%` }}>
-                        </div>
+                          style={{ width: `${group.capacityPercentage || 0}%` }}
+                        ></div>
                       </div>
-                      
+
                       <p className="text-xs text-gray-600 text-center mt-2 font-medium">
                         {group.capacityPercentage || 0}% من السعة الإجمالية
                       </p>
@@ -1634,17 +1807,20 @@ const GroupManagement: React.FC = () => {
                           <FaCalendar className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                          <p className="font-bold text-amber-800">المواعيد الأسبوعية</p>
+                          <p className="font-bold text-amber-800">
+                            المواعيد الأسبوعية
+                          </p>
                           <p className="text-xs text-amber-600">جدول الحصص</p>
                         </div>
                       </div>
-                      
+
                       {group.timetable && group.timetable.length > 0 ? (
                         <div className="space-y-2">
                           {group.timetable.map((session: any, idx: number) => (
                             <div
                               key={idx}
-                              className="flex items-center justify-between bg-white p-3 rounded-xl border border-amber-300 shadow-sm">
+                              className="flex items-center justify-between bg-white p-3 rounded-xl border border-amber-300 shadow-sm"
+                            >
                               <div className="flex items-center gap-3">
                                 <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
                                   <span className="text-xs font-bold text-amber-800">
@@ -1668,8 +1844,12 @@ const GroupManagement: React.FC = () => {
                           <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-2">
                             <span className="text-amber-600 text-lg">📅</span>
                           </div>
-                          <p className="text-sm text-amber-700 font-medium">لم يتم تحديد مواعيد</p>
-                          <p className="text-xs text-amber-600">يمكن إضافة المواعيد لاحقاً</p>
+                          <p className="text-sm text-amber-700 font-medium">
+                            لم يتم تحديد مواعيد
+                          </p>
+                          <p className="text-xs text-amber-600">
+                            يمكن إضافة المواعيد لاحقاً
+                          </p>
                         </div>
                       )}
                     </div>
@@ -1682,7 +1862,6 @@ const GroupManagement: React.FC = () => {
                         </p>
                       </div>
                     )}
-
                   </div>
 
                   {/* Card Footer */}
@@ -1694,36 +1873,48 @@ const GroupManagement: React.FC = () => {
                           <div className="w-6 h-6 bg-orange-100 rounded-full flex items-center justify-center">
                             <span className="text-orange-600 text-sm">⚠️</span>
                           </div>
-                          <p className="text-sm font-semibold text-orange-700">حلقة فارغة - تحتاج لطلاب</p>
+                          <p className="text-sm font-semibold text-orange-700">
+                            حلقة فارغة - تحتاج لطلاب
+                          </p>
                         </div>
                       </div>
-                    ) : !group.isFull && (
-                      <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center">
-                              <span className="text-emerald-600 text-sm">✓</span>
+                    ) : (
+                      !group.isFull && (
+                        <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center">
+                                <span className="text-emerald-600 text-sm">
+                                  ✓
+                                </span>
+                              </div>
+                              <p className="text-sm font-semibold text-emerald-700">
+                                مقاعد متاحة
+                              </p>
                             </div>
-                            <p className="text-sm font-semibold text-emerald-700">مقاعد متاحة</p>
+                            <span className="bg-emerald-100 px-3 py-1 rounded-full text-xs font-bold text-emerald-700">
+                              {(group.capacity || 0) -
+                                (group.currentStudents || 0)}{' '}
+                              مقعد
+                            </span>
                           </div>
-                          <span className="bg-emerald-100 px-3 py-1 rounded-full text-xs font-bold text-emerald-700">
-                            {(group.capacity || 0) - (group.currentStudents || 0)} مقعد
-                          </span>
                         </div>
-                      </div>
+                      )
                     )}
 
                     {/* Action Buttons */}
                     <div className="flex gap-3 mb-4">
                       <button
                         onClick={() => handleEdit(group)}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                      >
                         <FaEdit className="w-4 h-4" />
                         <span className="font-bold">تعديل</span>
                       </button>
                       <button
-                        onClick={() => handleDelete(group._id || "")}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-xl hover:from-red-600 hover:to-pink-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                        onClick={() => handleDelete(group._id || '')}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-xl hover:from-red-600 hover:to-pink-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                      >
                         <FaTrash className="w-4 h-4" />
                         <span className="font-bold">حذف</span>
                       </button>
@@ -1734,8 +1925,8 @@ const GroupManagement: React.FC = () => {
                       <label className="flex items-center gap-3 cursor-pointer group p-2 hover:bg-gray-100 rounded-lg transition-colors">
                         <input
                           type="checkbox"
-                          checked={selectedGroups.has(group._id || "")}
-                          onChange={() => toggleGroupSelection(group._id || "")}
+                          checked={selectedGroups.has(group._id || '')}
+                          onChange={() => toggleGroupSelection(group._id || '')}
                           className="w-5 h-5 text-blue-600 rounded border-2 border-gray-300 focus:ring-2 focus:ring-blue-500 cursor-pointer transition-colors"
                         />
                         <span className="text-sm text-gray-600 font-medium group-hover:text-gray-800">
@@ -1763,14 +1954,14 @@ const GroupManagement: React.FC = () => {
               itemName="حلقة"
               showQuickJump={true}
             />
-          )}{" "}
+          )}{' '}
         {/* Add/Edit Form Modal */}
         {isFormVisible && (
           <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
               <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900">
-                  {isEditMode ? "تعديل الحلقة" : "إضافة حلقة جديدة"}
+                  {isEditMode ? 'تعديل الحلقة' : 'إضافة حلقة جديدة'}
                 </h2>
                 <button
                   onClick={() => {
@@ -1779,7 +1970,8 @@ const GroupManagement: React.FC = () => {
                     setSelectedGroup(null);
                   }}
                   aria-label="إغلاق النموذج"
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
                   <span className="text-2xl text-gray-500">×</span>
                 </button>
               </div>
