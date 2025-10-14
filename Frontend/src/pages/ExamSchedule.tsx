@@ -22,6 +22,7 @@ import {
   type ExamAverage,
 } from "../Api/examApi";
 import { getAllStudents } from "../Api/studentApi";
+import Swal from "sweetalert2";
 
 // =========================
 // إعدادات API تم نقلها إلى Api/examApi.ts
@@ -307,7 +308,13 @@ const ExamSchedule: React.FC = () => {
 
     // التحقق من البيانات قبل الإرسال
     if (!newExam.name || !newExam.date || !newExam.time) {
-      alert("يرجى ملء جميع الحقول المطلوبة");
+      await Swal.fire({
+        icon: "warning",
+        title: "تنبيه",
+        text: "يرجى ملء جميع الحقول المطلوبة",
+        confirmButtonText: "حسناً",
+        confirmButtonColor: "#059669",
+      });
       return;
     }
 
@@ -317,7 +324,13 @@ const ExamSchedule: React.FC = () => {
       teacherGroups.length > 0 &&
       !selectedGroupForExam
     ) {
-      alert("يرجى اختيار الحلقة");
+      await Swal.fire({
+        icon: "warning",
+        title: "تنبيه",
+        text: "يرجى اختيار الحلقة",
+        confirmButtonText: "حسناً",
+        confirmButtonColor: "#059669",
+      });
       return;
     }
 
@@ -386,6 +399,15 @@ const ExamSchedule: React.FC = () => {
         }
       }
 
+      await Swal.fire({
+        icon: "success",
+        title: "تم بنجاح",
+        text: "تم إضافة الامتحان بنجاح",
+        confirmButtonText: "حسناً",
+        confirmButtonColor: "#059669",
+        timer: 2000,
+      });
+
       setShowAddExamModal(false);
       setNewExam({ name: "", date: "", time: "" });
     } catch (error) {
@@ -404,7 +426,13 @@ const ExamSchedule: React.FC = () => {
         }
       }
 
-      alert(errorMessage);
+      await Swal.fire({
+        icon: "error",
+        title: "خطأ",
+        text: errorMessage,
+        confirmButtonText: "حسناً",
+        confirmButtonColor: "#DC2626",
+      });
     }
   };
 
@@ -417,16 +445,46 @@ const ExamSchedule: React.FC = () => {
       setExams((prev) =>
         prev.map((ex) => (String(ex._id ?? ex.id) === examId ? updated : ex))
       );
+
+      await Swal.fire({
+        icon: "success",
+        title: "تم بنجاح",
+        text: "تم تعديل الامتحان بنجاح",
+        confirmButtonText: "حسناً",
+        confirmButtonColor: "#059669",
+        timer: 2000,
+      });
+
       setShowEditExamModal(false);
       setEditExam(null);
     } catch (error) {
       console.error("Error updating exam:", error);
+      await Swal.fire({
+        icon: "error",
+        title: "خطأ",
+        text: "حدث خطأ أثناء تعديل الامتحان",
+        confirmButtonText: "حسناً",
+        confirmButtonColor: "#DC2626",
+      });
     }
   };
 
   const handleDeleteExam = async (examIdRaw: string | number) => {
     const examId = String(examIdRaw);
-    if (!window.confirm("هل أنت متأكد من حذف الامتحان؟")) return;
+
+    const result = await Swal.fire({
+      icon: "warning",
+      title: "تأكيد الحذف",
+      text: "هل أنت متأكد من حذف الامتحان؟ لا يمكن التراجع عن هذا الإجراء!",
+      showCancelButton: true,
+      confirmButtonText: "نعم، احذف",
+      cancelButtonText: "إلغاء",
+      confirmButtonColor: "#DC2626",
+      cancelButtonColor: "#6B7280",
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
       await deleteExam(examId);
       setExams((prev) => prev.filter((e) => String(e._id ?? e.id) !== examId));
@@ -435,8 +493,24 @@ const ExamSchedule: React.FC = () => {
         const { [examId]: removed, ...rest } = prev;
         return rest;
       });
+
+      await Swal.fire({
+        icon: "success",
+        title: "تم الحذف",
+        text: "تم حذف الامتحان بنجاح",
+        confirmButtonText: "حسناً",
+        confirmButtonColor: "#059669",
+        timer: 2000,
+      });
     } catch (error) {
       console.error("Error deleting exam:", error);
+      await Swal.fire({
+        icon: "error",
+        title: "خطأ",
+        text: "حدث خطأ أثناء حذف الامتحان",
+        confirmButtonText: "حسناً",
+        confirmButtonColor: "#DC2626",
+      });
     }
   };
 
@@ -452,12 +526,29 @@ const ExamSchedule: React.FC = () => {
     try {
       const examId = String(selectedExam._id ?? selectedExam.id);
       await bulkSaveMarks(examId, { marks: marksArr });
+
+      await Swal.fire({
+        icon: "success",
+        title: "تم بنجاح",
+        text: "تم حفظ جميع العلامات بنجاح",
+        confirmButtonText: "حسناً",
+        confirmButtonColor: "#059669",
+        timer: 2000,
+      });
+
       setShowMarkModal(false);
       setMarks({});
       setSelectedExam(null);
       refreshAverageForExam(examId);
     } catch (error) {
       console.error("Error saving marks:", error);
+      await Swal.fire({
+        icon: "error",
+        title: "خطأ",
+        text: "حدث خطأ أثناء حفظ العلامات",
+        confirmButtonText: "حسناً",
+        confirmButtonColor: "#DC2626",
+      });
     }
   };
 
@@ -467,13 +558,42 @@ const ExamSchedule: React.FC = () => {
   ) => {
     const examId = String(examIdRaw);
     const studentId = String(studentIdRaw);
-    if (!window.confirm("هل أنت متأكد من حذف العلامة؟")) return;
+
+    const result = await Swal.fire({
+      icon: "warning",
+      title: "تأكيد الحذف",
+      text: "هل أنت متأكد من حذف العلامة؟",
+      showCancelButton: true,
+      confirmButtonText: "نعم، احذف",
+      cancelButtonText: "إلغاء",
+      confirmButtonColor: "#DC2626",
+      cancelButtonColor: "#6B7280",
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
       await deleteStudentMark(examId, studentId);
       setMarks((prev) => ({ ...prev, [studentId]: { mark: "", detail: "" } }));
       refreshAverageForExam(examId);
+
+      await Swal.fire({
+        icon: "success",
+        title: "تم الحذف",
+        text: "تم حذف العلامة بنجاح",
+        confirmButtonText: "حسناً",
+        confirmButtonColor: "#059669",
+        timer: 1500,
+      });
     } catch (error) {
       console.error("Error deleting mark:", error);
+      await Swal.fire({
+        icon: "error",
+        title: "خطأ",
+        text: "حدث خطأ أثناء حذف العلامة",
+        confirmButtonText: "حسناً",
+        confirmButtonColor: "#DC2626",
+      });
     }
   };
 
@@ -846,7 +966,10 @@ const ExamSchedule: React.FC = () => {
 
   // ——— واجهة المستخدم
   return (
-    <div className="max-w-6xl mx-auto p-4 md:p-6" dir="rtl" lang="ar">
+    <div
+      className="max-w-6xl mx-auto px-4 md:px-6 pt-4 md:pt-6 pb-16 md:pb-20"
+      dir="rtl"
+      lang="ar">
       {/* العنوان */}
       <div className="mb-6">
         <h2 className="text-3xl md:text-4xl font-extrabold text-center text-emerald-700 tracking-tight">
@@ -1379,6 +1502,13 @@ const ExamSchedule: React.FC = () => {
                                   "Error updating student mark:",
                                   error
                                 );
+                                await Swal.fire({
+                                  icon: "error",
+                                  title: "خطأ",
+                                  text: "حدث خطأ أثناء حفظ العلامة",
+                                  confirmButtonText: "حسناً",
+                                  confirmButtonColor: "#DC2626",
+                                });
                               }
                             }}>
                             حفظ فردي
