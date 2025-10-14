@@ -2,7 +2,7 @@ import { NavLink, useNavigate, useLocation, Link } from "react-router-dom";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import NotificationHeader from "../NotificationHeader";
 import { useAuth } from "../../hooks/useAuth";
-import ChangePasswordModal from '../../pages/Auth/ChangePass';
+import ChangePasswordModal from "../../pages/Auth/ChangePass";
 import { io, Socket } from "socket.io-client";
 import api from "../../Api/api";
 import { showLogoutConfirmation } from "../../utils/logoutUtils";
@@ -11,6 +11,7 @@ import {
   Award,
   BookOpen,
   CalendarDays,
+  Clock,
   ClipboardList,
   FileCheck2,
   Headphones,
@@ -40,7 +41,8 @@ const Header = () => {
   const [logoLoaded, setLogoLoaded] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] =
+    useState(false);
 
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -167,6 +169,16 @@ const Header = () => {
         icon: UserCheck,
         color: "from-red-500 to-pink-500",
       },
+      ...(isTeacherOrAdmin
+        ? [
+            {
+              to: "/my-students",
+              label: "إدارة الطلاب",
+              icon: UserCheck,
+              color: "from-emerald-500 to-green-500",
+            },
+          ]
+        : []),
       {
         to: "/test",
         label: "اختبر نفسك",
@@ -174,7 +186,7 @@ const Header = () => {
         color: "from-indigo-500 to-purple-500",
       },
     ],
-    []
+    [isTeacherOrAdmin]
   );
 
   const secondaryNavItems = useMemo(() => {
@@ -192,6 +204,12 @@ const Header = () => {
         color: "from-blue-500 to-indigo-500",
       },
       {
+        to: "/prayer-times",
+        label: "مواقيت الصلاة",
+        icon: Clock,
+        color: "from-cyan-500 to-blue-500",
+      },
+      {
         to: "/arrangement",
         label: "الترتيب",
         icon: Medal,
@@ -203,7 +221,7 @@ const Header = () => {
         icon: Sparkles,
         color: "from-pink-500 to-rose-500",
       },
-    
+
       {
         to: "/reports",
         label: "التقارير الشهرية",
@@ -230,9 +248,7 @@ const Header = () => {
       },
     ];
     if (!isTeacherOrAdmin) return base;
-    return [
-      ...base,
-    ];
+    return [...base];
   }, [isTeacherOrAdmin]);
 
   return (
@@ -274,22 +290,22 @@ const Header = () => {
                   <NavLink
                     key={item.to}
                     to={item.to}
-                    end={item.to === '/'}
+                    end={item.to === "/"}
                     className={({ isActive }) => {
                       // تحسين تحديد الحالة النشطة للمسارات الفرعية
                       const currentPath = location.pathname;
                       let isCurrentActive = isActive;
-                      
+
                       // معالجة خاصة للصفحة الرئيسية - تكون نشطة فقط في المسار الدقيق
-                      if (item.to === '/' && currentPath !== '/') {
+                      if (item.to === "/" && currentPath !== "/") {
                         isCurrentActive = false;
                       }
-                      
+
                       // معالجة المسارات الأخرى - تكون نشطة في المسارات الفرعية أيضاً
-                      if (item.to !== '/' && !isActive) {
-                        isCurrentActive = currentPath.startsWith(item.to + '/');
+                      if (item.to !== "/" && !isActive) {
+                        isCurrentActive = currentPath.startsWith(item.to + "/");
                       }
-                      
+
                       return `group relative px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 hover:scale-105 ${
                         isCurrentActive
                           ? "bg-white text-emerald-600 shadow-lg transform scale-105"
@@ -300,22 +316,24 @@ const Header = () => {
                       // تحديد الحالة النشطة هنا أيضاً للتناسق
                       const currentPath = location.pathname;
                       let isCurrentActive = isActive;
-                      
-                      if (item.to === '/' && currentPath !== '/') {
+
+                      if (item.to === "/" && currentPath !== "/") {
                         isCurrentActive = false;
                       }
-                      
-                      if (item.to !== '/' && !isActive) {
-                        isCurrentActive = currentPath.startsWith(item.to + '/');
+
+                      if (item.to !== "/" && !isActive) {
+                        isCurrentActive = currentPath.startsWith(item.to + "/");
                       }
-                      
+
                       return (
                         <>
                           <span className="flex items-center gap-2">
                             <IconComponent
                               size={20}
                               className={`group-hover:scale-125 transition-transform ${
-                                isCurrentActive ? "text-emerald-600" : "text-white/70"
+                                isCurrentActive
+                                  ? "text-emerald-600"
+                                  : "text-white/70"
                               }`}
                             />
                             <span>{item.label}</span>
@@ -509,19 +527,21 @@ const Header = () => {
                       <NavLink
                         key={item.to}
                         to={item.to}
-                        end={item.to === '/'}
+                        end={item.to === "/"}
                         className={({ isActive }) => {
                           const currentPath = location.pathname;
                           let isCurrentActive = isActive;
-                          
-                          if (item.to === '/' && currentPath !== '/') {
+
+                          if (item.to === "/" && currentPath !== "/") {
                             isCurrentActive = false;
                           }
-                          
-                          if (item.to !== '/' && !isActive) {
-                            isCurrentActive = currentPath.startsWith(item.to + '/');
+
+                          if (item.to !== "/" && !isActive) {
+                            isCurrentActive = currentPath.startsWith(
+                              item.to + "/"
+                            );
                           }
-                          
+
                           return `group relative px-3 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 whitespace-nowrap hover:scale-105 ${
                             isCurrentActive
                               ? "bg-white text-emerald-600 shadow-lg border border-emerald-200 transform scale-105"
@@ -531,15 +551,17 @@ const Header = () => {
                         {({ isActive }) => {
                           const currentPath = location.pathname;
                           let isCurrentActive = isActive;
-                          
-                          if (item.to === '/' && currentPath !== '/') {
+
+                          if (item.to === "/" && currentPath !== "/") {
                             isCurrentActive = false;
                           }
-                          
-                          if (item.to !== '/' && !isActive) {
-                            isCurrentActive = currentPath.startsWith(item.to + '/');
+
+                          if (item.to !== "/" && !isActive) {
+                            isCurrentActive = currentPath.startsWith(
+                              item.to + "/"
+                            );
                           }
-                          
+
                           return (
                             <>
                               <IconComponent
@@ -630,20 +652,22 @@ const Header = () => {
                     <NavLink
                       key={item.to}
                       to={item.to}
-                      end={item.to === '/'}
+                      end={item.to === "/"}
                       onClick={() => setIsMenuOpen(false)}
                       className={({ isActive }) => {
                         const currentPath = location.pathname;
                         let isCurrentActive = isActive;
-                        
-                        if (item.to === '/' && currentPath !== '/') {
+
+                        if (item.to === "/" && currentPath !== "/") {
                           isCurrentActive = false;
                         }
-                        
-                        if (item.to !== '/' && !isActive) {
-                          isCurrentActive = currentPath.startsWith(item.to + '/');
+
+                        if (item.to !== "/" && !isActive) {
+                          isCurrentActive = currentPath.startsWith(
+                            item.to + "/"
+                          );
                         }
-                        
+
                         return `flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                           isCurrentActive
                             ? "bg-white/20 text-white shadow-lg transform scale-105"
@@ -653,15 +677,17 @@ const Header = () => {
                       {({ isActive }) => {
                         const currentPath = location.pathname;
                         let isCurrentActive = isActive;
-                        
-                        if (item.to === '/' && currentPath !== '/') {
+
+                        if (item.to === "/" && currentPath !== "/") {
                           isCurrentActive = false;
                         }
-                        
-                        if (item.to !== '/' && !isActive) {
-                          isCurrentActive = currentPath.startsWith(item.to + '/');
+
+                        if (item.to !== "/" && !isActive) {
+                          isCurrentActive = currentPath.startsWith(
+                            item.to + "/"
+                          );
                         }
-                        
+
                         return (
                           <>
                             <IconComponent
@@ -745,7 +771,7 @@ const Header = () => {
       `}</style>
 
       {/* Change Password Modal */}
-      <ChangePasswordModal 
+      <ChangePasswordModal
         isOpen={isChangePasswordModalOpen}
         onClose={() => setIsChangePasswordModalOpen(false)}
       />
