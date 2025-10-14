@@ -269,48 +269,9 @@ export const showLogoutConfirmation = async (options: LogoutOptions = {}) => {
     cleanupSession();
     if (onConfirm) onConfirm();
 
-    // رسالة النجاح المتطورة
+    // إغلاق رسالة التحميل والخروج مباشرة
     setTimeout(() => {
-      Swal.fire({
-        title: '',
-        html: `
-          <div class="text-center py-10" dir="rtl" style="font-family: 'Cairo', sans-serif;">
-            <!-- Success Animation -->
-            <div class="relative mx-auto w-24 h-24 mb-8">
-              <div class="absolute inset-0 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full shadow-2xl animate-bounce"></div>
-              <div class="absolute inset-0 bg-green-100 rounded-full animate-ping opacity-30"></div>
-              <div class="absolute inset-0 flex items-center justify-center">
-                <svg class="w-12 h-12 text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
-                </svg>
-              </div>
-            </div>
-            
-            <div class="text-6xl mb-4 animate-bounce">🎉</div>
-            <h3 class="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-3">
-              تم بنجاح!
-            </h3>
-            <p class="text-gray-600 text-xl mb-6">إلى اللقاء ${displayName}</p>
-            
-            <!-- Floating Particles -->
-            <div class="absolute top-4 left-4 w-2 h-2 bg-green-400 rounded-full animate-ping"></div>
-            <div class="absolute top-8 right-8 w-3 h-3 bg-emerald-400 rounded-full animate-bounce"></div>
-            <div class="absolute bottom-6 left-12 w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-          </div>
-        `,
-        timer: 2500,
-        timerProgressBar: true,
-        showConfirmButton: false,
-        showClass: {
-          popup: 'animate__animated animate__jackInTheBox'
-        },
-        customClass: {
-          popup: 'font-cairo text-right rounded-3xl shadow-2xl border-0 bg-gradient-to-br from-green-50 via-emerald-50 to-green-100 relative overflow-hidden',
-          timerProgressBar: 'bg-gradient-to-r from-green-500 to-emerald-600'
-        },
-        width: '450px',
-        backdrop: 'rgba(0,0,0,0.8)'
-      });
+      Swal.close();
     }, 800);
 
     return true;

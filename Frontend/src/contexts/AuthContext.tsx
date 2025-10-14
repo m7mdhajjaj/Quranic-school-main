@@ -242,13 +242,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(null);
       setToken(null);
 
-       // Token removal will be handled automatically by api interceptor
+      // تنظيف شامل لكل البيانات
+      localStorage.clear(); // مسح كل localStorage
+      sessionStorage.clear(); // مسح كل sessionStorage
+      
+      // تنظيف الكوكيز
+      document.cookie.split(';').forEach(cookie => {
+        const name = cookie.split('=')[0].trim();
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+      });
 
-      // مسح البيانات من localStorage
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
-      localStorage.removeItem('userId');
-      localStorage.removeItem('savedCredentials');
+      console.log('✨ تم تنظيف جميع بيانات الجلسة');
 
       // إعادة توجه إلى صفحة تسجيل الدخول
       window.location.href = '/login';
