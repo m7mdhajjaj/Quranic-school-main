@@ -1509,133 +1509,34 @@ const DailyMarks = () => {
 
       {/* Add Section Modal - Only for teachers */}
       {isAddSectionModalOpen && currentUser?.role !== "student" && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
-          <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-800">
-                إضافة مقطع جديد للحلقة: {selectedGroup}
-              </h3>
-              <button
-                onClick={() => setIsAddSectionModalOpen(false)}
-                className="text-gray-500 hover:text-gray-700">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            <form onSubmit={handleAddSection}>
-              {/* Date Field */}
-              <div className="mb-4">
-                <label
-                  className="block text-gray-700 text-sm font-bold mb-2"
-                  htmlFor="date">
-                  التاريخ
-                </label>
-                <input
-                  type="date"
-                  id="date"
-                  name="date"
-                  value={newSection.date}
-                  onChange={handleSectionInputChange}
-                  className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  required
-                />
-              </div>
-
-              {/* Review Section */}
-              <div className="mb-4 mt-6">
-                <h4 className="text-md font-bold text-emerald-700 mb-3 border-r-4 border-emerald-500 pr-2">
-                  معلومات المراجعة
-                </h4>
-                <div className="mb-4">
-                  <label
-                    className="block text-gray-700 text-sm font-bold mb-2"
-                    htmlFor="reviewSection">
-                    مقطع المراجعة
-                  </label>
-                  <input
-                    type="text"
-                    id="reviewSection"
-                    name="reviewSection"
-                    placeholder="مثال: البقرة (1-10)"
-                    value={newSection.reviewSection}
-                    onChange={handleSectionInputChange}
-                    className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    required
-                  />
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fadeIn">
+            {/* Gradient Header */}
+            <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-6">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-white">
+                    إضافة مقطع جديد
+                  </h3>
                 </div>
-              </div>
-
-              {/* Memorization Section */}
-              <div className="mb-4 mt-6">
-                <h4 className="text-md font-bold text-amber-600 mb-3 border-r-4 border-amber-500 pr-2">
-                  معلومات الحفظ
-                </h4>
-                <div className="mb-4">
-                  <label
-                    className="block text-gray-700 text-sm font-bold mb-2"
-                    htmlFor="memorizationSection">
-                    مقطع الحفظ
-                  </label>
-                  <input
-                    type="text"
-                    id="memorizationSection"
-                    name="memorizationSection"
-                    placeholder="مثال: البقرة (11-15)"
-                    value={newSection.memorizationSection}
-                    onChange={handleSectionInputChange}
-                    className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Action buttons */}
-              <div className="flex justify-between mt-8">
                 <button
-                  type="button"
                   onClick={() => setIsAddSectionModalOpen(false)}
-                  className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-lg transition">
-                  إلغاء
-                </button>
-                <button
-                  type="submit"
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-8 rounded-lg transition shadow-md">
-                  إضافة المقطع
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Section Modal - Only for teachers */}
-      {isEditSectionModalOpen &&
-        editingSection &&
-        currentUser?.role !== "student" && (
-          <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
-            <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-gray-800">
-                  تعديل المقطع
-                </h3>
-                <button
-                  onClick={() => {
-                    setIsEditSectionModalOpen(false);
-                    setEditingSection(null);
-                  }}
-                  className="text-gray-500 hover:text-gray-700">
+                  className="text-white/80 hover:text-white hover:bg-white/20 p-2 rounded-lg transition">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-6 w-6"
@@ -1651,13 +1552,199 @@ const DailyMarks = () => {
                   </svg>
                 </button>
               </div>
+              <p className="text-white/90 text-sm mt-2">
+                الحلقة: {selectedGroup}
+              </p>
+            </div>
 
-              <form onSubmit={handleEditSection}>
+            <form onSubmit={handleAddSection} className="p-6">
+              {/* Date Field */}
+              <div className="mb-6">
+                <label className="flex items-center gap-2 text-gray-700 text-sm font-bold mb-3">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-emerald-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                  التاريخ
+                </label>
+                <input
+                  type="date"
+                  id="date"
+                  name="date"
+                  value={newSection.date}
+                  onChange={handleSectionInputChange}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition duration-200 outline-none"
+                  required
+                />
+              </div>
+
+              {/* Review Section */}
+              <div className="mb-6">
+                <div className="flex items-center gap-2 mb-4 pb-2 border-b-2 border-emerald-200">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-emerald-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                    />
+                  </svg>
+                  <h4 className="text-md font-bold text-emerald-700">
+                    معلومات المراجعة
+                  </h4>
+                </div>
+                <label className="block text-gray-700 text-sm font-medium mb-2">
+                  مقطع المراجعة
+                </label>
+                <input
+                  type="text"
+                  id="reviewSection"
+                  name="reviewSection"
+                  placeholder="مثال: البقرة (1-10)"
+                  value={newSection.reviewSection}
+                  onChange={handleSectionInputChange}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition duration-200 outline-none"
+                  required
+                />
+              </div>
+
+              {/* Memorization Section */}
+              <div className="mb-6">
+                <div className="flex items-center gap-2 mb-4 pb-2 border-b-2 border-amber-200">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-amber-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  <h4 className="text-md font-bold text-amber-600">
+                    معلومات الحفظ
+                  </h4>
+                </div>
+                <label className="block text-gray-700 text-sm font-medium mb-2">
+                  مقطع الحفظ
+                </label>
+                <input
+                  type="text"
+                  id="memorizationSection"
+                  name="memorizationSection"
+                  placeholder="مثال: البقرة (11-15)"
+                  value={newSection.memorizationSection}
+                  onChange={handleSectionInputChange}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-500 focus:ring-4 focus:ring-amber-100 transition duration-200 outline-none"
+                  required
+                />
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex gap-3 mt-8">
+                <button
+                  type="button"
+                  onClick={() => setIsAddSectionModalOpen(false)}
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-6 rounded-xl transition duration-200 border-2 border-gray-200">
+                  إلغاء
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-medium py-3 px-8 rounded-xl transition duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02]">
+                  إضافة المقطع
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Section Modal - Only for teachers */}
+      {isEditSectionModalOpen &&
+        editingSection &&
+        currentUser?.role !== "student" && (
+          <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fadeIn">
+              {/* Gradient Header */}
+              <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-6">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-6 w-6 text-white"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-bold text-white">
+                      تعديل المقطع
+                    </h3>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setIsEditSectionModalOpen(false);
+                      setEditingSection(null);
+                    }}
+                    className="text-white/80 hover:text-white hover:bg-white/20 p-2 rounded-lg transition">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <form onSubmit={handleEditSection} className="p-6">
                 {/* Date Field */}
-                <div className="mb-4">
-                  <label
-                    className="block text-gray-700 text-sm font-bold mb-2"
-                    htmlFor="edit-date">
+                <div className="mb-6">
+                  <label className="flex items-center gap-2 text-gray-700 text-sm font-bold mb-3">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 text-blue-600"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
+                    </svg>
                     التاريخ
                   </label>
                   <input
@@ -1666,73 +1753,95 @@ const DailyMarks = () => {
                     name="date"
                     value={editingSection.date}
                     onChange={handleEditSectionInputChange}
-                    className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition duration-200 outline-none"
                     required
                   />
                 </div>
 
                 {/* Review Section */}
-                <div className="mb-4 mt-6">
-                  <h4 className="text-md font-bold text-emerald-700 mb-3 border-r-4 border-emerald-500 pr-2">
-                    معلومات المراجعة
-                  </h4>
-                  <div className="mb-4">
-                    <label
-                      className="block text-gray-700 text-sm font-bold mb-2"
-                      htmlFor="edit-reviewSection">
-                      مقطع المراجعة
-                    </label>
-                    <input
-                      type="text"
-                      id="edit-reviewSection"
-                      name="reviewSection"
-                      placeholder="مثال: البقرة (1-10)"
-                      value={editingSection.reviewSection}
-                      onChange={handleEditSectionInputChange}
-                      className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      required
-                    />
+                <div className="mb-6">
+                  <div className="flex items-center gap-2 mb-4 pb-2 border-b-2 border-emerald-200">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 text-emerald-600"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                      />
+                    </svg>
+                    <h4 className="text-md font-bold text-emerald-700">
+                      معلومات المراجعة
+                    </h4>
                   </div>
+                  <label className="block text-gray-700 text-sm font-medium mb-2">
+                    مقطع المراجعة
+                  </label>
+                  <input
+                    type="text"
+                    id="edit-reviewSection"
+                    name="reviewSection"
+                    placeholder="مثال: البقرة (1-10)"
+                    value={editingSection.reviewSection}
+                    onChange={handleEditSectionInputChange}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition duration-200 outline-none"
+                    required
+                  />
                 </div>
 
                 {/* Memorization Section */}
-                <div className="mb-4 mt-6">
-                  <h4 className="text-md font-bold text-amber-600 mb-3 border-r-4 border-amber-500 pr-2">
-                    معلومات الحفظ
-                  </h4>
-                  <div className="mb-4">
-                    <label
-                      className="block text-gray-700 text-sm font-bold mb-2"
-                      htmlFor="edit-memorizationSection">
-                      مقطع الحفظ
-                    </label>
-                    <input
-                      type="text"
-                      id="edit-memorizationSection"
-                      name="memorizationSection"
-                      placeholder="مثال: البقرة (11-15)"
-                      value={editingSection.memorizationSection}
-                      onChange={handleEditSectionInputChange}
-                      className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      required
-                    />
+                <div className="mb-6">
+                  <div className="flex items-center gap-2 mb-4 pb-2 border-b-2 border-amber-200">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 text-amber-600"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                    <h4 className="text-md font-bold text-amber-600">
+                      معلومات الحفظ
+                    </h4>
                   </div>
+                  <label className="block text-gray-700 text-sm font-medium mb-2">
+                    مقطع الحفظ
+                  </label>
+                  <input
+                    type="text"
+                    id="edit-memorizationSection"
+                    name="memorizationSection"
+                    placeholder="مثال: البقرة (11-15)"
+                    value={editingSection.memorizationSection}
+                    onChange={handleEditSectionInputChange}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-500 focus:ring-4 focus:ring-amber-100 transition duration-200 outline-none"
+                    required
+                  />
                 </div>
 
                 {/* Action buttons */}
-                <div className="flex justify-between mt-8">
+                <div className="flex gap-3 mt-8">
                   <button
                     type="button"
                     onClick={() => {
                       setIsEditSectionModalOpen(false);
                       setEditingSection(null);
                     }}
-                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-lg transition">
+                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-6 rounded-xl transition duration-200 border-2 border-gray-200">
                     إلغاء
                   </button>
                   <button
                     type="submit"
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-8 rounded-lg transition shadow-md">
+                    className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium py-3 px-8 rounded-xl transition duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02]">
                     حفظ التعديل
                   </button>
                 </div>
@@ -2052,32 +2161,52 @@ const DailyMarks = () => {
 
       {/* Bulk Update Modal */}
       {isBulkUpdateModalOpen && currentUser?.role !== "student" && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
-          <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-2xl">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-800">
-                تحديث المقاطع لجميع الطلاب
-              </h3>
-              <button
-                onClick={() => {
-                  setIsBulkUpdateModalOpen(false);
-                  setSelectedSectionsForBulk([]);
-                }}
-                className="text-gray-500 hover:text-gray-700">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-fadeIn">
+            {/* Gradient Header */}
+            <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-6">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-white">
+                    تحديث المقاطع لجميع الطلاب
+                  </h3>
+                </div>
+                <button
+                  onClick={() => {
+                    setIsBulkUpdateModalOpen(false);
+                    setSelectedSectionsForBulk([]);
+                  }}
+                  className="text-white/80 hover:text-white hover:bg-white/20 p-2 rounded-lg transition">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
             </div>
 
             <form
@@ -2092,24 +2221,40 @@ const DailyMarks = () => {
                     undefined,
                 };
                 executeBulkUpdate(updateData);
-              }}>
+              }}
+              className="p-6">
               {/* Section Selection */}
               <div className="mb-6">
-                <h4 className="text-md font-bold text-gray-700 mb-3">
-                  اختر المقاطع المراد تحديثها:
-                </h4>
-                <div className="max-h-60 overflow-y-auto border rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-4">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-purple-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                    />
+                  </svg>
+                  <h4 className="text-md font-bold text-gray-700">
+                    اختر المقاطع المراد تحديثها:
+                  </h4>
+                </div>
+                <div className="max-h-60 overflow-y-auto border-2 border-gray-200 rounded-xl p-4 bg-gray-50">
                   {getFilteredSections().map((section) => (
                     <label
                       key={section._id}
-                      className="flex items-center mb-2 cursor-pointer">
+                      className="flex items-center mb-3 p-3 bg-white rounded-lg cursor-pointer hover:bg-purple-50 transition border border-gray-100">
                       <input
                         type="checkbox"
                         checked={selectedSectionsForBulk.includes(section._id)}
                         onChange={() => toggleSectionSelection(section._id)}
-                        className="ml-2"
+                        className="ml-3 w-4 h-4 accent-purple-600"
                       />
-                      <span className="text-sm">
+                      <span className="text-sm text-gray-700">
                         {new Date(section.date).toLocaleDateString("en-GB")} -
                         مراجعة: {section.reviewSection} - حفظ:{" "}
                         {section.memorizationSection}
@@ -2120,44 +2265,80 @@ const DailyMarks = () => {
               </div>
 
               {/* Update Fields */}
-              <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-bold mb-2">
+              <div className="mb-6">
+                <div className="flex items-center gap-2 mb-4 pb-2 border-b-2 border-emerald-200">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-emerald-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                    />
+                  </svg>
+                  <h4 className="text-md font-bold text-emerald-700">
+                    معلومات المراجعة
+                  </h4>
+                </div>
+                <label className="block text-gray-700 text-sm font-medium mb-2">
                   مقطع المراجعة الجديد (اتركه فارغاً للاحتفاظ بالقيمة الحالية)
                 </label>
                 <input
                   type="text"
                   name="reviewSection"
                   placeholder="مثال: البقرة (1-10)"
-                  className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition duration-200 outline-none"
                 />
               </div>
 
               <div className="mb-6">
-                <label className="block text-gray-700 text-sm font-bold mb-2">
+                <div className="flex items-center gap-2 mb-4 pb-2 border-b-2 border-amber-200">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-amber-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  <h4 className="text-md font-bold text-amber-600">
+                    معلومات الحفظ
+                  </h4>
+                </div>
+                <label className="block text-gray-700 text-sm font-medium mb-2">
                   مقطع الحفظ الجديد (اتركه فارغاً للاحتفاظ بالقيمة الحالية)
                 </label>
                 <input
                   type="text"
                   name="memorizationSection"
                   placeholder="مثال: البقرة (11-15)"
-                  className="shadow appearance-none border rounded w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-500 focus:ring-4 focus:ring-amber-100 transition duration-200 outline-none"
                 />
               </div>
 
               {/* Action buttons */}
-              <div className="flex justify-between mt-8">
+              <div className="flex gap-3 mt-8">
                 <button
                   type="button"
                   onClick={() => {
                     setIsBulkUpdateModalOpen(false);
                     setSelectedSectionsForBulk([]);
                   }}
-                  className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-lg transition">
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-6 rounded-xl transition duration-200 border-2 border-gray-200">
                   إلغاء
                 </button>
                 <button
                   type="submit"
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-8 rounded-lg transition shadow-md">
+                  className="flex-1 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white font-medium py-3 px-8 rounded-xl transition duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02]">
                   تحديث المقاطع المحددة
                 </button>
               </div>
@@ -2168,84 +2349,139 @@ const DailyMarks = () => {
 
       {/* Bulk Delete Modal */}
       {isBulkDeleteModalOpen && currentUser?.role !== "student" && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
-          <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-2xl">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-800">
-                حذف المقاطع لجميع الطلاب
-              </h3>
-              <button
-                onClick={() => {
-                  setIsBulkDeleteModalOpen(false);
-                  setSelectedSectionsForBulk([]);
-                }}
-                className="text-gray-500 hover:text-gray-700">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            {/* Section Selection */}
-            <div className="mb-6">
-              <h4 className="text-md font-bold text-gray-700 mb-3">
-                اختر المقاطع المراد حذفها:
-              </h4>
-              <div className="max-h-60 overflow-y-auto border rounded-lg p-3">
-                {getFilteredSections().map((section) => (
-                  <label
-                    key={section._id}
-                    className="flex items-center mb-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedSectionsForBulk.includes(section._id)}
-                      onChange={() => toggleSectionSelection(section._id)}
-                      className="ml-2"
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-fadeIn">
+            {/* Gradient Header */}
+            <div className="bg-gradient-to-r from-red-500 to-rose-600 p-6">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-white">
+                    حذف المقاطع لجميع الطلاب
+                  </h3>
+                </div>
+                <button
+                  onClick={() => {
+                    setIsBulkDeleteModalOpen(false);
+                    setSelectedSectionsForBulk([]);
+                  }}
+                  className="text-white/80 hover:text-white hover:bg-white/20 p-2 rounded-lg transition">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
                     />
-                    <span className="text-sm">
-                      {new Date(section.date).toLocaleDateString("en-GB")} -
-                      مراجعة: {section.reviewSection} - حفظ:{" "}
-                      {section.memorizationSection}
-                    </span>
-                  </label>
-                ))}
+                  </svg>
+                </button>
               </div>
             </div>
 
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-              <p className="text-red-800 text-sm">
-                <strong>تحذير:</strong> سيتم حذف جميع العلامات المرتبطة بالمقاطع
-                المحددة نهائياً. هذا الإجراء لا يمكن التراجع عنه.
-              </p>
-            </div>
+            <div className="p-6">
+              {/* Section Selection */}
+              <div className="mb-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-gray-700"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                    />
+                  </svg>
+                  <h4 className="text-md font-bold text-gray-700">
+                    اختر المقاطع المراد حذفها:
+                  </h4>
+                </div>
+                <div className="max-h-60 overflow-y-auto border-2 border-gray-200 rounded-xl p-4 bg-gray-50">
+                  {getFilteredSections().map((section) => (
+                    <label
+                      key={section._id}
+                      className="flex items-center mb-3 p-3 bg-white rounded-lg cursor-pointer hover:bg-red-50 transition border border-gray-100">
+                      <input
+                        type="checkbox"
+                        checked={selectedSectionsForBulk.includes(section._id)}
+                        onChange={() => toggleSectionSelection(section._id)}
+                        className="ml-3 w-4 h-4 accent-red-600"
+                      />
+                      <span className="text-sm text-gray-700">
+                        {new Date(section.date).toLocaleDateString("en-GB")} -
+                        مراجعة: {section.reviewSection} - حفظ:{" "}
+                        {section.memorizationSection}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
 
-            {/* Action buttons */}
-            <div className="flex justify-between mt-8">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsBulkDeleteModalOpen(false);
-                  setSelectedSectionsForBulk([]);
-                }}
-                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-6 rounded-lg transition">
-                إلغاء
-              </button>
-              <button
-                type="button"
-                onClick={executeBulkDelete}
-                className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-8 rounded-lg transition shadow-md">
-                حذف المقاطع المحددة
-              </button>
+              <div className="bg-gradient-to-r from-red-50 to-rose-50 border-2 border-red-200 rounded-xl p-5 mb-6">
+                <div className="flex items-start gap-3">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6 text-red-600 flex-shrink-0 mt-0.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                  <div>
+                    <p className="text-red-800 font-bold mb-1">تحذير هام!</p>
+                    <p className="text-red-700 text-sm">
+                      سيتم حذف جميع العلامات المرتبطة بالمقاطع المحددة نهائياً.
+                      هذا الإجراء لا يمكن التراجع عنه.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex gap-3 mt-8">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsBulkDeleteModalOpen(false);
+                    setSelectedSectionsForBulk([]);
+                  }}
+                  className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-6 rounded-xl transition duration-200 border-2 border-gray-200">
+                  إلغاء
+                </button>
+                <button
+                  type="button"
+                  onClick={executeBulkDelete}
+                  className="flex-1 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white font-medium py-3 px-8 rounded-xl transition duration-200 shadow-lg hover:shadow-xl transform hover:scale-[1.02]">
+                  حذف المقاطع المحددة
+                </button>
+              </div>
             </div>
           </div>
         </div>

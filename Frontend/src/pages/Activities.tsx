@@ -159,7 +159,7 @@ const Activities = () => {
     setCurrentActivity({
       title: "",
       description: "",
-      date: new Date().toISOString().split('T')[0], // تاريخ اليوم بصيغة YYYY-MM-DD
+      date: new Date().toISOString().split("T")[0], // تاريخ اليوم بصيغة YYYY-MM-DD
       image: "",
       category: "درس",
     });
