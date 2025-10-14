@@ -17,8 +17,6 @@ const activitySchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      required: [true, "تصنيف النشاط مطلوب"],
-      enum: ["درس", "رحلة", "مسابقة", "محاضرة", "فعالية"],
       default: "درس",
     },
     image: {
@@ -26,7 +24,7 @@ const activitySchema = new mongoose.Schema(
       default: "https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+نشاط",
     },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 const Activity = mongoose.model("Activity", activitySchema);

@@ -1,5 +1,5 @@
-import api from './api';
-import { AxiosError } from 'axios';
+import api from "./api";
+import { AxiosError } from "axios";
 
 // ============================================================================
 // Activities API
@@ -23,44 +23,49 @@ export interface Activity {
 // Get all activities
 export const getAllActivities = async (): Promise<Activity[]> => {
   try {
-    const response = await api.get('/activities');
-    return response.data.success ? response.data.data || response.data : response.data;
+    const response = await api.get("/activities");
+    return response.data.success
+      ? response.data.data || response.data
+      : response.data;
   } catch (error) {
-    console.error('Error fetching activities:', error);
-    const axiosError = error as AxiosError<{message?: string}>;
-    throw new Error(axiosError.response?.data?.message || 'حدث خطأ أثناء جلب الأنشطة');
+    console.error("Error fetching activities:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
+    throw new Error(
+      axiosError.response?.data?.message || "حدث خطأ أثناء جلب الأنشطة"
+    );
   }
 };
 
 // Create activity
-export const createActivity = async (formData: FormData): Promise<Activity> => {
+export const createActivity = async (
+  activityData: Partial<Activity>
+): Promise<Activity> => {
   try {
-    const response = await api.post('/activities', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    return response.data.success ? response.data.data : response.data;
+    const response = await api.post("/activities", activityData);
+    return response.data.activity || response.data;
   } catch (error) {
-    console.error('Error creating activity:', error);
-    const axiosError = error as AxiosError<{message?: string}>;
-    throw new Error(axiosError.response?.data?.message || 'حدث خطأ أثناء إنشاء النشاط');
+    console.error("Error creating activity:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
+    throw new Error(
+      axiosError.response?.data?.message || "حدث خطأ أثناء إنشاء النشاط"
+    );
   }
 };
 
 // Update activity
-export const updateActivity = async (id: string, formData: FormData): Promise<Activity> => {
+export const updateActivity = async (
+  id: string,
+  activityData: Partial<Activity>
+): Promise<Activity> => {
   try {
-    const response = await api.put(`/activities/${id}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    return response.data.success ? response.data.data : response.data;
+    const response = await api.put(`/activities/${id}`, activityData);
+    return response.data.activity || response.data;
   } catch (error) {
-    console.error('Error updating activity:', error);
-    const axiosError = error as AxiosError<{message?: string}>;
-    throw new Error(axiosError.response?.data?.message || 'حدث خطأ أثناء تحديث النشاط');
+    console.error("Error updating activity:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
+    throw new Error(
+      axiosError.response?.data?.message || "حدث خطأ أثناء تحديث النشاط"
+    );
   }
 };
 
@@ -69,8 +74,10 @@ export const deleteActivity = async (id: string): Promise<void> => {
   try {
     await api.delete(`/activities/${id}`);
   } catch (error) {
-    console.error('Error deleting activity:', error);
-    const axiosError = error as AxiosError<{message?: string}>;
-    throw new Error(axiosError.response?.data?.message || 'حدث خطأ أثناء حذف النشاط');
+    console.error("Error deleting activity:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
+    throw new Error(
+      axiosError.response?.data?.message || "حدث خطأ أثناء حذف النشاط"
+    );
   }
 };

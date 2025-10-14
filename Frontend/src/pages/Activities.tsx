@@ -1,7 +1,15 @@
 import { useState, useEffect } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import { getAllActivities, createActivity, updateActivity, deleteActivity as deleteActivityApi, type Activity } from "../Api/activityApi";
+import Swal from "sweetalert2";
+import {
+  getAllActivities,
+  createActivity,
+  updateActivity,
+  deleteActivity as deleteActivityApi,
+  type Activity,
+} from "../Api/activityApi";
+import { uploadActivityImage } from "../Api/uploadApi";
 import { API_BASE_URL } from "../config";
 
 interface ActivityFormData {
@@ -84,9 +92,32 @@ const Activities = () => {
   }, []);
 
   // Handle file selection for image upload
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+
+      // التحقق من نوع الملف
+      if (!file.type.startsWith("image/")) {
+        await Swal.fire({
+          icon: "error",
+          title: "خطأ",
+          text: "يجب اختيار صورة فقط",
+          confirmButtonColor: "#DC2626",
+        });
+        return;
+      }
+
+      // التحقق من حجم الملف (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        await Swal.fire({
+          icon: "error",
+          title: "خطأ",
+          text: "حجم الصورة يجب أن يكون أقل من 5 ميجابايت",
+          confirmButtonColor: "#DC2626",
+        });
+        return;
+      }
+
       setSelectedImage(file);
 
       // Create a preview URL for the selected image
@@ -144,8 +175,8 @@ const Activities = () => {
       title: activity.title,
       description: activity.description,
       date: activity.date,
-      image: activity.image || '',
-      category: activity.category || 'درس',
+      image: activity.image || "",
+      category: activity.category || "درس",
     });
     setSelectedImage(null);
     setImagePreview(activity.image || null);
@@ -164,38 +195,101 @@ const Activities = () => {
     )
       return;
 
-    try {
-      const formData = new FormData();
-      formData.append("title", currentActivity.title);
-      formData.append("description", currentActivity.description);
-      formData.append("date", currentActivity.date);
-      formData.append("category", currentActivity.category);
+    setLoading(true);
 
+    try {
+      let imageUrl = currentActivity.image;
+
+      // رفع الصورة على Cloudinary إذا تم اختيار ملف جديد
       if (selectedImage) {
-        formData.append("image", selectedImage);
+        try {
+          console.log("Uploading image to Cloudinary...");
+          const uploadResult = await uploadActivityImage(selectedImage);
+
+          if (uploadResult.success && uploadResult.url) {
+            imageUrl = uploadResult.url;
+            console.log("Image uploaded successfully:", imageUrl);
+
+            await Swal.fire({
+              icon: "success",
+              title: "تم رفع الصورة",
+              text: "تم رفع الصورة بنجاح",
+              confirmButtonColor: "#059669",
+              timer: 1500,
+              showConfirmButton: false,
+            });
+          }
+        } catch (uploadError) {
+          console.error("Failed to upload image:", uploadError);
+          await Swal.fire({
+            icon: "error",
+            title: "خطأ في رفع الصورة",
+            text: "فشل رفع الصورة، سيتم استخدام صورة افتراضية",
+            confirmButtonColor: "#DC2626",
+          });
+          imageUrl =
+            "https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+نشاط";
+        }
       }
+
+      // إعداد بيانات النشاط
+      const activityData = {
+        title: currentActivity.title,
+        description: currentActivity.description,
+        date: currentActivity.date,
+        category: currentActivity.category || "درس",
+        imageUrl: imageUrl || "",
+      };
+
+      console.log("Sending activity data:", activityData);
 
       let savedActivity: Activity;
 
       if (modalMode === "add") {
-        savedActivity = await createActivity(formData);
+        savedActivity = await createActivity(activityData);
         setActivities([...activities, savedActivity]);
+
+        await Swal.fire({
+          icon: "success",
+          title: "تم الإضافة",
+          text: "تم إضافة النشاط بنجاح",
+          confirmButtonColor: "#059669",
+          timer: 2000,
+        });
       } else {
         // Edit mode
-        savedActivity = await updateActivity(currentActivity._id!, formData);
+        savedActivity = await updateActivity(
+          currentActivity._id!,
+          activityData
+        );
         setActivities(
           activities.map((activity) =>
-            activity._id === currentActivity._id
-              ? savedActivity
-              : activity
+            activity._id === currentActivity._id ? savedActivity : activity
           )
         );
+
+        await Swal.fire({
+          icon: "success",
+          title: "تم التحديث",
+          text: "تم تحديث النشاط بنجاح",
+          confirmButtonColor: "#059669",
+          timer: 2000,
+        });
       }
 
       closeModal();
     } catch (err) {
       console.error("Error saving activity:", err);
       setError("حدث خطأ أثناء حفظ النشاط");
+
+      await Swal.fire({
+        icon: "error",
+        title: "خطأ",
+        text: "حدث خطأ أثناء حفظ النشاط، يرجى المحاولة مرة أخرى",
+        confirmButtonColor: "#DC2626",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -275,7 +369,7 @@ const Activities = () => {
                   ? "bg-emerald-600 text-white"
                   : "bg-white text-slate-700 hover:bg-slate-100"
               }`}
-              onClick={() => setFilter(category || '')}>
+              onClick={() => setFilter(category || "")}>
               {category}
             </button>
           ))}
@@ -328,7 +422,7 @@ const Activities = () => {
                     src={
                       activity.image && activity.image.startsWith("http")
                         ? activity.image
-                        : activity.image 
+                        : activity.image
                         ? `${API_BASE_URL}/${activity.image}`
                         : "/src/images/default-activity.jpg"
                     }
