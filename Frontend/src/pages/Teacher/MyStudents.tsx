@@ -434,6 +434,8 @@ const MyStudents: React.FC = () => {
                   setSelectedGroup(e.target.value);
                   setCurrentPage(1);
                 }}
+                title="اختر الحلقة"
+                aria-label="اختر الحلقة"
                 className="w-full md:w-64 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all">
                 {teacherGroups.map((group) => (
                   <option key={group.id} value={group.name}>
