@@ -600,10 +600,71 @@ const TeacherStudentsManagement: React.FC = () => {
           </div>
         )}
 
-        {/* Loading State */}
-        {isLoading && (
-          <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+        {/* Loading State with Skeleton */}
+        {isLoading && selectedGroup && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-4 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      رقم الطالب
+                    </th>
+                    <th className="px-6 py-4 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      الاسم الكامل
+                    </th>
+                    <th className="px-6 py-4 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      رقم الهوية
+                    </th>
+                    <th className="px-6 py-4 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      العمر
+                    </th>
+                    <th className="px-6 py-4 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      الجنس
+                    </th>
+                    <th className="px-6 py-4 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      الهاتف
+                    </th>
+                    <th className="px-6 py-4 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
+                      الإجراءات
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <tr key={`skeleton-${i}`} className="animate-fadeIn">
+                      <td className="px-6 py-4">
+                        <div className="h-4 w-16 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-[length:200%_100%] animate-shimmer rounded"></div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="h-4 w-48 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-[length:200%_100%] animate-shimmer rounded"></div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="h-4 w-32 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-[length:200%_100%] animate-shimmer rounded"></div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="h-4 w-8 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-[length:200%_100%] animate-shimmer rounded"></div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="h-6 w-16 bg-gradient-to-r from-blue-100 via-blue-200 to-blue-100 bg-[length:200%_100%] animate-shimmer rounded-full"></div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <div className="h-4 w-4 bg-gradient-to-r from-emerald-100 via-emerald-200 to-emerald-100 bg-[length:200%_100%] animate-shimmer rounded"></div>
+                          <div className="h-4 w-28 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-[length:200%_100%] animate-shimmer rounded"></div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <div className="h-8 w-8 bg-gradient-to-r from-blue-100 via-blue-200 to-blue-100 bg-[length:200%_100%] animate-shimmer rounded-lg"></div>
+                          <div className="h-8 w-8 bg-gradient-to-r from-red-100 via-red-200 to-red-100 bg-[length:200%_100%] animate-shimmer rounded-lg"></div>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
@@ -945,6 +1006,37 @@ const TeacherStudentsManagement: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Custom CSS for animations */}
+      <style>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: scale(0.98);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        @keyframes shimmer {
+          0% {
+            background-position: -200% 0;
+          }
+          100% {
+            background-position: 200% 0;
+          }
+        }
+
+        .animate-fadeIn {
+          animation: fadeIn 0.4s ease-out;
+        }
+
+        .animate-shimmer {
+          animation: shimmer 2s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 };

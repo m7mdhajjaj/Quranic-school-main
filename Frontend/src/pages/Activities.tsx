@@ -360,19 +360,32 @@ const Activities = () => {
           )}
         </div>
 
-        <div className="mb-8 flex flex-wrap justify-center gap-4">
-          {categories.map((category) => (
-            <button
-              key={category}
-              className={`py-2 px-4 rounded-full ${
-                filter === category
-                  ? "bg-emerald-600 text-white"
-                  : "bg-white text-slate-700 hover:bg-slate-100"
-              }`}
-              onClick={() => setFilter(category || "")}>
-              {category}
-            </button>
-          ))}
+        <div className="mb-8 flex flex-wrap justify-center gap-3">
+          {categories.map((category) => {
+            const count = category === "الكل" 
+              ? activities.length 
+              : activities.filter(a => a.category === category).length;
+            
+            return (
+              <button
+                key={category}
+                className={`py-2.5 px-5 rounded-full font-medium transition-all duration-200 shadow-sm hover:shadow-md flex items-center gap-2 ${
+                  filter === category
+                    ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white scale-105"
+                    : "bg-white text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 border border-emerald-100"
+                }`}
+                onClick={() => setFilter(category || "")}>
+                {category}
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                  filter === category
+                    ? "bg-white/20 text-white"
+                    : "bg-emerald-100 text-emerald-700"
+                }`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         {loading ? (
@@ -380,31 +393,32 @@ const Activities = () => {
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div
                 key={i}
-                className="bg-white rounded-xl shadow-md overflow-hidden">
-                {/* Image Skeleton */}
-                <div className="h-80 bg-gray-200 animate-pulse"></div>
+                className="bg-white rounded-xl shadow-md overflow-hidden animate-fadeIn">
+                {/* Image Skeleton with Shimmer */}
+                <div className="h-80 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-[length:200%_100%] animate-shimmer relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-t from-white/20 to-transparent"></div>
+                </div>
 
                 {/* Content Skeleton */}
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
-                    <div className="h-6 bg-gray-200 rounded animate-pulse w-40"></div>
-                    <div className="flex gap-2">
-                      <div className="h-5 w-5 bg-gray-200 rounded animate-pulse"></div>
-                      <div className="h-5 w-5 bg-gray-200 rounded animate-pulse"></div>
-                    </div>
+                    {/* Title Skeleton */}
+                    <div className="h-6 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-[length:200%_100%] animate-shimmer rounded-lg w-2/3"></div>
+                    {/* Badge Skeleton */}
+                    <div className="h-6 w-16 bg-gradient-to-r from-emerald-100 via-emerald-200 to-emerald-100 bg-[length:200%_100%] animate-shimmer rounded-full"></div>
                   </div>
 
                   {/* Description Skeleton */}
-                  <div className="space-y-2 mb-4">
-                    <div className="h-4 bg-gray-200 rounded animate-pulse w-full"></div>
-                    <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
-                    <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2"></div>
+                  <div className="space-y-3 mb-4">
+                    <div className="h-4 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-[length:200%_100%] animate-shimmer rounded w-full"></div>
+                    <div className="h-4 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-[length:200%_100%] animate-shimmer rounded w-5/6"></div>
+                    <div className="h-4 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-[length:200%_100%] animate-shimmer rounded w-3/4"></div>
                   </div>
 
                   {/* Date Skeleton */}
-                  <div className="flex items-center">
-                    <div className="h-5 w-5 bg-gray-200 rounded animate-pulse ml-1"></div>
-                    <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
+                  <div className="flex items-center gap-2 mt-4">
+                    <div className="h-5 w-5 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-[length:200%_100%] animate-shimmer rounded"></div>
+                    <div className="h-4 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-[length:200%_100%] animate-shimmer rounded w-32"></div>
                   </div>
                 </div>
               </div>
@@ -415,9 +429,9 @@ const Activities = () => {
             {filteredActivities.map((activity) => (
               <div
                 key={activity._id}
-                className="bg-white rounded-xl shadow-md overflow-hidden transition-transform hover:-translate-y-1 hover:shadow-lg"
+                className="bg-white rounded-xl shadow-md overflow-hidden transition-transform hover:-translate-y-1 hover:shadow-lg animate-fadeIn"
                 data-aos="fade-up">
-                <div className="h-80 relative overflow-hidden">
+                <div className="h-80 relative overflow-hidden group">
                   <img
                     src={
                       activity.image && activity.image.startsWith("http")
@@ -427,10 +441,11 @@ const Activities = () => {
                         : "/src/images/default-activity.jpg"
                     }
                     alt={activity.title}
-                    className="w-full h-full object-contain bg-gray-50"
+                    className="w-full h-full object-contain bg-gray-50 group-hover:scale-105 transition-transform duration-300"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   <div className="absolute top-4 right-4">
-                    <span className="bg-emerald-100 text-emerald-800 text-xs font-semibold px-3 py-1 rounded-full">
+                    <span className="bg-emerald-100 text-emerald-800 text-xs font-semibold px-3 py-1.5 rounded-full shadow-sm">
                       {activity.category}
                     </span>
                   </div>
@@ -445,7 +460,8 @@ const Activities = () => {
                       <div className="flex gap-2">
                         <button
                           onClick={() => openEditModal(activity)}
-                          className="text-blue-500 hover:text-blue-700">
+                          title="تعديل النشاط"
+                          className="text-blue-500 hover:text-white hover:bg-blue-500 p-2 rounded-lg transition-all duration-200 hover:shadow-md">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             className="h-5 w-5"
@@ -462,7 +478,8 @@ const Activities = () => {
                         </button>
                         <button
                           onClick={() => handleDeleteActivity(activity._id!)}
-                          className="text-red-500 hover:text-red-700">
+                          title="حذف النشاط"
+                          className="text-red-500 hover:text-white hover:bg-red-500 p-2 rounded-lg transition-all duration-200 hover:shadow-md">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             className="h-5 w-5"
@@ -508,37 +525,86 @@ const Activities = () => {
         )}
 
         {!loading && filteredActivities.length === 0 && (
-          <div className="text-center py-16">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-16 w-16 mx-auto text-slate-300"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1}
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-              />
-            </svg>
-            <h3 className="text-xl font-medium text-slate-600 mt-4">
-              لا توجد أنشطة بهذا التصنيف
-            </h3>
-            {isTeacherOrAdmin && (
-              <p className="text-slate-500 mt-2">
-                يمكنك إضافة نشاط جديد من خلال الزر أعلاه
+          <div className="text-center py-20 animate-fadeIn">
+            <div className="bg-white rounded-2xl shadow-lg p-12 max-w-md mx-auto border border-emerald-100">
+              <div className="bg-emerald-50 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-12 w-12 text-emerald-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-slate-700 mb-3">
+                لا توجد أنشطة بهذا التصنيف
+              </h3>
+              <p className="text-slate-500 mb-6">
+                {filter === "الكل" 
+                  ? "لم يتم إضافة أي أنشطة بعد"
+                  : `لا توجد أنشطة في تصنيف "${filter}"`
+                }
               </p>
-            )}
+              {isTeacherOrAdmin && (
+                <button
+                  onClick={openAddModal}
+                  className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold py-3 px-6 rounded-lg transition shadow-md hover:shadow-lg flex items-center gap-2 mx-auto">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor">
+                    <path
+                      fillRule="evenodd"
+                      d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  إضافة نشاط جديد
+                </button>
+              )}
+            </div>
           </div>
         )}
 
         {error && (
-          <div
-            className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mt-4"
-            role="alert">
-            <strong className="font-bold">خطأ! </strong>
-            <span className="block sm:inline">{error}</span>
+          <div className="max-w-2xl mx-auto mt-8 animate-fadeIn">
+            <div className="bg-gradient-to-r from-red-50 to-rose-50 border-2 border-red-200 rounded-xl p-6 shadow-lg">
+              <div className="flex items-start gap-4">
+                <div className="bg-red-100 p-3 rounded-full">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6 text-red-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-red-800 mb-1">
+                    حدث خطأ!
+                  </h3>
+                  <p className="text-red-700">{error}</p>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="mt-3 text-sm text-red-600 hover:text-red-800 font-medium underline">
+                    إعادة المحاولة
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -879,8 +945,21 @@ const Activities = () => {
           }
         }
 
+        @keyframes shimmer {
+          0% {
+            background-position: -200% 0;
+          }
+          100% {
+            background-position: 200% 0;
+          }
+        }
+
         .animate-fadeIn {
           animation: fadeIn 0.3s ease-out;
+        }
+
+        .animate-shimmer {
+          animation: shimmer 2s ease-in-out infinite;
         }
 
         /* Custom scrollbar for modal */
