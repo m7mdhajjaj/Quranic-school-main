@@ -50,7 +50,7 @@ import Test from "./pages/Test";
 import ExamSchedule from "./pages/ExamSchedule";
 import Reports from "./pages/Reports";
 import Timetable from "./pages/Timetable";
-import TeacherStudentsManagement from "./pages/TeacherStudentsManagement";
+import MyStudents from "./pages/Teacher/MyStudents";
 
 // ============================================================================
 // Page Components - Communication & Activities
@@ -200,7 +200,7 @@ const TeacherRoutes: React.FC = () => {
 
           {/* ====== Attendance & Management - Teacher Features ====== */}
           <Route path="/absence" element={<Absence />} />
-          <Route path="/my-students" element={<TeacherStudentsManagement />} />
+          <Route path="/my-students" element={<MyStudents />} />
 
           {/* ====== Islamic Resources ====== */}
           <Route path="/prayer-times" element={<PrayerTimes />} />

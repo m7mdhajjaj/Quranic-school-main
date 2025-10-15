@@ -17,22 +17,22 @@ import {
   FaTimes,
   FaSync,
 } from "react-icons/fa";
-import { useAuth } from "../hooks/useAuth";
-import { useSocket } from "../hooks/useSocket";
+import { useAuth } from "../../hooks/useAuth";
+import { useSocket } from "../../hooks/useSocket";
 import {
   getAllStudents,
   deleteStudent,
   type Student as ApiStudent,
-} from "../Api/studentApi";
+} from "../../Api/studentApi";
 
-import AddStudentFormWithYup from "../components/Forms/AddStudentForm";
-import ResponsivePagination from "../components/Pagination/ResponsivePagination";
+import AddStudentFormWithYup from "../../components/Forms/AddStudentForm";
+import ResponsivePagination from "../../components/Pagination/ResponsivePagination";
 import {
   showCenteredSwal,
   showSuccessMessage,
   showWarningMessage,
   showErrorMessage,
-} from "../utils/sweetalertUtils";
+} from "../../utils/sweetalertUtils";
 
 type Student = ApiStudent;
 
@@ -54,13 +54,16 @@ interface TeacherUser {
   groups?: Group[];
 }
 
-const TeacherStudentsManagement: React.FC = () => {
+const MyStudents: React.FC = () => {
   const { user: currentUser } = useAuth();
   const { onStudentUpdate, offStudentUpdate, isConnected } = useSocket();
 
   // Cast user to TeacherUser type
   const teacher = currentUser as TeacherUser;
-  const teacherGroups = teacher?.groups || [];
+
+    const teacherGroups = useMemo(() => teacher?.groups || [], [teacher?.groups]);
+//fix
+  // const teacherGroups = teacher?.groups || [];
 
   // Core States
   const [students, setStudents] = useState<Student[]>([]);
@@ -530,7 +533,9 @@ const TeacherStudentsManagement: React.FC = () => {
                     showFilters || activeFiltersCount > 0
                       ? "bg-emerald-600 text-white shadow-lg"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}>
+                  }`}
+                  aria-label="تبديل الفلاتر"
+                  title="تبديل الفلاتر">
                   <FaFilter />
                   {activeFiltersCount > 0 && (
                     <span className="bg-white text-emerald-600 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
@@ -544,7 +549,9 @@ const TeacherStudentsManagement: React.FC = () => {
                   onClick={() =>
                     setViewMode(viewMode === "table" ? "grid" : "table")
                   }
-                  className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all">
+                  className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all"
+                  aria-label={viewMode === "table" ? "عرض الشبكة" : "عرض الجدول"}
+                  title={viewMode === "table" ? "عرض الشبكة" : "عرض الجدول"}>
                   {viewMode === "table" ? <FaTh /> : <FaList />}
                 </button>
 
@@ -560,7 +567,9 @@ const TeacherStudentsManagement: React.FC = () => {
                 <button
                   onClick={fetchStudents}
                   disabled={isLoading}
-                  className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50">
+                  className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50"
+                  aria-label="تحديث قائمة الطلاب"
+                  title="تحديث قائمة الطلاب">
                   <FaSync className={isLoading ? "animate-spin" : ""} />
                 </button>
               </div>
@@ -572,10 +581,11 @@ const TeacherStudentsManagement: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Gender Filter */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="gender-filter" className="block text-sm font-medium text-gray-700 mb-2">
                       الجنس
                     </label>
                     <select
+                      id="gender-filter"
                       value={selectedGender}
                       onChange={(e) => setSelectedGender(e.target.value)}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent">
@@ -977,7 +987,9 @@ const TeacherStudentsManagement: React.FC = () => {
                 </div>
                 <button
                   onClick={handleFormClose}
-                  className="text-white/80 hover:text-white hover:bg-white/20 p-2 rounded-lg transition">
+                  className="text-white/80 hover:text-white hover:bg-white/20 p-2 rounded-lg transition"
+                  title="إغلاق"
+                  aria-label="إغلاق">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-6 w-6"
@@ -1041,4 +1053,4 @@ const TeacherStudentsManagement: React.FC = () => {
   );
 };
 
-export default TeacherStudentsManagement;
+export default MyStudents;

@@ -516,7 +516,6 @@ const Profile: React.FC = () => {
                         </button>
                       </>
                     ) : (
-                      // Upload Button (when no avatar)
                       <button
                         type="button"
                         onClick={() => document.getElementById('avatar')?.click()}
