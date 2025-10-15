@@ -61,12 +61,8 @@ const adminSchema = new mongoose.Schema(
 
     // صورة
     avatar: {
-      data: Buffer,
-      contentType: {
-        type: String,
-        enum: ['image/png', 'image/jpeg', 'image/webp'],
-        default: undefined,
-      },
+      url: { type: String },
+      publicId: { type: String },
     },
 
     isActive: { type: Boolean, default: false },
@@ -78,8 +74,7 @@ const adminSchema = new mongoose.Schema(
     toJSON: {
       virtuals: true,
       transform: (_doc, ret) => {
-        if (ret.avatar && ret.avatar.data) delete ret.avatar.data;
-        ret.hasAvatar = !!ret.avatar?.contentType;
+        ret.hasAvatar = !!ret.avatar?.url;
         return ret;
       },
     },

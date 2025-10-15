@@ -1,6 +1,7 @@
 import { NavLink, useNavigate, useLocation, Link } from "react-router-dom";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import NotificationHeader from "../NotificationHeader";
+import Avatar from "../Avatar";
 import { useAuth } from "../../hooks/useAuth";
 import ChangePasswordModal from "../../pages/Auth/ChangePass";
 import { io, Socket } from "socket.io-client";
@@ -370,9 +371,12 @@ const Header = () => {
                 <button
                   onClick={() => setProfileMenuOpen(!profileMenuOpen)}
                   className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2.5 rounded-xl bg-white/20 hover:bg-white/30 border border-white/30 text-white transition-all hover:scale-105 backdrop-blur-md">
-                  <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-white/30 flex items-center justify-center font-bold text-sm">
-                    {currentUser?.firstName?.[0] || "👤"}
-                  </div>
+                  <Avatar
+                    user={currentUser || undefined}
+                    size="sm"
+                    border="none"
+                    className="w-8 h-8 md:w-9 md:h-9"
+                  />
                   <span className="hidden md:block text-sm font-semibold truncate max-w-24">
                     {currentUser?.firstName || "المستخدم"}
                   </span>
@@ -396,9 +400,12 @@ const Header = () => {
                   <div className="absolute left-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-slide-down z-50">
                     <div className="bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-5">
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-emerald-600 font-bold text-xl shadow-lg">
-                          {currentUser?.firstName?.[0] || "👤"}
-                        </div>
+                        <Avatar
+                          user={currentUser || undefined}
+                          size="lg"
+                          border="thick"
+                          className="shadow-lg"
+                        />
                         <div className="flex-1 min-w-0">
                           <p className="text-white font-bold text-sm truncate">
                             {currentUser?.firstName && currentUser?.lastName
@@ -625,9 +632,12 @@ const Header = () => {
 
               {currentUser && (
                 <div className="flex items-center gap-4 mb-6 p-4 bg-white/10 rounded-2xl backdrop-blur-md">
-                  <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-emerald-600 font-bold text-lg shadow-lg">
-                    {currentUser?.firstName?.[0] || "👤"}
-                  </div>
+                  <Avatar
+                    user={currentUser || undefined}
+                    size="lg"
+                    border="thick"
+                    className="shadow-lg"
+                  />
                   <div className="flex-1">
                     <div className="text-white font-semibold text-lg truncate">
                       {currentUser.firstName && currentUser.lastName

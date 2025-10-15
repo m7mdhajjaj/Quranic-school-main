@@ -4,7 +4,7 @@
 // routes/teacherRoutes.js
 const express = require("express");
 const router = express.Router();
-const multer = require("multer");
+const cloudinary = require("../config/cloudinary");
 
 const Teacher = require("../schema/Teacher");
 const Student = require("../schema/Student"); // for /for-student
@@ -15,49 +15,88 @@ const {
   validateTeacherGroups, 
   sanitizeTeacherData 
 } = require("../Validation/TeacherValidation");
+const { uploadAvatar } = require("../config/multer");
 
-// ========== Multer in-memory (لا ملفات على الهارد) ==========
-const teacherAvatarUpload = multer({
-  storage: multer.memoryStorage(),
-  fileFilter: (_req, file, cb) => {
-    if (file.mimetype && file.mimetype.startsWith("image/")) return cb(null, true);
-    cb(new Error("يُسمح فقط بملفات الصور"), false);
-  },
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
-});
-
-// ========== رفع أفاتار المعلّم (يحفظ في الداتابيس) - FIXED ==========
-router.post("/:id/avatar", teacherAvatarUpload.single("avatar"), async (req, res) => {
+// ========== رفع أفاتار المعلّم (Cloudinary) - UPDATED ==========
+router.post("/:id/avatar", uploadAvatar.single("avatar"), async (req, res) => {
   try {
     const teacher = await Teacher.findById(req.params.id);
     if (!teacher) return res.status(404).json({ success: false, message: "المعلم غير موجود" });
     if (!req.file) return res.status(400).json({ success: false, message: "لم يتم استلام ملف صورة" });
 
-    // Only update avatar field without triggering validation on other fields
+    // Delete old avatar from Cloudinary if exists
+    if (teacher.avatar && teacher.avatar.publicId) {
+      try {
+        await cloudinary.uploader.destroy(teacher.avatar.publicId);
+      } catch (error) {
+        console.log("Error deleting old avatar:", error);
+      }
+    }
+
+    // Update avatar with Cloudinary URL and public ID
     await Teacher.updateOne(
       { _id: req.params.id },
-      { $set: { avatar: { data: req.file.buffer, contentType: req.file.mimetype } } }
+      {
+        $set: {
+          avatar: {
+            url: req.file.path,
+            publicId: req.file.filename,
+          },
+        },
+      }
     );
 
-    return res.status(200).json({ success: true, message: "تم حفظ الصورة في قاعدة البيانات" });
+    return res.status(200).json({
+      success: true,
+      message: "تم رفع الصورة بنجاح",
+      avatarUrl: req.file.path,
+    });
   } catch (error) {
     console.error("Error uploading teacher avatar:", error);
     return res.status(500).json({ success: false, message: "خطأ في رفع الصورة" });
   }
 });
 
-// ========== عرض صورة أفاتار المعلّم مباشرة من الداتابيس ==========
+// ========== عرض رابط صورة أفاتار المعلّم ==========
 router.get("/:id/avatar", async (req, res) => {
   try {
     const teacher = await Teacher.findById(req.params.id).select("avatar");
-    if (!teacher || !teacher.avatar || !teacher.avatar.data) {
-      return res.status(404).send("لا توجد صورة");
+    if (!teacher) {
+      return res.status(404).json({ success: false, message: "المعلم غير موجود" });
     }
-    res.set("Content-Type", teacher.avatar.contentType || "image/jpeg");
-    return res.send(teacher.avatar.data);
+    // إذا ما في صورة، نرجع null بدل error
+    const avatarUrl = teacher.avatar?.url || null;
+    res.json({ success: true, avatarUrl });
   } catch (error) {
-    console.error("Error serving teacher avatar:", error);
-    return res.status(500).send("خطأ في عرض الصورة");
+    console.error("Error getting teacher avatar:", error);
+    return res.status(500).json({ success: false, message: "خطأ في عرض الصورة" });
+  }
+});
+
+// ========== حذف أفاتار المعلّم ==========
+router.delete("/:id/avatar", async (req, res) => {
+  try {
+    const teacher = await Teacher.findById(req.params.id);
+    if (!teacher)
+      return res.status(404).json({ success: false, message: "المعلم غير موجود" });
+
+    if (teacher.avatar && teacher.avatar.publicId) {
+      // Delete from Cloudinary
+      await cloudinary.uploader.destroy(teacher.avatar.publicId);
+
+      // Remove from database
+      await Teacher.updateOne(
+        { _id: req.params.id },
+        { $unset: { avatar: "" } }
+      );
+
+      res.json({ success: true, message: "تم حذف الصورة بنجاح" });
+    } else {
+      res.status(404).json({ success: false, message: "لا توجد صورة لحذفها" });
+    }
+  } catch (error) {
+    console.error("Error deleting teacher avatar:", error);
+    res.status(500).json({ success: false, message: "خطأ في حذف الصورة" });
   }
 });
 

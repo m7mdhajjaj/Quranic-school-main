@@ -19,6 +19,7 @@ import {
   AlertCircle,
   Camera,
   ShieldCheck,
+  Trash2,
 } from 'lucide-react';
 import Avatar from '../components/Avatar';
 import { useAuth } from '../hooks/useAuth';
@@ -30,6 +31,7 @@ import {
   updateUserById,
   fetchAvatarBlobUrl,
   uploadUserAvatar,
+  deleteUserAvatar,
   type UserProfile,
 } from '../Api/profileApi';
 import { validateProfileData, validateField, type FieldErrors } from '../Validation/profileValidation';
@@ -211,6 +213,27 @@ const Profile: React.FC = () => {
     setEdited(null);
     setAvatarFile(null);
     setFieldErrors({});
+  };
+
+  const handleDeleteAvatar = async () => {
+    if (!user || !endpoint) return;
+
+    try {
+      await deleteUserAvatar(endpoint, user._id);
+      
+      // Clear avatar from state
+      if (avatarUrl && avatarUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(avatarUrl);
+      }
+      setAvatarUrl(null);
+      setAvatarFile(null);
+      
+      await showSuccessMessage('تم الحذف!', 'تم حذف الصورة الشخصية بنجاح');
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { message?: string } } };
+      const msg = axiosError?.response?.data?.message || 'تعذّر حذف الصورة';
+      await showErrorMessage('خطأ في الحذف!', msg);
+    }
   };
 
   const handleFieldBlur = (fieldName: string, value: string | undefined) => {
@@ -429,16 +452,29 @@ const Profile: React.FC = () => {
                   fallbackIcon={<UserIcon className="w-24 h-24 text-white" />}
                 />
 
-                {/* Camera Button */}
+                {/* Upload or Delete Avatar Button */}
                 {isEditing && (
-                  <button
-                    type="button"
-                    onClick={() => document.getElementById('avatar')?.click()}
-                    title="تغيير الصورة الشخصية"
-                    className="absolute bottom-4 right-4 bg-white text-emerald-600 p-5 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300"
-                  >
-                    <Camera className="w-7 h-7" />
-                  </button>
+                  avatarUrl ? (
+                    // Delete Button (when avatar exists)
+                    <button
+                      type="button"
+                      onClick={handleDeleteAvatar}
+                      title="حذف الصورة الشخصية"
+                      className="absolute bottom-4 right-4 bg-red-600 text-white p-5 rounded-full shadow-2xl hover:scale-110 hover:bg-red-700 active:scale-95 transition-all duration-300"
+                    >
+                      <Trash2 className="w-7 h-7" />
+                    </button>
+                  ) : (
+                    // Upload Button (when no avatar)
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('avatar')?.click()}
+                      title="رفع صورة شخصية"
+                      className="absolute bottom-4 right-4 bg-white text-emerald-600 p-5 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300"
+                    >
+                      <Camera className="w-7 h-7" />
+                    </button>
+                  )
                 )}
               </div>
 

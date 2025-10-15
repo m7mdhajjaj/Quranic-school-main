@@ -31,6 +31,7 @@ import {
 
 import AddStudentFormWithYup from '../../components/Forms/AddStudentForm';
 import ResponsivePagination from '../../components/Pagination/ResponsivePagination';
+import Avatar from '../../components/Avatar';
 import {
   showCenteredSwal,
   showSuccessMessage,
@@ -1127,9 +1128,12 @@ const StudentsManagement: React.FC = () => {
                 <div className="relative bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-700 p-6 text-center">
                   {/* Student Avatar */}
                   <div className="relative inline-block mb-4">
-                    <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-xl ring-4 ring-white/30">
-                      <FaUserGraduate className="w-12 h-12 text-blue-600" />
-                    </div>
+                    <Avatar
+                      user={student}
+                      size="xl"
+                      border="ring"
+                      fallbackIcon={<FaUserGraduate className="w-8 h-8" />}
+                    />
                     {/* Student ID Badge */}
                     <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-white px-3 py-1 rounded-full shadow-lg">
                       <span className="text-blue-600 font-bold text-sm">

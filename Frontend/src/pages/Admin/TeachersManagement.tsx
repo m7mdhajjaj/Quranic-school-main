@@ -35,6 +35,7 @@ import {
 import type { TeacherFormData } from '../../Validation/teacherValidation';
 import EnhancedTeacherForm from '../../components/Forms/AddTeacherForm';
 import ResponsivePagination from '../../components/Pagination/ResponsivePagination';
+import Avatar from '../../components/Avatar';
 import { showCenteredSwal, showSuccessMessage, showErrorMessage } from "../../utils/sweetalertUtils";
 
 type SortField = 'teacherId' | 'firstName' | 'age' | 'email';
@@ -1506,9 +1507,12 @@ const TeachersManagement: React.FC = () => {
                     <div className="relative bg-gradient-to-br from-purple-500 via-blue-600 to-indigo-700 p-6 text-center">
                       {/* Teacher Avatar */}
                       <div className="relative inline-block mb-4">
-                        <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-xl ring-4 ring-white/30">
-                          <FaUserTie className="w-12 h-12 text-purple-600" />
-                        </div>
+                        <Avatar
+                          user={teacher}
+                          size="xl"
+                          border="ring"
+                          fallbackIcon={<FaUserTie className="w-8 h-8" />}
+                        />
                         {/* Teacher ID Badge */}
                         <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-white px-3 py-1 rounded-full shadow-lg">
                           <span className="text-purple-600 font-bold text-sm">

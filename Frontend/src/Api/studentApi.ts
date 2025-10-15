@@ -22,8 +22,8 @@ export interface Student {
   email?: string;
   phoneNumber: string;
   avatar?: {
-    data: Buffer;
-    contentType: string;
+    url?: string;
+    publicId?: string;
   };
   isActive: boolean;
   lastSeen: Date;

@@ -17,6 +17,10 @@ export interface User {
   adminId?: string;
   group?: string;
   imageUrl?: string;
+  avatar?: {
+    url?: string;
+    publicId?: string;
+  };
   isActive?: boolean;
   // يمكن إضافة المزيد من الخصائص حسب الحاجة
 }

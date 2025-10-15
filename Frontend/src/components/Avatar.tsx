@@ -1,8 +1,9 @@
 import React from 'react';
 import { User as UserIcon } from 'lucide-react';
+import { useAvatar } from '../hooks/useAvatar';
 
 export interface AvatarProps {
-  /** Avatar image URL */
+  /** Avatar image URL from Cloudinary */
   src?: string | null;
   /** Alternative image URL (for preview when editing) */
   previewSrc?: string | null;
@@ -12,8 +13,24 @@ export interface AvatarProps {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl';
   /** User's name for fallback initial */
   userName?: string;
-  /** User ID for status checking */
+  /** User ID for fetching avatar from API */
   userId?: string;
+  /** User role for API endpoint */
+  userRole?: string;
+  /** User object with all data (including avatar from Cloudinary) */
+  user?: {
+    _id?: string;
+    firstName?: string;
+    name?: string;
+    gender?: string;
+    role?: string;
+    avatar?: {
+      url?: string;
+      publicId?: string;
+    };
+  };
+  /** Auto-fetch avatar from API using userId */
+  autoFetch?: boolean;
   /** User's gender for color theming */
   gender?: 'male' | 'female' | 'ذكر' | 'أنثى';
   /** Whether to show loading state */
@@ -111,10 +128,13 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
   previewSrc,
   alt = 'صورة المستخدم',
   size = 'md',
-  userName,
+  userName: externalUserName,
   userId,
-  gender = 'male',
-  loading = false,
+  userRole,
+  user,
+  autoFetch = false,
+  gender: externalGender = 'male',
+  loading: externalLoading = false,
   clickable = false,
   onClick,
   className = '',
@@ -127,8 +147,37 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
   statusSize = 'md',
   forceStatus,
 }) => {
-  const displaySrc = previewSrc || src;
+  // استخدام hook لجلب الصورة من Cloudinary إذا لزم الأمر
+  const { avatarUrl: fetchedAvatarUrl, isLoading: isFetchingAvatar } = useAvatar({
+    userId: userId || user?._id,
+    userRole: userRole || user?.role,
+    avatarData: user?.avatar,
+    enabled: autoFetch && !!(userId || user?._id) && !!(userRole || user?.role),
+  });
+
+  // أولوية الصورة:
+  // 1. src مباشر
+  // 2. user.avatar.url من Cloudinary
+  // 3. fetchedAvatarUrl من API
+  const finalAvatarUrl = src || user?.avatar?.url || fetchedAvatarUrl || null;
+  const displaySrc = previewSrc || finalAvatarUrl;
+
+  // معلومات المستخدم للـ fallback
+  const userName = externalUserName || user?.firstName || user?.name || '';
   const initials = userName ? userName.charAt(0).toUpperCase() : '';
+  
+  // الجنس
+  const userGender = user?.gender || externalGender;
+  const gender = (() => {
+    if (!userGender) return 'male';
+    const normalized = userGender.toLowerCase().trim();
+    if (normalized === 'male' || normalized === 'ذكر') return 'ذكر';
+    if (normalized === 'female' || normalized === 'أنثى' || normalized === 'انثى') return 'أنثى';
+    return 'male';
+  })();
+
+  // حالة التحميل
+  const loading = externalLoading || isFetchingAvatar;
 
   // Simple status logic without external dependencies
   const userIsOnline = forceStatus === 'online' || (!forceStatus && showStatus);
@@ -159,10 +208,10 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
 
   // دالة للحصول على لون الجنس مع دعم القيم العربية والإنجليزية
   const getGenderColor = () => {
-    if (gender === 'male' || gender === 'ذكر') {
+    if (gender === 'ذكر') {
       return 'bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-600 border-emerald-200/60 shadow-lg shadow-emerald-500/40';
     }
-    if (gender === 'female' || gender === 'أنثى') {
+    if (gender === 'أنثى') {
       return 'bg-gradient-to-br from-pink-400 via-rose-500 to-fuchsia-600 border-pink-200/60 shadow-lg shadow-pink-500/40';
     }
     return 'bg-gradient-to-br from-gray-400 via-slate-500 to-gray-600 border-gray-200/60 shadow-lg shadow-gray-500/40';
@@ -170,12 +219,6 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
 
   // دالة للحصول على لون النص حسب الجنس
   const getTextColor = () => {
-    if (gender === 'male' || gender === 'ذكر') {
-      return 'text-white drop-shadow-lg';
-    }
-    if (gender === 'female' || gender === 'أنثى') {
-      return 'text-white drop-shadow-lg';
-    }
     return 'text-white drop-shadow-lg';
   };
 

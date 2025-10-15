@@ -1,27 +1,18 @@
 // routes/studentRoutes.js
 const express = require("express");
 const router = express.Router();
-const multer = require("multer");
+const cloudinary = require("../config/cloudinary");
 
 const Student = require("../schema/Student");
 const studentController = require("../controllers/studentController");
 const { protect } = require("../middleware/authMiddleware");
 const { validateStudentData } = require("../Validation/StudentValidation");
+const { uploadAvatar } = require("../config/multer");
 
-// in-memory upload
-const studentAvatarUpload = multer({
-  storage: multer.memoryStorage(),
-  fileFilter: (_req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) cb(null, true);
-    else cb(new Error("يُسمح فقط بملفات الصور"), false);
-  },
-  limits: { fileSize: 2 * 1024 * 1024 },
-});
-
-// Upload student avatar (DB only) - FIXED
+// Upload student avatar (Cloudinary) - UPDATED
 router.post(
   "/:id/avatar",
-  studentAvatarUpload.single("avatar"),
+  uploadAvatar.single("avatar"),
   async (req, res) => {
     try {
       const student = await Student.findById(req.params.id);
@@ -34,19 +25,33 @@ router.post(
           .status(400)
           .json({ success: false, message: "لم يتم استلام ملف صورة" });
 
-      // Only update avatar field without triggering validation on other fields
+      // Delete old avatar from Cloudinary if exists
+      if (student.avatar && student.avatar.publicId) {
+        try {
+          await cloudinary.uploader.destroy(student.avatar.publicId);
+        } catch (error) {
+          console.log("Error deleting old avatar:", error);
+        }
+      }
+
+      // Update avatar with Cloudinary URL and public ID
       await Student.updateOne(
         { _id: req.params.id },
         {
           $set: {
-            avatar: { data: req.file.buffer, contentType: req.file.mimetype },
+            avatar: {
+              url: req.file.path,
+              publicId: req.file.filename,
+            },
           },
         }
       );
 
-      res
-        .status(200)
-        .json({ success: true, message: "تم حفظ الصورة في قاعدة البيانات" });
+      res.status(200).json({
+        success: true,
+        message: "تم رفع الصورة بنجاح",
+        avatarUrl: req.file.path,
+      });
     } catch (error) {
       console.error("Error uploading student avatar:", error);
       res.status(500).json({ success: false, message: "خطأ في رفع الصورة" });
@@ -54,18 +59,50 @@ router.post(
   }
 );
 
-// Serve student avatar - same as working teacher route
+// Get student avatar URL
 router.get("/:id/avatar", async (req, res) => {
   try {
     const student = await Student.findById(req.params.id).select("avatar");
-    if (!student || !student.avatar || !student.avatar.data) {
-      return res.status(404).send("لا توجد صورة");
+    if (!student) {
+      return res
+        .status(404)
+        .json({ success: false, message: "الطالب غير موجود" });
     }
-    res.set("Content-Type", student.avatar.contentType || "image/jpeg");
-    return res.send(student.avatar.data);
+    // إذا ما في صورة، نرجع null بدل error
+    const avatarUrl = student.avatar?.url || null;
+    res.json({ success: true, avatarUrl });
   } catch (error) {
-    console.error("Error serving student avatar:", error);
-    return res.status(500).send("خطأ في عرض الصورة");
+    console.error("Error getting student avatar:", error);
+    return res.status(500).json({ success: false, message: "خطأ في عرض الصورة" });
+  }
+});
+
+// Delete student avatar
+router.delete("/:id/avatar", async (req, res) => {
+  try {
+    const student = await Student.findById(req.params.id);
+    if (!student)
+      return res
+        .status(404)
+        .json({ success: false, message: "الطالب غير موجود" });
+
+    if (student.avatar && student.avatar.publicId) {
+      // Delete from Cloudinary
+      await cloudinary.uploader.destroy(student.avatar.publicId);
+
+      // Remove from database
+      await Student.updateOne(
+        { _id: req.params.id },
+        { $unset: { avatar: "" } }
+      );
+
+      res.json({ success: true, message: "تم حذف الصورة بنجاح" });
+    } else {
+      res.status(404).json({ success: false, message: "لا توجد صورة لحذفها" });
+    }
+  } catch (error) {
+    console.error("Error deleting student avatar:", error);
+    res.status(500).json({ success: false, message: "خطأ في حذف الصورة" });
   }
 });
 

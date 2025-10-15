@@ -81,12 +81,15 @@ export const updateUserById = async (
   return response.data?.data ?? response.data;
 };
 
-// Get user avatar
-export const getUserAvatar = async (endpoint: Endpoint, userId: string): Promise<Blob> => {
-  const response = await api.get(`/${endpoint}/${userId}/avatar`, {
-    responseType: 'blob',
-  });
-  return response.data;
+// Get user avatar URL from Cloudinary
+export const getUserAvatar = async (endpoint: Endpoint, userId: string): Promise<{ avatarUrl: string | null }> => {
+  try {
+    const response = await api.get(`/${endpoint}/${userId}/avatar`);
+    return { avatarUrl: response.data?.avatarUrl || response.data?.avatar?.url || null };
+  } catch (error) {
+    console.error('Error fetching avatar:', error);
+    return { avatarUrl: null };
+  }
 };
 
 // Upload user avatar
@@ -94,12 +97,21 @@ export const uploadUserAvatar = async (
   endpoint: Endpoint,
   userId: string,
   formData: FormData
-): Promise<{ success: boolean; message: string }> => {
+): Promise<{ success: boolean; message: string; avatarUrl?: string }> => {
   const response = await api.post(`/${endpoint}/${userId}/avatar`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
   });
+  return response.data;
+};
+
+// Delete user avatar
+export const deleteUserAvatar = async (
+  endpoint: Endpoint,
+  userId: string
+): Promise<{ success: boolean; message: string }> => {
+  const response = await api.delete(`/${endpoint}/${userId}/avatar`);
   return response.data;
 };
 
@@ -110,11 +122,11 @@ export const getUserEndpoint = (role?: string): Endpoint => {
   return 'students';
 };
 
-// Helper function to fetch avatar blob URL
+// Helper function to fetch avatar URL from Cloudinary
 export const fetchAvatarBlobUrl = async (endpoint: Endpoint, userId: string): Promise<string | null> => {
   try {
-    const blob = await getUserAvatar(endpoint, userId);
-    return URL.createObjectURL(blob);
+    const { avatarUrl } = await getUserAvatar(endpoint, userId);
+    return avatarUrl;
   } catch (error) {
     console.error('Error fetching avatar:', error);
     return null;

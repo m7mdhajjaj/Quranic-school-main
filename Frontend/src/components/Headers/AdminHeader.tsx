@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { showLogoutConfirmation } from '../../utils/logoutUtils';
 import ChangePasswordModal from '../../pages/Auth/ChangePass';
+import Avatar from '../Avatar';
 import {
   getRecentNotifications,
   getUnreadNotificationCount,
@@ -518,15 +519,12 @@ const AdminHeader: React.FC = () => {
                       : 'bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/30'
                   }`}
                 >
-                  <div
-                    className={`w-6 h-6 sm:w-8 sm:h-8 md:w-9 md:h-9 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm md:text-base ${
-                      scrolled
-                        ? 'bg-white text-emerald-600'
-                        : 'bg-white/20 text-white'
-                    }`}
-                  >
-                    {currentUser?.firstName?.[0] || 'A'}
-                  </div>
+                  <Avatar
+                    user={currentUser || undefined}
+                    size="sm"
+                    border="none"
+                    className="w-6 h-6 sm:w-8 sm:h-8 md:w-9 md:h-9"
+                  />
                   <span className="text-sm sm:text-base font-semibold hidden lg:block truncate max-w-24">
                     {currentUser?.firstName || 'المشرف'}
                   </span>
@@ -549,9 +547,12 @@ const AdminHeader: React.FC = () => {
                   <div className="absolute left-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-scale-in z-50">
                     <div className="bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-5">
                       <div className="flex items-center space-x-reverse space-x-3">
-                        <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-emerald-600 font-bold text-lg shadow-lg">
-                          {currentUser?.firstName?.[0] || 'A'}
-                        </div>
+                        <Avatar
+                          user={currentUser || undefined}
+                          size="lg"
+                          border="thick"
+                          className="shadow-lg"
+                        />
                         <div className="flex-1 min-w-0">
                           <p className="text-white font-bold text-sm truncate">
                             {currentUser?.firstName && currentUser?.lastName
@@ -699,15 +700,12 @@ const AdminHeader: React.FC = () => {
                   }`}
                 >
                   <div className="flex items-center space-x-reverse space-x-3">
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
-                        scrolled
-                          ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white'
-                          : 'bg-white text-emerald-600'
-                      }`}
-                    >
-                      {currentUser?.firstName?.charAt(0) || 'A'}
-                    </div>
+                    <Avatar
+                      user={currentUser || undefined}
+                      size="md"
+                      border="none"
+                      className="w-10 h-10"
+                    />
                     <div>
                       <p
                         className={`font-medium text-sm ${scrolled ? 'text-gray-900' : 'text-white'}`}
