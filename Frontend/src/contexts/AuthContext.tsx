@@ -138,7 +138,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 }, 500);
               }
               
-              console.log('✅ تم تأكيد صحة بيانات المستخدم:', parsedUser.firstName || parsedUser.name);
+              // console.log('✅ تم تأكيد صحة بيانات المستخدم:', parsedUser.firstName || parsedUser.name);
             } else {
               console.warn('⚠️ فشل في التحقق من التوكن');
             }
@@ -147,7 +147,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             
             // استخدم البيانات المحفوظة مؤقتاً حتى لو فشل التحقق
             // هذا يمنع إعادة التوجيه المستمر إذا كان الخادم غير متاح
-            console.log('🔄 سيتم استخدام البيانات المحفوظة مؤقتاً');
+            // console.log('🔄 سيتم استخدام البيانات المحفوظة مؤقتاً');
             setUser(parsedUser);
             setToken(savedToken);
             
@@ -226,7 +226,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         // Wait for connection before emitting login
         socketRef.current.on('connect', () => {
-          console.log('🔌 Socket متصل');
+          // console.log('🔌 Socket متصل');
           socketRef.current?.emit('login', {
             userId: userData._id,
             role: userData.role,
@@ -247,7 +247,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         });
       }
 
-      console.log('✅ تم تسجيل الدخول بنجاح:', userData.firstName || userData.name);
+      // console.log('✅ تم تسجيل الدخول بنجاح:', userData.firstName || userData.name);
     } catch (error) {
       console.error('❌ خطأ في تسجيل الدخول:', error);
     }
@@ -276,7 +276,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // قطع اتصال Socket
       if (socketRef.current && socketRef.current.connected) {
         socketRef.current.disconnect();
-        console.log('🔌 تم قطع اتصال Socket');
+        // console.log('🔌 تم قطع اتصال Socket');
       }
 
       // مسح البيانات من الحالة المحلية
@@ -293,7 +293,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
       });
 
-      console.log('✨ تم تنظيف جميع بيانات الجلسة');
+      // console.log('✨ تم تنظيف جميع بيانات الجلسة');
 
       // إعادة توجه إلى صفحة تسجيل الدخول
       window.location.href = '/login';
@@ -310,7 +310,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const updatedUser = { ...user, ...userData };
       setUser(updatedUser);
       localStorage.setItem('user', JSON.stringify(updatedUser));
-      console.log('🔄 تم تحديث بيانات المستخدم');
+      // console.log('🔄 تم تحديث بيانات المستخدم');
     } catch (error) {
       console.error('❌ خطأ في تحديث بيانات المستخدم:', error);
     }

@@ -122,7 +122,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     if (!user) {
       // Disconnect socket when user logs out
       if (socket) {
-        console.log('🔌 Disconnecting socket - user logged out');
+        // console.log('🔌 Disconnecting socket - user logged out');
         socket.disconnect();
         setSocket(null);
         setIsConnected(false);
@@ -145,7 +145,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
 
     // Connection event handlers
     socketInstance.on('connect', () => {
-      console.log('✅ Socket connected:', socketInstance.id);
+      // console.log('✅ Socket connected:', socketInstance.id);
       setIsConnected(true);
       
       // Send login data to server
@@ -156,8 +156,8 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       });
     });
 
-    socketInstance.on('disconnect', (reason) => {
-      console.log('❌ Socket disconnected:', reason);
+    socketInstance.on('disconnect', () => {
+      // console.log('❌ Socket disconnected');
       setIsConnected(false);
     });
 
@@ -170,8 +170,8 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       console.error('🚫 Socket error:', error);
     });
 
-    socketInstance.on('reconnect', (attemptNumber) => {
-      console.log('🔄 Socket reconnected after', attemptNumber, 'attempts');
+    socketInstance.on('reconnect', () => {
+      // console.log('🔄 Socket reconnected');
       setIsConnected(true);
       // Re-send login data after reconnection
       socketInstance.emit('login', {
@@ -181,8 +181,8 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       });
     });
 
-    socketInstance.on('reconnect_attempt', (attemptNumber) => {
-      console.log('🔄 Reconnect attempt #', attemptNumber);
+    socketInstance.on('reconnect_attempt', () => {
+      // console.log('🔄 Reconnect attempt');
     });
 
     socketInstance.on('reconnect_error', (error) => {
@@ -196,19 +196,19 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
 
     // Student management events
     socketInstance.on('studentCreated', (data: Student) => {
-      console.log('👥 Student created:', data);
+      // console.log('👥 Student created:', data);
       const event: StudentUpdateEvent = { type: 'created', student: data };
       studentUpdateCallbacks.current.forEach(callback => callback(event));
     });
 
     socketInstance.on('studentUpdated', (data: Student) => {
-      console.log('✏️ Student updated:', data);
+      // console.log('✏️ Student updated:', data);
       const event: StudentUpdateEvent = { type: 'updated', student: data };
       studentUpdateCallbacks.current.forEach(callback => callback(event));
     });
 
     socketInstance.on('studentDeleted', (data: { studentId: string, student?: Student }) => {
-      console.log('🗑️ Student deleted:', data);
+      // console.log('🗑️ Student deleted:', data);
       const event: StudentUpdateEvent = { 
         type: 'deleted', 
         student: data.student || {} as Student,
@@ -219,19 +219,19 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
 
     // Teacher management events
     socketInstance.on('teacherCreated', (data: Teacher) => {
-      console.log('👨‍🏫 Teacher created:', data);
+      // console.log('👨‍🏫 Teacher created:', data);
       const event: TeacherUpdateEvent = { type: 'created', teacher: data };
       teacherUpdateCallbacks.current.forEach(callback => callback(event));
     });
 
     socketInstance.on('teacherUpdated', (data: Teacher) => {
-      console.log('✏️ Teacher updated:', data);
+      // console.log('✏️ Teacher updated:', data);
       const event: TeacherUpdateEvent = { type: 'updated', teacher: data };
       teacherUpdateCallbacks.current.forEach(callback => callback(event));
     });
 
     socketInstance.on('teacherDeleted', (data: { _id: string }) => {
-      console.log('🗑️ Teacher deleted:', data);
+      // console.log('🗑️ Teacher deleted:', data);
       const event: TeacherUpdateEvent = { 
         type: 'deleted', 
         teacher: { _id: data._id } as Teacher,
@@ -242,13 +242,13 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
 
     // Dashboard events
     socketInstance.on('dashboardUpdate', (data: DashboardUpdateEvent) => {
-      console.log('📊 Dashboard update received:', data);
+      // console.log('📊 Dashboard update received:', data);
       dashboardUpdateCallbacks.current.forEach(callback => callback(data));
     });
 
     // User status events
     socketInstance.on('userStatusChange', (data: { userId: string; isActive: boolean; lastSeen: string }) => {
-      console.log('🔄 User status changed:', data);
+      // console.log('🔄 User status changed:', data);
       setOnlineUsers(prev => {
         const updated = new Map(prev);
         const existingUser = updated.get(data.userId);
@@ -265,7 +265,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
 
     // Cleanup on unmount
     return () => {
-      console.log('🧹 Cleaning up socket connection');
+      // console.log('🧹 Cleaning up socket connection');
       if (user) {
         socketInstance.emit('logout', {
           userId: user._id,

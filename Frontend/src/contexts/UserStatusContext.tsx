@@ -83,7 +83,7 @@ export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       });
 
       socketInstance.on('connect', () => {
-        console.log('UserStatus Socket connected');
+        // console.log('UserStatus Socket connected');
         setSocket(socketInstance);
         
         // جلب الحالة الأولية للمستخدم الحالي
@@ -93,7 +93,7 @@ export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       });
 
       socketInstance.on('disconnect', () => {
-        console.log('UserStatus Socket disconnected');
+        // console.log('UserStatus Socket disconnected');
         setSocket(null);
       });
 
