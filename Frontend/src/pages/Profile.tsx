@@ -218,6 +218,35 @@ const Profile: React.FC = () => {
   const handleDeleteAvatar = async () => {
     if (!user || !endpoint) return;
 
+    // استخدام SweetAlert للتأكيد قبل الحذف
+    const Swal = (await import('sweetalert2')).default;
+    const result = await Swal.fire({
+      title: 'هل أنت متأكد؟',
+      html: `
+        <div class="text-center py-4">
+          <div class="mx-auto w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-4">
+            <svg class="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+            </svg>
+          </div>
+          <p class="text-lg font-semibold text-gray-800 mb-2">سيتم حذف الصورة الشخصية نهائياً</p>
+          <p class="text-sm text-gray-600">لا يمكن التراجع عن هذا الإجراء</p>
+        </div>
+      `,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'نعم، احذف الصورة',
+      cancelButtonText: 'إلغاء',
+      reverseButtons: true,
+      customClass: {
+        popup: '!rounded-2xl',
+        confirmButton: '!bg-red-600 hover:!bg-red-700 !text-white !font-bold !px-6 !py-3 !rounded-xl !shadow-lg',
+        cancelButton: '!bg-gray-300 hover:!bg-gray-400 !text-gray-800 !font-bold !px-6 !py-3 !rounded-xl !shadow-lg',
+      },
+    });
+
+    if (!result.isConfirmed) return;
+
     try {
       await deleteUserAvatar(endpoint, user._id);
       
@@ -227,6 +256,11 @@ const Profile: React.FC = () => {
       }
       setAvatarUrl(null);
       setAvatarFile(null);
+      
+      // Update user object to reflect no avatar
+      if (user) {
+        setUser({ ...user, avatar: undefined });
+      }
       
       await showSuccessMessage('تم الحذف!', 'تم حذف الصورة الشخصية بنجاح');
     } catch (error: unknown) {
@@ -452,29 +486,50 @@ const Profile: React.FC = () => {
                   fallbackIcon={<UserIcon className="w-24 h-24 text-white" />}
                 />
 
-                {/* Upload or Delete Avatar Button */}
+                {/* Avatar Action Buttons */}
                 {isEditing && (
-                  avatarUrl ? (
-                    // Delete Button (when avatar exists)
-                    <button
-                      type="button"
-                      onClick={handleDeleteAvatar}
-                      title="حذف الصورة الشخصية"
-                      className="absolute bottom-4 right-4 bg-red-600 text-white p-5 rounded-full shadow-2xl hover:scale-110 hover:bg-red-700 active:scale-95 transition-all duration-300"
-                    >
-                      <Trash2 className="w-7 h-7" />
-                    </button>
-                  ) : (
-                    // Upload Button (when no avatar)
-                    <button
-                      type="button"
-                      onClick={() => document.getElementById('avatar')?.click()}
-                      title="رفع صورة شخصية"
-                      className="absolute bottom-4 right-4 bg-white text-emerald-600 p-5 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300"
-                    >
-                      <Camera className="w-7 h-7" />
-                    </button>
-                  )
+                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-3">
+                    {avatarUrl || avatarFile ? (
+                      // Edit and Delete Buttons (when avatar exists)
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => document.getElementById('avatar')?.click()}
+                          title="تعديل الصورة الشخصية"
+                          className="group relative bg-gradient-to-br from-emerald-500 to-teal-600 text-white p-4 rounded-full shadow-xl hover:shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 border-4 border-white"
+                        >
+                          <Camera className="w-6 h-6" />
+                          <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                            تعديل الصورة
+                          </div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleDeleteAvatar}
+                          title="حذف الصورة الشخصية"
+                          className="group relative bg-gradient-to-br from-red-500 to-rose-600 text-white p-4 rounded-full shadow-xl hover:shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 border-4 border-white"
+                        >
+                          <Trash2 className="w-6 h-6" />
+                          <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                            حذف الصورة
+                          </div>
+                        </button>
+                      </>
+                    ) : (
+                      // Upload Button (when no avatar)
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById('avatar')?.click()}
+                        title="رفع صورة شخصية"
+                        className="group relative bg-gradient-to-br from-white to-gray-50 text-emerald-600 p-4 rounded-full shadow-xl hover:shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 border-4 border-white ring-2 ring-emerald-500"
+                      >
+                        <Camera className="w-6 h-6" />
+                        <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                          رفع صورة شخصية
+                        </div>
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
 
