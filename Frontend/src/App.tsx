@@ -70,6 +70,7 @@ import Absence from "./pages/Absence";
 import PrayerTimes from "./pages/PrayerTimes";
 import QuranPage from "./pages/QuranPage";
 import QuranAudio from "./pages/QuranAudio";
+import Azkar from "./pages/Azkar";
 
 // ============================================================================
 // Page Components - Admin
@@ -206,6 +207,7 @@ const TeacherRoutes: React.FC = () => {
           <Route path="/prayer-times" element={<PrayerTimes />} />
           <Route path="/quran" element={<QuranPage />} />
           <Route path="/quran-audio" element={<QuranAudio />} />
+          <Route path="/azkar" element={<Azkar />} />
 
           {/* ====== User Settings ====== */}
           <Route path="/profile" element={<Profile />} />
@@ -277,6 +279,7 @@ const StudentRoutes: React.FC = () => {
           <Route path="/prayer-times" element={<PrayerTimes />} />
           <Route path="/quran" element={<QuranPage />} />
           <Route path="/quran-audio" element={<QuranAudio />} />
+          <Route path="/azkar" element={<Azkar />} />
 
           {/* ====== User Settings ====== */}
           <Route path="/profile" element={<Profile />} />

@@ -11,6 +11,7 @@ import { API_BASE_URL } from "../../config";
 import {
   Award,
   BookOpen,
+  BookOpenCheck,
   CalendarDays,
   Clock,
   ClipboardList,
@@ -203,6 +204,12 @@ const Header = () => {
         label: "استمع للقران",
         icon: Headphones,
         color: "from-blue-500 to-indigo-500",
+      },
+      {
+        to: "/azkar",
+        label: "الأذكار",
+        icon: BookOpenCheck,
+        color: "from-green-500 to-emerald-500",
       },
       {
         to: "/prayer-times",
