@@ -32,6 +32,7 @@ interface Student {
   firstName: string;
   lastName: string;
   warningsCount?: number;
+  existingWarningTypes?: string[]; // أنواع الإنذارات الموجودة مسبقاً
 }
 
 interface Group {
@@ -164,9 +165,16 @@ const Warnings = () => {
             const studentWarnings = Array.isArray(warningsRes.data)
               ? warningsRes.data
               : [];
+
+            // استخراج أنواع الإنذارات الموجودة (ما عدا التنبيه)
+            const existingTypes = studentWarnings
+              .map((w: any) => w.type)
+              .filter((type: string) => type !== "warning");
+
             return {
               ...student,
               warningsCount: studentWarnings.length,
+              existingWarningTypes: existingTypes,
             };
           } catch (err) {
             console.error(
@@ -176,6 +184,7 @@ const Warnings = () => {
             return {
               ...student,
               warningsCount: 0,
+              existingWarningTypes: [],
             };
           }
         })
@@ -247,12 +256,18 @@ const Warnings = () => {
         if (selectedGroup) {
           handleGroupSelect(selectedGroup);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error giving warning:", error);
+
+        // عرض رسالة مخصصة إذا كان الإنذار موجود مسبقاً
+        const errorMessage =
+          error?.response?.data?.message || "حدث خطأ أثناء إعطاء الإنذار";
+
         Swal.fire({
           icon: "error",
           title: "خطأ",
-          text: "حدث خطأ أثناء إعطاء الإنذار",
+          text: errorMessage,
+          confirmButtonColor: "#dc2626",
         });
       }
     }
@@ -415,42 +430,120 @@ const Warnings = () => {
                       {student.firstName.charAt(0)}
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-gray-800">
-                        {student.firstName} {student.lastName}
-                      </h3>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-xl font-bold text-gray-800">
+                          {student.firstName} {student.lastName}
+                        </h3>
+                        {/* عرض الإنذارات الموجودة */}
+                        {student.existingWarningTypes &&
+                          student.existingWarningTypes.length > 0 && (
+                            <div className="flex gap-1">
+                              {student.existingWarningTypes.includes(
+                                "first"
+                              ) && (
+                                <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full font-medium">
+                                  🔴 إنذار 1
+                                </span>
+                              )}
+                              {student.existingWarningTypes.includes(
+                                "second"
+                              ) && (
+                                <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full font-medium">
+                                  🔴🔴 إنذار 2
+                                </span>
+                              )}
+                              {student.existingWarningTypes.includes(
+                                "third"
+                              ) && (
+                                <span className="px-2 py-1 bg-red-200 text-red-800 text-xs rounded-full font-medium">
+                                  🔴🔴🔴 إنذار 3
+                                </span>
+                              )}
+                              {student.existingWarningTypes.includes(
+                                "expulsion"
+                              ) && (
+                                <span className="px-2 py-1 bg-gray-800 text-white text-xs rounded-full font-medium">
+                                  ❌ مفصول
+                                </span>
+                              )}
+                            </div>
+                          )}
+                      </div>
                       <p className="text-sm text-gray-600">
-                        عدد الإنذارات: {student.warningsCount || 0}
+                        إجمالي الإنذارات والتنبيهات:{" "}
+                        {student.warningsCount || 0}
                       </p>
                     </div>
                   </div>
 
                   {/* أزرار الإنذارات */}
                   <div className="flex flex-wrap gap-2">
+                    {/* التنبيه - يمكن إعطاؤه أكثر من مرة */}
                     <button
                       onClick={() => giveWarning(student, "warning")}
                       className="px-4 py-2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-lg font-medium hover:scale-105 transition-transform">
                       ⚠️ تنبيه
                     </button>
-                    <button
-                      onClick={() => giveWarning(student, "first")}
-                      className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg font-medium hover:scale-105 transition-transform">
-                      🔴 إنذار أول
-                    </button>
-                    <button
-                      onClick={() => giveWarning(student, "second")}
-                      className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg font-medium hover:scale-105 transition-transform">
-                      🔴🔴 إنذار ثاني
-                    </button>
-                    <button
-                      onClick={() => giveWarning(student, "third")}
-                      className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg font-medium hover:scale-105 transition-transform">
-                      🔴🔴🔴 إنذار ثالث
-                    </button>
-                    <button
-                      onClick={() => giveWarning(student, "expulsion")}
-                      className="px-4 py-2 bg-gradient-to-r from-gray-800 to-black text-white rounded-lg font-medium hover:scale-105 transition-transform">
-                      ❌ فصل
-                    </button>
+
+                    {/* الإنذار الأول - مرة واحدة فقط */}
+                    {!student.existingWarningTypes?.includes("first") ? (
+                      <button
+                        onClick={() => giveWarning(student, "first")}
+                        className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-lg font-medium hover:scale-105 transition-transform">
+                        🔴 إنذار أول
+                      </button>
+                    ) : (
+                      <button
+                        disabled
+                        className="px-4 py-2 bg-gray-400 text-white rounded-lg font-medium cursor-not-allowed opacity-50">
+                        🔴 تم الإنذار
+                      </button>
+                    )}
+
+                    {/* الإنذار الثاني - مرة واحدة فقط */}
+                    {!student.existingWarningTypes?.includes("second") ? (
+                      <button
+                        onClick={() => giveWarning(student, "second")}
+                        className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg font-medium hover:scale-105 transition-transform">
+                        🔴🔴 إنذار ثاني
+                      </button>
+                    ) : (
+                      <button
+                        disabled
+                        className="px-4 py-2 bg-gray-400 text-white rounded-lg font-medium cursor-not-allowed opacity-50">
+                        🔴🔴 تم الإنذار
+                      </button>
+                    )}
+
+                    {/* الإنذار الثالث - مرة واحدة فقط */}
+                    {!student.existingWarningTypes?.includes("third") ? (
+                      <button
+                        onClick={() => giveWarning(student, "third")}
+                        className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg font-medium hover:scale-105 transition-transform">
+                        🔴🔴🔴 إنذار ثالث
+                      </button>
+                    ) : (
+                      <button
+                        disabled
+                        className="px-4 py-2 bg-gray-400 text-white rounded-lg font-medium cursor-not-allowed opacity-50">
+                        🔴🔴🔴 تم الإنذار
+                      </button>
+                    )}
+
+                    {/* الفصل النهائي - مرة واحدة فقط */}
+                    {!student.existingWarningTypes?.includes("expulsion") ? (
+                      <button
+                        onClick={() => giveWarning(student, "expulsion")}
+                        className="px-4 py-2 bg-gradient-to-r from-gray-800 to-black text-white rounded-lg font-medium hover:scale-105 transition-transform">
+                        ❌ فصل
+                      </button>
+                    ) : (
+                      <button
+                        disabled
+                        className="px-4 py-2 bg-gray-400 text-white rounded-lg font-medium cursor-not-allowed opacity-50">
+                        ❌ تم الفصل
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

@@ -35,6 +35,32 @@ exports.createWarning = async (req, res) => {
       });
     }
 
+    // التحقق من عدم وجود إنذار سابق من نفس النوع (ما عدا التنبيه)
+    if (type !== "warning") {
+      const existingWarning = await Warning.findOne({
+        studentId,
+        type,
+      });
+
+      if (existingWarning) {
+        const warningTypeNames = {
+          first: "الإنذار الأول",
+          second: "الإنذار الثاني",
+          third: "الإنذار الثالث",
+          expulsion: "الفصل النهائي",
+        };
+
+        return res.status(400).json({
+          message: `الطالب حاصل على ${warningTypeNames[type]} مسبقاً. لا يمكن إعطاء نفس الإنذار مرتين.`,
+          existingWarning: {
+            type: existingWarning.type,
+            date: existingWarning.createdAt,
+            reason: existingWarning.reason,
+          },
+        });
+      }
+    }
+
     // إنشاء الإنذار
     const warning = new Warning({
       studentId,
