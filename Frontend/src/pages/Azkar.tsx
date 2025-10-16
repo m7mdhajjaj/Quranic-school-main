@@ -253,6 +253,92 @@ const getInitialAdhkarData = (): AzkarCategory[] => [
       },
     ],
   },
+  {
+    id: "food",
+    title: "أذكار الطعام",
+    icon: "🍽️",
+    adhkar: [
+      {
+        id: 1,
+        text: "بِسْمِ اللَّهِ (قبل الطعام)",
+        count: 1,
+        originalCount: 1,
+      },
+      {
+        id: 2,
+        text: "بِسْمِ اللَّهِ أَوَّلَهُ وَآخِرَهُ (إذا نسيت التسمية في البداية)",
+        count: 1,
+        originalCount: 1,
+      },
+      {
+        id: 3,
+        text: "الْحَمْدُ لِلَّهِ الَّذِي أَطْعَمَنَا وَسَقَانَا وَجَعَلَنَا مُسْلِمِينَ (بعد الطعام)",
+        count: 1,
+        originalCount: 1,
+      },
+      {
+        id: 4,
+        text: "الْحَمْدُ لِلَّهِ حَمْدًا كَثِيرًا طَيِّبًا مُبَارَكًا فِيهِ، غَيْرَ مَكْفِيٍّ وَلَا مُوَدَّعٍ وَلَا مُسْتَغْنًى عَنْهُ رَبَّنَا (بعد الطعام)",
+        count: 1,
+        originalCount: 1,
+      },
+      {
+        id: 5,
+        text: "اللَّهُمَّ بَارِكْ لَنَا فِيمَا رَزَقْتَنَا وَقِنَا عَذَابَ النَّارِ، بِسْمِ اللَّهِ (عند الشرب)",
+        count: 1,
+        originalCount: 1,
+      },
+    ],
+  },
+  {
+    id: "travel",
+    title: "أذكار السفر",
+    icon: "🚗",
+    adhkar: [
+      {
+        id: 1,
+        text: "بِسْمِ اللَّهِ، تَوَكَّلْتُ عَلَى اللَّهِ، لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ (عند الخروج من المنزل)",
+        count: 1,
+        originalCount: 1,
+      },
+      {
+        id: 2,
+        text: "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ أَنْ أَضِلَّ أَوْ أُضَلَّ، أَوْ أَزِلَّ أَوْ أُزَلَّ، أَوْ أَظْلِمَ أَوْ أُظْلَمَ، أَوْ أَجْهَلَ أَوْ يُجْهَلَ عَلَيَّ (عند الخروج)",
+        count: 1,
+        originalCount: 1,
+      },
+      {
+        id: 3,
+        text: "سُبْحَانَ الَّذِي سَخَّرَ لَنَا هَذَا وَمَا كُنَّا لَهُ مُقْرِنِينَ، وَإِنَّا إِلَى رَبِّنَا لَمُنْقَلِبُونَ (عند الركوب)",
+        count: 1,
+        originalCount: 1,
+      },
+      {
+        id: 4,
+        text: "الْحَمْدُ لِلَّهِ، الْحَمْدُ لِلَّهِ، الْحَمْدُ لِلَّهِ، اللَّهُ أَكْبَرُ، اللَّهُ أَكْبَرُ، اللَّهُ أَكْبَرُ (عند الركوب)",
+        count: 1,
+        originalCount: 1,
+      },
+      {
+        id: 5,
+        text: "سُبْحَانَكَ إِنِّي ظَلَمْتُ نَفْسِي فَاغْفِرْ لِي، فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ (عند الركوب)",
+        count: 1,
+        originalCount: 1,
+      },
+      {
+        id: 6,
+        text: "اللَّهُمَّ إِنَّا نَسْأَلُكَ فِي سَفَرِنَا هَذَا الْبِرَّ وَالتَّقْوَى، وَمِنَ الْعَمَلِ مَا تَرْضَى (دعاء السفر)",
+        count: 1,
+        originalCount: 1,
+      },
+      {
+        id: 7,
+        text: "آيِبُونَ تَائِبُونَ عَابِدُونَ لِرَبِّنَا حَامِدُونَ (عند الرجوع من السفر)",
+        count: 1,
+        originalCount: 1,
+      },
+    ],
+  },
 ];
 
 const Azkar = () => {
@@ -509,34 +595,13 @@ const Azkar = () => {
       dir="rtl">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
             الأذكار
           </h1>
-          <p className="text-gray-600 text-lg mb-4">
+          <p className="text-gray-600 text-lg">
             اختر نوع الأذكار التي تريد قراءتها
           </p>
-          
-          {/* رسالة توضيحية */}
-          <div className="max-w-3xl mx-auto bg-gradient-to-r from-emerald-50 to-teal-50 border-2 border-emerald-200 rounded-2xl p-6 shadow-lg">
-            <div className="flex items-start gap-4">
-              <div className="text-4xl flex-shrink-0 animate-pulse">📿</div>
-              <div className="text-right flex-1">
-                <h3 className="text-xl font-bold text-emerald-800 mb-2">
-                  💚 أذكار مختصرة للطلاب
-                </h3>
-                <p className="text-gray-700 leading-relaxed">
-                  هذه مجموعة مختارة من الأذكار بأعداد مناسبة لتسهيل الالتزام بها يومياً.
-                  نسأل الله أن يعيننا وإياكم على ذكره وشكره وحسن عبادته 🤲
-                </p>
-                <div className="mt-3 flex items-center justify-center gap-2 text-sm text-emerald-700 font-medium">
-                  <span>✨</span>
-                  <span>اجعل الأذكار عادة يومية تنير قلبك وتحصّن نفسك</span>
-                  <span>✨</span>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Categories Grid */}
