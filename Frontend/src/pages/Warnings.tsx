@@ -42,12 +42,30 @@ interface Group {
   students: Student[];
 }
 
+interface TeacherStatistics {
+  totalWarnings: number;
+  warningsCount: {
+    warning: number;
+    first: number;
+    second: number;
+    third: number;
+    expulsion: number;
+  };
+  studentsWithWarnings: number;
+  expelledStudents: number;
+  topReasons: Array<{ _id: string; count: number }>;
+  warningsByGroup: Array<{ _id: string; count: number }>;
+  recentWarnings: Warning[];
+}
+
 const Warnings = () => {
   const { user } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [warnings, setWarnings] = useState<Warning[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statistics, setStatistics] = useState<TeacherStatistics | null>(null);
+  const [showStatistics, setShowStatistics] = useState(false);
 
   const isTeacher = user?.role === "teacher";
   const isStudent = user?.role === "student";
@@ -196,6 +214,22 @@ const Warnings = () => {
       setSelectedGroup({ ...group, students: studentsWithWarnings });
     } catch (error) {
       console.error("Error fetching students:", error);
+    }
+  };
+
+  // جلب إحصائيات المعلم
+  const fetchTeacherStatistics = async () => {
+    try {
+      const response = await api.get("/warnings/statistics/teacher");
+      setStatistics(response.data);
+      setShowStatistics(true);
+    } catch (error) {
+      console.error("Error fetching statistics:", error);
+      Swal.fire({
+        icon: "error",
+        title: "خطأ",
+        text: "حدث خطأ أثناء جلب الإحصائيات",
+      });
     }
   };
 
@@ -409,7 +443,7 @@ const Warnings = () => {
   const deleteWarningById = async (warningId: string, student: Student) => {
     // جلب بيانات الإنذار/التنبيه
     const warning = student.allWarnings?.find((w: any) => w._id === warningId);
-    
+
     if (!warning) {
       Swal.fire({
         icon: "error",
@@ -425,15 +459,17 @@ const Warnings = () => {
       html: `
         <div class="text-right" dir="rtl">
           <p class="text-lg mb-4">هل أنت متأكد من حذف هذا التنبيه؟</p>
-          <p class="text-xl font-bold text-blue-600 mb-2">${student.firstName} ${
-        student.lastName
-      }</p>
+          <p class="text-xl font-bold text-blue-600 mb-2">${
+            student.firstName
+          } ${student.lastName}</p>
           <div class="bg-yellow-50 p-3 rounded-lg text-right mb-4">
             <p class="text-sm text-gray-700"><strong>السبب:</strong> ${
               warning.reason
             }</p>
             <p class="text-xs text-gray-500 mt-1">
-              التاريخ: ${new Date(warning.createdAt).toLocaleDateString("ar-SA")}
+              التاريخ: ${new Date(warning.createdAt).toLocaleDateString(
+                "ar-SA"
+              )}
             </p>
           </div>
         </div>
@@ -577,7 +613,201 @@ const Warnings = () => {
               <p className="text-gray-600 text-lg">
                 اختر الحلقة لعرض الطلاب وإدارة الإنذارات
               </p>
+
+              {/* زر الإحصائيات */}
+              <button
+                onClick={fetchTeacherStatistics}
+                className="mt-4 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-medium hover:scale-105 transition-transform shadow-lg">
+                📊 عرض الإحصائيات
+              </button>
             </div>
+
+            {/* عرض الإحصائيات */}
+            {showStatistics && statistics && (
+              <div className="bg-white rounded-2xl shadow-2xl p-6 mb-8 border-2 border-blue-200">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    📊 إحصائيات الإنذارات
+                  </h2>
+                  <button
+                    onClick={() => setShowStatistics(false)}
+                    className="text-gray-500 hover:text-gray-700 text-2xl">
+                    ✕
+                  </button>
+                </div>
+
+                {/* الإحصائيات الرئيسية */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 text-center">
+                    <div className="text-3xl font-bold text-blue-600">
+                      {statistics.totalWarnings}
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      إجمالي الإنذارات
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 text-center">
+                    <div className="text-3xl font-bold text-purple-600">
+                      {statistics.studentsWithWarnings}
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      طلاب لديهم إنذارات
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-4 text-center">
+                    <div className="text-3xl font-bold text-yellow-600">
+                      {statistics.warningsCount.warning}
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">تنبيهات</div>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-4 text-center">
+                    <div className="text-3xl font-bold text-red-600">
+                      {statistics.expelledStudents}
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      طلاب مفصولين
+                    </div>
+                  </div>
+                </div>
+
+                {/* توزيع الإنذارات */}
+                <div className="grid md:grid-cols-2 gap-6 mb-6">
+                  {/* الإنذارات حسب النوع */}
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <h3 className="text-lg font-bold text-gray-800 mb-3">
+                      الإنذارات حسب النوع
+                    </h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-700">⚠️ تنبيهات:</span>
+                        <span className="font-bold text-yellow-600">
+                          {statistics.warningsCount.warning}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-700">🔴 إنذار أول:</span>
+                        <span className="font-bold text-orange-600">
+                          {statistics.warningsCount.first}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-700">🔴🔴 إنذار ثاني:</span>
+                        <span className="font-bold text-red-600">
+                          {statistics.warningsCount.second}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-700">
+                          🔴🔴🔴 إنذار ثالث:
+                        </span>
+                        <span className="font-bold text-red-700">
+                          {statistics.warningsCount.third}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-700">❌ فصل نهائي:</span>
+                        <span className="font-bold text-gray-800">
+                          {statistics.warningsCount.expulsion}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* أكثر الأسباب تكراراً */}
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <h3 className="text-lg font-bold text-gray-800 mb-3">
+                      أكثر الأسباب تكراراً
+                    </h3>
+                    <div className="space-y-2">
+                      {statistics.topReasons.length > 0 ? (
+                        statistics.topReasons.map((reason, index) => (
+                          <div
+                            key={index}
+                            className="flex justify-between items-center">
+                            <span className="text-gray-700 text-sm truncate">
+                              {index + 1}. {reason._id}
+                            </span>
+                            <span className="font-bold text-blue-600">
+                              {reason.count}
+                            </span>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-gray-500 text-sm">لا توجد بيانات</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* الإنذارات حسب الحلقة */}
+                <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                  <h3 className="text-lg font-bold text-gray-800 mb-3">
+                    الإنذارات حسب الحلقة
+                  </h3>
+                  <div className="grid md:grid-cols-3 gap-3">
+                    {statistics.warningsByGroup.length > 0 ? (
+                      statistics.warningsByGroup.map((group, index) => (
+                        <div
+                          key={index}
+                          className="bg-white rounded-lg p-3 flex justify-between items-center shadow-sm">
+                          <span className="text-gray-700 font-medium">
+                            📚 {group._id}
+                          </span>
+                          <span className="font-bold text-blue-600">
+                            {group.count}
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-gray-500 text-sm">لا توجد بيانات</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* آخر الإنذارات */}
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <h3 className="text-lg font-bold text-gray-800 mb-3">
+                    آخر 5 إنذارات
+                  </h3>
+                  <div className="space-y-2">
+                    {statistics.recentWarnings.length > 0 ? (
+                      statistics.recentWarnings.map((warning) => (
+                        <div
+                          key={warning._id}
+                          className="bg-white rounded-lg p-3 shadow-sm">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <div className="font-medium text-gray-800">
+                                {warning.studentId.firstName}{" "}
+                                {warning.studentId.lastName}
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                {getWarningLabel(warning.type)} -{" "}
+                                {warning.reason}
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                {warning.groupId.name} •{" "}
+                                {new Date(warning.createdAt).toLocaleDateString(
+                                  "ar-SA"
+                                )}
+                              </div>
+                            </div>
+                            <span className="text-2xl">
+                              {getWarningIcon(warning.type)}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-gray-500 text-sm">لا توجد إنذارات</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Groups Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -725,14 +955,21 @@ const Warnings = () => {
                         إجمالي الإنذارات والتنبيهات:{" "}
                         {student.warningsCount || 0}
                       </p>
-                      
+
                       {/* عرض التنبيهات */}
                       {student.allWarnings &&
-                        student.allWarnings.filter((w: any) => w.type === "warning")
-                          .length > 0 && (
+                        student.allWarnings.filter(
+                          (w: any) => w.type === "warning"
+                        ).length > 0 && (
                           <div className="mt-2">
                             <p className="text-xs text-gray-500 mb-1">
-                              التنبيهات ({student.allWarnings.filter((w: any) => w.type === "warning").length}):
+                              التنبيهات (
+                              {
+                                student.allWarnings.filter(
+                                  (w: any) => w.type === "warning"
+                                ).length
+                              }
+                              ):
                             </p>
                             <div className="flex flex-wrap gap-1">
                               {student.allWarnings
@@ -743,7 +980,9 @@ const Warnings = () => {
                                     className="flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full font-medium group">
                                     <span>⚠️ تنبيه {index + 1}</span>
                                     <button
-                                      onClick={() => deleteWarningById(warning._id, student)}
+                                      onClick={() =>
+                                        deleteWarningById(warning._id, student)
+                                      }
                                       className="ml-1 hover:bg-yellow-200 rounded-full p-0.5 transition-colors opacity-0 group-hover:opacity-100"
                                       title={`حذف: ${warning.reason}`}>
                                       ✕

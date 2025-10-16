@@ -6,6 +6,13 @@ const { protect } = require("../middleware/authMiddleware");
 // جلب إحصائيات الإنذارات (للمدير) - يجب أن يكون قبل الـ routes الديناميكية
 router.get("/statistics/all", protect, warningController.getWarningsStatistics);
 
+// جلب إحصائيات المعلم
+router.get(
+  "/statistics/teacher",
+  protect,
+  warningController.getTeacherStatistics
+);
+
 // التحقق من حالة الطالب (مفصول أم لا)
 router.get("/status/:studentId", protect, warningController.checkStudentStatus);
 
