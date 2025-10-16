@@ -66,6 +66,7 @@ const Warnings = () => {
   const [loading, setLoading] = useState(true);
   const [statistics, setStatistics] = useState<TeacherStatistics | null>(null);
   const [showStatistics, setShowStatistics] = useState(false);
+  const [loadingStatistics, setLoadingStatistics] = useState(false);
 
   const isTeacher = user?.role === "teacher";
   const isStudent = user?.role === "student";
@@ -220,6 +221,7 @@ const Warnings = () => {
   // جلب إحصائيات المعلم
   const fetchTeacherStatistics = async () => {
     try {
+      setLoadingStatistics(true);
       const response = await api.get("/warnings/statistics/teacher");
       setStatistics(response.data);
       setShowStatistics(true);
@@ -230,6 +232,8 @@ const Warnings = () => {
         title: "خطأ",
         text: "حدث خطأ أثناء جلب الإحصائيات",
       });
+    } finally {
+      setLoadingStatistics(false);
     }
   };
 
@@ -617,8 +621,16 @@ const Warnings = () => {
               {/* زر الإحصائيات */}
               <button
                 onClick={fetchTeacherStatistics}
-                className="mt-4 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-medium hover:scale-105 transition-transform shadow-lg">
-                📊 عرض الإحصائيات
+                disabled={loadingStatistics}
+                className="mt-4 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-medium hover:scale-105 transition-transform shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2 mx-auto">
+                {loadingStatistics ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <span>جاري التحميل...</span>
+                  </>
+                ) : (
+                  <>📊 عرض الإحصائيات</>
+                )}
               </button>
             </div>
 
