@@ -236,6 +236,21 @@ const Warnings = () => {
     });
 
     if (result.isConfirmed && result.value) {
+      // عرض رسالة تحميل مع أيقونة متحركة
+      Swal.fire({
+        title: "جاري إضافة الإنذار...",
+        html: `
+          <div class="text-center py-4" dir="rtl">
+            <div class="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-red-600 mb-4"></div>
+            <p class="text-lg text-gray-700 font-medium">الرجاء الانتظار قليلاً...</p>
+            <p class="text-sm text-gray-500 mt-2">جاري حفظ البيانات</p>
+          </div>
+        `,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+      });
+
       try {
         await api.post("/warnings", {
           studentId: student._id,
@@ -247,9 +262,20 @@ const Warnings = () => {
 
         Swal.fire({
           icon: "success",
-          title: "تم بنجاح!",
-          text: `تم إعطاء ${getWarningLabel(type)} للطالب`,
+          title: "✅ تم بنجاح!",
+          html: `
+            <div class="text-center" dir="rtl">
+              <p class="text-lg text-gray-700">تم إعطاء <strong class="text-red-600">${getWarningLabel(
+                type
+              )}</strong> للطالب</p>
+              <p class="text-sm text-gray-500 mt-2">${student.firstName} ${
+            student.lastName
+          }</p>
+            </div>
+          `,
           confirmButtonColor: "#10b981",
+          confirmButtonText: "حسناً",
+          timer: 3000,
         });
 
         // إعادة تحميل البيانات
