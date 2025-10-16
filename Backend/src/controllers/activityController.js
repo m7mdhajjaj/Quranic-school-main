@@ -98,6 +98,12 @@ exports.createActivity = async (req, res) => {
       }
     }
 
+    // Emit Socket.IO event for activity creation
+    if (global.io) {
+      console.log("📡 Broadcasting activity created event");
+      global.io.to("activities").emit("activityCreated", activity);
+    }
+
     res.status(201).json({
       success: true,
       message: "تم إضافة النشاط بنجاح",
@@ -145,6 +151,12 @@ exports.updateActivity = async (req, res) => {
 
     await activity.save();
 
+    // Emit Socket.IO event for activity update
+    if (global.io) {
+      console.log("📡 Broadcasting activity updated event");
+      global.io.to("activities").emit("activityUpdated", activity);
+    }
+
     res.status(200).json({
       success: true,
       message: "تم تحديث النشاط بنجاح",
@@ -171,6 +183,15 @@ exports.deleteActivity = async (req, res) => {
 
     // Delete the activity from database
     await Activity.findByIdAndDelete(req.params.id);
+
+    // Emit Socket.IO event for activity deletion
+    if (global.io) {
+      console.log("📡 Broadcasting activity deleted event");
+      global.io.to("activities").emit("activityDeleted", {
+        _id: req.params.id,
+        title: activity.title,
+      });
+    }
 
     // Note: Deleting the image from Cloudinary should be handled separately
     // via the /api/upload route if needed.

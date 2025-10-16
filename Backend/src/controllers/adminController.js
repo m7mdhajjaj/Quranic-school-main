@@ -194,6 +194,18 @@ exports.updateAdmin = async (req, res) => {
     // إشعار تحديث الداشبورد
     notifyDashboardUpdate('stats');
 
+    // Emit socket event for real-time profile update
+    const io = req.app.get("io");
+    if (io) {
+      io.to("profile").emit("profileUpdated", {
+        user: updated,
+        userId: req.params.id,
+        userRole: "admin",
+        timestamp: Date.now(),
+      });
+      console.log("📡 Profile updated event emitted via socket (admin)");
+    }
+
     return res.status(200).json({
       success: true,
       message: "تم تحديث بيانات الإداري بنجاح",

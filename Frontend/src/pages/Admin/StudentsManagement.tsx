@@ -19,7 +19,7 @@ import {
   FaSync,
 } from 'react-icons/fa';
 import { useAuth } from '../../hooks/useAuth';
-import { useSocket } from '../../hooks/useSocket';
+import { useStudentsSocket } from '../../Socket';
 import {
   getAllStudents,
   deleteStudent,
@@ -48,7 +48,14 @@ type ViewMode = 'table' | 'grid';
 
 const StudentsManagement: React.FC = () => {
   const { user: currentUser } = useAuth();
-  const { onStudentUpdate, offStudentUpdate, isConnected } = useSocket();
+  
+  // استخدام نظام Socket الجديد مع Heartbeat تلقائي كل 30 ثانية
+  const {
+    isConnected,
+    lastUpdate: socketLastUpdate,
+    socketId,
+  } = useStudentsSocket();
+  
   const userRole = currentUser?.role || '';
   const hasPermission = userRole === 'teacher' || userRole === 'admin';
 
@@ -229,63 +236,18 @@ const StudentsManagement: React.FC = () => {
     fetchStudents();
   }, [hasPermission, fetchStudents]);
 
-  // Socket handlers for real-time updates
-  const [lastUpdateTime, setLastUpdateTime] = useState<number>(0);
-  // Track last refresh time for display
-
+  // Socket event handlers - التحديثات الفورية تتم عبر useStudentsSocket Hook
+  // Hook يستمع تلقائياً لأحداث: studentCreated, studentUpdated, studentDeleted
+  // عند استقبال أي حدث، يتم تحديث socketLastUpdate مما يؤدي لإعادة جلب البيانات
   useEffect(() => {
     if (!hasPermission) return;
-
-    const handleStudentUpdate = (event: {
-      type: 'created' | 'updated' | 'deleted';
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      student: any;
-      studentId?: string;
-    }) => {
-      const now = Date.now();
-      if (now - lastUpdateTime < 300) return; // Debounce updates
-      setLastUpdateTime(now);
-
-      console.log('📡 Socket event received:', event.type, event);
-
-      switch (event.type) {
-        case 'created':
-          setStudents((prevStudents) => {
-            const existingStudent = prevStudents.find(
-              (s) => s._id === event.student._id
-            );
-            if (existingStudent) return prevStudents;
-            return [...prevStudents, event.student];
-          });
-          break;
-
-        case 'updated':
-          setStudents((prevStudents) =>
-            prevStudents.map((s) =>
-              s._id === event.student._id ? { ...s, ...event.student } : s
-            )
-          );
-          showSuccessMessage(
-            '✏️ تم التحديث - تحديث مباشر',
-            `تم تحديث بيانات الطالب ${event.student.firstName} ${event.student.lastName}`
-          );
-          break;
-
-        case 'deleted':
-          setStudents((prevStudents) =>
-            prevStudents.filter((s) => s._id !== event.studentId)
-          );
-          showWarningMessage(
-            '🗑️ تم الحذف - تحديث مباشر',
-            'تم حذف طالب من النظام'
-          );
-          break;
-      }
-    };
-
-    onStudentUpdate(handleStudentUpdate);
-    return () => offStudentUpdate(handleStudentUpdate);
-  }, [hasPermission, onStudentUpdate, offStudentUpdate, lastUpdateTime]);
+    
+    // عند تحديث Socket، نعيد جلب قائمة الطلاب
+    if (socketLastUpdate) {
+      console.log('� Socket update detected, refreshing students list...');
+      fetchStudents();
+    }
+  }, [socketLastUpdate, hasPermission, fetchStudents]);
 
   // Auto refresh every 60 seconds when not connected to socket
   useEffect(() => {
@@ -652,12 +614,28 @@ const StudentsManagement: React.FC = () => {
                 <FaUserGraduate className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
-                  إدارة الطلاب
-                </h1>
-                <p className="text-gray-600 text-sm mt-1">
-                  نظام متكامل لإدارة بيانات الطلاب
-                </p>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-3xl font-bold text-gray-900">
+                    إدارة الطلاب
+                  </h1>
+                </div>
+                <div className="flex items-center gap-2 text-sm mt-1">
+                  <p className="text-gray-600">
+                    نظام متكامل لإدارة بيانات الطلاب
+                  </p>
+                  <div 
+                    className="flex items-center gap-1.5 cursor-help"
+                    title={
+                      isConnected
+                        ? `💓 Heartbeat نشط (كل 30 ثانية)\nSocket ID: ${socketId || 'N/A'}\nآخر تحديث: ${socketLastUpdate?.toLocaleTimeString('ar-SA') || 'N/A'}`
+                        : 'Socket غير متصل - وضع التحديث التلقائي'
+                    }>
+                    <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-yellow-500'} animate-pulse`}></div>
+                    <span className={`text-xs font-medium ${isConnected ? 'text-green-600' : 'text-yellow-600'}`}>
+                      {isConnected ? '💓 متصل مباشرة' : 'تحديث تلقائي'}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 

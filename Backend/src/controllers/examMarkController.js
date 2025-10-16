@@ -47,6 +47,18 @@ exports.setExamMarks = async (req, res) => {
     await updateExamAverage(examId);
 
     const updated = await ExamMark.find({ exam: examId }).populate("student");
+
+    // 🔌 Emit Socket event to exams room
+    const io = req.app.get("io");
+    if (io) {
+      io.to("exams").emit("examMarkCreated", {
+        examId: examId,
+        marks: updated,
+        timestamp: Date.now(),
+      });
+      console.log("✅ examMarkCreated event emitted to exams room");
+    }
+
     res.json(updated);
   } catch (err) {
     console.error("Error in setExamMarks:", err);
@@ -69,6 +81,18 @@ exports.updateStudentMark = async (req, res) => {
     // تحديث متوسط الامتحان
     await updateExamAverage(examId);
 
+    // 🔌 Emit Socket event to exams room
+    const io = req.app.get("io");
+    if (io) {
+      io.to("exams").emit("examMarkUpdated", {
+        examId: examId,
+        studentId: studentId,
+        mark: updated,
+        timestamp: Date.now(),
+      });
+      console.log("✅ examMarkUpdated event emitted to exams room");
+    }
+
     res.json(updated);
   } catch (err) {
     res.status(500).json({ error: "Server error" });
@@ -83,6 +107,17 @@ exports.deleteStudentMark = async (req, res) => {
 
     // تحديث متوسط الامتحان بعد الحذف
     await updateExamAverage(examId);
+
+    // 🔌 Emit Socket event to exams room
+    const io = req.app.get("io");
+    if (io) {
+      io.to("exams").emit("examMarkDeleted", {
+        examId: examId,
+        studentId: studentId,
+        timestamp: Date.now(),
+      });
+      console.log("✅ examMarkDeleted event emitted to exams room");
+    }
 
     res.json({ success: true });
   } catch (err) {

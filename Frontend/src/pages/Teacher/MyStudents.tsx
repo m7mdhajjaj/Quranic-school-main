@@ -18,7 +18,7 @@ import {
   FaSync,
 } from "react-icons/fa";
 import { useAuth } from "../../hooks/useAuth";
-import { useSocket } from "../../hooks/useSocket";
+import { useMyStudentsSocket } from "../../Socket";
 import {
   getAllStudents,
   deleteStudent,
@@ -56,7 +56,13 @@ interface TeacherUser {
 
 const MyStudents: React.FC = () => {
   const { user: currentUser } = useAuth();
-  const { onStudentUpdate, offStudentUpdate, isConnected } = useSocket();
+  
+  // استخدام نظام Socket الجديد مع Heartbeat تلقائي كل 30 ثانية
+  const {
+    isConnected,
+    lastUpdate: socketLastUpdate,
+    socketId,
+  } = useMyStudentsSocket();
 
   // Cast user to TeacherUser type
   const teacher = currentUser as TeacherUser;
@@ -186,58 +192,13 @@ const MyStudents: React.FC = () => {
     setFilteredStudents(filtered);
   }, [students, selectedGroup, teacherGroups]);
 
-  // Socket handlers for real-time updates
-  const [lastUpdateTime, setLastUpdateTime] = useState<number>(0);
-
+  // Socket: إعادة جلب البيانات عند استقبال تحديث
   useEffect(() => {
-    const handleStudentUpdate = (event: {
-      type: "created" | "updated" | "deleted";
-      student: any;
-      studentId?: string;
-    }) => {
-      const now = Date.now();
-      if (now - lastUpdateTime < 300) return;
-      setLastUpdateTime(now);
-
-      console.log("📡 Socket event received:", event.type, event);
-
-      switch (event.type) {
-        case "created":
-          if (event.student) {
-            setStudents((prev) => {
-              const exists = prev.some((s) => s._id === event.student._id);
-              if (exists) return prev;
-              return [...prev, event.student];
-            });
-          }
-          break;
-
-        case "updated":
-          if (event.student) {
-            setStudents((prev) =>
-              prev.map((s) =>
-                s._id === event.student._id ? { ...s, ...event.student } : s
-              )
-            );
-          }
-          break;
-
-        case "deleted":
-          if (event.studentId) {
-            setStudents((prev) =>
-              prev.filter((s) => s._id !== event.studentId)
-            );
-          }
-          break;
-      }
-    };
-
-    onStudentUpdate(handleStudentUpdate);
-
-    return () => {
-      offStudentUpdate(handleStudentUpdate);
-    };
-  }, [onStudentUpdate, offStudentUpdate, lastUpdateTime]);
+    if (socketLastUpdate) {
+      console.log("📡 Socket update received, refreshing students...");
+      fetchStudents();
+    }
+  }, [socketLastUpdate, fetchStudents]);
 
   // Apply filters and search
   const processedStudents = useMemo(() => {
@@ -409,15 +370,21 @@ const MyStudents: React.FC = () => {
               <p className="text-gray-600 mt-2">إدارة طلاب حلقاتك</p>
             </div>
 
-            {/* Connection Status */}
-            <div className="flex items-center gap-2">
-              <div
-                className={`w-3 h-3 rounded-full ${
-                  isConnected ? "bg-green-500" : "bg-red-500"
-                } animate-pulse`}
-              />
-              <span className="text-sm text-gray-600">
-                {isConnected ? "متصل" : "غير متصل"}
+            {/* Socket Connection Status */}
+            <div 
+              className="flex items-center gap-1.5 cursor-help"
+              title={
+                isConnected
+                  ? `💓 Heartbeat نشط (كل 30 ثانية)\nSocket ID: ${socketId || 'N/A'}\nآخر تحديث: ${socketLastUpdate?.toLocaleTimeString('ar-SA') || 'لا يوجد'}`
+                  : 'Socket غير متصل - وضع التحديث التلقائي'
+              }>
+              <div className={`w-2 h-2 rounded-full ${
+                isConnected ? 'bg-green-500' : 'bg-yellow-500'
+              } animate-pulse`}></div>
+              <span className={`text-xs font-medium ${
+                isConnected ? 'text-green-600' : 'text-yellow-600'
+              }`}>
+                {isConnected ? '💓 متصل مباشرة' : 'تحديث تلقائي'}
               </span>
             </div>
           </div>

@@ -255,19 +255,139 @@ io.on("connection", (socket) => {
     console.log(`📊 Online users: ${onlineUsers.size}`);
   });
 
+  // Heartbeat System - استقبال ping من Client
+  socket.on("ping", (data) => {
+    console.log(`💓 Heartbeat received from ${socket.id}:`, data);
+    // إرسال pong للتأكيد
+    socket.emit("pong", {
+      timestamp: Date.now(),
+      serverId: socket.id,
+      clientTimestamp: data?.timestamp,
+    });
+  });
+
   // Dashboard Socket Events
-  socket.on("joinDashboard", () => {
+  socket.on("joinDashboard", (data) => {
     socket.join("dashboard");
-    console.log(`📊 User ${socket.id} joined dashboard room`);
+    console.log(`📊 User ${socket.id} joined dashboard room`, data);
   });
 
-  socket.on("leaveDashboard", () => {
+  socket.on("leaveDashboard", (data) => {
     socket.leave("dashboard");
-    console.log(`📊 User ${socket.id} left dashboard room`);
+    console.log(`📊 User ${socket.id} left dashboard room`, data);
   });
 
-  socket.on("requestDashboardUpdate", async () => {
-    console.log(`📊 Dashboard update requested by ${socket.id}`);
+  // Teachers Socket Events
+  socket.on("joinTeachers", (data) => {
+    socket.join("teachers");
+    console.log(`👨‍🏫 User ${socket.id} joined teachers room`, data);
+  });
+
+  socket.on("leaveTeachers", (data) => {
+    socket.leave("teachers");
+    console.log(`👨‍🏫 User ${socket.id} left teachers room`, data);
+  });
+
+  // Students Socket Events
+  socket.on("joinStudents", (data) => {
+    socket.join("students");
+    console.log(`👨‍🎓 User ${socket.id} joined students room`, data);
+  });
+
+  socket.on("leaveStudents", (data) => {
+    socket.leave("students");
+    console.log(`👨‍🎓 User ${socket.id} left students room`, data);
+  });
+
+  // Groups Socket Events
+  socket.on("joinGroups", (data) => {
+    socket.join("groups");
+    console.log(`👥 User ${socket.id} joined groups room`, data);
+  });
+
+  socket.on("leaveGroups", (data) => {
+    socket.leave("groups");
+    console.log(`👥 User ${socket.id} left groups room`, data);
+  });
+
+  // Marks Socket Events (for Rankings/Arrangement)
+  socket.on("joinMarks", (data) => {
+    socket.join("marks");
+    console.log(`📝 User ${socket.id} joined marks room`, data);
+  });
+
+  socket.on("leaveMarks", (data) => {
+    socket.leave("marks");
+    console.log(`📝 User ${socket.id} left marks room`, data);
+  });
+
+  // Attendance Socket Events (for Absence)
+  socket.on("joinAttendance", (data) => {
+    socket.join("attendance");
+    console.log(`📋 User ${socket.id} joined attendance room`, data);
+  });
+
+  socket.on("leaveAttendance", (data) => {
+    socket.leave("attendance");
+    console.log(`📋 User ${socket.id} left attendance room`, data);
+  });
+
+  // Activities Socket Events
+  socket.on("joinActivities", (data) => {
+    socket.join("activities");
+    console.log(`🎯 User ${socket.id} joined activities room`, data);
+  });
+
+  socket.on("leaveActivities", (data) => {
+    socket.leave("activities");
+    console.log(`🎯 User ${socket.id} left activities room`, data);
+  });
+
+  // News Socket Events
+  socket.on("joinNews", (data) => {
+    socket.join("news");
+    console.log(`📰 User ${socket.id} joined news room`, data);
+  });
+
+  socket.on("leaveNews", (data) => {
+    socket.leave("news");
+    console.log(`📰 User ${socket.id} left news room`, data);
+  });
+
+  // Exams Socket Events
+  socket.on("joinExams", (data) => {
+    socket.join("exams");
+    console.log(`📝 User ${socket.id} joined exams room`, data);
+  });
+
+  socket.on("leaveExams", (data) => {
+    socket.leave("exams");
+    console.log(`📝 User ${socket.id} left exams room`, data);
+  });
+
+  // Sessions Socket Events
+  socket.on("joinSessions", (data) => {
+    socket.join("sessions");
+    console.log(`📅 User ${socket.id} joined sessions room`, data);
+  });
+
+  socket.on("leaveSessions", (data) => {
+    socket.leave("sessions");
+    console.log(`📅 User ${socket.id} left sessions room`, data);
+  });
+
+  socket.on("joinProfile", (data) => {
+    socket.join("profile");
+    console.log(`👤 User ${socket.id} joined profile room`, data);
+  });
+
+  socket.on("leaveProfile", (data) => {
+    socket.leave("profile");
+    console.log(`👤 User ${socket.id} left profile room`, data);
+  });
+
+  socket.on("requestDashboardUpdate", async (data) => {
+    console.log(`📊 Dashboard update requested by ${socket.id}`, data);
     try {
       // يمكن إضافة منطق لجلب البيانات المحدثة وإرسالها
       socket.emit("dashboardUpdate", {

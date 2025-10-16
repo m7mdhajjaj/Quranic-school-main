@@ -124,6 +124,16 @@ exports.createAttendance = async (req, res) => {
         // لا نريد أن يفشل حفظ الحضور بسبب مشكلة في تحديث الإحصائيات
       });
 
+      // Emit Socket.IO event for attendance creation
+      if (global.io) {
+        console.log("📡 Broadcasting attendance created event");
+        global.io.to("attendance").emit("attendanceCreated", {
+          date: formattedDate,
+          count: insertResult.length,
+          timestamp: Date.now(),
+        });
+      }
+
       return res.status(201).json({ message: "تم حفظ سجل الحضور بنجاح" });
     } catch (insertError) {
       console.error("Error inserting attendance records:", insertError);
@@ -300,7 +310,19 @@ exports.getStudentAttendanceStats = async (req, res) => {
 // Delete attendance record
 exports.deleteAttendance = async (req, res) => {
   try {
-    await Attendance.findByIdAndDelete(req.params.id);
+    const deletedAttendance = await Attendance.findByIdAndDelete(req.params.id);
+    
+    // Emit Socket.IO event for attendance deletion
+    if (global.io && deletedAttendance) {
+      console.log("📡 Broadcasting attendance deleted event");
+      global.io.to("attendance").emit("attendanceDeleted", {
+        _id: req.params.id,
+        studentId: deletedAttendance.studentId,
+        date: deletedAttendance.date,
+        timestamp: Date.now(),
+      });
+    }
+    
     res.json({ message: "تم حذف سجل الحضور بنجاح" });
   } catch (error) {
     res.status(500).json({ message: error.message });

@@ -65,6 +65,16 @@ exports.addSession = async (req, res) => {
       }
     }
 
+    // 🔌 Emit Socket event to sessions room
+    const io = req.app.get("io");
+    if (io) {
+      io.to("sessions").emit("sessionCreated", {
+        session: session,
+        timestamp: Date.now(),
+      });
+      console.log("✅ sessionCreated event emitted to sessions room");
+    }
+
     res.status(201).json(session);
   } catch (err) {
     console.error("Error adding session:", err);
@@ -165,6 +175,16 @@ exports.updateSession = async (req, res) => {
       }
     }
 
+    // 🔌 Emit Socket event to sessions room
+    const io = req.app.get("io");
+    if (io) {
+      io.to("sessions").emit("sessionUpdated", {
+        session: session,
+        timestamp: Date.now(),
+      });
+      console.log("✅ sessionUpdated event emitted to sessions room");
+    }
+
     res.json(session);
   } catch (err) {
     console.error("Error updating session:", err);
@@ -207,6 +227,16 @@ exports.deleteSession = async (req, res) => {
 
     // حذف الموعد من جدول Sessions
     await Session.findByIdAndDelete(id);
+
+    // 🔌 Emit Socket event to sessions room
+    const io = req.app.get("io");
+    if (io) {
+      io.to("sessions").emit("sessionDeleted", {
+        sessionId: id,
+        timestamp: Date.now(),
+      });
+      console.log("✅ sessionDeleted event emitted to sessions room");
+    }
 
     res.json({ success: true, message: "تم حذف الموعد بنجاح" });
   } catch (err) {

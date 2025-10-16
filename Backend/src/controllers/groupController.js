@@ -156,6 +156,12 @@ exports.createGroup = async (req, res) => {
       }
     }
 
+    // Emit socket event for real-time updates
+    if (global.io) {
+      console.log("📡 Broadcasting group created event");
+      global.io.emit("groupCreated", group);
+    }
+
     res.status(201).json({
       success: true,
       message: "تم إنشاء الحلقة بنجاح",
@@ -456,6 +462,13 @@ exports.updateGroup = async (req, res) => {
     }
 
     console.log("✅ تم تحديث الحلقة بنجاح:", group);
+
+    // Emit socket event for real-time updates
+    if (global.io) {
+      console.log("📡 Broadcasting group updated event");
+      global.io.emit("groupUpdated", group);
+    }
+
     res.status(200).json({
       success: true,
       message: "تم تحديث الحلقة بنجاح",

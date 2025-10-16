@@ -53,6 +53,16 @@ exports.createNews = async (req, res) => {
       image: finalImageUrl,
     });
 
+    // 🔌 Emit Socket event to news room
+    const io = req.app.get("io");
+    if (io) {
+      io.to("news").emit("newsCreated", {
+        news: news,
+        timestamp: Date.now(),
+      });
+      console.log("✅ newsCreated event emitted to news room");
+    }
+
     res.status(201).json(news);
   } catch (error) {
     console.error("Error creating news:", error);
@@ -87,6 +97,16 @@ exports.updateNews = async (req, res) => {
 
     await news.save();
 
+    // 🔌 Emit Socket event to news room
+    const io = req.app.get("io");
+    if (io) {
+      io.to("news").emit("newsUpdated", {
+        news: news,
+        timestamp: Date.now(),
+      });
+      console.log("✅ newsUpdated event emitted to news room");
+    }
+
     res.status(200).json(news);
   } catch (error) {
     console.error("Error updating news:", error);
@@ -106,6 +126,16 @@ exports.deleteNews = async (req, res) => {
     }
 
     await News.findByIdAndDelete(req.params.id);
+
+    // 🔌 Emit Socket event to news room
+    const io = req.app.get("io");
+    if (io) {
+      io.to("news").emit("newsDeleted", {
+        newsId: req.params.id,
+        timestamp: Date.now(),
+      });
+      console.log("✅ newsDeleted event emitted to news room");
+    }
 
     // Note: Deleting the image from Cloudinary should be handled separately
     // via the /api/upload route if needed.

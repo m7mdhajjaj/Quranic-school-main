@@ -727,6 +727,17 @@ exports.changePassword = async (req, res) => {
       });
     }
 
+    // Emit socket event for real-time password change notification
+    const io = req.app.get("io");
+    if (io) {
+      io.to("profile").emit("passwordChanged", {
+        userId: userId,
+        userRole: userType,
+        timestamp: Date.now(),
+      });
+      console.log(`📡 Password changed event emitted via socket (${userType})`);
+    }
+
     res.json({
       success: true,
       message: "تم تغيير كلمة المرور بنجاح",

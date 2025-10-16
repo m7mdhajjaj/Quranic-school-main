@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import LoadingSkeleton from "../../components/Loading/LoadingSkeleton";
 import { useDashboardStats } from "../../hooks/useDashboardStats";
-import { useSocket } from "../../hooks/useSocket";
+import { useDashboardSocket } from "../../Socket";
 import AddStudentForm from "../../components/Forms/AddStudentForm";
 import AddTeacherForm from "../../components/Forms/AddTeacherForm";
 import AddGroupForm from "../../components/Forms/AddGroupForm";
@@ -56,8 +56,14 @@ const AdminDashboard = () => {
     groupsDistribution,
   } = useDashboardStats();
 
-  // احصل على حالة الاتصال مباشرة من useSocket للمؤشر
-  const { isConnected } = useSocket();
+  // استخدام نظام Socket الجديد مع Heartbeat تلقائي كل 30 ثانية
+  const {
+    isConnected,
+    dashboardData: _socketData, // البيانات من Socket (يمكن استخدامها لاحقاً)
+    lastUpdate: socketLastUpdate,
+    requestUpdate,
+    socketId,
+  } = useDashboardSocket();
 
   // عداد التحديثات التلقائية وآخر تحديث تلقائي
   const [autoRefreshCount, setAutoRefreshCount] = useState(0);
@@ -676,7 +682,7 @@ const AdminDashboard = () => {
                 className="flex items-center gap-1.5"
                 title={
                   isConnected
-                    ? "البيانات تتحدث فورياً عبر Socket.IO"
+                    ? `💓 Heartbeat نشط (كل 30 ثانية)\nSocket ID: ${socketId || 'N/A'}\nآخر تحديث: ${socketLastUpdate?.toLocaleTimeString('ar-SA') || 'N/A'}`
                     : `تحديث تلقائي كل 30 ثانية${
                         lastAutoRefresh
                           ? ` | آخر تحديث: ${lastAutoRefresh.toLocaleTimeString(
@@ -694,7 +700,7 @@ const AdminDashboard = () => {
                     isConnected ? "text-green-600" : "text-yellow-600"
                   }`}>
                   {isConnected
-                    ? "متصل مباشرة"
+                    ? "💓 متصل مباشرة"
                     : `تحديث تلقائي (${autoRefreshCount})`}
                 </span>
               </div>
@@ -721,20 +727,43 @@ const AdminDashboard = () => {
                 </div>
               )}
 
-              <div className="flex items-center gap-3 px-4 py-2 bg-white rounded-xl shadow-md border border-gray-200">
-                <svg
-                  className="w-5 h-5 text-green-500 animate-pulse"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
-                <span className="font-semibold text-gray-700">تحديث مباشر</span>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 px-4 py-2 bg-white rounded-xl shadow-md border border-gray-200">
+                  <svg
+                    className="w-5 h-5 text-green-500 animate-pulse"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 10V3L4 14h7v7l9-11h-7z"
+                    />
+                  </svg>
+                  <span className="font-semibold text-gray-700">تحديث مباشر</span>
+                </div>
+                
+                {isConnected && (
+                  <button
+                    onClick={requestUpdate}
+                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow-md hover:shadow-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200"
+                    title="طلب تحديث فوري من الخادم">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
+                    </svg>
+                    <span className="font-semibold text-sm">تحديث الآن</span>
+                  </button>
+                )}
               </div>
 
               {lastUpdated && (

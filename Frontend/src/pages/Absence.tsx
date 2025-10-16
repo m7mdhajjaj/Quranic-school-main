@@ -16,6 +16,7 @@ import {
   getStudentAttendance,
   bulkSaveAttendance,
 } from "../Api/attendanceApi";
+import { useAbsenceSocket } from "../Socket";
 
 // ================== الإعدادات العامة ==================
 
@@ -85,6 +86,13 @@ const todayISO = () => new Date().toISOString().split("T")[0];
 const Absence = () => {
   const navigate = useNavigate();
 
+  // استخدام نظام Socket الجديد مع Heartbeat تلقائي كل 30 ثانية
+  const {
+    isConnected: socketConnected,
+    lastUpdate: socketLastUpdate,
+    socketId,
+  } = useAbsenceSocket();
+
   // --------- حالات عامة ---------
   const [currentUser, setCurrentUser] = useState<LoggedInUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -151,6 +159,29 @@ const Absence = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [yearMonth]);
+
+  // إعادة جلب البيانات عند تحديث Socket
+  useEffect(() => {
+    if (!socketLastUpdate || !currentUser) return;
+
+    console.log('🔄 Socket update detected in Absence, refetching attendance...');
+    
+    const refetchData = async () => {
+      try {
+        if (currentUser.role === "teacher" || currentUser.role === "admin") {
+          // إعادة جلب بيانات الحضور للمعلم
+          await fetchStudentsForTeacher(date);
+        } else if (currentUser.role === "student") {
+          // إعادة جلب إحصائيات الغياب للطالب
+          await fetchStudentAbsenceStats(currentUser._id);
+        }
+      } catch (err) {
+        console.error("Error refetching attendance after socket update:", err);
+      }
+    };
+
+    refetchData();
+  }, [socketLastUpdate, currentUser, date]);
 
   // ================== طلبات المعلّم ==================
   const fetchStudentsForTeacher = async (forDate: string) => {
@@ -642,9 +673,38 @@ const Absence = () => {
       <div className="container mx-auto max-w-6xl">
         {/* العنوان */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-800 mb-2">
-            سجل الحضور والغياب
-          </h1>
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <h1 className="text-3xl md:text-4xl font-bold text-slate-800">
+              سجل الحضور والغياب
+            </h1>
+            {/* Socket Connection Indicator */}
+            <div className="relative group">
+              <div
+                className={`w-3 h-3 rounded-full ${
+                  socketConnected ? "bg-green-500" : "bg-yellow-500"
+                } animate-pulse`}
+                title={socketConnected ? "متصل" : "غير متصل"}
+              />
+              {/* Tooltip */}
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                <div className="text-center">
+                  <div className="font-semibold mb-1">
+                    {socketConnected ? "✓ متصل بالسوكت" : "⚠ غير متصل"}
+                  </div>
+                  {socketId && (
+                    <div className="text-gray-300 text-xs">ID: {socketId.substring(0, 8)}...</div>
+                  )}
+                  {socketLastUpdate && (
+                    <div className="text-gray-300 text-xs mt-1">
+                      آخر تحديث: {new Date(socketLastUpdate).toLocaleTimeString('ar-EG')}
+                    </div>
+                  )}
+                </div>
+                {/* Arrow */}
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+              </div>
+            </div>
+          </div>
           <div className="w-24 h-1 bg-emerald-600 mx-auto mb-4"></div>
           <p className="text-gray-600">
             {currentUser?.role === "student"

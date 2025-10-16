@@ -23,6 +23,7 @@ import {
 } from "../Api/examApi";
 import { getAllStudents } from "../Api/studentApi";
 import Swal from "sweetalert2";
+import { useExamScheduleSocket } from "../Socket";
 
 // =========================
 // إعدادات API تم نقلها إلى Api/examApi.ts
@@ -216,6 +217,9 @@ const Field: React.FC<{
 // المكوّن الرئيسي
 // =========================
 const ExamSchedule: React.FC = () => {
+  // 🔌 Socket Connection
+  const { isConnected: socketConnected, lastUpdate: socketLastUpdate, socketId } = useExamScheduleSocket();
+
   // ——— الحالة (State)
   const [exams, setExams] = useState<Exam[]>([]);
   const [loadingExams, setLoadingExams] = useState(true);
@@ -918,6 +922,62 @@ const ExamSchedule: React.FC = () => {
     loadExams();
   }, [refreshAllAverages, role, getTeacherPossibleNames, isTeacherMatch]);
 
+  // 🔄 Auto-refresh when socket receives updates
+  useEffect(() => {
+    if (socketLastUpdate) {
+      console.log('🔄 ExamSchedule Socket update received, refreshing exams...');
+      const reloadExams = async () => {
+        try {
+          let list: Exam[] = await getAllExams();
+          
+          // Apply same filters as initial load
+          if (role === "student") {
+            const userStr = localStorage.getItem("user");
+            if (userStr) {
+              const currentUser = JSON.parse(userStr);
+              const studentGroup = currentUser.group;
+              if (studentGroup) {
+                list = list.filter((exam) => !exam.group || exam.group === studentGroup);
+              } else {
+                list = list.filter((exam) => !exam.group);
+              }
+            }
+          }
+
+          if (role === "teacher") {
+            const userStr = localStorage.getItem("user");
+            if (userStr) {
+              const currentUser = JSON.parse(userStr);
+              const { getAllGroups } = await import("../Api/groupApi");
+              const groupsRes = await getAllGroups();
+              if (groupsRes.success && Array.isArray(groupsRes.data)) {
+                const possibleNames = getTeacherPossibleNames(currentUser);
+                const teacherGroupsData = groupsRes.data.filter((group: any) => {
+                  if (!group.teacher) return false;
+                  return isTeacherMatch(group.teacher, possibleNames);
+                });
+                const teacherGroupNames = teacherGroupsData.map((g: any) => g.name);
+                if (teacherGroupNames.length > 0) {
+                  list = list.filter((exam) => !exam.group || teacherGroupNames.includes(exam.group));
+                } else {
+                  list = list.filter((exam) => !exam.group);
+                }
+              } else {
+                list = list.filter((exam) => !exam.group);
+              }
+            }
+          }
+
+          setExams(list);
+          await refreshAllAverages(list);
+        } catch (error) {
+          console.error('Error refreshing exams:', error);
+        }
+      };
+      reloadExams();
+    }
+  }, [socketLastUpdate, role, getTeacherPossibleNames, isTeacherMatch, refreshAllAverages]);
+
   // ——— الطالب: جلب علاماته الشخصية
   useEffect(() => {
     if (role !== "student") return;
@@ -1124,6 +1184,32 @@ const ExamSchedule: React.FC = () => {
       className="max-w-6xl mx-auto px-4 md:px-6 pt-4 md:pt-6 pb-16 md:pb-20"
       dir="rtl"
       lang="ar">
+      {/* 🔌 Socket Connection Indicator */}
+      <div className="fixed top-20 left-4 z-50">
+        <div className="relative group">
+          <div
+            className={`w-3 h-3 rounded-full transition-all duration-300 ${
+              socketConnected ? 'bg-emerald-500 animate-pulse' : 'bg-yellow-500'
+            }`}
+          />
+          <div className="absolute left-6 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs py-2 px-3 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-lg">
+            <div className="font-semibold mb-1">
+              {socketConnected ? '✓ متصل بالسوكت' : '⚠ غير متصل'}
+            </div>
+            {socketId && (
+              <div className="text-gray-300 text-[10px] mb-1">
+                ID: {socketId.slice(0, 8)}...
+              </div>
+            )}
+            {socketLastUpdate && (
+              <div className="text-gray-400 text-[10px]">
+                آخر تحديث: {new Date(socketLastUpdate).toLocaleTimeString('ar-EG')}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* العنوان */}
       <div className="mb-6">
         <h2 className="text-3xl md:text-4xl font-extrabold text-center text-emerald-700 tracking-tight">

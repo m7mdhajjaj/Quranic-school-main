@@ -16,6 +16,7 @@ import {
   showWarningMessage,
   showErrorMessage,
 } from "../utils/sweetalertUtils";
+import { useDailyMarksSocket } from "../Socket";
 
 // Interface for Student data from backend
 interface Student {
@@ -89,6 +90,13 @@ interface Mark {
 
 const DailyMarks = () => {
   const navigate = useNavigate();
+
+  // استخدام نظام Socket الجديد مع Heartbeat تلقائي كل 30 ثانية
+  const {
+    isConnected: socketConnected,
+    lastUpdate: socketLastUpdate,
+    socketId,
+  } = useDailyMarksSocket();
 
   // State for students, sections, and marks
   const [students, setStudents] = useState<Student[]>([]);
@@ -300,6 +308,29 @@ const DailyMarks = () => {
 
     fetchMarks();
   }, [currentUser, selectedStudentId]);
+
+  // إعادة جلب البيانات عند تحديث Socket
+  useEffect(() => {
+    if (!socketLastUpdate || !currentUser) return;
+
+    console.log('🔄 Socket update detected in DailyMarks, refetching marks...');
+    
+    const refetchMarks = async () => {
+      try {
+        if (currentUser.role === "student") {
+          const marksData = await getStudentMarks(currentUser._id);
+          setMarks(Array.isArray(marksData) ? marksData : []);
+        } else if (selectedStudentId) {
+          const marksData = await getStudentMarks(selectedStudentId);
+          setMarks(Array.isArray(marksData) ? marksData : []);
+        }
+      } catch (err) {
+        console.error("Error refetching marks after socket update:", err);
+      }
+    };
+
+    refetchMarks();
+  }, [socketLastUpdate, currentUser, selectedStudentId]);
 
   // Open the add mark modal
   const openAddMarkModal = (section: Section) => {
@@ -787,9 +818,38 @@ const DailyMarks = () => {
       dir="rtl">
       <div className="container mx-auto">
         <div className="text-center mb-10">
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
-            نظام العلامات اليومية
-          </h1>
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <h1 className="text-3xl md:text-4xl font-bold text-slate-800">
+              نظام العلامات اليومية
+            </h1>
+            {/* Socket Connection Indicator */}
+            <div className="relative group">
+              <div
+                className={`w-3 h-3 rounded-full ${
+                  socketConnected ? "bg-green-500" : "bg-yellow-500"
+                } animate-pulse`}
+                title={socketConnected ? "متصل" : "غير متصل"}
+              />
+              {/* Tooltip */}
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                <div className="text-center">
+                  <div className="font-semibold mb-1">
+                    {socketConnected ? "✓ متصل بالسوكت" : "⚠ غير متصل"}
+                  </div>
+                  {socketId && (
+                    <div className="text-gray-300 text-xs">ID: {socketId.substring(0, 8)}...</div>
+                  )}
+                  {socketLastUpdate && (
+                    <div className="text-gray-300 text-xs mt-1">
+                      آخر تحديث: {new Date(socketLastUpdate).toLocaleTimeString('ar-EG')}
+                    </div>
+                  )}
+                </div>
+                {/* Arrow */}
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+              </div>
+            </div>
+          </div>
           <div className="w-24 h-1 bg-emerald-600 mx-auto mb-6"></div>
           {currentUser && (
             <h2 className="text-xl text-gray-700">

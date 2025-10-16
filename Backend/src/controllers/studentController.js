@@ -451,6 +451,18 @@ exports.updateStudent = async (req, res) => {
       global.io.emit("studentUpdated", updatedStudent);
     }
 
+    // 🔌 Emit Socket event to profile room
+    const io = req.app.get("io");
+    if (io) {
+      io.to("profile").emit("profileUpdated", {
+        user: updatedStudent,
+        userId: req.params.id,
+        userRole: "student",
+        timestamp: Date.now(),
+      });
+      console.log("✅ profileUpdated event emitted to profile room");
+    }
+
     // إشعار تحديث إحصائيات الداشبورد
     notifyStudentStatsUpdate();
 

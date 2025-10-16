@@ -451,9 +451,15 @@ exports.updateTeacher = async (req, res) => {
     }
 
     // Emit socket event for real-time update
-    if (global.io) {
-      global.io.emit("teacherUpdated", updated);
-      console.log("📡 Teacher updated event emitted via socket");
+    const io = req.app.get("io");
+    if (io) {
+      io.to("profile").emit("profileUpdated", {
+        user: updated,
+        userId: req.params.id,
+        userRole: "teacher",
+        timestamp: Date.now(),
+      });
+      console.log("📡 Profile updated event emitted via socket (teacher)");
     }
 
     return res.status(200).json({

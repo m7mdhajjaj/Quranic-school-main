@@ -46,6 +46,18 @@ router.post("/:id/avatar", uploadAvatar.single("avatar"), async (req, res) => {
       }
     );
 
+    // Emit socket event for real-time avatar update
+    const io = req.app.get("io");
+    if (io) {
+      io.to("profile").emit("avatarUpdated", {
+        userId: req.params.id,
+        userRole: "teacher",
+        avatarUrl: req.file.path,
+        timestamp: Date.now(),
+      });
+      console.log("📡 Avatar updated event emitted via socket (teacher)");
+    }
+
     return res.status(200).json({
       success: true,
       message: "تم رفع الصورة بنجاح",
@@ -89,6 +101,17 @@ router.delete("/:id/avatar", async (req, res) => {
         { _id: req.params.id },
         { $unset: { avatar: "" } }
       );
+
+      // Emit socket event for real-time avatar deletion
+      const io = req.app.get("io");
+      if (io) {
+        io.to("profile").emit("avatarDeleted", {
+          userId: req.params.id,
+          userRole: "teacher",
+          timestamp: Date.now(),
+        });
+        console.log("📡 Avatar deleted event emitted via socket (teacher)");
+      }
 
       res.json({ success: true, message: "تم حذف الصورة بنجاح" });
     } else {

@@ -102,6 +102,12 @@ exports.createOrUpdateMark = async (req, res) => {
         );
       }
 
+      // Emit socket event for real-time updates (affects rankings)
+      if (global.io) {
+        console.log("📡 Broadcasting mark updated event");
+        global.io.emit("markUpdated", mark);
+      }
+
       res.json(mark);
     } else {
       // Create new mark
@@ -152,6 +158,12 @@ exports.createOrUpdateMark = async (req, res) => {
         );
       }
 
+      // Emit socket event for real-time updates (affects rankings)
+      if (global.io) {
+        console.log("📡 Broadcasting mark created event");
+        global.io.emit("markCreated", populatedMark);
+      }
+
       res.status(201).json(populatedMark);
     }
   } catch (error) {
@@ -191,6 +203,12 @@ exports.deleteMark = async (req, res) => {
     // حذف العلامة
     await Mark.findByIdAndDelete(req.params.id);
     console.log("✅ تم حذف العلامة");
+
+    // Emit Socket.IO event for mark deletion
+    if (global.io) {
+      console.log("📡 Broadcasting mark deleted event");
+      global.io.emit("markDeleted", { _id: req.params.id, studentId });
+    }
 
     // إعادة حساب المعدل الشهري للطالب بعد الحذف
     if (sectionId && sectionId.date) {

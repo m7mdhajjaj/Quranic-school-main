@@ -25,6 +25,7 @@ import {
   FaUserGraduate,
 } from 'react-icons/fa';
 import { useAuth } from '../../hooks/useAuth';
+import { useGroupsSocket } from '../../Socket';
 import AddGroupForm from '../../components/Forms/AddGroupForm';
 import ResponsivePagination from '../../components/Pagination/ResponsivePagination';
 import { getAllGroups, deleteGroup, type Group } from '../../Api/groupApi';
@@ -41,9 +42,14 @@ type SortOrder = 'asc' | 'desc';
 
 const GroupManagement: React.FC = () => {
   const { user: currentUser } = useAuth();
-  // Socket temporarily disabled for groups - can be added later
-  // const { onGroupUpdate, offGroupUpdate, isConnected } = useSocket();
-  const isConnected = false; // Fallback mode - will show auto refresh indicator
+  
+  // استخدام نظام Socket الجديد مع Heartbeat تلقائي كل 30 ثانية
+  const {
+    isConnected,
+    lastUpdate: socketLastUpdate,
+    socketId,
+  } = useGroupsSocket();
+  
   const userRole = currentUser?.role || '';
   const hasPermission = userRole === 'teacher' || userRole === 'admin';
 
@@ -219,6 +225,17 @@ const GroupManagement: React.FC = () => {
     }
   }, []);
 
+  // Socket event handlers - التحديثات الفورية تتم عبر useGroupsSocket Hook
+  useEffect(() => {
+    if (!hasPermission) return;
+    
+    // عند تحديث Socket، نعيد جلب قائمة الحلقات
+    if (socketLastUpdate) {
+      console.log('🔄 Socket update detected, refreshing groups list...');
+      fetchGroups();
+    }
+  }, [socketLastUpdate, hasPermission, fetchGroups]);
+
   // Initial load
   useEffect(() => {
     if (!hasPermission) return;
@@ -257,7 +274,7 @@ const GroupManagement: React.FC = () => {
         setAllTeachers(teachersFromGroups);
       }
     }
-  }, [groups]);
+  }, [groups, allTeachers.length]);
 
   // Handle sorting
   const handleSort = (field: SortField) => {
@@ -666,18 +683,24 @@ const GroupManagement: React.FC = () => {
                       <p className="text-gray-600">
                         إدارة وتنظيم حلقات تحفيظ القرآن الكريم
                       </p>
-                      <div className="flex items-center gap-1.5">
+                      <div 
+                        className="flex items-center gap-1.5 cursor-help"
+                        title={
+                          isConnected
+                            ? `💓 Heartbeat نشط (كل 30 ثانية)\nSocket ID: ${socketId || 'N/A'}\nآخر تحديث: ${socketLastUpdate?.toLocaleTimeString('ar-SA') || 'N/A'}`
+                            : 'Socket غير متصل - وضع التحديث التلقائي'
+                        }>
                         <div
                           className={`w-2 h-2 rounded-full ${
                             isConnected ? 'bg-green-500' : 'bg-yellow-500'
                           } animate-pulse`}
                         ></div>
                         <span
-                          className={`text-xs ${
+                          className={`text-xs font-medium ${
                             isConnected ? 'text-green-600' : 'text-yellow-600'
                           }`}
                         >
-                          {isConnected ? 'متصل مباشرة' : 'تحديث تلقائي'}
+                          {isConnected ? '💓 متصل مباشرة' : 'تحديث تلقائي'}
                         </span>
                       </div>
                     </div>

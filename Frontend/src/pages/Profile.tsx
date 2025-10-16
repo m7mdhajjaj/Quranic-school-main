@@ -35,6 +35,7 @@ import {
   type UserProfile,
 } from '../Api/profileApi';
 import { validateProfileData, validateField, type FieldErrors } from '../Validation/profileValidation';
+import { useProfileSocket } from '../Socket';
 
 type Endpoint = 'students' | 'teachers' | 'admins';
 
@@ -128,6 +129,9 @@ const Profile: React.FC = () => {
   const navigate = useNavigate();
   const { user: authUser } = useAuth();
 
+  // 🔌 Socket Connection
+  const { isConnected: socketConnected, lastUpdate: socketLastUpdate, socketId } = useProfileSocket();
+
   const [user, setUser] = useState<UserProfile | null>(null);
   const [endpoint, setEndpoint] = useState<Endpoint>('students');
   const [fetchState, setFetchState] = useState<FetchState>({ status: 'idle' });
@@ -202,6 +206,14 @@ const Profile: React.FC = () => {
         URL.revokeObjectURL(avatarUrl);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 🔄 Auto-refresh when socket receives updates
+  useEffect(() => {
+    if (socketLastUpdate) {
+      console.log('🔄 Profile Socket update received, refreshing profile...');
+      loadUser();
+    }
+  }, [socketLastUpdate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const beginEdit = () => {
     setEdited(user);
@@ -455,6 +467,32 @@ const Profile: React.FC = () => {
       className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100"
       dir="rtl"
     >
+      {/* 🔌 Socket Connection Indicator */}
+      <div className="fixed top-20 left-4 z-50">
+        <div className="relative group">
+          <div
+            className={`w-3 h-3 rounded-full transition-all duration-300 ${
+              socketConnected ? 'bg-emerald-500 animate-pulse' : 'bg-yellow-500'
+            }`}
+          />
+          <div className="absolute left-6 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs py-2 px-3 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-lg">
+            <div className="font-semibold mb-1">
+              {socketConnected ? '✓ متصل بالسوكت' : '⚠ غير متصل'}
+            </div>
+            {socketId && (
+              <div className="text-gray-300 text-[10px] mb-1">
+                ID: {socketId.slice(0, 8)}...
+              </div>
+            )}
+            {socketLastUpdate && (
+              <div className="text-gray-400 text-[10px]">
+                آخر تحديث: {new Date(socketLastUpdate).toLocaleTimeString('ar-EG')}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Hero Section */}
       <div className="relative bg-gradient-to-r from-emerald-600 to-teal-600 overflow-hidden">
         {/* Animated Background */}
