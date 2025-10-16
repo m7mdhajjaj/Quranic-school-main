@@ -73,6 +73,11 @@ import QuranAudio from "./pages/QuranAudio";
 import Azkar from "./pages/Azkar";
 
 // ============================================================================
+// Page Components - Warnings & Discipline
+// ============================================================================
+import Warnings from "./pages/Warnings";
+
+// ============================================================================
 // Page Components - Admin
 // ============================================================================
 import AdminDashboard from "./pages/Admin/Dashboard";
@@ -202,6 +207,7 @@ const TeacherRoutes: React.FC = () => {
           {/* ====== Attendance & Management - Teacher Features ====== */}
           <Route path="/absence" element={<Absence />} />
           <Route path="/my-students" element={<MyStudents />} />
+          <Route path="/warnings" element={<Warnings />} />
 
           {/* ====== Islamic Resources ====== */}
           <Route path="/prayer-times" element={<PrayerTimes />} />
@@ -274,6 +280,7 @@ const StudentRoutes: React.FC = () => {
 
           {/* ====== Attendance - View Only ====== */}
           <Route path="/absence" element={<Absence />} />
+          <Route path="/warnings" element={<Warnings />} />
 
           {/* ====== Islamic Resources ====== */}
           <Route path="/prayer-times" element={<PrayerTimes />} />

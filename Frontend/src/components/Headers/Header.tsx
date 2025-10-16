@@ -9,6 +9,7 @@ import api from "../../Api/api";
 import { showLogoutConfirmation } from "../../utils/logoutUtils";
 import { API_BASE_URL } from "../../config";
 import {
+  AlertTriangle,
   Award,
   BookOpen,
   BookOpenCheck,
@@ -229,7 +230,12 @@ const Header = () => {
         icon: Sparkles,
         color: "from-pink-500 to-rose-500",
       },
-
+      {
+        to: "/warnings",
+        label: "الإنذارات",
+        icon: AlertTriangle,
+        color: "from-red-500 to-orange-500",
+      },
       {
         to: "/reports",
         label: "التقارير الشهرية",
@@ -368,7 +374,6 @@ const Header = () => {
                   <NotificationHeader
                     userId={currentUser._id}
                     socket={socket}
-                    apiUrl={API_BASE_URL}
                   />
                 </div>
               )}
