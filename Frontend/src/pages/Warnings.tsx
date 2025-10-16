@@ -33,6 +33,7 @@ interface Student {
   lastName: string;
   warningsCount?: number;
   existingWarningTypes?: string[]; // أنواع الإنذارات الموجودة مسبقاً
+  allWarnings?: any[]; // جميع الإنذارات والتنبيهات مع تفاصيلها
 }
 
 interface Group {
@@ -175,6 +176,7 @@ const Warnings = () => {
               ...student,
               warningsCount: studentWarnings.length,
               existingWarningTypes: existingTypes,
+              allWarnings: studentWarnings, // حفظ جميع الإنذارات والتنبيهات
             };
           } catch (err) {
             console.error(
@@ -185,6 +187,7 @@ const Warnings = () => {
               ...student,
               warningsCount: 0,
               existingWarningTypes: [],
+              allWarnings: [],
             };
           }
         })
@@ -288,6 +291,197 @@ const Warnings = () => {
         // عرض رسالة مخصصة إذا كان الإنذار موجود مسبقاً
         const errorMessage =
           error?.response?.data?.message || "حدث خطأ أثناء إعطاء الإنذار";
+
+        Swal.fire({
+          icon: "error",
+          title: "خطأ",
+          text: errorMessage,
+          confirmButtonColor: "#dc2626",
+        });
+      }
+    }
+  };
+
+  // حذف إنذار (للمعلم فقط)
+  const deleteWarning = async (student: Student, warningType: string) => {
+    const result = await Swal.fire({
+      title: "⚠️ حذف الإنذار",
+      html: `
+        <div class="text-right" dir="rtl">
+          <p class="text-lg mb-4">هل أنت متأكد من حذف <strong class="text-red-600">${getWarningLabel(
+            warningType
+          )}</strong>؟</p>
+          <p class="text-xl font-bold text-blue-600 mb-4">${
+            student.firstName
+          } ${student.lastName}</p>
+          <p class="text-sm text-yellow-600 bg-yellow-50 p-3 rounded-lg">
+            ⚠️ تحذير: سيتم حذف الإنذار نهائياً ولن يمكن استرجاعه
+          </p>
+        </div>
+      `,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "نعم، احذف الإنذار",
+      cancelButtonText: "إلغاء",
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#6b7280",
+    });
+
+    if (result.isConfirmed) {
+      // عرض loading
+      Swal.fire({
+        title: "جاري حذف الإنذار...",
+        html: `
+          <div class="text-center py-4" dir="rtl">
+            <div class="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-red-600 mb-4"></div>
+            <p class="text-lg text-gray-700 font-medium">الرجاء الانتظار...</p>
+          </div>
+        `,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+      });
+
+      try {
+        // جلب إنذارات الطالب للعثور على الإنذار المطلوب
+        const warningsRes = await api.get(`/warnings/student/${student._id}`);
+        const studentWarnings = Array.isArray(warningsRes.data)
+          ? warningsRes.data
+          : [];
+
+        // العثور على الإنذار من النوع المحدد
+        const warningToDelete = studentWarnings.find(
+          (w: any) => w.type === warningType
+        );
+
+        if (!warningToDelete) {
+          Swal.fire({
+            icon: "error",
+            title: "خطأ",
+            text: "لم يتم العثور على الإنذار",
+            confirmButtonColor: "#dc2626",
+          });
+          return;
+        }
+
+        // حذف الإنذار
+        await api.delete(`/warnings/${warningToDelete._id}`);
+
+        Swal.fire({
+          icon: "success",
+          title: "✅ تم الحذف!",
+          html: `
+            <div class="text-center" dir="rtl">
+              <p class="text-lg text-gray-700">تم حذف <strong class="text-red-600">${getWarningLabel(
+                warningType
+              )}</strong> بنجاح</p>
+              <p class="text-sm text-gray-500 mt-2">${student.firstName} ${
+            student.lastName
+          }</p>
+            </div>
+          `,
+          confirmButtonColor: "#10b981",
+          confirmButtonText: "حسناً",
+          timer: 3000,
+        });
+
+        // إعادة تحميل البيانات
+        if (selectedGroup) {
+          handleGroupSelect(selectedGroup);
+        }
+      } catch (error: any) {
+        console.error("Error deleting warning:", error);
+
+        const errorMessage =
+          error?.response?.data?.message || "حدث خطأ أثناء حذف الإنذار";
+
+        Swal.fire({
+          icon: "error",
+          title: "خطأ",
+          text: errorMessage,
+          confirmButtonColor: "#dc2626",
+        });
+      }
+    }
+  };
+
+  // حذف إنذار/تنبيه محدد بالـ ID (للتنبيهات المتعددة)
+  const deleteWarningById = async (warningId: string, student: Student) => {
+    // جلب بيانات الإنذار/التنبيه
+    const warning = student.allWarnings?.find((w: any) => w._id === warningId);
+    
+    if (!warning) {
+      Swal.fire({
+        icon: "error",
+        title: "خطأ",
+        text: "لم يتم العثور على التنبيه",
+        confirmButtonColor: "#dc2626",
+      });
+      return;
+    }
+
+    const result = await Swal.fire({
+      title: "⚠️ حذف التنبيه",
+      html: `
+        <div class="text-right" dir="rtl">
+          <p class="text-lg mb-4">هل أنت متأكد من حذف هذا التنبيه؟</p>
+          <p class="text-xl font-bold text-blue-600 mb-2">${student.firstName} ${
+        student.lastName
+      }</p>
+          <div class="bg-yellow-50 p-3 rounded-lg text-right mb-4">
+            <p class="text-sm text-gray-700"><strong>السبب:</strong> ${
+              warning.reason
+            }</p>
+            <p class="text-xs text-gray-500 mt-1">
+              التاريخ: ${new Date(warning.createdAt).toLocaleDateString("ar-SA")}
+            </p>
+          </div>
+        </div>
+      `,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "نعم، احذف",
+      cancelButtonText: "إلغاء",
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#6b7280",
+    });
+
+    if (result.isConfirmed) {
+      // عرض loading
+      Swal.fire({
+        title: "جاري الحذف...",
+        html: `
+          <div class="text-center py-4" dir="rtl">
+            <div class="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-yellow-600 mb-4"></div>
+            <p class="text-lg text-gray-700 font-medium">الرجاء الانتظار...</p>
+          </div>
+        `,
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+      });
+
+      try {
+        await api.delete(`/warnings/${warningId}`);
+
+        Swal.fire({
+          icon: "success",
+          title: "✅ تم الحذف!",
+          text: "تم حذف التنبيه بنجاح",
+          confirmButtonColor: "#10b981",
+          confirmButtonText: "حسناً",
+          timer: 2000,
+        });
+
+        // إعادة تحميل البيانات
+        if (selectedGroup) {
+          handleGroupSelect(selectedGroup);
+        }
+      } catch (error: any) {
+        console.error("Error deleting warning:", error);
+
+        const errorMessage =
+          error?.response?.data?.message || "حدث خطأ أثناء حذف التنبيه";
 
         Swal.fire({
           icon: "error",
@@ -463,34 +657,66 @@ const Warnings = () => {
                         {/* عرض الإنذارات الموجودة */}
                         {student.existingWarningTypes &&
                           student.existingWarningTypes.length > 0 && (
-                            <div className="flex gap-1">
+                            <div className="flex gap-1 flex-wrap">
                               {student.existingWarningTypes.includes(
                                 "first"
                               ) && (
-                                <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full font-medium">
-                                  🔴 إنذار 1
-                                </span>
+                                <div className="flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full font-medium">
+                                  <span>🔴 إنذار 1</span>
+                                  <button
+                                    onClick={() =>
+                                      deleteWarning(student, "first")
+                                    }
+                                    className="ml-1 hover:bg-orange-200 rounded-full p-0.5 transition-colors"
+                                    title="حذف الإنذار">
+                                    ✕
+                                  </button>
+                                </div>
                               )}
                               {student.existingWarningTypes.includes(
                                 "second"
                               ) && (
-                                <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full font-medium">
-                                  🔴🔴 إنذار 2
-                                </span>
+                                <div className="flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full font-medium">
+                                  <span>🔴🔴 إنذار 2</span>
+                                  <button
+                                    onClick={() =>
+                                      deleteWarning(student, "second")
+                                    }
+                                    className="ml-1 hover:bg-red-200 rounded-full p-0.5 transition-colors"
+                                    title="حذف الإنذار">
+                                    ✕
+                                  </button>
+                                </div>
                               )}
                               {student.existingWarningTypes.includes(
                                 "third"
                               ) && (
-                                <span className="px-2 py-1 bg-red-200 text-red-800 text-xs rounded-full font-medium">
-                                  🔴🔴🔴 إنذار 3
-                                </span>
+                                <div className="flex items-center gap-1 px-2 py-1 bg-red-200 text-red-800 text-xs rounded-full font-medium">
+                                  <span>🔴🔴🔴 إنذار 3</span>
+                                  <button
+                                    onClick={() =>
+                                      deleteWarning(student, "third")
+                                    }
+                                    className="ml-1 hover:bg-red-300 rounded-full p-0.5 transition-colors"
+                                    title="حذف الإنذار">
+                                    ✕
+                                  </button>
+                                </div>
                               )}
                               {student.existingWarningTypes.includes(
                                 "expulsion"
                               ) && (
-                                <span className="px-2 py-1 bg-gray-800 text-white text-xs rounded-full font-medium">
-                                  ❌ مفصول
-                                </span>
+                                <div className="flex items-center gap-1 px-2 py-1 bg-gray-800 text-white text-xs rounded-full font-medium">
+                                  <span>❌ مفصول</span>
+                                  <button
+                                    onClick={() =>
+                                      deleteWarning(student, "expulsion")
+                                    }
+                                    className="ml-1 hover:bg-gray-700 rounded-full p-0.5 transition-colors"
+                                    title="حذف الفصل">
+                                    ✕
+                                  </button>
+                                </div>
                               )}
                             </div>
                           )}
@@ -499,6 +725,34 @@ const Warnings = () => {
                         إجمالي الإنذارات والتنبيهات:{" "}
                         {student.warningsCount || 0}
                       </p>
+                      
+                      {/* عرض التنبيهات */}
+                      {student.allWarnings &&
+                        student.allWarnings.filter((w: any) => w.type === "warning")
+                          .length > 0 && (
+                          <div className="mt-2">
+                            <p className="text-xs text-gray-500 mb-1">
+                              التنبيهات ({student.allWarnings.filter((w: any) => w.type === "warning").length}):
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {student.allWarnings
+                                .filter((w: any) => w.type === "warning")
+                                .map((warning: any, index: number) => (
+                                  <div
+                                    key={warning._id}
+                                    className="flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full font-medium group">
+                                    <span>⚠️ تنبيه {index + 1}</span>
+                                    <button
+                                      onClick={() => deleteWarningById(warning._id, student)}
+                                      className="ml-1 hover:bg-yellow-200 rounded-full p-0.5 transition-colors opacity-0 group-hover:opacity-100"
+                                      title={`حذف: ${warning.reason}`}>
+                                      ✕
+                                    </button>
+                                  </div>
+                                ))}
+                            </div>
+                          </div>
+                        )}
                     </div>
                   </div>
 
