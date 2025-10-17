@@ -72,7 +72,7 @@ const PointsGame = () => {
   const getPrayerPoints = (status: string) => {
     switch (status) {
       case "mosque":
-        return 10;
+        return 12;
       case "home":
         return 5;
       case "late":
@@ -113,10 +113,10 @@ const PointsGame = () => {
     if (adhkar.afterPrayer) total += 5;
 
     // نقاط الحلقة
-    // كل 10 دقائق حفظ = 5 نقاط
-    total += Math.floor(halaqah.memorizedMinutes / 10) * 5;
-    // كل 10 دقائق مراجعة = 3 نقاط
-    total += Math.floor(halaqah.reviewedMinutes / 10) * 3;
+    // كل 10 دقائق حفظ = 1 نقطة
+    total += Math.floor(halaqah.memorizedMinutes / 10) * 1;
+    // كل 10 دقائق مراجعة = 1 نقطة
+    total += Math.floor(halaqah.reviewedMinutes / 10) * 1;
 
     return total;
   };
@@ -214,7 +214,7 @@ const PointsGame = () => {
                           : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                       }`}>
                       <div className="text-2xl">🕌</div>
-                      <div className="text-xs mt-1">مسجد (10)</div>
+                      <div className="text-xs mt-1">مسجد (12)</div>
                     </button>
                     <button
                       onClick={() =>
