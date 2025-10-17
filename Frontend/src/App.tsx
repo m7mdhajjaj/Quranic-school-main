@@ -70,6 +70,17 @@ import Absence from "./pages/Absence";
 import PrayerTimes from "./pages/PrayerTimes";
 import QuranPage from "./pages/QuranPage";
 import QuranAudio from "./pages/QuranAudio";
+import Azkar from "./pages/Azkar";
+
+// ============================================================================
+// Page Components - Warnings & Discipline
+// ============================================================================
+import Warnings from "./pages/Warnings";
+
+// ============================================================================
+// Page Components - Points Game
+// ============================================================================
+import PointsGame from "./pages/PointsGame";
 
 // ============================================================================
 // Page Components - Admin
@@ -201,11 +212,16 @@ const TeacherRoutes: React.FC = () => {
           {/* ====== Attendance & Management - Teacher Features ====== */}
           <Route path="/absence" element={<Absence />} />
           <Route path="/my-students" element={<MyStudents />} />
+          <Route path="/warnings" element={<Warnings />} />
+
+          {/* ====== Points Game ====== */}
+          <Route path="/points-game" element={<PointsGame />} />
 
           {/* ====== Islamic Resources ====== */}
           <Route path="/prayer-times" element={<PrayerTimes />} />
           <Route path="/quran" element={<QuranPage />} />
           <Route path="/quran-audio" element={<QuranAudio />} />
+          <Route path="/azkar" element={<Azkar />} />
 
           {/* ====== User Settings ====== */}
           <Route path="/profile" element={<Profile />} />
@@ -272,11 +288,16 @@ const StudentRoutes: React.FC = () => {
 
           {/* ====== Attendance - View Only ====== */}
           <Route path="/absence" element={<Absence />} />
+          <Route path="/warnings" element={<Warnings />} />
+
+          {/* ====== Points Game ====== */}
+          <Route path="/points-game" element={<PointsGame />} />
 
           {/* ====== Islamic Resources ====== */}
           <Route path="/prayer-times" element={<PrayerTimes />} />
           <Route path="/quran" element={<QuranPage />} />
           <Route path="/quran-audio" element={<QuranAudio />} />
+          <Route path="/azkar" element={<Azkar />} />
 
           {/* ====== User Settings ====== */}
           <Route path="/profile" element={<Profile />} />

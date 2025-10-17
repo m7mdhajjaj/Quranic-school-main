@@ -9,8 +9,10 @@ import api from "../../Api/api";
 import { showLogoutConfirmation } from "../../utils/logoutUtils";
 import { API_BASE_URL } from "../../config";
 import {
+  AlertTriangle,
   Award,
   BookOpen,
+  BookOpenCheck,
   CalendarDays,
   Clock,
   ClipboardList,
@@ -165,6 +167,12 @@ const Header = () => {
         color: "from-orange-500 to-red-500",
       },
       {
+        to: "/points-game",
+        label: "لعبة النقاط",
+        icon: Award,
+        color: "from-yellow-500 to-orange-500",
+      },
+      {
         to: "/absence",
         label: "الحضور والغياب",
         icon: UserCheck,
@@ -205,6 +213,12 @@ const Header = () => {
         color: "from-blue-500 to-indigo-500",
       },
       {
+        to: "/azkar",
+        label: "الأذكار",
+        icon: BookOpenCheck,
+        color: "from-green-500 to-emerald-500",
+      },
+      {
         to: "/prayer-times",
         label: "مواقيت الصلاة",
         icon: Clock,
@@ -222,7 +236,13 @@ const Header = () => {
         icon: Sparkles,
         color: "from-pink-500 to-rose-500",
       },
-
+      {
+        to: "/warnings",
+        label: "الإنذارات",
+        icon: AlertTriangle,
+        color: "from-red-500 to-orange-500",
+      },
+   
       {
         to: "/reports",
         label: "التقارير الشهرية",
@@ -361,7 +381,6 @@ const Header = () => {
                   <NotificationHeader
                     userId={currentUser._id}
                     socket={socket}
-                    apiUrl={API_BASE_URL}
                   />
                 </div>
               )}

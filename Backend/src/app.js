@@ -7,6 +7,7 @@ const { Server } = require("socket.io");
 const Chat = require("./schema/Chat");
 const Student = require("./schema/Student");
 const NotificationService = require("./services/NotificationService");
+const MonthlyChampionService = require("./services/MonthlyChampionService");
 require("dotenv").config();
 
 // Connect to MongoDB
@@ -99,10 +100,12 @@ app.use("/api/exam-marks", require("./routes/examMarkRoutes"));
 app.use("/api/sessions", require("./routes/sessionRoutes"));
 app.use("/api/groups", require("./routes/groupRoutes"));
 app.use("/api/dashboard", require("./routes/dashboardRoutes"));
+app.use("/api/points-game", require("./routes/pointsGameRoutes")); // لعبة النقاط والشارات
 app.use("/api/reports", require("./routes/reportRoutes"));
 app.use("/api/goals", require("./routes/goalRoutes"));
 app.use("/api", require("./routes/profileRoutes"));
 app.use("/api/upload", require("./routes/uploadRoutes"));
+app.use("/api/warnings", require("./routes/warningRoutes"));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -191,6 +194,10 @@ io.on("connection", (socket) => {
     global.notificationService = notificationService; // Make it globally accessible
     global.onlineUsers = onlineUsers; // Make onlineUsers globally accessible
     global.io = io; // Make io globally accessible for chat controllers
+
+    // تشغيل Cron Job لتتويج أبطال الشهر
+    MonthlyChampionService.start();
+    console.log("🏆 خدمة تتويج الأبطال الشهرية تم تفعيلها");
   }
 
   // User login - store their user ID and socket ID with improved handling
@@ -384,6 +391,17 @@ io.on("connection", (socket) => {
   socket.on("leaveProfile", (data) => {
     socket.leave("profile");
     console.log(`👤 User ${socket.id} left profile room`, data);
+  });
+
+  // Warnings Socket Events
+  socket.on("joinWarnings", (data) => {
+    socket.join("warnings");
+    console.log(`⚠️ User ${socket.id} joined warnings room`, data);
+  });
+
+  socket.on("leaveWarnings", (data) => {
+    socket.leave("warnings");
+    console.log(`⚠️ User ${socket.id} left warnings room`, data);
   });
 
   socket.on("requestDashboardUpdate", async (data) => {
