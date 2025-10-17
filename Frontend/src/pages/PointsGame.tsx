@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../hooks/useAuth";
+import Swal from "sweetalert2";
 import {
   saveDailyPoints,
   getDailyPoints,
@@ -80,174 +81,6 @@ const PointsGame = () => {
 
   // State للشارات المكتسبة
   const [earnedBadges, setEarnedBadges] = useState<Badge[]>([]);
-
-  // بيانات وهمية للترتيب حسب النقاط (للعرض فقط)
-  const mockRankings = [
-    {
-      rank: 1,
-      name: "محمد أحمد",
-      points: 985,
-      emoji: "🥇",
-      badgesCount: 8,
-      totalBadgeRepeats: 25,
-    },
-    {
-      rank: 2,
-      name: "عبدالله سعيد",
-      points: 920,
-      emoji: "🥈",
-      badgesCount: 7,
-      totalBadgeRepeats: 18,
-    },
-    {
-      rank: 3,
-      name: "يوسف خالد",
-      points: 895,
-      emoji: "🥉",
-      badgesCount: 8,
-      totalBadgeRepeats: 15,
-    },
-    {
-      rank: 4,
-      name: "عمر حسن",
-      points: 850,
-      emoji: "⭐",
-      badgesCount: 6,
-      totalBadgeRepeats: 12,
-    },
-    {
-      rank: 5,
-      name: user?.firstName + " " + user?.lastName,
-      points: 780,
-      emoji: "🌟",
-      badgesCount: earnedBadges.length,
-      totalBadgeRepeats: earnedBadges.reduce((sum, b) => sum + b.count, 0),
-    },
-    {
-      rank: 6,
-      name: "علي محمود",
-      points: 750,
-      emoji: "💫",
-      badgesCount: 5,
-      totalBadgeRepeats: 10,
-    },
-    {
-      rank: 7,
-      name: "حمزة عمر",
-      points: 720,
-      emoji: "✨",
-      badgesCount: 4,
-      totalBadgeRepeats: 8,
-    },
-    {
-      rank: 8,
-      name: "إبراهيم فهد",
-      points: 680,
-      emoji: "⚡",
-      badgesCount: 3,
-      totalBadgeRepeats: 6,
-    },
-    {
-      rank: 9,
-      name: "خالد سالم",
-      points: 650,
-      emoji: "🔥",
-      badgesCount: 3,
-      totalBadgeRepeats: 5,
-    },
-    {
-      rank: 10,
-      name: "سعد ماجد",
-      points: 620,
-      emoji: "💪",
-      badgesCount: 2,
-      totalBadgeRepeats: 3,
-    },
-  ];
-
-  // بيانات وهمية للترتيب حسب الشارات (مرتبة حسب مجموع التكرارات)
-  const mockBadgeRankings = [
-    {
-      rank: 1,
-      name: "محمد أحمد",
-      badgesCount: 8,
-      totalBadgeRepeats: 25,
-      emoji: "👑",
-      points: 985,
-    },
-    {
-      rank: 2,
-      name: "عبدالله سعيد",
-      badgesCount: 7,
-      totalBadgeRepeats: 18,
-      emoji: "🏆",
-      points: 920,
-    },
-    {
-      rank: 3,
-      name: "يوسف خالد",
-      badgesCount: 8,
-      totalBadgeRepeats: 15,
-      emoji: "🥇",
-      points: 895,
-    },
-    {
-      rank: 4,
-      name: "عمر حسن",
-      badgesCount: 6,
-      totalBadgeRepeats: 12,
-      emoji: "🥈",
-      points: 850,
-    },
-    {
-      rank: 5,
-      name: "علي محمود",
-      badgesCount: 5,
-      totalBadgeRepeats: 10,
-      emoji: "🥉",
-      points: 750,
-    },
-    {
-      rank: 6,
-      name: "حمزة عمر",
-      badgesCount: 4,
-      totalBadgeRepeats: 8,
-      emoji: "⭐",
-      points: 720,
-    },
-    {
-      rank: 7,
-      name: user?.firstName + " " + user?.lastName,
-      badgesCount: earnedBadges.length,
-      totalBadgeRepeats: earnedBadges.reduce((sum, b) => sum + b.count, 0),
-      emoji: "🌟",
-      points: 780,
-    },
-    {
-      rank: 8,
-      name: "إبراهيم فهد",
-      badgesCount: 3,
-      totalBadgeRepeats: 6,
-      emoji: "�",
-      points: 680,
-    },
-    {
-      rank: 9,
-      name: "خالد سالم",
-      badgesCount: 3,
-      totalBadgeRepeats: 5,
-      emoji: "✨",
-      points: 650,
-    },
-    {
-      rank: 10,
-      name: "سعد ماجد",
-      badgesCount: 2,
-      totalBadgeRepeats: 3,
-      emoji: "�💪",
-      points: 620,
-    },
-  ];
 
   // تعريف جميع الشارات المتاحة
   const allBadges: Omit<Badge, "count">[] = [
@@ -595,6 +428,38 @@ const PointsGame = () => {
 
   // دالة لتحديث التقدم اليومي - UPDATED للحفظ في الباك إند
   const updateDailyProgress = async () => {
+    // تأكيد الحفظ
+    const result = await Swal.fire({
+      title: "هل أنت متأكد؟",
+      html: `
+        <div style="text-align: center; direction: rtl;">
+          <div style="font-size: 3rem; margin-bottom: 1rem;">💾</div>
+          <p style="font-size: 1.2rem; color: #4b5563;">
+            سيتم حفظ نقاطك اليومية
+          </p>
+          <div style="background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%); 
+                      padding: 1rem; 
+                      border-radius: 1rem; 
+                      color: white;
+                      margin-top: 1rem;">
+            <p style="margin: 0; font-weight: bold; font-size: 1.5rem;">${totalPoints} نقطة</p>
+            <p style="margin: 0.5rem 0 0 0;">إجمالي نقاط اليوم</p>
+          </div>
+        </div>
+      `,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "نعم، احفظ! 📝",
+      cancelButtonText: "إلغاء",
+      confirmButtonColor: "#10b981",
+      cancelButtonColor: "#ef4444",
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) {
+      return; // المستخدم ألغى العملية
+    }
+
     try {
       setSaving(true);
 
@@ -637,12 +502,61 @@ const PointsGame = () => {
         await loadBadgesData();
         await loadStatsData();
 
-        // إظهار رسالة نجاح
-        alert("✅ تم حفظ النقاط بنجاح! استمر في التميز 🌟");
+        // إظهار رسالة نجاح جميلة
+        await Swal.fire({
+          icon: "success",
+          title: "🎉 ممتاز!",
+          html: `
+            <div style="text-align: center; direction: rtl;">
+              <div style="font-size: 3rem; margin-bottom: 1rem;">✨</div>
+              <h3 style="font-size: 1.5rem; color: #10b981; font-weight: bold; margin-bottom: 0.5rem;">
+                تم حفظ نقاطك بنجاح!
+              </h3>
+              <p style="font-size: 1.2rem; color: #4b5563; margin-bottom: 1rem;">
+                حصلت على <strong style="color: #f59e0b;">${totalPoints}</strong> نقطة اليوم
+              </p>
+              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                          padding: 1rem; 
+                          border-radius: 1rem; 
+                          color: white;
+                          margin-top: 1rem;">
+                <p style="margin: 0; font-weight: bold;">استمر في التميز! 💪</p>
+                <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem;">كل نقطة تقربك من القمة �</p>
+              </div>
+            </div>
+          `,
+          confirmButtonText: "حسناً 👍",
+          confirmButtonColor: "#10b981",
+          timer: 5000,
+          timerProgressBar: true,
+          showClass: {
+            popup: "animate__animated animate__bounceIn",
+          },
+          hideClass: {
+            popup: "animate__animated animate__bounceOut",
+          },
+        });
       }
     } catch (error) {
       console.error("خطأ في حفظ النقاط:", error);
-      alert("❌ حدث خطأ في حفظ النقاط. حاول مرة أخرى.");
+
+      // رسالة خطأ جميلة
+      await Swal.fire({
+        icon: "error",
+        title: "عذراً! 😞",
+        html: `
+          <div style="text-align: center; direction: rtl;">
+            <p style="font-size: 1.2rem; color: #ef4444;">
+              حدث خطأ في حفظ النقاط
+            </p>
+            <p style="color: #6b7280;">
+              الرجاء المحاولة مرة أخرى
+            </p>
+          </div>
+        `,
+        confirmButtonText: "حسناً",
+        confirmButtonColor: "#ef4444",
+      });
     } finally {
       setSaving(false);
     }
