@@ -1,5 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../hooks/useAuth";
+
+// تعريف الشارات
+interface Badge {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  requirement: string;
+  count: number; // عدد المرات التي حصل عليها
+}
+
+interface BadgeProgress {
+  mosquePrayerStreak: number; // سلسلة الصلاة في المسجد
+  adhkarStreak: number; // سلسلة الأذكار
+  parentRespectPerfect: number; // عدد مرات 10/10 في بر الوالدين
+  schoolAttendanceStreak: number; // سلسلة الحضور للمدرسة
+  overallStreak: number; // سلسلة الإنجاز الشامل
+  sunanStreak: number; // سلسلة المحافظة على السنن
+  mosqueTwoPrayersWeek: number; // أسابيع صلاتين في المسجد
+}
 
 const PointsGame = () => {
   const { user } = useAuth();
@@ -37,6 +57,29 @@ const PointsGame = () => {
   });
 
   const [showRankings, setShowRankings] = useState(false);
+  const [showBadges, setShowBadges] = useState(false);
+
+  // State لتتبع التقدم نحو الشارات
+  const [badgeProgress, setBadgeProgress] = useState<BadgeProgress>(() => {
+    const saved = localStorage.getItem("badgeProgress");
+    return saved
+      ? JSON.parse(saved)
+      : {
+          mosquePrayerStreak: 0,
+          adhkarStreak: 0,
+          parentRespectPerfect: 0,
+          schoolAttendanceStreak: 0,
+          overallStreak: 0,
+          sunanStreak: 0,
+          mosqueTwoPrayersWeek: 0,
+        };
+  });
+
+  // State للشارات المكتسبة
+  const [earnedBadges, setEarnedBadges] = useState<Badge[]>(() => {
+    const saved = localStorage.getItem("earnedBadges");
+    return saved ? JSON.parse(saved) : [];
+  });
 
   // بيانات وهمية للترتيب (للعرض فقط)
   const mockRankings = [
@@ -56,6 +99,316 @@ const PointsGame = () => {
     { rank: 9, name: "خالد سالم", points: 650, emoji: "🔥" },
     { rank: 10, name: "سعد ماجد", points: 620, emoji: "💪" },
   ];
+
+  // تعريف جميع الشارات المتاحة
+  const allBadges: Omit<Badge, "count">[] = [
+    {
+      id: "mosque_30_days",
+      name: "المصلي المجتهد",
+      icon: "🕌",
+      description: "صلى في المسجد 30 يوم متتالي",
+      requirement: "30 يوم متتالي",
+    },
+    {
+      id: "adhkar_7_days",
+      name: "نجم الأذكار",
+      icon: "⭐",
+      description: "قرأ الأذكار 7 أيام متتالية",
+      requirement: "7 أيام متتالية",
+    },
+    {
+      id: "parent_respect_5_times",
+      name: "بار بوالديه",
+      icon: "❤️",
+      description: "حصل على 10/10 في بر الوالدين 5 مرات",
+      requirement: "5 مرات 10/10",
+    },
+    {
+      id: "school_30_days",
+      name: "الطالب المنضبط",
+      icon: "🎒",
+      description: "لم يغب عن المدرسة شهر كامل",
+      requirement: "30 يوم حضور",
+    },
+    {
+      id: "overall_15_days",
+      name: "سلسلة الإنجاز",
+      icon: "🔥",
+      description: "15 يوم متواصل بدون انقطاع",
+      requirement: "15 يوم متواصل",
+    },
+    {
+      id: "sunan_keeper",
+      name: "المحافظ على السنن",
+      icon: "🌙",
+      description: "صلى جميع النوافل 7 أيام متتالية",
+      requirement: "7 أيام نوافل كاملة",
+    },
+    {
+      id: "mosque_two_week",
+      name: "المصلي النشيط",
+      icon: "💫",
+      description: "صلى صلاتين في المسجد لمدة أسبوع",
+      requirement: "أسبوع كامل",
+    },
+    {
+      id: "all_badges",
+      name: "البطل الشامل",
+      icon: "👑",
+      description: "حصل على جميع الشارات",
+      requirement: "جميع الشارات",
+    },
+  ];
+
+  // حفظ البيانات في LocalStorage عند التغيير
+  useEffect(() => {
+    localStorage.setItem("badgeProgress", JSON.stringify(badgeProgress));
+  }, [badgeProgress]);
+
+  useEffect(() => {
+    localStorage.setItem("earnedBadges", JSON.stringify(earnedBadges));
+  }, [earnedBadges]);
+
+  // دالة للتحقق من الإنجازات ومنح الشارات
+  const checkAndAwardBadges = () => {
+    const newBadges: Badge[] = [...earnedBadges];
+    let updated = false;
+
+    // التحقق من شارة "المصلي المجتهد" - 30 يوم في المسجد
+    if (
+      badgeProgress.mosquePrayerStreak >= 30 &&
+      !newBadges.find((b) => b.id === "mosque_30_days")
+    ) {
+      const badge = allBadges.find((b) => b.id === "mosque_30_days");
+      if (badge) {
+        newBadges.push({ ...badge, count: 1 });
+        updated = true;
+      }
+    } else if (badgeProgress.mosquePrayerStreak >= 30) {
+      // زيادة العداد إذا حصل عليها مرة أخرى (كل 30 يوم إضافي)
+      const badgeIndex = newBadges.findIndex((b) => b.id === "mosque_30_days");
+      if (
+        badgeIndex !== -1 &&
+        badgeProgress.mosquePrayerStreak % 30 === 0 &&
+        badgeProgress.mosquePrayerStreak / 30 > newBadges[badgeIndex].count
+      ) {
+        newBadges[badgeIndex].count++;
+        updated = true;
+      }
+    }
+
+    // التحقق من شارة "نجم الأذكار" - 7 أيام
+    if (
+      badgeProgress.adhkarStreak >= 7 &&
+      !newBadges.find((b) => b.id === "adhkar_7_days")
+    ) {
+      const badge = allBadges.find((b) => b.id === "adhkar_7_days");
+      if (badge) {
+        newBadges.push({ ...badge, count: 1 });
+        updated = true;
+      }
+    } else if (badgeProgress.adhkarStreak >= 7) {
+      const badgeIndex = newBadges.findIndex((b) => b.id === "adhkar_7_days");
+      if (
+        badgeIndex !== -1 &&
+        badgeProgress.adhkarStreak % 7 === 0 &&
+        badgeProgress.adhkarStreak / 7 > newBadges[badgeIndex].count
+      ) {
+        newBadges[badgeIndex].count++;
+        updated = true;
+      }
+    }
+
+    // التحقق من شارة "بار بوالديه" - 5 مرات 10/10
+    if (
+      badgeProgress.parentRespectPerfect >= 5 &&
+      !newBadges.find((b) => b.id === "parent_respect_5_times")
+    ) {
+      const badge = allBadges.find((b) => b.id === "parent_respect_5_times");
+      if (badge) {
+        newBadges.push({ ...badge, count: 1 });
+        updated = true;
+      }
+    } else if (badgeProgress.parentRespectPerfect >= 5) {
+      const badgeIndex = newBadges.findIndex(
+        (b) => b.id === "parent_respect_5_times"
+      );
+      if (
+        badgeIndex !== -1 &&
+        badgeProgress.parentRespectPerfect % 5 === 0 &&
+        badgeProgress.parentRespectPerfect / 5 > newBadges[badgeIndex].count
+      ) {
+        newBadges[badgeIndex].count++;
+        updated = true;
+      }
+    }
+
+    // التحقق من شارة "الطالب المنضبط" - 30 يوم
+    if (
+      badgeProgress.schoolAttendanceStreak >= 30 &&
+      !newBadges.find((b) => b.id === "school_30_days")
+    ) {
+      const badge = allBadges.find((b) => b.id === "school_30_days");
+      if (badge) {
+        newBadges.push({ ...badge, count: 1 });
+        updated = true;
+      }
+    } else if (badgeProgress.schoolAttendanceStreak >= 30) {
+      const badgeIndex = newBadges.findIndex((b) => b.id === "school_30_days");
+      if (
+        badgeIndex !== -1 &&
+        badgeProgress.schoolAttendanceStreak % 30 === 0 &&
+        badgeProgress.schoolAttendanceStreak / 30 > newBadges[badgeIndex].count
+      ) {
+        newBadges[badgeIndex].count++;
+        updated = true;
+      }
+    }
+
+    // التحقق من شارة "سلسلة الإنجاز" - 15 يوم
+    if (
+      badgeProgress.overallStreak >= 15 &&
+      !newBadges.find((b) => b.id === "overall_15_days")
+    ) {
+      const badge = allBadges.find((b) => b.id === "overall_15_days");
+      if (badge) {
+        newBadges.push({ ...badge, count: 1 });
+        updated = true;
+      }
+    } else if (badgeProgress.overallStreak >= 15) {
+      const badgeIndex = newBadges.findIndex((b) => b.id === "overall_15_days");
+      if (
+        badgeIndex !== -1 &&
+        badgeProgress.overallStreak % 15 === 0 &&
+        badgeProgress.overallStreak / 15 > newBadges[badgeIndex].count
+      ) {
+        newBadges[badgeIndex].count++;
+        updated = true;
+      }
+    }
+
+    // التحقق من شارة "المحافظ على السنن" - 7 أيام
+    if (
+      badgeProgress.sunanStreak >= 7 &&
+      !newBadges.find((b) => b.id === "sunan_keeper")
+    ) {
+      const badge = allBadges.find((b) => b.id === "sunan_keeper");
+      if (badge) {
+        newBadges.push({ ...badge, count: 1 });
+        updated = true;
+      }
+    } else if (badgeProgress.sunanStreak >= 7) {
+      const badgeIndex = newBadges.findIndex((b) => b.id === "sunan_keeper");
+      if (
+        badgeIndex !== -1 &&
+        badgeProgress.sunanStreak % 7 === 0 &&
+        badgeProgress.sunanStreak / 7 > newBadges[badgeIndex].count
+      ) {
+        newBadges[badgeIndex].count++;
+        updated = true;
+      }
+    }
+
+    // التحقق من شارة "المصلي النشيط" - أسبوع صلاتين
+    if (
+      badgeProgress.mosqueTwoPrayersWeek >= 7 &&
+      !newBadges.find((b) => b.id === "mosque_two_week")
+    ) {
+      const badge = allBadges.find((b) => b.id === "mosque_two_week");
+      if (badge) {
+        newBadges.push({ ...badge, count: 1 });
+        updated = true;
+      }
+    } else if (badgeProgress.mosqueTwoPrayersWeek >= 7) {
+      const badgeIndex = newBadges.findIndex((b) => b.id === "mosque_two_week");
+      if (
+        badgeIndex !== -1 &&
+        badgeProgress.mosqueTwoPrayersWeek % 7 === 0 &&
+        badgeProgress.mosqueTwoPrayersWeek / 7 > newBadges[badgeIndex].count
+      ) {
+        newBadges[badgeIndex].count++;
+        updated = true;
+      }
+    }
+
+    // التحقق من شارة "البطل الشامل" - جميع الشارات
+    const otherBadgesCount = allBadges.length - 1; // كل الشارات ما عدا البطل الشامل
+    const earnedOtherBadges = newBadges.filter(
+      (b) => b.id !== "all_badges"
+    ).length;
+
+    if (
+      earnedOtherBadges >= otherBadgesCount &&
+      !newBadges.find((b) => b.id === "all_badges")
+    ) {
+      const badge = allBadges.find((b) => b.id === "all_badges");
+      if (badge) {
+        newBadges.push({ ...badge, count: 1 });
+        updated = true;
+      }
+    }
+
+    if (updated) {
+      setEarnedBadges(newBadges);
+    }
+  };
+
+  // دالة لتحديث التقدم اليومي
+  const updateDailyProgress = () => {
+    const newProgress = { ...badgeProgress };
+
+    // التحقق من الصلاة في المسجد (كل الصلوات)
+    const allPrayersInMosque = Object.values(prayers).every(
+      (p) => p.status === "mosque"
+    );
+    if (allPrayersInMosque) {
+      newProgress.mosquePrayerStreak++;
+    }
+
+    // التحقق من صلاتين في المسجد على الأقل
+    const mosquePrayersCount = Object.values(prayers).filter(
+      (p) => p.status === "mosque"
+    ).length;
+    if (mosquePrayersCount >= 2) {
+      newProgress.mosqueTwoPrayersWeek++;
+    }
+
+    // التحقق من الأذكار (جميعها)
+    const allAdhkar = Object.values(adhkar).every((a) => a);
+    if (allAdhkar) {
+      newProgress.adhkarStreak++;
+    }
+
+    // التحقق من بر الوالدين 10/10
+    if (parentRespect === 10) {
+      newProgress.parentRespectPerfect++;
+    }
+
+    // التحقق من الحضور للمدرسة
+    if (schoolAttendance) {
+      newProgress.schoolAttendanceStreak++;
+    }
+
+    // التحقق من جميع النوافل
+    const allNawafel = Object.values(nawafel).every((n) => n);
+    if (allNawafel) {
+      newProgress.sunanStreak++;
+    }
+
+    // التحقق من الإنجاز الشامل (كل شيء مكتمل)
+    if (
+      allPrayersInMosque &&
+      allAdhkar &&
+      parentRespect >= 8 &&
+      schoolAttendance &&
+      dailyStudy >= 1
+    ) {
+      newProgress.overallStreak++;
+    }
+
+    setBadgeProgress(newProgress);
+    checkAndAwardBadges();
+  };
 
   // دالة لتغيير حالة الصلاة
   const updatePrayerStatus = (
@@ -154,13 +507,42 @@ const PointsGame = () => {
           <div className="text-8xl font-black mb-4">{totalPoints}</div>
           <p className="text-xl opacity-90">نقطة</p>
 
-          {/* زر لوحة الترتيب */}
-          <button
-            onClick={() => setShowRankings(true)}
-            className="mt-6 bg-white text-orange-600 px-8 py-4 rounded-full font-bold text-lg hover:scale-110 transition-transform shadow-2xl flex items-center gap-2 mx-auto">
-            <span className="text-2xl">🏅</span>
-            <span>لوحة الترتيب</span>
-          </button>
+          {/* أزرار لوحة الترتيب والشارات */}
+          <div className="mt-6 flex gap-4 justify-center flex-wrap">
+            <button
+              onClick={() => setShowRankings(true)}
+              className="bg-white text-orange-600 px-8 py-4 rounded-full font-bold text-lg hover:scale-110 transition-transform shadow-2xl flex items-center gap-2">
+              <span className="text-2xl">🏅</span>
+              <span>لوحة الترتيب</span>
+            </button>
+
+            <button
+              onClick={() => setShowBadges(true)}
+              className="bg-white text-purple-600 px-8 py-4 rounded-full font-bold text-lg hover:scale-110 transition-transform shadow-2xl flex items-center gap-2 relative">
+              <span className="text-2xl">🏆</span>
+              <span>شاراتي</span>
+              {/* عداد الشارات */}
+              {earnedBadges.length > 0 && (
+                <div className="absolute -top-2 -right-2 bg-gradient-to-br from-red-500 to-pink-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-black text-sm shadow-lg border-2 border-white">
+                  {earnedBadges.length}
+                </div>
+              )}
+            </button>
+          </div>
+
+          {/* زر حفظ التقدم اليومي */}
+          <div className="mt-6">
+            <button
+              onClick={updateDailyProgress}
+              className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-10 py-4 rounded-full font-bold text-lg hover:scale-110 transition-transform shadow-2xl flex items-center gap-3 mx-auto">
+              <span className="text-2xl">💾</span>
+              <span>حفظ النقاط اليومية</span>
+              <span className="text-2xl">✨</span>
+            </button>
+            <p className="text-white/80 text-sm mt-2">
+              اضغط بعد الانتهاء من تسجيل نشاطاتك لحفظ التقدم والتحقق من الشارات!
+            </p>
+          </div>
 
           <div className="mt-6 grid grid-cols-3 gap-4 text-center">
             <div className="bg-white/20 rounded-xl p-3">
@@ -804,6 +1186,216 @@ const PointsGame = () => {
               <button
                 onClick={() => setShowRankings(false)}
                 className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-3 rounded-full font-bold hover:scale-105 transition-transform shadow-lg">
+                إغلاق
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* مودال الشارات */}
+      {showBadges && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden animate-fadeIn">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 text-white p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="text-5xl">🏆</div>
+                  <div>
+                    <h2 className="text-3xl font-black">شاراتي</h2>
+                    <p className="text-white/90 text-sm">
+                      حصلت على {earnedBadges.length} من {allBadges.length} شارة
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowBadges(false)}
+                  className="bg-white/20 hover:bg-white/30 p-2 rounded-full transition-colors">
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              {/* شريط التقدم */}
+              <div className="mt-4 bg-white/20 rounded-full h-3 overflow-hidden">
+                <div
+                  className="bg-white h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${(earnedBadges.length / allBadges.length) * 100}%`,
+                  }}></div>
+              </div>
+            </div>
+
+            {/* Badges Grid */}
+            <div className="overflow-y-auto max-h-[calc(90vh-200px)] p-6">
+              <div className="grid md:grid-cols-2 gap-4">
+                {allBadges.map((badge) => {
+                  const earnedBadge = earnedBadges.find(
+                    (b) => b.id === badge.id
+                  );
+                  const isEarned = !!earnedBadge;
+                  const count = earnedBadge?.count || 0;
+
+                  return (
+                    <div
+                      key={badge.id}
+                      className={`rounded-2xl p-6 transition-all duration-300 ${
+                        isEarned
+                          ? "bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-400 shadow-lg hover:shadow-xl"
+                          : "bg-gray-100 border-2 border-gray-300 opacity-60"
+                      }`}>
+                      <div className="flex items-start gap-4">
+                        {/* أيقونة الشارة */}
+                        <div className="relative flex-shrink-0">
+                          <div
+                            className={`text-6xl ${
+                              isEarned
+                                ? "animate-pulse"
+                                : "grayscale opacity-50"
+                            }`}>
+                            {badge.icon}
+                          </div>
+                          {/* عداد التكرار */}
+                          {isEarned && count > 1 && (
+                            <div className="absolute -top-2 -right-2 bg-gradient-to-br from-red-500 to-pink-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-black text-sm shadow-lg border-2 border-white">
+                              {count}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* معلومات الشارة */}
+                        <div className="flex-1">
+                          <h3
+                            className={`font-bold text-lg mb-1 ${
+                              isEarned ? "text-gray-800" : "text-gray-500"
+                            }`}>
+                            {badge.name}
+                          </h3>
+                          <p
+                            className={`text-sm mb-2 ${
+                              isEarned ? "text-gray-600" : "text-gray-400"
+                            }`}>
+                            {badge.description}
+                          </p>
+                          <div
+                            className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                              isEarned
+                                ? "bg-green-100 text-green-700"
+                                : "bg-gray-200 text-gray-500"
+                            }`}>
+                            {isEarned ? "✅ مكتملة" : `📋 ${badge.requirement}`}
+                          </div>
+
+                          {/* عرض عدد المرات */}
+                          {isEarned && count > 1 && (
+                            <div className="mt-2 text-xs font-bold text-orange-600">
+                              🔥 حصلت عليها {count} مرات!
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* شريط التقدم للشارات غير المكتملة */}
+                      {!isEarned && badge.id !== "all_badges" && (
+                        <div className="mt-4">
+                          <div className="flex justify-between text-xs text-gray-500 mb-1">
+                            <span>التقدم</span>
+                            <span>
+                              {badge.id === "mosque_30_days" &&
+                                `${badgeProgress.mosquePrayerStreak}/30`}
+                              {badge.id === "adhkar_7_days" &&
+                                `${badgeProgress.adhkarStreak}/7`}
+                              {badge.id === "parent_respect_5_times" &&
+                                `${badgeProgress.parentRespectPerfect}/5`}
+                              {badge.id === "school_30_days" &&
+                                `${badgeProgress.schoolAttendanceStreak}/30`}
+                              {badge.id === "overall_15_days" &&
+                                `${badgeProgress.overallStreak}/15`}
+                              {badge.id === "sunan_keeper" &&
+                                `${badgeProgress.sunanStreak}/7`}
+                              {badge.id === "mosque_two_week" &&
+                                `${badgeProgress.mosqueTwoPrayersWeek}/7`}
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-300 rounded-full h-2">
+                            <div
+                              className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-500"
+                              style={{
+                                width: `${
+                                  badge.id === "mosque_30_days"
+                                    ? (badgeProgress.mosquePrayerStreak / 30) *
+                                      100
+                                    : badge.id === "adhkar_7_days"
+                                    ? (badgeProgress.adhkarStreak / 7) * 100
+                                    : badge.id === "parent_respect_5_times"
+                                    ? (badgeProgress.parentRespectPerfect / 5) *
+                                      100
+                                    : badge.id === "school_30_days"
+                                    ? (badgeProgress.schoolAttendanceStreak /
+                                        30) *
+                                      100
+                                    : badge.id === "overall_15_days"
+                                    ? (badgeProgress.overallStreak / 15) * 100
+                                    : badge.id === "sunan_keeper"
+                                    ? (badgeProgress.sunanStreak / 7) * 100
+                                    : badge.id === "mosque_two_week"
+                                    ? (badgeProgress.mosqueTwoPrayersWeek / 7) *
+                                      100
+                                    : 0
+                                }%`,
+                              }}></div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* رسالة تحفيزية */}
+              {earnedBadges.length < allBadges.length && (
+                <div className="mt-6 bg-gradient-to-r from-blue-100 to-purple-100 rounded-2xl p-6 text-center border-2 border-blue-300">
+                  <div className="text-4xl mb-3">💪</div>
+                  <h3 className="font-bold text-gray-800 text-lg mb-2">
+                    استمر في التقدم!
+                  </h3>
+                  <p className="text-gray-600 text-sm">
+                    لديك {allBadges.length - earnedBadges.length} شارة متبقية
+                    لتجمعها. واصل اجتهادك! 🌟
+                  </p>
+                </div>
+              )}
+
+              {/* رسالة البطل الشامل */}
+              {earnedBadges.length === allBadges.length && (
+                <div className="mt-6 bg-gradient-to-r from-yellow-100 via-orange-100 to-red-100 rounded-2xl p-6 text-center border-2 border-yellow-400">
+                  <div className="text-6xl mb-3 animate-bounce">👑</div>
+                  <h3 className="font-bold text-gray-800 text-2xl mb-2">
+                    مبروك! أنت البطل الشامل! 🎉
+                  </h3>
+                  <p className="text-gray-600">
+                    حصلت على جميع الشارات! أنت قدوة للجميع! 🌟
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="bg-gray-50 p-4 text-center border-t">
+              <button
+                onClick={() => setShowBadges(false)}
+                className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-8 py-3 rounded-full font-bold hover:scale-105 transition-transform shadow-lg">
                 إغلاق
               </button>
             </div>
