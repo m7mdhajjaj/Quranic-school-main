@@ -58,6 +58,7 @@ const PointsGame = () => {
 
   const [showRankings, setShowRankings] = useState(false);
   const [showBadges, setShowBadges] = useState(false);
+  const [rankingType, setRankingType] = useState<"points" | "badges">("points"); // نوع الترتيب
 
   // State لتتبع التقدم نحو الشارات
   const [badgeProgress, setBadgeProgress] = useState<BadgeProgress>(() => {
@@ -81,23 +82,172 @@ const PointsGame = () => {
     return saved ? JSON.parse(saved) : [];
   });
 
-  // بيانات وهمية للترتيب (للعرض فقط)
+  // بيانات وهمية للترتيب حسب النقاط (للعرض فقط)
   const mockRankings = [
-    { rank: 1, name: "محمد أحمد", points: 985, emoji: "🥇" },
-    { rank: 2, name: "عبدالله سعيد", points: 920, emoji: "🥈" },
-    { rank: 3, name: "يوسف خالد", points: 895, emoji: "🥉" },
-    { rank: 4, name: "عمر حسن", points: 850, emoji: "⭐" },
+    {
+      rank: 1,
+      name: "محمد أحمد",
+      points: 985,
+      emoji: "🥇",
+      badgesCount: 8,
+      totalBadgeRepeats: 25,
+    },
+    {
+      rank: 2,
+      name: "عبدالله سعيد",
+      points: 920,
+      emoji: "🥈",
+      badgesCount: 7,
+      totalBadgeRepeats: 18,
+    },
+    {
+      rank: 3,
+      name: "يوسف خالد",
+      points: 895,
+      emoji: "🥉",
+      badgesCount: 8,
+      totalBadgeRepeats: 15,
+    },
+    {
+      rank: 4,
+      name: "عمر حسن",
+      points: 850,
+      emoji: "⭐",
+      badgesCount: 6,
+      totalBadgeRepeats: 12,
+    },
     {
       rank: 5,
       name: user?.firstName + " " + user?.lastName,
       points: 780,
       emoji: "🌟",
+      badgesCount: earnedBadges.length,
+      totalBadgeRepeats: earnedBadges.reduce((sum, b) => sum + b.count, 0),
     },
-    { rank: 6, name: "علي محمود", points: 750, emoji: "💫" },
-    { rank: 7, name: "حمزة عمر", points: 720, emoji: "✨" },
-    { rank: 8, name: "إبراهيم فهد", points: 680, emoji: "⚡" },
-    { rank: 9, name: "خالد سالم", points: 650, emoji: "🔥" },
-    { rank: 10, name: "سعد ماجد", points: 620, emoji: "💪" },
+    {
+      rank: 6,
+      name: "علي محمود",
+      points: 750,
+      emoji: "💫",
+      badgesCount: 5,
+      totalBadgeRepeats: 10,
+    },
+    {
+      rank: 7,
+      name: "حمزة عمر",
+      points: 720,
+      emoji: "✨",
+      badgesCount: 4,
+      totalBadgeRepeats: 8,
+    },
+    {
+      rank: 8,
+      name: "إبراهيم فهد",
+      points: 680,
+      emoji: "⚡",
+      badgesCount: 3,
+      totalBadgeRepeats: 6,
+    },
+    {
+      rank: 9,
+      name: "خالد سالم",
+      points: 650,
+      emoji: "🔥",
+      badgesCount: 3,
+      totalBadgeRepeats: 5,
+    },
+    {
+      rank: 10,
+      name: "سعد ماجد",
+      points: 620,
+      emoji: "💪",
+      badgesCount: 2,
+      totalBadgeRepeats: 3,
+    },
+  ];
+
+  // بيانات وهمية للترتيب حسب الشارات (مرتبة حسب مجموع التكرارات)
+  const mockBadgeRankings = [
+    {
+      rank: 1,
+      name: "محمد أحمد",
+      badgesCount: 8,
+      totalBadgeRepeats: 25,
+      emoji: "👑",
+      points: 985,
+    },
+    {
+      rank: 2,
+      name: "عبدالله سعيد",
+      badgesCount: 7,
+      totalBadgeRepeats: 18,
+      emoji: "🏆",
+      points: 920,
+    },
+    {
+      rank: 3,
+      name: "يوسف خالد",
+      badgesCount: 8,
+      totalBadgeRepeats: 15,
+      emoji: "🥇",
+      points: 895,
+    },
+    {
+      rank: 4,
+      name: "عمر حسن",
+      badgesCount: 6,
+      totalBadgeRepeats: 12,
+      emoji: "🥈",
+      points: 850,
+    },
+    {
+      rank: 5,
+      name: "علي محمود",
+      badgesCount: 5,
+      totalBadgeRepeats: 10,
+      emoji: "🥉",
+      points: 750,
+    },
+    {
+      rank: 6,
+      name: "حمزة عمر",
+      badgesCount: 4,
+      totalBadgeRepeats: 8,
+      emoji: "⭐",
+      points: 720,
+    },
+    {
+      rank: 7,
+      name: user?.firstName + " " + user?.lastName,
+      badgesCount: earnedBadges.length,
+      totalBadgeRepeats: earnedBadges.reduce((sum, b) => sum + b.count, 0),
+      emoji: "🌟",
+      points: 780,
+    },
+    {
+      rank: 8,
+      name: "إبراهيم فهد",
+      badgesCount: 3,
+      totalBadgeRepeats: 6,
+      emoji: "�",
+      points: 680,
+    },
+    {
+      rank: 9,
+      name: "خالد سالم",
+      badgesCount: 3,
+      totalBadgeRepeats: 5,
+      emoji: "✨",
+      points: 650,
+    },
+    {
+      rank: 10,
+      name: "سعد ماجد",
+      badgesCount: 2,
+      totalBadgeRepeats: 3,
+      emoji: "�💪",
+      points: 620,
+    },
   ];
 
   // تعريف جميع الشارات المتاحة
@@ -1088,18 +1238,51 @@ const PointsGame = () => {
                 <span className="text-2xl">✕</span>
               </button>
               <div className="text-center">
-                <div className="text-6xl mb-3">🏆</div>
-                <h2 className="text-3xl font-bold">لوحة الترتيب</h2>
+                <div className="text-6xl mb-3">
+                  {rankingType === "points" ? "🏆" : "🎖️"}
+                </div>
+                <h2 className="text-3xl font-bold">
+                  {rankingType === "points" ? "لوحة الترتيب" : "ترتيب الشارات"}
+                </h2>
                 <p className="text-sm opacity-90 mt-2">
-                  أفضل 10 طلاب هذا الشهر
+                  {rankingType === "points"
+                    ? "أفضل 10 طلاب هذا الشهر"
+                    : "أكثر الطلاب حصولاً على الشارات"}
                 </p>
+              </div>
+
+              {/* أزرار التبديل */}
+              <div className="mt-4 flex gap-2 justify-center">
+                <button
+                  onClick={() => setRankingType("points")}
+                  className={`px-6 py-2 rounded-full font-bold text-sm transition-all ${
+                    rankingType === "points"
+                      ? "bg-white text-orange-600 shadow-lg scale-105"
+                      : "bg-white/20 text-white hover:bg-white/30"
+                  }`}>
+                  <span className="ml-2">📊</span>
+                  ترتيب النقاط
+                </button>
+                <button
+                  onClick={() => setRankingType("badges")}
+                  className={`px-6 py-2 rounded-full font-bold text-sm transition-all ${
+                    rankingType === "badges"
+                      ? "bg-white text-orange-600 shadow-lg scale-105"
+                      : "bg-white/20 text-white hover:bg-white/30"
+                  }`}>
+                  <span className="ml-2">🏆</span>
+                  ترتيب الشارات
+                </button>
               </div>
             </div>
 
             {/* Rankings List */}
-            <div className="overflow-y-auto max-h-[calc(90vh-180px)] p-6">
+            <div className="overflow-y-auto max-h-[calc(90vh-240px)] p-6">
               <div className="space-y-3">
-                {mockRankings.map((student, index) => {
+                {(rankingType === "points"
+                  ? mockRankings
+                  : mockBadgeRankings
+                ).map((student, index) => {
                   const isCurrentUser =
                     student.name === `${user?.firstName} ${user?.lastName}`;
 
@@ -1147,22 +1330,63 @@ const PointsGame = () => {
                             </span>
                           )}
                         </h3>
+                        {/* عرض معلومات إضافية حسب نوع الترتيب */}
+                        {rankingType === "badges" && (
+                          <div
+                            className={`text-xs mt-1 ${
+                              isCurrentUser ? "text-white/80" : "text-gray-500"
+                            }`}>
+                            {student.badgesCount} شارات •{" "}
+                            {student.totalBadgeRepeats} تكرار إجمالي
+                          </div>
+                        )}
                       </div>
 
-                      {/* النقاط */}
+                      {/* النقاط أو الشارات */}
                       <div className="text-left">
-                        <div
-                          className={`text-3xl font-black ${
-                            isCurrentUser ? "text-white" : "text-orange-600"
-                          }`}>
-                          {student.points}
-                        </div>
-                        <div
-                          className={`text-xs ${
-                            isCurrentUser ? "text-white/80" : "text-gray-500"
-                          }`}>
-                          نقطة
-                        </div>
+                        {rankingType === "points" ? (
+                          <>
+                            <div
+                              className={`text-3xl font-black ${
+                                isCurrentUser ? "text-white" : "text-orange-600"
+                              }`}>
+                              {student.points}
+                            </div>
+                            <div
+                              className={`text-xs ${
+                                isCurrentUser
+                                  ? "text-white/80"
+                                  : "text-gray-500"
+                              }`}>
+                              نقطة
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div
+                              className={`text-3xl font-black ${
+                                isCurrentUser ? "text-white" : "text-purple-600"
+                              }`}>
+                              {student.totalBadgeRepeats}
+                            </div>
+                            <div
+                              className={`text-xs ${
+                                isCurrentUser
+                                  ? "text-white/80"
+                                  : "text-gray-500"
+                              }`}>
+                              تكرار
+                            </div>
+                            <div
+                              className={`text-sm font-bold mt-1 ${
+                                isCurrentUser
+                                  ? "text-white/90"
+                                  : "text-gray-600"
+                              }`}>
+                              🏆 {student.badgesCount}
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   );
@@ -1173,10 +1397,14 @@ const PointsGame = () => {
               <div className="mt-6 bg-gradient-to-r from-green-100 to-teal-100 rounded-2xl p-6 text-center border-2 border-green-300">
                 <div className="text-4xl mb-3">🌟</div>
                 <h3 className="font-bold text-gray-800 text-lg mb-2">
-                  استمر في التقدم!
+                  {rankingType === "points"
+                    ? "استمر في التقدم!"
+                    : "اجمع المزيد من الشارات!"}
                 </h3>
                 <p className="text-gray-600 text-sm">
-                  كل نقطة تقربك من القمة، واصل اجتهادك! 💪
+                  {rankingType === "points"
+                    ? "كل نقطة تقربك من القمة، واصل اجتهادك! 💪"
+                    : "كل شارة تعكس التزامك واجتهادك، استمر! 🏆"}
                 </p>
               </div>
             </div>
