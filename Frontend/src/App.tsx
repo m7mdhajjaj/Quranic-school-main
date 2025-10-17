@@ -78,6 +78,11 @@ import Azkar from "./pages/Azkar";
 import Warnings from "./pages/Warnings";
 
 // ============================================================================
+// Page Components - Points Game
+// ============================================================================
+import PointsGame from "./pages/PointsGame";
+
+// ============================================================================
 // Page Components - Admin
 // ============================================================================
 import AdminDashboard from "./pages/Admin/Dashboard";
@@ -209,6 +214,9 @@ const TeacherRoutes: React.FC = () => {
           <Route path="/my-students" element={<MyStudents />} />
           <Route path="/warnings" element={<Warnings />} />
 
+          {/* ====== Points Game ====== */}
+          <Route path="/points-game" element={<PointsGame />} />
+
           {/* ====== Islamic Resources ====== */}
           <Route path="/prayer-times" element={<PrayerTimes />} />
           <Route path="/quran" element={<QuranPage />} />
@@ -281,6 +289,9 @@ const StudentRoutes: React.FC = () => {
           {/* ====== Attendance - View Only ====== */}
           <Route path="/absence" element={<Absence />} />
           <Route path="/warnings" element={<Warnings />} />
+
+          {/* ====== Points Game ====== */}
+          <Route path="/points-game" element={<PointsGame />} />
 
           {/* ====== Islamic Resources ====== */}
           <Route path="/prayer-times" element={<PrayerTimes />} />

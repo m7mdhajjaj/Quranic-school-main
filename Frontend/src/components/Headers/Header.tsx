@@ -167,6 +167,12 @@ const Header = () => {
         color: "from-orange-500 to-red-500",
       },
       {
+        to: "/points-game",
+        label: "لعبة النقاط",
+        icon: Award,
+        color: "from-yellow-500 to-orange-500",
+      },
+      {
         to: "/absence",
         label: "الحضور والغياب",
         icon: UserCheck,
@@ -236,6 +242,7 @@ const Header = () => {
         icon: AlertTriangle,
         color: "from-red-500 to-orange-500",
       },
+   
       {
         to: "/reports",
         label: "التقارير الشهرية",
