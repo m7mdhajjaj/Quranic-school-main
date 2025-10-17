@@ -132,15 +132,35 @@ export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     };
   }, [token, user?._id, fetchUserStatus]);
 
-  // تحديث دوري كل 30 ثانية للمستخدمين المحملين
+  // تحديث دوري كل دقيقة للمستخدمين المحملين (محسّن للأداء)
   useEffect(() => {
     const interval = setInterval(() => {
-      Object.keys(userStatuses).forEach(userId => {
-        if (userId && token) {
-          fetchUserStatus(userId);
+      // Batch the status checks and limit to reasonable number
+      const userIds = Object.keys(userStatuses);
+      
+      // Only update if we have users and not too many (prevent performance issues)
+      if (userIds.length > 0 && userIds.length <= 50 && token) {
+        // Use requestIdleCallback to avoid blocking the main thread
+        if ('requestIdleCallback' in window) {
+          requestIdleCallback(() => {
+            userIds.forEach(userId => {
+              if (userId) {
+                fetchUserStatus(userId);
+              }
+            });
+          });
+        } else {
+          // Fallback for browsers without requestIdleCallback
+          setTimeout(() => {
+            userIds.forEach(userId => {
+              if (userId) {
+                fetchUserStatus(userId);
+              }
+            });
+          }, 0);
         }
-      });
-    }, 30000); // كل 30 ثانية
+      }
+    }, 60000); // Changed to 60 seconds to reduce frequency
 
     return () => clearInterval(interval);
   }, [userStatuses, token, fetchUserStatus]);

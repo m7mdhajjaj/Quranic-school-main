@@ -6,6 +6,7 @@ import {
   validateForgotPasswordData,
   validateResetPasswordData,
 } from '../../Validation/forgotPasswordValidation';
+import { showSuccessMessage, showErrorMessage } from '../../utils/sweetalertUtils';
 
 interface ForgotPasswordModalProps {
   isOpen: boolean;
@@ -37,10 +38,24 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const { name, value } = e.target;
-    setForgotPasswordData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    
+    // للحقل رقم الهوية، نسمح فقط بالأرقام و 9 أرقام كحد أقصى
+    if (name === 'idNumber') {
+      // إزالة أي حرف غير رقمي
+      const numericValue = value.replace(/\D/g, '');
+      // أخذ أول 9 أرقام فقط
+      const limitedValue = numericValue.slice(0, 9);
+      
+      setForgotPasswordData((prev) => ({
+        ...prev,
+        [name]: limitedValue,
+      }));
+    } else {
+      setForgotPasswordData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
     
     // Clear errors when user types
     if (error) setError('');
@@ -91,21 +106,32 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
       const response = await forgotPassword(forgotPasswordData);
 
       if (response.success) {
+        await showSuccessMessage(
+          'تم التحقق بنجاح',
+          'تم التحقق من بياناتك بنجاح. يمكنك الآن إدخال كلمة المرور الجديدة'
+        );
         setResetStep(2);
       } else {
-        setError(response.message || 'فشل في التحقق من البيانات');
+        await showErrorMessage(
+          'فشل التحقق',
+          response.message || 'فشل في التحقق من البيانات'
+        );
       }
     } catch (error: unknown) {
       console.error('Forgot password error:', error);
       if (axios.isAxiosError(error)) {
         const message = error.response?.data?.message || error.message;
-        setError(
+        await showErrorMessage(
+          'فشل التحقق',
           message || 'فشل في التحقق من البيانات. رجاءً تأكد من صحة المعلومات.'
         );
       } else if (error instanceof Error) {
-        setError(error.message);
+        await showErrorMessage('خطأ', error.message);
       } else {
-        setError('فشل في التحقق من البيانات. رجاءً تأكد من صحة المعلومات.');
+        await showErrorMessage(
+          'خطأ',
+          'فشل في التحقق من البيانات. رجاءً تأكد من صحة المعلومات.'
+        );
       }
     } finally {
       setIsLoading(false);
@@ -141,22 +167,32 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
       });
 
       if (response.success) {
-        alert('تم تغيير كلمة المرور بنجاح!');
+        await showSuccessMessage(
+          'تم بنجاح',
+          'تم تغيير كلمة المرور بنجاح!'
+        );
         handleClose();
       } else {
-        setError(response.message || 'فشل في تغيير كلمة المرور');
+        await showErrorMessage(
+          'فشل العملية',
+          response.message || 'فشل في تغيير كلمة المرور'
+        );
       }
     } catch (error: unknown) {
       console.error('Reset password error:', error);
       if (axios.isAxiosError(error)) {
         const message = error.response?.data?.message || error.message;
-        setError(
+        await showErrorMessage(
+          'فشل العملية',
           message || 'فشل في تغيير كلمة المرور. رجاءً المحاولة مرة أخرى.'
         );
       } else if (error instanceof Error) {
-        setError(error.message);
+        await showErrorMessage('خطأ', error.message);
       } else {
-        setError('فشل في تغيير كلمة المرور. رجاءً المحاولة مرة أخرى.');
+        await showErrorMessage(
+          'خطأ',
+          'فشل في تغيير كلمة المرور. رجاءً المحاولة مرة أخرى.'
+        );
       }
     } finally {
       setIsLoading(false);
@@ -493,6 +529,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
                       name="idNumber"
                       value={forgotPasswordData.idNumber}
                       onChange={handleForgotPasswordChange}
+                      maxLength={9}
                       className={`w-full px-4 py-3 text-sm border-2 rounded-xl focus:ring-2 focus:outline-none transition-all duration-300 text-right bg-white group-hover:shadow-sm ${
                         fieldErrors.idNumber
                           ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
