@@ -513,23 +513,21 @@ const AdminHeader: React.FC = () => {
               <div className="relative hidden md:block" ref={profileMenuRef}>
                 <button
                   onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                  className={`flex items-center space-x-reverse space-x-2 sm:space-x-3 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg sm:rounded-xl transition-all duration-300 transform hover:scale-105 ${
-                    scrolled
-                      ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'
-                      : 'bg-white/20 backdrop-blur-md border border-white/30 text-white hover:bg-white/30'
-                  }`}
+                  className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2.5 rounded-xl bg-white/20 hover:bg-white/30 border border-white/30 text-white transition-all hover:scale-105 backdrop-blur-md"
                 >
                   <Avatar
                     user={currentUser || undefined}
                     size="sm"
                     border="none"
-                    className="w-6 h-6 sm:w-8 sm:h-8 md:w-9 md:h-9"
+                    className="w-8 h-8 md:w-9 md:h-9"
                   />
-                  <span className="text-sm sm:text-base font-semibold hidden lg:block truncate max-w-24">
+                  <span className="hidden md:block text-sm font-semibold truncate max-w-24">
                     {currentUser?.firstName || 'المشرف'}
                   </span>
                   <svg
-                    className={`w-4 h-4 transition-transform duration-300 ${profileMenuOpen ? 'rotate-180' : ''}`}
+                    className={`w-4 h-4 transition-transform ${
+                      profileMenuOpen ? "rotate-180" : ""
+                    }`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -543,10 +541,10 @@ const AdminHeader: React.FC = () => {
                   </svg>
                 </button>
 
-                {profileMenuOpen && !mobileMenuOpen && (
-                  <div className="absolute left-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-scale-in z-50">
+                {profileMenuOpen && (
+                  <div className="absolute left-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-slide-down z-50">
                     <div className="bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-5">
-                      <div className="flex items-center space-x-reverse space-x-3">
+                      <div className="flex items-center gap-3">
                         <Avatar
                           user={currentUser || undefined}
                           size="lg"
@@ -574,9 +572,9 @@ const AdminHeader: React.FC = () => {
                           setProfileMenuOpen(false);
                           navigate('/profile');
                         }}
-                        className="w-full px-6 py-3 text-right flex items-center space-x-reverse space-x-3 text-gray-700 hover:bg-emerald-50 transition-all duration-200 group"
+                        className="w-full px-6 py-3 text-right flex items-center gap-3 text-gray-700 hover:bg-emerald-50 transition-all group"
                       >
-                        <div className="w-10 h-10 rounded-xl bg-emerald-100 group-hover:bg-emerald-200 flex items-center justify-center transition-colors">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-100 group-hover:bg-emerald-200 flex items-center justify-center">
                           <svg
                             className="w-5 h-5 text-emerald-600"
                             fill="none"
@@ -599,9 +597,9 @@ const AdminHeader: React.FC = () => {
                           setProfileMenuOpen(false);
                           setIsChangePasswordModalOpen(true);
                         }}
-                        className="w-full px-6 py-3 text-right flex items-center space-x-reverse space-x-3 text-gray-700 hover:bg-blue-50 transition-all duration-200 group"
+                        className="w-full px-6 py-3 text-right flex items-center gap-3 text-gray-700 hover:bg-blue-50 transition-all group"
                       >
-                        <div className="w-10 h-10 rounded-xl bg-blue-100 group-hover:bg-blue-200 flex items-center justify-center transition-colors">
+                        <div className="w-10 h-10 rounded-xl bg-blue-100 group-hover:bg-blue-200 flex items-center justify-center">
                           <svg
                             className="w-5 h-5 text-blue-600"
                             fill="none"
@@ -619,13 +617,13 @@ const AdminHeader: React.FC = () => {
                         <span className="font-medium">تغيير كلمة المرور</span>
                       </button>
 
-                      <div className="h-px my-2 mx-4 bg-gray-200"></div>
+                      <div className="h-px bg-gray-200 my-2 mx-4"></div>
 
                       <button
                         onClick={handleLogout}
-                        className="w-full px-6 py-3 text-right flex items-center space-x-reverse space-x-3 text-red-600 hover:bg-red-50 transition-all duration-200 group"
+                        className="w-full px-6 py-3 text-right flex items-center gap-3 text-red-600 hover:bg-red-50 transition-all group"
                       >
-                        <div className="w-10 h-10 rounded-xl bg-red-100 group-hover:bg-red-200 flex items-center justify-center transition-colors">
+                        <div className="w-10 h-10 rounded-xl bg-red-100 group-hover:bg-red-200 flex items-center justify-center">
                           <svg
                             className="w-5 h-5 text-red-600"
                             fill="none"
