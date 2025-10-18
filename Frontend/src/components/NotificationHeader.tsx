@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../styles/NotificationHeader.css";
-import { useSocket } from "../hooks/useSocket";
+import { useSocket } from "../hooks/useSocket"; // ✅ الآن موجود - يستخدم النظام الجديد
 import {
   getRecentNotifications,
   getUnreadNotificationCount,
@@ -45,6 +45,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
   userId,
   socket,
 }) => {
+  // ✅ استخدام النظام الجديد
   const { isConnected } = useSocket();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [stats, setStats] = useState<NotificationStats>({

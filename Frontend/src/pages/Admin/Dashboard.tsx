@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import LoadingSkeleton from "../../components/Loading/LoadingSkeleton";
-import { useDashboardStats } from "../../hooks/useDashboardStats";
+// import { useDashboardStats } from "../../hooks/useDashboardStats"; // Commented out - file doesn't exist
 import { useDashboardSocket } from "../../Socket";
 import AddStudentForm from "../../components/Forms/AddStudentForm";
 import AddTeacherForm from "../../components/Forms/AddTeacherForm";
@@ -46,15 +46,39 @@ interface PieChartProps {
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const {
-    stats,
-    isLoading,
-    error,
-    lastUpdated,
-    refreshing,
-    fetchStats,
-    groupsDistribution,
-  } = useDashboardStats();
+  // Temporarily commented out until useDashboardStats hook is created
+  // const {
+  //   stats,
+  //   isLoading,
+  //   error,
+  //   lastUpdated,
+  //   refreshing,
+  //   fetchStats,
+  //   groupsDistribution,
+  // } = useDashboardStats();
+  
+  // Temporary placeholders - commented out useDashboardStats hook
+  // Added default values to prevent null errors
+  const [stats] = useState({
+    totalStudents: 0,
+    totalTeachers: 0,
+    totalGroups: 0,
+    totalExams: 0,
+    averageExamMarks: 0,
+    activeStudents: 0,
+    attendanceRate: 0,
+  });
+  const [isLoading] = useState(false);
+  const [error] = useState<string | null>(null);
+  const [lastUpdated] = useState<Date | null>(null);
+  const [refreshing] = useState(false);
+  
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const fetchStats = React.useCallback((_force?: boolean) => {
+    // Placeholder function - will be implemented when useDashboardStats is created
+  }, []);
+  
+  const groupsDistribution = React.useMemo(() => [], []);
 
   // استخدام نظام Socket الجديد مع Heartbeat تلقائي كل 30 ثانية
   const {

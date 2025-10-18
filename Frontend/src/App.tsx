@@ -19,7 +19,7 @@ import React from "react";
 // ============================================================================
 import { AuthProvider } from "./contexts/AuthContext";
 import { UserStatusProvider } from "./contexts/UserStatusContext";
-import { SocketProvider } from "./contexts/SocketContext";
+// import { SocketProvider } from "./contexts/SocketContext"; // ❌ DELETED - استخدم النظام الجديد في Socket/
 import { useAuth } from "./hooks/useAuth";
 
 // ============================================================================
@@ -389,16 +389,17 @@ function AppContent() {
  * - BrowserRouter: Enables routing
  * - AuthProvider: Manages authentication state
  * - UserStatusProvider: Manages user online/offline status
- * - SocketProvider: Manages real-time socket connections
+ * 
+ * NOTE: SocketProvider (القديم) تم حذفه ✅
+ * استخدم النظام الجديد Socket/SocketManager
+ * كل صفحة تستخدم الـ hook المناسب (useDashboardSocket, useStudentsSocket, etc.)
  */
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <UserStatusProvider>
-          <SocketProvider>
-            <AppContent />
-          </SocketProvider>
+          <AppContent />
         </UserStatusProvider>
       </AuthProvider>
     </BrowserRouter>

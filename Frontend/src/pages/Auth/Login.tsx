@@ -8,7 +8,6 @@ import { useAuth } from "../../hooks/useAuth";
 import { loginStudent, loginTeacher, loginAdmin } from "../../Api/authApi";
 import ForgotPasswordModal from "./ForgotPasswordModal";
 import type { User } from "../../contexts/AuthContext";
-import { validateLoginForm } from "../../Validation/loginValidation";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -28,7 +27,6 @@ const Login = () => {
   useEffect(() => {
     const user = localStorage.getItem("user");
     if (user) {
-      console.log("🔄 User already logged in, redirecting to home...");
       navigate("/", { replace: true });
       return;
     }
@@ -42,8 +40,7 @@ const Login = () => {
           password: credentials.password || "",
         });
         setRememberMe(true);
-      } catch (error) {
-        console.error("Error parsing saved credentials:", error);
+      } catch {
         localStorage.removeItem("savedCredentials");
       }
     }
@@ -90,47 +87,22 @@ const Login = () => {
     setError("");
     setIsLoading(true);
 
-    console.log("🔐 Login attempt started...");
-    console.log("👤 User ID:", formData.userId);
-
-    // Client-side validation
-    const validation = await validateLoginForm(formData);
-    if (!validation.isValid) {
-      const firstError = Object.values(validation.errors)[0];
-      setError(firstError || "بيانات غير صحيحة");
-      setIsLoading(false);
-      return;
-    }
-
     try {
       let response;
       const loginErrors: string[] = [];
 
-      console.log("📡 Attempting auto-login detection...");
-
       // Try student login first (studentId + idNumber)
       try {
-        console.log("🔹 Attempting student login with:");
-        console.log("   - studentId:", formData.userId);
-        console.log("   - studentId type:", typeof formData.userId);
-        console.log("   - idNumber:", formData.password);
-        console.log("   - idNumber type:", typeof formData.password);
-        console.log("   - idNumber length:", formData.password?.length);
-        console.log("   - rememberMe:", rememberMe);
-
         response = await loginStudent({
           studentId: formData.userId,
           idNumber: formData.password,
           rememberMe: rememberMe,
         });
-        console.log("✅ Student login successful!");
       } catch (studentError) {
-        console.error("❌ Student login failed:", studentError);
         const studentMsg = axios.isAxiosError(studentError)
           ? studentError.response?.data?.message
           : "خطأ في تسجيل دخول الطالب";
         loginErrors.push(`طالب: ${studentMsg}`);
-        console.log("❌ Not a student, trying teacher...");
 
         // Try teacher login
         try {
@@ -140,13 +112,11 @@ const Login = () => {
             userType: "teacher",
             rememberMe: rememberMe,
           });
-          console.log("✅ Teacher login successful!");
         } catch (teacherError) {
           const teacherMsg = axios.isAxiosError(teacherError)
             ? teacherError.response?.data?.message
             : "خطأ في تسجيل دخول المعلم";
           loginErrors.push(`معلم: ${teacherMsg}`);
-          console.log("❌ Not a teacher, trying admin...");
 
           // Try admin login
           try {
@@ -156,7 +126,6 @@ const Login = () => {
               userType: "admin",
               rememberMe: rememberMe,
             });
-            console.log("✅ Admin login successful!");
           } catch (adminError) {
             const adminMsg = axios.isAxiosError(adminError)
               ? adminError.response?.data?.message
@@ -164,7 +133,6 @@ const Login = () => {
             loginErrors.push(`إداري: ${adminMsg}`);
 
             // All login attempts failed
-            console.error("❌ All login attempts failed");
             throw new Error(
               `فشل تسجيل الدخول. البيانات غير صحيحة أو المستخدم غير موجود.\n\n` +
                 `محاولات تسجيل الدخول:\n${loginErrors.join("\n")}`
@@ -172,11 +140,6 @@ const Login = () => {
           }
         }
       }
-
-      console.log(
-        "👤 User logged in:",
-        response.user?.firstName || response.user?.name || "Unknown"
-      );
 
       if (response && response.user && response.token) {
         authLogin(response.user as unknown as User, response.token);
@@ -192,13 +155,9 @@ const Login = () => {
               password: formData.password,
             })
           );
-          console.log("💾 Credentials saved for next login");
         } else {
           localStorage.removeItem("savedCredentials");
         }
-
-        console.log("🎉 Login successful!");
-        console.log("🚀 Navigating to appropriate page...");
 
         const userRole = response.user.role;
         const targetPage = userRole === "admin" ? "/admin/dashboard" : "/";
@@ -207,11 +166,9 @@ const Login = () => {
           navigate(targetPage, { replace: true });
         }, 100);
       } else {
-        console.error("❌ Invalid response data:", response);
         setError("رد غير صحيح من الخادم. رجاءً تأكد من بيانات الدخول.");
       }
     } catch (error: unknown) {
-      console.error("❌ Login error:", error);
       
       // زيادة عداد المحاولات الفاشلة
       const newFailedAttempts = failedAttempts + 1;
