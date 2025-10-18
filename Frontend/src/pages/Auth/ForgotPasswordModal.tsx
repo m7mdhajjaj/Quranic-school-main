@@ -106,12 +106,14 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
       const response = await forgotPassword(forgotPasswordData);
 
       if (response.success) {
+        setIsLoading(false);
+        setResetStep(2);
         await showSuccessMessage(
           'تم التحقق بنجاح',
           'تم التحقق من بياناتك بنجاح. يمكنك الآن إدخال كلمة المرور الجديدة'
         );
-        setResetStep(2);
       } else {
+        setIsLoading(false);
         await showErrorMessage(
           'فشل التحقق',
           response.message || 'فشل في التحقق من البيانات'
@@ -119,6 +121,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
       }
     } catch (error: unknown) {
       console.error('Forgot password error:', error);
+      setIsLoading(false);
       if (axios.isAxiosError(error)) {
         const message = error.response?.data?.message || error.message;
         await showErrorMessage(
@@ -133,8 +136,6 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
           'فشل في التحقق من البيانات. رجاءً تأكد من صحة المعلومات.'
         );
       }
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -167,12 +168,14 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
       });
 
       if (response.success) {
+        setIsLoading(false);
         await showSuccessMessage(
           'تم بنجاح',
           'تم تغيير كلمة المرور بنجاح!'
         );
         handleClose();
       } else {
+        setIsLoading(false);
         await showErrorMessage(
           'فشل العملية',
           response.message || 'فشل في تغيير كلمة المرور'
@@ -180,6 +183,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
       }
     } catch (error: unknown) {
       console.error('Reset password error:', error);
+      setIsLoading(false);
       if (axios.isAxiosError(error)) {
         const message = error.response?.data?.message || error.message;
         await showErrorMessage(
@@ -194,8 +198,6 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
           'فشل في تغيير كلمة المرور. رجاءً المحاولة مرة أخرى.'
         );
       }
-    } finally {
-      setIsLoading(false);
     }
   };
 
