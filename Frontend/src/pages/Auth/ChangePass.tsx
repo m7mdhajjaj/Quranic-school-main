@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { changePassword } from '../../Api/authApi';
 import { showSuccessMessage, showErrorMessage } from '../../utils/sweetalertUtils';
-import { validatePasswordStrength } from '../../utils/commonValidation';
+import { validatePasswordStrength } from '../../Validation/commonValidation';
 
 interface ChangePasswordModalProps {
   isOpen: boolean;
