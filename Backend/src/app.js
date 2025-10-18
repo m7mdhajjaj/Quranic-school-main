@@ -8,6 +8,8 @@ const Chat = require("./schema/Chat");
 const Student = require("./schema/Student");
 const NotificationService = require("./services/NotificationService");
 const MonthlyChampionService = require("./services/MonthlyChampionService");
+// Initialize FCM service (reads env FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_SERVICE_ACCOUNT_PATH)
+const FCMService = require("./services/FCMService");
 require("dotenv").config();
 
 // Connect to MongoDB
@@ -194,6 +196,7 @@ io.on("connection", (socket) => {
     global.notificationService = notificationService; // Make it globally accessible
     global.onlineUsers = onlineUsers; // Make onlineUsers globally accessible
     global.io = io; // Make io globally accessible for chat controllers
+    global.fcmService = FCMService;
 
     // تشغيل Cron Job لتتويج أبطال الشهر
     MonthlyChampionService.start();

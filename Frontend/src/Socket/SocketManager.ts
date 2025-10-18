@@ -1,5 +1,5 @@
 import { io, Socket } from 'socket.io-client';
-import { SOCKET_URL } from '../config';
+import { SOCKET_URL } from '../config/config';
 
 /**
  * Socket Manager - إدارة مركزية لاتصالات Socket

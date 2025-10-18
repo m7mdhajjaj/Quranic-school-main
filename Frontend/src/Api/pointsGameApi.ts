@@ -1,6 +1,6 @@
 // Api/pointsGameApi.ts
 import axios from "axios";
-import { API_URL } from "../config";
+import { API_URL } from "../config/config";
 
 const POINTS_GAME_URL = `${API_URL}/points-game`;
 

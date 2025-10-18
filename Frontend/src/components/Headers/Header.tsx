@@ -7,7 +7,7 @@ import ChangePasswordModal from "../../pages/Auth/ChangePass";
 import { io, Socket } from "socket.io-client";
 import api from "../../Api/api";
 import { showLogoutConfirmation } from "../../utils/logoutUtils";
-import { API_BASE_URL } from "../../config";
+import { API_BASE_URL } from "../../config/config";
 import {
   AlertTriangle,
   Award,

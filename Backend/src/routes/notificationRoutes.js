@@ -3,6 +3,7 @@ const router = express.Router();
 const Notification = require("../schema/Notification");
 const { protect } = require("../middleware/authMiddleware");
 const { validateNotificationFormData } = require("../Validation/NotificationValidation");
+const DeviceToken = require("../schema/DeviceToken");
 
 // تحقق من حالة المصادقة (للاختبار)
 router.get("/auth-test", protect, async (req, res) => {
@@ -123,6 +124,48 @@ router.get("/unread-count", protect, async (req, res) => {
       message: "خطأ في حساب الإشعارات غير المقروءة",
       error: error.message,
     });
+  }
+});
+
+// تسجيل/تحديث توكن جهاز FCM للمستخدم
+router.post('/register-token', protect, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const userModel = req.user.role === 'admin' ? 'Admin' : req.user.role === 'teacher' ? 'Teacher' : 'Student';
+    const { token, platform = 'web' } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ success: false, message: 'token is required' });
+    }
+
+    // Upsert token (unique)
+    const existing = await DeviceToken.findOne({ token });
+    if (existing) {
+      existing.user = userId;
+      existing.userModel = userModel;
+      existing.platform = platform;
+      await existing.save();
+    } else {
+      await DeviceToken.create({ user: userId, userModel, token, platform });
+    }
+
+    res.json({ success: true, message: 'token registered' });
+  } catch (error) {
+    console.error('Error registering token:', error);
+    res.status(500).json({ success: false, message: 'error registering token', error: error.message });
+  }
+});
+
+// حذف توكن الجهاز
+router.post('/unregister-token', protect, async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ success: false, message: 'token is required' });
+    const result = await DeviceToken.deleteOne({ token });
+    res.json({ success: true, deletedCount: result.deletedCount });
+  } catch (error) {
+    console.error('Error unregistering token:', error);
+    res.status(500).json({ success: false, message: 'error unregistering token', error: error.message });
   }
 });
 

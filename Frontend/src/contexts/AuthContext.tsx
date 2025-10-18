@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useRef, type ReactNode } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { API_BASE_URL, API_URL } from '../config';
+import { API_BASE_URL, API_URL } from '../config/config';
 import { verifyToken } from '../Api/authApi';
 
 // تعريف أنواع البيانات

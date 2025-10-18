@@ -1,0 +1,80 @@
+const admin = require('firebase-admin');
+const fs = require('fs');
+
+class FCMService {
+  constructor() {
+    this.initialized = false;
+    this.init();
+  }
+
+  init() {
+    try {
+      if (admin.apps && admin.apps.length > 0) {
+        this.initialized = true;
+        return;
+      }
+
+      // Expect service account JSON path or JSON content in env
+      const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+      const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
+
+      let serviceAccount;
+      if (serviceAccountJson) {
+        serviceAccount = JSON.parse(serviceAccountJson);
+      } else if (serviceAccountPath && fs.existsSync(serviceAccountPath)) {
+        serviceAccount = require(serviceAccountPath);
+      } else {
+        console.warn('FCM: No service account provided in env; FCM disabled');
+        return;
+      }
+
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+      });
+      this.messaging = admin.messaging();
+      this.initialized = true;
+      console.log('✅ FCM initialized');
+    } catch (error) {
+      console.error('❌ Error initializing FCM:', error.message || error);
+    }
+  }
+
+  async sendToToken(token, payload, options = {}) {
+    if (!this.initialized) return null;
+    try {
+      const message = {
+        token,
+        data: payload.data || {},
+        notification: payload.notification,
+        android: options.android,
+        apns: options.apns,
+        webpush: options.webpush,
+      };
+      return await this.messaging.send(message);
+    } catch (error) {
+      console.error('❌ FCM sendToToken error:', error.message || error);
+      return null;
+    }
+  }
+
+  async sendToTokens(tokens, payload, options = {}) {
+    if (!this.initialized) return null;
+    try {
+      const message = {
+        tokens: tokens,
+        data: payload.data || {},
+        notification: payload.notification,
+        android: options.android,
+        apns: options.apns,
+        webpush: options.webpush,
+      };
+      const response = await this.messaging.sendMulticast(message);
+      return response;
+    } catch (error) {
+      console.error('❌ FCM sendToTokens error:', error.message || error);
+      return null;
+    }
+  }
+}
+
+module.exports = new FCMService();

@@ -5,7 +5,7 @@ import type { ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { getHeroImage, uploadHeroImage } from '../Api/settingsApi';
-import { API_BASE_URL } from '../config';
+import { API_BASE_URL } from '../config/config';
 
 const Home = () => {
   const navigate = useNavigate();

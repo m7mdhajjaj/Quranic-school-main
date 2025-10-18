@@ -10,7 +10,7 @@ import {
   type Activity,
 } from "../Api/activityApi";
 import { uploadActivityImage } from "../Api/uploadApi";
-import { API_BASE_URL } from "../config";
+import { API_BASE_URL } from "../config/config";
 import { useActivitiesSocket } from "../Socket";
 
 interface ActivityFormData {
