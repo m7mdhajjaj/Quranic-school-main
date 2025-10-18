@@ -70,7 +70,6 @@ const AdminDashboard = () => {
   });
   const [isLoading] = useState(false);
   const [error] = useState<string | null>(null);
-  const [lastUpdated] = useState<Date | null>(null);
   const [refreshing] = useState(false);
   
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -83,15 +82,8 @@ const AdminDashboard = () => {
   // استخدام نظام Socket الجديد مع Heartbeat تلقائي كل 30 ثانية
   const {
     isConnected,
-    dashboardData: _socketData, // البيانات من Socket (يمكن استخدامها لاحقاً)
-    lastUpdate: socketLastUpdate,
-    requestUpdate,
     socketId,
   } = useDashboardSocket();
-
-  // عداد التحديثات التلقائية وآخر تحديث تلقائي
-  const [autoRefreshCount, setAutoRefreshCount] = useState(0);
-  const [lastAutoRefresh, setLastAutoRefresh] = useState<Date | null>(null);
 
   // State لإدارة عرض تفاصيل الحلقة المحددة
   const [selectedGroup, setSelectedGroup] = useState<{
@@ -117,15 +109,12 @@ const AdminDashboard = () => {
   const [showAddTeacherForm, setShowAddTeacherForm] = useState(false);
   const [showAddGroupForm, setShowAddGroupForm] = useState(false);
 
-  // نظام التحديث التلقائي كنظام احتياطي
+  // نظام Socket الجديد يتولى التحديث التلقائي
   useEffect(() => {
-    // تحديث تلقائي كل 30 ثانية عندما يكون Socket غير متصل
+    // Socket Manager يدير التحديثات التلقائية بـ Heartbeat كل 30 ثانية
     const refreshInterval = setInterval(() => {
       if (!isConnected && !refreshing) {
-        setAutoRefreshCount((count) => count + 1);
-        setLastAutoRefresh(new Date());
-        console.log("🔄 تحديث تلقائي لللوحة (وضع احتياطي)");
-        fetchStats(true);
+        console.log("🔄 Socket غير متصل");
       }
     }, 30000);
 
@@ -706,95 +695,20 @@ const AdminDashboard = () => {
                 className="flex items-center gap-1.5"
                 title={
                   isConnected
-                    ? `💓 Heartbeat نشط (كل 30 ثانية)\nSocket ID: ${socketId || 'N/A'}\nآخر تحديث: ${socketLastUpdate?.toLocaleTimeString('ar-SA') || 'N/A'}`
-                    : `تحديث تلقائي كل 30 ثانية${
-                        lastAutoRefresh
-                          ? ` | آخر تحديث: ${lastAutoRefresh.toLocaleTimeString(
-                              "ar-SA"
-                            )}`
-                          : ""
-                      }`
+                    ? `💓 Heartbeat نشط (كل 30 ثانية)\nSocket ID: ${socketId || 'N/A'}`
+                    : 'غير متصل'
                 }>
                 <div
                   className={`w-2.5 h-2.5 rounded-full ${
-                    isConnected ? "bg-green-500" : "bg-yellow-500"
+                    isConnected ? "bg-green-500" : "bg-red-500"
                   } animate-pulse`}></div>
                 <span
                   className={`text-sm font-medium cursor-help ${
-                    isConnected ? "text-green-600" : "text-yellow-600"
+                    isConnected ? "text-green-600" : "text-red-600"
                   }`}>
-                  {isConnected
-                    ? "💓 متصل مباشرة"
-                    : `تحديث تلقائي (${autoRefreshCount})`}
+                  {isConnected ? "💓 متصل مباشرة" : "غير متصل"}
                 </span>
               </div>
-            </div>
-          </div>
-
-          <div className="mt-6 lg:mt-0">
-            <div className="flex flex-col items-end gap-4">
-              {refreshing && (
-                <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 rounded-xl shadow-lg border border-green-200 animate-pulse">
-                  <svg
-                    className="w-5 h-5 animate-spin"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                    />
-                  </svg>
-                  <span className="font-semibold">تحديث تلقائي...</span>
-                </div>
-              )}
-
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-3 px-4 py-2 bg-white rounded-xl shadow-md border border-gray-200">
-                  <svg
-                    className="w-5 h-5 text-green-500 animate-pulse"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 10V3L4 14h7v7l9-11h-7z"
-                    />
-                  </svg>
-                  <span className="font-semibold text-gray-700">تحديث مباشر</span>
-                </div>
-                
-                {isConnected && (
-                  <button
-                    onClick={requestUpdate}
-                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl shadow-md hover:shadow-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200"
-                    title="طلب تحديث فوري من الخادم">
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                      />
-                    </svg>
-                    <span className="font-semibold text-sm">تحديث الآن</span>
-                  </button>
-                )}
-              </div>
-
-              {lastUpdated && (
-                <p className="text-sm text-gray-500 bg-white px-3 py-1 rounded-lg shadow-sm">
-                  آخر تحديث: {lastUpdated.toLocaleTimeString("ar-SA")}
-                </p>
-              )}
             </div>
           </div>
         </div>
