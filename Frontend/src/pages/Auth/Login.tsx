@@ -245,13 +245,13 @@ const Login = () => {
 
   return (
     <div
-      className="relative flex flex-col items-center justify-center min-h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-emerald-50 to-teal-50"
+      className="relative flex items-center justify-center min-h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-emerald-50 to-teal-50"
       dir="rtl">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-emerald-200/30 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-1/2 -left-40 w-96 h-96 bg-teal-200/30 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute -bottom-40 right-1/3 w-80 h-80 bg-cyan-200/30 rounded-full blur-3xl animate-pulse delay-2000"></div>
+        <div className="absolute -top-20 sm:-top-40 -right-20 sm:-right-40 w-40 h-40 sm:w-80 sm:h-80 bg-emerald-200/30 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute top-1/2 -left-20 sm:-left-40 w-48 h-48 sm:w-96 sm:h-96 bg-teal-200/30 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute -bottom-20 sm:-bottom-40 right-1/4 sm:right-1/3 w-40 h-40 sm:w-80 sm:h-80 bg-cyan-200/30 rounded-full blur-3xl animate-pulse delay-2000"></div>
       </div>
 
       {/* Decorative Islamic Pattern Overlay */}
@@ -259,49 +259,21 @@ const Login = () => {
         <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width=%2760%27%20height=%2760%27%20viewBox=%270%200%2060%2060%27%20xmlns=%27http://www.w3.org/2000/svg%27%3E%3Cg%20fill=%27none%27%20fill-rule=%27evenodd%27%3E%3Cg%20fill=%27%23ffffff%27%20fill-opacity=%271%27%3E%3Cpath%20d=%27M36%2034v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6%2034v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6%204V0H4v4H0v2h4v4h2V6h4V4H6z%27/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]"></div>
       </div>
 
-      {/* Main Content */}
-      <div className="relative z-10 w-full max-w-6xl px-4">
-        {/* Header Section */}
-        <div className="text-center mb-12">
-          <div className="flex justify-center mb-6">
-            <div className="relative group">
-              <div className="absolute -inset-4 bg-gradient-to-r from-emerald-300/40 via-teal-300/40 to-cyan-300/40 rounded-full blur-2xl opacity-50 group-hover:opacity-70 transition-opacity duration-500 animate-pulse"></div>
-              <img
-                src="/src/images/logo.jpg"
-                alt="مدرسة القرآن"
-                className="relative h-32 w-32 rounded-full border-4 border-emerald-500/40 shadow-2xl backdrop-blur-sm"
-              />
-            </div>
-          </div>
-
-          <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent drop-shadow-lg">
-            مدرسة القرآن الكريم
-          </h1>
-
-          <p className="text-xl md:text-2xl text-emerald-700 font-semibold mb-2 drop-shadow-md">
-            نظام إدارة الطلاب المتكامل
-          </p>
-
-          <div className="flex items-center justify-center gap-2 text-teal-600">
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-            </svg>
-            <span className="text-sm">منصة تعليمية متميزة</span>
-          </div>
-        </div>
-
-        {/* Login Card */}
-        <div className="relative max-w-xl mx-auto">
+      {/* Main Content Container - Two Columns */}
+      <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12 xl:gap-16 px-4 sm:px-6 lg:px-8 py-8 lg:py-0">
+        
+        {/* Right Side - Login Form (الجانب الأيمن - نموذج تسجيل الدخول) */}
+        <div className="w-full lg:w-1/2 max-w-md lg:max-w-lg order-1 lg:order-1">
           {/* Card Glow Effect */}
           <div className="absolute -inset-1 bg-gradient-to-r from-emerald-300/30 via-teal-300/30 to-cyan-300/30 rounded-3xl blur-xl opacity-40 transition duration-500"></div>
 
-          <div className="relative bg-white/95 backdrop-blur-xl p-12 rounded-3xl shadow-2xl border border-emerald-200/50">
+          <div className="relative bg-white/95 backdrop-blur-xl p-6 sm:p-8 lg:p-10 xl:p-12 rounded-3xl shadow-2xl border border-emerald-200/50">
             {/* Title */}
-            <div className="text-center mb-10">
-              <h2 className="text-4xl font-bold text-emerald-700 mb-3">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl sm:text-4xl font-bold text-emerald-700 mb-3">
                 تسجيل الدخول
               </h2>
-              <div className="h-1 w-24 mx-auto bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full"></div>
+              <div className="h-1 w-20 mx-auto bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full"></div>
               <p className="text-emerald-600 text-sm mt-4">
                 قم بإدخال معلومات الدخول الخاصة بك
               </p>
@@ -310,10 +282,10 @@ const Login = () => {
             <div>
               {/* Error Message */}
               {error && (
-                <div className="mb-6 p-4 bg-red-500/20 backdrop-blur-sm border-2 border-red-500/50 text-gray-900 rounded-2xl shadow-lg">
+                <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-500/20 backdrop-blur-sm border-2 border-red-500/50 text-gray-900 rounded-xl sm:rounded-2xl shadow-lg">
                   <div className="flex items-center justify-center gap-2">
                     <svg
-                      className="w-5 h-5 flex-shrink-0 text-red-600"
+                      className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 text-red-600"
                       fill="currentColor"
                       viewBox="0 0 20 20">
                       <path
@@ -322,13 +294,13 @@ const Login = () => {
                         clipRule="evenodd"
                       />
                     </svg>
-                    <span className="font-medium">{error}</span>
+                    <span className="font-medium text-xs sm:text-sm md:text-base">{error}</span>
                   </div>
                 </div>
               )}
 
               {/* Login Form */}
-              <form className="space-y-7" onSubmit={handleSubmit}>
+              <form className="space-y-6" onSubmit={handleSubmit}>
                 <div>
                   <label
                     className="block text-base font-semibold text-gray-700 mb-3"
@@ -341,7 +313,7 @@ const Login = () => {
                     name="userId"
                     value={formData.userId}
                     onChange={handleChange}
-                    className="w-full px-6 py-4 bg-white border-2 border-emerald-300 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none transition-all duration-200 text-right placeholder-gray-400 text-lg shadow-sm"
+                    className="w-full px-5 py-4 bg-white border-2 border-emerald-300 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none transition-all duration-200 text-right placeholder-gray-400 text-base shadow-sm"
                     placeholder="أدخل رقم المستخدم"
                     autoComplete="username"
                     required
@@ -361,7 +333,7 @@ const Login = () => {
                       name="password"
                       value={formData.password}
                       onChange={handleChange}
-                      className="w-full py-4 pr-6 pl-14 bg-white border-2 border-emerald-300 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none transition-all duration-200 text-right placeholder-gray-400 text-lg shadow-sm"
+                      className="w-full py-4 pr-5 pl-14 bg-white border-2 border-emerald-300 rounded-2xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none transition-all duration-200 text-right placeholder-gray-400 text-base shadow-sm"
                       placeholder="أدخل كلمة المرور أو رقم الهوية"
                       autoComplete="current-password"
                       required
@@ -571,18 +543,72 @@ const Login = () => {
                 </button>
               </form>
             </div>
+
+            {/* Footer - Inside Card */}
+            <div className="text-center mt-6 pt-6 border-t border-emerald-100">
+              <p className="text-gray-600 text-xs font-medium">
+                جميع الحقوق محفوظة © {new Date().getFullYear()}
+              </p>
+              <p className="text-gray-500 text-[10px] mt-1">
+                مدرسة القرآن الكريم
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="text-center mt-10">
-          <p className="text-gray-600 text-sm font-medium">
-            جميع الحقوق محفوظة © {new Date().getFullYear()} مدرسة القرآن الكريم
-          </p>
-          <p className="text-gray-500 text-xs mt-2">
-            نظام إدارة متطور لخدمة التعليم القرآني
-          </p>
+        {/* Left Side - Welcome Content (الجانب الأيسر - المحتوى الترحيبي) */}
+        <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start justify-center text-center lg:text-left space-y-6 lg:space-y-8 order-2 lg:order-2">
+          {/* Logo */}
+          <div className="relative group">
+            <div className="absolute -inset-4 bg-gradient-to-r from-emerald-300/40 via-teal-300/40 to-cyan-300/40 rounded-full blur-2xl opacity-50 group-hover:opacity-70 transition-opacity duration-500 animate-pulse"></div>
+            <img
+              src="/src/images/logo.jpg"
+              alt="مدرسة القرآن"
+              className="relative h-32 w-32 sm:h-40 sm:w-40 lg:h-48 lg:w-48 rounded-full border-4 border-emerald-500/40 shadow-2xl backdrop-blur-sm"
+            />
+          </div>
+
+          {/* Title and Description */}
+          <div className="space-y-4 max-w-lg">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent drop-shadow-lg leading-tight">
+              مدرسة القرآن الكريم
+            </h1>
+
+            <p className="text-lg sm:text-xl lg:text-2xl text-emerald-700 font-semibold drop-shadow-md">
+              نظام إدارة الطلاب المتكامل
+            </p>
+
+            <div className="flex items-center justify-center lg:justify-start gap-2 text-teal-600">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+              </svg>
+              <span className="text-sm sm:text-base">منصة تعليمية متميزة</span>
+            </div>
+
+            {/* Additional Info */}
+            <div className="pt-4 space-y-3 text-emerald-700/80">
+              <div className="flex items-center justify-center lg:justify-start gap-3">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                <span className="text-sm sm:text-base">إدارة شاملة للطلاب والمعلمين</span>
+              </div>
+              <div className="flex items-center justify-center lg:justify-start gap-3">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span className="text-sm sm:text-base">تتبع الحضور والأداء الأكاديمي</span>
+              </div>
+              <div className="flex items-center justify-center lg:justify-start gap-3">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span className="text-sm sm:text-base">تقارير تفصيلية ومتابعة دقيقة</span>
+              </div>
+            </div>
+          </div>
         </div>
+
       </div>
 
       {/* Forgot Password Modal */}
