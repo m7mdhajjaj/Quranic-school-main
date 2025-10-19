@@ -95,7 +95,9 @@ exports.getAllTeachers = async (req, res) => {
 // Get single teacher by ID
 exports.getTeacherById = async (req, res) => {
   try {
+    console.log('🔍 getTeacherById - ID:', req.params.id);
     const teacher = await Teacher.findById(req.params.id).select("-password");
+    console.log('🔍 getTeacherById - Teacher found:', teacher ? 'Yes' : 'No');
     if (!teacher) {
       return res
         .status(404)

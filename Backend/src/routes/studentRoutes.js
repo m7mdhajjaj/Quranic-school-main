@@ -12,6 +12,7 @@ const { uploadAvatar } = require("../config/multer");
 // Upload student avatar (Cloudinary) - UPDATED
 router.post(
   "/:id/avatar",
+  protect,
   uploadAvatar.single("avatar"),
   async (req, res) => {
     try {
@@ -72,7 +73,7 @@ router.post(
 );
 
 // Get student avatar URL
-router.get("/:id/avatar", async (req, res) => {
+router.get("/:id/avatar", protect, async (req, res) => {
   try {
     const student = await Student.findById(req.params.id).select("avatar");
     if (!student) {
@@ -90,7 +91,7 @@ router.get("/:id/avatar", async (req, res) => {
 });
 
 // Delete student avatar
-router.delete("/:id/avatar", async (req, res) => {
+router.delete("/:id/avatar", protect, async (req, res) => {
   try {
     const student = await Student.findById(req.params.id);
     if (!student)
@@ -102,7 +103,7 @@ router.delete("/:id/avatar", async (req, res) => {
       // Delete from Cloudinary
       await cloudinary.uploader.destroy(student.avatar.publicId);
 
-      // Remove from database
+      // Remove avatar completely - Avatar component will show initials
       await Student.updateOne(
         { _id: req.params.id },
         { $unset: { avatar: "" } }

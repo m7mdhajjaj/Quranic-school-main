@@ -113,7 +113,7 @@ const teacherSchema = new mongoose.Schema(
       },
     },
 
-    residence: { type: String },
+    residence: { type: String, required: [true, "مكان السكن مطلوب"] },
 
     // الحلقات التي يدرسها المعلم
     groups: {

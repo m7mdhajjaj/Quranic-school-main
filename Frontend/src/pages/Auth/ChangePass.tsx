@@ -1,7 +1,52 @@
 import { useState, useEffect } from 'react';
 import { changePassword } from '../../Api/authApi';
+import { getLogo } from '../../Api/uploadApi';
 import { showSuccessMessage, showErrorMessage } from '../../utils/sweetalertUtils';
-import { validatePasswordStrength } from '../../Validation/commonValidation';
+
+// Password validation function
+const validatePasswordStrength = (password: string): {
+  isValid: boolean;
+  errors: string[];
+  strength: 'weak' | 'medium' | 'strong';
+} => {
+  const errors: string[] = [];
+  let strength: 'weak' | 'medium' | 'strong' = 'weak';
+
+  // Check minimum length
+  if (!password || password.length < 4) {
+    errors.push('كلمة المرور يجب أن تكون 4 أحرف على الأقل');
+    return { isValid: false, errors, strength };
+  }
+
+  // Check maximum length
+  if (password.length > 50) {
+    errors.push('كلمة المرور طويلة جداً (الحد الأقصى 50 حرف)');
+    return { isValid: false, errors, strength };
+  }
+
+  // Count digits
+  const digitCount = (password.match(/\d/g) || []).length;
+
+  // Password must contain at least 4 digits OR 3 letters + rest digits
+  if (digitCount >= 4) {
+    strength = 'medium';
+  } else {
+    const letterCount = password.length - digitCount;
+    if (letterCount >= 3 && digitCount > 0) {
+      strength = 'medium';
+    } else {
+      errors.push('كلمة المرور يجب أن تحتوي على 4 أرقام على الأقل، أو 3 حروف وباقي أرقام');
+      return { isValid: false, errors, strength: 'weak' };
+    }
+  }
+
+  // Strong password: 6+ characters with mix of letters and numbers
+  if (password.length >= 6 && digitCount >= 2 && (password.match(/[a-zA-Z]/g) || []).length >= 2) {
+    strength = 'strong';
+  }
+
+  return { isValid: true, errors: [], strength };
+};
 
 interface ChangePasswordModalProps {
   isOpen: boolean;
@@ -47,6 +92,8 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [step, setStep] = useState(1);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoLoading, setLogoLoading] = useState(true);
   const [passwordStrength, setPasswordStrength] = useState<PasswordStrength>({
     score: 0,
     label: '',
@@ -59,6 +106,25 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
       special: false,
     },
   });
+
+  // Load Logo
+  useEffect(() => {
+    const fetchLogo = async () => {
+      setLogoLoading(true);
+      try {
+        const data = await getLogo();
+        if (data.success && data.url) {
+          setLogoUrl(data.url);
+        }
+      } catch (error) {
+        console.error('Error fetching logo:', error);
+      } finally {
+        setLogoLoading(false);
+      }
+    };
+
+    fetchLogo();
+  }, []);
 
   // Handle ESC key to close modal and form reset
   useEffect(() => {
@@ -379,11 +445,24 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
         >
           <div className="flex justify-center mb-6">
             <div className="relative">
-              <img
-                src="/src/images/logo.jpg"
-                alt="مدرسة القرآن"
-                className="h-20 w-20 rounded-full border-4 border-emerald-600 shadow-lg"
-              />
+              {logoLoading ? (
+                // Loading Skeleton
+                <div className="h-20 w-20 rounded-full border-4 border-emerald-600 shadow-lg bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse">
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-emerald-100/50 to-teal-100/50 animate-pulse"></div>
+                </div>
+              ) : logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt="مدرسة القرآن"
+                  className="h-20 w-20 rounded-full border-4 border-emerald-600 shadow-lg object-cover"
+                />
+              ) : (
+                <div className="h-20 w-20 rounded-full border-4 border-emerald-600 shadow-lg bg-gradient-to-br from-emerald-200 to-teal-200 flex items-center justify-center">
+                  <svg className="w-10 h-10 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+              )}
               <div className="absolute -bottom-1 -right-1 bg-emerald-600 rounded-full p-1.5 shadow-md">
                 <svg
                   className="w-4 h-4 text-white"
@@ -400,9 +479,7 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
                 </svg>
               </div>
             </div>
-          </div>
-
-          <h1 className="text-3xl font-bold text-center mb-2 text-gray-800">
+          </div>          <h1 className="text-3xl font-bold text-center mb-2 text-gray-800">
             تغيير كلمة المرور
           </h1>
           <p className="text-center text-gray-600 text-sm mb-8">

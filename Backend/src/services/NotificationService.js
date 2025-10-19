@@ -134,6 +134,8 @@ class NotificationService {
   async sendPrayerNotification(prayerName, prayerTime, emoji) {
     try {
       const message = `${emoji} حان وقت صلاة ${prayerName} - ${prayerTime}\nبارك الله فيكم`;
+      
+      // Broadcast via Socket.IO
       this.io.emit("prayerNotification", {
         type: "prayer_time",
         title: `صلاة ${prayerName}`,
@@ -143,6 +145,32 @@ class NotificationService {
         emoji,
         timestamp: new Date(),
       });
+      
+      // Send via FCM to all users
+      if (FCMService && FCMService.initialized) {
+        try {
+          const allDevices = await DeviceToken.find({}).lean();
+          const tokenList = allDevices.map((d) => d.token).filter(Boolean);
+          if (tokenList.length > 0) {
+            const payload = {
+              notification: {
+                title: `${emoji} صلاة ${prayerName}`,
+                body: `حان وقت صلاة ${prayerName} - ${prayerTime}`,
+              },
+              data: {
+                type: "prayer_time",
+                prayerName,
+                prayerTime,
+              },
+            };
+            await FCMService.sendToTokens(tokenList, payload);
+            console.log(`🕌 Prayer notification sent via FCM to ${tokenList.length} devices`);
+          }
+        } catch (fcmErr) {
+          console.error("❌ Error sending prayer FCM:", fcmErr);
+        }
+      }
+      
       console.log(`🕰️ Prayer notification broadcasted: ${prayerName} at ${prayerTime}`);
     } catch (error) {
       console.error("❌ Error sending prayer notification:", error);
@@ -151,6 +179,7 @@ class NotificationService {
 
   async sendQuranReminderNotification() {
     try {
+      // Broadcast via Socket.IO
       this.io.emit("quranReminder", {
         type: "quran_reminder",
         title: "تذكير بقراءة القرآن",
@@ -158,6 +187,30 @@ class NotificationService {
         emoji: "📖",
         timestamp: new Date(),
       });
+      
+      // Send via FCM to all users
+      if (FCMService && FCMService.initialized) {
+        try {
+          const allDevices = await DeviceToken.find({}).lean();
+          const tokenList = allDevices.map((d) => d.token).filter(Boolean);
+          if (tokenList.length > 0) {
+            const payload = {
+              notification: {
+                title: "📖 تذكير بقراءة القرآن",
+                body: "لا تنسَ وردك اليومي من القرآن الكريم",
+              },
+              data: {
+                type: "quran_reminder",
+              },
+            };
+            await FCMService.sendToTokens(tokenList, payload);
+            console.log(`📖 Quran reminder sent via FCM to ${tokenList.length} devices`);
+          }
+        } catch (fcmErr) {
+          console.error("❌ Error sending Quran reminder FCM:", fcmErr);
+        }
+      }
+      
       console.log("📖 Daily Quran reminder sent");
     } catch (error) {
       console.error("❌ Error sending Quran reminder:", error);

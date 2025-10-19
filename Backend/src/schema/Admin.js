@@ -57,7 +57,7 @@ const adminSchema = new mongoose.Schema(
       },
     },
 
-    residence: { type: String, trim: true },
+    residence: { type: String, required: [true, "مكان السكن مطلوب"] },
 
     // صورة
     avatar: {

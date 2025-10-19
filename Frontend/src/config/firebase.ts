@@ -1,6 +1,7 @@
 // Firebase Configuration and Cloud Messaging Setup
 import { initializeApp } from 'firebase/app';
-import { getMessaging, getToken, onMessage, Messaging } from 'firebase/messaging';
+import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import type { Messaging } from 'firebase/messaging';
 
 // Firebase configuration from environment
 const firebaseConfig = {
@@ -29,6 +30,39 @@ try {
 } catch (error) {
   console.warn('⚠️ Firebase Messaging not supported:', error);
 }
+
+/**
+ * Get FCM token without requesting permission (if already granted)
+ * @returns FCM token string or null if failed
+ */
+export const getExistingToken = async (): Promise<string | null> => {
+  if (!messaging) {
+    console.warn('Firebase Messaging not initialized');
+    return null;
+  }
+
+  try {
+    // Only get token if permission is already granted
+    if (Notification.permission !== 'granted') {
+      return null;
+    }
+
+    const token = await getToken(messaging, {
+      vapidKey: VAPID_KEY
+    });
+    
+    if (token) {
+      console.log('📱 FCM Token retrieved:', token);
+      return token;
+    } else {
+      console.warn('⚠️ No registration token available');
+      return null;
+    }
+  } catch (error) {
+    console.error('❌ Error getting FCM token:', error);
+    return null;
+  }
+};
 
 /**
  * Request permission and get FCM token
@@ -73,7 +107,7 @@ export const requestNotificationPermission = async (): Promise<string | null> =>
  * Listen for foreground messages
  * @param callback Function to handle incoming messages
  */
-export const onMessageListener = (callback: (payload: any) => void) => {
+export const onMessageListener = (callback: (payload: unknown) => void) => {
   if (!messaging) {
     console.warn('Firebase Messaging not initialized');
     return () => {};

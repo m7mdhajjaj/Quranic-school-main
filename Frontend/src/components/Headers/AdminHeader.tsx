@@ -9,6 +9,7 @@ import {
   getUnreadNotificationCount,
   markAsRead,
 } from '../../Api/notificationApi';
+import { getLogo } from '../../Api/uploadApi';
 import ThemeToggle from '../UI/ThemeToggle';
 
 interface AdminNotification {
@@ -35,12 +36,33 @@ const AdminHeader: React.FC = () => {
   const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoLoading, setLogoLoading] = useState(true);
 
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const notificationMenuRef = useRef<HTMLDivElement>(null);
 
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Load Logo
+  useEffect(() => {
+    const fetchLogo = async () => {
+      setLogoLoading(true);
+      try {
+        const data = await getLogo();
+        if (data.success && data.url) {
+          setLogoUrl(data.url);
+        }
+      } catch (error) {
+        console.error('Error fetching logo:', error);
+      } finally {
+        setLogoLoading(false);
+      }
+    };
+
+    fetchLogo();
+  }, []);
 
   // Handle scroll effect
   useEffect(() => {
@@ -305,9 +327,19 @@ const AdminHeader: React.FC = () => {
                       : 'bg-white'
                   }`}
                 >
-                  <span className="text-lg sm:text-2xl md:text-3xl animate-pulse">
-                    🎓
-                  </span>
+                  {logoLoading ? (
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-gray-300/50 to-gray-400/50 animate-pulse"></div>
+                  ) : logoUrl ? (
+                    <img
+                      src={logoUrl}
+                      alt="Logo"
+                      className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-lg sm:text-2xl md:text-3xl animate-pulse">
+                      🎓
+                    </span>
+                  )}
                   <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-4 md:h-4 bg-green-500 rounded-full animate-ping shadow-lg"></div>
                 </div>
                 <div className="hidden sm:block ml-1 sm:ml-2">

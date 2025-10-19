@@ -1,7 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const { uploadActivity, uploadNews } = require("../config/multer");
+const { uploadActivity, uploadNews, uploadHero, uploadLogo, uploadAvatar } = require("../config/multer");
 const cloudinary = require("../config/cloudinary");
+const { protect } = require("../middleware/authMiddleware");
 
 // Upload single activity image
 router.post("/activity", uploadActivity.single("image"), (req, res) => {
@@ -114,6 +115,156 @@ router.post("/news/multiple", uploadNews.array("images", 5), (req, res) => {
     res.status(500).json({
       success: false,
       message: "حدث خطأ أثناء رفع الصور",
+      error: error.message,
+    });
+  }
+});
+
+// ============= Hero Image Routes =============
+
+// Upload hero image
+router.post("/hero", uploadHero.single("image"), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "لم يتم رفع أي ملف",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "تم رفع صورة الهيرو بنجاح",
+      url: req.file.path,
+      publicId: req.file.filename,
+    });
+  } catch (error) {
+    console.error("Upload hero error:", error);
+    res.status(500).json({
+      success: false,
+      message: "حدث خطأ أثناء رفع صورة الهيرو",
+      error: error.message,
+    });
+  }
+});
+
+// Get current hero image (returns the latest uploaded hero image)
+router.get("/hero", async (req, res) => {
+  try {
+    // Get the list of resources in the Hero folder, sorted by uploaded_at desc
+    const result = await cloudinary.search
+      .expression('folder:quranic-school/Hero')
+      .sort_by('uploaded_at', 'desc')
+      .max_results(1)
+      .execute();
+
+    if (result.resources && result.resources.length > 0) {
+      res.json({
+        success: true,
+        url: result.resources[0].secure_url,
+        publicId: result.resources[0].public_id,
+      });
+    } else {
+      res.json({
+        success: true,
+        url: null,
+        message: "لم يتم رفع صورة هيرو بعد",
+      });
+    }
+  } catch (error) {
+    console.error("Get hero image error:", error);
+    res.status(500).json({
+      success: false,
+      message: "حدث خطأ أثناء جلب صورة الهيرو",
+      error: error.message,
+    });
+  }
+});
+
+// ============= Logo Routes =============
+
+// Upload logo
+router.post("/logo", uploadLogo.single("image"), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "لم يتم رفع أي ملف",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "تم رفع اللوغو بنجاح",
+      url: req.file.path,
+      publicId: req.file.filename,
+    });
+  } catch (error) {
+    console.error("Upload logo error:", error);
+    res.status(500).json({
+      success: false,
+      message: "حدث خطأ أثناء رفع اللوغو",
+      error: error.message,
+    });
+  }
+});
+
+// Get current logo (returns the latest uploaded logo)
+router.get("/logo", async (req, res) => {
+  try {
+    // Get the list of resources in the Logo folder, sorted by uploaded_at desc
+    const result = await cloudinary.search
+      .expression('folder:quranic-school/Logo')
+      .sort_by('uploaded_at', 'desc')
+      .max_results(1)
+      .execute();
+
+    if (result.resources && result.resources.length > 0) {
+      res.json({
+        success: true,
+        url: result.resources[0].secure_url,
+        publicId: result.resources[0].public_id,
+      });
+    } else {
+      res.json({
+        success: true,
+        url: null,
+        message: "لم يتم رفع لوغو بعد",
+      });
+    }
+  } catch (error) {
+    console.error("Get logo error:", error);
+    res.status(500).json({
+      success: false,
+      message: "حدث خطأ أثناء جلب اللوغو",
+      error: error.message,
+    });
+  }
+});
+
+// ============= Avatar Routes =============
+
+// Upload avatar
+router.post("/avatar", protect, uploadAvatar.single("image"), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "لم يتم رفع أي ملف",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "تم رفع الصورة الشخصية بنجاح",
+      url: req.file.path,
+      publicId: req.file.filename,
+    });
+  } catch (error) {
+    console.error("Upload avatar error:", error);
+    res.status(500).json({
+      success: false,
+      message: "حدث خطأ أثناء رفع الصورة الشخصية",
       error: error.message,
     });
   }

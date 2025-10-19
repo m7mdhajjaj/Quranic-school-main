@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../hooks/useAuth";
 import { loginStudent, loginTeacher, loginAdmin } from "../../Api/authApi";
+import { getLogo } from "../../Api/uploadApi";
 import ForgotPasswordModal from "./ForgotPasswordModal";
 import type { User } from "../../contexts/AuthContext";
 
@@ -23,6 +24,27 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
   const [failedAttempts, setFailedAttempts] = useState(0); // عداد المحاولات الفاشلة
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoLoading, setLogoLoading] = useState(true);
+
+  // Load Logo
+  useEffect(() => {
+    const fetchLogo = async () => {
+      setLogoLoading(true);
+      try {
+        const data = await getLogo();
+        if (data.success && data.url) {
+          setLogoUrl(data.url);
+        }
+      } catch (error) {
+        console.error('Error fetching logo:', error);
+      } finally {
+        setLogoLoading(false);
+      }
+    };
+
+    fetchLogo();
+  }, []);
 
   useEffect(() => {
     const user = localStorage.getItem("user");
@@ -518,11 +540,24 @@ const Login = () => {
           {/* Logo */}
           <div className="relative group">
             <div className="absolute -inset-4 bg-gradient-to-r from-emerald-300/40 via-teal-300/40 to-cyan-300/40 rounded-full blur-2xl opacity-50 group-hover:opacity-70 transition-opacity duration-500 animate-pulse"></div>
-            <img
-              src="/src/images/logo.jpg"
-              alt="مدرسة القرآن"
-              className="relative h-32 w-32 sm:h-40 sm:w-40 lg:h-48 lg:w-48 rounded-full border-4 border-emerald-500/40 shadow-2xl backdrop-blur-sm"
-            />
+            {logoLoading ? (
+              // Loading Skeleton
+              <div className="relative h-32 w-32 sm:h-40 sm:w-40 lg:h-48 lg:w-48 rounded-full border-4 border-emerald-500/40 shadow-2xl backdrop-blur-sm bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse">
+                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-emerald-100/50 to-teal-100/50 animate-pulse"></div>
+              </div>
+            ) : logoUrl ? (
+              <img
+                src={logoUrl}
+                alt="مدرسة القرآن"
+                className="relative h-32 w-32 sm:h-40 sm:w-40 lg:h-48 lg:w-48 rounded-full border-4 border-emerald-500/40 shadow-2xl backdrop-blur-sm object-cover"
+              />
+            ) : (
+              <div className="relative h-32 w-32 sm:h-40 sm:w-40 lg:h-48 lg:w-48 rounded-full border-4 border-emerald-500/40 shadow-2xl backdrop-blur-sm bg-gradient-to-br from-emerald-200 to-teal-200 flex items-center justify-center">
+                <svg className="w-16 h-16 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+            )}
           </div>
 
           {/* Title and Description */}

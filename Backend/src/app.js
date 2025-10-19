@@ -1,3 +1,6 @@
+// ⚠️ CRITICAL: Load environment variables FIRST before any other modules
+require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
@@ -10,7 +13,6 @@ const NotificationService = require("./services/NotificationService");
 const MonthlyChampionService = require("./services/MonthlyChampionService");
 // Initialize FCM service (reads env FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_SERVICE_ACCOUNT_PATH)
 const FCMService = require("./services/FCMService");
-require("dotenv").config();
 
 // Connect to MongoDB
 connectDB();
@@ -161,8 +163,16 @@ global.notifyDashboardUpdate = (updateType, data = null) => {
   }
 };
 
-// Initialize Notification Service
-let notificationService;
+// Initialize Notification Service immediately after Socket.IO is ready
+const notificationService = new NotificationService(io);
+global.notificationService = notificationService; // Make it globally accessible
+global.onlineUsers = onlineUsers; // Make onlineUsers globally accessible
+global.io = io; // Make io globally accessible for chat controllers
+global.fcmService = FCMService;
+
+// تشغيل Cron Job لتتويج أبطال الشهر
+MonthlyChampionService.start();
+console.log("🏆 خدمة تتويج الأبطال الشهرية تم تفعيلها");
 
 // Socket.IO error handling
 io.engine.on("connection_error", (err) => {
@@ -189,19 +199,6 @@ io.on("connection", (socket) => {
       }
     }
   });
-
-  // Initialize notification service after io is ready
-  if (!notificationService) {
-    notificationService = new NotificationService(io);
-    global.notificationService = notificationService; // Make it globally accessible
-    global.onlineUsers = onlineUsers; // Make onlineUsers globally accessible
-    global.io = io; // Make io globally accessible for chat controllers
-    global.fcmService = FCMService;
-
-    // تشغيل Cron Job لتتويج أبطال الشهر
-    MonthlyChampionService.start();
-    console.log("🏆 خدمة تتويج الأبطال الشهرية تم تفعيلها");
-  }
 
   // User login - store their user ID and socket ID with improved handling
   socket.on("login", async (userData) => {

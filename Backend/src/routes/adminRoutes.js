@@ -7,13 +7,17 @@ const Admin = require("../schema/Admin");
 const controller = require("../controllers/adminController");
 const { validateAdminData } = require("../Validation/AdminValidation");
 const { uploadAvatar } = require("../config/multer");
+const { protect } = require("../middleware/authMiddleware");
 
 // ========== رفع أفاتار الإداري (Cloudinary) - UPDATED ==========
 router.post(
   "/:id/avatar",
+  protect,
   uploadAvatar.single("avatar"),
   async (req, res) => {
     try {
+      console.log("🔐 Admin avatar upload - User:", req.user?.role, req.user?._id);
+      
       const admin = await Admin.findById(req.params.id);
       if (!admin)
         return res
@@ -34,6 +38,10 @@ router.post(
       }
 
       // Update avatar with Cloudinary URL and public ID
+      console.log("📸 Cloudinary upload successful:");
+      console.log("   URL:", req.file.path);
+      console.log("   Public ID:", req.file.filename);
+      
       await Admin.updateOne(
         { _id: req.params.id },
         {
@@ -75,7 +83,7 @@ router.post(
 );
 
 // ========== عرض رابط صورة أفاتار الإداري ==========
-router.get("/:id/avatar", async (req, res) => {
+router.get("/:id/avatar", protect, async (req, res) => {
   try {
     const admin = await Admin.findById(req.params.id).select("avatar");
     if (!admin) {
@@ -91,7 +99,7 @@ router.get("/:id/avatar", async (req, res) => {
 });
 
 // ========== حذف أفاتار الإداري ==========
-router.delete("/:id/avatar", async (req, res) => {
+router.delete("/:id/avatar", protect, async (req, res) => {
   try {
     const admin = await Admin.findById(req.params.id);
     if (!admin)
@@ -101,7 +109,7 @@ router.delete("/:id/avatar", async (req, res) => {
       // Delete from Cloudinary
       await cloudinary.uploader.destroy(admin.avatar.publicId);
 
-      // Remove from database
+      // Remove avatar completely - Avatar component will show initials
       await Admin.updateOne(
         { _id: req.params.id },
         { $unset: { avatar: "" } }

@@ -1,5 +1,6 @@
 const admin = require('firebase-admin');
 const fs = require('fs');
+const path = require('path');
 
 class FCMService {
   constructor() {
@@ -21,8 +22,19 @@ class FCMService {
       let serviceAccount;
       if (serviceAccountJson) {
         serviceAccount = JSON.parse(serviceAccountJson);
-      } else if (serviceAccountPath && fs.existsSync(serviceAccountPath)) {
-        serviceAccount = require(serviceAccountPath);
+      } else if (serviceAccountPath) {
+        // Resolve path relative to project root
+        const resolvedPath = path.resolve(process.cwd(), serviceAccountPath);
+        console.log(`🔍 Looking for Firebase service account at: ${resolvedPath}`);
+        
+        if (fs.existsSync(resolvedPath)) {
+          serviceAccount = JSON.parse(fs.readFileSync(resolvedPath, 'utf8'));
+          console.log('✅ Service account file found and loaded');
+        } else {
+          console.warn(`⚠️  Service account file not found at: ${resolvedPath}`);
+          console.warn('FCM: No service account provided in env; FCM disabled');
+          return;
+        }
       } else {
         console.warn('FCM: No service account provided in env; FCM disabled');
         return;

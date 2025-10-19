@@ -8,7 +8,7 @@ const Student = require("../schema/Student");
 const Teacher = require("../schema/Teacher");
 const Admin = require("../schema/Admin");
 const jwt = require("jsonwebtoken");
-const { validateProfileData } = require("../Validation/ProfileValidation");
+const { validateProfileData, sanitizeProfile } = require("../Validation/ProfileValidation");
 
 // Middleware to verify JWT token
 const authenticateToken = (req, res, next) => {
@@ -111,7 +111,7 @@ router.get("/me", authenticateToken, getUserProfile);
 router.get("/profile", authenticateToken, getUserProfile);
 
 // Update user profile
-router.put("/me", authenticateToken, validateProfileData, async (req, res) => {
+router.put("/me", authenticateToken, sanitizeProfile, validateProfileData, async (req, res) => {
   try {
     const userId = req.user.id || req.user._id;
     const userType = req.user.role || "student";
@@ -280,48 +280,53 @@ router.delete("/avatar", authenticateToken, async (req, res) => {
     const userId = req.user.id || req.user._id;
     const userType = req.user.role || "student";
 
+    // Default avatar URL from Cloudinary
+    const defaultAvatar = {
+      url: "https://res.cloudinary.com/dfi5r4ssx/image/upload/v1/quranic-school/Avatar/default-avatar.jpg",
+      publicId: null
+    };
+
     let user;
     if (userType === "student") {
       const existingUser = await Student.findById(userId);
-      if (existingUser && existingUser.avatar) {
-        const avatarPath = path.join(
-          __dirname,
-          "../../public/uploads",
-          existingUser.avatar
-        );
-        if (fs.existsSync(avatarPath)) {
-          fs.unlinkSync(avatarPath);
-        }
+      
+      // Delete from Cloudinary if exists
+      if (existingUser && existingUser.avatar && existingUser.avatar.publicId) {
+        const cloudinary = require("../config/cloudinary");
+        await cloudinary.uploader.destroy(existingUser.avatar.publicId);
       }
 
       user = await Student.findByIdAndUpdate(
         userId,
-        { $unset: { avatar: 1 } },
+        { $set: { avatar: defaultAvatar } },
         { new: true }
       ).select("-password");
     } else if (userType === "admin") {
-      // For admin, just remove from database
+      const existingUser = await Admin.findById(userId);
+      
+      // Delete from Cloudinary if exists
+      if (existingUser && existingUser.avatar && existingUser.avatar.publicId) {
+        const cloudinary = require("../config/cloudinary");
+        await cloudinary.uploader.destroy(existingUser.avatar.publicId);
+      }
+
       user = await Admin.findByIdAndUpdate(
         userId,
-        { $unset: { avatar: 1 } },
+        { $set: { avatar: defaultAvatar } },
         { new: true }
       ).select("-password");
     } else {
       const existingUser = await Teacher.findById(userId);
-      if (existingUser && existingUser.avatar) {
-        const avatarPath = path.join(
-          __dirname,
-          "../../public/uploads",
-          existingUser.avatar
-        );
-        if (fs.existsSync(avatarPath)) {
-          fs.unlinkSync(avatarPath);
-        }
+      
+      // Delete from Cloudinary if exists
+      if (existingUser && existingUser.avatar && existingUser.avatar.publicId) {
+        const cloudinary = require("../config/cloudinary");
+        await cloudinary.uploader.destroy(existingUser.avatar.publicId);
       }
 
       user = await Teacher.findByIdAndUpdate(
         userId,
-        { $unset: { avatar: 1 } },
+        { $set: { avatar: defaultAvatar } },
         { new: true }
       ).select("-password");
     }

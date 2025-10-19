@@ -21,6 +21,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { UserStatusProvider } from "./contexts/UserStatusContext";
 // import { SocketProvider } from "./contexts/SocketContext"; // ❌ DELETED - استخدم النظام الجديد في Socket/
 import { useAuth } from "./hooks/useAuth";
+import { useFirebaseMessaging } from "./hooks/useFirebaseMessaging"; // ✅ Firebase Notifications
 
 // ============================================================================
 // Layout Components
@@ -95,6 +96,7 @@ import GroupManagement from "./pages/Admin/GroupManagement";
 // Other Components
 // ============================================================================
 import Soon from "./components/Soon";
+import NotificationPermissionPrompt from "./components/Notifications/NotificationPermissionPrompt";
 
 // ============================================================================
 // Route Configurations
@@ -335,6 +337,19 @@ const StudentRoutes: React.FC = () => {
  */
 function AppContent() {
   const { isLoading, isAuthenticated, user } = useAuth();
+  
+  // ====== Firebase Cloud Messaging - Initialize notifications ======
+  const { isPermissionGranted, lastNotification } = useFirebaseMessaging();
+  
+  // Optional: Log notification status for debugging
+  React.useEffect(() => {
+    if (isPermissionGranted) {
+      console.log('✅ Firebase notifications enabled');
+    }
+    if (lastNotification) {
+      console.log('📩 New notification received:', lastNotification);
+    }
+  }, [isPermissionGranted, lastNotification]);
 
   // ====== Loading State ======
   // Show loading spinner while authentication data is being fetched
@@ -363,21 +378,33 @@ function AppContent() {
 
   // ====== Authenticated State - Role-Based Routing ======
   // Route to appropriate component based on user role
+  let routeComponent;
   switch (user?.role) {
     case "admin":
-      return <AdminRoutes />;
+      routeComponent = <AdminRoutes />;
+      break;
     case "teacher":
-      return <TeacherRoutes />;
+      routeComponent = <TeacherRoutes />;
+      break;
     case "student":
-      return <StudentRoutes />;
+      routeComponent = <StudentRoutes />;
+      break;
     default:
       // Fallback to login if role is undefined or invalid
-      return (
+      routeComponent = (
         <Routes>
           <Route path="*" element={<Login />} />
         </Routes>
       );
   }
+
+  return (
+    <>
+      {routeComponent}
+      {/* Show notification permission prompt after login */}
+      <NotificationPermissionPrompt autoShow={true} />
+    </>
+  );
 }
 
 // ============================================================================

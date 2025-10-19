@@ -90,6 +90,70 @@ export const uploadMultipleNewsImages = async (
 };
 
 /**
+ * رفع صورة اللوغو (يتم تخزينها في مجلد Logo في Cloudinary)
+ */
+export const uploadLogo = async (file: File): Promise<UploadResponse> => {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const response = await axios.post(`${API_URL}/logo`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  return response.data;
+};
+
+/**
+ * جلب صورة اللوغو الحالية
+ */
+export const getLogo = async (): Promise<UploadResponse> => {
+  const response = await axios.get(`${API_URL}/logo`);
+  return response.data;
+};
+
+/**
+ * رفع صورة الهيرو (يتم تخزينها في مجلد Hero في Cloudinary)
+ */
+export const uploadHeroImage = async (file: File): Promise<UploadResponse> => {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const response = await axios.post(`${API_URL}/hero`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  return response.data;
+};
+
+/**
+ * جلب صورة الهيرو الحالية
+ */
+export const getHeroImage = async (): Promise<UploadResponse> => {
+  const response = await axios.get(`${API_URL}/hero`);
+  return response.data;
+};
+
+/**
+ * رفع صورة الأفاتار (صورة البروفايل) - يتم تخزينها في مجلد Avatars في Cloudinary
+ */
+export const uploadAvatar = async (file: File): Promise<UploadResponse> => {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const response = await axios.post(`${API_URL}/avatar`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  return response.data;
+};
+
+/**
  * حذف صورة من Cloudinary
  * @param publicId معرف الصورة في Cloudinary (يتم الحصول عليه من الرفع)
  */

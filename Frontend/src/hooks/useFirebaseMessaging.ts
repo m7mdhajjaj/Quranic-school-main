@@ -9,6 +9,7 @@ import { useEffect, useCallback, useState } from 'react';
 import { 
   onMessageListener, 
   requestNotificationPermission,
+  getExistingToken,
   registerTokenWithBackend 
 } from '../config/firebase';
 import { useAuth } from './useAuth';
@@ -53,7 +54,8 @@ export const useFirebaseMessaging = (): UseFirebaseMessagingReturn => {
         
         // تسجيل Token مع الباكيند
         if (authToken) {
-          const apiUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5005'}/api/notifications/register-token`;
+          // Use relative URL - Vite proxy will handle forwarding to backend
+          const apiUrl = '/api/notifications/register-token';
           await registerTokenWithBackend(token, apiUrl, authToken);
           console.log('✅ تم تسجيل FCM Token بنجاح');
         }
@@ -72,23 +74,40 @@ export const useFirebaseMessaging = (): UseFirebaseMessagingReturn => {
     if (user && authToken) {
       // التحقق من الصلاحيات الحالية
       if (Notification.permission === 'granted') {
-        requestPermission();
+        // إذا الصلاحيات موجودة مسبقاً، احصل على الـ Token بدون طلب الصلاحيات
+        (async () => {
+          const token = await getExistingToken();
+          if (token) {
+            setFcmToken(token);
+            setIsPermissionGranted(true);
+            
+            // تسجيل Token مع الباكيند
+            const apiUrl = '/api/notifications/register-token';
+            await registerTokenWithBackend(token, apiUrl, authToken);
+            console.log('✅ تم تسجيل FCM Token بنجاح');
+          }
+        })();
       } else if (Notification.permission === 'default') {
-        // يمكن طلب الصلاحيات لاحقاً عند الحاجة
-        console.log('💡 يمكن طلب صلاحيات الإشعارات');
+        // لا تطلب الصلاحيات أوتوماتيكياً - دع المكون NotificationPermissionPrompt يتولى الأمر
+        console.log('💡 يمكن طلب صلاحيات الإشعارات من خلال الـ UI');
+        setIsPermissionGranted(false);
+      } else if (Notification.permission === 'denied') {
+        console.warn('⚠️ تم رفض صلاحيات الإشعارات مسبقاً');
+        setIsPermissionGranted(false);
       }
     }
-  }, [user, authToken, requestPermission]);
+  }, [user, authToken]);
 
   // ====== الاستماع للإشعارات الواردة ======
   useEffect(() => {
-    const unsubscribe = onMessageListener((payload: NotificationPayload) => {
+    const unsubscribe = onMessageListener((payload: unknown) => {
       console.log('📩 تم استلام إشعار:', payload);
-      setLastNotification(payload);
+      const typedPayload = payload as NotificationPayload;
+      setLastNotification(typedPayload);
 
       // عرض الإشعار للمستخدم
-      if (payload.notification) {
-        const { title, body } = payload.notification;
+      if (typedPayload.notification) {
+        const { title, body } = typedPayload.notification;
         
         // إنشاء إشعار نظام إذا كانت الصفحة مفتوحة
         if (Notification.permission === 'granted') {

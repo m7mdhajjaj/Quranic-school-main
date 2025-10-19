@@ -2,15 +2,15 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import "../styles/NotificationHeader.css";
-import { socketManager } from "../Socket/SocketManager"; // ✅ استخدام النظام الجديد مباشرة
+import "../../styles/NotificationHeader.css";
+import { socketManager } from "../../Socket/SocketManager"; // ✅ استخدام النظام الجديد مباشرة
 import {
   getRecentNotifications,
   getUnreadNotificationCount,
   markAsRead,
   markAllAsRead,
   deleteNotification,
-} from "../Api/notificationApi";
+} from "../../Api/notificationApi";
 
 interface Notification {
   _id: string;

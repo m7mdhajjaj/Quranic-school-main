@@ -9,7 +9,8 @@
 export const BACKEND_PORT = import.meta.env.VITE_BACKEND_PORT || "5005";
 export const BACKEND_HOST = import.meta.env.VITE_BACKEND_HOST || "localhost";
 export const API_BASE_URL = import.meta.env.VITE_API_URL || `http://${BACKEND_HOST}:${BACKEND_PORT}`;
-export const API_URL = `${API_BASE_URL}/api`;
+// Use relative URL for API calls - Vite proxy will handle forwarding to backend
+export const API_URL = '/api';
 export const SOCKET_URL = API_BASE_URL;
 
 // Application Configuration

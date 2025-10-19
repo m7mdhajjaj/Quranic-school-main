@@ -1,20 +1,18 @@
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { useEffect, useState, useRef } from 'react';
-import type { ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { getHeroImage, uploadHeroImage } from '../Api/settingsApi';
-import { API_BASE_URL } from '../config/config';
+import { getHeroImage, uploadHeroImage } from '../Api/uploadApi';
+import { showSuccessMessage, showErrorMessage } from '../utils/sweetalertUtils';
 
 const Home = () => {
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
-
-  // State for the hero image
-  const [heroImage, setHeroImage] = useState<string>(
-    '/src/images/officialPhoto.jpg'
-  );
+  
+  // Hero Image State
+  const [heroImage, setHeroImage] = useState<string | null>(null);
+  const [heroImageLoading, setHeroImageLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -28,70 +26,68 @@ const Home = () => {
     });
   }, []);
 
-  // المستخدم يتم تحميله تلقائياً من useAuth
-
-  // Load hero image from database
+  // Load Hero Image
   useEffect(() => {
     const fetchHeroImage = async () => {
+      setHeroImageLoading(true);
       try {
         const data = await getHeroImage();
-        if (data.success && data.heroImage) {
-          // If it's a relative path starting with /uploads/, prepend the base URL
-          if (data.heroImage.startsWith('/uploads/')) {
-            setHeroImage(`${API_BASE_URL}${data.heroImage}`);
-          } else {
-            setHeroImage(data.heroImage);
-          }
+        if (data.success && data.url) {
+          setHeroImage(data.url);
         }
       } catch (error) {
         console.error('Error fetching hero image:', error);
-        // Keep default image on error
+      } finally {
+        setHeroImageLoading(false);
       }
     };
 
     fetchHeroImage();
   }, []);
 
-  const isTeacherOrAdmin =
-    currentUser?.role === 'teacher' || currentUser?.role === 'admin';
+  // Check if user is teacher or admin
+  const isTeacherOrAdmin = currentUser?.role === 'teacher' || currentUser?.role === 'admin';
 
-  // Function to handle image change
-  const handleImageChange = async (event: ChangeEvent<HTMLInputElement>) => {
+  // Handle Hero Image Upload
+  const handleHeroImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      showErrorMessage('خطأ في نوع الملف', 'يرجى اختيار صورة صالحة (PNG, JPG, JPEG)');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      showErrorMessage('خطأ في حجم الملف', 'حجم الصورة يجب أن يكون أقل من 5 ميجابايت');
+      return;
+    }
 
     setUploading(true);
 
     try {
-      // Create FormData for file upload
-      const formData = new FormData();
-      formData.append('heroImage', file);
+      const data = await uploadHeroImage(file);
 
-      // Upload to server
-      const data = await uploadHeroImage(formData);
-
-      if (data.success && data.heroImage) {
-        // Update the image with the server URL
-        const imageUrl = `${API_BASE_URL}${data.heroImage}`;
-        setHeroImage(imageUrl);
-        console.log('Hero image updated successfully:', imageUrl);
+      if (data.success && data.url) {
+        setHeroImage(data.url);
+        showSuccessMessage('تم التحديث بنجاح', 'تم تحديث صورة الهيرو بنجاح');
       } else {
-        console.error('Failed to upload hero image');
-        alert('فشل في رفع الصورة. يرجى المحاولة مرة أخرى.');
+        showErrorMessage('فشل في الرفع', 'حدث خطأ أثناء رفع الصورة. يرجى المحاولة مرة أخرى');
       }
     } catch (error) {
       console.error('Error uploading hero image:', error);
-      alert('حدث خطأ أثناء رفع الصورة. يرجى المحاولة مرة أخرى.');
+      showErrorMessage('خطأ في الاتصال', 'حدث خطأ أثناء رفع الصورة. يرجى التحقق من الاتصال بالإنترنت');
     } finally {
       setUploading(false);
-      // Reset the file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     }
   };
 
-  // Function to trigger file input click
+  // Trigger file input click
   const handleEditButtonClick = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
@@ -160,17 +156,36 @@ const Home = () => {
           {/* Image */}
           <div className="w-full md:w-1/2 p-6 md:p-0" data-aos="fade-left">
             <div className="bg-indigo-900 rounded-tl-[80px] rounded-bl-2xl overflow-hidden relative h-[400px]">
-              <img
-                src={heroImage}
-                alt="مدرسة القرآن"
-                className="w-full h-full object-cover brightness-110 contrast-105"
-              />
-              <div className="absolute inset-0 bg-indigo-900/10"></div>
-              {/* Edit button */}
-              {isTeacherOrAdmin && (
+              {heroImageLoading ? (
+                // Loading Skeleton
+                <div className="w-full h-full bg-gradient-to-br from-indigo-800 via-indigo-700 to-indigo-900 animate-pulse">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/10 to-teal-500/10 animate-pulse"></div>
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                    <div className="w-20 h-20 border-4 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  </div>
+                </div>
+              ) : heroImage ? (
+                <>
+                  <img
+                    src={heroImage}
+                    alt="مدرسة القرآن"
+                    className="w-full h-full object-cover brightness-110 contrast-105"
+                  />
+                  <div className="absolute inset-0 bg-indigo-900/10"></div>
+                </>
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-indigo-800 to-indigo-900 flex items-center justify-center">
+                  <svg className="w-24 h-24 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+              )}
+              
+              {/* Edit button for teachers/admins */}
+              {isTeacherOrAdmin && !heroImageLoading && (
                 <button
-                  className="absolute top-4 right-4 bg-white/80 hover:bg-white text-emerald-700 p-2 rounded-full shadow-md transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={uploading ? 'جاري الرفع...' : 'تعديل الصورة'}
+                  className="absolute top-4 right-4 bg-white/90 hover:bg-white text-emerald-700 p-3 rounded-full shadow-lg transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-sm"
+                  title={uploading ? 'جاري الرفع...' : 'تعديل صورة الهيرو'}
                   onClick={handleEditButtonClick}
                   disabled={uploading}
                 >
@@ -213,15 +228,15 @@ const Home = () => {
                   )}
                 </button>
               )}
+
               {/* Hidden file input */}
               <input
                 type="file"
                 ref={fileInputRef}
-                onChange={handleImageChange}
+                onChange={handleHeroImageChange}
                 accept="image/*"
                 className="hidden"
-                aria-label="تحميل صورة البطل"
-                title="تحميل صورة البطل"
+                aria-label="رفع صورة الهيرو"
               />
             </div>
           </div>

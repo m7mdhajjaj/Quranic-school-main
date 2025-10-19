@@ -18,7 +18,7 @@ const {
 const { uploadAvatar } = require("../config/multer");
 
 // ========== رفع أفاتار المعلّم (Cloudinary) - UPDATED ==========
-router.post("/:id/avatar", uploadAvatar.single("avatar"), async (req, res) => {
+router.post("/:id/avatar", protect, uploadAvatar.single("avatar"), async (req, res) => {
   try {
     const teacher = await Teacher.findById(req.params.id);
     if (!teacher) return res.status(404).json({ success: false, message: "المعلم غير موجود" });
@@ -70,7 +70,7 @@ router.post("/:id/avatar", uploadAvatar.single("avatar"), async (req, res) => {
 });
 
 // ========== عرض رابط صورة أفاتار المعلّم ==========
-router.get("/:id/avatar", async (req, res) => {
+router.get("/:id/avatar", protect, async (req, res) => {
   try {
     const teacher = await Teacher.findById(req.params.id).select("avatar");
     if (!teacher) {
@@ -86,7 +86,7 @@ router.get("/:id/avatar", async (req, res) => {
 });
 
 // ========== حذف أفاتار المعلّم ==========
-router.delete("/:id/avatar", async (req, res) => {
+router.delete("/:id/avatar", protect, async (req, res) => {
   try {
     const teacher = await Teacher.findById(req.params.id);
     if (!teacher)
@@ -96,7 +96,7 @@ router.delete("/:id/avatar", async (req, res) => {
       // Delete from Cloudinary
       await cloudinary.uploader.destroy(teacher.avatar.publicId);
 
-      // Remove from database
+      // Remove avatar completely - Avatar component will show initials
       await Teacher.updateOne(
         { _id: req.params.id },
         { $unset: { avatar: "" } }

@@ -45,41 +45,55 @@ const validateTeacherData = (req, res, next) => {
 
     const isNewTeacher = req.method === 'POST';
 
-    // التحقق من الاسم الأول
-    if (!firstName || typeof firstName !== 'string' || firstName.trim().length === 0) {
+    // التحقق من الاسم الأول - مطلوب فقط للمعلمين الجدد
+    if (isNewTeacher && (!firstName || typeof firstName !== 'string' || firstName.trim().length === 0)) {
       errors.firstName = 'الاسم الأول مطلوب';
+    } else if (firstName !== undefined && (typeof firstName !== 'string' || firstName.trim().length === 0)) {
+      errors.firstName = 'الاسم الأول يجب أن يكون نصاً غير فارغ';
     }
 
-    // التحقق من اسم العائلة
-    if (!lastName || typeof lastName !== 'string' || lastName.trim().length === 0) {
+    // التحقق من اسم العائلة - مطلوب فقط للمعلمين الجدد
+    if (isNewTeacher && (!lastName || typeof lastName !== 'string' || lastName.trim().length === 0)) {
       errors.lastName = 'اسم العائلة مطلوب';
+    } else if (lastName !== undefined && (typeof lastName !== 'string' || lastName.trim().length === 0)) {
+      errors.lastName = 'اسم العائلة يجب أن يكون نصاً غير فارغ';
     }
 
-    // التحقق من رقم الهوية
-    if (!idNumber || typeof idNumber !== 'string') {
+    // التحقق من رقم الهوية - مطلوب فقط للمعلمين الجدد
+    if (isNewTeacher && (!idNumber || typeof idNumber !== 'string')) {
       errors.idNumber = 'رقم الهوية مطلوب';
-    } else {
-      const cleanIdNumber = idNumber.replace(/\s+/g, '');
-      if (!/^\d{9}$/.test(cleanIdNumber)) {
-        errors.idNumber = 'رقم الهوية يجب أن يتكون من 9 أرقام فقط';
+    } else if (idNumber !== undefined) {
+      if (typeof idNumber !== 'string') {
+        errors.idNumber = 'رقم الهوية يجب أن يكون نصاً';
+      } else {
+        const cleanIdNumber = idNumber.replace(/\s+/g, '');
+        if (!/^\d{9}$/.test(cleanIdNumber)) {
+          errors.idNumber = 'رقم الهوية يجب أن يتكون من 9 أرقام فقط';
+        }
       }
     }
 
-    // التحقق من رقم الهاتف
-    if (!phoneNumber || typeof phoneNumber !== 'string') {
+    // التحقق من رقم الهاتف - مطلوب فقط للمعلمين الجدد
+    if (isNewTeacher && (!phoneNumber || typeof phoneNumber !== 'string')) {
       errors.phoneNumber = 'رقم الهاتف مطلوب';
-    } else {
-      const cleanPhone = phoneNumber.replace(/\s+/g, '');
-      if (!/^05\d{8}$/.test(cleanPhone)) {
-        errors.phoneNumber = 'الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام';
+    } else if (phoneNumber !== undefined) {
+      if (typeof phoneNumber !== 'string') {
+        errors.phoneNumber = 'رقم الهاتف يجب أن يكون نصاً';
+      } else {
+        const cleanPhone = phoneNumber.replace(/\s+/g, '');
+        if (!/^05\d{8}$/.test(cleanPhone)) {
+          errors.phoneNumber = 'الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام';
+        }
       }
     }
 
-    // التحقق من تاريخ الميلاد
-    if (!birthDate || typeof birthDate !== 'string') {
+    // التحقق من تاريخ الميلاد - مطلوب فقط للمعلمين الجدد
+    if (isNewTeacher && (!birthDate || typeof birthDate !== 'string')) {
       errors.birthDate = 'تاريخ الميلاد مطلوب';
-    } else {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
+    } else if (birthDate !== undefined) {
+      if (typeof birthDate !== 'string') {
+        errors.birthDate = 'تاريخ الميلاد يجب أن يكون نصاً';
+      } else if (!/^\d{4}-\d{2}-\d{2}/.test(birthDate)) {
         errors.birthDate = 'صيغة التاريخ يجب أن تكون YYYY-MM-DD';
       } else {
         const birthDateObj = new Date(birthDate);
@@ -89,13 +103,17 @@ const validateTeacherData = (req, res, next) => {
       }
     }
 
-    // التحقق من البريد الإلكتروني
-    if (!email || typeof email !== 'string') {
+    // التحقق من البريد الإلكتروني - مطلوب فقط للمعلمين الجدد
+    if (isNewTeacher && (!email || typeof email !== 'string')) {
       errors.email = 'البريد الإلكتروني مطلوب';
-    } else {
-      const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
-      if (!emailRegex.test(email.trim())) {
-        errors.email = 'صيغة البريد الإلكتروني غير صحيحة';
+    } else if (email !== undefined) {
+      if (typeof email !== 'string') {
+        errors.email = 'البريد الإلكتروني يجب أن يكون نصاً';
+      } else {
+        const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
+        if (!emailRegex.test(email.trim())) {
+          errors.email = 'صيغة البريد الإلكتروني غير صحيحة';
+        }
       }
     }
 

@@ -127,7 +127,7 @@ const recordEditLocal = (field: 'birthDate' | 'gender', userId: string) => {
 // ============================
 const Profile: React.FC = () => {
   const navigate = useNavigate();
-  const { user: authUser } = useAuth();
+  const { user: authUser, updateUser: updateAuthUser } = useAuth();
 
   // 🔌 Socket Connection
   const { isConnected: socketConnected, lastUpdate: socketLastUpdate, socketId } = useProfileSocket();
@@ -274,6 +274,11 @@ const Profile: React.FC = () => {
         setUser({ ...user, avatar: undefined });
       }
       
+      // Remove avatar from AuthContext - Avatar component will show initials
+      updateAuthUser({
+        avatar: undefined
+      });
+      
       await showSuccessMessage('تم الحذف!', 'تم حذف الصورة الشخصية بنجاح');
     } catch (error: unknown) {
       const axiosError = error as { response?: { data?: { message?: string } } };
@@ -282,12 +287,14 @@ const Profile: React.FC = () => {
     }
   };
 
-  const handleFieldBlur = (fieldName: string, value: string | undefined) => {
-    const result = validateField(fieldName, value);
-    if (!result.isValid) {
-      setFieldErrors(prev => ({ ...prev, [fieldName]: result.error }));
+  const handleFieldBlur = async (fieldName: string, value: string | undefined) => {
+    if (!user) return;
+    
+    const errorMessage = await validateField(fieldName, value, user.role as 'student' | 'teacher' | 'admin');
+    if (errorMessage) {
+      setFieldErrors((prev: FieldErrors) => ({ ...prev, [fieldName]: errorMessage }));
     } else {
-      setFieldErrors(prev => {
+      setFieldErrors((prev: FieldErrors) => {
         const newErrors = { ...prev };
         delete newErrors[fieldName as keyof FieldErrors];
         return newErrors;
@@ -302,7 +309,7 @@ const Profile: React.FC = () => {
     setFieldErrors({});
     
     // Validate profile data
-    const validation = validateProfileData({
+    const validation = await validateProfileData({
       firstName: edited.firstName,
       fatherName: edited.fatherName,
       grandFatherName: edited.grandFatherName,
@@ -314,6 +321,7 @@ const Profile: React.FC = () => {
       gender: edited.gender,
       residence: edited.residence,
       idNumber: edited.idNumber,
+      role: user.role || 'student',
     });
 
     if (!validation.isValid) {
@@ -335,8 +343,12 @@ const Profile: React.FC = () => {
       residence: edited.residence,
       idNumber: edited.idNumber,
       phoneNumber: edited.phoneNumber,
-      groups: edited.groups,
     };
+
+    // إضافة groups فقط إذا كان المستخدم معلم وgroups موجودة
+    if (user.role === 'teacher' && edited.groups !== undefined) {
+      payload.groups = edited.groups;
+    }
 
     const changingBirth = edited.birthDate !== user.birthDate;
     const changingGender = (edited.gender ?? '') !== (user.gender ?? '');
@@ -374,14 +386,24 @@ const Profile: React.FC = () => {
       if (avatarFile) {
         const fd = new FormData();
         fd.append('avatar', avatarFile);
-        await uploadUserAvatar(endpoint, user._id, fd);
+        const uploadResponse = await uploadUserAvatar(endpoint, user._id, fd);
         
+        // Update avatar URL in state
         const newUrl = await fetchAvatarBlobUrl(endpoint, user._id);
         setAvatarUrl((prev) => {
           if (prev && prev.startsWith('blob:')) URL.revokeObjectURL(prev);
           return newUrl;
         });
         setAvatarFile(null);
+        
+        // Update avatar in AuthContext to reflect in header
+        if (uploadResponse?.avatarUrl) {
+          updateAuthUser({
+            avatar: {
+              url: uploadResponse.avatarUrl
+            }
+          });
+        }
       }
 
       setUser({ ...user, ...payload });
@@ -718,7 +740,7 @@ const Profile: React.FC = () => {
                           setEdited((p) => (p ? { ...p, firstName: v } : p))
                         }
                         onBlur={() => handleFieldBlur('firstName', edited?.firstName)}
-                        error={fieldErrors.firstName}
+                        error={fieldErrors?.['firstName']}
                         fieldName="firstName"
                       />
                       <TextInput
@@ -728,7 +750,7 @@ const Profile: React.FC = () => {
                           setEdited((p) => (p ? { ...p, fatherName: v } : p))
                         }
                         onBlur={() => handleFieldBlur('fatherName', edited?.fatherName)}
-                        error={fieldErrors.fatherName}
+                        error={fieldErrors?.['fatherName']}
                         fieldName="fatherName"
                       />
                       <TextInput
@@ -740,7 +762,7 @@ const Profile: React.FC = () => {
                           )
                         }
                         onBlur={() => handleFieldBlur('grandFatherName', edited?.grandFatherName)}
-                        error={fieldErrors.grandFatherName}
+                        error={fieldErrors?.['grandFatherName']}
                         fieldName="grandFatherName"
                       />
                       <TextInput
@@ -750,7 +772,7 @@ const Profile: React.FC = () => {
                           setEdited((p) => (p ? { ...p, lastName: v } : p))
                         }
                         onBlur={() => handleFieldBlur('lastName', edited?.lastName)}
-                        error={fieldErrors.lastName}
+                        error={fieldErrors?.['lastName']}
                         fieldName="lastName"
                       />
                     </div>
@@ -777,7 +799,7 @@ const Profile: React.FC = () => {
                         setEdited((p) => (p ? { ...p, idNumber: numbersOnly } : p));
                       }}
                       onBlur={() => handleFieldBlur('idNumber', edited?.idNumber)}
-                      error={fieldErrors.idNumber}
+                      error={fieldErrors?.['idNumber']}
                       placeholder="رقم الهوية (9 أرقام)"
                       maxLength={9}
                     />
@@ -812,7 +834,7 @@ const Profile: React.FC = () => {
                           )
                         }
                         onBlur={() => handleFieldBlur('birthDate', edited?.birthDate)}
-                        error={fieldErrors.birthDate}
+                        error={fieldErrors?.['birthDate']}
                       />
                       {remainingBirth < 2 && (
                         <div className="flex items-center gap-2 text-xs bg-amber-50 text-amber-700 px-3 py-2 rounded-lg border border-amber-200">
@@ -853,7 +875,7 @@ const Profile: React.FC = () => {
                         setEdited((p) => (p ? { ...p, residence: v } : p))
                       }
                       onBlur={() => handleFieldBlur('residence', edited?.residence)}
-                      error={fieldErrors.residence}
+                      error={fieldErrors?.['residence']}
                     />
                   ) : (
                     nv(user.residence)
@@ -889,7 +911,7 @@ const Profile: React.FC = () => {
                         setEdited((p) => (p ? { ...p, phoneNumber: numbersOnly } : p));
                       }}
                       onBlur={() => handleFieldBlur('phoneNumber', edited?.phoneNumber)}
-                      error={fieldErrors.phoneNumber}
+                      error={fieldErrors?.['phoneNumber']}
                       maxLength={10}
                     />
                   ) : (
@@ -913,7 +935,7 @@ const Profile: React.FC = () => {
                         setEdited((p) => (p ? { ...p, motherName: v } : p))
                       }
                       onBlur={() => handleFieldBlur('motherName', edited?.motherName)}
-                      error={fieldErrors.motherName}
+                      error={fieldErrors?.['motherName']}
                     />
                   ) : (
                     nv(user.motherName)

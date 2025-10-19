@@ -1,11 +1,11 @@
 import { NavLink, useNavigate, useLocation, Link } from "react-router-dom";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import NotificationHeader from "../NotificationHeader";
+import NotificationHeader from "../Notifications/NotificationHeader";
 import Avatar from "../Avatar";
 import { useAuth } from "../../hooks/useAuth";
 import ChangePasswordModal from "../../pages/Auth/ChangePass";
+import { getLogo } from "../../Api/uploadApi";
 import { io, Socket } from "socket.io-client";
-import api from "../../Api/api";
 import { showLogoutConfirmation } from "../../utils/logoutUtils";
 import { API_BASE_URL } from "../../config/config";
 import {
@@ -41,19 +41,36 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [socket, setSocket] = useState<Socket | null>(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [logoLoaded, setLogoLoaded] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] =
     useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [logoLoading, setLogoLoading] = useState(true);
 
   const profileMenuRef = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
 
   const isTeacherOrAdmin =
     currentUser?.role === "teacher" || currentUser?.role === "admin";
+
+  // Load Logo
+  useEffect(() => {
+    const fetchLogo = async () => {
+      setLogoLoading(true);
+      try {
+        const data = await getLogo();
+        if (data.success && data.url) {
+          setLogoUrl(data.url);
+        }
+      } catch (error) {
+        console.error('Error fetching logo:', error);
+      } finally {
+        setLogoLoading(false);
+      }
+    };
+
+    fetchLogo();
+  }, []);
 
   const handleLogout = useCallback(async () => {
     const confirmed = await showLogoutConfirmation({
@@ -117,12 +134,6 @@ const Header = () => {
       ) {
         setProfileMenuOpen(false);
       }
-      if (
-        searchRef.current &&
-        !searchRef.current.contains(event.target as Node)
-      ) {
-        setSearchOpen(false);
-      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -133,7 +144,6 @@ const Header = () => {
       if (event.key === "Escape") {
         setProfileMenuOpen(false);
         setIsMenuOpen(false);
-        setSearchOpen(false);
       }
     };
     document.addEventListener("keydown", handleEscKey);
@@ -285,13 +295,22 @@ const Header = () => {
               to="/"
               className="flex items-center gap-3 hover:opacity-90 transition-all duration-300 group flex-shrink-0">
               <div className="relative w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-2xl bg-white/20 backdrop-blur-md border-2 border-white/30 flex items-center justify-center shadow-xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-6">
-                <img
-                  src="/src/images/logo.jpg"
-                  alt="Logo"
-                  className="w-9 h-9 md:w-10 md:h-10 lg:w-12 lg:h-12 rounded-full object-cover"
-                  onLoad={() => setLogoLoaded(true)}
-                />
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full animate-pulse-ring"></div>
+                {logoLoading ? (
+                  // Loading Skeleton
+                  <div className="w-9 h-9 md:w-10 md:h-10 lg:w-12 lg:h-12 rounded-full bg-gradient-to-br from-white/40 to-white/20 animate-pulse"></div>
+                ) : logoUrl ? (
+                  <img
+                    src={logoUrl}
+                    alt="Logo"
+                    className="w-9 h-9 md:w-10 md:h-10 lg:w-12 lg:h-12 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-9 h-9 md:w-10 md:h-10 lg:w-12 lg:h-12 rounded-full bg-gradient-to-br from-white/60 to-white/40 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                )}
               </div>
               <div className="hidden sm:block">
                 <h1 className="text-lg md:text-xl lg:text-2xl font-bold text-white drop-shadow-lg leading-tight">
