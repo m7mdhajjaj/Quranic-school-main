@@ -10,7 +10,7 @@ import {
   markAsRead,
 } from '../../Api/notificationApi';
 import { getLogo } from '../../Api/uploadApi';
-import ThemeToggle from '../UI/ThemeToggle';
+import ThemeToggle from '../Theme/ThemeToggle';
 
 interface AdminNotification {
   _id?: string;

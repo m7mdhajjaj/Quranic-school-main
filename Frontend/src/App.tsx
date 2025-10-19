@@ -6,97 +6,99 @@
 // of headers and footers based on user roles and current routes.
 // ============================================================================
 
-import "./styles/App.css";
+import './styles/App.css';
 
 // ============================================================================
 // External Dependencies
 // ============================================================================
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import React from "react";
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import React from 'react';
 
 // ============================================================================
 // Contexts & Hooks
 // ============================================================================
-import { AuthProvider } from "./contexts/AuthContext";
-import { UserStatusProvider } from "./contexts/UserStatusContext";
+import { AuthProvider } from './contexts/AuthContext';
+import { UserStatusProvider } from './contexts/UserStatusContext';
+import { PrayerProvider } from './contexts/PrayerContext';
 // import { SocketProvider } from "./contexts/SocketContext"; // ❌ DELETED - استخدم النظام الجديد في Socket/
-import { useAuth } from "./hooks/useAuth";
-import { useFirebaseMessaging } from "./hooks/useFirebaseMessaging"; // ✅ Firebase Notifications
+import { useAuth } from './hooks/useAuth';
+import { useFirebaseMessaging } from './hooks/useFirebaseMessaging'; // ✅ Firebase Notifications
 
 // ============================================================================
 // Layout Components
 // ============================================================================
-import Header from "./components/Headers/Header";
-import AdminHeader from "./components/Headers/AdminHeader";
-import Footer from "./components/Footer";
+import Header from './components/Headers/Header';
+import AdminHeader from './components/Headers/AdminHeader';
+import Footer from './components/Footer';
+import PrayerAlert from './components/PrayerAlert';
 
 // ============================================================================
 // Page Components - General
 // ============================================================================
-import Home from "./pages/Home";
-import Login from "./pages/Auth/Login";
-import Profile from "./pages/Profile";
-import NotFound from "./pages/NotFound";
-import Privacy from "./pages/Privacy";
-import Terms from "./pages/Terms";
-import Contact from "./pages/Contact";
+import Home from './pages/Home';
+import Login from './pages/Auth/Login';
+import Profile from './pages/Profile';
+import NotFound from './pages/NotFound';
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
+import Contact from './pages/Contact';
 
 // ============================================================================
 // Page Components - Academic
 // ============================================================================
-import Goals from "./pages/Goals";
-import DailyMarks from "./pages/DailyMarks";
-import Arrangement from "./pages/Arrangement";
-import Test from "./pages/Test";
-import ExamSchedule from "./pages/ExamSchedule";
-import Reports from "./pages/Reports";
-import Timetable from "./pages/Timetable";
-import MyStudents from "./pages/Teacher/MyStudents";
+import Goals from './pages/Goals';
+import DailyMarks from './pages/DailyMarks';
+import Arrangement from './pages/Arrangement';
+import Test from './pages/Test';
+import ExamSchedule from './pages/ExamSchedule';
+import Reports from './pages/Reports';
+import Timetable from './pages/Timetable';
+import MyStudents from './pages/Teacher/MyStudents';
 
 // ============================================================================
 // Page Components - Communication & Activities
 // ============================================================================
-import News from "./pages/news";
+import News from './pages/news';
 // import Chat from "./pages/Chat";
-import Activities from "./pages/Activities";
+import Activities from './pages/Activities';
 
 // ============================================================================
 // Page Components - Attendance & Management
 // ============================================================================
-import Absence from "./pages/Absence";
+import Absence from './pages/Absence';
 
 // ============================================================================
 // Page Components - Islamic Resources
 // ============================================================================
-import PrayerTimes from "./pages/PrayerTimes";
-import QuranPage from "./pages/QuranPage";
-import QuranAudio from "./pages/QuranAudio";
-import Azkar from "./pages/Azkar";
+import PrayerTimes from './pages/PrayerTimes';
+import QuranPage from './pages/QuranPage';
+import QuranAudio from './pages/QuranAudio';
+import Azkar from './pages/Azkar';
 
 // ============================================================================
 // Page Components - Warnings & Discipline
 // ============================================================================
-import Warnings from "./pages/Warnings";
+import Warnings from './pages/Warnings';
 
 // ============================================================================
 // Page Components - Points Game
 // ============================================================================
-import PointsGame from "./pages/PointsGame";
+import PointsGame from './pages/PointsGame';
 
 // ============================================================================
 // Page Components - Admin
 // ============================================================================
-import AdminDashboard from "./pages/Admin/Dashboard";
+import AdminDashboard from './pages/Admin/Dashboard';
 // import AdminManagement from "./pages/Managments/AdminManagement";
-import StudentsManagement from "./pages/Admin/StudentsManagement";
-import TeachersManagement from "./pages/Admin/TeachersManagement";
-import GroupManagement from "./pages/Admin/GroupManagement";
+import StudentsManagement from './pages/Admin/StudentsManagement';
+import TeachersManagement from './pages/Admin/TeachersManagement';
+import GroupManagement from './pages/Admin/GroupManagement';
 
 // ============================================================================
 // Other Components
 // ============================================================================
-import Soon from "./components/Soon";
-import NotificationPermissionPrompt from "./components/Notifications/NotificationPermissionPrompt";
+import Soon from './components/Soon';
+import NotificationPermissionPrompt from './components/Notifications/NotificationPermissionPrompt';
 
 // ============================================================================
 // Route Configurations
@@ -105,7 +107,7 @@ import NotificationPermissionPrompt from "./components/Notifications/Notificatio
 /**
  * Routes that should hide the footer
  */
-const ROUTES_WITHOUT_FOOTER = ["/login", "/chat", "/quran", "/quran-audio"];
+const ROUTES_WITHOUT_FOOTER = ['/login', '/chat', '/quran', '/quran-audio'];
 
 /**
  * Check if current path should hide footer
@@ -127,11 +129,14 @@ const AdminRoutes: React.FC = () => {
   const location = useLocation();
 
   // Determine layout visibility based on current route
-  const isLoginPage = location.pathname === "/login";
+  const isLoginPage = location.pathname === '/login';
   const shouldShowFooter = !shouldHideFooter(location.pathname);
 
   return (
     <div className="app-content">
+      {/* Prayer Time Alert - Global */}
+      <PrayerAlert />
+
       {/* Header - Hidden only on login page */}
       {!isLoginPage && <AdminHeader />}
 
@@ -183,11 +188,14 @@ const TeacherRoutes: React.FC = () => {
   const location = useLocation();
 
   // Determine layout visibility based on current route
-  const isLoginPage = location.pathname === "/login";
+  const isLoginPage = location.pathname === '/login';
   const shouldShowFooter = !shouldHideFooter(location.pathname);
 
   return (
     <div className="app-content">
+      {/* Prayer Time Alert - Global */}
+      <PrayerAlert />
+
       {/* Header - Hidden only on login page */}
       {!isLoginPage && <Header />}
 
@@ -261,11 +269,14 @@ const StudentRoutes: React.FC = () => {
   const location = useLocation();
 
   // Determine layout visibility based on current route
-  const isLoginPage = location.pathname === "/login";
+  const isLoginPage = location.pathname === '/login';
   const shouldShowFooter = !shouldHideFooter(location.pathname);
 
   return (
     <div className="app-content">
+      {/* Prayer Time Alert - Global */}
+      <PrayerAlert />
+
       {/* Header - Hidden only on login page */}
       {!isLoginPage && <Header />}
 
@@ -337,10 +348,10 @@ const StudentRoutes: React.FC = () => {
  */
 function AppContent() {
   const { isLoading, isAuthenticated, user } = useAuth();
-  
+
   // ====== Firebase Cloud Messaging - Initialize notifications ======
   const { isPermissionGranted, lastNotification } = useFirebaseMessaging();
-  
+
   // Optional: Log notification status for debugging
   React.useEffect(() => {
     if (isPermissionGranted) {
@@ -380,13 +391,13 @@ function AppContent() {
   // Route to appropriate component based on user role
   let routeComponent;
   switch (user?.role) {
-    case "admin":
+    case 'admin':
       routeComponent = <AdminRoutes />;
       break;
-    case "teacher":
+    case 'teacher':
       routeComponent = <TeacherRoutes />;
       break;
-    case "student":
+    case 'student':
       routeComponent = <StudentRoutes />;
       break;
     default:
@@ -416,7 +427,8 @@ function AppContent() {
  * - BrowserRouter: Enables routing
  * - AuthProvider: Manages authentication state
  * - UserStatusProvider: Manages user online/offline status
- * 
+ * - PrayerProvider: Manages prayer time notifications
+ *
  * NOTE: SocketProvider (القديم) تم حذفه ✅
  * استخدم النظام الجديد Socket/SocketManager
  * كل صفحة تستخدم الـ hook المناسب (useDashboardSocket, useStudentsSocket, etc.)
@@ -426,7 +438,9 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <UserStatusProvider>
-          <AppContent />
+          <PrayerProvider>
+            <AppContent />
+          </PrayerProvider>
         </UserStatusProvider>
       </AuthProvider>
     </BrowserRouter>

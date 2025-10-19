@@ -24,6 +24,7 @@ export default {
         'scale-in': 'scale-in 0.3s ease-out',
         'slide-in': 'slide-in 0.3s ease-out',
         'ping': 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite',
+        'slideDown': 'slideDown 0.3s ease-out',
         
         // New Loading Component animations
         'spin-fast': 'spin-fast 0.8s linear infinite',
@@ -40,6 +41,10 @@ export default {
         shimmer: {
           '0%': { transform: 'translateX(-100%)' },
           '100%': { transform: 'translateX(100%)' }
+        },
+        slideDown: {
+          'from': { opacity: '0', transform: 'translateY(-10px)' },
+          'to': { opacity: '1', transform: 'translateY(0)' }
         },
         'slide-in-right': {
           'from': { transform: 'translateX(-20px)', opacity: '0' },
@@ -97,6 +102,29 @@ export default {
         return acc;
       }, {});
       addUtilities(utilities);
+    },
+    // Plugin for line-clamp utilities
+    function({ addUtilities }) {
+      addUtilities({
+        '.line-clamp-1': {
+          'overflow': 'hidden',
+          'display': '-webkit-box',
+          '-webkit-box-orient': 'vertical',
+          '-webkit-line-clamp': '1',
+        },
+        '.line-clamp-2': {
+          'overflow': 'hidden',
+          'display': '-webkit-box',
+          '-webkit-box-orient': 'vertical',
+          '-webkit-line-clamp': '2',
+        },
+        '.line-clamp-3': {
+          'overflow': 'hidden',
+          'display': '-webkit-box',
+          '-webkit-box-orient': 'vertical',
+          '-webkit-line-clamp': '3',
+        },
+      });
     }
   ],
 }

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import "../../styles/NotificationHeader.css";
 import { socketManager } from "../../Socket/SocketManager"; // ✅ استخدام النظام الجديد مباشرة
 import {
   getRecentNotifications,
@@ -438,90 +437,84 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
 
   return (
     <div
-      className={`notification-container ${showDropdown ? "mobile-open" : ""}`}
-      ref={dropdownRef}>
+      className={`relative ${showDropdown ? "z-50" : ""}`}
+      ref={dropdownRef}
+      dir="rtl">
       <button
         type="button"
-        className="notification-button"
+        className="relative cursor-pointer transition-transform duration-300 hover:scale-110 text-2xl"
         onClick={() => setShowDropdown(!showDropdown)}
         title="الإشعارات"
         aria-label="فتح/إغلاق الإشعارات">
         🔔
         {stats.unreadCount > 0 && (
-          <span className="notification-badge">
+          <span className="absolute -top-2 -left-2 bg-gradient-to-br from-red-500 to-red-600 text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center shadow-lg shadow-red-500/40 animate-pulse">
             {stats.unreadCount > 99 ? "99+" : stats.unreadCount}
           </span>
         )}
       </button>
 
       {showDropdown && (
-        <div className="notification-dropdown">
-          <div className="notification-header">
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <h3>الإشعارات</h3>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "4px",
-                  fontSize: "11px",
-                  color: isConnected ? "#10B981" : "#F59E0B",
-                }}
-                title={
-                  isConnected
-                    ? "تحديث فوري عبر Socket"
-                    : "تحديث تلقائي كل دقيقة"
-                }>
+        <div className="absolute top-full left-0 sm:left-0 mt-2 w-screen sm:w-96 max-w-[95vw] sm:max-w-none max-h-[80vh] sm:max-h-[500px] bg-white rounded-xl shadow-2xl overflow-hidden z-[1000] animate-slideDown -ml-4 sm:ml-0">
+          <div className="p-3 sm:p-4 border-b border-gray-100 bg-gradient-to-l from-emerald-50 to-teal-50">
+            <div className="flex items-center justify-between gap-2 sm:gap-3 flex-wrap">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <h3 className="text-base sm:text-lg font-bold text-gray-800 truncate">الإشعارات</h3>
                 <div
-                  style={{
-                    width: "6px",
-                    height: "6px",
-                    borderRadius: "50%",
-                    backgroundColor: isConnected ? "#10B981" : "#F59E0B",
-                    animation: "pulse 2s infinite",
-                  }}
-                />
-                <span>{isConnected ? "فوري" : "تلقائي"}</span>
+                  className={`flex items-center gap-1 text-xs ${
+                    isConnected ? "text-emerald-600" : "text-amber-600"
+                  }`}
+                  title={
+                    isConnected
+                      ? "تحديث فوري عبر Socket"
+                      : "تحديث تلقائي كل دقيقة"
+                  }>
+                  <div
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      isConnected ? "bg-emerald-500" : "bg-amber-500"
+                    } animate-pulse`}></div>
+                  <span className="hidden sm:inline">{isConnected ? "فوري" : "تلقائي"}</span>
+                </div>
               </div>
-            </div>
 
-            <div className="notification-actions">
-              <button
-                className="mark-all-btn"
-                onClick={markAllAsReadLocal}
-                disabled={stats.unreadCount === 0 || isMarkingAll}
-                title={
-                  stats.unreadCount === 0
-                    ? "لا توجد إشعارات غير مقروءة"
-                    : "تحديد جميع الإشعارات كمقروءة"
-                }
-                aria-label="تحديد جميع الإشعارات كمقروءة">
-                {isMarkingAll ? "جارٍ التحديد..." : "تحديد الكل مقروء"}
-              </button>
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <button
+                  className="text-xs sm:text-sm px-2 sm:px-3 py-1.5 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                  onClick={markAllAsReadLocal}
+                  disabled={stats.unreadCount === 0 || isMarkingAll}
+                  title={
+                    stats.unreadCount === 0
+                      ? "لا توجد إشعارات غير مقروءة"
+                      : "تحديد جميع الإشعارات كمقروءة"
+                  }
+                  aria-label="تحديد جميع الإشعارات كمقروءة">
+                  {isMarkingAll ? "جارٍ..." : <span className="hidden sm:inline">تحديد الكل</span>}<span className="sm:hidden">✓</span>
+                </button>
 
-              <button
-                className="close-notifications-btn"
-                onClick={() => setShowDropdown(false)}
-                title="إغلاق"
-                aria-label="إغلاق قائمة الإشعارات">
-                ✕
-              </button>
+                <button
+                  className="text-gray-500 hover:text-gray-700 text-xl font-bold transition-colors p-1"
+                  onClick={() => setShowDropdown(false)}
+                  title="إغلاق"
+                  aria-label="إغلاق قائمة الإشعارات">
+                  ✕
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="notification-list">
+          <div className="max-h-[calc(80vh-80px)] sm:max-h-96 overflow-y-auto">
             {isLoading && notifications.length === 0 ? (
-              <div className="notification-loading">جاري التحميل...</div>
+              <div className="p-8 text-center text-gray-400">جاري التحميل...</div>
             ) : notifications.length === 0 ? (
-              <div className="no-notifications">لا توجد إشعارات</div>
+              <div className="p-8 text-center text-gray-400">لا توجد إشعارات</div>
             ) : (
               <>
                 {notifications.map((notification, index) => (
                   <div
                     key={`${notification._id}-${index}`}
-                    className={`notification-item ${
-                      !notification.isRead ? "unread" : ""
-                    } ${notification.isNew ? "new" : ""}`}
+                    className={`flex items-start gap-2 sm:gap-3 p-3 sm:p-4 border-b border-gray-100 transition-all duration-200 cursor-pointer hover:bg-gray-50 ${
+                      !notification.isRead ? "bg-blue-50 border-r-4 border-r-blue-500" : "opacity-80"
+                    } ${notification.isNew ? "animate-pulse" : ""}`}
                     data-type={notification.type}
                     data-priority={notification.priority}
                     onClick={() => {
@@ -539,24 +532,24 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
                         markAsReadLocal(notification._id);
                       }
                     }}>
-                    <div className="notification-icon">
+                    <div className="flex-shrink-0 text-xl sm:text-2xl">
                       {getNotificationIcon(notification.type)}
                     </div>
-                    <div className="notification-content">
-                      <div className="notification-title">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-gray-800 mb-1 text-xs sm:text-sm leading-snug">
                         {notification.title}
                       </div>
                       {notification.type !== "message" && (
-                        <div className="notification-message">
+                        <div className="text-gray-600 text-xs leading-relaxed mb-1.5 sm:mb-2 line-clamp-2">
                           {notification.message}
                         </div>
                       )}
-                      <div className="notification-time">
+                      <div className="text-gray-400 text-[10px] sm:text-xs flex items-center gap-1">
                         {formatDate(notification.createdAt)}
                       </div>
                     </div>
                     <button
-                      className="delete-notification bg-transparent border-none text-red-500 cursor-pointer p-1 mr-2"
+                      className="flex-shrink-0 bg-transparent border-none text-red-500 hover:text-red-700 cursor-pointer p-0.5 sm:p-1 transition-colors text-sm sm:text-base"
                       onClick={(e) =>
                         deleteNotificationLocal(notification._id, e)
                       }
@@ -568,13 +561,17 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
                 ))}
 
                 {hasMore && !isLoading && (
-                  <div className="notification-footer">
-                    <button onClick={loadMore}>تحميل المزيد</button>
+                  <div className="p-4 text-center border-t border-gray-100">
+                    <button 
+                      onClick={loadMore}
+                      className="text-emerald-600 hover:text-emerald-700 font-medium text-sm transition-colors">
+                      تحميل المزيد
+                    </button>
                   </div>
                 )}
 
                 {isLoading && notifications.length > 0 && (
-                  <div className="notification-loading">جاري التحميل...</div>
+                  <div className="p-4 text-center text-gray-400">جاري التحميل...</div>
                 )}
               </>
             )}

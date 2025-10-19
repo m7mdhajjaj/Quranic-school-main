@@ -5,13 +5,19 @@ const cron = require("node-cron");
 const moment = require("moment-timezone");
 const FCMService = require("./FCMService");
 const DeviceToken = require("../schema/DeviceToken");
+const adhan = require("adhan");
 
 class NotificationService {
   constructor(io) {
     this.io = io;
     this.timezone = "Asia/Jerusalem";
+    // إحداثيات فلسطين (القدس) - يمكن تغييرها حسب موقعك
+    this.coordinates = new adhan.Coordinates(31.9522, 35.2332);
+    this.calculationParams = adhan.CalculationMethod.MuslimWorldLeague();
+    this.calculationParams.madhab = adhan.Madhab.Shafi; // المذهب الشافعي
+    this.prayerTasks = {}; // لتخزين المهام المجدولة
     this.setupPrayerNotifications();
-    console.log("🔔 NotificationService initialized");
+    console.log("🔔 NotificationService initialized with dynamic prayer times");
   }
 
   // Create and dispatch a notification
@@ -95,40 +101,80 @@ class NotificationService {
     }
   }
 
-  // Schedules and prayer notifications + daily reminders (kept unchanged)
+  // Schedules and prayer notifications + daily reminders with DYNAMIC prayer times
   setupPrayerNotifications() {
-    const prayerTimes = [
-      { name: "الفجر", time: "05:00", emoji: "🌅" },
-      { name: "الظهر", time: "12:30", emoji: "☀️" },
-      { name: "العصر", time: "15:45", emoji: "🌤️" },
-      { name: "المغرب", time: "18:00", emoji: "🌅" },
-      { name: "العشاء", time: "19:30", emoji: "🌙" },
-    ];
-
-    prayerTimes.forEach((prayer) => {
-      const [hour, minute] = prayer.time.split(":");
-      let notificationMinute = parseInt(minute) - 10;
-      let notificationHour = parseInt(hour);
-
-      if (notificationMinute < 0) {
-        notificationMinute = 60 + notificationMinute;
-        notificationHour -= 1;
-      }
-      if (notificationHour < 0) notificationHour = 23;
-
-      const cronTime = `${notificationMinute} ${notificationHour} * * *`;
-      cron.schedule(cronTime, () => {
-        this.sendPrayerNotification(prayer.name, prayer.time, prayer.emoji);
-      });
-
-      console.log(`⏰ Prayer notification scheduled: ${prayer.name} at ${notificationHour}:${notificationMinute.toString().padStart(2, "0")}`);
+    // جدولة يومية لحساب أوقات الصلاة (كل يوم عند منتصف الليل)
+    cron.schedule("0 0 * * *", () => {
+      console.log("🕌 Updating daily prayer times...");
+      this.scheduleDailyPrayerTimes();
     });
 
+    // تشغيل فوري عند بدء السيرفر لحساب أوقات اليوم
+    this.scheduleDailyPrayerTimes();
+
+    // تذكير يومي بقراءة القرآن الساعة 8 مساءً
     cron.schedule("0 20 * * *", () => {
       this.sendQuranReminderNotification();
     });
 
-    console.log("🛎️ Prayer notifications system activated");
+    console.log("🛎️ Dynamic prayer notifications system activated");
+  }
+
+  scheduleDailyPrayerTimes() {
+    try {
+      const today = new Date();
+      const prayerTimes = new adhan.PrayerTimes(this.coordinates, today, this.calculationParams);
+
+      const prayers = [
+        { name: "الفجر", time: prayerTimes.fajr, emoji: "🌅" },
+        { name: "الظهر", time: prayerTimes.dhuhr, emoji: "☀️" },
+        { name: "العصر", time: prayerTimes.asr, emoji: "🌤️" },
+        { name: "المغرب", time: prayerTimes.maghrib, emoji: "�" },
+        { name: "العشاء", time: prayerTimes.isha, emoji: "🌙" },
+      ];
+
+      console.log(`\n🕌 أوقات الصلاة لتاريخ ${today.toLocaleDateString('ar-EG')}:`);
+      
+      prayers.forEach((prayer) => {
+        if (prayer.time) {
+          const prayerMoment = moment(prayer.time).tz(this.timezone);
+          const prayerHour = prayerMoment.hour();
+          const prayerMinute = prayerMoment.minute();
+          
+          // حساب وقت التنبيه (10 دقائق قبل الصلاة)
+          let notificationMinute = prayerMinute - 10;
+          let notificationHour = prayerHour;
+
+          if (notificationMinute < 0) {
+            notificationMinute = 60 + notificationMinute;
+            notificationHour -= 1;
+          }
+          if (notificationHour < 0) notificationHour = 23;
+
+          const prayerTimeStr = prayerMoment.format("HH:mm");
+          console.log(`   ${prayer.emoji} ${prayer.name}: ${prayerTimeStr}`);
+
+          // جدولة التنبيه - يعمل مرة واحدة اليوم فقط
+          const cronTime = `${notificationMinute} ${notificationHour} * * *`;
+          
+          // إلغاء المهام السابقة إذا كانت موجودة
+          if (this.prayerTasks[prayer.name]) {
+            this.prayerTasks[prayer.name].stop();
+          }
+
+          // إنشاء مهمة جديدة
+          this.prayerTasks[prayer.name] = cron.schedule(cronTime, () => {
+            this.sendPrayerNotification(prayer.name, prayerTimeStr, prayer.emoji);
+          });
+
+          console.log(`   ⏰ التنبيه سيكون الساعة ${notificationHour.toString().padStart(2, '0')}:${notificationMinute.toString().padStart(2, '0')}`);
+        }
+      });
+
+      console.log("✅ تم جدولة أوقات الصلاة بنجاح\n");
+    } catch (error) {
+      console.error("❌ خطأ في جدولة أوقات الصلاة:", error);
+    }
   }
 
   async sendPrayerNotification(prayerName, prayerTime, emoji) {
