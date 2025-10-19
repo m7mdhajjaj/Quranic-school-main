@@ -130,7 +130,7 @@ const QuranPage = () => {
   };
 
   const totalPages = selectedSurah
-    ? Math.ceil(selectedSurah.numberOfAyahs / ayahsPerPage)
+    ? Math.ceil((selectedSurah.numberOfAyahs || selectedSurah.ayahs?.length || 0) / ayahsPerPage)
     : 0;
 
   const goToNextPage = () => {
