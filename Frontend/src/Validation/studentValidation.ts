@@ -60,37 +60,56 @@ export const studentValidationSchema = yup.object({
     
   fatherName: yup
     .string()
-    .required('اسم الأب مطلوب')
+    .when('$isNewStudent', {
+      is: true,
+      then: (schema) => schema.required('اسم الأب مطلوب'),
+      otherwise: (schema) => schema.nullable().notRequired(),
+    })
     .trim(),
     
   grandFatherName: yup
     .string()
-    .required('اسم الجد مطلوب')
+    .when('$isNewStudent', {
+      is: true,
+      then: (schema) => schema.required('اسم الجد مطلوب'),
+      otherwise: (schema) => schema.nullable().notRequired(),
+    })
     .trim(),
     
   motherName: yup
     .string()
-    .required('اسم الأم مطلوب')
+    .when('$isNewStudent', {
+      is: true,
+      then: (schema) => schema.required('اسم الأم مطلوب'),
+      otherwise: (schema) => schema.nullable().notRequired(),
+    })
     .trim(),
     
   lastName: yup
     .string()
-    .required('اسم العائلة مطلوب')
+    .when('$isNewStudent', {
+      is: true,
+      then: (schema) => schema.required('اسم العائلة مطلوب'),
+      otherwise: (schema) => schema.nullable().notRequired(),
+    })
     .trim(),
     
   idNumber: yup
     .string()
-    .required('رقم الهوية مطلوب')
+    .when('$isNewStudent', {
+      is: true,
+      then: (schema) => schema.required('رقم الهوية مطلوب'),
+      otherwise: (schema) => schema.nullable().notRequired(),
+    })
     .trim()
     .test('only-numbers', 'رقم الهوية يجب أن يحتوي على أرقام فقط', function(value) {
-      if (!value) return false;
+      if (!value) return true; // Allow empty for updates
       return /^\d+$/.test(value);
     })
     .test('exactly-nine-digits', 'رقم الهوية يجب أن يتكون من 9 أرقام بالضبط', function(value) {
-      if (!value) return false;
+      if (!value) return true; // Allow empty for updates
       return value.length === 9;
     })
-    .matches(/^\d{9}$/, 'رقم الهوية يجب أن يتكون من 9 أرقام فقط')
     .test('unique-id', 'رقم الهوية موجود بالفعل', function() {
       // هذا التحقق يتم في الباك اند - unique constraint
       return true;
@@ -98,7 +117,7 @@ export const studentValidationSchema = yup.object({
     
   birthDate: yup
     .string()
-    .required('تاريخ الميلاد مطلوب')
+    .nullable()
     .test('not-future', 'تاريخ الميلاد لا يمكن أن يكون في المستقبل', (value) => {
       if (!value) return true;
       return new Date(value) <= new Date();
@@ -106,30 +125,41 @@ export const studentValidationSchema = yup.object({
     
   gender: yup
     .string()
-    .required('الجنس مطلوب')
-    .oneOf(['ذكر', 'أنثى', 'male', 'female', 'Male', 'Female'], 
+    .nullable()
+    .oneOf([null, 'ذكر', 'أنثى', 'male', 'female', 'Male', 'Female'], 
            'الجنس يجب أن يكون ذكر أو أنثى')
-    .transform((value) => normalizeGender(value)),
+    .transform((value) => value ? normalizeGender(value) : null),
     
   residence: yup
     .string()
-    .required('مكان السكن مطلوب')
+    .nullable()
     .trim(),
     
   teacher: yup
     .string()
-    .required('اسم المعلم مطلوب')
+    .when('$isNewStudent', {
+      is: true,
+      then: (schema) => schema.required('اسم المعلم مطلوب'),
+      otherwise: (schema) => schema.nullable().notRequired(),
+    })
     .trim(),
     
   group: yup
     .string()
-    .required('اسم الحلقة مطلوب')
+    .when('$isNewStudent', {
+      is: true,
+      then: (schema) => schema.required('اسم الحلقة مطلوب'),
+      otherwise: (schema) => schema.nullable().notRequired(),
+    })
     .trim(),
     
   phoneNumber: yup
     .string()
-    .required('رقم الهاتف مطلوب')
-    .matches(/^05\d{8}$/, 'الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام')
+    .nullable()
+    .test('valid-phone', 'الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام', function(value) {
+      if (!value) return true; // Allow empty
+      return /^05\d{8}$/.test(value);
+    })
     .test('unique-phone', 'رقم الهاتف موجود بالفعل', function() {
       // هذا التحقق يتم في الباك اند - unique constraint
       return true;

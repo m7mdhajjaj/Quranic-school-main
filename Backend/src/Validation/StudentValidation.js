@@ -46,84 +46,99 @@ const validateStudentData = (req, res, next) => {
     } = req.body;
 
     const isNewStudent = req.method === 'POST';
+    const isUpdate = req.method === 'PUT';
 
-    // التحقق من الاسم الأول - مطلوب
+    // التحقق من الاسم الأول - مطلوب دائماً
     if (!firstName || typeof firstName !== 'string' || firstName.trim().length === 0) {
       errors.firstName = 'الاسم الأول مطلوب';
     }
 
-    // التحقق من اسم الأب - مطلوب
-    if (!fatherName || typeof fatherName !== 'string' || fatherName.trim().length === 0) {
+    // التحقق من اسم الأب - مطلوب للطلاب الجدد فقط
+    if (isNewStudent && (!fatherName || typeof fatherName !== 'string' || fatherName.trim().length === 0)) {
       errors.fatherName = 'اسم الأب مطلوب';
     }
 
-    // التحقق من اسم الجد - مطلوب
-    if (!grandFatherName || typeof grandFatherName !== 'string' || grandFatherName.trim().length === 0) {
+    // التحقق من اسم الجد - مطلوب للطلاب الجدد فقط
+    if (isNewStudent && (!grandFatherName || typeof grandFatherName !== 'string' || grandFatherName.trim().length === 0)) {
       errors.grandFatherName = 'اسم الجد مطلوب';
     }
 
-    // التحقق من اسم الأم - مطلوب
-    if (!motherName || typeof motherName !== 'string' || motherName.trim().length === 0) {
+    // التحقق من اسم الأم - مطلوب للطلاب الجدد فقط
+    if (isNewStudent && (!motherName || typeof motherName !== 'string' || motherName.trim().length === 0)) {
       errors.motherName = 'اسم الأم مطلوب';
     }
 
-    // التحقق من اسم العائلة - مطلوب
-    if (!lastName || typeof lastName !== 'string' || lastName.trim().length === 0) {
+    // التحقق من اسم العائلة - مطلوب للطلاب الجدد فقط
+    if (isNewStudent && (!lastName || typeof lastName !== 'string' || lastName.trim().length === 0)) {
       errors.lastName = 'اسم العائلة مطلوب';
     }
 
-    // التحقق من رقم الهوية - مطلوب
-    if (!idNumber || typeof idNumber !== 'string') {
+    // التحقق من رقم الهوية - مطلوب للطلاب الجدد، اختياري للتحديث
+    if (idNumber !== undefined && idNumber !== null && idNumber !== '') {
+      if (typeof idNumber !== 'string') {
+        errors.idNumber = 'رقم الهوية يجب أن يكون نصاً';
+      } else {
+        const cleanIdNumber = idNumber.replace(/\s+/g, '');
+        if (!/^\d{9}$/.test(cleanIdNumber)) {
+          errors.idNumber = 'رقم الهوية يجب أن يتكون من 9 أرقام فقط';
+        }
+      }
+    } else if (isNewStudent) {
       errors.idNumber = 'رقم الهوية مطلوب';
-    } else {
-      const cleanIdNumber = idNumber.replace(/\s+/g, '');
-      if (!/^\d{9}$/.test(cleanIdNumber)) {
-        errors.idNumber = 'رقم الهوية يجب أن يتكون من 9 أرقام فقط';
+    }
+
+    // التحقق من تاريخ الميلاد - اختياري ولكن إذا تم إدخاله يجب أن يكون صحيحاً
+    if (birthDate !== undefined && birthDate !== null && birthDate !== '') {
+      if (typeof birthDate !== 'string') {
+        errors.birthDate = 'تاريخ الميلاد يجب أن يكون نصاً';
+      } else {
+        const birthDateObj = new Date(birthDate);
+        if (isNaN(birthDateObj.getTime())) {
+          errors.birthDate = 'تاريخ الميلاد غير صحيح';
+        } else if (birthDateObj > new Date()) {
+          errors.birthDate = 'تاريخ الميلاد لا يمكن أن يكون في المستقبل';
+        }
       }
     }
 
-    // التحقق من تاريخ الميلاد - مطلوب
-    if (!birthDate || typeof birthDate !== 'string') {
-      errors.birthDate = 'تاريخ الميلاد مطلوب';
-    } else {
-      const birthDateObj = new Date(birthDate);
-      if (birthDateObj > new Date()) {
-        errors.birthDate = 'تاريخ الميلاد لا يمكن أن يكون في المستقبل';
+    // التحقق من الجنس - اختياري ولكن إذا تم إدخاله يجب أن يكون صحيحاً
+    if (gender !== undefined && gender !== null && gender !== '') {
+      if (typeof gender !== 'string') {
+        errors.gender = 'الجنس يجب أن يكون نصاً';
+      } else {
+        const allowedGenders = ['ذكر', 'أنثى', 'male', 'female', 'Male', 'Female'];
+        if (!allowedGenders.includes(gender)) {
+          errors.gender = 'الجنس يجب أن يكون ذكر أو أنثى';
+        }
       }
     }
 
-    // التحقق من الجنس - مطلوب
-    if (!gender || typeof gender !== 'string') {
-      errors.gender = 'الجنس مطلوب';
-    } else {
-      const allowedGenders = ['ذكر', 'أنثى', 'male', 'female', 'Male', 'Female'];
-      if (!allowedGenders.includes(gender)) {
-        errors.gender = 'الجنس يجب أن يكون ذكر أو أنثى';
+    // التحقق من مكان السكن - اختياري
+    if (residence !== undefined && residence !== null && residence !== '') {
+      if (typeof residence !== 'string' || residence.trim().length === 0) {
+        errors.residence = 'مكان السكن غير صحيح';
       }
     }
 
-    // التحقق من مكان السكن - مطلوب
-    if (!residence || typeof residence !== 'string' || residence.trim().length === 0) {
-      errors.residence = 'مكان السكن مطلوب';
-    }
-
-    // التحقق من المعلم - مطلوب
-    if (!teacher || typeof teacher !== 'string' || teacher.trim().length === 0) {
+    // التحقق من المعلم - مطلوب للطلاب الجدد فقط
+    if (isNewStudent && (!teacher || typeof teacher !== 'string' || teacher.trim().length === 0)) {
       errors.teacher = 'اسم المعلم مطلوب';
     }
 
-    // التحقق من الحلقة - مطلوب
-    if (!group || typeof group !== 'string' || group.trim().length === 0) {
+    // التحقق من الحلقة - مطلوب للطلاب الجدد فقط
+    if (isNewStudent && (!group || typeof group !== 'string' || group.trim().length === 0)) {
       errors.group = 'اسم الحلقة مطلوب';
     }
 
-    // التحقق من رقم الهاتف - مطلوب
-    if (!phoneNumber || typeof phoneNumber !== 'string') {
-      errors.phoneNumber = 'رقم الهاتف مطلوب';
-    } else {
-      const cleanPhone = phoneNumber.replace(/\s+/g, '');
-      if (!/^05\d{8}$/.test(cleanPhone)) {
-        errors.phoneNumber = 'الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام';
+    // التحقق من رقم الهاتف - اختياري ولكن إذا تم إدخاله يجب أن يكون صحيحاً
+    if (phoneNumber !== undefined && phoneNumber !== null && phoneNumber !== '') {
+      if (typeof phoneNumber !== 'string') {
+        errors.phoneNumber = 'رقم الهاتف يجب أن يكون نصاً';
+      } else {
+        const cleanPhone = phoneNumber.replace(/\s+/g, '');
+        if (!/^05\d{8}$/.test(cleanPhone)) {
+          errors.phoneNumber = 'الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام';
+        }
       }
     }
 
@@ -158,6 +173,7 @@ const validateStudentData = (req, res, next) => {
 
     // إذا وجدت أخطاء، إرجاعها
     if (Object.keys(errors).length > 0) {
+      console.log('❌ أخطاء في التحقق من البيانات:', errors);
       return res.status(400).json({
         success: false,
         message: 'بيانات غير صحيحة',
@@ -165,6 +181,7 @@ const validateStudentData = (req, res, next) => {
       });
     }
 
+    console.log('✅ تم التحقق من البيانات بنجاح');
     next();
   } catch (error) {
     console.error('خطأ في validateStudentData:', error);

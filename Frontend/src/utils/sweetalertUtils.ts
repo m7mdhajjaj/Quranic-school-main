@@ -1,6 +1,19 @@
 import Swal from "sweetalert2";
 import type { SweetAlertOptions } from "sweetalert2";
 
+// دالة لتشغيل الصوت
+const playSound = (soundFile: string) => {
+  try {
+    const audio = new Audio(`/sounds/${soundFile}`);
+    audio.volume = 0.5; // ضبط مستوى الصوت (50%)
+    audio.play().catch((error) => {
+      console.warn('Could not play sound:', error);
+    });
+  } catch (error) {
+    console.warn('Error playing sound:', error);
+  }
+};
+
 // دالة لإعداد SweetAlert بموضع ثابت في الوسط وخلفية خفيفة - باستخدام Tailwind فقط
 export const showCenteredSwal = (options: SweetAlertOptions) => {
   return Swal.fire({
@@ -53,6 +66,9 @@ export const showSuccessMessage = (
   position: SweetAlertOptions["position"] = "center",
   isToast: boolean = false
 ) => {
+  // تشغيل صوت النجاح
+  playSound('successful.mp3');
+  
   if (isToast) {
     // نمط Toast للإشعارات السريعة
     return Swal.fire({
@@ -112,6 +128,9 @@ export const showSuccessMessage = (
 
 // دالة لرسالة الخطأ المخصصة - Tailwind only
 export const showErrorMessage = (title: string, message: string) => {
+  // تشغيل صوت الفشل
+  playSound('error.wav');
+  
   return showCenteredSwal({
     title: title,
     html: `

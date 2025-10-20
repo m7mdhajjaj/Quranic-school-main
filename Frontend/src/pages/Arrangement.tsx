@@ -224,25 +224,27 @@ const Arrangement = () => {
       dir="rtl">
       <div className="container mx-auto">
         <div className="text-center mb-16" data-aos="fade-down">
-          {/* Socket Connection Indicator */}
-          <div className="flex justify-center mb-4">
-            <div 
-              className="flex items-center gap-1.5 cursor-help bg-white px-4 py-2 rounded-full shadow-sm"
-              title={
-                isConnected
-                  ? `💓 Heartbeat نشط (كل 30 ثانية)\nSocket ID: ${socketId || 'N/A'}\nآخر تحديث: ${socketLastUpdate?.toLocaleTimeString('ar-SA') || 'لا يوجد'}`
-                  : 'Socket غير متصل - وضع التحديث التلقائي'
-              }>
-              <div className={`w-2 h-2 rounded-full ${
-                isConnected ? 'bg-green-500' : 'bg-yellow-500'
-              } animate-pulse`}></div>
-              <span className={`text-xs font-medium ${
-                isConnected ? 'text-green-600' : 'text-yellow-600'
-              }`}>
-                {isConnected ? '💓 تحديث مباشر' : 'تحديث تلقائي'}
-              </span>
+          {/* Socket Connection Indicator - للمطورين فقط */}
+          {import.meta.env.DEV && (
+            <div className="flex justify-center mb-4">
+              <div 
+                className="flex items-center gap-1.5 cursor-help bg-white px-4 py-2 rounded-full shadow-sm"
+                title={
+                  isConnected
+                    ? `💓 Heartbeat نشط (كل 30 ثانية)\nSocket ID: ${socketId || 'N/A'}\nآخر تحديث: ${socketLastUpdate?.toLocaleTimeString('ar-SA') || 'لا يوجد'}`
+                    : 'Socket غير متصل - وضع التحديث التلقائي'
+                }>
+                <div className={`w-2 h-2 rounded-full ${
+                  isConnected ? 'bg-green-500' : 'bg-yellow-500'
+                } animate-pulse`}></div>
+                <span className={`text-xs font-medium ${
+                  isConnected ? 'text-green-600' : 'text-yellow-600'
+                }`}>
+                  {isConnected ? '💓 تحديث مباشر' : 'تحديث تلقائي'}
+                </span>
+              </div>
             </div>
-          </div>
+          )}
 
           <h1 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
             ترتيب الطلاب المتميزين

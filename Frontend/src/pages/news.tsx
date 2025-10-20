@@ -337,31 +337,33 @@ const News = () => {
 
   return (
     <main className="container mx-auto px-4 py-12" dir="rtl">
-      {/* 🔌 Socket Connection Indicator */}
-      <div className="fixed top-20 left-4 z-50">
-        <div className="relative group">
-          <div
-            className={`w-3 h-3 rounded-full transition-all duration-300 ${
-              socketConnected ? 'bg-emerald-500 animate-pulse' : 'bg-yellow-500'
-            }`}
-          />
-          <div className="absolute left-6 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs py-2 px-3 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-lg">
-            <div className="font-semibold mb-1">
-              {socketConnected ? '✓ متصل بالسوكت' : '⚠ غير متصل'}
+      {/* 🔌 Socket Connection Indicator - للمطورين فقط */}
+      {import.meta.env.DEV && (
+        <div className="fixed top-20 left-4 z-50">
+          <div className="relative group">
+            <div
+              className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                socketConnected ? 'bg-emerald-500 animate-pulse' : 'bg-yellow-500'
+              }`}
+            />
+            <div className="absolute left-6 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs py-2 px-3 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none shadow-lg">
+              <div className="font-semibold mb-1">
+                {socketConnected ? '✓ متصل بالسوكت' : '⚠ غير متصل'}
+              </div>
+              {socketId && (
+                <div className="text-gray-300 text-[10px] mb-1">
+                  ID: {socketId.slice(0, 8)}...
+                </div>
+              )}
+              {socketLastUpdate && (
+                <div className="text-gray-400 text-[10px]">
+                  آخر تحديث: {new Date(socketLastUpdate).toLocaleTimeString('ar-EG')}
+                </div>
+              )}
             </div>
-            {socketId && (
-              <div className="text-gray-300 text-[10px] mb-1">
-                ID: {socketId.slice(0, 8)}...
-              </div>
-            )}
-            {socketLastUpdate && (
-              <div className="text-gray-400 text-[10px]">
-                آخر تحديث: {new Date(socketLastUpdate).toLocaleTimeString('ar-EG')}
-              </div>
-            )}
           </div>
         </div>
-      </div>
+      )}
 
       <section className="mb-12">
         <div className="flex justify-between items-center mb-8">

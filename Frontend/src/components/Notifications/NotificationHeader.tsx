@@ -213,8 +213,18 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
         sentAt: (socketNotification as any).sentAt || socketNotification.createdAt || new Date().toISOString()
       };
       
-      // إضافة الإشعار للقائمة
-      setNotifications((prev) => [notificationWithSentAt, ...prev]);
+      // إضافة الإشعار للقائمة مع إعادة الترتيب
+      setNotifications((prev) => {
+        const updated = [notificationWithSentAt, ...prev];
+        // ترتيب: الغير مقروء أولاً ثم الأحدث
+        return updated.sort((a, b) => {
+          if (!a.isRead && b.isRead) return -1;
+          if (a.isRead && !b.isRead) return 1;
+          const dateA = new Date(a.sentAt || a.createdAt).getTime();
+          const dateB = new Date(b.sentAt || b.createdAt).getTime();
+          return dateB - dateA;
+        });
+      });
       
       // تحديث الإحصائيات
       setStats((prev) => ({
@@ -279,8 +289,18 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
         data: notification.data,
       };
       
-      // ✅ إضافة الإشعار للقائمة فوراً (Live Update)
-      setNotifications((prev) => [newNotification, ...prev]);
+      // ✅ إضافة الإشعار للقائمة فوراً (Live Update) مع الترتيب
+      setNotifications((prev) => {
+        const updated = [newNotification, ...prev];
+        // ترتيب: الغير مقروء أولاً ثم الأحدث
+        return updated.sort((a, b) => {
+          if (!a.isRead && b.isRead) return -1;
+          if (a.isRead && !b.isRead) return 1;
+          const dateA = new Date(a.sentAt || a.createdAt).getTime();
+          const dateB = new Date(b.sentAt || b.createdAt).getTime();
+          return dateB - dateA;
+        });
+      });
       
       // ✅ تحديث العدادات
       setStats((prev) => ({
@@ -497,10 +517,32 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
         }
       );
 
+      // ✅ ترتيب الإشعارات: الأولوية للغير مقروء ثم الأحدث
+      const sortedNotifications = newNotifications.sort((a, b) => {
+        // 1. الأولوية للغير مقروء
+        if (!a.isRead && b.isRead) return -1;
+        if (a.isRead && !b.isRead) return 1;
+        
+        // 2. ترتيب حسب التاريخ (الأحدث أولاً)
+        const dateA = new Date(a.sentAt || a.createdAt).getTime();
+        const dateB = new Date(b.sentAt || b.createdAt).getTime();
+        return dateB - dateA; // الأحدث أولاً
+      });
+
       if (reset) {
-        setNotifications(newNotifications);
+        setNotifications(sortedNotifications);
       } else {
-        setNotifications((prev) => [...prev, ...newNotifications]);
+        // عند التحميل الإضافي، نضيف ثم نرتب
+        setNotifications((prev) => {
+          const combined = [...prev, ...sortedNotifications];
+          return combined.sort((a, b) => {
+            if (!a.isRead && b.isRead) return -1;
+            if (a.isRead && !b.isRead) return 1;
+            const dateA = new Date(a.sentAt || a.createdAt).getTime();
+            const dateB = new Date(b.sentAt || b.createdAt).getTime();
+            return dateB - dateA;
+          });
+        });
       }
 
       // جلب إحصائيات الإشعارات
