@@ -9,12 +9,16 @@ export interface Notification {
   id?: number;
   title: string;
   message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  priority: 'low' | 'medium' | 'high';
+  type: 'grade' | 'message' | 'prayer_time' | 'activity' | 'attendance' | 'general'; // ✅ متطابق مع Backend
+  priority: 'low' | 'medium' | 'high' | 'urgent'; // ✅ متطابق مع Backend
   isRead: boolean;
-  userId: string;
+  userId?: string;
+  recipient?: string;
+  recipientModel?: string;
   createdAt: string;
-  updatedAt?: string;
+  sentAt: string; // وقت الإرسال الفعلي
+  data?: any;
+  isNew?: boolean;
   icon?: string;
   color?: string;
   time?: string;
@@ -32,7 +36,10 @@ export interface NotificationResponse {
 export const getRecentNotifications = async (userId: string, limit: number = 10): Promise<Notification[]> => {
   try {
     const response = await api.get(`/notifications/${userId}?limit=${limit}`);
-    return response.data.data || [];
+    // ✅ Backend يعيد data.notifications وليس data فقط
+    const notifications = response.data?.data?.notifications || response.data?.data || [];
+    console.log('📬 Fetched notifications:', notifications);
+    return notifications;
   } catch (error) {
     console.error('Failed to get recent notifications:', error);
     return [];
@@ -103,7 +110,7 @@ export const getAllNotifications = async (
 };
 
 // Create a new notification (admin only)
-export const createNotification = async (notification: Omit<Notification, '_id' | 'createdAt' | 'updatedAt'>): Promise<Notification | null> => {
+export const createNotification = async (notification: Omit<Notification, '_id' | 'createdAt'>): Promise<Notification | null> => {
   try {
     const response = await api.post('/notifications', notification);
     return response.data.data;

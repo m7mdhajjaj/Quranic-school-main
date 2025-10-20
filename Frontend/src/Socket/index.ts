@@ -21,6 +21,7 @@ export { useExamScheduleSocket } from "./useExamScheduleSocket";
 export { useTimetableSocket } from "./useTimetableSocket";
 export { useProfileSocket } from "./useProfileSocket";
 export { useWarningsSocket } from "./useWarningsSocket";
+export { useNotificationsSocket } from "./useNotificationsSocket"; // ✅ نظام الإشعارات
 
 // يمكن إضافة المزيد من الـ Hooks هنا في المستقبل
 // export { useChatSocket } from './useChatSocket';

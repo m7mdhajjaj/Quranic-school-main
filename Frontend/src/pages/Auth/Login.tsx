@@ -242,7 +242,7 @@ const Login = () => {
       <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12 xl:gap-16 px-4 sm:px-6 lg:px-8 py-8 lg:py-0">
         
         {/* Right Side - Login Form (الجانب الأيمن - نموذج تسجيل الدخول) */}
-        <div className="w-full lg:w-1/2 max-w-md lg:max-w-lg order-1 lg:order-1">
+        <div className="w-full lg:w-1/2 max-w-md lg:max-w-lg order-2 lg:order-1">
           {/* Card Glow Effect */}
           <div className="absolute -inset-1 bg-gradient-to-r from-emerald-300/30 via-teal-300/30 to-cyan-300/30 rounded-3xl blur-xl opacity-40 transition duration-500"></div>
 
@@ -536,7 +536,7 @@ const Login = () => {
         </div>
 
         {/* Left Side - Welcome Content (الجانب الأيسر - المحتوى الترحيبي) */}
-        <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start justify-center text-center lg:text-left space-y-6 lg:space-y-8 order-2 lg:order-2">
+        <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start justify-center text-center lg:text-left space-y-6 lg:space-y-8 order-1 lg:order-2">
           {/* Logo */}
           <div className="relative group">
             <div className="absolute -inset-4 bg-gradient-to-r from-emerald-300/40 via-teal-300/40 to-cyan-300/40 rounded-full blur-2xl opacity-50 group-hover:opacity-70 transition-opacity duration-500 animate-pulse"></div>

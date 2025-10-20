@@ -49,8 +49,29 @@ export const showCenteredSwal = (options: SweetAlertOptions) => {
 export const showSuccessMessage = (
   title: string,
   message: string,
-  studentName?: string
+  studentName?: string,
+  position: SweetAlertOptions["position"] = "center",
+  isToast: boolean = false
 ) => {
+  if (isToast) {
+    // نمط Toast للإشعارات السريعة
+    return Swal.fire({
+      title: title,
+      text: message,
+      icon: "success",
+      toast: true,
+      position: position || "top-end",
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true,
+      customClass: {
+        popup: "!rounded-xl !shadow-2xl",
+        title: "!text-base !font-bold",
+        timerProgressBar: "!bg-green-500",
+      },
+    });
+  }
+
   return showCenteredSwal({
     title: title,
     html: `

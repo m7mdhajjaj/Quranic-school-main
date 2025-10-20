@@ -167,6 +167,7 @@ global.notifyDashboardUpdate = (updateType, data = null) => {
 // Initialize Notification Service immediately after Socket.IO is ready
 const notificationService = new NotificationService(io);
 global.notificationService = notificationService; // Make it globally accessible
+app.set("notificationService", notificationService); // ✅ لاستخدامه في الـ routes
 global.onlineUsers = onlineUsers; // Make onlineUsers globally accessible
 global.io = io; // Make io globally accessible for chat controllers
 global.fcmService = FCMService;
@@ -403,6 +404,29 @@ io.on("connection", (socket) => {
   socket.on("leaveWarnings", (data) => {
     socket.leave("warnings");
     console.log(`⚠️ User ${socket.id} left warnings room`, data);
+  });
+
+  // ✅ Notifications Socket Events
+  socket.on("joinNotifications", (data) => {
+    const { userId, role } = data;
+    
+    // انضمام للـ room الخاص بالإشعارات العامة
+    socket.join("notifications");
+    
+    // انضمام للـ room الخاص بالمستخدم (باستخدام userId)
+    if (userId) {
+      socket.join(userId);
+      console.log(`🔔 User ${socket.id} (${role}) joined notifications room for user ID: ${userId}`);
+    }
+  });
+
+  socket.on("leaveNotifications", (data) => {
+    const { userId } = data;
+    socket.leave("notifications");
+    if (userId) {
+      socket.leave(userId);
+    }
+    console.log(`🔔 User ${socket.id} left notifications room`, data);
   });
 
   socket.on("requestDashboardUpdate", async (data) => {

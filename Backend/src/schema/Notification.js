@@ -44,26 +44,17 @@ const notificationSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    isSystemNotification: {
-      type: Boolean,
-      default: false,
-    },
-    priority: {
-      type: String,
-      enum: ["low", "medium", "high", "urgent"],
-      default: "medium",
+    sentAt: {
+      type: Date,
+      default: Date.now,
+      required: true,
     },
     readAt: {
       type: Date,
     },
-    expiresAt: {
-      type: Date,
-      // الإشعارات تنتهي صلاحيتها بعد 30 يوم افتراضياً
-      default: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-    },
   },
   {
-    timestamps: true,
+    timestamps: { createdAt: true, updatedAt: false },
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
   },
@@ -73,7 +64,6 @@ const notificationSchema = new mongoose.Schema(
 notificationSchema.index({ recipient: 1, createdAt: -1 });
 notificationSchema.index({ recipient: 1, isRead: 1 });
 notificationSchema.index({ type: 1 });
-notificationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 // Virtual للحصول على عمر الإشعار
 notificationSchema.virtual("age").get(function () {

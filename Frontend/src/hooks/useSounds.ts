@@ -1,100 +1,70 @@
-/**
- * Hook مخصص لاستخدام الأصوات في مكونات React
- * يستخدم مكتبة use-sound للحصول على أداء أفضل
- */
+﻿export const useSounds = () => {
+  const playAdd = () => {
+    try {
+      const audio = new Audio('/sounds/successful.mp3');
+      audio.volume = 0.6;
+      audio.play().catch((err) => console.log('Sound error:', err));
+    } catch (error) {
+      console.log('Sound init error:', error);
+    }
+  };
 
-import useSound from 'use-sound';
+  const playUpdate = () => {
+    try {
+      const audio = new Audio('/sounds/successful.mp3');
+      audio.volume = 0.6;
+      audio.play().catch((err) => console.log('Sound error:', err));
+    } catch (error) {
+      console.log('Sound init error:', error);
+    }
+  };
 
-export interface UseSoundsReturn {
-  playAdd: () => void;
-  playUpdate: () => void;
-  playDelete: () => void;
-  playNotification: () => void;
-  playError: () => void;
-}
+  const playDelete = () => {
+    try {
+      const audio = new Audio('/sounds/successful.mp3');
+      audio.volume = 0.5;
+      audio.play().catch((err) => console.log('Sound error:', err));
+    } catch (error) {
+      console.log('Sound init error:', error);
+    }
+  };
 
-/**
- * Hook للتحكم في الأصوات باستخدام مكتبة use-sound
- * @returns كائن يحتوي على وظائف التحكم في الأصوات
- * 
- * @example
- * ```tsx
- * import { useSounds } from '@/hooks/useSounds';
- * 
- * function TeacherManagement() {
- *   const { playAdd, playUpdate, playDelete, playError } = useSounds();
- * 
- *   const handleCreate = async () => {
- *     try {
- *       await api.create();
- *       playAdd(); // 🔊 صوت الإضافة
- *     } catch (error) {
- *       playError(); // 🔊 صوت الخطأ
- *     }
- *   };
- * 
- *   const handleUpdate = async () => {
- *     try {
- *       await api.update();
- *       playUpdate(); // 🔊 صوت التعديل
- *     } catch (error) {
- *       playError();
- *     }
- *   };
- * 
- *   const handleDelete = async () => {
- *     try {
- *       await api.delete();
- *       playDelete(); // 🔊 صوت الحذف
- *     } catch (error) {
- *       playError();
- *     }
- *   };
- * 
- *   return (
- *     <div>
- *       <button onClick={handleCreate}>إضافة</button>
- *       <button onClick={handleUpdate}>تعديل</button>
- *       <button onClick={handleDelete}>حذف</button>
- *     </div>
- *   );
- * }
- * ```
- */
-export const useSounds = (): UseSoundsReturn => {
-  // استخدام مكتبة use-sound لتحميل الأصوات
-  const [playAddSound] = useSound('/sounds/add.mp3', { 
-    volume: 0.5,
-    interrupt: true // السماح بمقاطعة الصوت إذا تم تشغيله مرة أخرى
-  });
-  
-  const [playUpdateSound] = useSound('/sounds/update.mp3', { 
-    volume: 0.5,
-    interrupt: true 
-  });
-  
-  const [playDeleteSound] = useSound('/sounds/delete.mp3', { 
-    volume: 0.5,
-    interrupt: true 
-  });
-  
-  const [playNotificationSound] = useSound('/sounds/notification.mp3', { 
-    volume: 0.5,
-    interrupt: true 
-  });
-  
-  const [playErrorSound] = useSound('/sounds/error.mp3', { 
-    volume: 0.6,
-    interrupt: true 
-  });
+  const playError = () => {
+    try {
+      const audio = new Audio('/sounds/error.wav');
+      audio.volume = 0.6;
+      audio.play().catch((err) => console.log('Sound error:', err));
+    } catch (error) {
+      console.log('Sound init error:', error);
+    }
+  };
+
+  const playSuccess = () => {
+    try {
+      const audio = new Audio('/sounds/successful.mp3');
+      audio.volume = 0.7;
+      audio.play().catch((err) => console.log('Sound error:', err));
+    } catch (error) {
+      console.log('Sound init error:', error);
+    }
+  };
+
+  const playNotification = () => {
+    try {
+      const audio = new Audio('/sounds/notification.mp3');
+      audio.volume = 0.7;
+      audio.play().catch((err) => console.log('Sound error:', err));
+    } catch (error) {
+      console.log('Sound init error:', error);
+    }
+  };
 
   return {
-    playAdd: playAddSound,
-    playUpdate: playUpdateSound,
-    playDelete: playDeleteSound,
-    playNotification: playNotificationSound,
-    playError: playErrorSound,
+    playAdd,
+    playUpdate,
+    playDelete,
+    playError,
+    playSuccess,
+    playNotification,
   };
 };
-
-export default useSounds;

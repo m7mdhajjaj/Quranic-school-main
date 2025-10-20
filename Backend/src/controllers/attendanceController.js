@@ -96,17 +96,24 @@ exports.createAttendance = async (req, res) => {
           (record) => !record.isPresent
         );
         const dateStr = formattedDate.toLocaleDateString("ar-SA");
+        
+        // الحصول على اسم المعلم من بيانات المستخدم
+        const teacherName = req.user?.firstName 
+          ? `${req.user.firstName} ${req.user.lastName || ''}`.trim()
+          : req.user?.name || "المعلم";
+
+        console.log(`📢 Sending absence notifications to ${absentRecords.length} absent students by teacher: ${teacherName}`);
 
         for (const record of absentRecords) {
           try {
             await global.notificationService.notifyAbsence(
               record.studentId,
               dateStr,
-              req.user?.name || "المعلم"
+              teacherName
             );
           } catch (notificationError) {
             console.error(
-              "Error sending absence notification:",
+              `Error sending absence notification to student ${record.studentId}:`,
               notificationError
             );
             // لا نريد أن يفشل حفظ الحضور بسبب مشكلة في الإشعارات
@@ -114,7 +121,7 @@ exports.createAttendance = async (req, res) => {
         }
 
         console.log(
-          `Sent absence notifications to ${absentRecords.length} students`
+          `✅ Successfully sent ${absentRecords.length} absence notifications`
         );
       }
 

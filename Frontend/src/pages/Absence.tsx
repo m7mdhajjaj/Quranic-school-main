@@ -1,4 +1,3 @@
-// Absence.tsx
 // =========================================
 // شاشة الحضور والغياب (Teacher + Student)
 // - واجهة المعلّم: تسجيل حضور/غياب يومي + فلترة حسب الحلقة + بحث
@@ -8,7 +7,6 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { showSuccessMessage, showErrorMessage } from "../utils/sweetalertUtils";
 import { AbsenceSkeleton } from "../components/Loading/LoadingSkeleton";
 import { getAllStudents } from "../Api/studentApi";
 import {
@@ -17,6 +15,7 @@ import {
   bulkSaveAttendance,
 } from "../Api/attendanceApi";
 import { useAbsenceSocket } from "../Socket";
+import { useSounds } from "../hooks/useSounds";
 
 // ================== الإعدادات العامة ==================
 
@@ -92,6 +91,37 @@ const Absence = () => {
     lastUpdate: socketLastUpdate,
     socketId,
   } = useAbsenceSocket();
+
+  // ✅ استخدام الأصوات
+  const { playAdd, playError } = useSounds();
+  
+  // ✅ صوت النجاح المخصص
+  const playSuccessSound = () => {
+    try {
+      const audio = new Audio('/sounds/successful.mp3');
+      audio.volume = 0.6;
+      audio.play().catch(() => {
+        // إذا فشل، استخدم الصوت الافتراضي
+        playAdd();
+      });
+    } catch {
+      playAdd();
+    }
+  };
+  
+  // ❌ صوت الفشل المخصص
+  const playFailedSound = () => {
+    try {
+      const audio = new Audio('/sounds/failed.mp3');
+      audio.volume = 0.6;
+      audio.play().catch(() => {
+        // إذا فشل، استخدم الصوت الافتراضي
+        playError();
+      });
+    } catch {
+      playError();
+    }
+  };
 
   // --------- حالات عامة ---------
   const [currentUser, setCurrentUser] = useState<LoggedInUser | null>(null);
@@ -517,18 +547,31 @@ const Absence = () => {
     setStudents((prev) => {
       const next = prev.map((s) => {
         if (s._id === studentId) {
+          const newState = !s.isPresent;
           console.log(
             "✅ تم العثور على الطالب:",
             s.name,
             "الحالة الحالية:",
             s.isPresent,
             "→ الحالة الجديدة:",
-            !s.isPresent
+            newState
           );
-          return { ...s, isPresent: !s.isPresent };
+          return { ...s, isPresent: newState };
         }
         return s;
       });
+      
+      // حساب الإحصائيات بعد التغيير مباشرة
+      const visibleIds = visibleStudents.map(v => v._id);
+      const updatedVisible = next.filter(s => visibleIds.includes(s._id));
+      const newPresentCount = updatedVisible.filter(s => s.isPresent).length;
+      const newAbsentCount = updatedVisible.length - newPresentCount;
+      
+      console.log(`📊 الإحصائيات المحدثة للحلقة "${groupFilter}":`);
+      console.log(`   ✅ الحاضرين: ${newPresentCount}`);
+      console.log(`   ❌ الغائبين: ${newAbsentCount}`);
+      console.log(`   👥 المجموع: ${updatedVisible.length}`);
+      
       return next;
     });
   };
@@ -541,6 +584,12 @@ const Absence = () => {
     // تحديث فقط الطلاب المرئيين في الحلقة المختارة
     const visibleStudentIds = visibleStudents.map((s) => s._id);
 
+    console.log(
+      `🔄 تغيير حالة ${visibleStudents.length} طالب في الحلقة "${groupFilter}" إلى: ${
+        newState ? "حاضر" : "غائب"
+      }`
+    );
+
     setStudents((prev) => {
       const next = prev.map((s) => {
         // تحديث فقط الطلاب المرئيين
@@ -549,14 +598,19 @@ const Absence = () => {
         }
         return s; // باقي الطلاب ما يتغيروا
       });
+      
+      // حساب الإحصائيات بعد التغيير
+      const updatedVisible = next.filter(s => visibleStudentIds.includes(s._id));
+      const newPresentCount = updatedVisible.filter(s => s.isPresent).length;
+      const newAbsentCount = updatedVisible.length - newPresentCount;
+      
+      console.log(`📊 الإحصائيات بعد التحديد الجماعي:`);
+      console.log(`   ✅ الحاضرين: ${newPresentCount}`);
+      console.log(`   ❌ الغائبين: ${newAbsentCount}`);
+      console.log(`   👥 المجموع: ${updatedVisible.length}`);
+      
       return next;
     });
-
-    console.log(
-      `🔄 تغيير حالة ${
-        visibleStudents.length
-      } طالب في الحلقة "${groupFilter}" إلى: ${newState ? "حاضر" : "غائب"}`
-    );
   };
 
   // إحصائيات الحضور للطلاب المرئيين فقط
@@ -588,10 +642,21 @@ const Absence = () => {
           isPresent: s.isPresent,
         }));
 
+      // حساب عدد الحاضرين والغائبين الفعلي قبل الحفظ
+      const actualPresentCount = payload.filter((s) => s.isPresent).length;
+      const actualAbsentCount = payload.length - actualPresentCount;
+      const actualAttendanceRate = payload.length > 0
+        ? Math.round((actualPresentCount / payload.length) * 100)
+        : 0;
+
       console.log(
         `💾 حفظ الحضور لـ ${payload.length} طالب من الحلقة "${groupFilter}"`
       );
       console.log("📋 التاريخ:", date);
+      console.log(`📊 الإحصائيات الفعلية:`);
+      console.log(`   ✅ الحاضرين: ${actualPresentCount}`);
+      console.log(`   ❌ الغائبين: ${actualAbsentCount}`);
+      console.log(`   📈 نسبة الحضور: ${actualAttendanceRate}%`);
       console.log(
         "📋 البيانات المرسلة:",
         JSON.stringify({ date, records: payload }, null, 2)
@@ -602,22 +667,186 @@ const Absence = () => {
         records: payload,
       });
 
-      showSuccessMessage(
-        "تم الحفظ!",
-        `تم حفظ حضور ${payload.length} طالب من الحلقة "${groupFilter}" بنجاح ✅`
-      );
+      // ✅ تشغيل صوت النجاح المخصص فوراً
+      playSuccessSound();
+
+      // خيار 1: Toast سريع (معلق حالياً)
+      // const Swal = (await import("sweetalert2")).default;
+      // await Swal.fire({
+      //   icon: "success",
+      //   title: "✅ تم رصد الحضور بنجاح",
+      //   text: `حاضر: ${actualPresentCount} | غائب: ${actualAbsentCount}`,
+      //   toast: true,
+      //   position: "top-end",
+      //   showConfirmButton: false,
+      //   timer: 3000,
+      //   timerProgressBar: true,
+      // });
+
+      // خيار 2: ✅ عرض سويت الريت بتصميم جميل ومتحرك (مفعّل)
+      const Swal = (await import("sweetalert2")).default;
+      await Swal.fire({
+        icon: "success",
+        title: '<div style="color: #059669; font-size: 28px; font-weight: bold; text-shadow: 2px 2px 4px rgba(5,150,105,0.2);">🎉 تم رصد الحضور بنجاح</div>',
+        html: `
+          <div style="text-align: center; direction: rtl; font-family: 'Cairo', sans-serif; padding: 15px;">
+            
+            <!-- بطاقة الإحصائيات -->
+            <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-radius: 20px; padding: 25px; margin: 20px 0; box-shadow: 0 8px 20px rgba(5,150,105,0.15); border: 3px solid #86efac;">
+              
+              <!-- عداد الحاضرين والغائبين -->
+              <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 20px;">
+                
+                <!-- الحاضرين -->
+                <div style="background: white; border-radius: 15px; padding: 20px 30px; box-shadow: 0 4px 12px rgba(22,163,74,0.2); border: 2px solid #22c55e; min-width: 120px; transform: scale(1); transition: transform 0.3s;">
+                  <div style="font-size: 48px; margin-bottom: 8px;">✅</div>
+                  <div style="font-size: 36px; font-weight: bold; color: #16a34a; margin-bottom: 5px;">${actualPresentCount}</div>
+                  <div style="font-size: 15px; color: #15803d; font-weight: 600;">حاضر</div>
+                </div>
+                
+                <!-- الغائبين -->
+                <div style="background: white; border-radius: 15px; padding: 20px 30px; box-shadow: 0 4px 12px rgba(220,38,38,0.2); border: 2px solid #ef4444; min-width: 120px; transform: scale(1); transition: transform 0.3s;">
+                  <div style="font-size: 48px; margin-bottom: 8px;">${actualAbsentCount > 0 ? '⚠️' : '🎊'}</div>
+                  <div style="font-size: 36px; font-weight: bold; color: #dc2626; margin-bottom: 5px;">${actualAbsentCount}</div>
+                  <div style="font-size: 15px; color: #b91c1c; font-weight: 600;">غائب</div>
+                </div>
+                
+              </div>
+
+              <!-- نسبة الحضور مع شريط متحرك -->
+              <div style="margin-top: 25px;">
+                <div style="font-size: 18px; color: #047857; font-weight: bold; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                  <span>📊</span>
+                  <span>نسبة الحضور</span>
+                  <span style="color: #059669; font-size: 24px;">${actualAttendanceRate}%</span>
+                </div>
+                <div style="background: white; border-radius: 30px; height: 30px; overflow: hidden; box-shadow: inset 0 2px 6px rgba(0,0,0,0.1); position: relative;">
+                  <div style="position: absolute; left: 0; top: 0; height: 100%; width: ${actualAttendanceRate}%; background: linear-gradient(90deg, #22c55e 0%, #16a34a 50%, #15803d 100%); border-radius: 30px; animation: progressFill 1s ease-out; box-shadow: 0 0 10px rgba(22,163,74,0.4);"></div>
+                </div>
+              </div>
+              
+            </div>
+
+            <!-- رسالة الإشعارات -->
+            ${actualAbsentCount > 0 
+              ? `<div style="background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); padding: 18px; border-radius: 15px; margin-top: 15px; border: 2px solid #fb923c; box-shadow: 0 4px 10px rgba(249,115,22,0.15);">
+                  <div style="font-size: 20px; margin-bottom: 5px;">🔔</div>
+                  <div style="color: #ea580c; font-size: 16px; font-weight: 600;">تم إرسال إشعارات للطلاب الغائبين</div>
+                </div>` 
+              : `<div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 18px; border-radius: 15px; margin-top: 15px; border: 2px solid #fbbf24; box-shadow: 0 4px 10px rgba(251,191,36,0.15);">
+                  <div style="font-size: 24px; margin-bottom: 5px;">🌟</div>
+                  <div style="color: #d97706; font-size: 17px; font-weight: 600;">ممتاز! جميع الطلاب حاضرون</div>
+                </div>`
+            }
+            
+            <style>
+              @keyframes progressFill {
+                from { width: 0%; }
+                to { width: ${actualAttendanceRate}%; }
+              }
+            </style>
+            
+          </div>
+        `,
+        confirmButtonText: "تمام ✓",
+        confirmButtonColor: "#10b981",
+        buttonsStyling: true,
+        timer: 5000,
+        timerProgressBar: true,
+        allowOutsideClick: true,
+        allowEscapeKey: true,
+        showClass: {
+          popup: "animate__animated animate__zoomIn animate__faster"
+        },
+        hideClass: {
+          popup: "animate__animated animate__zoomOut animate__faster"
+        },
+        customClass: {
+          popup: 'swal2-custom-popup',
+          confirmButton: 'swal2-custom-confirm'
+        },
+        didOpen: (popup) => {
+          // إضافة تأثيرات hover على البطاقات
+          const cards = popup.querySelectorAll('[style*="transform: scale(1)"]');
+          cards.forEach((card: any) => {
+            card.addEventListener('mouseenter', () => {
+              card.style.transform = 'scale(1.05)';
+            });
+            card.addEventListener('mouseleave', () => {
+              card.style.transform = 'scale(1)';
+            });
+          });
+        }
+      });
     } catch (e: any) {
       console.error("❌ خطأ في حفظ الحضور:", e);
       console.error("📋 تفاصيل الخطأ:", e.response?.data);
-      if (e.response) {
-        const errorMsg =
-          e.response?.data?.message ||
-          e.response?.data?.details ||
-          "تعذر حفظ السجل";
-        showErrorMessage("خطأ في الحفظ", errorMsg);
-      } else {
-        showErrorMessage("خطأ في الحفظ", "تعذر حفظ السجل - تحقق من الاتصال");
-      }
+      
+      // ❌ تشغيل صوت الفشل المخصص فوراً
+      playFailedSound();
+      
+      const Swal = (await import("sweetalert2")).default;
+      const errorMsg = e.response?.data?.message || e.response?.data?.details || "تعذر حفظ السجل";
+      const isNetworkError = !e.response;
+      
+      await Swal.fire({
+        icon: "error",
+        title: '<div style="color: #dc2626; font-size: 26px; font-weight: bold; text-shadow: 2px 2px 4px rgba(220,38,38,0.2);">❌ خطأ في الحفظ</div>',
+        html: `
+          <div style="text-align: center; direction: rtl; font-family: 'Cairo', sans-serif; padding: 20px;">
+            
+            <!-- بطاقة الخطأ -->
+            <div style="background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border-radius: 20px; padding: 30px; margin: 20px 0; box-shadow: 0 8px 20px rgba(220,38,38,0.15); border: 3px solid #fca5a5;">
+              
+              <div style="font-size: 64px; margin-bottom: 15px; animation: shake 0.5s;">
+                ${isNetworkError ? '🌐' : '⚠️'}
+              </div>
+              
+              <div style="font-size: 18px; color: #b91c1c; font-weight: 600; line-height: 1.8; margin-bottom: 15px;">
+                ${isNetworkError ? 'تعذر الاتصال بالخادم' : errorMsg}
+              </div>
+              
+              ${isNetworkError 
+                ? `<div style="background: white; border-radius: 12px; padding: 15px; margin-top: 15px; border-right: 4px solid #f87171;">
+                    <div style="color: #991b1b; font-size: 15px; line-height: 1.6;">
+                      • تحقق من اتصالك بالإنترنت<br>
+                      • أعد المحاولة بعد قليل<br>
+                      • تواصل مع الدعم الفني إذا استمرت المشكلة
+                    </div>
+                   </div>` 
+                : `<div style="background: white; border-radius: 12px; padding: 15px; margin-top: 15px; border-right: 4px solid #f87171;">
+                    <div style="color: #991b1b; font-size: 15px;">
+                      💡 نصيحة: تأكد من صحة البيانات وحاول مجدداً
+                    </div>
+                   </div>`
+              }
+              
+            </div>
+            
+            <style>
+              @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-10px); }
+                75% { transform: translateX(10px); }
+              }
+            </style>
+            
+          </div>
+        `,
+        confirmButtonText: "حسناً، فهمت",
+        confirmButtonColor: "#ef4444",
+        buttonsStyling: true,
+        timer: 5000,
+        timerProgressBar: true,
+        allowOutsideClick: true,
+        allowEscapeKey: true,
+        showClass: {
+          popup: "animate__animated animate__shakeX animate__faster"
+        },
+        hideClass: {
+          popup: "animate__animated animate__fadeOut animate__faster"
+        }
+      });
     }
   };
 

@@ -131,6 +131,11 @@ const DailyMarks = () => {
     new Date().getFullYear()
   ); // Current year
 
+  // 🔧 Developer Mode State (يتفعل بالضغط على d ثلاث مرات)
+  const [developerMode, setDeveloperMode] = useState<boolean>(false);
+  const [dKeyPressCount, setDKeyPressCount] = useState<number>(0);
+  const [lastDKeyPress, setLastDKeyPress] = useState<number>(0);
+
   // Current logged-in user state
   const [currentUser, setCurrentUser] = useState<LoggedInUser | null>(null);
 
@@ -145,6 +150,40 @@ const DailyMarks = () => {
     reviewMark: 8,
     memorizationMark: 8,
   });
+
+  // 🔧 Developer Mode: تفعيل وضع المطور بالضغط على d ثلاث مرات
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === 'd') {
+        const now = Date.now();
+        
+        // إذا مرت أكثر من 2 ثانية، نعيد العداد
+        if (now - lastDKeyPress > 2000) {
+          setDKeyPressCount(1);
+        } else {
+          setDKeyPressCount(prev => prev + 1);
+        }
+        
+        setLastDKeyPress(now);
+        
+        // إذا ضغط d ثلاث مرات خلال ثانيتين
+        if (dKeyPressCount + 1 >= 3 && now - lastDKeyPress <= 2000) {
+          setDeveloperMode(prev => !prev);
+          setDKeyPressCount(0);
+          
+          // صوت تفعيل/إلغاء
+          const audio = new Audio(developerMode ? '/sounds/error.wav' : '/sounds/successful.mp3');
+          audio.volume = 0.3;
+          audio.play().catch(() => {});
+          
+          console.log(developerMode ? '🔧 Developer Mode: OFF' : '🔧 Developer Mode: ON');
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [dKeyPressCount, lastDKeyPress, developerMode]);
 
   // Fetch current user and data on component mount
   useEffect(() => {
@@ -433,9 +472,28 @@ const DailyMarks = () => {
       // Update marks array with new mark
       setMarks((prev) => [createdMark as any, ...prev]);
       setIsAddMarkModalOpen(false);
+      
+      // تشغيل صوت النجاح
+      const audio = new Audio('/sounds/successful.mp3');
+      audio.play().catch(err => console.log('Error playing sound:', err));
+      
+      // عرض رسالة نجاح مع toast
+      const totalMark = (newMark.reviewMark || 0) + (newMark.memorizationMark || 0);
+      showSuccessMessage(
+        `تم رصد العلامة بنجاح!\nالعلامة: ${totalMark}/20`,
+        "✅ تم الرصد",
+        undefined,
+        "top-end",
+        true // toast mode
+      );
     } catch (err) {
       console.error("Error adding mark:", err);
-      showErrorMessage("حدث خطأ أثناء إضافة العلامة", "خطأ");
+      
+      // تشغيل صوت الخطأ
+      const audio = new Audio('/sounds/error.wav');
+      audio.play().catch(err => console.log('Error playing sound:', err));
+      
+      showErrorMessage("حدث خطأ أثناء إضافة العلامة", "❌ خطأ");
     }
   };
 
@@ -463,9 +521,28 @@ const DailyMarks = () => {
       );
       setIsUpdateMarkModalOpen(false);
       setEditingMark(null);
+      
+      // تشغيل صوت النجاح
+      const audio = new Audio('/sounds/successful.mp3');
+      audio.play().catch(err => console.log('Error playing sound:', err));
+      
+      // عرض رسالة نجاح مع toast
+      const totalMark = (newMark.reviewMark || 0) + (newMark.memorizationMark || 0);
+      showSuccessMessage(
+        `تم تحديث العلامة بنجاح!\nالعلامة الجديدة: ${totalMark}/20`,
+        "🔄 تم التحديث",
+        undefined,
+        "top-end",
+        true // toast mode
+      );
     } catch (err) {
       console.error("Error updating mark:", err);
-      showErrorMessage("حدث خطأ أثناء تحديث العلامة", "خطأ");
+      
+      // تشغيل صوت الخطأ
+      const audio = new Audio('/sounds/error.wav');
+      audio.play().catch(err => console.log('Error playing sound:', err));
+      
+      showErrorMessage("حدث خطأ أثناء تحديث العلامة", "❌ خطأ");
     }
   };
 
@@ -822,33 +899,39 @@ const DailyMarks = () => {
             <h1 className="text-3xl md:text-4xl font-bold text-slate-800">
               نظام العلامات اليومية
             </h1>
-            {/* Socket Connection Indicator */}
-            <div className="relative group">
-              <div
-                className={`w-3 h-3 rounded-full ${
-                  socketConnected ? "bg-green-500" : "bg-yellow-500"
-                } animate-pulse`}
-                title={socketConnected ? "متصل" : "غير متصل"}
-              />
-              {/* Tooltip */}
-              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
-                <div className="text-center">
-                  <div className="font-semibold mb-1">
-                    {socketConnected ? "✓ متصل بالسوكت" : "⚠ غير متصل"}
-                  </div>
-                  {socketId && (
-                    <div className="text-gray-300 text-xs">ID: {socketId.substring(0, 8)}...</div>
-                  )}
-                  {socketLastUpdate && (
-                    <div className="text-gray-300 text-xs mt-1">
-                      آخر تحديث: {new Date(socketLastUpdate).toLocaleTimeString('ar-EG')}
+            
+            {/* Socket Connection Indicator - يظهر فقط في وضع المطور */}
+            {developerMode && (
+              <div className="relative group">
+                <div
+                  className={`w-3 h-3 rounded-full ${
+                    socketConnected ? "bg-green-500" : "bg-yellow-500"
+                  } animate-pulse`}
+                  title={socketConnected ? "متصل" : "غير متصل"}
+                />
+                {/* Tooltip */}
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                  <div className="text-center">
+                    <div className="font-semibold mb-1">
+                      {socketConnected ? "✓ متصل بالسوكت" : "⚠ غير متصل"}
                     </div>
-                  )}
+                    {socketId && (
+                      <div className="text-gray-300 text-xs">ID: {socketId.substring(0, 8)}...</div>
+                    )}
+                    {socketLastUpdate && (
+                      <div className="text-gray-300 text-xs mt-1">
+                        آخر تحديث: {new Date(socketLastUpdate).toLocaleTimeString('ar-EG')}
+                      </div>
+                    )}
+                    <div className="text-gray-400 text-xs mt-2 pt-2 border-t border-gray-700">
+                      🔧 وضع المطور • اضغط d×3 للإلغاء
+                    </div>
+                  </div>
+                  {/* Arrow */}
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
                 </div>
-                {/* Arrow */}
-                <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
               </div>
-            </div>
+            )}
           </div>
           <div className="w-24 h-1 bg-emerald-600 mx-auto mb-6"></div>
           {currentUser && (

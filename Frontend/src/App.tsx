@@ -19,7 +19,7 @@ import React from 'react';
 // ============================================================================
 import { AuthProvider } from './contexts/AuthContext';
 import { UserStatusProvider } from './contexts/UserStatusContext';
-import { PrayerProvider } from './contexts/PrayerContext';
+// import { PrayerProvider } from './contexts/PrayerContext'; // ❌ غير مستخدم - تم الاستعاضة عنه بـ Sweet Alert في NotificationHeader
 // import { SocketProvider } from "./contexts/SocketContext"; // ❌ DELETED - استخدم النظام الجديد في Socket/
 import { useAuth } from './hooks/useAuth';
 import { useFirebaseMessaging } from './hooks/useFirebaseMessaging'; // ✅ Firebase Notifications
@@ -30,7 +30,6 @@ import { useFirebaseMessaging } from './hooks/useFirebaseMessaging'; // ✅ Fire
 import Header from './components/Headers/Header';
 import AdminHeader from './components/Headers/AdminHeader';
 import Footer from './components/Footer';
-import PrayerAlert from './components/PrayerAlert';
 
 // ============================================================================
 // Page Components - General
@@ -134,8 +133,7 @@ const AdminRoutes: React.FC = () => {
 
   return (
     <div className="app-content">
-      {/* Prayer Time Alert - Global */}
-      <PrayerAlert />
+      {/* Prayer Time Alert - Handled by NotificationHeader & PrayerTimes with Sweet Alert */}
 
       {/* Header - Hidden only on login page */}
       {!isLoginPage && <AdminHeader />}
@@ -194,7 +192,6 @@ const TeacherRoutes: React.FC = () => {
   return (
     <div className="app-content">
       {/* Prayer Time Alert - Global */}
-      <PrayerAlert />
 
       {/* Header - Hidden only on login page */}
       {!isLoginPage && <Header />}
@@ -275,7 +272,6 @@ const StudentRoutes: React.FC = () => {
   return (
     <div className="app-content">
       {/* Prayer Time Alert - Global */}
-      <PrayerAlert />
 
       {/* Header - Hidden only on login page */}
       {!isLoginPage && <Header />}
@@ -427,7 +423,8 @@ function AppContent() {
  * - BrowserRouter: Enables routing
  * - AuthProvider: Manages authentication state
  * - UserStatusProvider: Manages user online/offline status
- * - PrayerProvider: Manages prayer time notifications
+ *
+ * Prayer notifications: ✅ Handled by NotificationHeader + PrayerTimes with Sweet Alert
  *
  * NOTE: SocketProvider (القديم) تم حذفه ✅
  * استخدم النظام الجديد Socket/SocketManager
@@ -438,9 +435,7 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <UserStatusProvider>
-          <PrayerProvider>
-            <AppContent />
-          </PrayerProvider>
+          <AppContent />
         </UserStatusProvider>
       </AuthProvider>
     </BrowserRouter>

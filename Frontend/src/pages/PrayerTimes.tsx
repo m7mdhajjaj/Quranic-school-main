@@ -9,6 +9,8 @@ import {
   type PrayerTimesData,
   type PrayerSettings
 } from "../Api/prayerTimesApi";
+import { socketManager } from "../Socket";
+import Swal from "sweetalert2";
 
 const PrayerTimes = () => {
   const [prayerTimes, setPrayerTimes] = useState<PrayerTime[]>([]);
@@ -193,6 +195,110 @@ const PrayerTimes = () => {
   useEffect(() => {
     fetchPrayerTimes();
   }, [fetchPrayerTimes]);
+
+  // استماع لأحداث الصلاة عبر Socket
+  useEffect(() => {
+    const socket = socketManager.getSocket();
+    if (!socket) return;
+
+    // التنبيه قبل 10 دقائق من الصلاة
+    const handlePrayerReminder = (data: {
+      prayerName: string;
+      prayerTime: string;
+      emoji: string;
+      minutesRemaining: number;
+    }) => {
+      console.log("⏰ Prayer reminder received:", data);
+      
+      // تشغيل صوت التنبيه
+      try {
+        const audio = new Audio("/sounds/notification.mp3");
+        audio.volume = 0.7;
+        audio.play().catch((err) => console.error("Error playing sound:", err));
+      } catch (error) {
+        console.error("Error playing notification sound:", error);
+      }
+
+      // عرض Sweet Alert
+      Swal.fire({
+        title: `${data.emoji} تنبيه صلاة ${data.prayerName}`,
+        html: `
+          <div class="text-center">
+            <div class="text-6xl mb-4">${data.emoji}</div>
+            <p class="text-xl mb-2">باقي <strong>10 دقائق</strong> على صلاة ${data.prayerName}</p>
+            <p class="text-lg text-gray-600">الوقت: ${data.prayerTime}</p>
+            <p class="text-md text-emerald-600 mt-4">🕌 استعدوا للصلاة</p>
+          </div>
+        `,
+        icon: "info",
+        confirmButtonText: "حسناً",
+        confirmButtonColor: "#10b981",
+        timer: 10000,
+        timerProgressBar: true,
+        backdrop: `
+          rgba(0,123,255,0.1)
+          left top
+          no-repeat
+        `,
+      });
+    };
+
+    // الأذان عند وقت الصلاة
+    const handlePrayerAdhan = (data: {
+      prayerName: string;
+      prayerTime: string;
+      emoji: string;
+      isAdhan: boolean;
+    }) => {
+      console.log("🔔 Prayer adhan received:", data);
+      
+      // تشغيل صوت الأذان أو تنبيه قوي
+      try {
+        const audio = new Audio("/sounds/notification.mp3");
+        audio.volume = 1.0;
+        audio.play().catch((err) => console.error("Error playing sound:", err));
+      } catch (error) {
+        console.error("Error playing adhan sound:", error);
+      }
+
+      // عرض Sweet Alert مع أنيميشن
+      Swal.fire({
+        title: `${data.emoji} أذان ${data.prayerName}`,
+        html: `
+          <div class="text-center">
+            <div class="text-8xl mb-4 animate-bounce">${data.emoji}</div>
+            <p class="text-2xl font-bold mb-2">🕌 حان وقت صلاة ${data.prayerName}</p>
+            <p class="text-xl text-gray-600 mb-4">${data.prayerTime}</p>
+            <div class="text-3xl text-emerald-600 font-arabic mb-2">
+              الله أكبر الله أكبر
+            </div>
+            <p class="text-lg text-gray-500">بارك الله فيكم</p>
+          </div>
+        `,
+        icon: "success",
+        confirmButtonText: "الذهاب للصلاة",
+        confirmButtonColor: "#059669",
+        showCloseButton: true,
+        allowOutsideClick: false,
+        backdrop: `
+          rgba(16,185,129,0.2)
+          left top
+          no-repeat
+        `,
+        customClass: {
+          popup: "animate__animated animate__fadeInDown",
+        },
+      });
+    };
+
+    socket.on("prayerReminder", handlePrayerReminder);
+    socket.on("prayerAdhan", handlePrayerAdhan);
+
+    return () => {
+      socket.off("prayerReminder", handlePrayerReminder);
+      socket.off("prayerAdhan", handlePrayerAdhan);
+    };
+  }, []);
 
   // Update next prayer every minute
   useEffect(() => {

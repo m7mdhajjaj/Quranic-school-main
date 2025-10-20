@@ -94,11 +94,16 @@ exports.createOrUpdateMark = async (req, res) => {
       const newTotalMark =
         (mark.reviewMark || 0) + (mark.memorizationMark || 0);
       if (global.notificationService) {
+        const teacherName = req.user?.name || mark.sectionId?.teacher || "المعلم";
+        const subjectName = "القرآن الكريم";
+        
         await global.notificationService.notifyNewGrade(
           mark.studentId._id,
-          `${mark.sectionId.subject || "المادة"} - محدث`,
+          subjectName,
           newTotalMark,
-          req.user?.name || "المعلم"
+          teacherName,
+          true, // isUpdate = true
+          oldTotalMark // العلامة القديمة
         );
       }
 
@@ -150,11 +155,16 @@ exports.createOrUpdateMark = async (req, res) => {
       const totalMark =
         (populatedMark.reviewMark || 0) + (populatedMark.memorizationMark || 0);
       if (global.notificationService) {
+        const teacherName = req.user?.name || populatedMark.sectionId?.teacher || "المعلم";
+        const subjectName = "القرآن الكريم";
+        
         await global.notificationService.notifyNewGrade(
           populatedMark.studentId._id,
-          populatedMark.sectionId.subject || "المادة",
+          subjectName,
           totalMark,
-          req.user?.name || "المعلم"
+          teacherName,
+          false, // isUpdate = false (علامة جديدة)
+          null // لا توجد علامة قديمة
         );
       }
 
