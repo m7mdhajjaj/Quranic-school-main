@@ -92,6 +92,25 @@ const Absence = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // حالة لإظهار/إخفاء مؤشر السوكيت (للمطورين فقط)
+  const [showSocketIndicator, setShowSocketIndicator] = useState(false);
+
+  // مستمع للوحة المفاتيح: الضغط على 'd' لإظهار/إخفاء مؤشر السوكيت
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      if (event.key === 'd' || event.key === 'D') {
+        setShowSocketIndicator((prev) => {
+          const newValue = !prev;
+          console.log(`🔧 Socket Indicator ${newValue ? 'shown' : 'hidden'} (Debug Mode)`);
+          return newValue;
+        });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, []);
+
   // --------- حالات واجهة المعلّم ---------
   const [students, setStudents] = useState<AttendanceStudent[]>([]);
   const [date, setDate] = useState<string>(todayISO());
@@ -737,8 +756,8 @@ const Absence = () => {
             <h1 className="text-3xl md:text-4xl font-bold text-slate-800">
               سجل الحضور والغياب
             </h1>
-            {/* Socket Connection Indicator - للمطورين فقط */}
-            {import.meta.env.DEV && (
+            {/* Socket Connection Indicator - للمطورين فقط (اضغط 'd' لإظهار/إخفاء) */}
+            {showSocketIndicator && (
               <div className="relative group">
                 <div
                   className={`w-3 h-3 rounded-full ${
@@ -760,6 +779,9 @@ const Absence = () => {
                         آخر تحديث: {new Date(socketLastUpdate).toLocaleTimeString('ar-EG')}
                       </div>
                     )}
+                    <div className="text-gray-400 text-xs mt-1 border-t border-gray-600 pt-1">
+                      اضغط 'd' للإخفاء
+                    </div>
                   </div>
                   {/* Arrow */}
                   <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
