@@ -7,11 +7,21 @@ const {
 // Get all marks
 exports.getMarks = async (req, res) => {
   try {
+    console.log("⚡ Fetching all marks...");
+    const startTime = Date.now();
+
     const marks = await Mark.find()
       .populate("studentId", "firstName fatherName lastName group")
-      .populate("sectionId");
+      .populate("sectionId", "date memorizationSection reviewSection group")
+      .limit(200) // حد أقصى لتحسين الأداء
+      .lean(); // استخدام lean() للسرعة
+
+    const duration = Date.now() - startTime;
+    console.log(`✅ Fetched ${marks.length} marks in ${duration}ms`);
+
     res.json(marks);
   } catch (error) {
+    console.error("Error fetching marks:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -19,11 +29,24 @@ exports.getMarks = async (req, res) => {
 // Get marks for a specific student
 exports.getStudentMarks = async (req, res) => {
   try {
+    console.log("⚡ Fetching marks for student:", req.params.studentId);
+    const startTime = Date.now();
+
     const marks = await Mark.find({ studentId: req.params.studentId })
-      .populate("sectionId")
-      .sort({ "sectionId.date": -1 }); // Sort by section date (newest first)
+      .populate({
+        path: "sectionId",
+        select: "date memorizationSection reviewSection group teacher",
+      })
+      .sort({ createdAt: -1 })
+      .limit(100) // حد أقصى 100 علامة لتحسين الأداء
+      .lean(); // استخدام lean() للسرعة
+
+    const duration = Date.now() - startTime;
+    console.log(`✅ Fetched ${marks.length} marks in ${duration}ms`);
+
     res.json(marks);
   } catch (error) {
+    console.error("Error fetching student marks:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -94,9 +117,10 @@ exports.createOrUpdateMark = async (req, res) => {
       const newTotalMark =
         (mark.reviewMark || 0) + (mark.memorizationMark || 0);
       if (global.notificationService) {
-        const teacherName = req.user?.name || mark.sectionId?.teacher || "المعلم";
+        const teacherName =
+          req.user?.name || mark.sectionId?.teacher || "المعلم";
         const subjectName = "القرآن الكريم";
-        
+
         await global.notificationService.notifyNewGrade(
           mark.studentId._id,
           subjectName,
@@ -155,9 +179,10 @@ exports.createOrUpdateMark = async (req, res) => {
       const totalMark =
         (populatedMark.reviewMark || 0) + (populatedMark.memorizationMark || 0);
       if (global.notificationService) {
-        const teacherName = req.user?.name || populatedMark.sectionId?.teacher || "المعلم";
+        const teacherName =
+          req.user?.name || populatedMark.sectionId?.teacher || "المعلم";
         const subjectName = "القرآن الكريم";
-        
+
         await global.notificationService.notifyNewGrade(
           populatedMark.studentId._id,
           subjectName,
