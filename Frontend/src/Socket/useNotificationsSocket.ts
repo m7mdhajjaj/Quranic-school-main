@@ -14,7 +14,7 @@ import { useAuth } from '../hooks/useAuth';
 interface Notification {
   _id: string;
   id?: string;
-  type: 'grade' | 'message' | 'prayer_time' | 'activity' | 'attendance' | 'general';
+  type: 'grade' | 'message' | 'prayer_time' | 'activity' | 'attendance' | 'exam' | 'general';
   title: string;
   message: string;
   createdAt: string;

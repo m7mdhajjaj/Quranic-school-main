@@ -20,6 +20,7 @@ interface Notification {
     | "prayer_time"
     | "activity"
     | "attendance"
+    | "exam"
     | "general";
   title: string;
   message: string;
@@ -686,10 +687,11 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
   const getNotificationIcon = (type: string) => {
     const icons = {
       grade: "🎯",
-      message: "�",
+      message: "💬",
       prayer_time: "🕌",
       activity: "✨",
       attendance: "⚡",
+      exam: "📝",
       general: "🔔",
     };
     return icons[type as keyof typeof icons] || "🔔";
@@ -918,6 +920,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
                       notification.type === 'message' ? 'bg-gradient-to-b from-blue-400 to-blue-600' :
                       notification.type === 'prayer_time' ? 'bg-gradient-to-b from-purple-400 to-purple-600' :
                       notification.type === 'activity' ? 'bg-gradient-to-b from-orange-400 to-orange-600' :
+                      notification.type === 'exam' ? 'bg-gradient-to-b from-pink-400 to-pink-600' :
                       'bg-gradient-to-b from-gray-400 to-gray-600'
                     }`}></div>
                     
@@ -929,6 +932,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
                         notification.type === 'message' ? 'bg-gradient-to-br from-blue-400 to-blue-500' :
                         notification.type === 'prayer_time' ? 'bg-gradient-to-br from-purple-400 to-purple-500' :
                         notification.type === 'activity' ? 'bg-gradient-to-br from-orange-400 to-orange-500' :
+                        notification.type === 'exam' ? 'bg-gradient-to-br from-pink-400 to-pink-500' :
                         'bg-gradient-to-br from-gray-400 to-gray-500'
                       }`}>
                         {getNotificationIcon(notification.type)}

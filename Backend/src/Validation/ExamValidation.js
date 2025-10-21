@@ -255,16 +255,20 @@ const validateExamData = async (req, res, next) => {
     const validatedData = {};
     
     // Validate required fields for creation, optional for updates
-    if (!isUpdate || data.title !== undefined) {
-      const titleValidation = validateExamTitle(data.title);
+    // Support both 'name' and 'title' for backward compatibility
+    const examTitle = data.title || data.name;
+    if (!isUpdate || examTitle !== undefined) {
+      const titleValidation = validateExamTitle(examTitle);
       if (!titleValidation.isValid) {
         errors.push(titleValidation.message);
       } else {
         validatedData.title = titleValidation.value;
+        validatedData.name = titleValidation.value; // For backward compatibility
       }
     }
     
-    if (!isUpdate || data.subject !== undefined) {
+    // Optional: subject
+    if (data.subject !== undefined) {
       const subjectValidation = validateSubject(data.subject);
       if (!subjectValidation.isValid) {
         errors.push(subjectValidation.message);
@@ -273,7 +277,8 @@ const validateExamData = async (req, res, next) => {
       }
     }
     
-    if (!isUpdate || data.group !== undefined) {
+    // Optional: group (can be null for general exams)
+    if (data.group !== undefined) {
       const groupValidation = validateGroup(data.group);
       if (!groupValidation.isValid) {
         errors.push(groupValidation.message);
@@ -282,7 +287,8 @@ const validateExamData = async (req, res, next) => {
       }
     }
     
-    if (!isUpdate || data.teacher !== undefined) {
+    // Optional: teacher
+    if (data.teacher !== undefined) {
       const teacherValidation = validateTeacher(data.teacher);
       if (!teacherValidation.isValid) {
         errors.push(teacherValidation.message);
@@ -298,6 +304,11 @@ const validateExamData = async (req, res, next) => {
       } else {
         validatedData.date = dateValidation.value;
       }
+    }
+    
+    // Optional: time
+    if (data.time !== undefined) {
+      validatedData.time = data.time;
     }
     
     // Validate optional fields

@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const goalController = require("../controllers/goalController");
+const goalController = require("../controllers/ExamMark/goalController");
 const { protect } = require("../middleware/authMiddleware");
 const { validateGoalData } = require("../Validation/GoalValidation");
 

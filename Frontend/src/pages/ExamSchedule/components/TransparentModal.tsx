@@ -1,0 +1,91 @@
+// ============================================================================
+// TransparentModal Component
+// ============================================================================
+
+import React from "react";
+import { cn } from "../utils";
+
+interface TransparentModalProps {
+  open: boolean;
+  onClose: () => void;
+  maxWidth?: string;
+  children: React.ReactNode;
+  cardClassName?: string;
+  ariaLabel?: string;
+  title?: string;
+  icon?: React.ReactNode;
+  gradientFrom?: string;
+  gradientTo?: string;
+}
+
+export const TransparentModal: React.FC<TransparentModalProps> = ({
+  open,
+  onClose,
+  maxWidth = "max-w-lg",
+  children,
+  cardClassName,
+  ariaLabel,
+  title,
+  icon,
+  gradientFrom = "emerald-500",
+  gradientTo = "teal-600",
+}) => {
+  if (!open) return null;
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+      role="dialog"
+      aria-label={ariaLabel ?? "Modal"}
+      aria-modal
+      onMouseDown={(e) => {
+        // إغلاق عند الضغط خارج البطاقة
+        if (e.target === e.currentTarget) onClose();
+      }}>
+      <div
+        className={cn(
+          "bg-white rounded-2xl shadow-2xl w-full overflow-hidden animate-fadeIn",
+          maxWidth,
+          cardClassName
+        )}>
+        {title && (
+          <div
+            className={cn(
+              "p-6",
+              `bg-gradient-to-r from-${gradientFrom} to-${gradientTo}`
+            )}>
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                {icon && (
+                  <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
+                    {icon}
+                  </div>
+                )}
+                <h3 className="text-xl font-bold text-white">{title}</h3>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="text-white/80 hover:text-white hover:bg-white/20 p-2 rounded-lg transition"
+                aria-label="إغلاق">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
+        <div className="p-6">{children}</div>
+      </div>
+    </div>
+  );
+};

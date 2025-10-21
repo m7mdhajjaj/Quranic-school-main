@@ -21,6 +21,7 @@ const notificationSchema = new mongoose.Schema(
         "prayer_time",
         "activity",
         "attendance",
+        "exam",
         "general",
       ],
     },

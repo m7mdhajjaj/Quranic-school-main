@@ -11,8 +11,10 @@ import './styles/App.css';
 // ============================================================================
 // External Dependencies
 // ============================================================================
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import React from 'react';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // ============================================================================
 // Contexts & Hooks
@@ -27,9 +29,7 @@ import { useFirebaseMessaging } from './hooks/useFirebaseMessaging'; // ✅ Fire
 // ============================================================================
 // Layout Components
 // ============================================================================
-import Header from './components/Headers/Header';
-import AdminHeader from './components/Headers/AdminHeader';
-import Footer from './components/Footer';
+import Layout from './components/Layout';
 
 // ============================================================================
 // Page Components - General
@@ -69,7 +69,7 @@ import Absence from './pages/Absence';
 // ============================================================================
 // Page Components - Islamic Resources
 // ============================================================================
-import PrayerTimes from './pages/PrayerTimes';
+// import PrayerTimes from './pages/PrayerTimes';
 import QuranPage from './pages/QuranPage';
 import QuranAudio from './pages/QuranAudio';
 import Azkar from './pages/Azkar';
@@ -100,22 +100,6 @@ import Soon from './components/Soon';
 import NotificationPermissionPrompt from './components/Notifications/NotificationPermissionPrompt';
 
 // ============================================================================
-// Route Configurations
-// ============================================================================
-
-/**
- * Routes that should hide the footer
- */
-const ROUTES_WITHOUT_FOOTER = ['/login', '/chat', '/quran', '/quran-audio'];
-
-/**
- * Check if current path should hide footer
- */
-const shouldHideFooter = (pathname: string): boolean => {
-  return ROUTES_WITHOUT_FOOTER.some((route) => pathname === route);
-};
-
-// ============================================================================
 // Admin Routes Component
 // ============================================================================
 /**
@@ -125,50 +109,34 @@ const shouldHideFooter = (pathname: string): boolean => {
  * - Footer is now displayed for admin pages
  */
 const AdminRoutes: React.FC = () => {
-  const location = useLocation();
-
-  // Determine layout visibility based on current route
-  const isLoginPage = location.pathname === '/login';
-  const shouldShowFooter = !shouldHideFooter(location.pathname);
-
   return (
-    <div className="app-content">
-      {/* Prayer Time Alert - Handled by NotificationHeader & PrayerTimes with Sweet Alert */}
+    <Layout role="admin">
+      <Routes>
+        {/* ====== Admin Dashboard Routes ====== */}
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        {/* <Route path="/admin/management" element={<AdminManagement />} /> */}
+        <Route path="/admin/students" element={<StudentsManagement />} />
+        <Route path="/admin/teachers" element={<TeachersManagement />} />
+        <Route path="/admin/groups" element={<GroupManagement />} />
+        <Route path="/admin/settings" element={<NotFound />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/" element={<AdminDashboard />} />
 
-      {/* Header - Hidden only on login page */}
-      {!isLoginPage && <AdminHeader />}
+        {/* ====== Admin - User Settings ====== */}
+        <Route path="/profile" element={<Profile />} />
 
-      <main className="main-content">
-        <Routes>
-          {/* ====== Admin Dashboard Routes ====== */}
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          {/* <Route path="/admin/management" element={<AdminManagement />} /> */}
-          <Route path="/admin/students" element={<StudentsManagement />} />
-          <Route path="/admin/teachers" element={<TeachersManagement />} />
-          <Route path="/admin/groups" element={<GroupManagement />} />
-          <Route path="/admin/settings" element={<NotFound />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/" element={<AdminDashboard />} />
+        {/* ====== Admin - Authentication ====== */}
+        <Route path="/login" element={<Login />} />
 
-          {/* ====== Admin - User Settings ====== */}
-          <Route path="/profile" element={<Profile />} />
+        {/* ====== Special Pages ====== */}
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/contact" element={<Contact />} />
 
-          {/* ====== Admin - Authentication ====== */}
-          <Route path="/login" element={<Login />} />
-
-          {/* ====== Special Pages ====== */}
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/contact" element={<Contact />} />
-
-          {/* ====== Fallback - Redirect to Dashboard ====== */}
-          <Route path="*" element={<AdminDashboard />} />
-        </Routes>
-      </main>
-
-      {/* Footer - Hidden on login and specific pages */}
-      {shouldShowFooter && <Footer />}
-    </div>
+        {/* ====== Fallback - Redirect to Dashboard ====== */}
+        <Route path="*" element={<AdminDashboard />} />
+      </Routes>
+    </Layout>
   );
 };
 
@@ -183,72 +151,56 @@ const AdminRoutes: React.FC = () => {
  * - Restricted from admin-only pages
  */
 const TeacherRoutes: React.FC = () => {
-  const location = useLocation();
-
-  // Determine layout visibility based on current route
-  const isLoginPage = location.pathname === '/login';
-  const shouldShowFooter = !shouldHideFooter(location.pathname);
-
   return (
-    <div className="app-content">
-      {/* Prayer Time Alert - Global */}
+    <Layout role="teacher">
+      <Routes>
+        {/* ====== Home & Authentication ====== */}
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
 
-      {/* Header - Hidden only on login page */}
-      {!isLoginPage && <Header />}
+        {/* ====== Academic Pages - Teacher Access ====== */}
+        <Route path="/goals" element={<Goals />} />
+        <Route path="/daily-marks" element={<DailyMarks />} />
+        <Route path="/arrangement" element={<Arrangement />} />
+        <Route path="/test" element={<Test />} />
+        <Route path="/exam-schedule" element={<ExamSchedule />} />
+        <Route path="/reports" element={<Reports />} />
+        <Route path="/timetable" element={<Timetable />} />
 
-      <main className="main-content">
-        <Routes>
-          {/* ====== Home & Authentication ====== */}
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
+        {/* ====== Communication & Activities ====== */}
+        <Route path="/news" element={<News />} />
+        {/* <Route path="/chat" element={<Chat />} /> */}
+        <Route path="/activities" element={<Activities />} />
 
-          {/* ====== Academic Pages - Teacher Access ====== */}
-          <Route path="/goals" element={<Goals />} />
-          <Route path="/daily-marks" element={<DailyMarks />} />
-          <Route path="/arrangement" element={<Arrangement />} />
-          <Route path="/test" element={<Test />} />
-          <Route path="/exam-schedule" element={<ExamSchedule />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/timetable" element={<Timetable />} />
+        {/* ====== Attendance & Management - Teacher Features ====== */}
+        <Route path="/absence" element={<Absence />} />
+        <Route path="/my-students" element={<MyStudents />} />
+        <Route path="/warnings" element={<Warnings />} />
 
-          {/* ====== Communication & Activities ====== */}
-          <Route path="/news" element={<News />} />
-          {/* <Route path="/chat" element={<Chat />} /> */}
-          <Route path="/activities" element={<Activities />} />
+        {/* ====== Points Game ====== */}
+        <Route path="/points-game" element={<PointsGame />} />
 
-          {/* ====== Attendance & Management - Teacher Features ====== */}
-          <Route path="/absence" element={<Absence />} />
-          <Route path="/my-students" element={<MyStudents />} />
-          <Route path="/warnings" element={<Warnings />} />
+        {/* ====== Islamic Resources ====== */}
+        {/* <Route path="/prayer-times" element={<PrayerTimes />} /> */}
+        <Route path="/quran" element={<QuranPage />} />
+        <Route path="/quran-audio" element={<QuranAudio />} />
+        <Route path="/azkar" element={<Azkar />} />
 
-          {/* ====== Points Game ====== */}
-          <Route path="/points-game" element={<PointsGame />} />
+        {/* ====== User Settings ====== */}
+        <Route path="/profile" element={<Profile />} />
+        {/* ====== Special Pages ====== */}
+        <Route path="/soon" element={<Soon />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/contact" element={<Contact />} />
 
-          {/* ====== Islamic Resources ====== */}
-          <Route path="/prayer-times" element={<PrayerTimes />} />
-          <Route path="/quran" element={<QuranPage />} />
-          <Route path="/quran-audio" element={<QuranAudio />} />
-          <Route path="/azkar" element={<Azkar />} />
-
-          {/* ====== User Settings ====== */}
-          <Route path="/profile" element={<Profile />} />
-          {/* ====== Special Pages ====== */}
-          <Route path="/soon" element={<Soon />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/contact" element={<Contact />} />
-
-          {/* ====== Protected & Fallback Routes ====== */}
-          {/* Block access to admin routes */}
-          <Route path="/admin/*" element={<NotFound />} />
-          {/* 404 page for undefined routes */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </main>
-
-      {/* Footer - Hidden on login, chat, and Quran pages */}
-      {shouldShowFooter && <Footer />}
-    </div>
+        {/* ====== Protected & Fallback Routes ====== */}
+        {/* Block access to admin routes */}
+        <Route path="/admin/*" element={<NotFound />} />
+        {/* 404 page for undefined routes */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Layout>
   );
 };
 
@@ -263,72 +215,56 @@ const TeacherRoutes: React.FC = () => {
  * - Cannot access management or admin features
  */
 const StudentRoutes: React.FC = () => {
-  const location = useLocation();
-
-  // Determine layout visibility based on current route
-  const isLoginPage = location.pathname === '/login';
-  const shouldShowFooter = !shouldHideFooter(location.pathname);
-
   return (
-    <div className="app-content">
-      {/* Prayer Time Alert - Global */}
+    <Layout role="student">
+      <Routes>
+        {/* ====== Home & Authentication ====== */}
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
 
-      {/* Header - Hidden only on login page */}
-      {!isLoginPage && <Header />}
+        {/* ====== Academic Pages - Student View Only ====== */}
+        <Route path="/goals" element={<Goals />} />
+        <Route path="/daily-marks" element={<DailyMarks />} />
+        <Route path="/arrangement" element={<Arrangement />} />
+        <Route path="/exam-schedule" element={<ExamSchedule />} />
+        <Route path="/reports" element={<Reports />} />
+        <Route path="/timetable" element={<Timetable />} />
+        <Route path="/test" element={<Test />} />
+        {/* ====== Communication & Activities ====== */}
+        <Route path="/news" element={<News />} />
+        {/* <Route path="/chat" element={<Chat />} /> */}
+        <Route path="/activities" element={<Activities />} />
 
-      <main className="main-content">
-        <Routes>
-          {/* ====== Home & Authentication ====== */}
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
+        {/* ====== Attendance - View Only ====== */}
+        <Route path="/absence" element={<Absence />} />
+        <Route path="/warnings" element={<Warnings />} />
 
-          {/* ====== Academic Pages - Student View Only ====== */}
-          <Route path="/goals" element={<Goals />} />
-          <Route path="/daily-marks" element={<DailyMarks />} />
-          <Route path="/arrangement" element={<Arrangement />} />
-          <Route path="/exam-schedule" element={<ExamSchedule />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/timetable" element={<Timetable />} />
-          <Route path="/test" element={<Test />} />
-          {/* ====== Communication & Activities ====== */}
-          <Route path="/news" element={<News />} />
-          {/* <Route path="/chat" element={<Chat />} /> */}
-          <Route path="/activities" element={<Activities />} />
+        {/* ====== Points Game ====== */}
+        <Route path="/points-game" element={<PointsGame />} />
 
-          {/* ====== Attendance - View Only ====== */}
-          <Route path="/absence" element={<Absence />} />
-          <Route path="/warnings" element={<Warnings />} />
+        {/* ====== Islamic Resources ====== */}
+        {/* <Route path="/prayer-times" element={<PrayerTimes />} /> */}
+        <Route path="/quran" element={<QuranPage />} />
+        <Route path="/quran-audio" element={<QuranAudio />} />
+        <Route path="/azkar" element={<Azkar />} />
 
-          {/* ====== Points Game ====== */}
-          <Route path="/points-game" element={<PointsGame />} />
+        {/* ====== User Settings ====== */}
+        <Route path="/profile" element={<Profile />} />
+        {/* ====== Special Pages ====== */}
+        <Route path="/soon" element={<Soon />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/contact" element={<Contact />} />
 
-          {/* ====== Islamic Resources ====== */}
-          <Route path="/prayer-times" element={<PrayerTimes />} />
-          <Route path="/quran" element={<QuranPage />} />
-          <Route path="/quran-audio" element={<QuranAudio />} />
-          <Route path="/azkar" element={<Azkar />} />
-
-          {/* ====== User Settings ====== */}
-          <Route path="/profile" element={<Profile />} />
-          {/* ====== Special Pages ====== */}
-          <Route path="/soon" element={<Soon />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/contact" element={<Contact />} />
-
-          {/* ====== Protected & Fallback Routes ====== */}
-          {/* Block access to management features (teacher-only) */}
-          <Route path="/test" element={<NotFound />} />
-          {/* Block access to admin routes */}
-          <Route path="/admin/*" element={<NotFound />} />
-          {/* 404 page for undefined routes */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </main>
-
-      {/* Footer - Hidden on login, chat, and Quran pages */}
-      {shouldShowFooter && <Footer />}
-    </div>
+        {/* ====== Protected & Fallback Routes ====== */}
+        {/* Block access to management features (teacher-only) */}
+        <Route path="/test" element={<NotFound />} />
+        {/* Block access to admin routes */}
+        <Route path="/admin/*" element={<NotFound />} />
+        {/* 404 page for undefined routes */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Layout>
   );
 };
 
@@ -436,6 +372,34 @@ function App() {
       <AuthProvider>
         <UserStatusProvider>
           <AppContent />
+          {/* Toast Container with modern styling - RTL positioned on right */}
+          <ToastContainer
+            position="top-left"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop={true}
+            closeOnClick={true}
+            rtl={true}
+            pauseOnFocusLoss={false}
+            draggable={true}
+            pauseOnHover={true}
+            theme="light"
+            limit={3}
+            style={{
+              zIndex: 9999,
+              top: '1.5rem',
+              right: '1.5rem',
+              left: 'auto',
+            }}
+            toastStyle={{
+              borderRadius: '12px',
+              padding: '16px',
+              fontSize: '15px',
+              fontWeight: '500',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
+              backdropFilter: 'blur(8px)',
+            }}
+          />
         </UserStatusProvider>
       </AuthProvider>
     </BrowserRouter>

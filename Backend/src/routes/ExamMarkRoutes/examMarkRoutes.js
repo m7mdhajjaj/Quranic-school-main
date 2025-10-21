@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
-const examMarkController = require("../controllers/examMarkController");
-const { validateExamMarkData } = require("../Validation/ExamMarkValidation");
+const examMarkController = require("../../controllers/ExamMark/examMarkController");
+const { validateExamMarkData } = require("../../Validation/ExamMarkValidation");
 
 // علامات طالب واحد
 router.get("/student/:studentId", examMarkController.getStudentMarks);

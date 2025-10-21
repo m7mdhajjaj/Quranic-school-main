@@ -86,16 +86,17 @@ class NotificationService {
         isNew: true,
       };
 
-      // إرسال للمستخدم المحدد (إذا كان متصل سيستقبله، إذا لا فسيتجاهله Socket.IO)
+      // إرسال للمستخدم المحدد عبر غرفة الـ userId
       this.io.to(recipientId).emit("newNotification", notificationPayload);
+      console.log(`📤 Notification sent to room: ${recipientId} - ${notification.title}`);
 
       // أيضاً محاولة الإرسال عبر socketId إذا كان موجود في onlineUsers
       if (global.onlineUsers && global.onlineUsers.has(recipientId)) {
         const userData = global.onlineUsers.get(recipientId);
         this.io.to(userData.socketId).emit("newNotification", notificationPayload);
-        console.log(`📱 Real-time notification sent to ${userData.firstName} (${notification.type})`);
+        console.log(`📱 Real-time notification sent to ${userData.firstName} (${notification.type}) via socketId`);
       } else {
-        console.log(`📡 Notification broadcasted for user ${recipientId} (will receive if connected)`);
+        console.log(`📡 User ${recipientId} not in onlineUsers, notification sent to room only`);
       }
     } catch (error) {
       console.error("❌ Error sending real-time notification:", error);

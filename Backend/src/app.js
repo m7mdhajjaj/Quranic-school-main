@@ -99,8 +99,8 @@ app.use("/api/marks", require("./routes/markRoutes"));
 app.use("/api/attendance", require("./routes/attendanceRoutes"));
 app.use("/api/chat", require("./routes/chatRoutes"));
 app.use("/api/notifications", require("./routes/notificationRoutes"));
-app.use("/api/exams", require("./routes/examRoutes"));
-app.use("/api/exam-marks", require("./routes/examMarkRoutes"));
+app.use("/api/exams", require("./routes/ExamRoutes/examRoutes"));
+app.use("/api/exam-marks", require("./routes/ExamMarkRoutes/examMarkRoutes"));
 app.use("/api/sessions", require("./routes/sessionRoutes"));
 app.use("/api/groups", require("./routes/groupRoutes"));
 app.use("/api/dashboard", require("./routes/dashboardRoutes"));
@@ -213,6 +213,10 @@ io.on("connection", (socket) => {
       firstName: firstName || "مستخدم",
       loginTime: new Date().toISOString(),
     });
+
+    // ✅ انضمام المستخدم لغرفة خاصة به لاستقبال الإشعارات
+    socket.join(userId);
+    console.log(`🔔 User ${userId} joined their notification room`);
 
     // Set isActive to true in database with better error handling
     try {

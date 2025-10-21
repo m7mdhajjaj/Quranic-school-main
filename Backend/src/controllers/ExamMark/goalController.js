@@ -1,7 +1,7 @@
-const Goal = require("../schema/Goal");
-const Student = require("../schema/Student");
-const Teacher = require("../schema/Teacher");
-const Group = require("../schema/Group");
+const Goal = require("../../schema/Goal");
+const Student = require("../../schema/Student");
+const Teacher = require("../../schema/Teacher");
+const Group = require("../../schema/Group");
 const mongoose = require("mongoose");
 
 // Get all goals
