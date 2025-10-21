@@ -671,27 +671,33 @@ exports.getPointsRankings = async (req, res) => {
       `✅ [Points Ranking] عدد السجلات الصالحة: ${validRankings.length}`
     );
 
-    // تنسيق البيانات وإضافة الترتيب - مع فلترة السجلات الفارغة
-    const formattedRankings = await Promise.all(
-      validRankings.map(async (record, index) => {
-        // الحصول على عدد الشارات
-        const badges = await StudentBadge.findOne({
-          studentId: record.studentId._id,
-        });
+    // ⚡ تحسين الأداء: جلب جميع الشارات مرة واحدة
+    const studentIds = validRankings.map((r) => r.studentId._id);
+    const allBadges = await StudentBadge.find({
+      studentId: { $in: studentIds },
+    }).lean();
 
-        return {
-          rank: index + 1,
-          _id: record.studentId._id,
-          studentId: record.studentId._id,
-          name: `${record.studentId.firstName} ${record.studentId.lastName}`,
-          points: record.totalPoints,
-          emoji: "👤",
-          activeDays: record.activeDays,
-          badgesCount: badges?.earnedBadges.length || 0,
-          totalBadgeRepeats: badges?.totalBadgeRepeats || 0,
-        };
-      })
+    // تحويل إلى Map للوصول السريع
+    const badgesMap = new Map(
+      allBadges.map((b) => [b.studentId.toString(), b])
     );
+
+    // تنسيق البيانات وإضافة الترتيب
+    const formattedRankings = validRankings.map((record, index) => {
+      const badges = badgesMap.get(record.studentId._id.toString());
+
+      return {
+        rank: index + 1,
+        _id: record.studentId._id,
+        studentId: record.studentId._id,
+        name: `${record.studentId.firstName} ${record.studentId.lastName}`,
+        points: record.totalPoints,
+        emoji: "👤",
+        activeDays: record.activeDays,
+        badgesCount: badges?.earnedBadges.length || 0,
+        totalBadgeRepeats: badges?.totalBadgeRepeats || 0,
+      };
+    });
 
     console.log(`✅ [Points Ranking] إرسال ${formattedRankings.length} سجل`);
 
@@ -762,42 +768,59 @@ exports.getBadgesRankings = async (req, res) => {
 
     console.log(`📊 [Badges Ranking] عدد الطلاب: ${studentsInGroup.length}`);
 
-    const rankings = [];
+    // ⚡ تحسين الأداء: جلب جميع البيانات مرة واحدة
+    const studentIds = studentsInGroup.map((s) => s._id);
 
-    for (const stud of studentsInGroup) {
-      const badges = await StudentBadge.findOne({ studentId: stud._id });
+    // جلب جميع الشارات مرة واحدة
+    const allBadges = await StudentBadge.find({
+      studentId: { $in: studentIds },
+    }).lean();
 
-      // حساب مجموع النقاط للشهر الحالي
-      const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      endOfMonth.setHours(23, 59, 59, 999);
+    // جلب جميع النقاط مرة واحدة
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    endOfMonth.setHours(23, 59, 59, 999);
 
-      const points = await DailyPoints.aggregate([
-        {
-          $match: {
-            studentId: stud._id,
-            date: { $gte: startOfMonth, $lte: endOfMonth },
-          },
+    const allPoints = await DailyPoints.aggregate([
+      {
+        $match: {
+          studentId: { $in: studentIds },
+          date: { $gte: startOfMonth, $lte: endOfMonth },
         },
-        {
-          $group: {
-            _id: null,
-            totalPoints: { $sum: "$totalPoints" },
-          },
+      },
+      {
+        $group: {
+          _id: "$studentId",
+          totalPoints: { $sum: "$totalPoints" },
         },
-      ]);
+      },
+    ]);
 
-      rankings.push({
+    // تحويل النتائج إلى Map للوصول السريع
+    const badgesMap = new Map(
+      allBadges.map((b) => [b.studentId.toString(), b])
+    );
+    const pointsMap = new Map(
+      allPoints.map((p) => [p._id.toString(), p.totalPoints])
+    );
+
+    // بناء الترتيب
+    const rankings = studentsInGroup.map((stud) => {
+      const studIdStr = stud._id.toString();
+      const badges = badgesMap.get(studIdStr);
+      const points = pointsMap.get(studIdStr) || 0;
+
+      return {
         _id: stud._id,
         studentId: stud._id,
         name: `${stud.firstName} ${stud.lastName}`,
         emoji: "👤",
         badgesCount: badges?.earnedBadges.length || 0,
         totalBadgeRepeats: badges?.totalBadgeRepeats || 0,
-        points: points[0]?.totalPoints || 0,
-      });
-    }
+        points: points,
+      };
+    });
 
     // ترتيب حسب مجموع التكرارات (من الأعلى للأدنى)
     rankings.sort((a, b) => {
