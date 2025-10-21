@@ -25,17 +25,7 @@ import { getAllStudents } from "../Api/studentApi";
 import Swal from "sweetalert2";
 import { useExamScheduleSocket } from "../Socket";
 
-// =========================
-// إعدادات API تم نقلها إلى Api/examApi.ts
-// =========================
 
-// =========================
-// الأنواع (Types) تم نقلها إلى Api/examApi.ts
-// =========================
-
-// =========================
-// أدوات مساعدة
-// =========================
 
 const cn = (...cls: Array<string | false | null | undefined>) =>
   cls.filter(Boolean).join(" ");
@@ -48,6 +38,56 @@ const safeExamId = (ex: Exam | null | undefined): string | null => {
   const val = ex._id ?? ex.id;
   if (val === undefined || val === null) return null;
   return String(val);
+};
+
+// التحقق من أن وقت الامتحان ضمن المدى المسموح (09:00 - 19:00)
+const isTimeWithinAllowedRange = (timeStr: string): boolean => {
+  if (!timeStr) return false;
+  const [hStr, mStr] = timeStr.split(":");
+  const h = Number(hStr);
+  const m = Number(mStr);
+  if (Number.isNaN(h) || Number.isNaN(m)) return false;
+  const total = h * 60 + m;
+  const MIN = 9 * 60; // 09:00
+  const MAX = 19 * 60; // 19:00
+  return total >= MIN && total <= MAX;
+};
+
+// تنسيق التاريخ من yyyy-mm-dd إلى صيغة عربية أوضح
+const formatDateArabic = (dateStr: string): string => {
+  if (!dateStr) return dateStr;
+  
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
+    const year = date.getFullYear();
+    
+    const arabicMonths = [
+      'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+      'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+    ];
+    
+    return `${day} ${arabicMonths[month - 1]} ${year}`;
+  } catch {
+    return dateStr;
+  }
+};
+
+// تنسيق الوقت إلى نظام 12 ساعة مع صباحاً/مساءً
+const formatTime12Arabic = (timeStr: string): string => {
+  if (!timeStr) return timeStr;
+  const [hStr, mStr] = timeStr.split(":");
+  let h = Number(hStr);
+  const m = Number(mStr);
+  if (Number.isNaN(h) || Number.isNaN(m)) return timeStr;
+  const period = h >= 12 ? "مساءً" : "صباحاً";
+  h = h % 12;
+  if (h === 0) h = 12;
+  const mm = String(m).padStart(2, "0");
+  return `${h}:${mm} ${period}`;
 };
 
 // وظيفة للتعامل مع الأخطاء
@@ -382,6 +422,39 @@ const ExamSchedule: React.FC = () => {
       return;
     }
 
+    // التحقق من وقت الامتحان (من 09:00 إلى 19:00)
+    if (!isTimeWithinAllowedRange(newExam.time)) {
+      await Swal.fire({
+        icon: "warning",
+        title: "تنبيه",
+        text: "وقت الامتحان يجب أن يكون بين 09:00 صباحاً و 07:00 مساءً",
+        confirmButtonText: "حسناً",
+        confirmButtonColor: "#059669",
+      });
+      return;
+    }
+
+    // منع إضافة امتحان لنفس الحلقة في نفس اليوم
+    const targetGroup = role === "teacher" ? selectedGroupForExam : "";
+    const hasSameGroupSameDay = exams.some((ex) => {
+      const g1 = String(ex.group ?? "");
+      const g2 = String(targetGroup ?? "");
+      return String(ex.date ?? "") === String(newExam.date ?? "") && g1 === g2;
+    });
+    if (hasSameGroupSameDay) {
+      await Swal.fire({
+        icon: "error",
+        title: "غير مسموح",
+        text:
+          targetGroup
+            ? "لا يمكن إضافة امتحان لنفس الحلقة في نفس اليوم"
+            : "لا يمكن إضافة امتحان عام لنفس اليوم",
+        confirmButtonText: "حسناً",
+        confirmButtonColor: "#DC2626",
+      });
+      return;
+    }
+
     console.log("📤 إرسال بيانات الامتحان:", newExam);
     console.log("📋 الحلقة المختارة:", selectedGroupForExam);
 
@@ -488,6 +561,38 @@ const ExamSchedule: React.FC = () => {
     e.preventDefault();
     if (!editExam) return;
     const examId = String(editExam._id ?? editExam.id);
+    // التحقق من وقت الامتحان (من 09:00 إلى 19:00)
+    if (!isTimeWithinAllowedRange(editExam.time)) {
+      await Swal.fire({
+        icon: "warning",
+        title: "تنبيه",
+        text: "وقت الامتحان يجب أن يكون بين 09:00 صباحاً و 07:00 مساءً",
+        confirmButtonText: "حسناً",
+        confirmButtonColor: "#059669",
+      });
+      return;
+    }
+
+    // منع تعديل الامتحان ليصبح مكرر لنفس الحلقة في نفس اليوم
+    const hasConflict = exams.some((ex) => {
+      const exId = String(ex._id ?? ex.id ?? "");
+      if (exId === examId) return false;
+      const sameDate = String(ex.date ?? "") === String(editExam.date ?? "");
+      const sameGroup = String(ex.group ?? "") === String(editExam.group ?? "");
+      return sameDate && sameGroup;
+    });
+    if (hasConflict) {
+      await Swal.fire({
+        icon: "error",
+        title: "غير مسموح",
+        text: editExam.group
+          ? "يوجد بالفعل امتحان لهذه الحلقة في هذا اليوم"
+          : "يوجد بالفعل امتحان عام في هذا اليوم",
+        confirmButtonText: "حسناً",
+        confirmButtonColor: "#DC2626",
+      });
+      return;
+    }
     try {
       const updated = await updateExam(examId, editExam);
       setExams((prev) =>
@@ -1181,7 +1286,7 @@ const ExamSchedule: React.FC = () => {
   // ——— واجهة المستخدم
   return (
     <div
-      className="max-w-6xl mx-auto px-4 md:px-6 pt-4 md:pt-6 pb-16 md:pb-20"
+      className="max-w-8xl mx-auto px-4 md:px-8 pt-4 md:pt-8 pb-16 md:pb-20"
       dir="rtl"
       lang="ar">
       {/* 🔌 Socket Connection Indicator - للمطورين فقط */}
@@ -1252,7 +1357,13 @@ const ExamSchedule: React.FC = () => {
 
         {(role === "teacher" || role === "admin") && (
           <div className="flex items-center justify-end gap-2">
-            {role === "teacher" && teacherGroups.length === 0 ? (
+            {loadingExams ? (
+              // Skeleton placeholder for Add Exam button (sync with table skeleton)
+              <div
+                className="h-10 w-48 rounded-lg bg-gradient-to-r from-emerald-100 via-emerald-200 to-emerald-100 bg-[length:200%_100%] animate-shimmer"
+                aria-hidden="true"
+              />
+            ) : role === "teacher" && teacherGroups.length === 0 ? (
               <div className="text-amber-600 text-sm flex items-center gap-2">
                 <span>⚠️</span>
                 <span>لا يوجد لديك حلقات مسجلة</span>
@@ -1260,7 +1371,8 @@ const ExamSchedule: React.FC = () => {
             ) : (
               <PillButton
                 onClick={() => setShowAddExamModal(true)}
-                disabled={role === "teacher" && teacherGroups.length === 0}>
+                disabled={role === "teacher" && teacherGroups.length === 0}
+              >
                 {role === "teacher"
                   ? "إضافة امتحان للحلقة"
                   : "إضافة امتحان لكل الطلاب"}
@@ -1273,21 +1385,21 @@ const ExamSchedule: React.FC = () => {
       {/* البطاقة + الجدول */}
       <div className="bg-white/90 backdrop-blur rounded-2xl border border-emerald-100 shadow-[0_10px_30px_rgba(16,185,129,0.08)] overflow-hidden">
         {/* جدول للشاشات المتوسطة فما فوق */}
-        <div className="hidden md:block overflow-auto">
-          <table className="min-w-full text-center align-middle">
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full min-w-[920px] text-center align-middle">
             <thead className="sticky top-0 z-10">
               <tr className="bg-gradient-to-l from-emerald-600 to-emerald-500 text-white">
-                <th className="px-4 py-3 text-sm font-bold">اسم الامتحان</th>
-                <th className="px-4 py-3 text-sm font-bold">الحلقة</th>
-                <th className="px-4 py-3 text-sm font-bold">التاريخ</th>
-                <th className="px-4 py-3 text-sm font-bold">الوقت</th>
-                <th className="px-4 py-3 text-sm font-bold">
+                <th className="px-6 py-4 text-base font-bold whitespace-nowrap">اسم الامتحان</th>
+                <th className="px-6 py-4 text-base font-bold whitespace-nowrap">الحلقة</th>
+                <th className="px-6 py-4 text-base font-bold whitespace-nowrap">التاريخ</th>
+                <th className="px-6 py-4 text-base font-bold whitespace-nowrap">الوقت</th>
+                <th className="px-6 py-4 text-base font-bold whitespace-nowrap">
                   {role === "teacher" || role === "admin"
                     ? "متوسط العلامات"
                     : "النتيجة"}
                 </th>
                 {(role === "teacher" || role === "admin") && (
-                  <th className="px-4 py-3 text-sm font-bold">إجراءات</th>
+                  <th className="px-6 py-4 text-base font-bold whitespace-nowrap">إجراءات</th>
                 )}
               </tr>
             </thead>
@@ -1375,12 +1487,12 @@ const ExamSchedule: React.FC = () => {
                         zebra ? "bg-emerald-50/30" : "bg-white",
                         "hover:bg-emerald-50 transition-colors"
                       )}>
-                      <td className="px-4 py-3 font-semibold text-emerald-900">
+                      <td className="px-6 py-4 font-semibold text-emerald-900 whitespace-nowrap">
                         {exam.name}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         {exam.group ? (
-                          <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                          <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
                             <span>📚</span>
                             {exam.group}
                           </span>
@@ -1388,13 +1500,47 @@ const ExamSchedule: React.FC = () => {
                           <span className="text-gray-400 text-xs">-</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-emerald-800">
-                        {exam.date}
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-2">
+                          <span className="text-emerald-700 font-medium">
+                            {formatDateArabic(exam.date)}
+                          </span>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4 text-emerald-500"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+                        </div>
                       </td>
-                      <td className="px-4 py-3 text-emerald-800">
-                        {exam.time}
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-2">
+                          <span className="text-emerald-700 font-medium">
+                            {formatTime12Arabic(exam.time)}
+                          </span>
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4 text-emerald-500"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                        </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         {role === "teacher" || role === "admin" ? (
                           <AvgBadge value={examAverages[examId]} />
                         ) : (
@@ -1402,9 +1548,10 @@ const ExamSchedule: React.FC = () => {
                         )}
                       </td>
                       {(role === "teacher" || role === "admin") && (
-                        <td className="px-4 py-3">
+                        <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center justify-center gap-2">
                             <PillButton
+                              className="whitespace-nowrap"
                               onClick={() => {
                                 setSelectedExam(exam);
                                 setShowMarkModal(true);
@@ -1506,9 +1653,15 @@ const ExamSchedule: React.FC = () => {
                         </span>
                       </div>
                     )}
-                    <div className="mb-3 text-sm text-emerald-800/80">
-                      <span className="ml-2">📅 {exam.date}</span>
-                      <span>⏰ {exam.time}</span>
+                    <div className="mb-3 text-sm">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-emerald-600">📅</span>
+                        <span className="text-emerald-800 font-medium">{formatDateArabic(exam.date)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-emerald-600">⏰</span>
+                        <span className="text-emerald-800">{formatTime12Arabic(exam.time)}</span>
+                      </div>
                     </div>
 
                     {/* عرض العلامة أو المتوسط */}
@@ -1528,7 +1681,7 @@ const ExamSchedule: React.FC = () => {
                   {(role === "teacher" || role === "admin") && (
                     <div className="mt-3 flex gap-2">
                       <PillButton
-                        className="flex-1"
+                        className="whitespace-nowrap"
                         onClick={() => {
                           setSelectedExam(exam);
                           setShowMarkModal(true);
@@ -1687,6 +1840,8 @@ const ExamSchedule: React.FC = () => {
               <input
                 className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition duration-200 outline-none"
                 type="time"
+                min="09:00"
+                max="19:00"
                 value={newExam.time}
                 onChange={(e) =>
                   setNewExam((p) => ({ ...p, time: e.target.value }))
@@ -1858,6 +2013,8 @@ const ExamSchedule: React.FC = () => {
                 <input
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-500 focus:ring-4 focus:ring-amber-100 transition duration-200 outline-none"
                   type="time"
+                  min="09:00"
+                  max="19:00"
                   value={editExam.time}
                   onChange={(e) =>
                     setEditExam((p) => (p ? { ...p, time: e.target.value } : p))
