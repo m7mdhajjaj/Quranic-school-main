@@ -42,6 +42,8 @@ interface AttendanceStudent {
   group?: string;
   teacher?: string;
   isPresent: boolean;
+  totalAbsences?: number; // عدد مرات الغياب الإجمالي
+  absenceDates?: string[]; // تواريخ الغيابات
 }
 
 interface MonthlyAbsence {
@@ -119,6 +121,9 @@ const Absence = () => {
   // فلترة + بحث
   const [groupFilter, setGroupFilter] = useState<string>("all");
   const [nameQuery, setNameQuery] = useState<string>("");
+
+  // حالة لتتبع الطالب المفتوحة قائمة غياباته
+  const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
 
   // --------- حالات واجهة الطالب ---------
   const [monthlyStats, setMonthlyStats] = useState<MonthlyAbsence[]>([]);
@@ -295,15 +300,56 @@ const Absence = () => {
         }
       }
 
-      // 3) تشكيل بيانات العرض
-      let formatted: AttendanceStudent[] = filteredStudents.map((s) => ({
-        _id: s._id,
-        studentId: s.studentId,
-        name: `${s.firstName} ${s.fatherName ?? ""} ${s.lastName ?? ""}`.trim(),
-        group: s.group,
-        teacher: s.teacher,
-        isPresent: true, // افتراضياً الكل حاضر
-      }));
+      // 3) تشكيل بيانات العرض مع جلب إحصائيات الغياب
+      let formatted: AttendanceStudent[] = await Promise.all(
+        filteredStudents.map(async (s) => {
+          // جلب سجل حضور الطالب لحساب الغيابات
+          let totalAbsences = 0;
+          let absenceDates: string[] = [];
+          
+          try {
+            const studentAttendance = await getStudentAttendance(s._id);
+            if (Array.isArray(studentAttendance)) {
+              // تصفية الغيابات فقط
+              const absences = studentAttendance.filter((record: any) => !record.isPresent);
+              totalAbsences = absences.length;
+              
+              // استخراج التواريخ وترتيبها بتنسيق DD/MM/YYYY
+              absenceDates = absences
+                .map((record: any) => {
+                  const date = new Date(record.date);
+                  const day = String(date.getDate()).padStart(2, '0');
+                  const month = String(date.getMonth() + 1).padStart(2, '0');
+                  const year = date.getFullYear();
+                  return `${day}/${month}/${year}`;
+                })
+                .sort((a, b) => {
+                  // ترتيب من الأحدث للأقدم
+                  const [dayA, monthA, yearA] = a.split('/').map(Number);
+                  const [dayB, monthB, yearB] = b.split('/').map(Number);
+                  const dateA = new Date(yearA, monthA - 1, dayA);
+                  const dateB = new Date(yearB, monthB - 1, dayB);
+                  return dateB.getTime() - dateA.getTime();
+                });
+            }
+          } catch (err) {
+            console.warn(`⚠️ Could not fetch absence data for student ${s._id}:`, err);
+          }
+
+          return {
+            _id: s._id,
+            studentId: s.studentId,
+            name: `${s.firstName} ${s.fatherName ?? ""} ${s.lastName ?? ""}`.trim(),
+            group: s.group,
+            teacher: s.teacher,
+            isPresent: true, // افتراضياً الكل حاضر
+            totalAbsences,
+            absenceDates,
+          };
+        })
+      );
+
+      console.log(`📊 تم جلب إحصائيات الغياب لـ ${formatted.length} طالب`);
 
       // 4) جلب حضور اليوم المحدد (إن وجد)
       try {
@@ -1208,6 +1254,12 @@ const Absence = () => {
                           <th className="py-3 px-4 text-right text-sm font-medium text-gray-500">
                             الحلقة
                           </th>
+                          <th className="py-3 px-4 text-center text-sm font-medium text-gray-500">
+                            عدد الغيابات
+                          </th>
+                          <th className="py-3 px-4 text-center text-sm font-medium text-gray-500">
+                            تواريخ الغيابات
+                          </th>
                           <th className="py-3 px-6 text-center text-sm font-medium text-gray-500">
                             <div className="flex items-center justify-center">
                               <input
@@ -1225,7 +1277,7 @@ const Absence = () => {
                         {visibleStudents.length === 0 ? (
                           <tr>
                             <td
-                              colSpan={4}
+                              colSpan={6}
                               className="text-center py-6 text-gray-500">
                               لا يوجد طلاب مطابقين للفلترة/البحث
                             </td>
@@ -1244,6 +1296,72 @@ const Absence = () => {
                               </td>
                               <td className="px-4 py-3 text-sm text-gray-500">
                                 {s.group ?? "-"}
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <span
+                                  className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
+                                    (s.totalAbsences ?? 0) === 0
+                                      ? "bg-green-100 text-green-700"
+                                      : (s.totalAbsences ?? 0) <= 3
+                                      ? "bg-yellow-100 text-yellow-700"
+                                      : (s.totalAbsences ?? 0) <= 7
+                                      ? "bg-orange-100 text-orange-700"
+                                      : "bg-red-100 text-red-700"
+                                  }`}>
+                                  {s.totalAbsences ?? 0}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                                {(s.absenceDates ?? []).length === 0 ? (
+                                  <span className="text-xs text-gray-400 italic">لا يوجد غيابات</span>
+                                ) : (
+                                  <div className="relative inline-block">
+                                    <button 
+                                      onClick={() => setExpandedStudentId(
+                                        expandedStudentId === s._id ? null : s._id
+                                      )}
+                                      className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium transition-colors">
+                                      {expandedStudentId === s._id ? 'إخفاء' : `عرض (${s.absenceDates?.length})`}
+                                    </button>
+                                    
+                                    {/* قائمة التواريخ المنسدلة */}
+                                    {expandedStudentId === s._id && (
+                                      <div className="absolute left-1/2 transform -translate-x-1/2 top-full mt-2 w-56 bg-white border-2 border-blue-200 rounded-lg shadow-2xl z-50 max-h-64 overflow-hidden">
+                                        {/* Header */}
+                                        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 font-bold text-sm flex items-center justify-between">
+                                          <span>تواريخ الغيابات</span>
+                                          <button 
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              setExpandedStudentId(null);
+                                            }}
+                                            className="hover:bg-blue-700 rounded-full w-6 h-6 flex items-center justify-center transition-colors">
+                                            ✕
+                                          </button>
+                                        </div>
+                                        
+                                        {/* Content with scroll */}
+                                        <div className="max-h-48 overflow-y-auto p-3">
+                                          <ul className="space-y-2">
+                                            {s.absenceDates?.map((date, idx) => (
+                                              <li key={idx} className="flex items-center gap-2 text-sm bg-red-50 hover:bg-red-100 px-3 py-2 rounded-lg transition-colors">
+                                                <span className="text-red-500 font-bold">📅</span>
+                                                <span className="text-gray-700 font-medium">{date}</span>
+                                              </li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                        
+                                        {/* Footer */}
+                                        <div className="bg-gray-50 px-4 py-2 border-t border-gray-200 text-center">
+                                          <span className="text-xs text-gray-600">
+                                            إجمالي: <span className="font-bold text-red-600">{s.absenceDates?.length}</span> غياب
+                                          </span>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                               </td>
                               <td
                                 className="px-6 py-3 text-center"
