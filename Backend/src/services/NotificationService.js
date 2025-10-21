@@ -601,6 +601,70 @@ class NotificationService {
     }
   }
 
+  async notifyAbsenceRemoved(studentId, date, teacherName) {
+    try {
+      const student = await Student.findById(studentId);
+      if (!student) throw new Error("Student not found");
+      
+      const studentName = student.firstName && student.lastName 
+        ? `${student.firstName} ${student.lastName}` 
+        : student.name || 'الطالب';
+      
+      console.log(`✅ Sending absence removal notification to student: ${studentName} (ID: ${studentId})`);
+      
+      const notificationTitle = `✅ تم إزالة الغياب`;
+      const notificationMessage = `تم إزالة غيابك بتاريخ ${date} بواسطة ${teacherName}. تم تسجيلك حاضراً.`;
+      
+      // إرسال عبر FCM
+      if (FCMService && FCMService.initialized) {
+        try {
+          const deviceTokens = await DeviceToken.find({ 
+            user: studentId,
+            userModel: 'Student'
+          }).lean();
+          
+          if (deviceTokens.length > 0) {
+            const tokens = deviceTokens.map(d => d.token).filter(Boolean);
+            const payload = {
+              notification: {
+                title: notificationTitle,
+                body: notificationMessage,
+              },
+              data: {
+                type: "attendance",
+                date,
+                teacherName,
+                absenceType: "removed",
+              },
+            };
+            await FCMService.sendToTokens(tokens, payload);
+            console.log(`📱 Absence removal notification sent via FCM to ${tokens.length} devices`);
+          }
+        } catch (fcmErr) {
+          console.error("❌ Error sending absence removal FCM:", fcmErr);
+        }
+      }
+      
+      return await this.createNotification({
+        recipient: studentId,
+        recipientModel: "Student",
+        type: "attendance",
+        title: notificationTitle,
+        message: notificationMessage,
+        priority: "medium",
+        data: { 
+          date, 
+          teacherName,
+          studentName,
+          absenceType: 'removed'
+        },
+      });
+    } catch (error) {
+      console.error("❌ Error creating absence removal notification:", error);
+      throw error;
+    }
+  }
+
   async notifySystemMessage(recipientId, recipientModel, title, message, priority = "medium", data = {}) {
     try {
       return await this.createNotification({

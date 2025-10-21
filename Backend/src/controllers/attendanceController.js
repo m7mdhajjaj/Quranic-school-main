@@ -36,6 +36,21 @@ exports.createAttendance = async (req, res) => {
       return res.status(400).json({ message: "خطأ في تنسيق التاريخ" });
     }
 
+    // ⏰ التحقق من أن التاريخ ليس أقدم من أسبوع (7 أيام)
+    const now = new Date();
+    const ONE_WEEK = 7 * 24 * 60 * 60 * 1000; // 7 أيام
+    const timeDiff = now - formattedDate;
+
+    if (timeDiff > ONE_WEEK) {
+      const daysAgo = Math.round(timeDiff / (1000 * 60 * 60 * 24));
+      console.log(`⚠️ Attempt to modify attendance older than 7 days (${daysAgo} days ago)`);
+      return res.status(403).json({ 
+        message: "لا يمكن تعديل الحضور بعد مرور أسبوع",
+        details: `هذا التاريخ قديم (مضى عليه ${daysAgo} يوم). لا يمكن التعديل بعد مرور أسبوع.`,
+        daysAgo: daysAgo,
+      });
+    }
+
     // Create new attendance records
     const attendanceRecords = records.map((record) => ({
       studentId: record.studentId,
@@ -43,10 +58,30 @@ exports.createAttendance = async (req, res) => {
       isPresent: record.isPresent,
     }));
 
-    try {
-      // حذف السجلات الموجودة فقط لهؤلاء الطلاب في هذا التاريخ (ليس كل السجلات!)
-      const studentIds = attendanceRecords.map((r) => r.studentId);
+    // متغير لحفظ السجلات القديمة (خارج block try)
+    let oldRecordsMap = new Map();
 
+    try {
+      // جلب السجلات القديمة قبل الحذف لتتبع التغييرات من غائب إلى حاضر
+      const studentIds = attendanceRecords.map((r) => r.studentId);
+      
+      const oldRecords = await Attendance.find({
+        studentId: { $in: studentIds },
+        date: {
+          $gte: formattedDate,
+          $lt: new Date(formattedDate.getTime() + 24 * 60 * 60 * 1000),
+        },
+      }).lean();
+
+      // إنشاء map للسجلات القديمة للمقارنة السريعة
+      oldRecords.forEach(record => {
+        oldRecordsMap.set(record.studentId.toString(), {
+          isPresent: record.isPresent,
+          createdAt: record.createdAt,
+        });
+      });
+
+      // حذف السجلات الموجودة
       const deleteResult = await Attendance.deleteMany({
         studentId: { $in: studentIds },
         date: {
@@ -123,6 +158,51 @@ exports.createAttendance = async (req, res) => {
         console.log(
           `✅ Successfully sent ${absentRecords.length} absence notifications`
         );
+
+        // إرسال إشعارات لإزالة الغياب (الطلاب الذين كانوا غائبين وأصبحوا حاضرين)
+        const now = new Date();
+        const ONE_WEEK = 7 * 24 * 60 * 60 * 1000; // 7 أيام
+
+        console.log(`🔍 Checking for absence removals...`);
+        
+        for (const record of attendanceRecords) {
+          try {
+            const studentIdStr = record.studentId.toString();
+            const oldRecord = oldRecordsMap.get(studentIdStr);
+            
+            // التحقق: هل كان الطالب غائباً سابقاً وأصبح حاضراً الآن؟
+            if (oldRecord && !oldRecord.isPresent && record.isPresent) {
+              // التحقق من الفترة الزمنية: هل مضى أقل من أسبوع؟
+              const timeDiff = now - new Date(oldRecord.createdAt);
+              
+              if (timeDiff <= ONE_WEEK) {
+                const daysAgo = Math.round(timeDiff / (1000 * 60 * 60 * 24));
+                console.log(
+                  `✅ Student ${studentIdStr} was marked absent and is now present within 7 days (${daysAgo} days ago). Sending removal notification...`
+                );
+                
+                await global.notificationService.notifyAbsenceRemoved(
+                  record.studentId,
+                  dateStr,
+                  teacherName
+                );
+                
+                console.log(`📱 Absence removal notification sent to student ${studentIdStr}`);
+              } else {
+                const daysAgo = Math.round(timeDiff / (1000 * 60 * 60 * 24));
+                console.log(
+                  `⏰ Student ${studentIdStr} absence was more than 7 days ago (${daysAgo} days). No notification sent.`
+                );
+              }
+            }
+          } catch (removalError) {
+            console.error(
+              `Error sending absence removal notification to student ${record.studentId}:`,
+              removalError
+            );
+            // لا نريد أن يفشل حفظ الحضور بسبب مشكلة في الإشعارات
+          }
+        }
       }
 
       // تحديث إحصائيات الحلقات للشهر الحالي

@@ -1,9 +1,4 @@
-// =========================================
-// شاشة الحضور والغياب (Teacher + Student)
-// - واجهة المعلّم: تسجيل حضور/غياب يومي + فلترة حسب الحلقة + بحث
-// - واجهة الطالب: إحصائيات الغياب شهرياً + سنوياً
-// - تحسينات: تحذير تغييرات غير محفوظة، فلترة شهر تعمل فعلياً
-// =========================================
+
 
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
@@ -15,7 +10,7 @@ import {
   bulkSaveAttendance,
 } from "../Api/attendanceApi";
 import { useAbsenceSocket } from "../Socket";
-import { useSounds } from "../hooks/useSounds";
+import { showSuccessMessage, showErrorMessage } from "../utils/sweetalertUtils";
 
 // ================== الإعدادات العامة ==================
 
@@ -91,37 +86,6 @@ const Absence = () => {
     lastUpdate: socketLastUpdate,
     socketId,
   } = useAbsenceSocket();
-
-  // ✅ استخدام الأصوات
-  const { playAdd, playError } = useSounds();
-  
-  // ✅ صوت النجاح المخصص
-  const playSuccessSound = () => {
-    try {
-      const audio = new Audio('/sounds/successful.mp3');
-      audio.volume = 0.6;
-      audio.play().catch(() => {
-        // إذا فشل، استخدم الصوت الافتراضي
-        playAdd();
-      });
-    } catch {
-      playAdd();
-    }
-  };
-  
-  // ❌ صوت الفشل المخصص
-  const playFailedSound = () => {
-    try {
-      const audio = new Audio('/sounds/failed.mp3');
-      audio.volume = 0.6;
-      audio.play().catch(() => {
-        // إذا فشل، استخدم الصوت الافتراضي
-        playError();
-      });
-    } catch {
-      playError();
-    }
-  };
 
   // --------- حالات عامة ---------
   const [currentUser, setCurrentUser] = useState<LoggedInUser | null>(null);
@@ -630,9 +594,34 @@ const Absence = () => {
     [visibleStudents.length, presentCount]
   );
 
+  // ⏰ التحقق من أن التاريخ ليس أقدم من أسبوع (7 أيام)
+  const isDateTooOld = useMemo(() => {
+    const selectedDate = new Date(date);
+    const now = new Date();
+    const ONE_WEEK = 7 * 24 * 60 * 60 * 1000; // 7 أيام
+    const timeDiff = now.getTime() - selectedDate.getTime();
+    return timeDiff > ONE_WEEK;
+  }, [date]);
+
+  const daysAgo = useMemo(() => {
+    const selectedDate = new Date(date);
+    const now = new Date();
+    const timeDiff = now.getTime() - selectedDate.getTime();
+    return Math.round(timeDiff / (1000 * 60 * 60 * 24));
+  }, [date]);
+
   // حفظ السجل
   const handleSave = async () => {
     try {
+      // ⏰ التحقق من أن التاريخ ليس أقدم من أسبوع
+      if (isDateTooOld) {
+        await showErrorMessage(
+          "لا يمكن التعديل",
+          `هذا التاريخ قديم (مضى عليه ${daysAgo} ${daysAgo === 1 ? 'يوم' : 'أيام'}). لا يمكن تعديل الحضور بعد مرور أسبوع.`
+        );
+        return;
+      }
+
       // استخدام فقط الطلاب المرئيين في الحلقة المختارة
       const payload: AttendanceRecordPayload[] = visibleStudents
         .filter((s) => s._id)
@@ -667,186 +656,28 @@ const Absence = () => {
         records: payload,
       });
 
-      // ✅ تشغيل صوت النجاح المخصص فوراً
-      playSuccessSound();
-
-      // خيار 1: Toast سريع (معلق حالياً)
-      // const Swal = (await import("sweetalert2")).default;
-      // await Swal.fire({
-      //   icon: "success",
-      //   title: "✅ تم رصد الحضور بنجاح",
-      //   text: `حاضر: ${actualPresentCount} | غائب: ${actualAbsentCount}`,
-      //   toast: true,
-      //   position: "top-end",
-      //   showConfirmButton: false,
-      //   timer: 3000,
-      //   timerProgressBar: true,
-      // });
-
-      // خيار 2: ✅ عرض سويت الريت بتصميم جميل ومتحرك (مفعّل)
-      const Swal = (await import("sweetalert2")).default;
-      await Swal.fire({
-        icon: "success",
-        title: '<div style="color: #059669; font-size: 28px; font-weight: bold; text-shadow: 2px 2px 4px rgba(5,150,105,0.2);">🎉 تم رصد الحضور بنجاح</div>',
-        html: `
-          <div style="text-align: center; direction: rtl; font-family: 'Cairo', sans-serif; padding: 15px;">
-            
-            <!-- بطاقة الإحصائيات -->
-            <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-radius: 20px; padding: 25px; margin: 20px 0; box-shadow: 0 8px 20px rgba(5,150,105,0.15); border: 3px solid #86efac;">
-              
-              <!-- عداد الحاضرين والغائبين -->
-              <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 20px;">
-                
-                <!-- الحاضرين -->
-                <div style="background: white; border-radius: 15px; padding: 20px 30px; box-shadow: 0 4px 12px rgba(22,163,74,0.2); border: 2px solid #22c55e; min-width: 120px; transform: scale(1); transition: transform 0.3s;">
-                  <div style="font-size: 48px; margin-bottom: 8px;">✅</div>
-                  <div style="font-size: 36px; font-weight: bold; color: #16a34a; margin-bottom: 5px;">${actualPresentCount}</div>
-                  <div style="font-size: 15px; color: #15803d; font-weight: 600;">حاضر</div>
-                </div>
-                
-                <!-- الغائبين -->
-                <div style="background: white; border-radius: 15px; padding: 20px 30px; box-shadow: 0 4px 12px rgba(220,38,38,0.2); border: 2px solid #ef4444; min-width: 120px; transform: scale(1); transition: transform 0.3s;">
-                  <div style="font-size: 48px; margin-bottom: 8px;">${actualAbsentCount > 0 ? '⚠️' : '🎊'}</div>
-                  <div style="font-size: 36px; font-weight: bold; color: #dc2626; margin-bottom: 5px;">${actualAbsentCount}</div>
-                  <div style="font-size: 15px; color: #b91c1c; font-weight: 600;">غائب</div>
-                </div>
-                
-              </div>
-
-              <!-- نسبة الحضور مع شريط متحرك -->
-              <div style="margin-top: 25px;">
-                <div style="font-size: 18px; color: #047857; font-weight: bold; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                  <span>📊</span>
-                  <span>نسبة الحضور</span>
-                  <span style="color: #059669; font-size: 24px;">${actualAttendanceRate}%</span>
-                </div>
-                <div style="background: white; border-radius: 30px; height: 30px; overflow: hidden; box-shadow: inset 0 2px 6px rgba(0,0,0,0.1); position: relative;">
-                  <div style="position: absolute; left: 0; top: 0; height: 100%; width: ${actualAttendanceRate}%; background: linear-gradient(90deg, #22c55e 0%, #16a34a 50%, #15803d 100%); border-radius: 30px; animation: progressFill 1s ease-out; box-shadow: 0 0 10px rgba(22,163,74,0.4);"></div>
-                </div>
-              </div>
-              
-            </div>
-
-            <!-- رسالة الإشعارات -->
-            ${actualAbsentCount > 0 
-              ? `<div style="background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); padding: 18px; border-radius: 15px; margin-top: 15px; border: 2px solid #fb923c; box-shadow: 0 4px 10px rgba(249,115,22,0.15);">
-                  <div style="font-size: 20px; margin-bottom: 5px;">🔔</div>
-                  <div style="color: #ea580c; font-size: 16px; font-weight: 600;">تم إرسال إشعارات للطلاب الغائبين</div>
-                </div>` 
-              : `<div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 18px; border-radius: 15px; margin-top: 15px; border: 2px solid #fbbf24; box-shadow: 0 4px 10px rgba(251,191,36,0.15);">
-                  <div style="font-size: 24px; margin-bottom: 5px;">🌟</div>
-                  <div style="color: #d97706; font-size: 17px; font-weight: 600;">ممتاز! جميع الطلاب حاضرون</div>
-                </div>`
-            }
-            
-            <style>
-              @keyframes progressFill {
-                from { width: 0%; }
-                to { width: ${actualAttendanceRate}%; }
-              }
-            </style>
-            
-          </div>
-        `,
-        confirmButtonText: "تمام ✓",
-        confirmButtonColor: "#10b981",
-        buttonsStyling: true,
-        timer: 5000,
-        timerProgressBar: true,
-        allowOutsideClick: true,
-        allowEscapeKey: true,
-        showClass: {
-          popup: "animate__animated animate__zoomIn animate__faster"
-        },
-        hideClass: {
-          popup: "animate__animated animate__zoomOut animate__faster"
-        },
-        customClass: {
-          popup: 'swal2-custom-popup',
-          confirmButton: 'swal2-custom-confirm'
-        },
-        didOpen: (popup) => {
-          // إضافة تأثيرات hover على البطاقات
-          const cards = popup.querySelectorAll('[style*="transform: scale(1)"]');
-          cards.forEach((card: any) => {
-            card.addEventListener('mouseenter', () => {
-              card.style.transform = 'scale(1.05)';
-            });
-            card.addEventListener('mouseleave', () => {
-              card.style.transform = 'scale(1)';
-            });
-          });
-        }
-      });
+      // ✅ عرض رسالة النجاح مع الصوت
+      await showSuccessMessage(
+        "تم رصد الحضور بنجاح",
+        `حاضر: ${actualPresentCount} | غائب: ${actualAbsentCount} | نسبة الحضور: ${actualAttendanceRate}%`,
+        undefined,
+        "center",
+        false
+      );
     } catch (e: any) {
       console.error("❌ خطأ في حفظ الحضور:", e);
       console.error("📋 تفاصيل الخطأ:", e.response?.data);
       
-      // ❌ تشغيل صوت الفشل المخصص فوراً
-      playFailedSound();
+      // ❌ عرض رسالة الخطأ مع الصوت
+      let errorMsg = e.response?.data?.message || e.response?.data?.details || "تعذر حفظ السجل";
       
-      const Swal = (await import("sweetalert2")).default;
-      const errorMsg = e.response?.data?.message || e.response?.data?.details || "تعذر حفظ السجل";
-      const isNetworkError = !e.response;
+      // معالجة خاصة لخطأ التاريخ القديم
+      if (e.response?.status === 403 && e.response?.data?.daysAgo) {
+        const daysAgo = e.response.data.daysAgo;
+        errorMsg = `لا يمكن تعديل الحضور بعد مرور أسبوع. هذا التاريخ قديم (مضى عليه ${daysAgo} ${daysAgo === 1 ? 'يوم' : 'أيام'}).`;
+      }
       
-      await Swal.fire({
-        icon: "error",
-        title: '<div style="color: #dc2626; font-size: 26px; font-weight: bold; text-shadow: 2px 2px 4px rgba(220,38,38,0.2);">❌ خطأ في الحفظ</div>',
-        html: `
-          <div style="text-align: center; direction: rtl; font-family: 'Cairo', sans-serif; padding: 20px;">
-            
-            <!-- بطاقة الخطأ -->
-            <div style="background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border-radius: 20px; padding: 30px; margin: 20px 0; box-shadow: 0 8px 20px rgba(220,38,38,0.15); border: 3px solid #fca5a5;">
-              
-              <div style="font-size: 64px; margin-bottom: 15px; animation: shake 0.5s;">
-                ${isNetworkError ? '🌐' : '⚠️'}
-              </div>
-              
-              <div style="font-size: 18px; color: #b91c1c; font-weight: 600; line-height: 1.8; margin-bottom: 15px;">
-                ${isNetworkError ? 'تعذر الاتصال بالخادم' : errorMsg}
-              </div>
-              
-              ${isNetworkError 
-                ? `<div style="background: white; border-radius: 12px; padding: 15px; margin-top: 15px; border-right: 4px solid #f87171;">
-                    <div style="color: #991b1b; font-size: 15px; line-height: 1.6;">
-                      • تحقق من اتصالك بالإنترنت<br>
-                      • أعد المحاولة بعد قليل<br>
-                      • تواصل مع الدعم الفني إذا استمرت المشكلة
-                    </div>
-                   </div>` 
-                : `<div style="background: white; border-radius: 12px; padding: 15px; margin-top: 15px; border-right: 4px solid #f87171;">
-                    <div style="color: #991b1b; font-size: 15px;">
-                      💡 نصيحة: تأكد من صحة البيانات وحاول مجدداً
-                    </div>
-                   </div>`
-              }
-              
-            </div>
-            
-            <style>
-              @keyframes shake {
-                0%, 100% { transform: translateX(0); }
-                25% { transform: translateX(-10px); }
-                75% { transform: translateX(10px); }
-              }
-            </style>
-            
-          </div>
-        `,
-        confirmButtonText: "حسناً، فهمت",
-        confirmButtonColor: "#ef4444",
-        buttonsStyling: true,
-        timer: 5000,
-        timerProgressBar: true,
-        allowOutsideClick: true,
-        allowEscapeKey: true,
-        showClass: {
-          popup: "animate__animated animate__shakeX animate__faster"
-        },
-        hideClass: {
-          popup: "animate__animated animate__fadeOut animate__faster"
-        }
-      });
+      await showErrorMessage("خطأ في الحفظ", errorMsg);
     }
   };
 
@@ -1127,16 +958,13 @@ const Absence = () => {
                           <td className="px-4 py-3 text-center">
                             <div className="w-full bg-gray-200 rounded-full h-2.5 mb-1 mx-auto max-w-[150px]">
                               <div
-                                className={`h-2.5 rounded-full ${
-                                  m.rate === 0
-                                    ? "bg-green-500"
-                                    : m.rate <= 10
-                                    ? "bg-amber-500"
-                                    : "bg-red-500"
-                                }`}
-                                style={{
-                                  width: `${Math.min(m.rate * 3, 100)}%`,
-                                }}
+                                className={`h-2.5 rounded-full ${m.rate === 0
+                                  ? "bg-green-500"
+                                  : m.rate <= 10
+                                  ? "bg-amber-500"
+                                  : "bg-red-500"
+                                } custom-width-bar`}
+                                data-rate={m.rate}
                               />
                             </div>
                             <span className="text-xs text-gray-500">
@@ -1298,6 +1126,43 @@ const Absence = () => {
                       </p>
                     </div>
                   </div>
+
+                  {/* ⚠️ تحذير: التاريخ أقدم من أسبوع */}
+                  {isDateTooOld && (
+                    <div className="mt-6 bg-gradient-to-r from-red-50 to-orange-50 border-r-4 border-red-500 rounded-lg p-4 shadow-md">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0">
+                          <svg
+                            className="w-6 h-6 text-red-600 animate-pulse"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                            />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-red-800 font-bold text-lg mb-1">
+                            ⏰ لا يمكن تعديل الحضور
+                          </h3>
+                          <p className="text-red-700 text-sm leading-relaxed">
+                            هذا التاريخ قديم (مضى عليه <span className="font-bold">{daysAgo} {daysAgo === 1 ? 'يوم' : 'أيام'}</span>). 
+                            لا يمكن تعديل الحضور بعد مرور <span className="font-bold">أسبوع (7 أيام)</span>.
+                          </p>
+                          <div className="mt-2 flex items-center gap-2 text-xs text-red-600">
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                            </svg>
+                            <span>الرجاء اختيار تاريخ خلال الأسبوع الماضي فقط</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* جدول الطلاب */}
@@ -1379,7 +1244,13 @@ const Absence = () => {
                   <div className="p-4 bg-gray-50 flex justify-center">
                     <button
                       onClick={handleSave}
-                      className="bg-emerald-600 text-white px-8 py-2 rounded-lg shadow-md flex items-center hover:bg-emerald-700">
+                      disabled={isDateTooOld}
+                      className={`px-8 py-2 rounded-lg shadow-md flex items-center transition-all ${
+                        isDateTooOld
+                          ? "bg-gray-400 text-gray-200 cursor-not-allowed opacity-60"
+                          : "bg-emerald-600 text-white hover:bg-emerald-700"
+                      }`}
+                      title={isDateTooOld ? "لا يمكن الحفظ - التاريخ أقدم من أسبوع" : "حفظ السجل"}>
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="h-5 w-5 ml-2"
@@ -1391,7 +1262,7 @@ const Absence = () => {
                           clipRule="evenodd"
                         />
                       </svg>
-                      حفظ السجل
+                      {isDateTooOld ? "لا يمكن الحفظ (التاريخ قديم)" : "حفظ السجل"}
                     </button>
                   </div>
                 </div>
