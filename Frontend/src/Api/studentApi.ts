@@ -1,7 +1,7 @@
 // Student API functions
-import api from './api';
-import type { StudentFormData } from '../Validation/studentValidation';
-import { AxiosError } from 'axios';
+import api from "./api";
+import type { StudentFormData } from "../Validation/studentValidation";
+import { AxiosError } from "axios";
 
 export interface Student {
   _id: string;
@@ -43,216 +43,312 @@ export interface StudentStats {
 }
 
 // Get all students
-export const getAllStudents = async (): Promise<{ success: boolean; data?: Student[]; message?: string }> => {
+export const getAllStudents = async (): Promise<{
+  success: boolean;
+  data?: Student[];
+  message?: string;
+}> => {
   try {
-    const response = await api.get('/students');
+    const response = await api.get("/students");
     return response.data;
   } catch (error) {
-    console.error('Error fetching students:', error);
-    const axiosError = error as AxiosError<{message?: string}>;
+    console.error("Error fetching students:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || 'حدث خطأ أثناء جلب الطلاب'
+      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب الطلاب",
     };
   }
 };
 
 // Get student by ID
-export const getStudentById = async (id: string): Promise<{ success: boolean; data?: Student; message?: string }> => {
+export const getStudentById = async (
+  id: string
+): Promise<{ success: boolean; data?: Student; message?: string }> => {
   try {
     const response = await api.get(`/students/${id}`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching student:', error);
-    const axiosError = error as AxiosError<{message?: string}>;
+    console.error("Error fetching student:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || 'حدث خطأ أثناء جلب الطالب'
+      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب الطالب",
     };
   }
 };
 
 // Create new student
-export const createStudent = async (studentData: StudentFormData): Promise<{ success: boolean; data?: Student; message?: string }> => {
+export const createStudent = async (
+  studentData: StudentFormData
+): Promise<{ success: boolean; data?: Student; message?: string }> => {
   try {
-    console.log('📤 إرسال بيانات الطالب إلى الخادم:', JSON.stringify(studentData, null, 2));
-    const response = await api.post('/students', studentData);
-    console.log('✅ استجابة الخادم:', response.data);
+    console.log(
+      "📤 إرسال بيانات الطالب إلى الخادم:",
+      JSON.stringify(studentData, null, 2)
+    );
+    const response = await api.post("/students", studentData);
+    console.log("✅ استجابة الخادم:", response.data);
     return response.data;
   } catch (error) {
-    console.error('❌ خطأ في إنشاء الطالب:', error);
-    const axiosError = error as AxiosError<{message?: string; details?: unknown}>;
-    
+    console.error("❌ خطأ في إنشاء الطالب:", error);
+    const axiosError = error as AxiosError<{
+      message?: string;
+      details?: unknown;
+    }>;
+
     // تسجيل تفاصيل أكثر عن الخطأ
     if (axiosError.response) {
-      console.error('🔍 تفاصيل الخطأ من الخادم:');
-      console.error('   - كود الحالة:', axiosError.response.status);
-      console.error('   - الرسالة:', axiosError.response.data?.message);
-      console.error('   - التفاصيل:', axiosError.response.data?.details);
-      console.error('   - البيانات الكاملة:', axiosError.response.data);
+      console.error("🔍 تفاصيل الخطأ من الخادم:");
+      console.error("   - كود الحالة:", axiosError.response.status);
+      console.error("   - الرسالة:", axiosError.response.data?.message);
+      console.error("   - التفاصيل:", axiosError.response.data?.details);
+      console.error("   - البيانات الكاملة:", axiosError.response.data);
     }
-    
+
     return {
       success: false,
-      message: axiosError.response?.data?.message || 'حدث خطأ أثناء إنشاء الطالب'
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء إنشاء الطالب",
     };
   }
 };
 
 // Update student
-export const updateStudent = async (id: string, studentData: Partial<StudentFormData>): Promise<{ success: boolean; data?: Student; message?: string }> => {
+export const updateStudent = async (
+  id: string,
+  studentData: Partial<StudentFormData>
+): Promise<{ success: boolean; data?: Student; message?: string }> => {
   try {
     const response = await api.put(`/students/${id}`, studentData);
     return response.data;
   } catch (error) {
-    console.error('Error updating student:', error);
-    const axiosError = error as AxiosError<{message?: string}>;
+    console.error("Error updating student:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || 'حدث خطأ أثناء تحديث الطالب'
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء تحديث الطالب",
     };
   }
 };
 
 // Delete student
-export const deleteStudent = async (id: string): Promise<{ success: boolean; message?: string }> => {
+export const deleteStudent = async (
+  id: string
+): Promise<{ success: boolean; message?: string }> => {
   try {
     const response = await api.delete(`/students/${id}`);
     return response.data;
   } catch (error) {
-    console.error('Error deleting student:', error);
-    const axiosError = error as AxiosError<{message?: string}>;
+    console.error("Error deleting student:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || 'حدث خطأ أثناء حذف الطالب'
+      message: axiosError.response?.data?.message || "حدث خطأ أثناء حذف الطالب",
     };
   }
 };
 
 // Get student statistics
-export const getStudentStats = async (): Promise<{ success: boolean; data?: StudentStats; message?: string }> => {
+export const getStudentStats = async (): Promise<{
+  success: boolean;
+  data?: StudentStats;
+  message?: string;
+}> => {
   try {
-    const response = await api.get('/students/stats/summary/all');
+    const response = await api.get("/students/stats/summary/all");
     return response.data;
   } catch (error) {
-    console.error('Error fetching student stats:', error);
-    const axiosError = error as AxiosError<{message?: string}>;
+    console.error("Error fetching student stats:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || 'حدث خطأ أثناء جلب إحصائيات الطلاب'
+      message:
+        axiosError.response?.data?.message ||
+        "حدث خطأ أثناء جلب إحصائيات الطلاب",
     };
   }
 };
 
 // Get students by group
-export const getStudentsByGroup = async (groupName: string): Promise<{ success: boolean; data?: Student[]; message?: string }> => {
+export const getStudentsByGroup = async (
+  groupName: string
+): Promise<{ success: boolean; data?: Student[]; message?: string }> => {
   try {
-    const response = await api.get(`/students/group/${encodeURIComponent(groupName)}`);
+    const response = await api.get(
+      `/students/group/${encodeURIComponent(groupName)}`
+    );
     return response.data;
   } catch (error) {
-    console.error('Error fetching students by group:', error);
-    const axiosError = error as AxiosError<{message?: string}>;
+    console.error("Error fetching students by group:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || 'حدث خطأ أثناء جلب طلاب الحلقة'
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء جلب طلاب الحلقة",
     };
   }
 };
 
 // Get students by teacher
-export const getStudentsByTeacher = async (teacherName: string): Promise<{ success: boolean; data?: Student[]; message?: string }> => {
+export const getStudentsByTeacher = async (
+  teacherName: string
+): Promise<{ success: boolean; data?: Student[]; message?: string }> => {
   try {
-    const response = await api.get(`/students/teacher/${encodeURIComponent(teacherName)}`);
+    const response = await api.get(
+      `/students/teacher/${encodeURIComponent(teacherName)}`
+    );
     return response.data;
   } catch (error) {
-    console.error('Error fetching students by teacher:', error);
-    const axiosError = error as AxiosError<{message?: string}>;
+    console.error("Error fetching students by teacher:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || 'حدث خطأ أثناء جلب طلاب المعلم'
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء جلب طلاب المعلم",
     };
   }
 };
 
 // Upload student avatar
-export const uploadStudentAvatar = async (id: string, avatarFile: File): Promise<{ success: boolean; message?: string }> => {
+export const uploadStudentAvatar = async (
+  id: string,
+  avatarFile: File
+): Promise<{ success: boolean; message?: string }> => {
   try {
     const formData = new FormData();
-    formData.append('avatar', avatarFile);
+    formData.append("avatar", avatarFile);
 
     const response = await api.post(`/students/${id}/avatar`, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
     return response.data;
   } catch (error) {
-    console.error('Error uploading student avatar:', error);
-    const axiosError = error as AxiosError<{message?: string}>;
+    console.error("Error uploading student avatar:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || 'حدث خطأ أثناء رفع الصورة'
+      message: axiosError.response?.data?.message || "حدث خطأ أثناء رفع الصورة",
     };
   }
 };
 
 // Search students
-export const searchStudents = async (query: string): Promise<{ success: boolean; data?: Student[]; message?: string }> => {
+export const searchStudents = async (
+  query: string
+): Promise<{ success: boolean; data?: Student[]; message?: string }> => {
   try {
-    const response = await api.get(`/students/search?q=${encodeURIComponent(query)}`);
+    const response = await api.get(
+      `/students/search?q=${encodeURIComponent(query)}`
+    );
     return response.data;
   } catch (error) {
-    console.error('Error searching students:', error);
-    const axiosError = error as AxiosError<{message?: string}>;
+    console.error("Error searching students:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || 'حدث خطأ أثناء البحث عن الطلاب'
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء البحث عن الطلاب",
     };
   }
 };
 
 // Toggle student active status
-export const toggleStudentStatus = async (id: string): Promise<{ success: boolean; data?: Student; message?: string }> => {
+export const toggleStudentStatus = async (
+  id: string
+): Promise<{ success: boolean; data?: Student; message?: string }> => {
   try {
     const response = await api.patch(`/students/${id}/toggle-status`);
     return response.data;
   } catch (error) {
-    console.error('Error toggling student status:', error);
-    const axiosError = error as AxiosError<{message?: string}>;
+    console.error("Error toggling student status:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || 'حدث خطأ أثناء تغيير حالة الطالب'
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء تغيير حالة الطالب",
     };
   }
 };
 
 // Bulk operations
-export const bulkDeleteStudents = async (studentIds: string[]): Promise<{ success: boolean; deletedCount?: number; message?: string }> => {
+export const bulkDeleteStudents = async (
+  studentIds: string[]
+): Promise<{ success: boolean; deletedCount?: number; message?: string }> => {
   try {
-    const response = await api.delete('/students/bulk', {
-      data: { studentIds }
+    const response = await api.delete("/students/bulk", {
+      data: { studentIds },
     });
     return response.data;
   } catch (error) {
-    console.error('Error bulk deleting students:', error);
-    const axiosError = error as AxiosError<{message?: string}>;
+    console.error("Error bulk deleting students:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || 'حدث خطأ أثناء حذف الطلاب'
+      message: axiosError.response?.data?.message || "حدث خطأ أثناء حذف الطلاب",
     };
   }
 };
 
-export const bulkUpdateStudents = async (updates: Array<{id: string; data: Partial<StudentFormData>}>): Promise<{ success: boolean; updatedCount?: number; message?: string }> => {
+export const bulkUpdateStudents = async (
+  updates: Array<{ id: string; data: Partial<StudentFormData> }>
+): Promise<{ success: boolean; updatedCount?: number; message?: string }> => {
   try {
-    const response = await api.patch('/students/bulk', { updates });
+    const response = await api.patch("/students/bulk", { updates });
     return response.data;
   } catch (error) {
-    console.error('Error bulk updating students:', error);
-    const axiosError = error as AxiosError<{message?: string}>;
+    console.error("Error bulk updating students:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || 'حدث خطأ أثناء تحديث الطلاب'
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء تحديث الطلاب",
     };
+  }
+};
+
+// ⚡ OPTIMIZED - Get students with absence statistics (for Absence page)
+export interface StudentWithAbsenceStats {
+  _id: string;
+  studentId: number;
+  name: string;
+  group?: string;
+  teacher?: string;
+  totalAbsences: number;
+  absenceDates: Date[];
+}
+
+export const getStudentsWithAbsenceStats = async (
+  teacher?: string,
+  group?: string
+): Promise<StudentWithAbsenceStats[]> => {
+  try {
+    console.log("⚡ [OPTIMIZED API] جلب الطلاب مع إحصائيات الغياب...");
+    const startTime = Date.now();
+
+    const params = new URLSearchParams();
+    if (teacher) params.append("teacher", teacher);
+    if (group && group !== "all") params.append("group", group);
+
+    const url = `/students/with-absence-stats${
+      params.toString() ? `?${params}` : ""
+    }`;
+    const response = await api.get(url);
+
+    const duration = Date.now() - startTime;
+    console.log(
+      `✅ [OPTIMIZED API] تم جلب ${response.data.length} طالب في ${duration}ms`
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("❌ خطأ في جلب الطلاب مع الإحصائيات:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
+    throw new Error(
+      axiosError.response?.data?.message || "حدث خطأ أثناء جلب بيانات الطلاب"
+    );
   }
 };

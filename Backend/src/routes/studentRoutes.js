@@ -86,7 +86,9 @@ router.get("/:id/avatar", protect, async (req, res) => {
     res.json({ success: true, avatarUrl });
   } catch (error) {
     console.error("Error getting student avatar:", error);
-    return res.status(500).json({ success: false, message: "خطأ في عرض الصورة" });
+    return res
+      .status(500)
+      .json({ success: false, message: "خطأ في عرض الصورة" });
   }
 });
 
@@ -309,6 +311,13 @@ router.get("/stats", async (req, res) => {
     });
   }
 });
+
+// ⚡ OPTIMIZED endpoint for Absence page - get students with absence statistics
+router.get(
+  "/with-absence-stats",
+  protect,
+  studentController.getStudentsWithAbsenceStats
+);
 
 // CRUD routes - require authentication (admins and teachers can access)
 router.get("/", protect, studentController.getStudents);
