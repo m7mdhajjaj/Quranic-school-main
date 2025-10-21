@@ -331,7 +331,7 @@ const Arrangement = () => {
           <br />
 
           {/* Show current month/year title */}
-          <div className="mt-8 mb-12">
+          <div className="mt-8 mb-22">
             <div className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-8 py-4 rounded-2xl shadow-lg inline-block">
               <h2 className="text-2xl font-bold text-center">
                 🏆 ترتيب {getMonthName(selectedMonth)} {selectedYear}
