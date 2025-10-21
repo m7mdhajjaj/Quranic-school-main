@@ -144,10 +144,13 @@ const PointsGame = () => {
 
   // useEffect لجلب البيانات من الباك إند عند تحميل الصفحة
   useEffect(() => {
-    loadTodayData();
-    loadBadgesData();
-    loadStatsData();
-  }, []);
+    // المعلم لا يحتاج لتحميل بيانات يومية أو شارات
+    if (user?.role !== "teacher") {
+      loadTodayData();
+      loadBadgesData();
+      loadStatsData();
+    }
+  }, [user]);
 
   // جلب بيانات اليوم الحالي
   const loadTodayData = async () => {
@@ -157,20 +160,34 @@ const PointsGame = () => {
       if (data) {
         // تحديث البيانات من الباك إند
         setPrayers({
-          fajr: { status: data.prayers.fajr },
-          dhuhr: { status: data.prayers.dhuhr },
-          asr: { status: data.prayers.asr },
-          maghrib: { status: data.prayers.maghrib },
-          isha: { status: data.prayers.isha },
+          fajr: { status: data.prayers?.fajr || "missed" },
+          dhuhr: { status: data.prayers?.dhuhr || "missed" },
+          asr: { status: data.prayers?.asr || "missed" },
+          maghrib: { status: data.prayers?.maghrib || "missed" },
+          isha: { status: data.prayers?.isha || "missed" },
         });
-        setNawafel(data.nawafel);
-        setParentRespect(data.parentRespect);
-        setSchoolAttendance(data.schoolAttendance);
-        setDailyStudy(data.dailyStudy);
-        setAdhkar(data.adhkar);
+        setNawafel(
+          data.nawafel || {
+            duha: false,
+            qiyamAlayl: false,
+            rawatib: false,
+            witr: false,
+          }
+        );
+        setParentRespect(data.parentRespect || 5);
+        setSchoolAttendance(data.schoolAttendance || false);
+        setDailyStudy(data.dailyStudy || 0);
+        setAdhkar(
+          data.adhkar || {
+            morning: false,
+            evening: false,
+            sleep: false,
+            afterPrayer: false,
+          }
+        );
         setHalaqah({
-          memorizedMinutes: data.halaqah.memorized,
-          reviewedMinutes: data.halaqah.reviewed,
+          memorizedMinutes: data.halaqah?.memorized || 0,
+          reviewedMinutes: data.halaqah?.reviewed || 0,
         });
       }
     } catch (error) {
@@ -185,16 +202,28 @@ const PointsGame = () => {
     try {
       const data = await getStudentBadges();
       if (data) {
-        setBadgeProgress(data.badgeProgress);
+        setBadgeProgress(
+          data.badgeProgress || {
+            mosquePrayerStreak: 0,
+            adhkarStreak: 0,
+            parentRespectPerfect: 0,
+            schoolAttendanceStreak: 0,
+            overallStreak: 0,
+            sunanStreak: 0,
+            mosqueTwoPrayersWeek: 0,
+          }
+        );
         // تحويل API badges إلى Local badges format
-        const convertedBadges: Badge[] = data.earnedBadges.map((badge) => ({
-          id: badge.badgeId,
-          name: badge.name,
-          icon: badge.icon,
-          description: badge.description,
-          requirement: badge.requirement,
-          count: badge.count,
-        }));
+        const convertedBadges: Badge[] = (data.earnedBadges || []).map(
+          (badge) => ({
+            id: badge.badgeId,
+            name: badge.name,
+            icon: badge.icon,
+            description: badge.description,
+            requirement: badge.requirement,
+            count: badge.count,
+          })
+        );
         setEarnedBadges(convertedBadges);
       }
     } catch (error) {
@@ -660,31 +689,36 @@ const PointsGame = () => {
           {/* Header */}
           <div className="text-center mb-8">
             <div className="inline-block mb-4">
-              <div className="text-6xl mb-2">🎮</div>
+              <div className="text-6xl mb-2">
+                {user?.role === "teacher" ? "📊" : "🎮"}
+              </div>
             </div>
             <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
-              لعبة النقاط اليومية
+              {user?.role === "teacher"
+                ? "ترتيب الطلاب"
+                : "لعبة النقاط اليومية"}
             </h1>
             <p className="text-gray-600 text-lg">
-              تابع نشاطاتك اليومية واجمع النقاط! 🌟
+              {user?.role === "teacher"
+                ? "تابع تقدم طلابك ومنافستهم! 🌟"
+                : "تابع نشاطاتك اليومية واجمع النقاط! 🌟"}
             </p>
             <div className="mt-4 text-sm text-gray-500">
-              الطالب:{" "}
+              {user?.role === "teacher" ? "المعلم" : "الطالب"}:{" "}
               <span className="font-bold text-blue-600">
                 {user?.firstName} {user?.lastName}
               </span>
             </div>
           </div>
 
-          {/* إجمالي النقاط اليومية */}
-          <div className="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 rounded-3xl shadow-2xl p-8 mb-8 text-white text-center relative">
-            <div className="text-7xl mb-4">🏆</div>
-            <h2 className="text-3xl font-bold mb-2">نقاطك اليوم</h2>
-            <div className="text-8xl font-black mb-4">{totalPoints}</div>
-            <p className="text-xl opacity-90">نقطة</p>
-
-            {/* أزرار لوحة الترتيب والشارات */}
-            <div className="mt-6 flex gap-4 justify-center flex-wrap">
+          {/* المعلم يرى فقط زر لوحة الترتيب */}
+          {user?.role === "teacher" ? (
+            <div className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-3xl shadow-2xl p-8 mb-8 text-white text-center">
+              <div className="text-7xl mb-4">🏆</div>
+              <h2 className="text-3xl font-bold mb-4">لوحة ترتيب الطلاب</h2>
+              <p className="text-lg opacity-90 mb-6">
+                اضغط على الزر لمشاهدة ترتيب طلابك حسب النقاط والشارات
+              </p>
               <button
                 onClick={async () => {
                   setLoading(true);
@@ -698,602 +732,665 @@ const PointsGame = () => {
                   }
                 }}
                 disabled={loading}
-                className={`bg-white text-orange-600 px-8 py-4 rounded-full font-bold text-lg hover:scale-110 transition-transform shadow-2xl flex items-center gap-2 ${
+                className={`bg-white text-purple-600 px-10 py-5 rounded-full font-bold text-xl hover:scale-110 transition-transform shadow-2xl flex items-center gap-3 mx-auto ${
                   loading ? "opacity-70 cursor-not-allowed" : ""
                 }`}>
                 {loading ? (
                   <>
-                    <div className="w-6 h-6 border-4 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
+                    <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
                     <span>جاري التحميل...</span>
                   </>
                 ) : (
                   <>
-                    <span className="text-2xl">🏅</span>
-                    <span>لوحة الترتيب</span>
+                    <span className="text-3xl">🏅</span>
+                    <span>عرض لوحة الترتيب</span>
                   </>
                 )}
               </button>
-
-              <button
-                onClick={() => setShowBadges(true)}
-                className="bg-white text-purple-600 px-8 py-4 rounded-full font-bold text-lg hover:scale-110 transition-transform shadow-2xl flex items-center gap-2 relative">
-                <span className="text-2xl">🏆</span>
-                <span>شاراتي</span>
-                {/* عداد الشارات */}
-                {earnedBadges.length > 0 && (
-                  <div className="absolute -top-2 -right-2 bg-gradient-to-br from-red-500 to-pink-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-black text-sm shadow-lg border-2 border-white">
-                    {earnedBadges.length}
-                  </div>
-                )}
-              </button>
             </div>
+          ) : (
+            <>
+              {/* إجمالي النقاط اليومية - للطلاب فقط */}
+              <div className="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 rounded-3xl shadow-2xl p-8 mb-8 text-white text-center relative">
+                <div className="text-7xl mb-4">🏆</div>
+                <h2 className="text-3xl font-bold mb-2">نقاطك اليوم</h2>
+                <div className="text-8xl font-black mb-4">{totalPoints}</div>
+                <p className="text-xl opacity-90">نقطة</p>
 
-            {/* زر حفظ التقدم اليومي */}
-            <div className="mt-6">
-              <button
-                onClick={updateDailyProgress}
-                disabled={saving}
-                className={`bg-gradient-to-r from-green-500 to-emerald-600 text-white px-10 py-4 rounded-full font-bold text-lg hover:scale-110 transition-transform shadow-2xl flex items-center gap-3 mx-auto ${
-                  saving ? "opacity-50 cursor-not-allowed" : ""
-                }`}>
-                <span className="text-2xl">{saving ? "⏳" : "💾"}</span>
-                <span>{saving ? "جاري الحفظ..." : "حفظ النقاط اليومية"}</span>
-                <span className="text-2xl">✨</span>
-              </button>
-              <p className="text-white/80 text-sm mt-2">
-                اضغط بعد الانتهاء من تسجيل نشاطاتك لحفظ التقدم والتحقق من
-                الشارات!
-              </p>
-            </div>
-
-            <div className="mt-6 grid grid-cols-3 gap-4 text-center">
-              <div className="bg-white/20 rounded-xl p-3">
-                <div className="text-2xl font-bold">
-                  {stats?.weeklyPoints || 0}
-                </div>
-                <div className="text-sm">هذا الأسبوع</div>
-              </div>
-              <div className="bg-white/20 rounded-xl p-3">
-                <div className="text-2xl font-bold">
-                  {stats?.monthlyPoints || 0}
-                </div>
-                <div className="text-sm">هذا الشهر</div>
-              </div>
-              <div className="bg-white/20 rounded-xl p-3">
-                <div className="text-2xl font-bold">
-                  {stats?.currentRank || "-"}
-                </div>
-                <div className="text-sm">ترتيبك</div>
-              </div>
-            </div>
-          </div>
-
-          {/* 1. الصلوات الفروض */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="text-4xl">🕌</div>
-              <h2 className="text-2xl font-bold text-gray-800">
-                الصلوات الفروض
-              </h2>
-              <span className="text-sm text-gray-500">
-                (اضغط لتحديد الحالة)
-              </span>
-            </div>
-            <div className="grid md:grid-cols-5 gap-4">
-              {Object.entries(prayers).map(([key, prayer]) => {
-                const prayerNames: { [key: string]: string } = {
-                  fajr: "الفجر",
-                  dhuhr: "الظهر",
-                  asr: "العصر",
-                  maghrib: "المغرب",
-                  isha: "العشاء",
-                };
-
-                return (
-                  <div key={key} className="space-y-2">
-                    <h3 className="font-bold text-center text-gray-800">
-                      {prayerNames[key]}
-                    </h3>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() =>
-                          updatePrayerStatus(
-                            key as keyof typeof prayers,
-                            "mosque"
-                          )
-                        }
-                        className={`p-3 rounded-lg text-center transition-all ${
-                          prayer.status === "mosque"
-                            ? "bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-lg scale-105"
-                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                        }`}>
-                        <div className="text-2xl">🕌</div>
-                        <div className="text-xs mt-1">مسجد (12)</div>
-                      </button>
-                      <button
-                        onClick={() =>
-                          updatePrayerStatus(
-                            key as keyof typeof prayers,
-                            "home"
-                          )
-                        }
-                        className={`p-3 rounded-lg text-center transition-all ${
-                          prayer.status === "home"
-                            ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg scale-105"
-                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                        }`}>
-                        <div className="text-2xl">🏠</div>
-                        <div className="text-xs mt-1">منزل (5)</div>
-                      </button>
-                      <button
-                        onClick={() =>
-                          updatePrayerStatus(
-                            key as keyof typeof prayers,
-                            "late"
-                          )
-                        }
-                        className={`p-3 rounded-lg text-center transition-all ${
-                          prayer.status === "late"
-                            ? "bg-gradient-to-br from-yellow-500 to-orange-500 text-white shadow-lg scale-105"
-                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                        }`}>
-                        <div className="text-2xl">⏰</div>
-                        <div className="text-xs mt-1">متأخر (2)</div>
-                      </button>
-                      <button
-                        onClick={() =>
-                          updatePrayerStatus(
-                            key as keyof typeof prayers,
-                            "missed"
-                          )
-                        }
-                        className={`p-3 rounded-lg text-center transition-all ${
-                          prayer.status === "missed"
-                            ? "bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg scale-105"
-                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                        }`}>
-                        <div className="text-2xl">❌</div>
-                        <div className="text-xs mt-1">لم أصلِّ (0)</div>
-                      </button>
-                    </div>
-                    <div className="text-center">
-                      <span className="inline-block bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-bold">
-                        {getPrayerPoints(prayer.status)} نقطة
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* 2. الصلوات النوافل */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="text-4xl">✨</div>
-              <h2 className="text-2xl font-bold text-gray-800">
-                الصلوات النوافل
-              </h2>
-              <span className="text-sm text-gray-500">(اضغط لتفعيل/إلغاء)</span>
-            </div>
-            <div className="grid md:grid-cols-4 gap-4">
-              <button
-                onClick={() => setNawafel({ ...nawafel, duha: !nawafel.duha })}
-                className={`rounded-xl p-6 shadow-lg transition-all transform hover:scale-105 ${
-                  nawafel.duha
-                    ? "bg-gradient-to-br from-yellow-400 to-orange-400 text-white"
-                    : "bg-gray-100 text-gray-600"
-                }`}>
-                <div className="text-center">
-                  <div className="text-4xl mb-2">☀️</div>
-                  <h3 className="font-bold text-lg mb-2">صلاة الضحى</h3>
-                  <div className="text-sm font-medium">
-                    {nawafel.duha ? "✅ 5 نقاط" : "⚪ اضغط للتفعيل"}
-                  </div>
-                </div>
-              </button>
-
-              <button
-                onClick={() =>
-                  setNawafel({ ...nawafel, qiyamAlayl: !nawafel.qiyamAlayl })
-                }
-                className={`rounded-xl p-6 shadow-lg transition-all transform hover:scale-105 ${
-                  nawafel.qiyamAlayl
-                    ? "bg-gradient-to-br from-purple-500 to-indigo-600 text-white"
-                    : "bg-gray-100 text-gray-600"
-                }`}>
-                <div className="text-center">
-                  <div className="text-4xl mb-2">🌙</div>
-                  <h3 className="font-bold text-lg mb-2">قيام الليل</h3>
-                  <div className="text-sm font-medium">
-                    {nawafel.qiyamAlayl ? "✅ 10 نقاط" : "⚪ اضغط للتفعيل"}
-                  </div>
-                </div>
-              </button>
-
-              <button
-                onClick={() =>
-                  setNawafel({ ...nawafel, rawatib: !nawafel.rawatib })
-                }
-                className={`rounded-xl p-6 shadow-lg transition-all transform hover:scale-105 ${
-                  nawafel.rawatib
-                    ? "bg-gradient-to-br from-green-400 to-teal-500 text-white"
-                    : "bg-gray-100 text-gray-600"
-                }`}>
-                <div className="text-center">
-                  <div className="text-4xl mb-2">🙏</div>
-                  <h3 className="font-bold text-lg mb-2">الرواتب</h3>
-                  <div className="text-sm font-medium">
-                    {nawafel.rawatib ? "✅ 5 نقاط" : "⚪ اضغط للتفعيل"}
-                  </div>
-                </div>
-              </button>
-
-              <button
-                onClick={() => setNawafel({ ...nawafel, witr: !nawafel.witr })}
-                className={`rounded-xl p-6 shadow-lg transition-all transform hover:scale-105 ${
-                  nawafel.witr
-                    ? "bg-gradient-to-br from-blue-400 to-cyan-500 text-white"
-                    : "bg-gray-100 text-gray-600"
-                }`}>
-                <div className="text-center">
-                  <div className="text-4xl mb-2">🌟</div>
-                  <h3 className="font-bold text-lg mb-2">الوتر</h3>
-                  <div className="text-sm font-medium">
-                    {nawafel.witr ? "✅ 5 نقاط" : "⚪ اضغط للتفعيل"}
-                  </div>
-                </div>
-              </button>
-            </div>
-          </div>
-
-          {/* الصف الثاني: بر الوالدين، المدرسة، الدراسة */}
-          <div className="grid md:grid-cols-3 gap-6 mb-6">
-            {/* 3. بر الوالدين */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="text-4xl">❤️</div>
-                <h2 className="text-xl font-bold text-gray-800">بر الوالدين</h2>
-              </div>
-              <div className="text-center">
-                <div className="text-6xl font-black text-pink-600 mb-2">
-                  {parentRespect}
-                </div>
-                <p className="text-gray-600 mb-4">من 10 نقاط</p>
-                <input
-                  type="range"
-                  min="0"
-                  max="10"
-                  value={parentRespect}
-                  onChange={(e) => setParentRespect(Number(e.target.value))}
-                  className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-pink-500"
-                />
-                <div className="mt-4">
-                  <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div
-                      className="bg-gradient-to-r from-pink-400 to-red-500 h-3 rounded-full transition-all duration-500"
-                      style={{ width: `${parentRespect * 10}%` }}></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 4. الذهاب للمدرسة */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="text-4xl">🎒</div>
-                <h2 className="text-xl font-bold text-gray-800">
-                  الذهاب للمدرسة
-                </h2>
-              </div>
-              <div className="text-center">
-                <button
-                  onClick={() => setSchoolAttendance(!schoolAttendance)}
-                  className="w-full">
-                  <div
-                    className={`text-7xl mb-3 transition-all ${
-                      schoolAttendance ? "animate-bounce" : ""
+                {/* أزرار لوحة الترتيب والشارات */}
+                <div className="mt-6 flex gap-4 justify-center flex-wrap">
+                  <button
+                    onClick={async () => {
+                      setLoading(true);
+                      try {
+                        await loadRankings();
+                        setShowRankings(true);
+                      } catch (error) {
+                        console.error("خطأ في تحميل الترتيب:", error);
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    disabled={loading}
+                    className={`bg-white text-orange-600 px-8 py-4 rounded-full font-bold text-lg hover:scale-110 transition-transform shadow-2xl flex items-center gap-2 ${
+                      loading ? "opacity-70 cursor-not-allowed" : ""
                     }`}>
-                    {schoolAttendance ? "✅" : "❌"}
-                  </div>
-                  <p className="text-lg font-bold text-gray-700 mb-3">
-                    {schoolAttendance ? "حضرت اليوم" : "لم أحضر"}
+                    {loading ? (
+                      <>
+                        <div className="w-6 h-6 border-4 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
+                        <span>جاري التحميل...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-2xl">🏅</span>
+                        <span>لوحة الترتيب</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => setShowBadges(true)}
+                    className="bg-white text-purple-600 px-8 py-4 rounded-full font-bold text-lg hover:scale-110 transition-transform shadow-2xl flex items-center gap-2 relative">
+                    <span className="text-2xl">🏆</span>
+                    <span>شاراتي</span>
+                    {/* عداد الشارات */}
+                    {earnedBadges.length > 0 && (
+                      <div className="absolute -top-2 -right-2 bg-gradient-to-br from-red-500 to-pink-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-black text-sm shadow-lg border-2 border-white">
+                        {earnedBadges.length}
+                      </div>
+                    )}
+                  </button>
+                </div>
+
+                {/* زر حفظ التقدم اليومي */}
+                <div className="mt-6">
+                  <button
+                    onClick={updateDailyProgress}
+                    disabled={saving}
+                    className={`bg-gradient-to-r from-green-500 to-emerald-600 text-white px-10 py-4 rounded-full font-bold text-lg hover:scale-110 transition-transform shadow-2xl flex items-center gap-3 mx-auto ${
+                      saving ? "opacity-50 cursor-not-allowed" : ""
+                    }`}>
+                    <span className="text-2xl">{saving ? "⏳" : "💾"}</span>
+                    <span>
+                      {saving ? "جاري الحفظ..." : "حفظ النقاط اليومية"}
+                    </span>
+                    <span className="text-2xl">✨</span>
+                  </button>
+                  <p className="text-white/80 text-sm mt-2">
+                    اضغط بعد الانتهاء من تسجيل نشاطاتك لحفظ التقدم والتحقق من
+                    الشارات!
                   </p>
-                </button>
-                <div>
-                  <span
-                    className={`px-4 py-2 rounded-full text-white font-medium ${
-                      schoolAttendance ? "bg-green-500" : "bg-red-500"
-                    }`}>
-                    {schoolAttendance ? "+5 نقاط" : "0 نقطة"}
+                </div>
+
+                <div className="mt-6 grid grid-cols-3 gap-4 text-center">
+                  <div className="bg-white/20 rounded-xl p-3">
+                    <div className="text-2xl font-bold">
+                      {stats?.weeklyPoints || 0}
+                    </div>
+                    <div className="text-sm">هذا الأسبوع</div>
+                  </div>
+                  <div className="bg-white/20 rounded-xl p-3">
+                    <div className="text-2xl font-bold">
+                      {stats?.monthlyPoints || 0}
+                    </div>
+                    <div className="text-sm">هذا الشهر</div>
+                  </div>
+                  <div className="bg-white/20 rounded-xl p-3">
+                    <div className="text-2xl font-bold">
+                      {stats?.currentRank || "-"}
+                    </div>
+                    <div className="text-sm">ترتيبك</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 1. الصلوات الفروض */}
+              <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="text-4xl">🕌</div>
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    الصلوات الفروض
+                  </h2>
+                  <span className="text-sm text-gray-500">
+                    (اضغط لتحديد الحالة)
                   </span>
                 </div>
-                <p className="text-xs text-gray-500 mt-3">اضغط للتبديل</p>
-              </div>
-            </div>
+                <div className="grid md:grid-cols-5 gap-4">
+                  {Object.entries(prayers).map(([key, prayer]) => {
+                    const prayerNames: { [key: string]: string } = {
+                      fajr: "الفجر",
+                      dhuhr: "الظهر",
+                      asr: "العصر",
+                      maghrib: "المغرب",
+                      isha: "العشاء",
+                    };
 
-            {/* 5. الدراسة اليومية */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="text-4xl">📚</div>
-                <h2 className="text-xl font-bold text-gray-800">
-                  الدراسة اليومية
-                </h2>
-              </div>
-              <div className="text-center">
-                <div className="text-6xl font-black text-blue-600 mb-2">
-                  {dailyStudy}
+                    return (
+                      <div key={key} className="space-y-2">
+                        <h3 className="font-bold text-center text-gray-800">
+                          {prayerNames[key]}
+                        </h3>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            onClick={() =>
+                              updatePrayerStatus(
+                                key as keyof typeof prayers,
+                                "mosque"
+                              )
+                            }
+                            className={`p-3 rounded-lg text-center transition-all ${
+                              prayer.status === "mosque"
+                                ? "bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-lg scale-105"
+                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                            }`}>
+                            <div className="text-2xl">🕌</div>
+                            <div className="text-xs mt-1">مسجد (12)</div>
+                          </button>
+                          <button
+                            onClick={() =>
+                              updatePrayerStatus(
+                                key as keyof typeof prayers,
+                                "home"
+                              )
+                            }
+                            className={`p-3 rounded-lg text-center transition-all ${
+                              prayer.status === "home"
+                                ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg scale-105"
+                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                            }`}>
+                            <div className="text-2xl">🏠</div>
+                            <div className="text-xs mt-1">منزل (5)</div>
+                          </button>
+                          <button
+                            onClick={() =>
+                              updatePrayerStatus(
+                                key as keyof typeof prayers,
+                                "late"
+                              )
+                            }
+                            className={`p-3 rounded-lg text-center transition-all ${
+                              prayer.status === "late"
+                                ? "bg-gradient-to-br from-yellow-500 to-orange-500 text-white shadow-lg scale-105"
+                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                            }`}>
+                            <div className="text-2xl">⏰</div>
+                            <div className="text-xs mt-1">متأخر (2)</div>
+                          </button>
+                          <button
+                            onClick={() =>
+                              updatePrayerStatus(
+                                key as keyof typeof prayers,
+                                "missed"
+                              )
+                            }
+                            className={`p-3 rounded-lg text-center transition-all ${
+                              prayer.status === "missed"
+                                ? "bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg scale-105"
+                                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                            }`}>
+                            <div className="text-2xl">❌</div>
+                            <div className="text-xs mt-1">لم أصلِّ (0)</div>
+                          </button>
+                        </div>
+                        <div className="text-center">
+                          <span className="inline-block bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-bold">
+                            {getPrayerPoints(prayer.status)} نقطة
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                <p className="text-gray-600 mb-4">ساعات دراسة</p>
-                <div className="flex justify-center gap-2 mb-4">
+              </div>
+
+              {/* 2. الصلوات النوافل */}
+              <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="text-4xl">✨</div>
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    الصلوات النوافل
+                  </h2>
+                  <span className="text-sm text-gray-500">
+                    (اضغط لتفعيل/إلغاء)
+                  </span>
+                </div>
+                <div className="grid md:grid-cols-4 gap-4">
                   <button
-                    onClick={() => setDailyStudy(Math.max(0, dailyStudy - 0.5))}
-                    className="bg-red-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-600">
-                    -
+                    onClick={() =>
+                      setNawafel({ ...nawafel, duha: !nawafel.duha })
+                    }
+                    className={`rounded-xl p-6 shadow-lg transition-all transform hover:scale-105 ${
+                      nawafel.duha
+                        ? "bg-gradient-to-br from-yellow-400 to-orange-400 text-white"
+                        : "bg-gray-100 text-gray-600"
+                    }`}>
+                    <div className="text-center">
+                      <div className="text-4xl mb-2">☀️</div>
+                      <h3 className="font-bold text-lg mb-2">صلاة الضحى</h3>
+                      <div className="text-sm font-medium">
+                        {nawafel.duha ? "✅ 5 نقاط" : "⚪ اضغط للتفعيل"}
+                      </div>
+                    </div>
                   </button>
+
                   <button
-                    onClick={() => setDailyStudy(dailyStudy + 0.5)}
-                    className="bg-green-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-600">
-                    +
+                    onClick={() =>
+                      setNawafel({
+                        ...nawafel,
+                        qiyamAlayl: !nawafel.qiyamAlayl,
+                      })
+                    }
+                    className={`rounded-xl p-6 shadow-lg transition-all transform hover:scale-105 ${
+                      nawafel.qiyamAlayl
+                        ? "bg-gradient-to-br from-purple-500 to-indigo-600 text-white"
+                        : "bg-gray-100 text-gray-600"
+                    }`}>
+                    <div className="text-center">
+                      <div className="text-4xl mb-2">🌙</div>
+                      <h3 className="font-bold text-lg mb-2">قيام الليل</h3>
+                      <div className="text-sm font-medium">
+                        {nawafel.qiyamAlayl ? "✅ 10 نقاط" : "⚪ اضغط للتفعيل"}
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      setNawafel({ ...nawafel, rawatib: !nawafel.rawatib })
+                    }
+                    className={`rounded-xl p-6 shadow-lg transition-all transform hover:scale-105 ${
+                      nawafel.rawatib
+                        ? "bg-gradient-to-br from-green-400 to-teal-500 text-white"
+                        : "bg-gray-100 text-gray-600"
+                    }`}>
+                    <div className="text-center">
+                      <div className="text-4xl mb-2">🙏</div>
+                      <h3 className="font-bold text-lg mb-2">الرواتب</h3>
+                      <div className="text-sm font-medium">
+                        {nawafel.rawatib ? "✅ 5 نقاط" : "⚪ اضغط للتفعيل"}
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      setNawafel({ ...nawafel, witr: !nawafel.witr })
+                    }
+                    className={`rounded-xl p-6 shadow-lg transition-all transform hover:scale-105 ${
+                      nawafel.witr
+                        ? "bg-gradient-to-br from-blue-400 to-cyan-500 text-white"
+                        : "bg-gray-100 text-gray-600"
+                    }`}>
+                    <div className="text-center">
+                      <div className="text-4xl mb-2">🌟</div>
+                      <h3 className="font-bold text-lg mb-2">الوتر</h3>
+                      <div className="text-sm font-medium">
+                        {nawafel.witr ? "✅ 5 نقاط" : "⚪ اضغط للتفعيل"}
+                      </div>
+                    </div>
                   </button>
                 </div>
-                <div className="text-3xl font-bold text-green-600">
-                  +{dailyStudy * 2} نقطة
-                </div>
-                <p className="text-xs text-gray-500 mt-2">كل ساعة = نقطتان</p>
               </div>
-            </div>
-          </div>
 
-          {/* 6. الأذكار */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="text-4xl">📿</div>
-              <h2 className="text-2xl font-bold text-gray-800">
-                الأذكار اليومية
-              </h2>
-              <span className="text-sm text-gray-500">(اضغط لتفعيل/إلغاء)</span>
-            </div>
-            <div className="grid md:grid-cols-4 gap-4">
-              <button
-                onClick={() =>
-                  setAdhkar({ ...adhkar, morning: !adhkar.morning })
-                }
-                className={`rounded-xl p-6 shadow-lg transition-all transform hover:scale-105 ${
-                  adhkar.morning
-                    ? "bg-gradient-to-br from-yellow-300 to-orange-400 text-white"
-                    : "bg-gray-100 text-gray-600"
-                }`}>
-                <div className="text-center">
-                  <div className="text-4xl mb-2">🌅</div>
-                  <h3 className="font-bold text-lg mb-2">أذكار الصباح</h3>
-                  <div className="text-sm font-medium">
-                    {adhkar.morning ? "✅ 5 نقاط" : "⚪ اضغط للتفعيل"}
+              {/* الصف الثاني: بر الوالدين، المدرسة، الدراسة */}
+              <div className="grid md:grid-cols-3 gap-6 mb-6">
+                {/* 3. بر الوالدين */}
+                <div className="bg-white rounded-2xl shadow-lg p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="text-4xl">❤️</div>
+                    <h2 className="text-xl font-bold text-gray-800">
+                      بر الوالدين
+                    </h2>
                   </div>
-                </div>
-              </button>
-
-              <button
-                onClick={() =>
-                  setAdhkar({ ...adhkar, evening: !adhkar.evening })
-                }
-                className={`rounded-xl p-6 shadow-lg transition-all transform hover:scale-105 ${
-                  adhkar.evening
-                    ? "bg-gradient-to-br from-orange-400 to-red-500 text-white"
-                    : "bg-gray-100 text-gray-600"
-                }`}>
-                <div className="text-center">
-                  <div className="text-4xl mb-2">🌇</div>
-                  <h3 className="font-bold text-lg mb-2">أذكار المساء</h3>
-                  <div className="text-sm font-medium">
-                    {adhkar.evening ? "✅ 5 نقاط" : "⚪ اضغط للتفعيل"}
-                  </div>
-                </div>
-              </button>
-
-              <button
-                onClick={() => setAdhkar({ ...adhkar, sleep: !adhkar.sleep })}
-                className={`rounded-xl p-6 shadow-lg transition-all transform hover:scale-105 ${
-                  adhkar.sleep
-                    ? "bg-gradient-to-br from-indigo-400 to-purple-600 text-white"
-                    : "bg-gray-100 text-gray-600"
-                }`}>
-                <div className="text-center">
-                  <div className="text-4xl mb-2">🌙</div>
-                  <h3 className="font-bold text-lg mb-2">أذكار النوم</h3>
-                  <div className="text-sm font-medium">
-                    {adhkar.sleep ? "✅ 3 نقاط" : "⚪ اضغط للتفعيل"}
-                  </div>
-                </div>
-              </button>
-
-              <button
-                onClick={() =>
-                  setAdhkar({ ...adhkar, afterPrayer: !adhkar.afterPrayer })
-                }
-                className={`rounded-xl p-6 shadow-lg transition-all transform hover:scale-105 ${
-                  adhkar.afterPrayer
-                    ? "bg-gradient-to-br from-green-400 to-teal-600 text-white"
-                    : "bg-gray-100 text-gray-600"
-                }`}>
-                <div className="text-center">
-                  <div className="text-4xl mb-2">🤲</div>
-                  <h3 className="font-bold text-lg mb-2">بعد الصلاة</h3>
-                  <div className="text-sm font-medium">
-                    {adhkar.afterPrayer ? "✅ 5 نقاط" : "⚪ اضغط للتفعيل"}
-                  </div>
-                </div>
-              </button>
-            </div>
-          </div>
-
-          {/* 7. المتابعة في الحلقة */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="text-4xl">📖</div>
-              <h2 className="text-2xl font-bold text-gray-800">
-                المتابعة في الحلقة
-              </h2>
-              <span className="text-sm text-gray-500">
-                (الحد الأدنى 10 دقائق)
-              </span>
-            </div>
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* حفظ من الموضع القادم */}
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 shadow-lg border-2 border-green-200">
-                <div className="text-center mb-4">
-                  <div className="text-5xl mb-3">📚</div>
-                  <h3 className="font-bold text-xl text-gray-800 mb-2">
-                    حفظ من الموضع القادم
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    كم دقيقة حفظت اليوم؟
-                  </p>
-                </div>
-
-                <div className="space-y-4">
-                  {/* عرض الدقائق */}
-                  <div className="bg-white rounded-lg p-4 text-center">
-                    <div className="text-5xl font-black text-green-600 mb-2">
-                      {halaqah.memorizedMinutes}
+                  <div className="text-center">
+                    <div className="text-6xl font-black text-pink-600 mb-2">
+                      {parentRespect}
                     </div>
-                    <p className="text-gray-600 text-sm">دقيقة</p>
-                  </div>
-
-                  {/* أزرار التحكم */}
-                  <div className="flex justify-center gap-2">
-                    <button
-                      onClick={() =>
-                        setHalaqah({
-                          ...halaqah,
-                          memorizedMinutes: Math.max(
-                            0,
-                            halaqah.memorizedMinutes - 10
-                          ),
-                        })
-                      }
-                      className="bg-red-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-red-600 transition-colors shadow-lg">
-                      - 10
-                    </button>
-                    <button
-                      onClick={() =>
-                        setHalaqah({
-                          ...halaqah,
-                          memorizedMinutes: halaqah.memorizedMinutes + 10,
-                        })
-                      }
-                      className="bg-green-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-600 transition-colors shadow-lg">
-                      + 10
-                    </button>
-                  </div>
-
-                  {/* عرض النقاط */}
-                  <div className="bg-green-100 rounded-lg p-3 text-center border-2 border-green-300">
-                    <div className="text-3xl font-bold text-green-700">
-                      +{Math.floor(halaqah.memorizedMinutes / 10) * 5} نقطة
+                    <p className="text-gray-600 mb-4">من 10 نقاط</p>
+                    <input
+                      type="range"
+                      min="0"
+                      max="10"
+                      value={parentRespect}
+                      onChange={(e) => setParentRespect(Number(e.target.value))}
+                      className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-pink-500"
+                    />
+                    <div className="mt-4">
+                      <div className="w-full bg-gray-200 rounded-full h-3">
+                        <div
+                          className="bg-gradient-to-r from-pink-400 to-red-500 h-3 rounded-full transition-all duration-500"
+                          style={{ width: `${parentRespect * 10}%` }}></div>
+                      </div>
                     </div>
-                    <p className="text-xs text-gray-600 mt-1">
-                      كل 10 دقائق = 5 نقاط
+                  </div>
+                </div>
+
+                {/* 4. الذهاب للمدرسة */}
+                <div className="bg-white rounded-2xl shadow-lg p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="text-4xl">🎒</div>
+                    <h2 className="text-xl font-bold text-gray-800">
+                      الذهاب للمدرسة
+                    </h2>
+                  </div>
+                  <div className="text-center">
+                    <button
+                      onClick={() => setSchoolAttendance(!schoolAttendance)}
+                      className="w-full">
+                      <div
+                        className={`text-7xl mb-3 transition-all ${
+                          schoolAttendance ? "animate-bounce" : ""
+                        }`}>
+                        {schoolAttendance ? "✅" : "❌"}
+                      </div>
+                      <p className="text-lg font-bold text-gray-700 mb-3">
+                        {schoolAttendance ? "حضرت اليوم" : "لم أحضر"}
+                      </p>
+                    </button>
+                    <div>
+                      <span
+                        className={`px-4 py-2 rounded-full text-white font-medium ${
+                          schoolAttendance ? "bg-green-500" : "bg-red-500"
+                        }`}>
+                        {schoolAttendance ? "+5 نقاط" : "0 نقطة"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-3">اضغط للتبديل</p>
+                  </div>
+                </div>
+
+                {/* 5. الدراسة اليومية */}
+                <div className="bg-white rounded-2xl shadow-lg p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="text-4xl">📚</div>
+                    <h2 className="text-xl font-bold text-gray-800">
+                      الدراسة اليومية
+                    </h2>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-6xl font-black text-blue-600 mb-2">
+                      {dailyStudy}
+                    </div>
+                    <p className="text-gray-600 mb-4">ساعات دراسة</p>
+                    <div className="flex justify-center gap-2 mb-4">
+                      <button
+                        onClick={() =>
+                          setDailyStudy(Math.max(0, dailyStudy - 0.5))
+                        }
+                        className="bg-red-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-600">
+                        -
+                      </button>
+                      <button
+                        onClick={() => setDailyStudy(dailyStudy + 0.5)}
+                        className="bg-green-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-600">
+                        +
+                      </button>
+                    </div>
+                    <div className="text-3xl font-bold text-green-600">
+                      +{dailyStudy * 2} نقطة
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      كل ساعة = نقطتان
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* مراجعة من الموضع القادم */}
-              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-6 shadow-lg border-2 border-blue-200">
-                <div className="text-center mb-4">
-                  <div className="text-5xl mb-3">🔄</div>
-                  <h3 className="font-bold text-xl text-gray-800 mb-2">
-                    مراجعة من الموضع القادم
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    كم دقيقة راجعت اليوم؟
+              {/* 6. الأذكار */}
+              <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="text-4xl">📿</div>
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    الأذكار اليومية
+                  </h2>
+                  <span className="text-sm text-gray-500">
+                    (اضغط لتفعيل/إلغاء)
+                  </span>
+                </div>
+                <div className="grid md:grid-cols-4 gap-4">
+                  <button
+                    onClick={() =>
+                      setAdhkar({ ...adhkar, morning: !adhkar.morning })
+                    }
+                    className={`rounded-xl p-6 shadow-lg transition-all transform hover:scale-105 ${
+                      adhkar.morning
+                        ? "bg-gradient-to-br from-yellow-300 to-orange-400 text-white"
+                        : "bg-gray-100 text-gray-600"
+                    }`}>
+                    <div className="text-center">
+                      <div className="text-4xl mb-2">🌅</div>
+                      <h3 className="font-bold text-lg mb-2">أذكار الصباح</h3>
+                      <div className="text-sm font-medium">
+                        {adhkar.morning ? "✅ 5 نقاط" : "⚪ اضغط للتفعيل"}
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      setAdhkar({ ...adhkar, evening: !adhkar.evening })
+                    }
+                    className={`rounded-xl p-6 shadow-lg transition-all transform hover:scale-105 ${
+                      adhkar.evening
+                        ? "bg-gradient-to-br from-orange-400 to-red-500 text-white"
+                        : "bg-gray-100 text-gray-600"
+                    }`}>
+                    <div className="text-center">
+                      <div className="text-4xl mb-2">🌇</div>
+                      <h3 className="font-bold text-lg mb-2">أذكار المساء</h3>
+                      <div className="text-sm font-medium">
+                        {adhkar.evening ? "✅ 5 نقاط" : "⚪ اضغط للتفعيل"}
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      setAdhkar({ ...adhkar, sleep: !adhkar.sleep })
+                    }
+                    className={`rounded-xl p-6 shadow-lg transition-all transform hover:scale-105 ${
+                      adhkar.sleep
+                        ? "bg-gradient-to-br from-indigo-400 to-purple-600 text-white"
+                        : "bg-gray-100 text-gray-600"
+                    }`}>
+                    <div className="text-center">
+                      <div className="text-4xl mb-2">🌙</div>
+                      <h3 className="font-bold text-lg mb-2">أذكار النوم</h3>
+                      <div className="text-sm font-medium">
+                        {adhkar.sleep ? "✅ 3 نقاط" : "⚪ اضغط للتفعيل"}
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      setAdhkar({ ...adhkar, afterPrayer: !adhkar.afterPrayer })
+                    }
+                    className={`rounded-xl p-6 shadow-lg transition-all transform hover:scale-105 ${
+                      adhkar.afterPrayer
+                        ? "bg-gradient-to-br from-green-400 to-teal-600 text-white"
+                        : "bg-gray-100 text-gray-600"
+                    }`}>
+                    <div className="text-center">
+                      <div className="text-4xl mb-2">🤲</div>
+                      <h3 className="font-bold text-lg mb-2">بعد الصلاة</h3>
+                      <div className="text-sm font-medium">
+                        {adhkar.afterPrayer ? "✅ 5 نقاط" : "⚪ اضغط للتفعيل"}
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* 7. المتابعة في الحلقة */}
+              <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="text-4xl">📖</div>
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    المتابعة في الحلقة
+                  </h2>
+                  <span className="text-sm text-gray-500">
+                    (الحد الأدنى 10 دقائق)
+                  </span>
+                </div>
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* حفظ من الموضع القادم */}
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 shadow-lg border-2 border-green-200">
+                    <div className="text-center mb-4">
+                      <div className="text-5xl mb-3">📚</div>
+                      <h3 className="font-bold text-xl text-gray-800 mb-2">
+                        حفظ من الموضع القادم
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-4">
+                        كم دقيقة حفظت اليوم؟
+                      </p>
+                    </div>
+
+                    <div className="space-y-4">
+                      {/* عرض الدقائق */}
+                      <div className="bg-white rounded-lg p-4 text-center">
+                        <div className="text-5xl font-black text-green-600 mb-2">
+                          {halaqah.memorizedMinutes}
+                        </div>
+                        <p className="text-gray-600 text-sm">دقيقة</p>
+                      </div>
+
+                      {/* أزرار التحكم */}
+                      <div className="flex justify-center gap-2">
+                        <button
+                          onClick={() =>
+                            setHalaqah({
+                              ...halaqah,
+                              memorizedMinutes: Math.max(
+                                0,
+                                halaqah.memorizedMinutes - 10
+                              ),
+                            })
+                          }
+                          className="bg-red-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-red-600 transition-colors shadow-lg">
+                          - 10
+                        </button>
+                        <button
+                          onClick={() =>
+                            setHalaqah({
+                              ...halaqah,
+                              memorizedMinutes: halaqah.memorizedMinutes + 10,
+                            })
+                          }
+                          className="bg-green-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-600 transition-colors shadow-lg">
+                          + 10
+                        </button>
+                      </div>
+
+                      {/* عرض النقاط */}
+                      <div className="bg-green-100 rounded-lg p-3 text-center border-2 border-green-300">
+                        <div className="text-3xl font-bold text-green-700">
+                          +{Math.floor(halaqah.memorizedMinutes / 10) * 5} نقطة
+                        </div>
+                        <p className="text-xs text-gray-600 mt-1">
+                          كل 10 دقائق = 5 نقاط
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* مراجعة من الموضع القادم */}
+                  <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-6 shadow-lg border-2 border-blue-200">
+                    <div className="text-center mb-4">
+                      <div className="text-5xl mb-3">🔄</div>
+                      <h3 className="font-bold text-xl text-gray-800 mb-2">
+                        مراجعة من الموضع القادم
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-4">
+                        كم دقيقة راجعت اليوم؟
+                      </p>
+                    </div>
+
+                    <div className="space-y-4">
+                      {/* عرض الدقائق */}
+                      <div className="bg-white rounded-lg p-4 text-center">
+                        <div className="text-5xl font-black text-blue-600 mb-2">
+                          {halaqah.reviewedMinutes}
+                        </div>
+                        <p className="text-gray-600 text-sm">دقيقة</p>
+                      </div>
+
+                      {/* أزرار التحكم */}
+                      <div className="flex justify-center gap-2">
+                        <button
+                          onClick={() =>
+                            setHalaqah({
+                              ...halaqah,
+                              reviewedMinutes: Math.max(
+                                0,
+                                halaqah.reviewedMinutes - 10
+                              ),
+                            })
+                          }
+                          className="bg-red-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-red-600 transition-colors shadow-lg">
+                          - 10
+                        </button>
+                        <button
+                          onClick={() =>
+                            setHalaqah({
+                              ...halaqah,
+                              reviewedMinutes: halaqah.reviewedMinutes + 10,
+                            })
+                          }
+                          className="bg-blue-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-600 transition-colors shadow-lg">
+                          + 10
+                        </button>
+                      </div>
+
+                      {/* عرض النقاط */}
+                      <div className="bg-blue-100 rounded-lg p-3 text-center border-2 border-blue-300">
+                        <div className="text-3xl font-bold text-blue-700">
+                          +{Math.floor(halaqah.reviewedMinutes / 10) * 3} نقطة
+                        </div>
+                        <p className="text-xs text-gray-600 mt-1">
+                          كل 10 دقائق = 3 نقاط
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ملخص نقاط الحلقة */}
+                <div className="mt-6 bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl p-4 text-center border-2 border-purple-300">
+                  <h4 className="font-bold text-gray-800 mb-2">
+                    إجمالي نقاط الحلقة اليوم
+                  </h4>
+                  <div className="text-4xl font-black text-purple-700">
+                    {Math.floor(halaqah.memorizedMinutes / 10) * 5 +
+                      Math.floor(halaqah.reviewedMinutes / 10) * 3}{" "}
+                    نقطة
+                  </div>
+                  <p className="text-xs text-gray-600 mt-2">
+                    {halaqah.memorizedMinutes} دقيقة حفظ +{" "}
+                    {halaqah.reviewedMinutes} دقيقة مراجعة
                   </p>
                 </div>
+              </div>
 
-                <div className="space-y-4">
-                  {/* عرض الدقائق */}
-                  <div className="bg-white rounded-lg p-4 text-center">
-                    <div className="text-5xl font-black text-blue-600 mb-2">
-                      {halaqah.reviewedMinutes}
-                    </div>
-                    <p className="text-gray-600 text-sm">دقيقة</p>
-                  </div>
-
-                  {/* أزرار التحكم */}
-                  <div className="flex justify-center gap-2">
-                    <button
-                      onClick={() =>
-                        setHalaqah({
-                          ...halaqah,
-                          reviewedMinutes: Math.max(
-                            0,
-                            halaqah.reviewedMinutes - 10
-                          ),
-                        })
-                      }
-                      className="bg-red-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-red-600 transition-colors shadow-lg">
-                      - 10
-                    </button>
-                    <button
-                      onClick={() =>
-                        setHalaqah({
-                          ...halaqah,
-                          reviewedMinutes: halaqah.reviewedMinutes + 10,
-                        })
-                      }
-                      className="bg-blue-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-600 transition-colors shadow-lg">
-                      + 10
-                    </button>
-                  </div>
-
-                  {/* عرض النقاط */}
-                  <div className="bg-blue-100 rounded-lg p-3 text-center border-2 border-blue-300">
-                    <div className="text-3xl font-bold text-blue-700">
-                      +{Math.floor(halaqah.reviewedMinutes / 10) * 3} نقطة
-                    </div>
-                    <p className="text-xs text-gray-600 mt-1">
-                      كل 10 دقائق = 3 نقاط
-                    </p>
-                  </div>
+              {/* رسالة تحفيزية */}
+              <div className="bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 rounded-2xl shadow-2xl p-8 text-white text-center">
+                <div className="text-6xl mb-4">💪</div>
+                <h2 className="text-3xl font-bold mb-4">واصل التميز!</h2>
+                <p className="text-xl opacity-90 mb-4">
+                  {totalPoints >= 100
+                    ? "أنت طالب مثالي! استمر في التميز 🌟"
+                    : totalPoints >= 70
+                    ? "أداء رائع! بقليل من الجهد ستصل للكمال 💪"
+                    : totalPoints >= 50
+                    ? "أداء جيد! حاول تحسين نقاطك في الأيام القادمة 📈"
+                    : "ابدأ بخطوات صغيرة، وستصل للقمة بإذن الله! 🚀"}
+                </p>
+                <div className="text-sm opacity-75">
+                  "وَمَن يَتَّقِ اللَّهَ يَجْعَل لَّهُ مَخْرَجًا" ✨
                 </div>
               </div>
-            </div>
-
-            {/* ملخص نقاط الحلقة */}
-            <div className="mt-6 bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl p-4 text-center border-2 border-purple-300">
-              <h4 className="font-bold text-gray-800 mb-2">
-                إجمالي نقاط الحلقة اليوم
-              </h4>
-              <div className="text-4xl font-black text-purple-700">
-                {Math.floor(halaqah.memorizedMinutes / 10) * 5 +
-                  Math.floor(halaqah.reviewedMinutes / 10) * 3}{" "}
-                نقطة
-              </div>
-              <p className="text-xs text-gray-600 mt-2">
-                {halaqah.memorizedMinutes} دقيقة حفظ + {halaqah.reviewedMinutes}{" "}
-                دقيقة مراجعة
-              </p>
-            </div>
-          </div>
-
-          {/* رسالة تحفيزية */}
-          <div className="bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 rounded-2xl shadow-2xl p-8 text-white text-center">
-            <div className="text-6xl mb-4">💪</div>
-            <h2 className="text-3xl font-bold mb-4">واصل التميز!</h2>
-            <p className="text-xl opacity-90 mb-4">
-              {totalPoints >= 100
-                ? "أنت طالب مثالي! استمر في التميز 🌟"
-                : totalPoints >= 70
-                ? "أداء رائع! بقليل من الجهد ستصل للكمال 💪"
-                : totalPoints >= 50
-                ? "أداء جيد! حاول تحسين نقاطك في الأيام القادمة 📈"
-                : "ابدأ بخطوات صغيرة، وستصل للقمة بإذن الله! 🚀"}
-            </p>
-            <div className="text-sm opacity-75">
-              "وَمَن يَتَّقِ اللَّهَ يَجْعَل لَّهُ مَخْرَجًا" ✨
-            </div>
-          </div>
+            </>
+          )}
         </div>
 
         {/* Modal لوحة الترتيب */}
