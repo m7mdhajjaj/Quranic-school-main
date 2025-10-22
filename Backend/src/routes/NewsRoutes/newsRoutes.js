@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const newsController = require("../controllers/newsController");
-const { protect } = require("../middleware/authMiddleware");
-const { validateNewsData } = require("../Validation/NewsValidation");
+const newsController = require("../../controllers/News/newsController");
+const { protect } = require("../../middleware/authMiddleware");
+const { validateNewsData } = require("../../Validation/NewsValidation");
 
 // Get all news - require authentication
 router.get("/", protect, newsController.getAllNews);

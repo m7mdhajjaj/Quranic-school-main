@@ -57,7 +57,7 @@ import MyStudents from './pages/Teacher/MyStudents';
 // ============================================================================
 // Page Components - Communication & Activities
 // ============================================================================
-import News from './pages/news';
+import News from './pages/News';
 // import Chat from "./pages/Chat";
 import Activities from './pages/Activities';
 

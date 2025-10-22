@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { QuranAudioSkeleton } from "../components/Loading/LoadingSkeleton";
+import QuranAudioSkeleton from "../components/Skeleton/QuranAudioSkeleton";
 import {
   getAllSurahs,
   getSurah,

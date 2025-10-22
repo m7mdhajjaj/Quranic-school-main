@@ -13,11 +13,15 @@ const newsSchema = new mongoose.Schema(
     },
     date: {
       type: String,
-      default: () => new Date().toLocaleDateString("ar-SA"),
+      default: () => new Date().toLocaleDateString("en-GB"),
     },
     image: {
       type: String,
       default: "https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+خبر",
+    },
+    imagePublicId: {
+      type: String,
+      default: null,
     },
     isPublished: {
       type: Boolean,

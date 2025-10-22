@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { DailyMarksSkeleton } from "../components/Loading/LoadingSkeleton";
+import DailyMarksSkeleton from "../components/Skeleton/DailyMarksSkeleton";
 import { getStudentsByTeacher } from "../Api/studentApi";
 import { getTeacherById } from "../Api/teacherApi";
 import {
@@ -30,14 +30,14 @@ interface Student {
 }
 
 // Interface for Teacher data from backend
-interface Teacher {
-  _id: string;
-  teacherId: number;
-  firstName: string;
-  lastName: string;
-  groups: string[];
-  role: string;
-}
+// interface Teacher {
+//   _id: string;
+//   teacherId: number;
+//   firstName: string;
+//   lastName: string;
+//   groups: string[];
+//   role: string;
+// }
 
 // Interface for logged-in user
 interface LoggedInUser {

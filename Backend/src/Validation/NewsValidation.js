@@ -21,8 +21,8 @@ const validateNewsTitle = (title) => {
   }
   
   const titleStr = title.toString().trim();
-  if (titleStr.length < 5) {
-    return { isValid: false, message: 'عنوان الخبر يجب أن يكون 5 أحرف على الأقل' };
+  if (titleStr.length < 3) {
+    return { isValid: false, message: 'عنوان الخبر يجب أن يكون 3 أحرف على الأقل' };
   }
   
   if (titleStr.length > 200) {
@@ -41,8 +41,8 @@ const validateContent = (content) => {
   }
   
   const contentStr = content.toString().trim();
-  if (contentStr.length < 10) {
-    return { isValid: false, message: 'محتوى الخبر يجب أن يكون 10 أحرف على الأقل' };
+  if (contentStr.length < 3) {
+    return { isValid: false, message: 'محتوى الخبر يجب أن يكون 3 أحرف على الأقل' };
   }
   
   if (contentStr.length > 5000) {
@@ -225,28 +225,102 @@ const sanitizeNewsData = (data) => {
 
 /**
  * Main validation middleware for news data
+ * Flexible validation that checks required fields and provides detailed feedback
  */
 const validateNewsData = async (req, res, next) => {
   try {
-    const { title, content } = req.body;
+    console.log('📝 Validating news data:', req.body);
+    const { title, content, summary, category, priority, tags } = req.body;
     const errors = [];
 
-    if (!title || title.trim() === "") {
-      errors.push("عنوان الخبر مطلوب");
-    }
-    if (!content || content.trim() === "") {
-      errors.push("محتوى الخبر مطلوب");
+    // Validate title (required)
+    if (!title || title.trim() === '') {
+      errors.push('عنوان الخبر مطلوب');
+    } else {
+      const titleValidation = validateNewsTitle(title);
+      if (!titleValidation.isValid) {
+        errors.push(titleValidation.message);
+      } else {
+        req.body.title = titleValidation.value;
+      }
     }
 
+    // Validate content (required)
+    if (!content || content.trim() === '') {
+      errors.push('محتوى الخبر مطلوب');
+    } else {
+      const contentValidation = validateContent(content);
+      if (!contentValidation.isValid) {
+        errors.push(contentValidation.message);
+      } else {
+        req.body.content = contentValidation.value;
+      }
+    }
+
+    // Validate summary (optional but with rules if provided)
+    if (summary && summary.trim() !== '') {
+      const summaryValidation = validateSummary(summary);
+      if (!summaryValidation.isValid) {
+        errors.push(summaryValidation.message);
+      } else {
+        req.body.summary = summaryValidation.value;
+      }
+    }
+
+    // Validate category (optional, defaults to 'عام')
+    if (category && category.trim() !== '') {
+      const categoryValidation = validateCategory(category);
+      if (!categoryValidation.isValid) {
+        errors.push(categoryValidation.message);
+      } else {
+        req.body.category = categoryValidation.value;
+      }
+    }
+
+    // Validate priority (optional but with rules if provided)
+    if (priority && priority.trim() !== '') {
+      const priorityValidation = validatePriority(priority);
+      if (!priorityValidation.isValid) {
+        errors.push(priorityValidation.message);
+      } else {
+        req.body.priority = priorityValidation.value;
+      }
+    }
+
+    // Validate tags (optional but with rules if provided)
+    if (tags && Array.isArray(tags) && tags.length > 0) {
+      const tagsValidation = validateTags(tags);
+      if (!tagsValidation.isValid) {
+        errors.push(tagsValidation.message);
+      } else {
+        req.body.tags = tagsValidation.value;
+      }
+    }
+
+    // Validate image file if uploaded
+    if (req.file) {
+      const imageValidation = validateImageFile(req.file);
+      if (!imageValidation.isValid) {
+        errors.push(imageValidation.message);
+      }
+    }
+
+    // Return errors if any
     if (errors.length > 0) {
+      console.log('❌ Validation errors:', errors);
       return res.status(400).json({
         message: "بيانات الخبر غير صحيحة",
         errors: errors,
       });
     }
 
+    // Sanitize all data before proceeding
+    req.body = sanitizeNewsData(req.body);
+    console.log('✅ Validation passed, sanitized data:', req.body);
+
     next();
   } catch (error) {
+    console.error('Validation error:', error);
     res.status(500).json({
       message: "خطأ في خادم التحقق من البيانات",
       error: error.message,
@@ -256,4 +330,14 @@ const validateNewsData = async (req, res, next) => {
 
 module.exports = {
   validateNewsData,
+  validateNewsTitle,
+  validateContent,
+  validateSummary,
+  validateCategory,
+  validatePriority,
+  validateAuthor,
+  validatePublishDate,
+  validateTags,
+  validateImageFile,
+  sanitizeNewsData,
 };

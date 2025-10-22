@@ -91,7 +91,7 @@ app.use("/api/students", require("./routes/studentRoutes"));
 app.use("/api/teachers", require("./routes/teacherRoutes"));
 app.use("/api/admins", require("./routes/adminRoutes"));
 app.use("/api/auth", require("./routes/authRoutes"));
-app.use("/api/news", require("./routes/newsRoutes"));
+app.use("/api/news", require("./routes/NewsRoutes/newsRoutes"));
 app.use("/api/activities", require("./routes/activityRoutes"));
 app.use("/api/rankings", require("./routes/rankingRoutes"));
 app.use("/api/sections", require("./routes/sectionRoutes"));
@@ -108,7 +108,7 @@ app.use("/api/points-game", require("./routes/pointsGameRoutes")); // لعبة �
 app.use("/api/reports", require("./routes/reportRoutes"));
 app.use("/api/goals", require("./routes/goalRoutes"));
 app.use("/api", require("./routes/profileRoutes"));
-app.use("/api/upload", require("./routes/uploadRoutes"));
+app.use("/api/upload", require("./routes/UploadRoutes/uploadRoutes"));
 app.use("/api/warnings", require("./routes/warningRoutes"));
 app.use("/api/quran", require("./routes/quranRoutes"));
 

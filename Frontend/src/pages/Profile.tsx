@@ -24,7 +24,7 @@ import {
 import Avatar from '../components/Avatar';
 import { useAuth } from '../hooks/useAuth';
 import { showSuccessMessage, showErrorMessage } from '../utils/sweetalertUtils';
-import { ProfileSkeleton } from '../components/Loading/LoadingSkeleton';
+import ProfileSkeleton from '../components/Skeleton/ProfileSkeleton';
 import ChangePasswordModal from './Auth/ChangePass';
 import {
   getUserWithFallback,

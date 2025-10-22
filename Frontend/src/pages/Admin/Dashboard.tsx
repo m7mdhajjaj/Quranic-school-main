@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import LoadingSkeleton from "../../components/Loading/LoadingSkeleton";
 // import { useDashboardStats } from "../../hooks/useDashboardStats"; // Commented out - file doesn't exist
 import { useDashboardSocket } from "../../Socket";
 import AddStudentForm from "../../components/Forms/AddStudentForm";
@@ -250,10 +249,17 @@ const AdminDashboard = () => {
   // عرض Loading state
   if (isLoading) {
     return (
-      <LoadingSkeleton
-        title="جاري تحميل الإحصائيات..."
-        description="يتم الآن جلب البيانات من قاعدة البيانات"
-      />
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-green-50">
+        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-center py-32">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600 text-lg font-medium">جاري تحميل الإحصائيات...</p>
+              <p className="text-gray-500 text-sm mt-2">يتم الآن جلب البيانات من قاعدة البيانات</p>
+            </div>
+          </div>
+        </div>
+      </div>
     );
   }
 

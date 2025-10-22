@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import { GoalsSkeleton } from "../components/Loading/LoadingSkeleton";
+import GoalsSkeleton from "../components/Skeleton/GoalsSkeleton";
 
 const Goals = () => {
   const [loading, setLoading] = useState(true);

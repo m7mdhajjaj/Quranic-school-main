@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const { uploadActivity, uploadNews, uploadHero, uploadLogo, uploadAvatar } = require("../config/multer");
-const cloudinary = require("../config/cloudinary");
-const { protect } = require("../middleware/authMiddleware");
+const { uploadActivity, uploadNews, uploadHero, uploadLogo, uploadAvatar } = require("../../config/multer");
+const cloudinary = require("../../config/cloudinary");
+const { protect } = require("../../middleware/authMiddleware");
 
 // Upload single activity image
 router.post("/activity", uploadActivity.single("image"), (req, res) => {

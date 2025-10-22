@@ -1,4 +1,5 @@
-const News = require("../schema/News");
+const News = require("../../schema/News");
+const cloudinary = require("../../config/cloudinary");
 
 // Get all news items
 exports.getAllNews = async (req, res) => {
@@ -34,7 +35,7 @@ exports.getNewsById = async (req, res) => {
 // Create a new news item
 exports.createNews = async (req, res) => {
   try {
-    const { title, content, date, imageUrl } = req.body;
+    const { title, content, date, imageUrl, imagePublicId } = req.body;
 
     if (!title || !content) {
       return res.status(400).json({ message: "عنوان الخبر ومحتواه مطلوبان" });
@@ -49,8 +50,9 @@ exports.createNews = async (req, res) => {
     const news = await News.create({
       title,
       content,
-      date: date || new Date().toLocaleDateString("ar-SA"),
+      date: date || new Date().toLocaleDateString("en-GB"),
       image: finalImageUrl,
+      imagePublicId: imagePublicId || null,
     });
 
     // 🔌 Emit Socket event to news room
@@ -75,7 +77,7 @@ exports.createNews = async (req, res) => {
 // Update news item
 exports.updateNews = async (req, res) => {
   try {
-    const { title, content, date, isPublished, imageUrl } = req.body;
+    const { title, content, date, isPublished, imageUrl, imagePublicId } = req.body;
     const newsId = req.params.id;
 
     const news = await News.findById(newsId);
@@ -92,7 +94,19 @@ exports.updateNews = async (req, res) => {
 
     // Update image only if a new Cloudinary URL was provided
     if (imageUrl && imageUrl.startsWith("http")) {
+      // Delete old image from Cloudinary if exists and a new image is provided
+      if (news.imagePublicId && imagePublicId && news.imagePublicId !== imagePublicId) {
+        try {
+          await cloudinary.uploader.destroy(news.imagePublicId);
+          console.log(`✅ Deleted old image from Cloudinary: ${news.imagePublicId}`);
+        } catch (cloudinaryError) {
+          console.error("Error deleting old image from Cloudinary:", cloudinaryError);
+          // Continue with update even if deletion fails
+        }
+      }
+      
       news.image = imageUrl;
+      news.imagePublicId = imagePublicId || null;
     }
 
     await news.save();
@@ -125,6 +139,17 @@ exports.deleteNews = async (req, res) => {
       return res.status(404).json({ message: "الخبر غير موجود" });
     }
 
+    // Delete image from Cloudinary if exists
+    if (news.imagePublicId) {
+      try {
+        await cloudinary.uploader.destroy(news.imagePublicId);
+        console.log(`✅ Deleted image from Cloudinary: ${news.imagePublicId}`);
+      } catch (cloudinaryError) {
+        console.error("Error deleting image from Cloudinary:", cloudinaryError);
+        // Continue with news deletion even if Cloudinary deletion fails
+      }
+    }
+
     await News.findByIdAndDelete(req.params.id);
 
     // 🔌 Emit Socket event to news room
@@ -136,9 +161,6 @@ exports.deleteNews = async (req, res) => {
       });
       console.log("✅ newsDeleted event emitted to news room");
     }
-
-    // Note: Deleting the image from Cloudinary should be handled separately
-    // via the /api/upload route if needed.
 
     res.status(200).json({ message: "تم حذف الخبر بنجاح" });
   } catch (error) {

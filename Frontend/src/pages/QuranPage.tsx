@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import {
-  QuranPageSkeleton,
-  QuranReadingSkeleton,
-} from "../components/Loading/LoadingSkeleton";
+import QuranPageSkeleton from "../components/Skeleton/QuranPageSkeleton";
+import QuranReadingSkeleton from "../components/Skeleton/QuranReadingSkeleton";
 import {
   getAllSurahs,
   getSurah,

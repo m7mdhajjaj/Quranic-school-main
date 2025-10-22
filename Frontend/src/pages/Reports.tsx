@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import MarksBarChart from "../components/MarksBarChart";
-import { ReportsSkeleton } from "../components/Loading/LoadingSkeleton";
+import ReportsSkeleton from "../components/Skeleton/ReportsSkeleton";
 import { getStudentMarks, getAverageMarks } from "../Api/reportApi";
 import { getProfile } from "../Api/profileApi";
 

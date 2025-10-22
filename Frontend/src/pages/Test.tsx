@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { TestSkeleton } from "../components/Loading/LoadingSkeleton";
+import TestSkeleton from "../components/Skeleton/TestSkeleton";
 import {
   getAllSurahs,
   getMultipleSurahsWithAyahs,

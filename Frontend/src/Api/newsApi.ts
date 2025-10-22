@@ -11,6 +11,7 @@ export interface INews {
   content: string;
   date: string;
   image: string;
+  imagePublicId?: string;
   isPublished?: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -28,14 +29,14 @@ const buildImageUrl = (imagePath: string): string => {
 const formatDate = (dateInput: string | Date): string => {
   try {
     const date = new Date(dateInput);
-    return date.toLocaleDateString("ar-SA", {
+    return date.toLocaleDateString("ar-EG", {
       year: "numeric",
       month: "long",
       day: "numeric",
     });
   } catch (error) {
     console.error("Date formatting error:", error);
-    return new Date().toLocaleDateString("ar-SA");
+    return new Date().toLocaleDateString("ar-EG");
   }
 };
 
