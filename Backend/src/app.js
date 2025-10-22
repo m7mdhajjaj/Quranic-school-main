@@ -106,7 +106,7 @@ app.use("/api/groups", require("./routes/groupRoutes"));
 app.use("/api/dashboard", require("./routes/dashboardRoutes"));
 app.use("/api/points-game", require("./routes/pointsGameRoutes")); // لعبة النقاط والشارات
 app.use("/api/reports", require("./routes/reportRoutes"));
-app.use("/api/goals", require("./routes/goalRoutes"));
+app.use("/api/goals", require("./routes/Goals/goalRoutes"));
 app.use("/api", require("./routes/profileRoutes"));
 app.use("/api/upload", require("./routes/UploadRoutes/uploadRoutes"));
 app.use("/api/warnings", require("./routes/warningRoutes"));
