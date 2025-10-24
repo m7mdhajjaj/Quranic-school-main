@@ -9,7 +9,7 @@ const {
   validateDeleteMark,
   validateDeleteStudentMarks,
   validateDeleteSectionMarks,
-} = require("../../Validation/DailyMarksValidation");
+} = require("../../Validation/DailyMarkValidation/DailyMarksValidation");
 
 // ============================================================================
 // GET ROUTES - جلب العلامات

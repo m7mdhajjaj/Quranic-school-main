@@ -6,8 +6,20 @@ const express = require("express");
 const router = express.Router();
 const { protect } = require("../../middleware/authMiddleware");
 const ReportController = require("../../controllers/ReportController");
+const {
+  validateGroupReportParams,
+  validateDateRange,
+  handleValidationErrors,
+} = require("../../Validation/ReportValidation");
 
 // Get group report
-router.get("/:groupId", protect, ReportController.getGroupReport);
+router.get(
+  "/:groupId",
+  protect,
+  validateGroupReportParams,
+  validateDateRange,
+  handleValidationErrors,
+  ReportController.getGroupReport
+);
 
 module.exports = router;

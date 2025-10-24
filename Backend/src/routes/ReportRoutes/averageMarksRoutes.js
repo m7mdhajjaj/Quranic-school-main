@@ -6,8 +6,20 @@ const express = require("express");
 const router = express.Router();
 const { protect } = require("../../middleware/authMiddleware");
 const ReportController = require("../../controllers/ReportController");
+const {
+  validateAverageMarksQuery,
+  handleValidationErrors,
+  sanitizeQueryParams,
+} = require("../../Validation/ReportValidation");
 
 // Get average marks for all students in a group
-router.get("/", protect, ReportController.getAverageMarks);
+router.get(
+  "/",
+  protect,
+  sanitizeQueryParams,
+  validateAverageMarksQuery,
+  handleValidationErrors,
+  ReportController.getAverageMarks
+);
 
 module.exports = router;

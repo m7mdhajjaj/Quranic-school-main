@@ -3,6 +3,7 @@ const router = express.Router();
 const newsController = require("../../controllers/NewsController");
 const { protect } = require("../../middleware/authMiddleware");
 const { uploadNews } = require("../../config/multer");
+const { validateNewsData } = require("../../Validation/NewsValidation");
 
 // ============================================================================
 // GET ROUTES
@@ -25,7 +26,7 @@ router.get("/:id", protect, newsController.getNewsById);
 // ============================================================================
 
 // Create single news item with image upload
-router.post("/", protect, uploadNews.single("image"), newsController.createNews);
+router.post("/", protect, uploadNews.single("image"), validateNewsData, newsController.createNews);
 
 // Create multiple news items (bulk)
 router.post("/bulk", protect, newsController.createBulkNews);
@@ -38,7 +39,7 @@ router.post("/bulk", protect, newsController.createBulkNews);
 router.put("/:id/publish", protect, newsController.publishNews);
 
 // Update single news item
-router.put("/:id", protect, uploadNews.single("image"), newsController.updateNews);
+router.put("/:id", protect, uploadNews.single("image"), validateNewsData, newsController.updateNews);
 
 // Update multiple news items (bulk)
 router.put("/bulk", protect, newsController.updateBulkNews);

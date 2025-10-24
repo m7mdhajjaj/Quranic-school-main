@@ -3,8 +3,12 @@
 // ============================================================================
 
 import React, { useState, useEffect } from "react";
-import { Card } from "../../components/shared";
-import { Select } from "../../components/shared";
+import { 
+  FilterContainer, 
+  FilterSelect,
+  FilterChips,
+  type FilterChip
+} from "../../components/shared/Filter";
 import { validateReportFilters } from "../../Validation/reportValidation";
 
 interface ReportFiltersProps {
@@ -23,7 +27,6 @@ const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
   const [errors, setErrors] = useState<{ month?: string; year?: string }>({});
 
   const monthOptions = [
-    { value: "", label: "آخر 6 أشهر" },
     { value: "1", label: "يناير (1)" },
     { value: "2", label: "فبراير (2)" },
     { value: "3", label: "مارس (3)" },
@@ -39,7 +42,6 @@ const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
   ];
 
   const yearOptions = [
-    { value: "", label: "آخر 6 أشهر" },
     { value: "2023", label: "2023" },
     { value: "2024", label: "2024" },
     { value: "2025", label: "2025" },
@@ -58,57 +60,104 @@ const ReportFiltersComponent: React.FC<ReportFiltersProps> = ({
     setErrors(validationErrors);
   }, [selectedMonth, selectedYear]);
 
-  const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const val = e.target.value;
-    const month = val ? Number(val) : null;
+  // Handle month change
+  const handleMonthChange = (value: string) => {
+    const month = value ? Number(value) : null;
     onMonthChange(month);
   };
 
-  const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const val = e.target.value;
-    const year = val ? Number(val) : null;
+  // Handle year change
+  const handleYearChange = (value: string) => {
+    const year = value ? Number(value) : null;
     onYearChange(year);
   };
 
+  // Clear all filters
+  const handleClearFilters = () => {
+    onMonthChange(null);
+    onYearChange(null);
+  };
+
+  // Generate active filter chips
+  const activeChips: FilterChip[] = [];
+  
+  if (selectedMonth) {
+    const monthLabel = monthOptions.find(opt => opt.value === selectedMonth.toString())?.label || "";
+    activeChips.push({
+      id: 'month',
+      label: 'الشهر',
+      value: monthLabel,
+    });
+  }
+
+  if (selectedYear) {
+    activeChips.push({
+      id: 'year',
+      label: 'السنة',
+      value: selectedYear.toString(),
+    });
+  }
+
+  // Remove individual chip
+  const handleRemoveChip = (id: string) => {
+    if (id === 'month') {
+      onMonthChange(null);
+    } else if (id === 'year') {
+      onYearChange(null);
+    }
+  };
+
   return (
-    <Card
+    <FilterContainer
+      title="تصفية التقارير حسب الشهر والسنة"
       variant="gradient"
-      padding="md"
-      className="max-w-md mx-auto mb-6 sm:mb-8">
-      <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4 text-center">
-        فلترة حسب الشهر والسنة
-      </h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+      onClear={handleClearFilters}
+      showClearButton={activeChips.length > 0}
+      className="max-w-4xl mx-auto">
+      
+      {/* Filter Selects */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-gray-700 text-xs sm:text-sm font-bold mb-2">
-            اختر الشهر (اختياري):
-          </label>
-          <Select
+          <FilterSelect
+            label="اختر الشهر (اختياري)"
             value={selectedMonth?.toString() || ""}
-            onChange={handleMonthChange}
             options={monthOptions}
-            className={`w-full ${errors.month ? "border-red-500" : ""}`}
+            onChange={handleMonthChange}
+            showAllOption={true}
+            allOptionLabel="آخر 6 أشهر"
+            className={errors.month ? "border-red-500" : ""}
           />
           {errors.month && (
             <p className="text-red-500 text-xs mt-1">{errors.month}</p>
           )}
         </div>
+
         <div>
-          <label className="block text-gray-700 text-xs sm:text-sm font-bold mb-2">
-            اختر السنة (اختياري):
-          </label>
-          <Select
+          <FilterSelect
+            label="اختر السنة (اختياري)"
             value={selectedYear?.toString() || ""}
-            onChange={handleYearChange}
             options={yearOptions}
-            className={`w-full ${errors.year ? "border-red-500" : ""}`}
+            onChange={handleYearChange}
+            showAllOption={true}
+            allOptionLabel="آخر 6 أشهر"
+            className={errors.year ? "border-red-500" : ""}
           />
           {errors.year && (
             <p className="text-red-500 text-xs mt-1">{errors.year}</p>
           )}
         </div>
       </div>
-    </Card>
+
+      {/* Active Filter Chips */}
+      {activeChips.length > 0 && (
+        <FilterChips
+          chips={activeChips}
+          onRemove={handleRemoveChip}
+          onClearAll={handleClearFilters}
+          className="mt-4"
+        />
+      )}
+    </FilterContainer>
   );
 };
 
