@@ -1,97 +1,15 @@
-const axios = require('axios');
+const storageService = require('./storageService');
 
 /**
- * Quran Controller - Proxy to external Quran API
- * This controller fetches Quran data from external API (alquran.cloud)
- * and can be extended to cache data in the database if needed
+ * User Preferences Controller
+ * Handles user reading settings, bookmarks, and preferences
  */
-
-// Get all Surahs
-exports.getAllSurahs = async (req, res) => {
-  try {
-    const response = await axios.get('https://api.alquran.cloud/v1/surah');
-    res.json(response.data.data);
-  } catch (error) {
-    console.error('Error fetching surahs:', error.message);
-    res.status(500).json({ 
-      message: 'Failed to fetch surahs',
-      error: error.message 
-    });
-  }
-};
-
-// Get specific Surah with its Ayahs
-exports.getSurahWithAyahs = async (req, res) => {
-  try {
-    const { surahNumber } = req.params;
-    
-    if (!surahNumber || surahNumber < 1 || surahNumber > 114) {
-      return res.status(400).json({ 
-        message: 'Invalid surah number. Must be between 1 and 114' 
-      });
-    }
-
-    const response = await axios.get(`https://api.alquran.cloud/v1/surah/${surahNumber}`);
-    const data = response.data.data;
-    
-    res.json({
-      surah: {
-        number: data.number,
-        name: data.name,
-        englishName: data.englishName,
-        numberOfAyahs: data.numberOfAyahs,
-      },
-      ayahs: data.ayahs.map(ayah => ({
-        ...ayah,
-        surahNumber: parseInt(surahNumber),
-      }))
-    });
-  } catch (error) {
-    console.error(`Error fetching surah ${req.params.surahNumber}:`, error.message);
-    res.status(500).json({ 
-      message: 'Failed to fetch surah',
-      error: error.message 
-    });
-  }
-};
-
-// Get specific Ayah
-exports.getAyah = async (req, res) => {
-  try {
-    const { surahNumber, ayahNumber } = req.params;
-    
-    if (!surahNumber || surahNumber < 1 || surahNumber > 114) {
-      return res.status(400).json({ 
-        message: 'Invalid surah number. Must be between 1 and 114' 
-      });
-    }
-
-    const response = await axios.get(`https://api.alquran.cloud/v1/ayah/${surahNumber}:${ayahNumber}`);
-    res.json(response.data.data);
-  } catch (error) {
-    console.error(`Error fetching ayah ${req.params.surahNumber}:${req.params.ayahNumber}:`, error.message);
-    res.status(500).json({ 
-      message: 'Failed to fetch ayah',
-      error: error.message 
-    });
-  }
-};
-
-// In-memory storage for reading settings (can be moved to database later)
-const readingSettings = new Map();
-const bookmarks = new Map(); // Store bookmarks by userId
-const favoriteReciters = new Map(); // Store favorite reciter by userId
-const listeningProgress = new Map(); // Store listening progress by userId
 
 // Get reading settings for a user
 exports.getReadingSettings = async (req, res) => {
   try {
     const userId = req.user?.id || 'guest';
-    const settings = readingSettings.get(userId) || {
-      fontSize: 18,
-      theme: 'light',
-      ayahsPerPage: 10
-    };
+    const settings = storageService.getReadingSettings(userId);
     
     res.json({ settings });
   } catch (error) {
@@ -115,14 +33,7 @@ exports.saveReadingSettings = async (req, res) => {
       });
     }
     
-    // Validate settings
-    const validSettings = {
-      fontSize: settings.fontSize || 18,
-      theme: settings.theme || 'light',
-      ayahsPerPage: settings.ayahsPerPage || 10
-    };
-    
-    readingSettings.set(userId, validSettings);
+    const validSettings = storageService.saveReadingSettings(userId, settings);
     
     res.json({ 
       success: true,
@@ -142,7 +53,7 @@ exports.saveReadingSettings = async (req, res) => {
 exports.getBookmarks = async (req, res) => {
   try {
     const userId = req.user?.id || 'guest';
-    const userBookmarks = bookmarks.get(userId) || [];
+    const userBookmarks = storageService.getBookmarks(userId);
     
     res.json({ bookmarks: userBookmarks });
   } catch (error) {
@@ -160,46 +71,19 @@ exports.addBookmark = async (req, res) => {
     const userId = req.user?.id || 'guest';
     const { surah, ayah } = req.body;
     
-    // Check if surah and ayah are provided and are valid numbers
+    // Validate input
     if (typeof surah !== 'number' || typeof ayah !== 'number' || surah < 1 || ayah < 1) {
       return res.status(400).json({ 
         message: 'Valid Surah and Ayah numbers are required' 
       });
     }
     
-    const userBookmarks = bookmarks.get(userId) || [];
-    
-    // Check if bookmark already exists
-    const exists = userBookmarks.some(
-      b => b.surah === surah && b.ayah === ayah
-    );
-    
-    if (exists) {
-      // Don't return error, just return success with existing bookmark
-      const existingBookmark = userBookmarks.find(
-        b => b.surah === surah && b.ayah === ayah
-      );
-      return res.json({ 
-        success: true,
-        message: 'Bookmark already exists',
-        bookmark: existingBookmark
-      });
-    }
-    
-    const newBookmark = {
-      id: Date.now(),
-      surah,
-      ayah,
-      createdAt: new Date().toISOString()
-    };
-    
-    userBookmarks.push(newBookmark);
-    bookmarks.set(userId, userBookmarks);
+    const result = storageService.addBookmark(userId, surah, ayah);
     
     res.json({ 
       success: true,
-      message: 'Bookmark added successfully',
-      bookmark: newBookmark
+      message: result.exists ? 'Bookmark already exists' : 'Bookmark added successfully',
+      bookmark: result.bookmark
     });
   } catch (error) {
     console.error('Error adding bookmark:', error.message);
@@ -216,10 +100,7 @@ exports.removeBookmark = async (req, res) => {
     const userId = req.user?.id || 'guest';
     const { id } = req.params;
     
-    const userBookmarks = bookmarks.get(userId) || [];
-    const filteredBookmarks = userBookmarks.filter(b => b.id !== parseInt(id));
-    
-    bookmarks.set(userId, filteredBookmarks);
+    storageService.removeBookmark(userId, id);
     
     res.json({ 
       success: true,
@@ -238,7 +119,7 @@ exports.removeBookmark = async (req, res) => {
 exports.getFavoriteReciter = async (req, res) => {
   try {
     const userId = req.user?.id || 'guest';
-    const reciter = favoriteReciters.get(userId) || 'ar.alafasy'; // Default reciter
+    const reciter = storageService.getFavoriteReciter(userId);
     
     res.json({ reciter });
   } catch (error) {
@@ -262,12 +143,12 @@ exports.saveFavoriteReciter = async (req, res) => {
       });
     }
     
-    favoriteReciters.set(userId, reciter);
+    const savedReciter = storageService.saveFavoriteReciter(userId, reciter);
     
     res.json({ 
       success: true,
       message: 'Favorite reciter saved successfully',
-      reciter
+      reciter: savedReciter
     });
   } catch (error) {
     console.error('Error saving favorite reciter:', error.message);
@@ -284,8 +165,7 @@ exports.getListeningProgress = async (req, res) => {
     const userId = req.user?.id || 'guest';
     const { surahNumber } = req.params;
     
-    const userProgress = listeningProgress.get(userId) || {};
-    const progress = userProgress[surahNumber] || 0;
+    const progress = storageService.getListeningProgress(userId, surahNumber);
     
     res.json({ progress });
   } catch (error) {
@@ -309,9 +189,7 @@ exports.saveListeningProgress = async (req, res) => {
       });
     }
     
-    const userProgress = listeningProgress.get(userId) || {};
-    userProgress[surahNumber] = progress;
-    listeningProgress.set(userId, userProgress);
+    storageService.saveListeningProgress(userId, surahNumber, progress);
     
     res.json({ 
       success: true,

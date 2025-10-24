@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import DailyMarksSkeleton from "../../components/Skeleton/DailyMarksSkeleton";
+import DailyMarksSkeleton from "../../components/shared/Skeleton/DailyMarksSkeleton";
 import { createSection, updateSection, deleteSection } from "../../Api/sectionApi";
 import { createMark } from "../../Api/dailyMarksApi";
 import {

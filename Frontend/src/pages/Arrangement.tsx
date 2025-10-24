@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import ArrangementSkeleton from "../components/Skeleton/ArrangementSkeleton";
+import ArrangementSkeleton from "../components/shared/Skeleton/ArrangementSkeleton";
 import {
   getRankingByAverages,
   type StudentWithAverage,

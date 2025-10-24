@@ -10,7 +10,7 @@ import {
   FaCog,
   FaUser,
 } from 'react-icons/fa';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../../hooks/useAuth';
 
 const Footer = () => {
   const { isAdmin } = useAuth();

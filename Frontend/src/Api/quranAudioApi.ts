@@ -251,7 +251,7 @@ export const saveListeningProgress = async (
 ): Promise<void> => {
   try {
     await api.post('/quran/listening-progress', {
-      surah: surahNumber,
+      surahNumber: surahNumber,
       progress: progress
     });
   } catch (error) {

@@ -18,6 +18,17 @@
   }
 }
 
+@keyframes slideDown {
+  from {
+    transform: translateY(-30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
@@ -29,12 +40,29 @@
   100% { transform: translateX(200%); }
 }
 
+/* ✨ تحسين خط القرآن الكريم */
+.font-arabic {
+  font-family: 'Amiri', 'Traditional Arabic', 'Arabic Typesetting', 'Scheherazade', serif;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 2.2;
+}
+
+/* ✨ تحسين الأداء - CSS Containment */
+.contain-layout {
+  contain: layout style paint;
+}
+
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-out;
 }
 
 .animate-slideUp {
   animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.animate-slideDown {
+  animation: slideDown 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .animate-shake {

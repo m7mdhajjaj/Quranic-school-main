@@ -1,9 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { useAuth } from "../../hooks/useAuth";
-import NewsSkeleton from "../../components/Skeleton/NewsSkeleton";
+import NewsSkeleton from "../../components/shared/Skeleton/NewsSkeleton";
 import { EmptyState } from "../../components/shared";
+import { SearchInput, FilterSelect, FilterContainer } from "../../components/shared/Filter";
+import type { FilterOption } from "../../components/shared/Filter";
 import { useNewsData } from "./hooks/useNewsData";
 import { 
   NewsHeader, 
@@ -42,9 +44,55 @@ const News = () => {
     refreshNews,
   } = useNewsData();
 
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
+
   // Initialize AOS
   useEffect(() => {
     AOS.init({ duration: 800, once: true });
+  }, []);
+
+  // Filter and sort news
+  const filteredNews = useMemo(() => {
+    let filtered = newsItems;
+
+    // Apply search filter
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter((item) => {
+        const titleMatch = item.title?.toLowerCase().includes(searchLower);
+        const contentMatch = item.content?.toLowerCase().includes(searchLower);
+        return titleMatch || contentMatch;
+      });
+    }
+
+    // Apply sorting
+    filtered = [...filtered].sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
+    });
+
+    return filtered;
+  }, [newsItems, searchTerm, sortOrder]);
+
+  const sortOptions = useMemo((): FilterOption[] => [
+    { value: "newest", label: "الأحدث أولاً" },
+    { value: "oldest", label: "الأقدم أولاً" },
+  ], []);
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchTerm(value);
+  }, []);
+
+  const handleSortChange = useCallback((value: string) => {
+    setSortOrder(value as "newest" | "oldest");
+  }, []);
+
+  const handleClearFilters = useCallback(() => {
+    setSearchTerm("");
+    setSortOrder("newest");
   }, []);
 
   return (
@@ -57,6 +105,35 @@ const News = () => {
         socketId={socketId}
         socketLastUpdate={socketLastUpdate}
       />
+
+      {/* Filter Container */}
+      {newsItems.length > 0 && (
+        <FilterContainer
+          title="البحث والفلترة"
+          resultsCount={filteredNews.length}
+          resultsLabel="خبر"
+          onClear={handleClearFilters}
+          showClearButton={searchTerm !== "" || sortOrder !== "newest"}
+          variant="gradient"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <SearchInput
+              value={searchTerm}
+              onChange={handleSearchChange}
+              placeholder="ابحث في الأخبار..."
+              size="md"
+            />
+
+            <FilterSelect
+              label="الترتيب"
+              value={sortOrder}
+              options={sortOptions}
+              onChange={handleSortChange}
+              showAllOption={false}
+            />
+          </div>
+        </FilterContainer>
+      )}
 
       {/* News Grid */}
       {isLoading && newsItems.length === 0 ? (
@@ -76,13 +153,13 @@ const News = () => {
                 }}
               />
             </div>
-          ) : newsItems.length === 0 ? (
+          ) : filteredNews.length === 0 ? (
             <div className="col-span-2">
               <EmptyState 
-                illustration="no-data"
-                title="لا توجد أخبار متاحة حالياً"
-                description="لم يتم نشر أي أخبار بعد. تابعنا للحصول على آخر المستجدات!"
-                action={isTeacherOrAdmin ? {
+                illustration={newsItems.length === 0 ? "no-data" : "search"}
+                title={newsItems.length === 0 ? "لا توجد أخبار متاحة حالياً" : "لم يتم العثور على نتائج"}
+                description={newsItems.length === 0 ? "لم يتم نشر أي أخبار بعد. تابعنا للحصول على آخر المستجدات!" : "جرب تغيير معايير البحث أو الفلترة"}
+                action={isTeacherOrAdmin && newsItems.length === 0 ? {
                   label: "إضافة خبر جديد",
                   onClick: handleOpenModal,
                   icon: <span>➕</span>
@@ -90,7 +167,7 @@ const News = () => {
               />
             </div>
           ) : (
-            newsItems.map((item, index) => (
+            filteredNews.map((item, index) => (
               <NewsCard 
                 key={item._id}
                 news={item}

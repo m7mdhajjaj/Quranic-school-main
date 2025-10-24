@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
-import { showLogoutConfirmation } from '../logoutUtils';
-import ChangePasswordModal from '../../pages/Auth/ChangePass';
-import Avatar from '../Avatar';
+import { useAuth } from '../../../hooks/useAuth';
+import { showLogoutConfirmation } from '../../logoutUtils';
+import ChangePasswordModal from '../../../pages/Auth/ChangePass';
+import Avatar from '../../Avatar';
 import {
   getRecentNotifications,
   getUnreadNotificationCount,
   markAsRead,
-} from '../../Api/notificationApi';
-import { getLogo } from '../../Api/uploadApi';
+} from '../../../Api/notificationApi';
+import { getLogo } from '../../../Api/uploadApi';
 import ThemeToggle from '../Theme/ThemeToggle';
 
 interface AdminNotification {

@@ -1,13 +1,13 @@
 import { NavLink, useNavigate, useLocation, Link } from "react-router-dom";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import NotificationHeader from "../Notifications/NotificationHeader";
-import Avatar from "../Avatar";
-import { useAuth } from "../../hooks/useAuth";
-import ChangePasswordModal from "../../pages/Auth/ChangePass";
-import { getLogo } from "../../Api/uploadApi";
+import NotificationHeader from "../../Notifications/NotificationHeader";
+import Avatar from "../../Avatar";
+import { useAuth } from "../../../hooks/useAuth";
+import ChangePasswordModal from "../../../pages/Auth/ChangePass";
+import { getLogo } from "../../../Api/uploadApi";
 import { io, Socket } from "socket.io-client";
-import { showLogoutConfirmation } from "../logoutUtils";
-import { API_BASE_URL } from "../../config/config";
+import { showLogoutConfirmation } from "../../logoutUtils";
+import { API_BASE_URL } from "../../../config/config";
 import {
   AlertTriangle,
   Award,

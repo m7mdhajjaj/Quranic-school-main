@@ -9,6 +9,9 @@ export default {
       screens: {
         'xs': '475px', // Extra small screens
       },
+      scale: {
+        '102': '1.02',
+      },
       animationDelay: {
         '100': '0.1s',
         '200': '0.2s',

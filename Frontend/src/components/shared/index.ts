@@ -21,3 +21,4 @@ export { ProgressBar } from './ProgressBar';
 export { ProgressCircle } from './ProgressCircle';
 export { AvatarUpload } from './AvatarUpload';
 export { ImageUpload } from './ImageUpload';
+export { default as PageHeader } from './PageHeader';

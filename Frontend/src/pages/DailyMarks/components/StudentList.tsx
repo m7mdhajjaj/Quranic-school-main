@@ -3,7 +3,8 @@ import type { StudentListProps } from "../types/dailyMarks";
 import { Select } from "../../../components/shared/Select";
 import { Button } from "../../../components/shared/Button";
 import { Card } from "../../../components/shared/Card";
-import { Users, Plus, Edit, Trash2, Search, X } from "lucide-react";
+import { SearchInput } from "../../../components/shared/Filter";
+import { Users, Plus, Edit, Trash2 } from "lucide-react";
 
 /**
  * Enhanced Student list component with search, group filter, and statistics
@@ -70,25 +71,12 @@ export const StudentList = ({
       {/* Search Bar */}
       {students.length > 0 && (
         <div className="px-4 pt-4 pb-2">
-          <div className="relative">
-            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-            <input
-              type="text"
-              placeholder="ابحث عن طالب..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pr-10 pl-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200"
-            />
-            {searchTerm && (
-              <button
-                onClick={() => setSearchTerm("")}
-                title="مسح البحث"
-                aria-label="مسح البحث"
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
-                <X size={18} />
-              </button>
-            )}
-          </div>
+          <SearchInput
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="ابحث عن طالب..."
+            size="sm"
+          />
           {searchTerm && (
             <p className="text-xs text-gray-500 mt-2">
               {filteredStudents.length === 0 
@@ -116,7 +104,9 @@ export const StudentList = ({
           </div>
         ) : filteredStudents.length === 0 ? (
           <div className="text-center py-8">
-            <Search className="text-gray-300 mx-auto mb-3" size={48} />
+            <div className="bg-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
+              <Users className="text-gray-400" size={32} />
+            </div>
             <p className="text-gray-500 font-medium">لا توجد نتائج للبحث</p>
             <p className="text-gray-400 text-sm mt-1">جرب مصطلح بحث آخر</p>
           </div>

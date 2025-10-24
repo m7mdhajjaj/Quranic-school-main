@@ -88,21 +88,17 @@ export const SectionsTable = ({
       header: "📅 التاريخ",
       render: (row) => {
         const date = new Date(row.date);
-        const formattedDate = date.toLocaleDateString("ar-SA", {
+        const formattedDate = date.toLocaleDateString("en-GB", {
           year: "numeric",
-          month: "long",
-          day: "numeric",
+          month: "2-digit",
+          day: "2-digit",
         });
+        const dayName = date.toLocaleDateString("ar-SA", { weekday: "long" });
+        
         return (
           <div className="flex flex-col">
             <span className="font-semibold text-gray-800">{formattedDate}</span>
-            <span className="text-xs text-gray-500 mt-0.5">
-              {date.toLocaleDateString("en-GB", {
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-              })}
-            </span>
+            <span className="text-xs text-gray-500 mt-0.5">{dayName}</span>
           </div>
         );
       },

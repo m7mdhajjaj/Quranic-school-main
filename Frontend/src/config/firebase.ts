@@ -114,8 +114,11 @@ export const onMessageListener = (callback: (payload: unknown) => void) => {
   }
 
   const unsubscribe = onMessage(messaging, (payload) => {
+    // Immediately log and defer callback to avoid blocking
     console.log('📩 Foreground message received:', payload);
-    callback(payload);
+    
+    // Use setTimeout with 0 delay to defer to next tick
+    setTimeout(() => callback(payload), 0);
   });
 
   return unsubscribe;

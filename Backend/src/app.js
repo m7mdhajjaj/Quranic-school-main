@@ -110,7 +110,7 @@ app.use("/api/goals", require("./routes/Goals/goalRoutes"));
 app.use("/api", require("./routes/profileRoutes"));
 app.use("/api/upload", require("./routes/UploadRoutes/uploadRoutes"));
 app.use("/api/warnings", require("./routes/warningRoutes"));
-app.use("/api/quran", require("./routes/quranRoutes"));
+app.use("/api/quran", require("./routes/QuranRoutes/quranRoutes"));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

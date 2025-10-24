@@ -101,27 +101,33 @@ export const useFirebaseMessaging = (): UseFirebaseMessagingReturn => {
   // ====== الاستماع للإشعارات الواردة ======
   useEffect(() => {
     const unsubscribe = onMessageListener((payload: unknown) => {
-      console.log('📩 تم استلام إشعار:', payload);
       const typedPayload = payload as NotificationPayload;
+      
+      // Update state only - this is fast
       setLastNotification(typedPayload);
 
-      // عرض الإشعار للمستخدم
+      // Defer all heavy operations
       if (typedPayload.notification) {
         const { title, body } = typedPayload.notification;
         
-        // إنشاء إشعار نظام إذا كانت الصفحة مفتوحة
-        if (Notification.permission === 'granted') {
-          new Notification(title, {
-            body: body,
-            icon: '/logo.png',
-            badge: '/badge.png',
-            tag: 'quranic-school-notification',
-            requireInteraction: false,
-          });
-        }
-
-        // يمكن إضافة toast notification هنا
-        // showToast(title, body);
+        // Queue notification creation for later
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            if (Notification.permission === 'granted') {
+              try {
+                new Notification(title, {
+                  body: body,
+                  icon: '/logo.png',
+                  badge: '/badge.png',
+                  tag: 'quranic-school-notification',
+                  requireInteraction: false,
+                });
+              } catch (err) {
+                console.warn('Could not show notification:', err);
+              }
+            }
+          }, 0);
+        });
       }
     });
 

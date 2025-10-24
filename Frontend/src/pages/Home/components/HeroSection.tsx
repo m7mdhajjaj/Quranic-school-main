@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import HomeSkeleton from '../../../components/Skeleton/HomeSkeleton';
+import HomeSkeleton from '../../../components/shared/Skeleton/HomeSkeleton';
 import { Button, LoadingSpinner } from '../../../components/shared';
 import { Edit2 } from 'lucide-react';
 

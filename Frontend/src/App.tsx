@@ -29,7 +29,7 @@ import { useFirebaseMessaging } from './hooks/useFirebaseMessaging'; // ✅ Fire
 // ============================================================================
 // Layout Components
 // ============================================================================
-import Layout from './components/Layout';
+import Layout from './components/shared/Layout';
 
 // ============================================================================
 // Page Components - General

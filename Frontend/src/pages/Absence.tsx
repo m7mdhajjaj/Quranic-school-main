@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import AbsenceSkeleton from "../components/Skeleton/AbsenceSkeleton";
+import AbsenceSkeleton from "../components/shared/Skeleton/AbsenceSkeleton";
 import { getAttendanceByDate, bulkSaveAttendance } from "../Api/attendanceApi";
 import { useAbsenceSocket } from "../Socket";
 import { showSuccessMessage, showErrorMessage } from "../components/sweetalertUtils";
