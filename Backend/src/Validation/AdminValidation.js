@@ -1,5 +1,6 @@
 // Validation/AdminValidation.js
 const bcrypt = require('bcryptjs');
+const { checkDuplicateFields } = require('../utils/duplicateChecker');
 
 /**
  * Admin data validation middleware with comprehensive rules
@@ -240,15 +241,6 @@ const validateAdminData = async (req, res, next) => {
     const validatedData = {};
     
     // Validate required fields for creation, optional for updates
-    if (!isUpdate || data.adminId !== undefined) {
-      const adminIdValidation = validateAdminId(data.adminId);
-      if (!adminIdValidation.isValid) {
-        errors.push(adminIdValidation.message);
-      } else {
-        validatedData.adminId = adminIdValidation.value;
-      }
-    }
-    
     if (!isUpdate || data.firstName !== undefined) {
       const firstNameValidation = validateName(data.firstName, 'الاسم الأول');
       if (!firstNameValidation.isValid) {
@@ -276,12 +268,12 @@ const validateAdminData = async (req, res, next) => {
       }
     }
     
-    if (!isUpdate || data.phone !== undefined) {
-      const phoneValidation = validatePhone(data.phone);
+    if (!isUpdate || data.phoneNumber !== undefined) {
+      const phoneValidation = validatePhone(data.phoneNumber);
       if (!phoneValidation.isValid) {
         errors.push(phoneValidation.message);
       } else {
-        validatedData.phone = phoneValidation.value;
+        validatedData.phoneNumber = phoneValidation.value;
       }
     }
     
@@ -298,43 +290,27 @@ const validateAdminData = async (req, res, next) => {
       errors.push('كلمة المرور مطلوبة');
     }
     
-    // Validate optional fields
-    if (data.role !== undefined) {
-      const roleValidation = validateRole(data.role);
-      if (!roleValidation.isValid) {
-        errors.push(roleValidation.message);
-      } else {
-        validatedData.role = roleValidation.value;
-      }
-    }
-    
-    if (data.permissions !== undefined) {
-      const permissionsValidation = validatePermissions(data.permissions);
-      if (!permissionsValidation.isValid) {
-        errors.push(permissionsValidation.message);
-      } else {
-        validatedData.permissions = permissionsValidation.value;
-      }
-    }
-    
     // Validate ID number (optional)
     if (data.idNumber !== undefined) {
       const idValidation = validateIdNumber(data.idNumber);
       if (!idValidation.isValid) {
         errors.push(idValidation.message);
-      } else {
+      } else if (idValidation.value) {
         validatedData.idNumber = idValidation.value;
       }
     }
     
-    // Additional fields
-    if (data.isActive !== undefined) {
-      validatedData.isActive = Boolean(data.isActive);
-    }
+    // Additional fields (optional)
+    const optionalFields = [
+      'fatherName', 'grandFatherName', 'motherName', 
+      'birthDate', 'gender', 'residence'
+    ];
     
-    if (data.lastLogin !== undefined) {
-      validatedData.lastLogin = new Date(data.lastLogin);
-    }
+    optionalFields.forEach(field => {
+      if (data[field] !== undefined && data[field] !== null && data[field] !== '') {
+        validatedData[field] = data[field];
+      }
+    });
     
     // Check for validation errors
     if (errors.length > 0) {
@@ -346,8 +322,25 @@ const validateAdminData = async (req, res, next) => {
       });
     }
     
-    // Add validated data to request
-    req.validatedData = validatedData;
+    // التحقق من التكرار باستخدام duplicateChecker
+    const currentAdminId = isUpdate ? req.params.id : null;
+    const duplicateError = await checkDuplicateFields(
+      {
+        email: validatedData.email,
+        phoneNumber: validatedData.phoneNumber,
+        idNumber: validatedData.idNumber
+      },
+      currentAdminId,
+      'admin'
+    );
+    
+    if (duplicateError) {
+      console.log('❌ تكرار في البيانات:', duplicateError.message);
+      return res.status(400).json(duplicateError);
+    }
+    
+    // Merge validated data into req.body for controller
+    req.body = { ...req.body, ...validatedData };
     
     console.log('✅ تم التحقق من بيانات المشرف بنجاح');
     next();

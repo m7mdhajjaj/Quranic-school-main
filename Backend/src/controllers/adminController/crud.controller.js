@@ -1,49 +1,11 @@
-const Admin = require("../schema/Admin");
+const Admin = require("../../schema/Admin");
 const bcrypt = require("bcryptjs");
-const { validateAndCheckDuplicates } = require("../utils/duplicateChecker");
-const { notifyDashboardUpdate } = require("../utils/dashboardNotifications");
+const { notifyDashboardUpdate } = require("../../utils/dashboardNotifications");
+const { calculateAge, generateAdminId } = require("./utils.controller");
 
-// Calculate age from birth date
-const calculateAge = (birthDate) => {
-  if (!birthDate) return 0;
-
-  const today = new Date();
-  const birthDateObj = new Date(birthDate);
-
-  if (isNaN(birthDateObj.getTime())) return 0;
-
-  let age = today.getFullYear() - birthDateObj.getFullYear();
-  const monthDiff = today.getMonth() - birthDateObj.getMonth();
-
-  if (
-    monthDiff < 0 ||
-    (monthDiff === 0 && today.getDate() < birthDateObj.getDate())
-  ) {
-    age--;
-  }
-
-  return age;
-};
-
-// Generate next admin ID
-const generateAdminId = async () => {
-  try {
-    const lastAdmin = await Admin.findOne()
-      .sort({ adminId: -1 })
-      .select("adminId");
-
-    if (!lastAdmin) {
-      return 1; // Start admin IDs from 1
-    }
-
-    return lastAdmin.adminId + 1;
-  } catch (error) {
-    console.error("Error generating admin ID:", error);
-    return 1;
-  }
-};
-
-// Get all admins
+/**
+ * جلب جميع الإداريين
+ */
 exports.getAllAdmins = async (req, res) => {
   try {
     const admins = await Admin.find({}).select("-password");
@@ -56,7 +18,9 @@ exports.getAllAdmins = async (req, res) => {
   }
 };
 
-// Get single admin by ID
+/**
+ * جلب إداري واحد بواسطة ID
+ */
 exports.getAdminById = async (req, res) => {
   try {
     const admin = await Admin.findById(req.params.id).select("-password");
@@ -74,9 +38,13 @@ exports.getAdminById = async (req, res) => {
   }
 };
 
-// Create new admin
+/**
+ * إنشاء إداري جديد
+ * البيانات تأتي مُتحققة ومُنظفة من middleware (validateAdminData)
+ */
 exports.createAdmin = async (req, res) => {
   try {
+    // جميع البيانات مُتحققة ومُشفرة من middleware
     const {
       firstName,
       lastName,
@@ -92,39 +60,18 @@ exports.createAdmin = async (req, res) => {
       password,
     } = req.body;
 
-    // basic validation
-    const must = ["firstName", "lastName", "email", "phoneNumber"];
-    for (const f of must) {
-      if (!req.body[f]) {
-        return res
-          .status(400)
-          .json({ success: false, message: `حقل ${f} مطلوب` });
-      }
-    }
-
-    // التحقق من تكرار البيانات الفريدة عبر جميع أنواع المستخدمين
-    const hasDuplicates = await validateAndCheckDuplicates(req, res, { idNumber, phoneNumber, email });
-    if (hasDuplicates) return; // تم إرسال استجابة الخطأ بالفعل
-
-    // adminId + password
+    // توليد adminId
     const adminId = await generateAdminId();
-    const rawPass = password || String(adminId);
-    const hashed = await bcrypt.hash(rawPass, 10);
+    
+    // كلمة المرور تأتي مُشفرة من middleware
+    const hashedPassword = password || await bcrypt.hash(String(adminId), 10);
 
-    // age
+    // حساب العمر
     const age = calculateAge(birthDate);
-    if (birthDate && age < 18) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "يجب أن يكون عمر الإداري 18 عام على الأقل",
-        });
-    }
 
     const doc = await Admin.create({
       adminId,
-      password: hashed,
+      password: hashedPassword,
       firstName,
       lastName,
       fatherName,
@@ -155,26 +102,16 @@ exports.createAdmin = async (req, res) => {
   }
 };
 
-// Update admin
+/**
+ * تحديث بيانات إداري
+ * البيانات تأتي مُتحققة ومُنظفة من middleware (validateAdminData)
+ */
 exports.updateAdmin = async (req, res) => {
   try {
     const id = req.params.id;
     const updates = { ...req.body };
 
-    // التحقق من تكرار البيانات الفريدة عبر جميع أنواع المستخدمين (مع استثناء المدير الحالي)
-    const { idNumber, phoneNumber, email } = updates;
-    const hasDuplicates = await validateAndCheckDuplicates(req, res, { idNumber, phoneNumber, email }, id, 'admin');
-    if (hasDuplicates) return; // تم إرسال استجابة الخطأ بالفعل
-
-    // Remove password field from updates if it's empty or undefined
-    if (!updates.password) {
-      delete updates.password;
-    } else {
-      // Hash password if provided
-      updates.password = await bcrypt.hash(updates.password, 10);
-    }
-
-    // Handle age calculation
+    // حساب العمر إذا تم تحديث تاريخ الميلاد
     if (updates.birthDate) {
       updates.age = calculateAge(updates.birthDate);
     }
@@ -194,7 +131,7 @@ exports.updateAdmin = async (req, res) => {
     // إشعار تحديث الداشبورد
     notifyDashboardUpdate('stats');
 
-    // Emit socket event for real-time profile update
+    // إرسال تحديث مباشر عبر Socket
     const io = req.app.get("io");
     if (io) {
       io.to("profile").emit("profileUpdated", {
@@ -219,7 +156,9 @@ exports.updateAdmin = async (req, res) => {
   }
 };
 
-// Delete admin (soft delete)
+/**
+ * حذف إداري (حذف ناعم)
+ */
 exports.deleteAdmin = async (req, res) => {
   try {
     const id = req.params.id;
@@ -246,41 +185,5 @@ exports.deleteAdmin = async (req, res) => {
     return res
       .status(500)
       .json({ success: false, message: "حدث خطأ أثناء حذف الإداري" });
-  }
-};
-
-// Get admin statistics
-exports.getAdminStats = async (req, res) => {
-  try {
-    const totalAdmins = await Admin.countDocuments({ isActive: true });
-    const superAdmins = await Admin.countDocuments({ 
-      isActive: true, 
-      role: 'superAdmin' 
-    });
-    const regularAdmins = await Admin.countDocuments({ 
-      isActive: true, 
-      role: 'admin' 
-    });
-    const recentAdmins = await Admin.countDocuments({
-      isActive: true,
-      createdAt: {
-        $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
-      }
-    });
-
-    return res.status(200).json({
-      success: true,
-      data: {
-        total: totalAdmins,
-        superAdmins,
-        regularAdmins,
-        recent: recentAdmins
-      }
-    });
-  } catch (error) {
-    console.error("Error fetching admin stats:", error);
-    return res
-      .status(500)
-      .json({ success: false, message: "حدث خطأ أثناء جلب إحصائيات الإدارة" });
   }
 };

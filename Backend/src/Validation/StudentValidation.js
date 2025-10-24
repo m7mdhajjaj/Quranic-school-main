@@ -1,5 +1,6 @@
 // Student Validation - متطابق مع Frontend validation
 // التحقق من صحة بيانات الطلاب - نفس المنطق المستخدم في الفرونت إند
+const { checkDuplicateFields } = require('../utils/duplicateChecker');
 
 // تطبيع الجنس - نفس المنطق في Frontend
 const normalizeGender = (value) => {
@@ -24,7 +25,7 @@ const calculateAge = (birthDate) => {
 };
 
 // التحقق من صحة البيانات الأساسية
-const validateStudentData = (req, res, next) => {
+const validateStudentData = async (req, res, next) => {
   try {
     const errors = {};
     const { 
@@ -179,6 +180,23 @@ const validateStudentData = (req, res, next) => {
         message: 'بيانات غير صحيحة',
         errors
       });
+    }
+
+    // التحقق من التكرار باستخدام duplicateChecker
+    const currentStudentId = isUpdate ? req.params.id : null;
+    const duplicateError = await checkDuplicateFields(
+      {
+        email: email,
+        phoneNumber: phoneNumber,
+        idNumber: idNumber
+      },
+      currentStudentId,
+      'student'
+    );
+    
+    if (duplicateError) {
+      console.log('❌ تكرار في البيانات:', duplicateError.message);
+      return res.status(400).json(duplicateError);
     }
 
     console.log('✅ تم التحقق من البيانات بنجاح');

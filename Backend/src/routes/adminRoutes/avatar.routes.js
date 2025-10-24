@@ -1,15 +1,17 @@
-// routes/adminRoutes.js
+// routes/adminRoutes/avatar.routes.js
 const express = require("express");
 const router = express.Router();
-const cloudinary = require("../config/cloudinary");
+const cloudinary = require("../../config/cloudinary");
+const Admin = require("../../schema/Admin");
+const { uploadAvatar } = require("../../config/multer");
+const { protect } = require("../../middleware/authMiddleware");
 
-const Admin = require("../schema/Admin");
-const controller = require("../controllers/adminController");
-const { validateAdminData } = require("../Validation/AdminValidation");
-const { uploadAvatar } = require("../config/multer");
-const { protect } = require("../middleware/authMiddleware");
+/**
+ * Avatar Management Routes for Admins
+ * Handle upload, get, and delete avatar operations
+ */
 
-// ========== رفع أفاتار الإداري (Cloudinary) - UPDATED ==========
+// ========== Upload Admin Avatar (Cloudinary) ==========
 router.post(
   "/:id/avatar",
   protect,
@@ -19,21 +21,25 @@ router.post(
       console.log("🔐 Admin avatar upload - User:", req.user?.role, req.user?._id);
       
       const admin = await Admin.findById(req.params.id);
-      if (!admin)
+      if (!admin) {
         return res
           .status(404)
           .json({ success: false, message: "الإداري غير موجود" });
-      if (!req.file)
+      }
+
+      if (!req.file) {
         return res
           .status(400)
           .json({ success: false, message: "لم يتم استلام ملف صورة" });
+      }
 
       // Delete old avatar from Cloudinary if exists
       if (admin.avatar && admin.avatar.publicId) {
         try {
           await cloudinary.uploader.destroy(admin.avatar.publicId);
+          console.log("🗑️ Old avatar deleted from Cloudinary");
         } catch (error) {
-          console.log("Error deleting old avatar:", error);
+          console.log("⚠️ Error deleting old avatar:", error);
         }
       }
 
@@ -66,15 +72,13 @@ router.post(
         console.log("📡 Avatar updated event emitted via socket (admin)");
       }
 
-      return res
-        .status(200)
-        .json({
-          success: true,
-          message: "تم رفع الصورة بنجاح",
-          avatarUrl: req.file.path,
-        });
+      return res.status(200).json({
+        success: true,
+        message: "تم رفع الصورة بنجاح",
+        avatarUrl: req.file.path,
+      });
     } catch (error) {
-      console.error("Error uploading admin avatar:", error);
+      console.error("❌ Error uploading admin avatar:", error);
       return res
         .status(500)
         .json({ success: false, message: "خطأ في رفع الصورة" });
@@ -82,32 +86,41 @@ router.post(
   }
 );
 
-// ========== عرض رابط صورة أفاتار الإداري ==========
+// ========== Get Admin Avatar URL ==========
 router.get("/:id/avatar", protect, async (req, res) => {
   try {
     const admin = await Admin.findById(req.params.id).select("avatar");
     if (!admin) {
-      return res.status(404).json({ success: false, message: "الإداري غير موجود" });
+      return res
+        .status(404)
+        .json({ success: false, message: "الإداري غير موجود" });
     }
-    // إذا ما في صورة، نرجع null بدل error
+
+    // Return null if no avatar instead of error
     const avatarUrl = admin.avatar?.url || null;
     res.json({ success: true, avatarUrl });
   } catch (error) {
-    console.error("Error getting admin avatar:", error);
-    return res.status(500).json({ success: false, message: "خطأ في عرض الصورة" });
+    console.error("❌ Error getting admin avatar:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "خطأ في عرض الصورة" });
   }
 });
 
-// ========== حذف أفاتار الإداري ==========
+// ========== Delete Admin Avatar ==========
 router.delete("/:id/avatar", protect, async (req, res) => {
   try {
     const admin = await Admin.findById(req.params.id);
-    if (!admin)
-      return res.status(404).json({ success: false, message: "الإداري غير موجود" });
+    if (!admin) {
+      return res
+        .status(404)
+        .json({ success: false, message: "الإداري غير موجود" });
+    }
 
     if (admin.avatar && admin.avatar.publicId) {
       // Delete from Cloudinary
       await cloudinary.uploader.destroy(admin.avatar.publicId);
+      console.log("🗑️ Avatar deleted from Cloudinary");
 
       // Remove avatar completely - Avatar component will show initials
       await Admin.updateOne(
@@ -128,20 +141,14 @@ router.delete("/:id/avatar", protect, async (req, res) => {
 
       res.json({ success: true, message: "تم حذف الصورة بنجاح" });
     } else {
-      res.status(404).json({ success: false, message: "لا توجد صورة لحذفها" });
+      res
+        .status(404)
+        .json({ success: false, message: "لا توجد صورة لحذفها" });
     }
   } catch (error) {
-    console.error("Error deleting admin avatar:", error);
+    console.error("❌ Error deleting admin avatar:", error);
     res.status(500).json({ success: false, message: "خطأ في حذف الصورة" });
   }
 });
-
-// ========== باقي المسارات ==========
-router.get("/", controller.getAllAdmins);
-router.get("/stats", controller.getAdminStats);
-router.get("/:id", controller.getAdminById);
-router.post("/", validateAdminData, controller.createAdmin);
-router.put("/:id", validateAdminData, controller.updateAdmin);
-router.delete("/:id", controller.deleteAdmin);
 
 module.exports = router;
