@@ -1,4 +1,4 @@
-const Mark = require("../schema/Mark");
+const Mark = require("../schema/DailyMark");
 const ExamMark = require("../schema/ExamMark");
 const Student = require("../schema/Student");
 const Group = require("../schema/Group");

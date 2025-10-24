@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { changePassword } from '../../Api/authApi';
 import { getLogo } from '../../Api/uploadApi';
-import { showSuccessMessage, showErrorMessage } from '../../utils/sweetalertUtils';
+import { showSuccessMessage, showErrorMessage } from '../../components/sweetalertUtils';
 
 // Password validation function
 const validatePasswordStrength = (password: string): {

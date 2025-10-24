@@ -6,7 +6,7 @@ import { useAuth } from "../../hooks/useAuth";
 import ChangePasswordModal from "../../pages/Auth/ChangePass";
 import { getLogo } from "../../Api/uploadApi";
 import { io, Socket } from "socket.io-client";
-import { showLogoutConfirmation } from "../../utils/logoutUtils";
+import { showLogoutConfirmation } from "../logoutUtils";
 import { API_BASE_URL } from "../../config/config";
 import {
   AlertTriangle,

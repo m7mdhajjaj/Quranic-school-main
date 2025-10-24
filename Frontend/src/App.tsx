@@ -46,13 +46,13 @@ import Contact from './pages/Contact';
 // Page Components - Academic
 // ============================================================================
 import Goals from './pages/Goals/Goals';
-import DailyMarks from './pages/DailyMarks';
+import DailyMarks from './pages/DailyMarks/index';
 import Arrangement from './pages/Arrangement';
 import Test from './pages/Test';
 import ExamSchedule from './pages/ExamSchedule';
 import Reports from './pages/Reports';
 import Timetable from './pages/Timetable';
-import MyStudents from './pages/Teacher/MyStudents';
+import MyStudents from './pages/MyStudents';
 
 // ============================================================================
 // Page Components - Communication & Activities

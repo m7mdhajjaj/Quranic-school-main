@@ -1,3 +1,5 @@
+import { Card } from '../../../components/shared';
+
 const VisionSection = () => {
   return (
     <div className="relative mt-16 py-10">
@@ -9,8 +11,11 @@ const VisionSection = () => {
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div
-            className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition duration-300"
+          <Card
+            variant="elevated"
+            padding="lg"
+            hover
+            className="text-center"
             data-aos="flip-left"
             data-aos-delay="100"
           >
@@ -36,10 +41,13 @@ const VisionSection = () => {
             <p className="text-slate-600">
               تعلم أصول التلاوة الصحيحة وفق أحكام التجويد
             </p>
-          </div>
+          </Card>
 
-          <div
-            className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition duration-300"
+          <Card
+            variant="elevated"
+            padding="lg"
+            hover
+            className="text-center"
             data-aos="flip-left"
             data-aos-delay="300"
           >
@@ -65,10 +73,13 @@ const VisionSection = () => {
             <p className="text-slate-600">
               برامج متخصصة لحفظ القرآن الكريم بمنهجية مدروسة
             </p>
-          </div>
+          </Card>
 
-          <div
-            className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition duration-300"
+          <Card
+            variant="elevated"
+            padding="lg"
+            hover
+            className="text-center"
             data-aos="flip-left"
             data-aos-delay="500"
           >
@@ -94,7 +105,7 @@ const VisionSection = () => {
             <p className="text-slate-600">
               دراسة تفسير القرآن وعلومه بطرق ميسرة وشاملة
             </p>
-          </div>
+          </Card>
         </div>
       </div>
     </div>

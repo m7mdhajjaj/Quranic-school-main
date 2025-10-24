@@ -713,4 +713,139 @@ class NotificationService {
   }
 }
 
+// ============================================================================
+// Helper functions for direct notification sending (without class instance)
+// ============================================================================
+
+/**
+ * Send push notification to multiple devices using Firebase FCM
+ * @param {Array<String>} userIds - Array of user IDs to send notification to
+ * @param {String} title - Notification title
+ * @param {String} message - Notification message body
+ * @param {Object} data - Additional data payload
+ * @returns {Promise<Object>} FCM response
+ */
+async function sendNotificationToDevices(userIds, title, message, data = {}) {
+  try {
+    if (!FCMService || !FCMService.initialized) {
+      console.warn("⚠️ FCM Service not initialized. Skipping push notification.");
+      return { success: false, message: "FCM not initialized" };
+    }
+
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+      console.warn("⚠️ No user IDs provided for notification");
+      return { success: false, message: "No user IDs" };
+    }
+
+    // Get all device tokens for the provided user IDs
+    const deviceTokens = await DeviceToken.find({
+      user: { $in: userIds },
+    })
+      .lean()
+      .select("token user");
+
+    if (!deviceTokens || deviceTokens.length === 0) {
+      console.warn(`⚠️ No device tokens found for ${userIds.length} users`);
+      return { success: false, message: "No device tokens found" };
+    }
+
+    const tokens = deviceTokens.map((d) => d.token).filter(Boolean);
+
+    if (tokens.length === 0) {
+      console.warn("⚠️ No valid tokens found after filtering");
+      return { success: false, message: "No valid tokens" };
+    }
+
+    // Prepare FCM payload
+    const payload = {
+      notification: {
+        title: title,
+        body: message,
+      },
+      data: {
+        ...data,
+        sentAt: new Date().toISOString(),
+      },
+    };
+
+    // Send notification via FCM
+    const response = await FCMService.sendToTokens(tokens, payload);
+
+    if (response) {
+      console.log(
+        `✅ Push notification sent to ${tokens.length} devices for ${userIds.length} users`
+      );
+      console.log(`   📊 Success: ${response.successCount}, Failed: ${response.failureCount}`);
+
+      return {
+        success: true,
+        successCount: response.successCount,
+        failureCount: response.failureCount,
+        totalTokens: tokens.length,
+      };
+    }
+
+    return { success: false, message: "FCM sendToTokens returned null" };
+  } catch (error) {
+    console.error("❌ Error sending notification to devices:", error);
+    throw error;
+  }
+}
+
+/**
+ * Send notification to a single user (creates DB notification + sends push)
+ * @param {String} userId - User ID to send notification to
+ * @param {String} userModel - User model ('Student' or 'Teacher')
+ * @param {String} title - Notification title
+ * @param {String} message - Notification message
+ * @param {String} type - Notification type (e.g., 'news', 'grade', 'attendance')
+ * @param {Object} data - Additional data payload
+ * @returns {Promise<Object>} Created notification
+ */
+async function sendNotificationToUser(userId, userModel, title, message, type = "general", data = {}) {
+  try {
+    // Create notification in database
+    const notification = new Notification({
+      recipient: userId,
+      recipientModel: userModel,
+      title: title,
+      message: message,
+      type: type,
+      data: data,
+      isRead: false,
+    });
+
+    await notification.save();
+
+    // Send push notification
+    await sendNotificationToDevices([userId], title, message, {
+      ...data,
+      notificationId: notification._id.toString(),
+      type: type,
+    });
+
+    // Send via Socket.IO if available
+    if (global.io) {
+      global.io.to(userId.toString()).emit("newNotification", {
+        id: notification._id,
+        type: type,
+        title: title,
+        message: message,
+        data: data,
+        createdAt: notification.createdAt,
+        isNew: true,
+      });
+    }
+
+    console.log(`✅ Notification sent to user ${userId}: ${title}`);
+    return notification;
+  } catch (error) {
+    console.error("❌ Error sending notification to user:", error);
+    throw error;
+  }
+}
+
+// Export both the class and helper functions
 module.exports = NotificationService;
+module.exports.sendNotificationToDevices = sendNotificationToDevices;
+module.exports.sendNotificationToUser = sendNotificationToUser;

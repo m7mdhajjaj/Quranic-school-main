@@ -22,6 +22,7 @@ const notificationSchema = new mongoose.Schema(
         "activity",
         "attendance",
         "exam",
+        "news",
         "general",
       ],
     },

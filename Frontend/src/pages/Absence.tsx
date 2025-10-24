@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import AbsenceSkeleton from "../components/Skeleton/AbsenceSkeleton";
 import { getAttendanceByDate, bulkSaveAttendance } from "../Api/attendanceApi";
 import { useAbsenceSocket } from "../Socket";
-import { showSuccessMessage, showErrorMessage } from "../utils/sweetalertUtils";
+import { showSuccessMessage, showErrorMessage } from "../components/sweetalertUtils";
 
 // ================== الإعدادات العامة ==================
 

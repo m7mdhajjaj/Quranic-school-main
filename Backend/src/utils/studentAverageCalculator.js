@@ -1,7 +1,7 @@
 // utils/studentAverageCalculator.js
 
 const Student = require("../schema/Student");
-const Mark = require("../schema/Mark");
+const Mark = require("../schema/DailyMark");
 const Section = require("../schema/Section");
 
 /**

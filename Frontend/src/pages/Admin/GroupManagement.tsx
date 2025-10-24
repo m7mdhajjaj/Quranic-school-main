@@ -27,7 +27,7 @@ import {
 import { useAuth } from '../../hooks/useAuth';
 import { useGroupsSocket } from '../../Socket';
 import AddGroupForm from '../../components/Forms/AddGroupForm';
-import ResponsivePagination from '../../components/Pagination/ResponsivePagination';
+import ResponsivePagination from '../../components/shared/ResponsivePagination';
 import { getAllGroups, deleteGroup, type Group } from '../../Api/groupApi';
 import { getAllTeachers } from '../../Api/teacherApi';
 import { type GroupFormData } from '../../Validation/groupValidation';
@@ -35,7 +35,7 @@ import {
   showCenteredSwal,
   showSuccessMessage,
   showErrorMessage,
-} from '../../utils/sweetalertUtils';
+} from '../../components/sweetalertUtils';
 
 type SortField = 'name' | 'teacher' | 'capacity';
 type SortOrder = 'asc' | 'desc';

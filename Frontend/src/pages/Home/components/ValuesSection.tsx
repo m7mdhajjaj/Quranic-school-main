@@ -1,3 +1,5 @@
+import { Card } from '../../../components/shared';
+
 interface ValueCardProps {
   icon: React.ReactNode;
   title: string;
@@ -7,8 +9,11 @@ interface ValueCardProps {
 
 const ValueCard = ({ icon, title, description, delay }: ValueCardProps) => {
   return (
-    <div
-      className="bg-teal-900 text-white p-6 rounded-lg shadow-lg"
+    <Card
+      variant="default"
+      padding="lg"
+      hover
+      className="bg-teal-900 text-white shadow-lg"
       data-aos="zoom-in-up"
       data-aos-delay={delay}
     >
@@ -17,7 +22,7 @@ const ValueCard = ({ icon, title, description, delay }: ValueCardProps) => {
       </div>
       <h3 className="text-xl font-bold mb-2 text-center">{title}</h3>
       <p className="text-center text-white/90 text-sm">{description}</p>
-    </div>
+    </Card>
   );
 };
 

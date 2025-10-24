@@ -13,44 +13,27 @@ export interface INews {
   image: string;
   imagePublicId?: string;
   isPublished?: boolean;
+  author?: {
+    _id: string;
+    firstName?: string;
+    lastName?: string;
+    name?: string;
+    email?: string;
+  } | string;
+  authorName?: string;
+  authorModel?: string;
   createdAt?: string;
   updatedAt?: string;
 }
 
-// Helper function to build image URLs
-const buildImageUrl = (imagePath: string): string => {
-  if (!imagePath)
-    return "https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+جديدة";
-  if (imagePath.startsWith("http")) return imagePath;
-  return `${API_BASE_URL}/${imagePath}`;
-};
-
-// Helper function to format dates
-const formatDate = (dateInput: string | Date): string => {
-  try {
-    const date = new Date(dateInput);
-    return date.toLocaleDateString("ar-EG", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  } catch (error) {
-    console.error("Date formatting error:", error);
-    return new Date().toLocaleDateString("ar-EG");
-  }
-};
 
 // Get all news
 export const getAllNews = async (): Promise<INews[]> => {
   const response = await api.get("/news");
-  const newsData = response.data;
+  const newsData = response.data.data; // Access the nested data array
 
-  // Process each news item to format dates and build proper image URLs
-  return newsData.map((item: INews) => ({
-    ...item,
-    date: formatDate(item.date || item.createdAt || new Date()),
-    image: buildImageUrl(item.image),
-  }));
+  // Return raw data; formatting and image URL logic should be handled in components/utils
+  return newsData;
 };
 
 // Create news (now accepts both FormData and plain object)
@@ -69,7 +52,7 @@ export const createNews = async (
         }
       : undefined, // Let axios set default headers for JSON
   });
-  return response.data;
+  return response.data.data; // Extract the nested data property
 };
 
 // Update news (now accepts both FormData and plain object)
@@ -89,7 +72,7 @@ export const updateNews = async (
         }
       : undefined, // Let axios set default headers for JSON
   });
-  return response.data;
+  return response.data.data; // Extract the nested data property
 };
 
 // Delete news
@@ -97,5 +80,3 @@ export const deleteNews = async (id: string): Promise<void> => {
   await api.delete(`/news/${id}`);
 };
 
-// Export helper function for building image URLs (for use in components)
-export const buildNewsImageUrl = buildImageUrl;

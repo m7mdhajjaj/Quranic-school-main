@@ -6,7 +6,7 @@ import {
   validateForgotPasswordData,
   validateResetPasswordData,
 } from '../../Validation/forgotPasswordValidation';
-import { showSuccessMessage, showErrorMessage } from '../../utils/sweetalertUtils';
+import { showSuccessMessage, showErrorMessage } from '../../components/sweetalertUtils';
 
 interface ForgotPasswordModalProps {
   isOpen: boolean;

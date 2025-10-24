@@ -30,14 +30,14 @@ import {
 } from '../../Api/studentApi';
 
 import AddStudentFormWithYup from '../../components/Forms/AddStudentForm';
-import ResponsivePagination from '../../components/Pagination/ResponsivePagination';
+import ResponsivePagination from '../../components/shared/ResponsivePagination';
 import Avatar from '../../components/Avatar';
 import {
   showCenteredSwal,
   showSuccessMessage,
   showWarningMessage,
   showErrorMessage,
-} from '../../utils/sweetalertUtils';
+} from '../../components/sweetalertUtils';
 
 // استخدام Student من API
 type Student = ApiStudent;

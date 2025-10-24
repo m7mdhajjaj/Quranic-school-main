@@ -3,12 +3,12 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 import { useAuth } from "../../hooks/useAuth";
 import NewsSkeleton from "../../components/Skeleton/NewsSkeleton";
+import { EmptyState } from "../../components/shared";
 import { useNewsData } from "./hooks/useNewsData";
 import { 
   NewsHeader, 
   NewsCard, 
-  NewsModal, 
-  EmptyState
+  NewsModal
 } from "./components";
 
 const News = () => {
@@ -64,19 +64,31 @@ const News = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {error && newsItems.length === 0 ? (
-            <EmptyState 
-              error={error}
-              isTeacherOrAdmin={isTeacherOrAdmin}
-              onAddNews={handleOpenModal}
-              onRetry={refreshNews}
-            />
+            <div className="col-span-2">
+              <EmptyState 
+                illustration="error"
+                title="حدث خطأ!"
+                description={error}
+                action={{
+                  label: "إعادة المحاولة",
+                  onClick: refreshNews,
+                  icon: <span>🔄</span>
+                }}
+              />
+            </div>
           ) : newsItems.length === 0 ? (
-            <EmptyState 
-              error={null}
-              isTeacherOrAdmin={isTeacherOrAdmin}
-              onAddNews={handleOpenModal}
-              onRetry={refreshNews}
-            />
+            <div className="col-span-2">
+              <EmptyState 
+                illustration="no-data"
+                title="لا توجد أخبار متاحة حالياً"
+                description="لم يتم نشر أي أخبار بعد. تابعنا للحصول على آخر المستجدات!"
+                action={isTeacherOrAdmin ? {
+                  label: "إضافة خبر جديد",
+                  onClick: handleOpenModal,
+                  icon: <span>➕</span>
+                } : undefined}
+              />
+            </div>
           ) : (
             newsItems.map((item, index) => (
               <NewsCard 

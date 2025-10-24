@@ -31,10 +31,3 @@ export interface NewsModalProps {
   onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
-
-export interface EmptyStateProps {
-  error: string | null;
-  isTeacherOrAdmin: boolean;
-  onAddNews: () => void;
-  onRetry: () => void;
-}

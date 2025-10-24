@@ -9,8 +9,8 @@ import {
   deleteExam,
   type Exam,
 } from '../../../Api/examApi';
-import { showSuccessToast, showErrorToast } from '../../../utils/toastUtils';
-import { showSuccessMessage, showErrorMessage } from '../../../utils/sweetalertUtils';
+import { showSuccessToast, showErrorToast } from '../../../components/toastUtils';
+import { showSuccessMessage, showErrorMessage } from '../../../components/sweetalertUtils';
 import { isTimeWithinAllowedRange } from '../utils';
 import Swal from 'sweetalert2';
 

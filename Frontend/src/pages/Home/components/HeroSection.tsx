@@ -1,5 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import HomeSkeleton from '../../../components/Skeleton/HomeSkeleton';
+import { Button, LoadingSpinner } from '../../../components/shared';
+import { Edit2 } from 'lucide-react';
 
 interface User {
   role?: string;
@@ -78,16 +80,18 @@ const HeroSection = ({
                 </div>
               </div>
             )}
-            <button
-              onClick={() => {
-                navigate('/soon');
-              }}
-              className="bg-emerald-600 text-white px-8 py-3 rounded-full hover:bg-emerald-700 transition duration-300 shadow-md mx-auto block"
-              data-aos="zoom-in"
-              data-aos-delay="1100"
-            >
-              ابدأ رحلتك التعليمية
-            </button>
+            <div data-aos="zoom-in" data-aos-delay="1100" className="flex justify-center">
+              <Button
+                onClick={() => {
+                  navigate('/soon');
+                }}
+                variant="primary"
+                size="lg"
+                className="rounded-full shadow-md"
+              >
+                ابدأ رحلتك التعليمية
+              </Button>
+            </div>
           </div>
 
           {/* Image */}
@@ -122,50 +126,16 @@ const HeroSection = ({
 
               {/* Edit button for teachers/admins */}
               {isTeacherOrAdmin && !heroImageLoading && (
-                <button
-                  className="absolute top-4 right-4 bg-white/90 hover:bg-white text-emerald-700 p-3 rounded-full shadow-lg transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-sm"
-                  title={uploading ? 'جاري الرفع...' : 'تعديل صورة الهيرو'}
+                <Button
                   onClick={onEditButtonClick}
                   disabled={uploading}
+                  variant="ghost"
+                  size="md"
+                  className="absolute top-4 right-4 bg-white/90 hover:bg-white text-emerald-700 rounded-full shadow-lg backdrop-blur-sm !p-3"
+                  title={uploading ? 'جاري الرفع...' : 'تعديل صورة الهيرو'}
                 >
-                  {uploading ? (
-                    <svg
-                      className="h-5 w-5 animate-spin"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                  ) : (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                      />
-                    </svg>
-                  )}
-                </button>
+                  {uploading ? <LoadingSpinner size="sm" color="emerald" /> : <Edit2 size={20} />}
+                </Button>
               )}
 
               {/* Hidden file input */}

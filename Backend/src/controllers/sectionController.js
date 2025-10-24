@@ -1,5 +1,5 @@
 const Section = require("../schema/Section");
-const Mark = require("../schema/Mark");
+const DailyMark = require("../schema/DailyMark");
 
 // Get all sections, sorted by date (newest first)
 // Support filtering by group and teacher via query params
@@ -107,7 +107,7 @@ exports.deleteSection = async (req, res) => {
     }
 
     // Delete all marks for this section
-    await Mark.deleteMany({ sectionId: req.params.id });
+    await DailyMark.deleteMany({ sectionId: req.params.id });
 
     // Delete the section
     await Section.findByIdAndDelete(req.params.id);

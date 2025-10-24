@@ -4,7 +4,7 @@ const Exam = require("../schema/Exam");
 const Group = require("../schema/Group");
 const Activity = require("../schema/Activity");
 const News = require("../schema/News");
-const Mark = require("../schema/Mark");
+const DailyMark = require("../schema/DailyMark");
 const ExamMark = require("../schema/ExamMark");
 const Attendance = require("../schema/Attendance");
 
@@ -47,7 +47,7 @@ exports.getDashboardStats = async (req, res) => {
       News.countDocuments(),
 
       // Calculate average marks from regular marks
-      Mark.aggregate([
+      DailyMark.aggregate([
         {
           $group: {
             _id: null,
@@ -97,7 +97,7 @@ exports.getDashboardStats = async (req, res) => {
       }),
 
       // Get recent marks for trend analysis
-      Mark.find().sort({ createdAt: -1 }).limit(100).select("mark createdAt"),
+      DailyMark.find().sort({ createdAt: -1 }).limit(100).select("mark createdAt"),
     ]);
 
     // Calculate attendance rate
@@ -201,7 +201,7 @@ exports.getDashboardCharts = async (req, res) => {
       ]),
 
       // Marks distribution
-      Mark.aggregate([
+      DailyMark.aggregate([
         {
           $bucket: {
             groupBy: "$mark",
