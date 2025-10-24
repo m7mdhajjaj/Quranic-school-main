@@ -1,4 +1,4 @@
-import api from './api';
+import api from "./api";
 
 // ============================================================================
 // Reports API
@@ -42,27 +42,36 @@ export interface GroupReport {
 }
 
 // Get student report
-export const getStudentReport = async (studentId: string, params?: {
-  startDate?: string;
-  endDate?: string;
-}): Promise<StudentReport> => {
+export const getStudentReport = async (
+  studentId: string,
+  params?: {
+    startDate?: string;
+    endDate?: string;
+  }
+): Promise<StudentReport> => {
   const response = await api.get(`/reports/student/${studentId}`, { params });
   return response.data;
 };
 
 // Get group report
-export const getGroupReport = async (groupId: string, params?: {
-  startDate?: string;
-  endDate?: string;
-}): Promise<GroupReport> => {
+export const getGroupReport = async (
+  groupId: string,
+  params?: {
+    startDate?: string;
+    endDate?: string;
+  }
+): Promise<GroupReport> => {
   const response = await api.get(`/reports/group/${groupId}`, { params });
   return response.data;
 };
 
 // Export report as PDF
-export const exportReportPDF = async (type: 'student' | 'group', id: string): Promise<Blob> => {
+export const exportReportPDF = async (
+  type: "student" | "group",
+  id: string
+): Promise<Blob> => {
   const response = await api.get(`/reports/${type}/${id}/export`, {
-    responseType: 'blob',
+    responseType: "blob",
   });
   return response.data;
 };
@@ -77,14 +86,14 @@ export const getStudentMarks = async (params?: {
   data: number[];
 }> => {
   try {
-    const response = await api.get('/reports/student-marks', { params });
+    const response = await api.get("/reports/student-marks", { params });
     return response.data;
   } catch (error) {
-    console.error('Error fetching student marks:', error);
+    console.error("Error fetching student marks:", error);
     // Fallback data
     return {
       labels: ["4/2025", "5/2025", "6/2025", "7/2025", "8/2025", "9/2025"],
-      data: [7.2, 7.8, 8.0, 7.5, 8.1, 7.9]
+      data: [7.2, 7.8, 8.0, 7.5, 8.1, 7.9],
     };
   }
 };
@@ -98,14 +107,14 @@ export const getAverageMarks = async (params?: {
   data: number[];
 }> => {
   try {
-    const response = await api.get('/reports/average-marks', { params });
+    const response = await api.get("/reports/average-marks", { params });
     return response.data;
   } catch (error) {
-    console.error('Error fetching average marks:', error);
+    console.error("Error fetching average marks:", error);
     // Fallback data
     return {
       labels: ["4/2025", "5/2025", "6/2025", "7/2025", "8/2025", "9/2025"],
-      data: [7.8, 8.2, 7.5, 8.0, 7.9, 8.1]
+      data: [7.8, 8.2, 7.5, 8.0, 7.9, 8.1],
     };
   }
 };

@@ -95,17 +95,23 @@ app.use("/api/news", require("./routes/NewsRoutes/newsRoutes"));
 app.use("/api/activities", require("./routes/activityRoutes"));
 app.use("/api/rankings", require("./routes/rankingRoutes"));
 app.use("/api/sections", require("./routes/sectionRoutes"));
-app.use("/api/daily-marks", require("./routes/DailyMarkRoutes/DailyMarkRoutes"));
+app.use(
+  "/api/daily-marks",
+  require("./routes/DailyMarkRoutes/DailyMarkRoutes")
+);
 app.use("/api/attendance", require("./routes/attendanceRoutes"));
 app.use("/api/chat", require("./routes/chatRoutes"));
-app.use("/api/notifications", require("./routes/NotificationRoutes/notificationRoutes"));
+app.use(
+  "/api/notifications",
+  require("./routes/NotificationRoutes/notificationRoutes")
+);
 app.use("/api/exams", require("./routes/ExamRoutes/examRoutes"));
 app.use("/api/exam-marks", require("./routes/ExamMarkRoutes/examMarkRoutes"));
 app.use("/api/sessions", require("./routes/sessionRoutes"));
 app.use("/api/groups", require("./routes/groupRoutes"));
 app.use("/api/dashboard", require("./routes/dashboardRoutes"));
 app.use("/api/points-game", require("./routes/pointsGameRoutes")); // لعبة النقاط والشارات
-app.use("/api/reports", require("./routes/reportRoutes"));
+app.use("/api/reports", require("./routes/ReportRoutes"));
 app.use("/api/goals", require("./routes/Goals/goalRoutes"));
 app.use("/api", require("./routes/profileRoutes"));
 app.use("/api/upload", require("./routes/UploadRoutes/uploadRoutes"));
@@ -413,14 +419,16 @@ io.on("connection", (socket) => {
   // ✅ Notifications Socket Events
   socket.on("joinNotifications", (data) => {
     const { userId, role } = data;
-    
+
     // انضمام للـ room الخاص بالإشعارات العامة
     socket.join("notifications");
-    
+
     // انضمام للـ room الخاص بالمستخدم (باستخدام userId)
     if (userId) {
       socket.join(userId);
-      console.log(`🔔 User ${socket.id} (${role}) joined notifications room for user ID: ${userId}`);
+      console.log(
+        `🔔 User ${socket.id} (${role}) joined notifications room for user ID: ${userId}`
+      );
     }
   });
 
