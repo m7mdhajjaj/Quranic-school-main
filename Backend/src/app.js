@@ -95,7 +95,7 @@ app.use("/api/news", require("./routes/NewsRoutes/newsRoutes"));
 app.use("/api/activities", require("./routes/activityRoutes"));
 app.use("/api/rankings", require("./routes/rankingRoutes"));
 app.use("/api/sections", require("./routes/sectionRoutes"));
-app.use("/api/marks", require("./routes/DailyMarkRoutes/DailyMarkRoutes"));
+app.use("/api/daily-marks", require("./routes/DailyMarkRoutes/DailyMarkRoutes"));
 app.use("/api/attendance", require("./routes/attendanceRoutes"));
 app.use("/api/chat", require("./routes/chatRoutes"));
 app.use("/api/notifications", require("./routes/NotificationRoutes/notificationRoutes"));

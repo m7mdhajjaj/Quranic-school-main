@@ -38,6 +38,7 @@ export const Card: React.FC<CardProps> = ({
         hover ? 'hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]' : ''
       } ${onClick ? 'cursor-pointer' : ''} ${className || ''}`}
       onClick={onClick}
+      dir="rtl"
     >
       {children}
     </div>

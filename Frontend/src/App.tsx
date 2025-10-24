@@ -46,7 +46,7 @@ import Contact from './pages/Contact';
 // Page Components - Academic
 // ============================================================================
 import Goals from './pages/Goals/Goals';
-import DailyMarks from './pages/DailyMarks/index';
+import DailyMarks from './pages/DailyMarks/DailyMarksPage';
 import Arrangement from './pages/Arrangement';
 import Test from './pages/Test';
 import ExamSchedule from './pages/ExamSchedule';

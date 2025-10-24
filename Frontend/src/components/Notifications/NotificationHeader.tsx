@@ -279,7 +279,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({
       const createdAtValue = notification.createdAt || new Date().toISOString();
       
       const newNotification: Notification = {
-        _id: notification.id,
+        _id: notification._id || notification.id, // دعم كلا الحقلين
         type: notification.type,
         title: notification.title,
         message: notification.message,

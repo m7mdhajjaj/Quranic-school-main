@@ -1,5 +1,10 @@
 const Section = require("../schema/Section");
 const DailyMark = require("../schema/DailyMark");
+const { 
+  notifySectionAdded, 
+  notifySectionUpdated, 
+  notifySectionDeleted 
+} = require("./sectionNotifications");
 
 // Get all sections, sorted by date (newest first)
 // Support filtering by group and teacher via query params
@@ -55,6 +60,13 @@ exports.createSection = async (req, res) => {
     console.log("✅ Section object created:", section);
     const newSection = await section.save();
     console.log("✅ Section saved successfully:", newSection);
+    
+    // إرسال إشعارات لجميع طلاب الحلقة
+    const io = req.app.get("io");
+    if (io && newSection.group) {
+      await notifySectionAdded(newSection, io);
+    }
+    
     res.status(201).json(newSection);
   } catch (error) {
     console.error("❌ Error creating section:", error);
@@ -86,11 +98,20 @@ exports.updateSection = async (req, res) => {
     // Use validated data from middleware
     const updateData = req.validatedData || req.body;
 
+    // حفظ المقطع القديم للمقارنة
+    const oldSection = { ...section.toObject() };
+
     const updatedSection = await Section.findByIdAndUpdate(
       req.params.id,
       updateData,
       { new: true }
     );
+
+    // إرسال إشعارات لجميع طلاب الحلقة
+    const io = req.app.get("io");
+    if (io && updatedSection.group) {
+      await notifySectionUpdated(updatedSection, oldSection, io);
+    }
 
     res.json(updatedSection);
   } catch (error) {
@@ -104,6 +125,12 @@ exports.deleteSection = async (req, res) => {
     const section = await Section.findById(req.params.id);
     if (!section) {
       return res.status(404).json({ message: "المقطع غير موجود" });
+    }
+
+    // إرسال إشعارات قبل الحذف
+    const io = req.app.get("io");
+    if (io && section.group) {
+      await notifySectionDeleted(section, io);
     }
 
     // Delete all marks for this section

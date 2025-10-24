@@ -42,6 +42,7 @@ export const StatCard: React.FC<StatCardProps> = ({
   return (
     <div
       className={`bg-white rounded-xl p-6 shadow-lg border-r-4 ${borderColors[color]} hover:shadow-xl transition-all duration-300 ${className || ''}`}
+      dir="rtl"
     >
       <div className="flex items-start justify-between">
         <div className="flex-1">
