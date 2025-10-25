@@ -35,7 +35,7 @@ import Layout from './components/shared/Layout';
 // Page Components - General
 // ============================================================================
 import Home from './pages/Home';
-import Login from './pages/Auth/Login';
+import Login from './pages/Auth/Login/index';
 import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 import Privacy from './pages/Privacy';
@@ -96,7 +96,7 @@ import GroupManagement from './pages/Admin/GroupManagement';
 // ============================================================================
 // Other Components
 // ============================================================================
-import Soon from './components/Soon';
+import Soon from './pages/Soon';
 import NotificationPermissionPrompt from './components/Notifications/NotificationPermissionPrompt';
 
 // ============================================================================

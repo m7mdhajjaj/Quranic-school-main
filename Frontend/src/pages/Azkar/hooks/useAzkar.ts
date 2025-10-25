@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 
-interface Dhikr {
+export interface Dhikr {
   id: number;
   text: string;
   count: number;
   originalCount: number;
 }
 
-interface AzkarCategory {
+export interface AzkarCategory {
   id: string;
   title: string;
   icon: string;
@@ -341,45 +341,44 @@ const getInitialAdhkarData = (): AzkarCategory[] => [
   },
 ];
 
-const Azkar = () => {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+// دالة للتحقق من تاريخ اليوم
+const getTodayDate = () => {
+  const now = new Date();
+  return now.toISOString().split("T")[0]; // YYYY-MM-DD
+};
 
-  // دالة للتحقق من تاريخ اليوم
-  const getTodayDate = () => {
-    const now = new Date();
-    return now.toISOString().split("T")[0]; // YYYY-MM-DD
-  };
+// دالة لتحميل البيانات من localStorage
+const loadAdhkarData = (): AzkarCategory[] => {
+  try {
+    const savedDate = localStorage.getItem("azkar_date");
+    const todayDate = getTodayDate();
 
-  // دالة لتحميل البيانات من localStorage
-  const loadAdhkarData = (): AzkarCategory[] => {
-    try {
-      const savedDate = localStorage.getItem("azkar_date");
-      const todayDate = getTodayDate();
-
-      // إذا كان التاريخ مختلف أو غير موجود، نرجع البيانات الأصلية
-      if (savedDate !== todayDate) {
-        localStorage.setItem("azkar_date", todayDate);
-        const initialData = getInitialAdhkarData();
-        localStorage.setItem("azkar_data", JSON.stringify(initialData));
-        return initialData;
-      }
-
-      // تحميل البيانات المحفوظة
-      const savedData = localStorage.getItem("azkar_data");
-      if (savedData) {
-        return JSON.parse(savedData);
-      }
-
-      // إذا لم توجد بيانات محفوظة، نرجع البيانات الأصلية
+    // إذا كان التاريخ مختلف أو غير موجود، نرجع البيانات الأصلية
+    if (savedDate !== todayDate) {
+      localStorage.setItem("azkar_date", todayDate);
       const initialData = getInitialAdhkarData();
       localStorage.setItem("azkar_data", JSON.stringify(initialData));
       return initialData;
-    } catch (error) {
-      console.error("Error loading azkar data:", error);
-      return getInitialAdhkarData();
     }
-  };
 
+    // تحميل البيانات المحفوظة
+    const savedData = localStorage.getItem("azkar_data");
+    if (savedData) {
+      return JSON.parse(savedData);
+    }
+
+    // إذا لم توجد بيانات محفوظة، نرجع البيانات الأصلية
+    const initialData = getInitialAdhkarData();
+    localStorage.setItem("azkar_data", JSON.stringify(initialData));
+    return initialData;
+  } catch (error) {
+    console.error("Error loading azkar data:", error);
+    return getInitialAdhkarData();
+  }
+};
+
+export const useAzkar = () => {
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [adhkarData, setAdhkarData] = useState<AzkarCategory[]>(loadAdhkarData);
 
   // حفظ البيانات عند كل تحديث
@@ -474,222 +473,12 @@ const Azkar = () => {
     return adhkarData.find((cat) => cat.id === selectedCategory);
   };
 
-  const selectedCategoryData = getSelectedCategoryData();
-
-  if (selectedCategory && selectedCategoryData) {
-    return (
-      <div
-        className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 p-4 md:p-8"
-        dir="rtl">
-        <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-            <div className="flex items-center justify-between">
-              <button
-                onClick={() => resetCategory(selectedCategory)}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors font-medium">
-                إعادة تعيين
-              </button>
-              <div className="text-center flex-1">
-                <h1 className="text-3xl font-bold text-gray-800 flex items-center justify-center gap-3">
-                  <span>{selectedCategoryData.title}</span>
-                  <span>{selectedCategoryData.icon}</span>
-                </h1>
-              </div>
-              <button
-                onClick={() => setSelectedCategory(null)}
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
-                <span className="font-medium">رجوع</span>
-                <span className="text-2xl">→</span>
-              </button>
-            </div>
-            <div className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-600">
-              <span>التقدم:</span>
-              <span className="font-bold text-green-600">
-                {
-                  selectedCategoryData.adhkar.filter((d) => d.count === 0)
-                    .length
-                }{" "}
-                / {selectedCategoryData.adhkar.length}
-              </span>
-            </div>
-          </div>
-
-          {/* Adhkar Cards */}
-          <div className="space-y-4">
-            {selectedCategoryData.adhkar.map((dhikr) => {
-              const isCompleted = dhikr.count === 0;
-              return (
-                <div
-                  key={dhikr.id}
-                  className={`rounded-2xl shadow-lg p-6 transition-all duration-300 ${
-                    isCompleted
-                      ? "bg-gradient-to-r from-green-100 to-green-200 border-2 border-green-400"
-                      : "bg-white hover:shadow-xl"
-                  }`}>
-                  <div className="flex flex-col gap-4">
-                    {/* Dhikr Text */}
-                    <div className="text-right">
-                      <p
-                        className={`text-lg md:text-xl leading-relaxed ${
-                          isCompleted ? "text-green-800" : "text-gray-800"
-                        }`}
-                        style={{ fontFamily: "Arial, sans-serif" }}>
-                        {dhikr.text}
-                      </p>
-                    </div>
-
-                    {/* Counter Button */}
-                    <div className="flex items-center justify-center">
-                      <button
-                        onClick={() =>
-                          handleDhikrClick(selectedCategory, dhikr.id)
-                        }
-                        disabled={isCompleted}
-                        className={`px-8 py-4 rounded-xl font-bold text-xl transition-all duration-300 transform ${
-                          isCompleted
-                            ? "bg-green-500 text-white cursor-default"
-                            : "bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl"
-                        }`}>
-                        {isCompleted ? (
-                          <span className="flex items-center gap-2">
-                            <span>تم الإكمال</span>
-                            <span>✓</span>
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-3">
-                            <span>{dhikr.count}</span>
-                            <span className="text-2xl">🤲</span>
-                          </span>
-                        )}
-                      </button>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                      <div
-                        className="bg-gradient-to-r from-green-400 to-green-600 h-full transition-all duration-300"
-                        style={{
-                          width: `${
-                            ((dhikr.originalCount - dhikr.count) /
-                              dhikr.originalCount) *
-                            100
-                          }%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Main Categories View
-  return (
-    <div
-      className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 p-4 md:p-8"
-      dir="rtl">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
-            الأذكار
-          </h1>
-          <p className="text-gray-600 text-lg mb-4">
-            اختر نوع الأذكار التي تريد قراءتها
-          </p>
-
-          {/* رسالة توضيحية */}
-          <div className="max-w-3xl mx-auto bg-gradient-to-r from-emerald-50 to-teal-50 border-2 border-emerald-200 rounded-2xl p-6 shadow-lg">
-            <div className="flex items-start gap-4">
-              <div className="text-4xl flex-shrink-0 animate-pulse">📿</div>
-              <div className="text-right flex-1">
-                <h3 className="text-xl font-bold text-emerald-800 mb-2">
-                  أذكار مختصرة للطلاب
-                </h3>
-                <p className="text-gray-700 leading-relaxed">
-                  هذه مجموعة مختارة من الأذكار بأعداد مناسبة لتسهيل الالتزام بها
-                  يومياً. نسأل الله أن يعيننا وإياكم على ذكره وشكره وحسن عبادته
-                  🤲
-                </p>
-                <div className="mt-3 flex items-center justify-center gap-2 text-sm text-emerald-700 font-medium">
-                  <span>✨</span>
-                  <span>اجعل الأذكار عادة يومية تنير قلبك وتحصّن نفسك</span>
-                  <span>✨</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Categories Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {adhkarData.map((category) => {
-            const completedCount = category.adhkar.filter(
-              (d) => d.count === 0
-            ).length;
-            const totalCount = category.adhkar.length;
-            const isFullyCompleted = completedCount === totalCount;
-
-            return (
-              <button
-                key={category.id}
-                onClick={() => setSelectedCategory(category.id)}
-                className={`relative overflow-hidden rounded-2xl shadow-lg transition-all duration-300 transform hover:scale-105 hover:shadow-2xl p-8 ${
-                  isFullyCompleted
-                    ? "bg-gradient-to-br from-green-400 to-green-600"
-                    : "bg-gradient-to-br from-white to-gray-50"
-                }`}>
-                {/* Completion Badge */}
-                {isFullyCompleted && (
-                  <div className="absolute top-4 left-4 bg-white text-green-600 px-3 py-1 rounded-full text-sm font-bold">
-                    ✓ مكتمل
-                  </div>
-                )}
-
-                {/* Icon */}
-                <div className="text-6xl mb-4">{category.icon}</div>
-
-                {/* Title */}
-                <h2
-                  className={`text-2xl font-bold mb-4 ${
-                    isFullyCompleted ? "text-white" : "text-gray-800"
-                  }`}>
-                  {category.title}
-                </h2>
-
-                {/* Progress */}
-                <div className="mt-4">
-                  <div
-                    className={`text-sm mb-2 ${
-                      isFullyCompleted ? "text-white" : "text-gray-600"
-                    }`}>
-                    التقدم: {completedCount} / {totalCount}
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                    <div
-                      className={`h-full transition-all duration-300 ${
-                        isFullyCompleted
-                          ? "bg-white"
-                          : "bg-gradient-to-r from-blue-500 to-purple-500"
-                      }`}
-                      style={{
-                        width: `${(completedCount / totalCount) * 100}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
+  return {
+    selectedCategory,
+    setSelectedCategory,
+    adhkarData,
+    handleDhikrClick,
+    resetCategory,
+    getSelectedCategoryData,
+  };
 };
-
-export default Azkar;

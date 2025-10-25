@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -7,6 +8,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   fullWidth?: boolean;
+  showPasswordToggle?: boolean; // خاصية جديدة لإظهار/إخفاء كلمة المرور
 }
 
 export const Input: React.FC<InputProps> = ({
@@ -18,12 +20,25 @@ export const Input: React.FC<InputProps> = ({
   fullWidth = true,
   required,
   className,
+  showPasswordToggle = false,
+  type,
+  value,
   ...props
 }) => {
+  const [showPassword, setShowPassword] = useState(false);
+  
+  // تحديد نوع الـ input بناءً على حالة إظهار كلمة المرور
+  const inputType = showPasswordToggle 
+    ? (showPassword ? 'text' : 'password')
+    : type;
+
+  // التحقق من وجود قيمة لإظهار أيقونة العين
+  const hasValue = value !== undefined && value !== null && value !== '';
+
   return (
     <div className={fullWidth ? 'w-full' : ''}>
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-base font-semibold text-gray-700 mb-3">
           {label} {required && <span className="text-red-500">*</span>}
         </label>
       )}
@@ -34,12 +49,14 @@ export const Input: React.FC<InputProps> = ({
           </div>
         )}
         <input
-          className={`w-full px-4 py-2.5 border-2 rounded-lg transition-all ${
+          type={inputType}
+          value={value}
+          className={`w-full px-5 py-4 bg-white border-2 rounded-2xl transition-all text-right placeholder-gray-400 text-base shadow-sm ${
             leftIcon ? 'pl-10' : ''
-          } ${rightIcon ? 'pr-10' : ''} ${
+          } ${rightIcon || (showPasswordToggle && hasValue) ? 'pl-14' : ''} ${
             error
               ? 'border-red-500 focus:border-red-500 focus:ring-red-200'
-              : 'border-gray-200 focus:border-emerald-500 focus:ring-emerald-200'
+              : 'border-emerald-300 focus:border-emerald-500 focus:ring-emerald-500'
           } focus:ring-2 focus:outline-none ${className || ''}`}
           required={required}
           {...props}
@@ -48,6 +65,22 @@ export const Input: React.FC<InputProps> = ({
           <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
             {rightIcon}
           </div>
+        )}
+        {/* زر إظهار/إخفاء كلمة المرور على اليسار */}
+        {showPasswordToggle && hasValue && (
+          <button
+            type="button"
+            tabIndex={-1}
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-600 hover:text-emerald-700 focus:outline-none transition-colors duration-200"
+            aria-label={showPassword ? "إخفاء كلمة المرور" : "عرض كلمة المرور"}
+          >
+            {showPassword ? (
+              <EyeOff className="w-5 h-5" />
+            ) : (
+              <Eye className="w-5 h-5" />
+            )}
+          </button>
         )}
       </div>
       {error && <p className="text-red-500 text-xs mt-1">{error}</p>}

@@ -23,17 +23,17 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
     sm: {
       switch: 'w-10 h-5',
       circle: 'w-4 h-4',
-      translate: 'translate-x-5',
+      translate: '-translate-x-5',
     },
     md: {
       switch: 'w-14 h-7',
       circle: 'w-6 h-6',
-      translate: 'translate-x-7',
+      translate: '-translate-x-7',
     },
     lg: {
       switch: 'w-16 h-8',
       circle: 'w-7 h-7',
-      translate: 'translate-x-8',
+      translate: '-translate-x-8',
     },
   };
 
@@ -59,8 +59,8 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
           className={`${sizeConfig.switch} ${colors[color]} rounded-full transition-colors duration-200 ease-in-out`}
         >
           <div
-            className={`${sizeConfig.circle} bg-white rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${
-              checked ? sizeConfig.translate : 'translate-x-0.5'
+            className={`${sizeConfig.circle} bg-white rounded-full shadow-md transform transition-transform duration-200 ease-in-out absolute right-0.5 top-1/2 -translate-y-1/2 ${
+              checked ? sizeConfig.translate : ''
             }`}
           />
         </div>

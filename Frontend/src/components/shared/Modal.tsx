@@ -69,19 +69,19 @@ export const Modal: React.FC<ModalProps> = ({
       onClick={closeOnOverlayClick ? onClose : undefined}
     >
       <div
-        className={`bg-white rounded-2xl shadow-2xl ${sizeClasses[size]} w-full max-h-[90vh] overflow-y-auto animate-fadeIn`}
+        className={`bg-white rounded-2xl shadow-2xl ${sizeClasses[size]} w-full max-h-[90vh] overflow-y-auto animate-fadeIn scrollbar-hide`}
         onClick={(e) => e.stopPropagation()}
       >
         {(title || showCloseButton) && (
-          <div className={`flex items-center justify-between p-6 border-b border-gray-200 ${headerClassName || ''}`}>
-            {title && <h2 className="text-2xl font-bold text-gray-800">{title}</h2>}
+          <div className={`flex items-center justify-between p-6 border-b border-emerald-300 bg-gradient-to-r from-emerald-400 to-teal-500 ${headerClassName || ''}`}>
+            {title && <h2 className="text-2xl font-bold text-white">{title}</h2>}
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-white/20 rounded-lg transition-all duration-300"
                 aria-label="إغلاق"
               >
-                <X className="w-6 h-6 text-gray-600" />
+                <X className="w-6 h-6 text-white" />
               </button>
             )}
           </div>

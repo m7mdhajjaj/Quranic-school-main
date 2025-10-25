@@ -34,8 +34,6 @@ markSchema.index({ studentId: 1, sectionId: 1 }, { unique: true });
 // ⚡ Performance indexes for optimized queries
 markSchema.index({ studentId: 1, createdAt: -1 }); // للبحث حسب الطالب مع الترتيب
 markSchema.index({ sectionId: 1 }); // للبحث حسب Section
-markSchema.index({ studentId: 1, sectionId: 1 }); // للبحث المركب
-
 
 const Mark = mongoose.model("Mark", markSchema);
 
