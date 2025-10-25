@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import Swal from 'sweetalert2';
-import { SOCKET_URL } from '../config/config';
+import { SOCKET_URL } from '../../config/config';
 
 interface PrayerData {
   prayerName: string;
