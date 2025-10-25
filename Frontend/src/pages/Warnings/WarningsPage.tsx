@@ -64,7 +64,14 @@ const WarningsPage = () => {
   // التعامل مع اختيار الحلقة
   const handleGroupSelect = async (group: Group) => {
     const updatedGroup = await fetchGroupStudentsWarnings(group);
-    setSelectedGroup(updatedGroup);
+    if (updatedGroup) {
+      setSelectedGroup(updatedGroup);
+    }
+  };
+
+  // العودة للحلقات
+  const handleBack = () => {
+    setSelectedGroup(null);
   };
 
   // عرض الإحصائيات
@@ -303,7 +310,9 @@ const WarningsPage = () => {
       <TeacherView
         groups={groups}
         loading={loading}
+        selectedGroup={selectedGroup}
         onGroupSelect={handleGroupSelect}
+        onBack={handleBack}
         onShowStatistics={handleShowStatistics}
         statistics={statistics}
         showStatistics={showStatistics}

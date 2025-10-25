@@ -2,13 +2,7 @@
 // TeacherView - عرض المعلم للإنذارات
 // ============================================================================
 
-import { useState } from "react";
-import type {
-  TeacherViewProps,
-  Group,
-  Student,
-  WarningType,
-} from "./types/warnings";
+import type { TeacherViewProps, Group } from "./types/warnings";
 import { LoadingSpinner } from "../../components/shared/Feedback/LoadingSpinner";
 import { EmptyState } from "../../components/shared/UI/EmptyState";
 import { Button } from "../../components/shared/Form/Button";
@@ -18,7 +12,9 @@ import { ArrowRight, BarChart3 } from "lucide-react";
 export const TeacherView: React.FC<TeacherViewProps> = ({
   groups,
   loading,
+  selectedGroup: selectedGroupProp,
   onGroupSelect,
+  onBack,
   onShowStatistics,
   statistics,
   showStatistics,
@@ -28,15 +24,14 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   onDeleteWarning,
   onDeleteWarningById,
 }) => {
-  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+  const selectedGroup = selectedGroupProp;
 
   const handleGroupSelect = async (group: Group) => {
-    setSelectedGroup(group);
     onGroupSelect(group);
   };
 
   const handleBack = () => {
-    setSelectedGroup(null);
+    onBack?.();
   };
 
   if (loading) {

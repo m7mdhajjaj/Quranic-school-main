@@ -66,7 +66,9 @@ export interface TeacherStatistics {
 export interface TeacherViewProps {
   groups: Group[];
   loading: boolean;
+  selectedGroup?: Group | null;
   onGroupSelect: (group: Group) => void;
+  onBack?: () => void;
   onShowStatistics: () => void;
   statistics: TeacherStatistics | null;
   showStatistics: boolean;
