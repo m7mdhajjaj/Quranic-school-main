@@ -259,7 +259,7 @@ const WarningsPage = () => {
             }</p>
             <p class="text-xs text-gray-500 mt-1">
               التاريخ: ${new Date(warning.createdAt).toLocaleDateString(
-                "ar-SA"
+                "ar-EG"
               )}
             </p>
           </div>

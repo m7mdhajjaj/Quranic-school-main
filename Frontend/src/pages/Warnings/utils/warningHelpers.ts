@@ -98,10 +98,10 @@ export const canRepeatWarning = (type: WarningType): boolean => {
 };
 
 /**
- * تنسيق التاريخ بالعربي
+ * تنسيق التاريخ بالعربي (ميلادي)
  */
 export const formatArabicDate = (date: string): string => {
-  return new Date(date).toLocaleDateString("ar-SA", {
+  return new Date(date).toLocaleDateString("ar-EG", {
     year: "numeric",
     month: "long",
     day: "numeric",
