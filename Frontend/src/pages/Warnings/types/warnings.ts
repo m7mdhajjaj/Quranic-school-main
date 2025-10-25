@@ -1,0 +1,124 @@
+// ============================================================================
+// Types & Interfaces للإنذارات
+// ============================================================================
+
+export type WarningType =
+  | "warning"
+  | "first"
+  | "second"
+  | "third"
+  | "expulsion";
+
+export interface Warning {
+  _id: string;
+  studentId: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+  };
+  teacherId: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+  };
+  groupId: {
+    _id: string;
+    name: string;
+  };
+  type: WarningType;
+  reason: string;
+  date: string;
+  createdAt: string;
+}
+
+export interface Student {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  warningsCount?: number;
+  existingWarningTypes?: string[];
+  allWarnings?: Warning[];
+}
+
+export interface Group {
+  _id: string;
+  name: string;
+  students: Student[];
+}
+
+export interface TeacherStatistics {
+  totalWarnings: number;
+  warningsCount: {
+    warning: number;
+    first: number;
+    second: number;
+    third: number;
+    expulsion: number;
+  };
+  studentsWithWarnings: number;
+  expelledStudents: number;
+  topReasons: Array<{ _id: string; count: number }>;
+  warningsByGroup: Array<{ _id: string; count: number }>;
+  recentWarnings: Warning[];
+}
+
+// Props للـ Components
+export interface TeacherViewProps {
+  groups: Group[];
+  loading: boolean;
+  onGroupSelect: (group: Group) => void;
+  onShowStatistics: () => void;
+  statistics: TeacherStatistics | null;
+  showStatistics: boolean;
+  loadingStatistics: boolean;
+  onCloseStatistics: () => void;
+  onGiveWarning?: (student: Student, type: WarningType) => void;
+  onDeleteWarning?: (student: Student, type: string) => void;
+  onDeleteWarningById?: (warningId: string, student: Student) => void;
+}
+
+export interface StudentViewProps {
+  warnings: Warning[];
+  loading: boolean;
+}
+
+export interface GroupCardProps {
+  group: Group;
+  onClick: () => void;
+}
+
+export interface StudentCardProps {
+  student: Student;
+  onGiveWarning: (type: WarningType) => void;
+  onDeleteWarning: (type: string) => void;
+  onDeleteWarningById: (warningId: string) => void;
+}
+
+export interface WarningBadgeProps {
+  type: WarningType;
+  count?: number;
+  onDelete?: () => void;
+  showDelete?: boolean;
+}
+
+export interface StatisticsPanelProps {
+  statistics: TeacherStatistics;
+  onClose: () => void;
+}
+
+export interface GiveWarningModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  student: Student;
+  warningType: WarningType;
+  onConfirm: (reason: string) => void;
+}
+
+export interface DeleteWarningModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  student: Student;
+  warningType: string;
+  warningId?: string;
+  onConfirm: () => void;
+}
