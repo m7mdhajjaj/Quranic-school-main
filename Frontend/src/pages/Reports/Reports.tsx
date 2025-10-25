@@ -7,7 +7,6 @@ import { useReportData } from "./useReportData";
 import ReportHeader from "./ReportHeader";
 import ReportFilters from "./ReportFilters";
 import ReportChart from "./ReportChart";
-import ReportsSkeleton from "../../components/shared/Skeleton/ReportsSkeleton";
 
 const Reports: React.FC = () => {
   const {
@@ -21,7 +20,7 @@ const Reports: React.FC = () => {
   } = useReportData();
 
   if (loading) {
-    return <ReportsSkeleton />;
+    return <div className="text-center py-8">جاري التحميل...</div>;
   }
 
   return (

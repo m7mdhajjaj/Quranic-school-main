@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useCallback, memo } from "react";
 import type { Surah } from "../../../Api/quranAudioApi";
 import SurahCard from "./SurahCard";
-import QuranAudioSkeleton from "../../../components/shared/Skeleton/QuranAudioSkeleton";
 import { SearchInput, FilterSelect, FilterContainer } from "../../../components/shared/Filter";
 import type { FilterOption } from "../../../components/shared/Filter";
 import { EmptyState } from "../../../components/shared";
@@ -188,7 +187,7 @@ const SurahList: React.FC<SurahListProps> = ({
         </div>
 
         {loading && surahs.length === 0 ? (
-          <QuranAudioSkeleton />
+          <div className="text-center py-8">جاري التحميل...</div>
         ) : filteredAndSorted.length === 0 ? (
           <EmptyState
             illustration="search"

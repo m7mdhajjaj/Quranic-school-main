@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { useAuth } from "../../hooks/useAuth";
-import NewsSkeleton from "../../components/shared/Skeleton/NewsSkeleton";
 import { EmptyState } from "../../components/shared";
 import { SearchInput, FilterSelect, FilterContainer } from "../../components/shared/Filter";
 import type { FilterOption } from "../../components/shared/Filter";
@@ -137,7 +136,7 @@ const News = () => {
 
       {/* News Grid */}
       {isLoading && newsItems.length === 0 ? (
-        <NewsSkeleton />
+        <div className="text-center py-8">جاري التحميل...</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {error && newsItems.length === 0 ? (

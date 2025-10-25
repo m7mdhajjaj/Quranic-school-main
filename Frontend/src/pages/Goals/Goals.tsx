@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { Users, BookOpen, GraduationCap, Heart, Clock, UserPlus, MessageCircle } from "lucide-react";
-import GoalsSkeleton from "../../components/shared/Skeleton/GoalsSkeleton";
 import { Card } from "../../components/shared";
 
 const Goals = () => {
@@ -26,7 +25,7 @@ const Goals = () => {
   }, []);
 
   if (loading) {
-    return <GoalsSkeleton />;
+    return <div className="text-center py-8">جاري التحميل...</div>;
   }
 
   return (

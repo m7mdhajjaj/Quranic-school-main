@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom';
-import HomeSkeleton from '../../../components/shared/Skeleton/HomeSkeleton';
 import { Button, LoadingSpinner } from '../../../components/shared';
 import { Edit2 } from 'lucide-react';
 
@@ -37,7 +36,7 @@ const HeroSection = ({
 
   // Show skeleton while loading
   if (heroImageLoading) {
-    return <HomeSkeleton />;
+    return <div className="text-center py-8">جاري التحميل...</div>;
   }
 
   return (

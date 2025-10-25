@@ -1,5 +1,5 @@
 import React from "react";
-import Skeleton from "./Skeleton";
+import { SkeletonBox } from "../Base";
 
 interface SkeletonTableProps {
   /**
@@ -15,6 +15,10 @@ interface SkeletonTableProps {
    */
   showHeader?: boolean;
   /**
+   * عرض الإجراءات (Actions column)
+   */
+  showActions?: boolean;
+  /**
    * فئات CSS إضافية
    */
   className?: string;
@@ -27,13 +31,16 @@ interface SkeletonTableProps {
 /**
  * مكون SkeletonTable لعرض جداول تحميل
  */
-const SkeletonTable: React.FC<SkeletonTableProps> = ({
+export const SkeletonTable: React.FC<SkeletonTableProps> = ({
   rows = 5,
   columns = 4,
   showHeader = true,
+  showActions = false,
   className = "",
   animation = "pulse",
 }) => {
+  const totalColumns = showActions ? columns + 1 : columns;
+
   return (
     <div className={`bg-white rounded-2xl shadow-lg overflow-hidden ${className}`}>
       <div className="overflow-x-auto">
@@ -42,9 +49,13 @@ const SkeletonTable: React.FC<SkeletonTableProps> = ({
           {showHeader && (
             <thead className="bg-gray-50">
               <tr>
-                {Array.from({ length: columns }).map((_, index) => (
+                {Array.from({ length: totalColumns }).map((_, index) => (
                   <th key={index} className="px-6 py-4 text-right">
-                    <Skeleton height={20} width="80%" animation={animation} />
+                    <SkeletonBox 
+                      height={20} 
+                      width={index === totalColumns - 1 && showActions ? "60%" : "80%"} 
+                      animation={animation} 
+                    />
                   </th>
                 ))}
               </tr>
@@ -55,13 +66,20 @@ const SkeletonTable: React.FC<SkeletonTableProps> = ({
           <tbody className="divide-y divide-gray-100">
             {Array.from({ length: rows }).map((_, rowIndex) => (
               <tr key={rowIndex} className="hover:bg-gray-50 transition-colors">
-                {Array.from({ length: columns }).map((_, colIndex) => (
+                {Array.from({ length: totalColumns }).map((_, colIndex) => (
                   <td key={colIndex} className="px-6 py-4">
-                    <Skeleton 
-                      height={16} 
-                      width={colIndex === 0 ? "90%" : "70%"} 
-                      animation={animation}
-                    />
+                    {colIndex === totalColumns - 1 && showActions ? (
+                      <div className="flex gap-2">
+                        <SkeletonBox variant="circular" width={32} height={32} animation={animation} />
+                        <SkeletonBox variant="circular" width={32} height={32} animation={animation} />
+                      </div>
+                    ) : (
+                      <SkeletonBox 
+                        height={16} 
+                        width={colIndex === 0 ? "90%" : "70%"} 
+                        animation={animation}
+                      />
+                    )}
                   </td>
                 ))}
               </tr>
@@ -72,5 +90,3 @@ const SkeletonTable: React.FC<SkeletonTableProps> = ({
     </div>
   );
 };
-
-export default SkeletonTable;

@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import TestSkeleton from "../components/shared/Skeleton/TestSkeleton";
 import {
   getAllSurahs,
   getMultipleSurahsWithAyahs,
@@ -202,11 +201,11 @@ const Test = () => {
   };
 
   if (surahsLoading) {
-    return <TestSkeleton />;
+    return <div className="text-center py-8">جاري التحميل...</div>;
   }
 
   if (loading) {
-    return <TestSkeleton />;
+    return <div className="text-center py-8">جاري التحميل...</div>;
   }
 
   if (showResult) {

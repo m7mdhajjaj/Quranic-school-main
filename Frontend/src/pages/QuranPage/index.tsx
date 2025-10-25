@@ -1,7 +1,6 @@
 import { useState, useCallback, useTransition, lazy, Suspense } from "react";
 import { Alert } from "../../components/shared";
 import { BookOpen, Sparkles } from "lucide-react";
-import QuranPageSkeleton from "../../components/shared/Skeleton/QuranPageSkeleton";
 import SurahList from "./SurahList";
 import ReaderControls from "./ReaderControls";
 import Pagination from "./Pagination";
@@ -12,7 +11,6 @@ import { getSurah, saveReadingBookmark } from "../../Api/quranAudioApi";
 import type { SurahData } from "./types/quran.types";
 
 // ✅ Lazy load heavy components
-const QuranReadingSkeleton = lazy(() => import("../../components/shared/Skeleton/QuranReadingSkeleton"));
 const SurahReader = lazy(() => import("./SurahReader"));
 
 const QuranPage = () => {
@@ -81,7 +79,7 @@ const QuranPage = () => {
   }, [currentPage, goToNextPage, goToPreviousPage, startTransition]);
 
   if (initLoading) {
-    return <QuranPageSkeleton />;
+    return <div className="text-center py-8">جاري التحميل...</div>;
   }
 
   return (
@@ -125,9 +123,7 @@ const QuranPage = () => {
             />
 
             {loading || isPending ? (
-              <Suspense fallback={<div className="text-center py-8">جاري التحميل...</div>}>
-                <QuranReadingSkeleton />
-              </Suspense>
+              <div className="text-center py-8">جاري التحميل...</div>
             ) : (
               <Suspense fallback={<div className="text-center py-8">جاري التحميل...</div>}>
                 <SurahReader

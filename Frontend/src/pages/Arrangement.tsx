@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import ArrangementSkeleton from "../components/shared/Skeleton/ArrangementSkeleton";
 import {
   getRankingByAverages,
   type StudentWithAverage,
@@ -344,7 +343,7 @@ const Arrangement = () => {
         </div>
 
         {/* Loading indicator */}
-        {loading && <ArrangementSkeleton />}
+        {loading && <div className="text-center py-8">جاري التحميل...</div>}
 
         {/* Error message */}
         {!loading && error && (

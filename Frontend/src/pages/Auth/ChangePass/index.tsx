@@ -6,7 +6,6 @@ import { Modal } from '../../../components/shared/Modal';
 import { Input } from '../../../components/shared/Input';
 import { Button } from '../../../components/shared/Button';
 import { Logo } from '../../../components/shared/Logo';
-import { ChangePasswordSkeleton } from '../../../components/shared/Skeleton';
 import { PasswordRequirements } from '../../../components/shared/PasswordRequirements';
 import { SecurityTips } from '../../../components/shared/SecurityTips';
 import { PasswordStrengthIndicator } from '../../../components/shared/PasswordStrengthIndicator';
@@ -327,7 +326,7 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
       overlayClassName="bg-black/30"
     >
       {logoLoading ? (
-        <ChangePasswordSkeleton />
+        <div className="text-center py-8">جاري التحميل...</div>
       ) : (
         <div dir="rtl">
           <div className="flex justify-center mb-6">

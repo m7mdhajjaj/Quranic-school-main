@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import AbsenceSkeleton from "../components/shared/Skeleton/AbsenceSkeleton";
 import { getAttendanceByDate, bulkSaveAttendance } from "../Api/attendanceApi";
 import { useAbsenceSocket } from "../Socket";
 import { showSuccessMessage, showErrorMessage } from "../components/sweetalertUtils";
@@ -748,7 +747,7 @@ const Absence = () => {
 
         {/* حالة التحميل/الخطأ */}
         {loading ? (
-          <AbsenceSkeleton />
+          <div className="text-center py-8">جاري التحميل...</div>
         ) : error ? (
           <div className="bg-white rounded-xl shadow-md p-8 text-center">
             <p className="text-red-500">{error}</p>
