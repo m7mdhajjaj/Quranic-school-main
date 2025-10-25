@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
-import { showLogoutConfirmation } from '../../logoutUtils';
+import { showLogoutConfirmation } from '../../utils/logoutUtils';
 import ChangePasswordModal from '../../../pages/Auth/ChangePass';
-import Avatar from '../../Avatar';
+import Avatar from '../../common/Avatar';
 import {
   getRecentNotifications,
   getUnreadNotificationCount,

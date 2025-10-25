@@ -4,7 +4,7 @@ import SurahCard from "./SurahCard";
 import { SearchInput, FilterSelect, FilterContainer } from "../../../components/shared/Filter";
 import type { FilterOption } from "../../../components/shared/Filter";
 import { EmptyState } from "../../../components/shared";
-import ResponsivePagination from "../../../components/shared/ResponsivePagination";
+import ResponsivePagination from "../../../components/shared/Navigation/ResponsivePagination";
 
 interface SurahListProps {
   surahs: Surah[];

@@ -97,7 +97,7 @@ import GroupManagement from './pages/Admin/GroupManagement';
 // Other Components
 // ============================================================================
 import Soon from './pages/Soon';
-import NotificationPermissionPrompt from './components/Notifications/NotificationPermissionPrompt';
+import NotificationPermissionPrompt from './Notifications/NotificationPermissionPrompt';
 
 // ============================================================================
 // Admin Routes Component

@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 // import { useDashboardStats } from "../../hooks/useDashboardStats"; // Commented out - file doesn't exist
 import { useDashboardSocket } from "../../Socket";
-import AddStudentForm from "../../components/Forms/AddStudentForm";
-import AddTeacherForm from "../../components/Forms/AddTeacherForm";
-import AddGroupForm from "../../components/Forms/AddGroupForm";
+import AddStudentForm from "../../Forms/AddStudentForm";
+import AddTeacherForm from "../../Forms/AddTeacherForm";
+import AddGroupForm from "../../Forms/AddGroupForm";
 
 interface StatCardProps {
   icon: React.ReactNode;

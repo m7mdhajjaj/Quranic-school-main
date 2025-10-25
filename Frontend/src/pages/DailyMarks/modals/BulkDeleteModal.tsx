@@ -1,6 +1,5 @@
-import { Modal } from "../../../components/shared/Modal";
-import { Button } from "../../../components/shared/Button";
-import { Card } from "../../../components/shared/Card";
+import { Modal, Card } from "../../../components/shared/UI";
+import { Button } from "../../../components/shared/Form";
 import { Trash2, AlertTriangle } from "lucide-react";
 import type { BulkDeleteModalProps } from "../types/dailyMarks";
 

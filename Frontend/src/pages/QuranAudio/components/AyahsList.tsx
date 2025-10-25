@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from "react";
 import type { Ayah } from "../../../Api/quranAudioApi";
 import AyahCard from "./AyahCard";
-import ResponsivePagination from "../../../components/shared/ResponsivePagination";
+import ResponsivePagination from "../../../components/shared/Navigation/ResponsivePagination";
 import { Card, LoadingSpinner } from "../../../components/shared";
 import { Book } from "lucide-react";
 

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAttendanceByDate, bulkSaveAttendance } from "../Api/attendanceApi";
 import { useAbsenceSocket } from "../Socket";
-import { showSuccessMessage, showErrorMessage } from "../components/sweetalertUtils";
+import { showSuccessMessage, showErrorMessage } from "../components/utils/sweetalertUtils";
 
 // ================== الإعدادات العامة ==================
 

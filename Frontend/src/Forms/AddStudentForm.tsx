@@ -18,14 +18,14 @@ import {
 import {
   validateStudentWithYup,
   type StudentFormData,
-} from "../../Validation/studentValidation";
+} from "../Validation/studentValidation";
 import {
   createStudent,
   updateStudent,
   type Student,
-} from "../../Api/studentApi";
-import { getAllTeachers, type Teacher } from "../../Api/teacherApi";
-import { getAllGroups, type Group } from "../../Api/groupApi";
+} from "../Api/studentApi";
+import { getAllTeachers, type Teacher } from "../Api/teacherApi";
+import { getAllGroups, type Group } from "../Api/groupApi";
 // ✅ يستخدم النظام الجديد بالفعل
 
 // Using centralized validation from studentValidation.ts

@@ -4,7 +4,7 @@
 
 import React from "react";
 import { Card } from "../../components/shared";
-import MarksBarChart from "../../components/MarksBarChart";
+import MarksBarChart from "../../components/common/MarksBarChart";
 
 interface ReportChartProps {
   labels: string[];

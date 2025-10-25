@@ -1,7 +1,5 @@
-import { Modal } from "../../../components/shared/Modal";
-import { Button } from "../../../components/shared/Button";
-import { RangeSlider } from "../../../components/shared/RangeSlider";
-import { Card } from "../../../components/shared/Card";
+import { Modal, Card } from "../../../components/shared/UI";
+import { Button, RangeSlider } from "../../../components/shared/Form";
 import type { UpdateMarkModalProps } from "../types/dailyMarks";
 
 /**

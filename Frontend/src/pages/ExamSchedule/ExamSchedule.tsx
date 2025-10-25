@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { getStudentAllMarks, type Exam } from "../../Api/examApi";
-import Table, { type Column } from "../../components/shared/Table";
+import Table from "../../components/shared/UI/Table";
+import type { Column } from "../../components/shared/UI/Table";
 import "./styles/animations.css";
 
 // Import utility functions and components

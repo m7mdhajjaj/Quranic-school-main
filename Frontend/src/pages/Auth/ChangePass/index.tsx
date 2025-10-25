@@ -1,14 +1,11 @@
 import { useState, useEffect } from 'react';
 import { changePassword } from '../../../Api/authApi';
 import { getLogo } from '../../../Api/uploadApi';
-import { showSuccessMessage, showErrorMessage } from '../../../components/sweetalertUtils';
-import { Modal } from '../../../components/shared/Modal';
-import { Input } from '../../../components/shared/Input';
-import { Button } from '../../../components/shared/Button';
-import { Logo } from '../../../components/shared/Logo';
-import { PasswordRequirements } from '../../../components/shared/PasswordRequirements';
-import { SecurityTips } from '../../../components/shared/SecurityTips';
-import { PasswordStrengthIndicator } from '../../../components/shared/PasswordStrengthIndicator';
+import { showSuccessMessage, showErrorMessage } from '../../../components/utils/sweetalertUtils';
+import { Modal } from '../../../components/shared/UI';
+import { Input, Button } from '../../../components/shared/Form';
+import { Logo } from '../../../components/shared/Features';
+import { PasswordRequirements, SecurityTips, PasswordStrengthIndicator } from '../../../components/shared/Auth';
 import { validatePassword, calculatePasswordStrength } from '../../../utils/passwordValidation';
 import { Lock, CheckCircle2, XCircle } from 'lucide-react';
 import type {

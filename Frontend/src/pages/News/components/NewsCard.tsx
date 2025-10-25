@@ -1,5 +1,5 @@
 import type { NewsCardProps } from '../utils/types';
-import AddedAgo from '../../../components/AddedAgo';
+import AddedAgo from '../../../components/common/AddedAgo';
 import { Button, Card } from '../../../components/shared';
 import { ArrowLeft, Edit, Trash2 } from 'lucide-react';
 

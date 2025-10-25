@@ -29,15 +29,15 @@ import {
   type Student as ApiStudent,
 } from '../../Api/studentApi';
 
-import AddStudentFormWithYup from '../../components/Forms/AddStudentForm';
-import ResponsivePagination from '../../components/shared/ResponsivePagination';
-import Avatar from '../../components/Avatar';
+import AddStudentFormWithYup from '../../Forms/AddStudentForm';
+import ResponsivePagination from '../../components/shared/Navigation/ResponsivePagination';
+import Avatar from '../../components/common/Avatar';
 import {
   showCenteredSwal,
   showSuccessMessage,
   showWarningMessage,
   showErrorMessage,
-} from '../../components/sweetalertUtils';
+} from '../../components/utils/sweetalertUtils';
 
 // استخدام Student من API
 type Student = ApiStudent;

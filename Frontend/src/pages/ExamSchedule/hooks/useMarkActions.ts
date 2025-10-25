@@ -1,5 +1,5 @@
 import { bulkSaveMarks, deleteStudentMark, updateStudentMark } from '../../../Api/examApi';
-import { showSuccessToast, showErrorToast } from '../../../components/toastUtils';
+import { showSuccessToast, showErrorToast } from '../../../components/utils/toastUtils';
 import Swal from 'sweetalert2';
 
 export function useMarkActions(options: { refreshAverageForExam: (examId: string) => Promise<void>; setMarks: React.Dispatch<React.SetStateAction<Record<string, { mark: string; detail: string }>>>; }) {

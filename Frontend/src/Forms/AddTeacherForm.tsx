@@ -18,14 +18,14 @@ import {
 import {
   validateTeacherWithYup,
   validateTeacherFieldWithYup,
-} from "../../Validation/teacherValidation";
-import type { TeacherFormData } from "../../Validation/teacherValidation";
+} from "../Validation/teacherValidation";
+import type { TeacherFormData } from "../Validation/teacherValidation";
 import {
   createTeacher,
   updateTeacher,
   type Teacher,
-} from "../../Api/teacherApi";
-import { getAllGroups, type Group } from "../../Api/groupApi";
+} from "../Api/teacherApi";
+import { getAllGroups, type Group } from "../Api/groupApi";
 
 // دالة لتحويل التاريخ من الخادم إلى تنسيق input[type="date"]
 const formatDateForInput = (dateValue?: string | Date): string => {

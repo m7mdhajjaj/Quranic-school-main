@@ -13,14 +13,14 @@ import {
   validateGroupFieldWithYup,
   validateGroupComprehensive,
   type GroupFormData,
-} from "../../Validation/groupValidation";
-import { getAllTeachers, type Teacher } from "../../Api/teacherApi";
+} from "../Validation/groupValidation";
+import { getAllTeachers, type Teacher } from "../Api/teacherApi";
 import {
   getAllGroups,
   createGroup,
   updateGroup,
   type Group,
-} from "../../Api/groupApi";
+} from "../Api/groupApi";
 
 interface AddGroupFormProps {
   onClose: () => void;

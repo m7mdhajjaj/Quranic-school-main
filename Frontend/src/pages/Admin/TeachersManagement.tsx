@@ -33,10 +33,10 @@ import {
   type Teacher 
 } from '../../Api/teacherApi';
 import type { TeacherFormData } from '../../Validation/teacherValidation';
-import EnhancedTeacherForm from '../../components/Forms/AddTeacherForm';
-import ResponsivePagination from '../../components/shared/ResponsivePagination';
-import Avatar from '../../components/Avatar';
-import { showCenteredSwal, showSuccessMessage, showErrorMessage } from "../../components/sweetalertUtils";
+import EnhancedTeacherForm from '../../Forms/AddTeacherForm';
+import ResponsivePagination from '../../components/shared/Navigation/ResponsivePagination';
+import Avatar from '../../components/common/Avatar';
+import { showCenteredSwal, showSuccessMessage, showErrorMessage } from "../../components/utils/sweetalertUtils";
 
 type SortField = 'teacherId' | 'firstName' | 'age' | 'email';
 type SortOrder = 'asc' | 'desc';

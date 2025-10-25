@@ -1,7 +1,7 @@
-import { Card } from "../../../components/shared/Card";
-import { Button } from "../../../components/shared/Button";
-import { ProgressBar } from "../../../components/shared/ProgressBar";
-import Reveal from "../../../components/shared/Reveal";
+import { Card } from "../../../components/shared/UI";
+import { Button } from "../../../components/shared/Form";
+import { ProgressBar } from "../../../components/shared/Feedback";
+import Reveal from "../../../components/shared/Animation/Reveal";
 
 interface DhikrCardProps {
   text: string;

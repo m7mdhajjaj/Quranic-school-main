@@ -4,11 +4,11 @@ import { createMark } from "../../Api/dailyMarksApi";
 import {
   showCenteredSwal,
   showWarningMessage,
-} from "../../components/sweetalertUtils";
+} from "../../components/utils/sweetalertUtils";
 import {
   showSuccessToast,
   showErrorToast,
-} from "../../components/toastUtils";
+} from "../../components/utils/toastUtils";
 import { useDailyMarksSocket } from "../../Socket";
 
 // Import refactored components and hooks

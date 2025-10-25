@@ -26,8 +26,8 @@ import {
 } from 'react-icons/fa';
 import { useAuth } from '../../hooks/useAuth';
 import { useGroupsSocket } from '../../Socket';
-import AddGroupForm from '../../components/Forms/AddGroupForm';
-import ResponsivePagination from '../../components/shared/ResponsivePagination';
+import AddGroupForm from '../../Forms/AddGroupForm';
+import ResponsivePagination from '../../components/shared/Navigation/ResponsivePagination';
 import { getAllGroups, deleteGroup, type Group } from '../../Api/groupApi';
 import { getAllTeachers } from '../../Api/teacherApi';
 import { type GroupFormData } from '../../Validation/groupValidation';
@@ -35,7 +35,7 @@ import {
   showCenteredSwal,
   showSuccessMessage,
   showErrorMessage,
-} from '../../components/sweetalertUtils';
+} from '../../components/utils/sweetalertUtils';
 
 type SortField = 'name' | 'teacher' | 'capacity';
 type SortOrder = 'asc' | 'desc';

@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Exam } from '../../../Api/examApi';
-import type { Column } from '../../../components/shared/Table';
+import type { Column } from '../../../components/shared/UI/Table';
 import { AvgBadge, StudentMarkDisplay } from '../components';
 import { formatDateArabic, formatTime12Arabic, safeExamId } from '../utils';
 

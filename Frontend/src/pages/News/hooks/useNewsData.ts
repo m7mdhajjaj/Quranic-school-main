@@ -12,7 +12,7 @@ import { validateNewsForm } from '../../../Validation/NewsValidation';
 import {
   showSuccessToast,
   showErrorToast,
-} from '../../../components/toastUtils';
+} from '../../../components/utils/toastUtils';
 import { useAuth } from '../../../hooks/useAuth';
 
 export const useNewsData = () => {

@@ -1,8 +1,7 @@
 import { useState } from "react";
 import type { StudentListProps } from "../types/dailyMarks";
-import { Select } from "../../../components/shared/Select";
-import { Button } from "../../../components/shared/Button";
-import { Card } from "../../../components/shared/Card";
+import { Select, Button } from "../../../components/shared/Form";
+import { Card } from "../../../components/shared/UI";
 import { SearchInput } from "../../../components/shared/Filter";
 import { Users, Plus, Edit, Trash2 } from "lucide-react";
 

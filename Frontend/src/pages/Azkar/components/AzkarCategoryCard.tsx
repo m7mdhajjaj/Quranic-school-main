@@ -1,6 +1,5 @@
-import { Card } from "../../../components/shared/Card";
-import { Badge } from "../../../components/shared/Badge";
-import { ProgressBar } from "../../../components/shared/ProgressBar";
+import { Card, Badge } from "../../../components/shared/UI";
+import { ProgressBar } from "../../../components/shared/Feedback";
 
 interface AzkarCategoryCardProps {
   icon: string;

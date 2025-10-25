@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { useNotificationsSocket } from "../../Socket"; // ✅ استخدام نظام Socket الجديد للإشعارات
-import { useFirebaseMessaging } from "../../hooks/useFirebaseMessaging"; // ✅ Firebase للإشعارات Push
-import { socketManager } from "../../Socket"; // ✅ للاستماع لأحداث الصلاة
+import { useNotificationsSocket } from "../Socket"; // ✅ استخدام نظام Socket الجديد للإشعارات
+import { useFirebaseMessaging } from "../hooks/useFirebaseMessaging"; // ✅ Firebase للإشعارات Push
+import { socketManager } from "../Socket"; // ✅ للاستماع لأحداث الصلاة
 import Swal from "sweetalert2";
 import {
   getRecentNotifications,
@@ -10,7 +10,7 @@ import {
   markAsRead,
   markAllAsRead,
   deleteNotification,
-} from "../../Api/notificationApi";
+} from "../Api/notificationApi";
 
 interface Notification {
   _id: string;

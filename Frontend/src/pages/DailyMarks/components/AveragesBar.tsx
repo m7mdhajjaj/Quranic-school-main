@@ -1,5 +1,5 @@
 import type { AveragesBarProps } from "../types/dailyMarks";
-import { StatCard } from "../../../components/shared/StatCard";
+import { StatCard } from "../../../components/shared/Features";
 import { Award, TrendingUp } from "lucide-react";
 
 /**

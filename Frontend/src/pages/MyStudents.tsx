@@ -25,14 +25,14 @@ import {
   type Student as ApiStudent,
 } from "../Api/studentApi";
 
-import AddStudentFormWithYup from "../components/Forms/AddStudentForm";
-import ResponsivePagination from "../components/shared/ResponsivePagination";
+import AddStudentFormWithYup from "../Forms/AddStudentForm";
+import ResponsivePagination from "../components/shared/Navigation/ResponsivePagination";
 import {
   showCenteredSwal,
   showSuccessMessage,
   showWarningMessage,
   showErrorMessage,
-} from "../components/sweetalertUtils";
+} from "../components/utils/sweetalertUtils";
 
 type Student = ApiStudent;
 
