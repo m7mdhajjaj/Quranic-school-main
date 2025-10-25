@@ -36,16 +36,6 @@ export const getMonthName = (month: number): string => {
 };
 
 /**
- * Get medal color based on rank
- */
-export const getMedalColor = (rank: number): string => {
-  if (rank === 1) return "#FFD700"; // Gold
-  if (rank === 2) return "#C0C0C0"; // Silver
-  if (rank === 3) return "#CD7F32"; // Bronze
-  return "#E5E7EB"; // Gray
-};
-
-/**
  * Generate available years array (current year - 5 years)
  */
 export const generateAvailableYears = (): number[] => {
@@ -66,11 +56,4 @@ export const getCurrentPeriod = (): { month: number; year: number } => {
     month: now.getMonth() + 1,
     year: now.getFullYear(),
   };
-};
-
-/**
- * Format average with one decimal place
- */
-export const formatAverage = (average: number): string => {
-  return average.toFixed(1) + "%";
 };

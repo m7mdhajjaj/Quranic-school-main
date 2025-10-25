@@ -1,13 +1,13 @@
 /**
  * Filter Panel Component
  * Handles year, month, and group selection
- * Uses shared Select component
+ * Uses shared Filter components
  */
 
 import type { FilterPanelProps } from "../types/arrangement";
 import { getMonthName } from "../utils/arrangementHelpers";
-import { Select } from "../../../components/shared/Form/Select";
-import { Calendar, Users } from "lucide-react";
+import { FilterSelect } from "../../../components/shared/Filter";
+import type { FilterOption } from "../../../components/shared/Filter";
 
 export const FilterPanel = ({
   selectedYear,
@@ -19,17 +19,17 @@ export const FilterPanel = ({
   onMonthChange,
   onGroupChange,
 }: FilterPanelProps) => {
-  const yearOptions = availableYears.map((year) => ({
-    value: year,
+  const yearOptions: FilterOption[] = availableYears.map((year) => ({
+    value: year.toString(),
     label: year.toString(),
   }));
 
-  const monthOptions = Array.from({ length: 12 }, (_, i) => ({
-    value: i + 1,
+  const monthOptions: FilterOption[] = Array.from({ length: 12 }, (_, i) => ({
+    value: (i + 1).toString(),
     label: getMonthName(i + 1),
   }));
 
-  const groupOptions =
+  const groupOptions: FilterOption[] =
     user?.groups?.map((group) => ({
       value: group.name,
       label: group.name,
@@ -39,35 +39,38 @@ export const FilterPanel = ({
     <div className="flex flex-wrap justify-center items-center gap-6 mt-8">
       {/* Year selector */}
       <div className="w-32">
-        <Select
+        <FilterSelect
           label="السنة"
-          value={selectedYear}
-          onChange={(e) => onYearChange(parseInt(e.target.value))}
+          value={selectedYear.toString()}
+          onChange={(value) => onYearChange(parseInt(value))}
           options={yearOptions}
-          icon={<Calendar size={18} />}
+          showAllOption={false}
+          className=""
         />
       </div>
 
       {/* Month selector */}
       <div className="w-40">
-        <Select
+        <FilterSelect
           label="الشهر"
-          value={selectedMonth}
-          onChange={(e) => onMonthChange(parseInt(e.target.value))}
+          value={selectedMonth.toString()}
+          onChange={(value) => onMonthChange(parseInt(value))}
           options={monthOptions}
-          icon={<Calendar size={18} />}
+          showAllOption={false}
+          className=""
         />
       </div>
 
       {/* Group selector for teachers with multiple groups */}
       {user?.role === "teacher" && user.groups && user.groups.length > 1 && (
         <div className="w-48">
-          <Select
+          <FilterSelect
             label="الحلقة"
             value={selectedGroup}
-            onChange={(e) => onGroupChange(e.target.value)}
+            onChange={(value) => onGroupChange(value)}
             options={groupOptions}
-            icon={<Users size={18} />}
+            showAllOption={false}
+            className=""
           />
         </div>
       )}

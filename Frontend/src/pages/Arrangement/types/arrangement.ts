@@ -49,10 +49,9 @@ export interface RankingTableProps {
   students: StudentWithAverage[];
 }
 
-export interface CriteriaCardsProps {}
-
-export interface SocketIndicatorProps {
-  isConnected: boolean;
-  socketId: string | null;
-  lastUpdate: Date | null;
+export interface UseRankingDataReturn {
+  students: StudentWithAverage[];
+  loading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
 }

@@ -1,11 +1,14 @@
 /**
  * Page Header Component
  * Displays title, description, and current period title
+ * Uses shared PageHeader component
  */
 
+import SharedPageHeader from "../../../components/shared/Layout/PageHeader";
 import { getMonthName } from "../utils/arrangementHelpers";
+import { Trophy } from "lucide-react";
 
-interface PageHeaderProps {
+interface ArrangementPageHeaderProps {
   selectedMonth: number;
   selectedYear: number;
   studentsCount: number;
@@ -15,19 +18,20 @@ export const PageHeader = ({
   selectedMonth,
   selectedYear,
   studentsCount,
-}: PageHeaderProps) => {
+}: ArrangementPageHeaderProps) => {
   return (
-    <div className="text-center mb-16" data-aos="fade-down">
-      <h1 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
-        ترتيب الطلاب المتميزين
-      </h1>
-      <div className="w-24 h-1 bg-emerald-600 mx-auto mb-6"></div>
-      <p className="text-slate-600 text-lg max-w-3xl mx-auto">
-        يعرض هذا الترتيب الطلاب بناءً على معدلاتهم الشهرية في الحفظ والمراجعة
-      </p>
+    <div data-aos="fade-down">
+      {/* استخدام المكون المشترك */}
+      <SharedPageHeader
+        title="ترتيب الطلاب المتميزين"
+        subtitle="يعرض هذا الترتيب الطلاب بناءً على معدلاتهم الشهرية في الحفظ والمراجعة"
+        icon={<Trophy className="w-12 h-12 sm:w-16 sm:h-16 text-white" />}
+        showDivider={true}
+        className="mb-8"
+      />
 
       {/* Current month/year title */}
-      <div className="mt-8">
+      <div className="text-center">
         <div className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-8 py-4 rounded-2xl shadow-lg inline-block">
           <h2 className="text-2xl font-bold text-center">
             🏆 ترتيب {getMonthName(selectedMonth)} {selectedYear}

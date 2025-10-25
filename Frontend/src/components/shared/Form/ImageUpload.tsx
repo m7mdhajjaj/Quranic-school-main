@@ -145,6 +145,9 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
           }}
           className="hidden"
           disabled={disabled}
+          aria-label={label || 'اختر صورة'}
+          title={label || 'اختر صورة'}
+          placeholder="اختر صورة"
         />
 
         <div className="flex flex-col items-center gap-2">

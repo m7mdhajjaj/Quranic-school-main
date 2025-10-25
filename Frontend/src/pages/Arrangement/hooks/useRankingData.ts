@@ -4,14 +4,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { getRankingByAverages } from "../../../Api/rankingApi";
-import type { StudentWithAverage, User } from "../types/arrangement";
-
-interface UseRankingDataReturn {
-  students: StudentWithAverage[];
-  loading: boolean;
-  error: string | null;
-  refetch: () => Promise<void>;
-}
+import type { 
+  StudentWithAverage, 
+  User, 
+  UseRankingDataReturn 
+} from "../types/arrangement";
 
 export const useRankingData = (
   selectedMonth: number,

@@ -15,7 +15,6 @@ import {
 import type { User } from "./types/arrangement";
 import { LoadingSpinner } from "../../components/shared/Feedback/LoadingSpinner";
 import { Alert } from "../../components/shared/UI/Alert";
-import { SocketIndicator } from "./components/SocketIndicator";
 import { FilterPanel } from "./components/FilterPanel";
 import { PageHeader } from "./components/PageHeader";
 import { Podium } from "./components/Podium";
@@ -38,7 +37,7 @@ const ArrangementPage = () => {
     }
   }, []);
 
-  const { isConnected, socketId, lastUpdate } = useArrangementSocket();
+  const { lastUpdate } = useArrangementSocket();
 
   // Get current period
   const currentPeriod = getCurrentPeriod();
@@ -87,12 +86,7 @@ const ArrangementPage = () => {
       className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 py-12 px-4"
       dir="rtl">
       <div className="container mx-auto">
-        {/* Socket Connection Indicator */}
-        <SocketIndicator
-          isConnected={isConnected}
-          socketId={socketId}
-          lastUpdate={lastUpdate}
-        />
+       
 
         {/* Page Header */}
         <PageHeader
