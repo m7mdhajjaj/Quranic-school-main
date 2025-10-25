@@ -1,5 +1,6 @@
-﻿export const useSounds = () => {
-  const playAdd = () => {
+﻿// دوال الأصوات التي يمكن استخدامها في أي مكان (خارج React components)
+export const soundPlayer = {
+  playAdd: () => {
     try {
       const audio = new Audio('/sounds/successful.mp3');
       audio.volume = 0.6;
@@ -7,9 +8,9 @@
     } catch (error) {
       console.log('Sound init error:', error);
     }
-  };
+  },
 
-  const playUpdate = () => {
+  playUpdate: () => {
     try {
       const audio = new Audio('/sounds/successful.mp3');
       audio.volume = 0.6;
@@ -17,9 +18,9 @@
     } catch (error) {
       console.log('Sound init error:', error);
     }
-  };
+  },
 
-  const playDelete = () => {
+  playDelete: () => {
     try {
       const audio = new Audio('/sounds/successful.mp3');
       audio.volume = 0.5;
@@ -27,9 +28,9 @@
     } catch (error) {
       console.log('Sound init error:', error);
     }
-  };
+  },
 
-  const playError = () => {
+  playError: () => {
     try {
       const audio = new Audio('/sounds/error.wav');
       audio.volume = 0.6;
@@ -37,9 +38,9 @@
     } catch (error) {
       console.log('Sound init error:', error);
     }
-  };
+  },
 
-  const playSuccess = () => {
+  playSuccess: () => {
     try {
       const audio = new Audio('/sounds/successful.mp3');
       audio.volume = 0.7;
@@ -47,9 +48,9 @@
     } catch (error) {
       console.log('Sound init error:', error);
     }
-  };
+  },
 
-  const playNotification = () => {
+  playNotification: () => {
     try {
       const audio = new Audio('/sounds/notification.mp3');
       audio.volume = 0.7;
@@ -57,14 +58,30 @@
     } catch (error) {
       console.log('Sound init error:', error);
     }
-  };
+  },
 
-  return {
-    playAdd,
-    playUpdate,
-    playDelete,
-    playError,
-    playSuccess,
-    playNotification,
-  };
+  playLogout: () => {
+    try {
+      const audio = new Audio('/sounds/notification.mp3');
+      audio.volume = 0.5;
+      audio.play().catch((err) => console.log('Sound error:', err));
+    } catch (error) {
+      console.log('Sound init error:', error);
+    }
+  },
+
+  playLogin: () => {
+    try {
+      const audio = new Audio('/sounds/Login.mp3');
+      audio.volume = 0.6;
+      audio.play().catch((err) => console.log('Sound error:', err));
+    } catch (error) {
+      console.log('Sound init error:', error);
+    }
+  },
+};
+
+// Hook للاستخدام في React components
+export const useSounds = () => {
+  return soundPlayer;
 };

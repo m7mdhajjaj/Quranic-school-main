@@ -1,19 +1,56 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
-interface ThemeToggleProps {
+/**
+ * ThemeToggle Component Props
+ * @interface ThemeToggleProps
+ */
+export interface ThemeToggleProps {
+  /** Additional CSS classes */
   className?: string;
+  /** Button size variants */
   size?: 'sm' | 'md' | 'lg';
+  /** Visual style variants */
   variant?: 'default' | 'minimal' | 'pill';
+  /** Show theme label text */
   showLabel?: boolean;
+  /** Adaptive styling when scrolled */
   scrolled?: boolean;
+  /** Custom callback when theme changes */
+  onChange?: (isDark: boolean) => void;
+  /** Disable the toggle */
+  disabled?: boolean;
+  /** Show tooltip on hover */
+  showTooltip?: boolean;
 }
 
-const ThemeToggle: React.FC<ThemeToggleProps> = ({
+/**
+ * ThemeToggle - مكون تبديل الوضع الليلي/النهاري
+ * 
+ * @component
+ * @example
+ * // Basic usage
+ * <ThemeToggle />
+ * 
+ * @example
+ * // With label and custom size
+ * <ThemeToggle size="lg" showLabel />
+ * 
+ * @example
+ * // Minimal variant with callback
+ * <ThemeToggle 
+ *   variant="minimal" 
+ *   onChange={(isDark) => console.log('Theme changed:', isDark)} 
+ * />
+ */
+export const ThemeToggle: React.FC<ThemeToggleProps> = ({
   className = '',
   size = 'md',
   variant = 'default',
   showLabel = false,
   scrolled = false,
+  onChange,
+  disabled = false,
+  showTooltip = true,
 }) => {
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -28,6 +65,8 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
 
   // Handle dark mode toggle
   const toggleDarkMode = useCallback(() => {
+    if (disabled) return;
+    
     setIsDarkMode((prev) => {
       const newMode = !prev;
       localStorage.setItem('darkMode', newMode.toString());
@@ -41,9 +80,12 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
         document.body.classList.remove('dark');
       }
 
+      // Call onChange callback if provided
+      onChange?.(newMode);
+
       return newMode;
     });
-  }, []);
+  }, [disabled, onChange]);
 
   // Initialize dark mode on component mount
   useEffect(() => {
@@ -77,7 +119,9 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
 
   // Variant styles
   const getVariantClasses = () => {
-    const baseClasses = 'relative transition-all duration-500 transform hover:scale-110 overflow-hidden group';
+    const baseClasses = `relative transition-all duration-500 transform ${
+      disabled ? 'cursor-not-allowed opacity-50' : 'hover:scale-110 cursor-pointer'
+    } overflow-hidden group`;
     
     switch (variant) {
       case 'minimal':
@@ -108,14 +152,18 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
   };
 
   const currentSize = sizeClasses[size];
+  const tooltipText = isDarkMode ? 'التبديل إلى الوضع الفاتح' : 'التبديل إلى الوضع المظلم';
+  const ariaLabel = isDarkMode ? 'تفعيل الوضع الفاتح' : 'تفعيل الوضع المظلم';
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
       <button
         onClick={toggleDarkMode}
+        disabled={disabled}
         className={`${getVariantClasses()} ${currentSize.button}`}
-        title={isDarkMode ? 'التبديل إلى الوضع الفاتح' : 'التبديل إلى الوضع المظلم'}
-        aria-label={isDarkMode ? 'تفعيل الوضع الفاتح' : 'تفعيل الوضع المظلم'}
+        title={showTooltip ? tooltipText : undefined}
+        aria-label={ariaLabel}
+        type="button"
       >
         <div className="relative z-10">
           {isDarkMode ? (
@@ -165,7 +213,7 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
 
       {showLabel && (
         <span className={`font-medium transition-colors ${currentSize.text} ${
-          isDarkMode ? 'text-yellow-600' : 'text-gray-700'
+          isDarkMode ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-700'
         }`}>
           {isDarkMode ? 'الوضع المظلم' : 'الوضع الفاتح'}
         </span>
