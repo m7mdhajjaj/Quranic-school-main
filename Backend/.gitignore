@@ -18,6 +18,7 @@ dist
 
 # Firebase Service Account (sensitive credentials)
 src/config/firebase-service-account.json
+src/quranic-school-77b5e-firebase-adminsdk-fbsvc-b218bd18a0.json
 
 # Editor directories and files
 .vscode/
