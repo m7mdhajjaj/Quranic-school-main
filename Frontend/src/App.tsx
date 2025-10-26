@@ -6,8 +6,6 @@
 // of headers and footers based on user roles and current routes.
 // ============================================================================
 
-import './styles/App.css';
-
 // ============================================================================
 // External Dependencies
 // ============================================================================
@@ -21,10 +19,8 @@ import 'react-toastify/dist/ReactToastify.css';
 // ============================================================================
 import { AuthProvider } from './contexts/AuthContext';
 import { UserStatusProvider } from './contexts/UserStatusContext';
-// import { PrayerProvider } from './contexts/PrayerContext'; // ❌ غير مستخدم - تم الاستعاضة عنه بـ Sweet Alert في NotificationHeader
-// import { SocketProvider } from "./contexts/SocketContext"; // ❌ DELETED - استخدم النظام الجديد في Socket/
 import { useAuth } from './hooks/useAuth';
-import { useFirebaseMessaging } from './hooks/useFirebaseMessaging'; // ✅ Firebase Notifications
+import { useFirebaseMessaging } from './hooks/useFirebaseMessaging'; 
 
 // ============================================================================
 // Layout Components
@@ -40,7 +36,7 @@ import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
-import Contact from './pages/Contact';
+import Contact from './pages/Contact/components/Contact';
 
 // ============================================================================
 // Page Components - Academic
@@ -77,7 +73,7 @@ import Azkar from './pages/Azkar';
 // ============================================================================
 // Page Components - Warnings & Discipline
 // ============================================================================
-import Warnings from './pages/Warnings';
+import Warnings from './pages/Warnings/Warnings';
 
 // ============================================================================
 // Page Components - Points Game

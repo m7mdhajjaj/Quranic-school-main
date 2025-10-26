@@ -10,7 +10,7 @@ const {
   validateStudentReportParams,
   validateDateRange,
   handleValidationErrors,
-} = require("../../Validation/ReportValidation");
+} = require("../../Validation/Report/ReportValidation");
 
 // Get detailed student report
 router.get(

@@ -30,9 +30,6 @@ export * from './Theme';
 // Auth Components
 export * from './Auth';
 
-// Animation Components
-export * from './Animation';
-
 // Feature Components
 export * from './Features';
 

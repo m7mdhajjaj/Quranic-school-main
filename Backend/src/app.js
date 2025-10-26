@@ -92,7 +92,7 @@ app.use("/api/teachers", require("./routes/teacherRoutes"));
 app.use("/api/admins", require("./routes/adminRoutes"));
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/news", require("./routes/NewsRoutes/newsRoutes"));
-app.use("/api/activities", require("./routes/activityRoutes"));
+app.use("/api/activities", require("./routes/activityRoutes/activityRoutes"));
 app.use("/api/rankings", require("./routes/rankingRoutes"));
 app.use("/api/sections", require("./routes/sectionRoutes"));
 app.use(

@@ -10,7 +10,7 @@ const {
   validateGroupReportParams,
   validateDateRange,
   handleValidationErrors,
-} = require("../../Validation/ReportValidation");
+} = require("../../Validation/Report/ReportValidation");
 
 // Get group report
 router.get(

@@ -30,19 +30,38 @@
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
-  20%, 40%, 60%, 80% { transform: translateX(8px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-8px);
+  }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(8px);
+  }
 }
 
 @keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(200%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
 }
 
 /* ✨ تحسين خط القرآن الكريم */
 .font-arabic {
-  font-family: 'Amiri', 'Traditional Arabic', 'Arabic Typesetting', 'Scheherazade', serif;
+  font-family:
+    'Amiri', 'Traditional Arabic', 'Arabic Typesetting', 'Scheherazade', serif;
   font-weight: 500;
   letter-spacing: 0.02em;
   line-height: 2.2;
@@ -94,7 +113,7 @@ input[type='password']::-ms-reveal,
 input[type='password']::-webkit-credentials-auto-fill-button {
   display: none !important;
 }
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @keyframes fade-in {
   from {
@@ -239,7 +258,7 @@ input[type='password']::-webkit-credentials-auto-fill-button {
 }
 
 .chat-bubble::before {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
@@ -291,7 +310,9 @@ input[type='password']::-webkit-credentials-auto-fill-button {
 }
 
 @keyframes bounce {
-  0%, 80%, 100% {
+  0%,
+  80%,
+  100% {
     transform: scale(0);
     opacity: 0.5;
   }
@@ -316,7 +337,8 @@ input[type='password']::-webkit-credentials-auto-fill-button {
 
 /* Enhanced skeleton animations */
 @keyframes pulse-slow {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.4;
   }
   50% {
@@ -375,7 +397,13 @@ input[type='password']::-webkit-credentials-auto-fill-button {
 /* Hide scrollbars for navigation */
 .scrollbar-hide {
   -ms-overflow-style: none;
-  scrollbar-width: none;
+}
+
+/* Apply scrollbar-width only when supported to avoid errors in browsers that don't support it */
+@supports (scrollbar-width: none) {
+  .scrollbar-hide {
+    scrollbar-width: none;
+  }
 }
 
 .scrollbar-hide::-webkit-scrollbar {
@@ -397,5 +425,3 @@ input[type='password']::-webkit-credentials-auto-fill-button {
 .animate-fade-in {
   animation: fadeInDropdown 0.2s ease-out forwards;
 }
-
-

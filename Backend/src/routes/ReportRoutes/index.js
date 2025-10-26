@@ -25,7 +25,7 @@ const {
   validateDateRange,
   handleValidationErrors,
   sanitizeQueryParams,
-} = require("../../Validation/ReportValidation");
+} = require("../../Validation/Report/ReportValidation");
 
 // Import controllers
 const ReportController = require("../../controllers/ReportController");

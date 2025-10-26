@@ -9,7 +9,7 @@ const ReportController = require("../../controllers/ReportController");
 const {
   validateExportReportParams,
   handleValidationErrors,
-} = require("../../Validation/ReportValidation");
+} = require("../../Validation/Report/ReportValidation");
 
 // Export student report as PDF
 router.get(

@@ -108,7 +108,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
     <div className={`space-y-2 ${className || ''}`}>
       {/* Label */}
       {label && (
-        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+        <label className="flex items-center gap-2 text-base font-semibold text-gray-700 mb-3">
           <ImageIcon size={20} className="text-emerald-600" />
           {label}
           {required && <span className="text-red-500">*</span>}
@@ -122,8 +122,8 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={`
-          block w-full p-6 border-2 border-dashed rounded-lg text-center cursor-pointer
-          transition-all group
+          block w-full p-6 border-2 border-dashed rounded-2xl text-center cursor-pointer
+          transition-all group shadow-sm
           ${isDragging 
             ? 'border-emerald-500 bg-emerald-50' 
             : error 

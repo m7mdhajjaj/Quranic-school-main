@@ -21,7 +21,11 @@ const activitySchema = new mongoose.Schema(
     },
     image: {
       type: String,
-      default: "https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+نشاط",
+      default: "https://placehold.co/600x400/f3e8ff/6b21a8?text=صورة+نشاط",
+    },
+    imagePublicId: {
+      type: String,
+      default: null,
     },
   },
   { timestamps: true }

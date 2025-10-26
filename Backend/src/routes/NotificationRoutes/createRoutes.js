@@ -6,7 +6,7 @@ const express = require("express");
 const router = express.Router();
 const Notification = require("../../schema/Notification");
 const { protect } = require("../../middleware/authMiddleware");
-const { validateNotificationFormData } = require("../../Validation/NotificationValidation");
+const { validateNotificationFormData } = require("../../Validation/Notification/NotificationValidation");
 
 // ============================================================================
 // Create Routes

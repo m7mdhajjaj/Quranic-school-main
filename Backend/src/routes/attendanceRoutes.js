@@ -5,7 +5,7 @@ const attendanceController = require("../controllers/attendanceController");
 const { protect } = require("../middleware/authMiddleware");
 const {
   validateAttendanceData,
-} = require("../Validation/AttendanceValidation");
+} = require("../Validation/Attendance/AttendanceValidation");
 
 // Create or update attendance records for a specific date - PROTECTED
 // Note: Validation removed as controller uses isPresent (boolean) instead of status (string)

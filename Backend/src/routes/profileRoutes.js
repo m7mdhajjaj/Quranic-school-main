@@ -8,7 +8,7 @@ const Student = require("../schema/Student");
 const Teacher = require("../schema/Teacher");
 const Admin = require("../schema/Admin");
 const jwt = require("jsonwebtoken");
-const { validateProfileData, sanitizeProfile } = require("../Validation/ProfileValidation");
+const { validateProfileData, sanitizeProfile } = require("../Validation/Profile/ProfileValidation");
 
 // Middleware to verify JWT token
 const authenticateToken = (req, res, next) => {

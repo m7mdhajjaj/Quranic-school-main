@@ -13,6 +13,7 @@ export interface Activity {
   time?: string;
   location?: string;
   image?: string;
+  imagePublicId?: string;
   category?: string;
   participants?: string[];
   isPublished?: boolean;
@@ -36,13 +37,24 @@ export const getAllActivities = async (): Promise<Activity[]> => {
   }
 };
 
-// Create activity
+// Create activity (now accepts both FormData and plain object)
 export const createActivity = async (
-  activityData: Partial<Activity>
+  data: FormData | Partial<Activity>
 ): Promise<Activity> => {
   try {
-    const response = await api.post("/activities", activityData);
-    return response.data.activity || response.data;
+    const isFormData = data instanceof FormData;
+    
+    console.log("Creating activity with data:", data);
+    console.log("Is FormData?", isFormData);
+    
+    const response = await api.post("/activities", data, {
+      headers: isFormData
+        ? {
+            "Content-Type": "multipart/form-data",
+          }
+        : undefined, // Let axios set default headers for JSON
+    });
+    return response.data.activity || response.data.data || response.data;
   } catch (error) {
     console.error("Error creating activity:", error);
     const axiosError = error as AxiosError<{ message?: string }>;
@@ -52,14 +64,25 @@ export const createActivity = async (
   }
 };
 
-// Update activity
+// Update activity (now accepts both FormData and plain object)
 export const updateActivity = async (
   id: string,
-  activityData: Partial<Activity>
+  data: FormData | Partial<Activity>
 ): Promise<Activity> => {
   try {
-    const response = await api.put(`/activities/${id}`, activityData);
-    return response.data.activity || response.data;
+    const isFormData = data instanceof FormData;
+    
+    console.log("Updating activity with data:", data);
+    console.log("Is FormData?", isFormData);
+    
+    const response = await api.put(`/activities/${id}`, data, {
+      headers: isFormData
+        ? {
+            "Content-Type": "multipart/form-data",
+          }
+        : undefined, // Let axios set default headers for JSON
+    });
+    return response.data.activity || response.data.data || response.data;
   } catch (error) {
     console.error("Error updating activity:", error);
     const axiosError = error as AxiosError<{ message?: string }>;

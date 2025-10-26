@@ -3,7 +3,7 @@ const router = express.Router();
 const newsController = require("../../controllers/NewsController");
 const { protect } = require("../../middleware/authMiddleware");
 const { uploadNews } = require("../../config/multer");
-const { validateNewsData } = require("../../Validation/NewsValidation");
+const { validateNewsData } = require("../../Validation/News/NewsValidation");
 
 // ============================================================================
 // GET ROUTES

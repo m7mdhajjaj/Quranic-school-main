@@ -3,7 +3,7 @@ const router = express.Router();
 const sectionController = require("../controllers/sectionController");
 const {
   validateDailyMarksSectionData,
-} = require("../Validation/DailyMarkValidation/DailyMarksSectionValidation");
+} = require("../Validation/DailyMark/DailyMarksSectionValidation");
 
 // Get all sections
 router.get("/", sectionController.getSections);

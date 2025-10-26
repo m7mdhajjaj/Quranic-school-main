@@ -2,21 +2,43 @@ const multer = require("multer");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const cloudinary = require("./cloudinary");
 
-// Configure Cloudinary storage for activities
+// Configure Cloudinary storage for activities with dynamic folders
 const activityStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: {
-    folder: "quranic-school/activities",
-    allowed_formats: ["jpg", "jpeg", "png", "gif", "webp"],
-    transformation: [
-      {
-        width: 1200,
-        height: 800,
-        crop: "limit",
-        quality: "auto",
-        fetch_format: "auto",
-      },
-    ],
+  params: async (req, file) => {
+    // الحصول على التصنيف من البيانات المرسلة
+    const category = req.body.category || 'عام';
+    
+    // الحصول على معرف النشاط (للتعديل) أو استخدام timestamp (للإضافة)
+    // عند الإضافة، سنستخدم timestamp كمعرف مؤقت ثم نعيد تسمية المجلد لاحقاً
+    let activityIdentifier;
+    
+    if (req.params.id) {
+      // عند التعديل: استخدم ID الموجود
+      activityIdentifier = req.params.id;
+    } else {
+      // عند الإضافة: استخدم timestamp + random للتفرد
+      activityIdentifier = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // حفظ المعرف المؤقت في req لاستخدامه لاحقاً
+      req.tempActivityId = activityIdentifier;
+    }
+    
+    // تنظيف اسم التصنيف ليكون مناسباً كاسم مجلد
+    const sanitizedCategory = category.trim().replace(/\s+/g, '_');
+    
+    return {
+      folder: `quranic-school/activities/${sanitizedCategory}/${activityIdentifier}`,
+      allowed_formats: ["jpg", "jpeg", "png", "gif", "webp"],
+      transformation: [
+        {
+          width: 1200,
+          height: 800,
+          crop: "limit",
+          quality: "auto",
+          fetch_format: "auto",
+        },
+      ],
+    };
   },
 });
 

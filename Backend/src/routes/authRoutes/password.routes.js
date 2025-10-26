@@ -11,7 +11,7 @@ const {
   validateChangePassword,
   validateVerifyIdentity,
   validateResetPassword,
-} = require("../../Validation/AuthValidation");
+} = require("../../Validation/Auth/AuthValidation");
 
 /**
  * Password Management Routes

@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const controller = require("../../controllers/adminController");
-const { validateAdminData } = require("../../Validation/AdminValidation");
+const { validateAdminData } = require("../../Validation/Admin/AdminValidation");
 const { protect } = require("../../middleware/authMiddleware");
 
 /**

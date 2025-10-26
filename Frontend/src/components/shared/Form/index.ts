@@ -6,3 +6,4 @@ export { ToggleSwitch } from './ToggleSwitch';
 export { RangeSlider } from './RangeSlider';
 export { ImageUpload } from './ImageUpload';
 export { AvatarUpload } from './AvatarUpload';
+export { DatePicker } from './DatePicker';

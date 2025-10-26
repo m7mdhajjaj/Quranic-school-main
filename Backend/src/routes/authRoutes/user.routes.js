@@ -3,7 +3,7 @@ const express = require("express");
 const router = express.Router();
 const { getMe, registerTeacher } = require("../../controllers/authController");
 const { protect } = require("../../middleware/authMiddleware");
-const { validateRegisterTeacher } = require("../../Validation/AuthValidation");
+const { validateRegisterTeacher } = require("../../Validation/Auth/AuthValidation");
 
 /**
  * User Management Routes

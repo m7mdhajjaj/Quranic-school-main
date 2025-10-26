@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const groupController = require("../controllers/groupController");
 const authMiddleware = require("../middleware/authMiddleware");
-const { validateGroupData } = require("../Validation/GroupValidation");
+const { validateGroupData } = require("../Validation/Group/GroupValidation");
 
 // الحصول على جميع الحلقات - متاح للجميع المسجلين (معلمين وإداريين)
 router.get("/", authMiddleware.protect, groupController.getAllGroups);

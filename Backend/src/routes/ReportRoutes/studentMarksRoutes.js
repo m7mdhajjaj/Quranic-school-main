@@ -10,7 +10,7 @@ const {
   validateStudentMarksQuery,
   handleValidationErrors,
   sanitizeQueryParams,
-} = require("../../Validation/ReportValidation");
+} = require("../../Validation/Report/ReportValidation");
 
 // Get student marks for charts (monthly/yearly)
 router.get(

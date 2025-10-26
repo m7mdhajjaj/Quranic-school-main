@@ -7,7 +7,7 @@ const {
   validateTeacherData,
   validateTeacherGroups,
   sanitizeTeacherData,
-} = require("../../Validation/TeacherValidation");
+} = require("../../Validation/Teacher/TeacherValidation");
 
 /**
  * CRUD Routes for Teachers

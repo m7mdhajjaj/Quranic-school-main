@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const rankingController = require("../controllers/RankingController");
-const { validateRankingData } = require("../Validation/RankingValidation");
+const { validateRankingData } = require("../Validation/Ranking/RankingValidation");
 const {
   protect,
   teacherProtect,

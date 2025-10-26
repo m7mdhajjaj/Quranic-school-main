@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const examController = require("../../controllers/ExamShedule/examController");
 const { protect } = require("../../middleware/authMiddleware");
-const { validateExamData } = require("../../Validation/ExamValidation");
+const { validateExamData } = require("../../Validation/Exam/ExamValidation");
 
 router.get("/", protect, examController.getExams);
 router.post("/", protect, validateExamData, examController.addExam);

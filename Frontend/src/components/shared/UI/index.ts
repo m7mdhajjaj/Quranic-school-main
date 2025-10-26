@@ -7,3 +7,5 @@ export { Table } from './Table';
 export { Tooltip } from './Tooltip';
 export { EmptyState } from './EmptyState';
 export { default as UserStatus } from './UserStatus';
+export { DropdownMenu } from './DropdownMenu';
+export type { DropdownMenuItem } from './DropdownMenu';

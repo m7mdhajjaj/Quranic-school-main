@@ -10,7 +10,7 @@ const {
   validateAverageMarksQuery,
   handleValidationErrors,
   sanitizeQueryParams,
-} = require("../../Validation/ReportValidation");
+} = require("../../Validation/Report/ReportValidation");
 
 // Get average marks for all students in a group
 router.get(

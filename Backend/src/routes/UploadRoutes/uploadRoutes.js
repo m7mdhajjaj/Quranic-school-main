@@ -7,12 +7,18 @@ const { protect } = require("../../middleware/authMiddleware");
 // Upload single activity image
 router.post("/activity", uploadActivity.single("image"), (req, res) => {
   try {
+    console.log("📤 Uploading activity image via upload route...");
+    
     if (!req.file) {
       return res.status(400).json({
         success: false,
         message: "لم يتم رفع أي ملف",
       });
     }
+
+    console.log("✅ Activity image uploaded successfully");
+    console.log("  - URL:", req.file.path);
+    console.log("  - Public ID:", req.file.filename);
 
     res.json({
       success: true,
@@ -21,7 +27,7 @@ router.post("/activity", uploadActivity.single("image"), (req, res) => {
       publicId: req.file.filename,
     });
   } catch (error) {
-    console.error("Upload error:", error);
+    console.error("❌ Upload error:", error);
     res.status(500).json({
       success: false,
       message: "حدث خطأ أثناء رفع الصورة",
@@ -33,12 +39,18 @@ router.post("/activity", uploadActivity.single("image"), (req, res) => {
 // Upload single news image
 router.post("/news", uploadNews.single("image"), (req, res) => {
   try {
+    console.log("📤 Uploading news image via upload route...");
+    
     if (!req.file) {
       return res.status(400).json({
         success: false,
         message: "لم يتم رفع أي ملف",
       });
     }
+
+    console.log("✅ News image uploaded successfully");
+    console.log("  - URL:", req.file.path);
+    console.log("  - Public ID:", req.file.filename);
 
     res.json({
       success: true,
@@ -47,7 +59,7 @@ router.post("/news", uploadNews.single("image"), (req, res) => {
       publicId: req.file.filename,
     });
   } catch (error) {
-    console.error("Upload error:", error);
+    console.error("❌ Upload error:", error);
     res.status(500).json({
       success: false,
       message: "حدث خطأ أثناء رفع الصورة",
@@ -62,6 +74,8 @@ router.post(
   uploadActivity.array("images", 5),
   (req, res) => {
     try {
+      console.log("📤 Uploading multiple activity images...");
+      
       if (!req.files || req.files.length === 0) {
         return res.status(400).json({
           success: false,
@@ -74,13 +88,15 @@ router.post(
         publicId: file.filename,
       }));
 
+      console.log(`✅ Uploaded ${urls.length} activity images successfully`);
+
       res.json({
         success: true,
         message: `تم رفع ${urls.length} صور بنجاح`,
         files: urls,
       });
     } catch (error) {
-      console.error("Upload error:", error);
+      console.error("❌ Upload error:", error);
       res.status(500).json({
         success: false,
         message: "حدث خطأ أثناء رفع الصور",
@@ -93,6 +109,8 @@ router.post(
 // Upload multiple news images
 router.post("/news/multiple", uploadNews.array("images", 5), (req, res) => {
   try {
+    console.log("📤 Uploading multiple news images...");
+    
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({
         success: false,
@@ -105,13 +123,15 @@ router.post("/news/multiple", uploadNews.array("images", 5), (req, res) => {
       publicId: file.filename,
     }));
 
+    console.log(`✅ Uploaded ${urls.length} news images successfully`);
+
     res.json({
       success: true,
       message: `تم رفع ${urls.length} صور بنجاح`,
       files: urls,
     });
   } catch (error) {
-    console.error("Upload error:", error);
+    console.error("❌ Upload error:", error);
     res.status(500).json({
       success: false,
       message: "حدث خطأ أثناء رفع الصور",
@@ -273,24 +293,28 @@ router.post("/avatar", protect, uploadAvatar.single("image"), (req, res) => {
 // Delete image from Cloudinary
 router.delete("/:publicId", async (req, res) => {
   try {
-    const publicId = req.params.publicId;
+    const publicId = req.params.publicId.replace(/-/g, "/"); // Convert dashes back to slashes
+    
+    console.log("🗑️ Deleting image from Cloudinary:", publicId);
 
     // Delete from Cloudinary
     const result = await cloudinary.uploader.destroy(publicId);
 
     if (result.result === "ok") {
+      console.log("✅ Image deleted successfully from Cloudinary");
       res.json({
         success: true,
         message: "تم حذف الصورة بنجاح",
       });
     } else {
+      console.log("⚠️ Image not found or already deleted");
       res.status(404).json({
         success: false,
         message: "الصورة غير موجودة أو تم حذفها مسبقاً",
       });
     }
   } catch (error) {
-    console.error("Delete error:", error);
+    console.error("❌ Delete error:", error);
     res.status(500).json({
       success: false,
       message: "حدث خطأ أثناء حذف الصورة",

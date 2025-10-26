@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const chatController = require("../controllers/chatController");
 const { protect } = require("../middleware/authMiddleware");
-const { validateChatData } = require("../Validation/ChatValidation");
+const { validateChatData } = require("../Validation/Chat/ChatValidation");
 
 // Get all messages for a user
 router.get("/user/:userId/:userType", protect, chatController.getUserMessages);

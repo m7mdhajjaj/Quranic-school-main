@@ -1,6 +1,5 @@
 import React from 'react';
 import { Search, X } from 'lucide-react';
-import { Input } from '..';
 
 interface SearchInputProps {
   value: string;
@@ -13,8 +12,7 @@ interface SearchInputProps {
 }
 
 /**
- * مكون بحث قابل لإعادة الاستخدام
- * يمكن استخدامه في أي مكان يحتاج بحث
+ * مكون بحث محسّن وجميل
  */
 const SearchInput: React.FC<SearchInputProps> = ({
   value,
@@ -30,30 +28,80 @@ const SearchInput: React.FC<SearchInputProps> = ({
   };
 
   const sizeClasses = {
-    sm: 'text-sm py-1.5',
-    md: 'text-base py-2',
-    lg: 'text-lg py-3',
+    sm: 'py-2 text-sm',
+    md: 'py-3 text-base',
+    lg: 'py-4 text-lg',
+  };
+
+  const iconSize = {
+    sm: 18,
+    md: 20,
+    lg: 22,
   };
 
   return (
-    <div className="relative w-full">
-      <Input
+    <div className={`relative w-full ${className}`}>
+      {/* Search Icon */}
+      <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+        <Search 
+          size={iconSize[size]} 
+          className="text-emerald-500"
+        />
+      </div>
+
+      {/* Input Field */}
+      <input
         type="text"
         placeholder={placeholder}
         value={value}
         onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
         disabled={disabled}
-        rightIcon={<Search size={20} className="text-emerald-600" />}
-        className={`text-right ${sizeClasses[size]} ${className}`}
+        className={`
+          w-full
+          ${sizeClasses[size]}
+          pr-12 pl-12
+          text-right
+          bg-white
+          border-2 border-gray-200
+          rounded-xl
+          focus:outline-none 
+          focus:border-emerald-500 
+          focus:ring-4 
+          focus:ring-emerald-100
+          transition-all
+          duration-300
+          placeholder:text-gray-400
+          disabled:bg-gray-100 
+          disabled:cursor-not-allowed
+          shadow-sm
+          hover:shadow-md
+          hover:border-emerald-300
+        `}
       />
-      
+
+      {/* Clear Button */}
       {showClearButton && value && !disabled && (
         <button
           onClick={handleClear}
-          className="absolute left-12 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+          className="
+            absolute 
+            left-4 
+            top-1/2 
+            transform 
+            -translate-y-1/2
+            p-1
+            text-gray-400 
+            hover:text-red-500
+            hover:bg-red-50
+            rounded-full
+            transition-all
+            duration-200
+            hover:scale-110
+          "
           type="button"
-          title="مسح البحث">
-          <X size={18} />
+          title="مسح البحث"
+        >
+          <X size={iconSize[size] - 2} />
         </button>
       )}
     </div>
