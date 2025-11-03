@@ -34,7 +34,7 @@ import Home from './pages/Home';
 import Login from './pages/Auth/Login/index';
 import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
-import Privacy from './pages/Privacy';
+import Privacy from './pages/Privacy/Privacy';
 import Terms from './pages/Terms';
 import Contact from './pages/Contact/components/Contact';
 

@@ -23,5 +23,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src", "src/hooks/useSounds.ts"]
+  "include": ["src", "src/hooks/useSounds.ts", "../Privacy"]
 }
