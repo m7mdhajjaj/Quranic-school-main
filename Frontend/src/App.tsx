@@ -20,7 +20,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider } from './contexts/AuthContext';
 import { UserStatusProvider } from './contexts/UserStatusContext';
 import { useAuth } from './hooks/useAuth';
-import { useFirebaseMessaging } from './hooks/useFirebaseMessaging'; 
+import { useFirebaseMessaging } from './hooks/useFirebaseMessaging';
 
 // ============================================================================
 // Layout Components
@@ -44,7 +44,7 @@ import Contact from './pages/Contact/components/Contact';
 import Goals from './pages/Goals/Goals';
 import DailyMarks from './pages/DailyMarks/DailyMarksPage';
 import Arrangement from './pages/Arrangement';
-import Test from './pages/Test';
+import Test from './pages/Test/TestPage';
 import ExamSchedule from './pages/ExamSchedule';
 import Reports from './pages/Reports';
 import Timetable from './pages/Timetable';
@@ -110,7 +110,6 @@ const AdminRoutes: React.FC = () => {
       <Routes>
         {/* ====== Admin Dashboard Routes ====== */}
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        {/* <Route path="/admin/management" element={<AdminManagement />} /> */}
         <Route path="/admin/students" element={<StudentsManagement />} />
         <Route path="/admin/teachers" element={<TeachersManagement />} />
         <Route path="/admin/groups" element={<GroupManagement />} />
