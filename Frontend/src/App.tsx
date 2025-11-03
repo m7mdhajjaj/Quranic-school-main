@@ -78,7 +78,7 @@ import Warnings from './pages/Warnings/Warnings';
 // ============================================================================
 // Page Components - Points Game
 // ============================================================================
-import PointsGame from './pages/PointsGame';
+import PointsGame from './pages/PointsGame/PointsGamePage';
 
 // ============================================================================
 // Page Components - Admin
