@@ -1,5 +1,5 @@
 import { useState, useCallback, useTransition, lazy, Suspense } from "react";
-import { Alert } from "../../components/shared";
+import { Alert } from "../../components/UI";
 import { BookOpen, Sparkles } from "lucide-react";
 import SurahList from "./SurahList";
 import ReaderControls from "./ReaderControls";

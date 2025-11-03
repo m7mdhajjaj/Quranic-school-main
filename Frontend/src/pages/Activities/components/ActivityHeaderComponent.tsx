@@ -1,6 +1,6 @@
 import React from 'react';
-import { Button } from '../../../components/shared/Form/Button';
-import PageHeader from '../../../components/shared/Layout/PageHeader';
+import { Button } from '../../../components/UI';
+import  PageHeader  from '../../../components/UI/PageHeader';
 import { Plus, Sparkles } from 'lucide-react';
 
 interface ActivityHeaderProps {

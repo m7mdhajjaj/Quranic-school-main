@@ -1,4 +1,4 @@
-import { Card, FeatureList } from '../../../components/shared';
+import { Card, FeatureList } from '../../../components/UI';
 import { Shield, UserCheck } from 'lucide-react';
 
 const UserRightsCard = () => {

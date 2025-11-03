@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
-import { EmptyState } from "../../components/shared";
-import { SearchInput, FilterSelect, FilterContainer } from "../../components/shared/Filter";
-import type { FilterOption } from "../../components/shared/Filter";
+import { EmptyState } from "../../components/UI";
+import { SearchInput, FilterSelect, FilterContainer } from "../../components/Filters";
+import type { FilterOption } from "../../components/Filters";
 import SurahCard from "./SurahCard";
 import { filterSurahs } from "./utils/filterSurahs";
 import { useDebouncedValue } from "./hooks/useDebouncedValue";

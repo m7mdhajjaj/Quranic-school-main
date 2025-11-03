@@ -1,8 +1,8 @@
 import type { Section, Mark, SectionsTableProps } from "../types/dailyMarks";
-import { Button } from "../../../components/shared/Form";
-import { ProgressBar } from "../../../components/shared/Feedback";
-import { Table } from "../../../components/shared/UI";
-import type { Column } from "../../../components/shared/UI/Table";
+import { Button } from "../../../components/UI";
+import { ProgressBar } from "../../../components/UI";
+import { Table } from "../../../components/UI";
+import type { Column } from "../../../components/UI/Table";
 
 // Extended section type with mark for table rendering
 type SectionWithMark = Section & { mark?: Mark };

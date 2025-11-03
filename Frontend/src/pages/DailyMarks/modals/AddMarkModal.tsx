@@ -1,6 +1,5 @@
-import { Modal, Card } from "../../../components/shared/UI";
-import { Button, RangeSlider } from "../../../components/shared/Form";
-import type { AddMarkModalProps } from "../types/dailyMarks";
+import { Button, RangeSlider, Modal, Card } from '../../../components/UI';
+import type { AddMarkModalProps } from '../types/dailyMarks';
 
 /**
  * Modal for adding a new mark for a student
@@ -18,13 +17,13 @@ export const AddMarkModal = ({
 
   const handleReviewMarkChange = (value: number) => {
     onChange({
-      target: { name: "reviewMark", value: value.toString() },
+      target: { name: 'reviewMark', value: value.toString() },
     } as React.ChangeEvent<HTMLInputElement>);
   };
 
   const handleMemorizationMarkChange = (value: number) => {
     onChange({
-      target: { name: "memorizationMark", value: value.toString() },
+      target: { name: 'memorizationMark', value: value.toString() },
     } as React.ChangeEvent<HTMLInputElement>);
   };
 
@@ -38,19 +37,19 @@ export const AddMarkModal = ({
         <Card className="bg-gray-50 mb-6">
           <h4 className="font-bold text-gray-700 mb-2">معلومات المقطع:</h4>
           <p className="text-sm text-gray-600 mb-1">
-            <span className="font-semibold">التاريخ:</span>{" "}
-            {new Date(selectedSection.date).toLocaleDateString("en-GB", {
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit",
+            <span className="font-semibold">التاريخ:</span>{' '}
+            {new Date(selectedSection.date).toLocaleDateString('en-GB', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
             })}
           </p>
           <p className="text-sm text-gray-600 mb-1">
-            <span className="font-semibold">مقطع المراجعة:</span>{" "}
+            <span className="font-semibold">مقطع المراجعة:</span>{' '}
             {selectedSection.reviewSection}
           </p>
           <p className="text-sm text-gray-600">
-            <span className="font-semibold">مقطع الحفظ:</span>{" "}
+            <span className="font-semibold">مقطع الحفظ:</span>{' '}
             {selectedSection.memorizationSection}
           </p>
         </Card>

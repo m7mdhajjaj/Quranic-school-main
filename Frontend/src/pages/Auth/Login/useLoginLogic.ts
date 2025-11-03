@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../../../hooks/useAuth';
 import { loginStudent, loginTeacher, loginAdmin } from '../../../Api/authApi';
-import { getLogo } from '../../../Api/uploadApi';
+import { useLogo } from '../../../hooks/useLogo';
 import type { User } from '../../../contexts/AuthContext';
 import type { LoginFormData } from '../types';
 
@@ -20,28 +20,8 @@ export const useLoginLogic = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
   const [failedAttempts, setFailedAttempts] = useState(0);
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const [logoLoading, setLogoLoading] = useState(true);
+  const { logoUrl, logoLoading } = useLogo();
   const [isInitialized, setIsInitialized] = useState(false);
-
-  // Load Logo
-  useEffect(() => {
-    const fetchLogo = async () => {
-      setLogoLoading(true);
-      try {
-        const data = await getLogo();
-        if (data.success && data.url) {
-          setLogoUrl(data.url);
-        }
-      } catch (error) {
-        console.error('Error fetching logo:', error);
-      } finally {
-        setLogoLoading(false);
-      }
-    };
-
-    fetchLogo();
-  }, []);
 
   // Navigation and saved credentials
   useEffect(() => {

@@ -4,7 +4,7 @@
 
 import type { WarningBadgeProps } from "../types/warnings";
 import { getWarningLabel, getWarningIcon } from "../utils/warningHelpers";
-import { Badge } from "../../../components/shared/UI/Badge";
+import { Badge } from "../../../components/UI/Badge";
 
 export const WarningBadge: React.FC<WarningBadgeProps> = ({
   type,

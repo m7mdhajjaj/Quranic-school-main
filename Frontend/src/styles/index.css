@@ -58,6 +58,19 @@
   }
 }
 
+@keyframes bounce-slow {
+  0%, 100% { 
+    transform: translateY(0); 
+  }
+  50% { 
+    transform: translateY(-10px); 
+  }
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 3s ease-in-out infinite;
+}
+
 /* ✨ تحسين خط القرآن الكريم */
 .font-arabic {
   font-family:
@@ -424,4 +437,32 @@ input[type='password']::-webkit-credentials-auto-fill-button {
 
 .animate-fade-in {
   animation: fadeInDropdown 0.2s ease-out forwards;
+}
+
+/* Header Animations */
+@keyframes pulse-ring {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0; }
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes gradient-slide {
+  0% { transform: scaleX(0); transform-origin: left; }
+  100% { transform: scaleX(1); transform-origin: left; }
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+.animate-gradient-slide {
+  animation: gradient-slide 0.4s ease-out;
 }

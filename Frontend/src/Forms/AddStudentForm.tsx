@@ -82,7 +82,6 @@ const AddStudentForm: React.FC<Props> = ({
   onSuccess,
   student,
   defaultGroup,
-  restrictToGroup,
 }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({

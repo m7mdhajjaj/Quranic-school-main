@@ -4,7 +4,7 @@
  * Uses shared Card component
  */
 
-import { Card } from "../../../components/shared/UI/Card";
+import { Card } from "../../../components/UI/Card";
 
 export const CriteriaCards = () => {
   return (

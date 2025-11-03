@@ -1,5 +1,5 @@
 import { Search } from 'lucide-react';
-import { Input } from '../../components/shared';
+import { Input } from '../../components/UI';
 
 interface SearchBarProps {
   value: string;

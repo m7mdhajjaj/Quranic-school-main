@@ -1,4 +1,4 @@
-import { Card, FeatureList } from '../../../components/shared';
+import { Card, FeatureList } from '../../../components/UI';
 import { Database, Target } from 'lucide-react';
 
 const DataCollectionCard = () => {

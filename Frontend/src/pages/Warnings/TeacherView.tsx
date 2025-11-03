@@ -3,9 +3,9 @@
 // ============================================================================
 
 import type { TeacherViewProps, Group } from "./types/warnings";
-import { LoadingSpinner } from "../../components/shared/Feedback/LoadingSpinner";
-import { EmptyState } from "../../components/shared/UI/EmptyState";
-import { Button } from "../../components/shared/Form/Button";
+import { LoadingSpinner } from "../../components/UI/LoadingSpinner";
+import { EmptyState } from "../../components/UI/EmptyState";
+import { Button } from "../../components/UI/Button";
 import { GroupCard, StudentCard, StatisticsPanel } from "./components";
 import { ArrowRight, BarChart3 } from "lucide-react";
 

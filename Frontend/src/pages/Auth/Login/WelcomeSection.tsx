@@ -1,5 +1,5 @@
 import React from 'react';
-import { Logo, Badge, FeatureList } from '../../../components/shared';
+import { Logo, Badge, FeatureList } from '../../../components/UI';
 import { Star, BookOpen, BarChart, FileText } from 'lucide-react';
 
 interface WelcomeSectionProps {
@@ -43,17 +43,22 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({
           </Badge>
         </div>
 
-        {/* Additional Info */}
+        {/* Additional Info - الآن مع الميزات الجديدة! */}
         <FeatureList
           align="start"
+          variant="default"  // يمكن تغييره إلى "checklist" أو "minimal"
+          spacing="normal"   // ميزة جديدة: tight/normal/relaxed
           items={[
             {
               icon: <BookOpen className="w-5 h-5" />,
-              text: "إدارة شاملة للطلاب والمعلمين"
+              text: "إدارة شاملة للطلاب والمعلمين",
+              // يمكن إضافة description للميزات
+              // description: "نظام متكامل لإدارة البيانات"
             },
             {
               icon: <BarChart className="w-5 h-5" />,
-              text: "تتبع الحضور والأداء الأكاديمي"
+              text: "تتبع الحضور والأداء الأكاديمي",
+              // يمكن إضافة completed: true إذا كانت الميزة نشطة
             },
             {
               icon: <FileText className="w-5 h-5" />,

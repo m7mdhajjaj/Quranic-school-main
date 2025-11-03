@@ -21,10 +21,10 @@ import {
   ShieldCheck,
   Trash2,
 } from 'lucide-react';
-import Avatar from '../components/common/Avatar';
+import Avatar from '../components/Avatar/Avatar';
 import { useAuth } from '../hooks/useAuth';
 import { showSuccessMessage, showErrorMessage } from '../components/utils/sweetalertUtils';
-import ChangePasswordModal from './Auth/ChangePass';
+import ChangePasswordModal from './Auth/ChangePass/ChangePass';
 import {
   getUserWithFallback,
   updateUserById,

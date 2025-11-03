@@ -1,4 +1,4 @@
-import { Card, FeatureList } from '../../../components/shared';
+import { Card, FeatureList } from '../../../components/UI';
 import { Check, X } from 'lucide-react';
 
 const UsageRulesCard = () => {

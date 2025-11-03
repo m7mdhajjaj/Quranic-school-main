@@ -26,7 +26,7 @@ import {
 } from "../Api/studentApi";
 
 import AddStudentFormWithYup from "../Forms/AddStudentForm";
-import ResponsivePagination from "../components/shared/Navigation/ResponsivePagination";
+import ResponsivePagination from "../components/UI/ResponsivePagination";
 import {
   showCenteredSwal,
   showSuccessMessage,

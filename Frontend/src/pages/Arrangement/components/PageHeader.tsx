@@ -4,7 +4,7 @@
  * Uses shared PageHeader component
  */
 
-import SharedPageHeader from "../../../components/shared/Layout/PageHeader";
+import SharedPageHeader from "../../../components/UI/PageHeader";
 import { getMonthName } from "../utils/arrangementHelpers";
 import { Trophy } from "lucide-react";
 

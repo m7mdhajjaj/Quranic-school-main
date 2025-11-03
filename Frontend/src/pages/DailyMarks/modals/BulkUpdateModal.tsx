@@ -1,5 +1,4 @@
-import { Modal, Card } from "../../../components/shared/UI";
-import { Button, Input } from "../../../components/shared/Form";
+import { Modal, Card ,Button, Input} from "../../../components/UI";
 import { RefreshCw } from "lucide-react";
 import type { BulkUpdateModalProps } from "../types/dailyMarks";
 

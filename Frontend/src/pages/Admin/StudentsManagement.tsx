@@ -30,8 +30,8 @@ import {
 } from '../../Api/studentApi';
 
 import AddStudentFormWithYup from '../../Forms/AddStudentForm';
-import ResponsivePagination from '../../components/shared/Navigation/ResponsivePagination';
-import Avatar from '../../components/common/Avatar';
+import ResponsivePagination from '../../components/UI/ResponsivePagination';
+import Avatar from '../../components/Avatar/Avatar';
 import {
   showCenteredSwal,
   showSuccessMessage,

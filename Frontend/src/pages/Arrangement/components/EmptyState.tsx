@@ -4,7 +4,7 @@
  * Uses shared EmptyState component
  */
 
-import { EmptyState as SharedEmptyState } from "../../../components/shared/UI/EmptyState";
+import { EmptyState as SharedEmptyState } from "../../../components/UI/EmptyState";
 import { getMonthName } from "../utils/arrangementHelpers";
 
 interface EmptyStateProps {

@@ -2,7 +2,7 @@ import type { TeacherViewProps } from "./types/dailyMarks";
 import { StudentList } from "./components/StudentList";
 import { SectionsTable } from "./components/SectionsTable";
 import { AveragesBar } from "./components/AveragesBar";
-import { EmptyState, Card } from "../../components/shared/UI";
+import { EmptyState, Card } from "../../components/UI";
 
 /**
  * Teacher view component - 2-column layout with student list and marks table

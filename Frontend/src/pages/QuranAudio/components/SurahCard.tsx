@@ -1,7 +1,7 @@
 import React, { memo, useCallback } from "react";
 import type { Surah } from "../../../Api/quranAudioApi";
-import { Card, Badge } from "../../../components/shared/UI";
-import { Button } from "../../../components/shared/Form";
+import { Card, Badge } from "../../../components/UI";
+import { Button } from "../../../components/UI";
 import { Book, MapPin } from "lucide-react";
 
 interface SurahCardProps {

@@ -1,4 +1,4 @@
-import { Card } from '../../../components/shared';
+import { Card } from '../../../components/UI';
 
 interface ValueCardProps {
   icon: React.ReactNode;

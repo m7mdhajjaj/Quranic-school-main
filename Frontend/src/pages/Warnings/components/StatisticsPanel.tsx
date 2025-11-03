@@ -3,8 +3,8 @@
 // ============================================================================
 
 import type { StatisticsPanelProps } from "../types/warnings";
-import { Card } from "../../../components/shared/UI/Card";
-import { StatCard } from "../../../components/shared/Features/StatCard";
+import { Card } from "../../../components//UI/Card";
+import { StatCard } from "../../../components//UI/StatCard";
 import {
   getWarningLabel,
   getWarningIcon,

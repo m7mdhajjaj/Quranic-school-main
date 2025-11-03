@@ -24,10 +24,10 @@ import {
 } from './modals';
 import FilterButtons, {
   type FilterButton,
-} from '../../components/shared/Filter/FilterButtons';
-import SearchInput from '../../components/shared/Filter/SearchInput';
-import { EmptyState } from '../../components/shared/UI/EmptyState';
-import { Alert } from '../../components/shared/UI/Alert';
+} from '../../components/Filters/FilterButtons';
+import SearchInput from '../../components/Filters/SearchInput';
+import { EmptyState } from '../../components/UI/EmptyState';
+import { Alert } from '../../components/UI/Alert';
 
 const ActivitiesPage = () => {
   // Socket Connection Hook
@@ -220,20 +220,18 @@ const ActivitiesPage = () => {
   };
 
   // Filter logic
-  const filteredActivities = activities
-    .filter((activity) => {
-      // فلتر حسب التصنيف
-      const matchesCategory =
-        filter === 'الكل' || activity.category === filter;
+  const filteredActivities = activities.filter((activity) => {
+    // فلتر حسب التصنيف
+    const matchesCategory = filter === 'الكل' || activity.category === filter;
 
-      // فلتر حسب البحث
-      const matchesSearch =
-        !searchTerm ||
-        activity.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        activity.description.toLowerCase().includes(searchTerm.toLowerCase());
+    // فلتر حسب البحث
+    const matchesSearch =
+      !searchTerm ||
+      activity.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      activity.description.toLowerCase().includes(searchTerm.toLowerCase());
 
-      return matchesCategory && matchesSearch;
-    });
+    return matchesCategory && matchesSearch;
+  });
 
   const categories = [
     'الكل',
@@ -310,9 +308,9 @@ const ActivitiesPage = () => {
                 action={
                   isTeacherOrAdmin
                     ? {
-                      label: 'إضافة نشاط جديد',
-                      onClick: openAddModal,
-                    }
+                        label: 'إضافة نشاط جديد',
+                        onClick: openAddModal,
+                      }
                     : undefined
                 }
               />

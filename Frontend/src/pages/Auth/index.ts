@@ -5,7 +5,7 @@
 
 export { default as ForgotPasswordModal } from './ResetPassword/ForgotPasswordModal';
 export { default as LoginPage } from './Login';
-export { default as ChangePasswordPage } from './ChangePass';
+export { default as ChangePasswordPage } from './ChangePass/ChangePass';
 
 // تصدير الأنواع (Types)
 export type {

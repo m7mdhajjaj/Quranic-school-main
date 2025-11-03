@@ -8,7 +8,7 @@ import {
   FilterSelect,
   FilterChips,
   type FilterChip
-} from "../../components/shared/Filter";
+} from "../../components/Filters";
 import { validateReportFilters } from "../../Validation/reportValidation";
 
 interface ReportFiltersProps {

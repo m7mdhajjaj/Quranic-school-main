@@ -1,5 +1,4 @@
-import { Modal } from "../../../components/shared/UI";
-import { Button, Input } from "../../../components/shared/Form";
+import { Modal,Button, Input } from "../../../components/UI";
 import { Calendar, Edit } from "lucide-react";
 import type { EditSectionModalProps } from "../types/dailyMarks";
 

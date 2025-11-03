@@ -20,7 +20,7 @@ import {
 } from 'react-icons/fa';
 import { useAuth } from '../../hooks/useAuth';
 import { useTeachersSocket } from '../../Socket';
-import { useSounds } from '../../hooks/useSounds';
+import { useSounds } from '../../components/Hooks/useSounds';
 
 import { 
   getAllTeachers,
@@ -34,8 +34,8 @@ import {
 } from '../../Api/teacherApi';
 import type { TeacherFormData } from '../../Validation/teacherValidation';
 import EnhancedTeacherForm from '../../Forms/AddTeacherForm';
-import ResponsivePagination from '../../components/shared/Navigation/ResponsivePagination';
-import Avatar from '../../components/common/Avatar';
+import ResponsivePagination from '../../components/UI/ResponsivePagination';
+import Avatar from '../../components/Avatar/Avatar';
 import { showCenteredSwal, showSuccessMessage, showErrorMessage } from "../../components/utils/sweetalertUtils";
 
 type SortField = 'teacherId' | 'firstName' | 'age' | 'email';

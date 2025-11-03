@@ -25,7 +25,7 @@ import { useFirebaseMessaging } from './hooks/useFirebaseMessaging';
 // ============================================================================
 // Layout Components
 // ============================================================================
-import { Layout } from './components/shared/Layout';
+import { Layout } from './components/Layout';
 
 // ============================================================================
 // Page Components - General
@@ -93,20 +93,20 @@ import GroupManagement from './pages/Admin/GroupManagement';
 // Other Components
 // ============================================================================
 import Soon from './pages/Soon';
-import NotificationPermissionPrompt from './Notifications/NotificationPermissionPrompt';
+import NotificationPermissionPrompt from './components/Notifications/NotificationPermissionPrompt';
 
 // ============================================================================
 // Admin Routes Component
 // ============================================================================
 /**
  * Handles all routing for admin users
- * - Shows AdminHeader instead of regular Header
+ * - Shows unified Header with admin-specific navigation items
  * - Provides access to admin dashboard and management pages
  * - Footer is now displayed for admin pages
  */
 const AdminRoutes: React.FC = () => {
   return (
-    <Layout role="admin">
+    <Layout>
       <Routes>
         {/* ====== Admin Dashboard Routes ====== */}
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
@@ -140,14 +140,14 @@ const AdminRoutes: React.FC = () => {
 // ============================================================================
 /**
  * Handles all routing for teacher users
- * - Shows regular Header (not AdminHeader)
+ * - Shows unified Header with teacher-specific navigation
  * - Has access to management features and academic tools
  * - Can view and manage student data
  * - Restricted from admin-only pages
  */
 const TeacherRoutes: React.FC = () => {
   return (
-    <Layout role="teacher">
+    <Layout>
       <Routes>
         {/* ====== Home & Authentication ====== */}
         <Route path="/" element={<Home />} />
@@ -204,14 +204,14 @@ const TeacherRoutes: React.FC = () => {
 // ============================================================================
 /**
  * Handles all routing for student users
- * - Shows regular Header (not AdminHeader)
+ * - Shows unified Header with student-specific navigation
  * - Limited access compared to teachers
  * - Can view their own data and resources
  * - Cannot access management or admin features
  */
 const StudentRoutes: React.FC = () => {
   return (
-    <Layout role="student">
+    <Layout>
       <Routes>
         {/* ====== Home & Authentication ====== */}
         <Route path="/" element={<Home />} />

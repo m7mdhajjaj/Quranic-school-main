@@ -3,9 +3,9 @@
 // ============================================================================
 
 import type { StudentCardProps, WarningType } from "../types/warnings";
-import { Card } from "../../../components/shared/UI/Card";
-import Avatar from "../../../components/common/Avatar";
-import { Button } from "../../../components/shared/Form/Button";
+import { Card } from "../../../components/UI/Card";
+import Avatar from "../../../components/Avatar/Avatar";
+import { Button } from "../../../components/UI/Button";
 import { WarningBadge } from "./WarningBadge";
 
 export const StudentCard: React.FC<StudentCardProps> = ({
@@ -47,9 +47,8 @@ export const StudentCard: React.FC<StudentCardProps> = ({
         {/* معلومات الطالب */}
         <div className="flex items-center gap-4 flex-1 min-w-[200px]">
           <Avatar
-            userName={student.firstName}
+            user={student}
             size="lg"
-            gender={student.firstName ? "male" : "male"}
           />
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2 flex-wrap">

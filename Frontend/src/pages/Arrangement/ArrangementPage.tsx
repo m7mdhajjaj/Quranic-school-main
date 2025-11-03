@@ -13,8 +13,8 @@ import {
   getCurrentPeriod,
 } from "./utils/arrangementHelpers";
 import type { User } from "./types/arrangement";
-import { LoadingSpinner } from "../../components/shared/Feedback/LoadingSpinner";
-import { Alert } from "../../components/shared/UI/Alert";
+import { LoadingSpinner } from "../../components/UI/LoadingSpinner";
+import { Alert } from "../../components/UI/Alert";
 import { FilterPanel } from "./components/FilterPanel";
 import { PageHeader } from "./components/PageHeader";
 import { Podium } from "./components/Podium";

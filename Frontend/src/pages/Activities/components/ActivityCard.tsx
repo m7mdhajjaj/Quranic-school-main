@@ -1,10 +1,7 @@
 import React from 'react';
-import { Card } from '../../../components/shared/UI/Card';
-import { Badge } from '../../../components/shared/UI/Badge';
-import { DropdownMenu } from '../../../components/shared/UI/DropdownMenu';
-import { Button } from '../../../components/shared/Form/Button';
+import { Card, Badge, DropdownMenu, Button } from '../../../components/UI';
+import AddedAgo from '../../../components/UI/AddedAgo';
 import type { Activity } from '../types/activities';
-import AddedAgo from '../../../components/common/AddedAgo';
 import { Edit, Trash2, MoreHorizontal } from 'lucide-react';
 
 interface ActivityCardProps {

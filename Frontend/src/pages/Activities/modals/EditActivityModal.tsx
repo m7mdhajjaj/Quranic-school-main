@@ -1,6 +1,5 @@
 import React from "react";
-import { Modal } from "../../../components/shared/UI";
-import { Button, Input, Select, Textarea, ImageUpload, DatePicker } from "../../../components/shared/Form";
+import { Button,Modal, Input, Select, Textarea, ImageUpload, DatePicker } from "../../../components/UI";
 import { Edit, Tag } from "lucide-react";
 import type { ActivityFormData } from "../types/activities";
 import { API_BASE_URL } from "../../../config/config";

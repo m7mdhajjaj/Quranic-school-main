@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, PageHeader } from '../../../components/shared';
+import { Card, PageHeader } from '../../../components/UI';
 
 interface LoginCardProps {
   children: React.ReactNode;

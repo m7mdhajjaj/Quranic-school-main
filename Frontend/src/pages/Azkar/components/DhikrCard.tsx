@@ -1,7 +1,4 @@
-import { Card } from "../../../components/shared/UI";
-import { Button } from "../../../components/shared/Form";
-import { ProgressBar } from "../../../components/shared/Feedback";
-
+import { Card,Button ,ProgressBar} from "../../../components/UI";
 interface DhikrCardProps {
   text: string;
   count: number;

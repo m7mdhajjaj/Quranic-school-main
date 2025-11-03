@@ -1,13 +1,13 @@
 import React from 'react';
-import { Modal } from '../../../components/shared/UI';
 import {
+  Modal,
   Button,
   Input,
   Select,
   Textarea,
   ImageUpload,
   DatePicker,
-} from '../../../components/shared/Form';
+} from '../../../components/UI';
 import { Plus, Tag } from 'lucide-react';
 import type { ActivityFormData } from '../types/activities';
 

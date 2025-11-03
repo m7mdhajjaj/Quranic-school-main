@@ -1,6 +1,5 @@
-import PageHeader from "../../../components/shared/Layout/PageHeader";
-import { Button } from "../../../components/shared/Form";
-import { Badge } from "../../../components/shared/UI";
+import PageHeader from "../../../components/UI/PageHeader";
+import { Button, Badge } from "../../../components/UI";
 import type { ReactNode } from "react";
 
 interface AzkarHeaderProps {

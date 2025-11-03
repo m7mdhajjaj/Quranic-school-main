@@ -1,5 +1,5 @@
 import { memo } from "react";
-import ResponsivePagination from "../../components/shared/Navigation/ResponsivePagination";
+import ResponsivePagination from "../../components/UI/ResponsivePagination";
 
 interface PaginationProps {
   currentPage: number;

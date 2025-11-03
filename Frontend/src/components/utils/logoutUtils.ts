@@ -1,6 +1,6 @@
 import Swal from 'sweetalert2';
 import { showCenteredSwal, showErrorMessage } from './sweetalertUtils';
-import { soundPlayer } from '../../hooks/useSounds';
+import { soundPlayer } from '../Hooks/useSounds';
 
 interface LogoutOptions {
   userType?: 'admin' | 'user';

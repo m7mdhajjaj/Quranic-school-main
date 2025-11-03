@@ -1,4 +1,4 @@
-import { Card } from "../../../components/shared/UI";
+import { Card } from "../../../components/UI";
 
 const InfoMessage = () => {
   return (

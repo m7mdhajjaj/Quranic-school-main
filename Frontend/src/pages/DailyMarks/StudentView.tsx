@@ -1,7 +1,7 @@
 import type { StudentViewProps } from "./types/dailyMarks";
 import { SectionsTable } from "./components/SectionsTable";
 import { AveragesBar } from "./components/AveragesBar";
-import { Card } from "../../components/shared/UI";
+import { Card } from "../../components/UI";
 
 /**
  * Student view component - single table layout with averages

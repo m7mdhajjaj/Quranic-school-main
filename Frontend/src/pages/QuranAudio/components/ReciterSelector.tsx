@@ -1,6 +1,6 @@
 import React, { useCallback } from "react";
 import type { Reciter } from "../../../Api/quranAudioApi";
-import { Card } from "../../../components/shared/UI";
+import { Card } from "../../../components/UI";
 
 interface ReciterSelectorProps {
   reciters: Reciter[];

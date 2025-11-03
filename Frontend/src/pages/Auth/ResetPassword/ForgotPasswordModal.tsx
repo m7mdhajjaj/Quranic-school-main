@@ -7,7 +7,8 @@ import {
   validateResetPasswordData,
 } from '../../../Validation/forgotPasswordValidation';
 import { showSuccessMessage, showErrorMessage } from '../../../components/utils/sweetalertUtils';
-import { Modal, Button, Input, Alert, PasswordRequirements, PasswordStrengthIndicator } from '../../../components/shared';
+import { Modal, Button, Input, Alert } from '../../../components/UI';
+import { PasswordRequirements, PasswordStrengthIndicator } from '../../../components/Auth';
 import type {
   ForgotPasswordModalProps,
   ForgotPasswordFormData,

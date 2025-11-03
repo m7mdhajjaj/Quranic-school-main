@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
 import { Users, BookOpen, GraduationCap, Heart, Clock, UserPlus, MessageCircle } from "lucide-react";
-import { Card } from "../../components/shared";
+import { Card } from "../../components/UI/Card";
 
 const Goals = () => {
   const [loading, setLoading] = useState(true);
