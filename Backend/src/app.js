@@ -107,7 +107,7 @@ app.use(
 );
 app.use("/api/exams", require("./routes/ExamRoutes/examRoutes"));
 app.use("/api/exam-marks", require("./routes/ExamMarkRoutes/examMarkRoutes"));
-app.use("/api/sessions", require("./routes/sessionRoutes"));
+app.use("/api/sessions", require("./routes/timetableRoutes/TimeTableRoutes"));
 app.use("/api/groups", require("./routes/groupRoutes"));
 app.use("/api/dashboard", require("./routes/dashboardRoutes"));
 app.use("/api/points-game", require("./routes/pointsGameRoutes")); // لعبة النقاط والشارات
