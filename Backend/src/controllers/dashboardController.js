@@ -1,17 +1,17 @@
-const Student = require("../schema/Student");
-const Teacher = require("../schema/Teacher");
-const Exam = require("../schema/Exam");
-const Group = require("../schema/Group");
-const Activity = require("../schema/Activity");
-const News = require("../schema/News");
-const DailyMark = require("../schema/DailyMark");
-const ExamMark = require("../schema/ExamMark");
-const Attendance = require("../schema/Attendance");
+const Student = require('../schema/Student');
+const Teacher = require('../schema/Teacher');
+const Exam = require('../schema/Exam');
+const Group = require('../schema/Group');
+const Activity = require('../schema/Activity');
+const News = require('../schema/News');
+const DailyMark = require('../schema/DailyMark');
+const ExamMark = require('../schema/ExamMark');
+const Attendance = require('../schema/Attendance');
 
 // Get dashboard statistics - optimized for performance
 exports.getDashboardStats = async (req, res) => {
   try {
-    console.log("📊 جلب إحصائيات لوحة التحكم...");
+    console.log('📊 جلب إحصائيات لوحة التحكم...');
 
     // Use Promise.all for parallel execution of all database queries
     const [
@@ -51,7 +51,7 @@ exports.getDashboardStats = async (req, res) => {
         {
           $group: {
             _id: null,
-            averageMarks: { $avg: "$mark" },
+            averageMarks: { $avg: '$mark' },
           },
         },
       ]),
@@ -61,7 +61,7 @@ exports.getDashboardStats = async (req, res) => {
         {
           $group: {
             _id: null,
-            averageExamMarks: { $avg: { $toDouble: "$mark" } },
+            averageExamMarks: { $avg: { $toDouble: '$mark' } },
           },
         },
       ]),
@@ -81,7 +81,7 @@ exports.getDashboardStats = async (req, res) => {
             totalAttendance: { $sum: 1 },
             presentCount: {
               $sum: {
-                $cond: [{ $eq: ["$status", "present"] }, 1, 0],
+                $cond: [{ $eq: ['$status', 'present'] }, 1, 0],
               },
             },
           },
@@ -97,7 +97,10 @@ exports.getDashboardStats = async (req, res) => {
       }),
 
       // Get recent marks for trend analysis
-      DailyMark.find().sort({ createdAt: -1 }).limit(100).select("mark createdAt"),
+      DailyMark.find()
+        .sort({ createdAt: -1 })
+        .limit(100)
+        .select('mark createdAt'),
     ]);
 
     // Calculate attendance rate
@@ -138,18 +141,18 @@ exports.getDashboardStats = async (req, res) => {
       recentMarksCount: recentMarks.length,
     };
 
-    console.log("✅ تم جلب الإحصائيات بنجاح:", stats);
+    console.log('✅ تم جلب الإحصائيات بنجاح:', stats);
 
     res.status(200).json({
       success: true,
-      message: "تم جلب إحصائيات لوحة التحكم بنجاح",
+      message: 'تم جلب إحصائيات لوحة التحكم بنجاح',
       data: stats,
     });
   } catch (error) {
-    console.error("❌ خطأ في جلب إحصائيات لوحة التحكم:", error);
+    console.error('❌ خطأ في جلب إحصائيات لوحة التحكم:', error);
     res.status(500).json({
       success: false,
-      message: "خطأ في جلب إحصائيات لوحة التحكم",
+      message: 'خطأ في جلب إحصائيات لوحة التحكم',
       error: error.message,
     });
   }
@@ -158,7 +161,7 @@ exports.getDashboardStats = async (req, res) => {
 // Get detailed charts data for dashboard
 exports.getDashboardCharts = async (req, res) => {
   try {
-    console.log("📈 جلب بيانات الرسوم البيانية...");
+    console.log('📈 جلب بيانات الرسوم البيانية...');
 
     const [
       groupDistribution,
@@ -170,18 +173,18 @@ exports.getDashboardCharts = async (req, res) => {
       Student.aggregate([
         {
           $lookup: {
-            from: "groups",
-            localField: "group",
-            foreignField: "_id",
-            as: "groupInfo",
+            from: 'groups',
+            localField: 'group',
+            foreignField: '_id',
+            as: 'groupInfo',
           },
         },
         {
-          $unwind: { path: "$groupInfo", preserveNullAndEmptyArrays: true },
+          $unwind: { path: '$groupInfo', preserveNullAndEmptyArrays: true },
         },
         {
           $group: {
-            _id: "$groupInfo.name",
+            _id: '$groupInfo.name',
             count: { $sum: 1 },
           },
         },
@@ -194,7 +197,7 @@ exports.getDashboardCharts = async (req, res) => {
       Student.aggregate([
         {
           $group: {
-            _id: "$gender",
+            _id: '$gender',
             count: { $sum: 1 },
           },
         },
@@ -204,12 +207,12 @@ exports.getDashboardCharts = async (req, res) => {
       DailyMark.aggregate([
         {
           $bucket: {
-            groupBy: "$mark",
+            groupBy: '$mark',
             boundaries: [0, 50, 70, 85, 100],
-            default: "other",
+            default: 'other',
             output: {
               count: { $sum: 1 },
-              avgMark: { $avg: "$mark" },
+              avgMark: { $avg: '$mark' },
             },
           },
         },
@@ -227,19 +230,19 @@ exports.getDashboardCharts = async (req, res) => {
         {
           $group: {
             _id: {
-              year: { $year: "$date" },
-              month: { $month: "$date" },
+              year: { $year: '$date' },
+              month: { $month: '$date' },
             },
             total: { $sum: 1 },
             present: {
               $sum: {
-                $cond: [{ $eq: ["$status", "present"] }, 1, 0],
+                $cond: [{ $eq: ['$status', 'present'] }, 1, 0],
               },
             },
           },
         },
         {
-          $sort: { "_id.year": 1, "_id.month": 1 },
+          $sort: { '_id.year': 1, '_id.month': 1 },
         },
       ]),
     ]);
@@ -251,18 +254,18 @@ exports.getDashboardCharts = async (req, res) => {
       attendanceByMonth,
     };
 
-    console.log("✅ تم جلب بيانات الرسوم البيانية بنجاح");
+    console.log('✅ تم جلب بيانات الرسوم البيانية بنجاح');
 
     res.status(200).json({
       success: true,
-      message: "تم جلب بيانات الرسوم البيانية بنجاح",
+      message: 'تم جلب بيانات الرسوم البيانية بنجاح',
       data: chartsData,
     });
   } catch (error) {
-    console.error("❌ خطأ في جلب بيانات الرسوم البيانية:", error);
+    console.error('❌ خطأ في جلب بيانات الرسوم البيانية:', error);
     res.status(500).json({
       success: false,
-      message: "خطأ في جلب بيانات الرسوم البيانية",
+      message: 'خطأ في جلب بيانات الرسوم البيانية',
       error: error.message,
     });
   }

@@ -101,41 +101,6 @@ const validateTeacher = (teacherId) => {
 };
 
 /**
- * Validate group level/grade
- */
-const validateLevel = (level) => {
-  if (!level || level.toString().trim() === "") {
-    return { isValid: true, value: "" }; // Optional field
-  }
-
-  const levelStr = level.toString().trim();
-  const validLevels = [
-    "مبتدئ",
-    "متوسط",
-    "متقدم",
-    "تحفيظ",
-    "الصف الأول",
-    "الصف الثاني",
-    "الصف الثالث",
-    "الصف الرابع",
-    "الصف الخامس",
-    "الصف السادس",
-    "الصف السابع",
-    "الصف الثامن",
-    "الصف التاسع",
-    "الصف العاشر",
-    "الصف الحادي عشر",
-    "الصف الثاني عشر",
-  ];
-
-  if (!validLevels.includes(levelStr)) {
-    return { isValid: true, value: levelStr }; // Allow custom levels
-  }
-
-  return { isValid: true, value: levelStr };
-};
-
-/**
  * Validate maximum capacity
  */
 const validateCapacity = (capacity) => {
@@ -151,10 +116,10 @@ const validateCapacity = (capacity) => {
     };
   }
 
-  if (capacityNum > 100) {
+  if (capacityNum > 50) {
     return {
       isValid: false,
-      message: "سعة المجموعة لا يمكن أن تزيد عن 100 طالب",
+      message: "سعة المجموعة لا يمكن أن تزيد عن 50 طالب",
     };
   }
 
@@ -162,67 +127,31 @@ const validateCapacity = (capacity) => {
 };
 
 /**
- * Validate schedule array
+ * Validate schedule string (matches Schema definition)
  */
 const validateSchedule = (schedule) => {
-  if (!schedule || !Array.isArray(schedule)) {
-    return { isValid: true, value: [] }; // Optional field
+  if (!schedule || schedule.toString().trim() === "") {
+    return { isValid: true, value: "" }; // Optional field
   }
 
-  const validDays = [
-    "الأحد",
-    "الإثنين",
-    "الثلاثاء",
-    "الأربعاء",
-    "الخميس",
-    "الجمعة",
-    "السبت",
-  ];
-  const validatedSchedule = [];
-
-  for (const session of schedule) {
-    if (!session.day || !session.time) {
-      return { isValid: false, message: "كل جلسة يجب أن تحتوي على يوم ووقت" };
-    }
-
-    if (!validDays.includes(session.day)) {
-      return { isValid: false, message: `يوم غير صحيح: ${session.day}` };
-    }
-
-    // Validate time format (HH:MM)
-    if (!/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(session.time)) {
-      return {
-        isValid: false,
-        message: `وقت غير صحيح: ${session.time} (يجب أن يكون بصيغة HH:MM)`,
-      };
-    }
-
-    validatedSchedule.push({
-      day: session.day,
-      time: session.time,
-      duration: session.duration || 60, // Default 60 minutes
-    });
+  const scheduleStr = schedule.toString().trim();
+  
+  if (scheduleStr.length > 100) {
+    return {
+      isValid: false,
+      message: "الجدول الزمني يجب ألا يتجاوز 100 حرف",
+    };
   }
 
-  return { isValid: true, value: validatedSchedule };
-};
-
-/**
- * Validate group type
- */
-const validateGroupType = (type) => {
-  if (!type || type.toString().trim() === "") {
-    return { isValid: true, value: "عادية" }; // Default type
+  // Allow Arabic text, numbers, spaces, colons, and hyphens
+  if (!/^[\u0600-\u06FF\s0-9:-]*$/.test(scheduleStr)) {
+    return {
+      isValid: false,
+      message: "صيغة الجدول غير صحيحة",
+    };
   }
 
-  const validTypes = ["عادية", "تحفيظ", "تلاوة", "تجويد", "مراجعة", "اختبارات"];
-  const typeStr = type.toString().trim();
-
-  if (!validTypes.includes(typeStr)) {
-    return { isValid: true, value: typeStr }; // Allow custom types
-  }
-
-  return { isValid: true, value: typeStr };
+  return { isValid: true, value: scheduleStr };
 };
 
 /**
@@ -291,15 +220,6 @@ const validateGroupData = async (req, res, next) => {
       }
     }
 
-    if (data.level !== undefined) {
-      const levelValidation = validateLevel(data.level);
-      if (!levelValidation.isValid) {
-        errors.push(levelValidation.message);
-      } else {
-        validatedData.level = levelValidation.value;
-      }
-    }
-
     if (data.capacity !== undefined) {
       const capacityValidation = validateCapacity(data.capacity);
       if (!capacityValidation.isValid) {
@@ -318,44 +238,9 @@ const validateGroupData = async (req, res, next) => {
       }
     }
 
-    if (data.type !== undefined) {
-      const typeValidation = validateGroupType(data.type);
-      if (!typeValidation.isValid) {
-        errors.push(typeValidation.message);
-      } else {
-        validatedData.type = typeValidation.value;
-      }
-    }
-
     // Boolean fields
     if (data.isActive !== undefined) {
       validatedData.isActive = Boolean(data.isActive);
-    }
-
-    // Date fields
-    if (data.startDate !== undefined && data.startDate) {
-      const startDate = new Date(data.startDate);
-      if (isNaN(startDate.getTime())) {
-        errors.push("تاريخ البداية غير صحيح");
-      } else {
-        validatedData.startDate = startDate;
-      }
-    }
-
-    if (data.endDate !== undefined && data.endDate) {
-      const endDate = new Date(data.endDate);
-      if (isNaN(endDate.getTime())) {
-        errors.push("تاريخ النهاية غير صحيح");
-      } else {
-        validatedData.endDate = endDate;
-      }
-    }
-
-    // Validate date logic
-    if (validatedData.startDate && validatedData.endDate) {
-      if (validatedData.startDate >= validatedData.endDate) {
-        errors.push("تاريخ البداية يجب أن يكون قبل تاريخ النهاية");
-      }
     }
 
     // Check for validation errors
@@ -383,14 +268,70 @@ const validateGroupData = async (req, res, next) => {
   }
 };
 
+/**
+ * Validation middleware for renaming a group
+ */
+const validateRenameGroup = async (req, res, next) => {
+  try {
+    console.log("🔍 بدء التحقق من بيانات إعادة التسمية...");
+
+    const { oldName, newName } = req.body;
+    const errors = [];
+
+    // Validate oldName
+    if (!isRequired(oldName)) {
+      errors.push("الاسم القديم للمجموعة مطلوب");
+    } else {
+      const oldNameValidation = validateGroupName(oldName);
+      if (!oldNameValidation.isValid) {
+        errors.push("الاسم القديم: " + oldNameValidation.message);
+      }
+    }
+
+    // Validate newName
+    if (!isRequired(newName)) {
+      errors.push("الاسم الجديد للمجموعة مطلوب");
+    } else {
+      const newNameValidation = validateGroupName(newName);
+      if (!newNameValidation.isValid) {
+        errors.push("الاسم الجديد: " + newNameValidation.message);
+      }
+    }
+
+    // Check if names are different
+    if (oldName && newName && oldName.trim() === newName.trim()) {
+      errors.push("الاسم الجديد يجب أن يكون مختلفاً عن الاسم القديم");
+    }
+
+    // Check for validation errors
+    if (errors.length > 0) {
+      console.log("❌ أخطاء في التحقق من بيانات إعادة التسمية:", errors);
+      return res.status(400).json({
+        success: false,
+        message: "بيانات إعادة التسمية غير صحيحة",
+        errors: errors,
+      });
+    }
+
+    console.log("✅ تم التحقق من بيانات إعادة التسمية بنجاح");
+    next();
+  } catch (error) {
+    console.error("❌ خطأ في التحقق من بيانات إعادة التسمية:", error);
+    res.status(500).json({
+      success: false,
+      message: "خطأ في خادم التحقق من البيانات",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   validateGroupData,
+  validateRenameGroup,
   sanitizeGroupData,
   validateGroupName,
   validateDescription,
   validateTeacher,
-  validateLevel,
   validateCapacity,
   validateSchedule,
-  validateGroupType,
 };
