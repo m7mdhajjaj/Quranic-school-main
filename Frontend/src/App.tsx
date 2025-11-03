@@ -9,91 +9,91 @@
 // ============================================================================
 // External Dependencies
 // ============================================================================
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import React from 'react';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import React from "react";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 // ============================================================================
 // Contexts & Hooks
 // ============================================================================
-import { AuthProvider } from './contexts/AuthContext';
-import { UserStatusProvider } from './contexts/UserStatusContext';
-import { useAuth } from './hooks/useAuth';
-import { useFirebaseMessaging } from './hooks/useFirebaseMessaging';
+import { AuthProvider } from "./contexts/AuthContext";
+import { UserStatusProvider } from "./contexts/UserStatusContext";
+import { useAuth } from "./hooks/useAuth";
+import { useFirebaseMessaging } from "./hooks/useFirebaseMessaging";
 
 // ============================================================================
 // Layout Components
 // ============================================================================
-import { Layout } from './components/Layout';
+import { Layout } from "./components/Layout";
 
 // ============================================================================
 // Page Components - General
 // ============================================================================
-import Home from './pages/Home';
-import Login from './pages/Auth/Login/index';
-import Profile from './pages/Profile';
-import NotFound from './pages/NotFound';
-import Privacy from './pages/Privacy/Privacy';
-import Terms from './pages/Terms';
-import Contact from './pages/Contact/components/Contact';
+import Home from "./pages/Home";
+import Login from "./pages/Auth/Login/index";
+import Profile from "./pages/Profile";
+import NotFound from "./pages/NotFound";
+import Privacy from "./pages/Privacy/Privacy";
+import Terms from "./pages/Terms";
+import Contact from "./pages/Contact/components/Contact";
 
 // ============================================================================
 // Page Components - Academic
 // ============================================================================
-import Goals from './pages/Goals/Goals';
-import DailyMarks from './pages/DailyMarks/DailyMarksPage';
-import Arrangement from './pages/Arrangement';
-import Test from './pages/Test/TestPage';
-import ExamSchedule from './pages/ExamSchedule';
-import Reports from './pages/Reports';
-import Timetable from './pages/Timetable/TimetablePage';
-import MyStudents from './pages/MyStudents';
+import Goals from "./pages/Goals/Goals";
+import DailyMarks from "./pages/DailyMarks/DailyMarksPage";
+import Arrangement from "./pages/Arrangement";
+import Test from "./pages/Test/TestPage";
+import ExamSchedule from "./pages/ExamSchedule";
+import Reports from "./pages/Reports";
+import Timetable from "./pages/Timetable/TimetablePage";
+import MyStudents from "./pages/MyStudents";
 
 // ============================================================================
 // Page Components - Communication & Activities
 // ============================================================================
-import News from './pages/News';
+import News from "./pages/News";
 // import Chat from "./pages/Chat";
-import Activities from './pages/Activities';
+import Activities from "./pages/Activities";
 
 // ============================================================================
 // Page Components - Attendance & Management
 // ============================================================================
-import Absence from './pages/Absence/index';
+import Absence from "./pages/Absence/index";
 
 // ============================================================================
 // Page Components - Islamic Resources
 // ============================================================================
 // import PrayerTimes from './pages/PrayerTimes';
-import QuranPage from './pages/QuranPage';
-import QuranAudio from './pages/QuranAudio';
-import Azkar from './pages/Azkar';
+import QuranPage from "./pages/QuranPage";
+import QuranAudio from "./pages/QuranAudio";
+import Azkar from "./pages/Azkar";
 
 // ============================================================================
 // Page Components - Warnings & Discipline
 // ============================================================================
-import Warnings from './pages/Warnings/Warnings';
+import Warnings from "./pages/Warnings/Warnings";
 
 // ============================================================================
 // Page Components - Points Game
 // ============================================================================
-import PointsGame from './pages/PointsGame/PointsGamePage';
+import PointsGame from "./pages/PointsGame/PointsGamePage";
 
 // ============================================================================
 // Page Components - Admin
 // ============================================================================
-import AdminDashboard from './pages/Admin/Dashboard';
+import AdminDashboard from "./pages/Admin/Dashboard";
 // import AdminManagement from "./pages/Managments/AdminManagement";
-import StudentsManagement from './pages/Admin/StudentsManagement';
-import TeachersManagement from './pages/Admin/TeachersManagement';
-import GroupManagement from './pages/Admin/GroupManagement';
+import StudentsManagement from "./pages/Admin/StudentsManagement";
+import TeachersManagement from "./pages/Admin/TeachersManagement";
+import GroupManagement from "./pages/Admin/GroupManagement";
 
 // ============================================================================
 // Other Components
 // ============================================================================
-import Soon from './pages/Soon';
-import NotificationPermissionPrompt from './components/Notifications/NotificationPermissionPrompt';
+import Soon from "./pages/Soon";
+import NotificationPermissionPrompt from "./components/Notifications/NotificationPermissionPrompt";
 
 // ============================================================================
 // Admin Routes Component
@@ -282,10 +282,10 @@ function AppContent() {
   // Optional: Log notification status for debugging
   React.useEffect(() => {
     if (isPermissionGranted) {
-      console.log('✅ Firebase notifications enabled');
+      console.log("✅ Firebase notifications enabled");
     }
     if (lastNotification) {
-      console.log('📩 New notification received:', lastNotification);
+      console.log("📩 New notification received:", lastNotification);
     }
   }, [isPermissionGranted, lastNotification]);
 
@@ -318,13 +318,13 @@ function AppContent() {
   // Route to appropriate component based on user role
   let routeComponent;
   switch (user?.role) {
-    case 'admin':
+    case "admin":
       routeComponent = <AdminRoutes />;
       break;
-    case 'teacher':
+    case "teacher":
       routeComponent = <TeacherRoutes />;
       break;
-    case 'student':
+    case "student":
       routeComponent = <StudentRoutes />;
       break;
     default:
@@ -382,17 +382,17 @@ function App() {
             limit={3}
             style={{
               zIndex: 9999,
-              top: '1.5rem',
-              right: '1.5rem',
-              left: 'auto',
+              top: "1.5rem",
+              right: "1.5rem",
+              left: "auto",
             }}
             toastStyle={{
-              borderRadius: '12px',
-              padding: '16px',
-              fontSize: '15px',
-              fontWeight: '500',
-              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
-              backdropFilter: 'blur(8px)',
+              borderRadius: "12px",
+              padding: "16px",
+              fontSize: "15px",
+              fontWeight: "500",
+              boxShadow: "0 8px 24px rgba(0, 0, 0, 0.12)",
+              backdropFilter: "blur(8px)",
             }}
           />
         </UserStatusProvider>
