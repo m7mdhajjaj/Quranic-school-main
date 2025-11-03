@@ -47,7 +47,7 @@ import Arrangement from './pages/Arrangement';
 import Test from './pages/Test/TestPage';
 import ExamSchedule from './pages/ExamSchedule';
 import Reports from './pages/Reports';
-import Timetable from './pages/Timetable';
+import Timetable from './pages/Timetable/TimetablePage';
 import MyStudents from './pages/MyStudents';
 
 // ============================================================================
