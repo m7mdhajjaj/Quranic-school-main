@@ -1,12 +1,12 @@
 // ============================================================================
-// Reports/Reports.tsx - Main Reports Component
+// Reports.tsx - Main Reports Page (Restructured)
 // ============================================================================
 
 import React from "react";
-import { useReportData } from "./useReportData";
 import ReportHeader from "./ReportHeader";
 import ReportFilters from "./ReportFilters";
 import ReportChart from "./ReportChart";
+import { useReportData } from "./useReportData";
 
 const Reports: React.FC = () => {
   const {
@@ -19,30 +19,33 @@ const Reports: React.FC = () => {
     setSelectedYear,
   } = useReportData();
 
-  if (loading) {
-    return <div className="text-center py-8">جاري التحميل...</div>;
-  }
-
   return (
-    <div
-      className="container mx-auto py-4 sm:py-6 md:py-8 px-2 sm:px-4"
-      dir="rtl">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 pb-8">
       <ReportHeader />
+      
+      <div className="max-w-7xl mx-auto px-4 space-y-6">
+        <ReportFilters
+          selectedMonth={selectedMonth}
+          selectedYear={selectedYear}
+          onMonthChange={setSelectedMonth}
+          onYearChange={setSelectedYear}
+        />
 
-      <ReportFilters
-        selectedMonth={selectedMonth}
-        selectedYear={selectedYear}
-        onMonthChange={setSelectedMonth}
-        onYearChange={setSelectedYear}
-      />
-
-      <ReportChart
-        labels={chartData.labels}
-        data={chartData.data}
-        userRole={userRole}
-        selectedMonth={selectedMonth}
-        selectedYear={selectedYear}
-      />
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+            <p className="mt-4 text-gray-600">جاري تحميل التقارير...</p>
+          </div>
+        ) : (
+          <ReportChart
+            labels={chartData.labels}
+            data={chartData.data}
+            userRole={userRole}
+            selectedMonth={selectedMonth}
+            selectedYear={selectedYear}
+          />
+        )}
+      </div>
     </div>
   );
 };

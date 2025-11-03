@@ -1,8 +1,11 @@
-import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import { getAttendanceByDate, bulkSaveAttendance } from "../Api/attendanceApi";
-import { useAbsenceSocket } from "../Socket";
-import { showSuccessMessage, showErrorMessage } from "../components/utils/sweetalertUtils";
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { getAttendanceByDate, bulkSaveAttendance } from '../Api/attendanceApi';
+import { useAbsenceSocket } from '../Socket';
+import {
+  showSuccessMessage,
+  showErrorMessage,
+} from '../components/utils/sweetalertUtils';
 
 // ================== الإعدادات العامة ==================
 
@@ -15,7 +18,7 @@ interface LoggedInUser {
   fatherName?: string;
   group?: string;
   groups?: string[];
-  role: "student" | "teacher" | "admin";
+  role: 'student' | 'teacher' | 'admin';
 }
 
 interface AttendanceStudent {
@@ -44,22 +47,22 @@ interface AttendanceRecordPayload {
 
 // أسماء الشهور بالعربي + رقم الشهر
 const AR_MONTHS = [
-  "يناير (01)",
-  "فبراير (02)",
-  "مارس (03)",
-  "أبريل (04)",
-  "مايو (05)",
-  "يونيو (06)",
-  "يوليو (07)",
-  "أغسطس (08)",
-  "سبتمبر (09)",
-  "أكتوبر (10)",
-  "نوفمبر (11)",
-  "ديسمبر (12)",
+  'يناير (01)',
+  'فبراير (02)',
+  'مارس (03)',
+  'أبريل (04)',
+  'مايو (05)',
+  'يونيو (06)',
+  'يوليو (07)',
+  'أغسطس (08)',
+  'سبتمبر (09)',
+  'أكتوبر (10)',
+  'نوفمبر (11)',
+  'ديسمبر (12)',
 ];
 
 // مساعد: تاريخ اليوم بصيغة "YYYY-MM-DD"
-const todayISO = () => new Date().toISOString().split("T")[0];
+const todayISO = () => new Date().toISOString().split('T')[0];
 
 // ================== المكوّن الرئيسي ==================
 const Absence = () => {
@@ -83,19 +86,19 @@ const Absence = () => {
   // مستمع للوحة المفاتيح: الضغط على 'd' لإظهار/إخفاء مؤشر السوكيت
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
-      if (event.key === "d" || event.key === "D") {
+      if (event.key === 'd' || event.key === 'D') {
         setShowSocketIndicator((prev) => {
           const newValue = !prev;
           console.log(
-            `🔧 Socket Indicator ${newValue ? "shown" : "hidden"} (Debug Mode)`
+            `🔧 Socket Indicator ${newValue ? 'shown' : 'hidden'} (Debug Mode)`
           );
           return newValue;
         });
       }
     };
 
-    window.addEventListener("keydown", handleKeyPress);
-    return () => window.removeEventListener("keydown", handleKeyPress);
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
   }, []);
 
   // --------- حالات واجهة المعلّم ---------
@@ -104,8 +107,8 @@ const Absence = () => {
   const [selectedAll, setSelectedAll] = useState(false);
 
   // فلترة + بحث
-  const [groupFilter, setGroupFilter] = useState<string>("all");
-  const [nameQuery, setNameQuery] = useState<string>("");
+  const [groupFilter, setGroupFilter] = useState<string>('all');
+  const [nameQuery, setNameQuery] = useState<string>('');
 
   // حالة لتتبع الطالب المفتوحة قائمة غياباته
   const [expandedStudentId, setExpandedStudentId] = useState<string | null>(
@@ -123,22 +126,22 @@ const Absence = () => {
   useEffect(() => {
     const run = async () => {
       try {
-        const raw = localStorage.getItem("user");
+        const raw = localStorage.getItem('user');
         if (!raw) {
-          navigate("/login");
+          navigate('/login');
           return;
         }
         const user: LoggedInUser = JSON.parse(raw);
         setCurrentUser(user);
 
-        if (user.role === "teacher" || user.role === "admin") {
+        if (user.role === 'teacher' || user.role === 'admin') {
           await fetchStudentsForTeacher(date);
         } else {
           await fetchStudentAbsenceStats(user._id);
         }
       } catch (e) {
         console.error(e);
-        setError("حدث خطأ أثناء جلب البيانات");
+        setError('حدث خطأ أثناء جلب البيانات');
       } finally {
         setLoading(false);
       }
@@ -150,7 +153,7 @@ const Absence = () => {
   // إعادة الجلب للمعلّم عند تغيير التاريخ
   useEffect(() => {
     if (!currentUser) return;
-    if (currentUser.role === "teacher" || currentUser.role === "admin") {
+    if (currentUser.role === 'teacher' || currentUser.role === 'admin') {
       fetchStudentsForTeacher(date);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -159,7 +162,7 @@ const Absence = () => {
   // إعادة الجلب للطالب عند تغيير الشهر/السنة
   useEffect(() => {
     if (!currentUser) return;
-    if (currentUser.role === "student") {
+    if (currentUser.role === 'student') {
       fetchStudentAbsenceStats(currentUser._id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -170,20 +173,20 @@ const Absence = () => {
     if (!socketLastUpdate || !currentUser) return;
 
     console.log(
-      "🔄 Socket update detected in Absence, refetching attendance..."
+      '🔄 Socket update detected in Absence, refetching attendance...'
     );
 
     const refetchData = async () => {
       try {
-        if (currentUser.role === "teacher" || currentUser.role === "admin") {
+        if (currentUser.role === 'teacher' || currentUser.role === 'admin') {
           // إعادة جلب بيانات الحضور للمعلم
           await fetchStudentsForTeacher(date);
-        } else if (currentUser.role === "student") {
+        } else if (currentUser.role === 'student') {
           // إعادة جلب إحصائيات الغياب للطالب
           await fetchStudentAbsenceStats(currentUser._id);
         }
       } catch (err) {
-        console.error("Error refetching attendance after socket update:", err);
+        console.error('Error refetching attendance after socket update:', err);
       }
     };
 
@@ -194,14 +197,14 @@ const Absence = () => {
   const fetchStudentsForTeacher = async (forDate: string) => {
     try {
       setError(null);
-      console.log("⚡ [OPTIMIZED] بدء جلب الطلاب مع إحصائيات الغياب...");
+      console.log('⚡ [OPTIMIZED] بدء جلب الطلاب مع إحصائيات الغياب...');
       const startTime = Date.now();
 
       // ⚡ استخدام الـ endpoint المحسّن (طلب واحد فقط بدلاً من N+1 طلبات!)
-      const { getStudentsWithAbsenceStats } = await import("../Api/studentApi");
+      const { getStudentsWithAbsenceStats } = await import('../Api/studentApi');
 
       const teacherName =
-        currentUser?.role === "teacher"
+        currentUser?.role === 'teacher'
           ? `${currentUser.firstName} ${currentUser.lastName}`.trim()
           : undefined;
 
@@ -219,15 +222,15 @@ const Absence = () => {
         absenceDates: s.absenceDates
           .map((date: any) => {
             const d = new Date(date);
-            const day = String(d.getDate()).padStart(2, "0");
-            const month = String(d.getMonth() + 1).padStart(2, "0");
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
             const year = d.getFullYear();
             return `${day}/${month}/${year}`;
           })
           .sort((a, b) => {
             // ترتيب من الأحدث للأقدم
-            const [dayA, monthA, yearA] = a.split("/").map(Number);
-            const [dayB, monthB, yearB] = b.split("/").map(Number);
+            const [dayA, monthA, yearA] = a.split('/').map(Number);
+            const [dayB, monthB, yearB] = b.split('/').map(Number);
             const dateA = new Date(yearA, monthA - 1, dayA);
             const dateB = new Date(yearB, monthB - 1, dayB);
             return dateB.getTime() - dateA.getTime();
@@ -258,7 +261,7 @@ const Absence = () => {
       setSelectedAll(formatted.every((s) => s.isPresent));
     } catch (e) {
       console.error(e);
-      setError("تعذر جلب بيانات الطلاب");
+      setError('تعذر جلب بيانات الطلاب');
     }
   };
 
@@ -266,7 +269,7 @@ const Absence = () => {
   const fetchStudentAbsenceStats = async (studentId: string) => {
     try {
       setError(null);
-      const { getStudentAttendance } = await import("../Api/attendanceApi");
+      const { getStudentAttendance } = await import('../Api/attendanceApi');
       const data = await getStudentAttendance(studentId);
 
       // تجميع حسب الشهر/السنة
@@ -282,7 +285,7 @@ const Absence = () => {
 
       // تحويل إلى MonthlyAbsence[] (نستخدم AR_MONTHS بالمسمى + الرقم)
       const stats: MonthlyAbsence[] = Object.entries(grouped).map(([k, v]) => {
-        const [yy, m] = k.split("-").map(Number);
+        const [yy, m] = k.split('-').map(Number);
         const label = AR_MONTHS[m]; // مثال: "يناير (01)"
         const rate =
           v.total > 0 ? Math.round((v.absences / v.total) * 1000) / 10 : 0;
@@ -297,8 +300,8 @@ const Absence = () => {
       // ترتيب زمني
       stats.sort((a, b) => {
         // افصل آخر "مسافة" للحصول على السنة
-        const aLastSpace = a.month.lastIndexOf(" ");
-        const bLastSpace = b.month.lastIndexOf(" ");
+        const aLastSpace = a.month.lastIndexOf(' ');
+        const bLastSpace = b.month.lastIndexOf(' ');
         const aLabel = a.month.substring(0, aLastSpace); // "يناير (01)"
         const bLabel = b.month.substring(0, bLastSpace); // "فبراير (02)"
         const aYear = parseInt(a.month.substring(aLastSpace + 1), 10);
@@ -314,18 +317,18 @@ const Absence = () => {
     } catch (e) {
       console.error(e);
       setMonthlyStats([]);
-      setError("تعذر جلب إحصائيات الغياب");
+      setError('تعذر جلب إحصائيات الغياب');
     }
   };
 
   // helper function للحصول على أسماء المعلم المحتملة
   const getTeacherPossibleNames = (user: LoggedInUser) => {
     const firstLast = `${user.firstName} ${user.lastName}`.trim();
-    const firstFatherLast = `${user.firstName} ${user.fatherName || ""} ${
-      user.lastName || ""
+    const firstFatherLast = `${user.firstName} ${user.fatherName || ''} ${
+      user.lastName || ''
     }`
       .trim()
-      .replace(/\s+/g, " ");
+      .replace(/\s+/g, ' ');
     return [firstLast, firstFatherLast, user.firstName].filter(
       (name) => name.length > 0
     );
@@ -335,7 +338,7 @@ const Absence = () => {
   const isTeacherMatch = (studentTeacher: string, possibleNames: string[]) => {
     const studentTeacherNormalized = studentTeacher
       .trim()
-      .replace(/\s+/g, " ")
+      .replace(/\s+/g, ' ')
       .toLowerCase();
     return possibleNames.some((possibleName) => {
       const normalizedPossible = possibleName.toLowerCase();
@@ -355,27 +358,27 @@ const Absence = () => {
   // جلب حلقات المعلم من Groups API مباشرة
   useEffect(() => {
     const fetchTeacherGroups = async () => {
-      if (!currentUser || currentUser.role !== "teacher") {
+      if (!currentUser || currentUser.role !== 'teacher') {
         setTeacherGroups([]);
         return;
       }
 
       try {
-        console.log("🔍 جلب حلقات المعلم من Groups API...");
+        console.log('🔍 جلب حلقات المعلم من Groups API...');
 
         // جلب الحلقات مباشرة من Groups API
-        const { getAllGroups } = await import("../Api/groupApi");
+        const { getAllGroups } = await import('../Api/groupApi');
         const groupsRes = await getAllGroups();
 
         if (!groupsRes.success || !Array.isArray(groupsRes.data)) {
-          console.error("❌ فشل في جلب الحلقات");
+          console.error('❌ فشل في جلب الحلقات');
           setTeacherGroups([]);
           return;
         }
 
         const possibleNames = getTeacherPossibleNames(currentUser);
-        console.log("📋 أسماء المعلم المحتملة:", possibleNames);
-        console.log("📊 إجمالي الحلقات في النظام:", groupsRes.data.length);
+        console.log('📋 أسماء المعلم المحتملة:', possibleNames);
+        console.log('📊 إجمالي الحلقات في النظام:', groupsRes.data.length);
 
         // فلترة الحلقات التي تخص هذا المعلم
         const teacherGroupsData = groupsRes.data.filter((group: any) => {
@@ -394,11 +397,11 @@ const Absence = () => {
 
         const groupNames = teacherGroupsData
           .map((g: any) => g.name)
-          .sort((a: string, b: string) => a.localeCompare(b, "ar"));
+          .sort((a: string, b: string) => a.localeCompare(b, 'ar'));
         console.log(`📋 حلقات المعلم النهائية:`, groupNames);
         setTeacherGroups(groupNames);
       } catch (error) {
-        console.error("خطأ في جلب حلقات المعلم:", error);
+        console.error('خطأ في جلب حلقات المعلم:', error);
         setTeacherGroups([]);
       }
     };
@@ -408,7 +411,7 @@ const Absence = () => {
 
   // مجموعات (Groups) موجودة عند الطلاب
   const groupsAvailable = useMemo(() => {
-    if (currentUser?.role === "teacher") {
+    if (currentUser?.role === 'teacher') {
       // للمعلم: استخدم الحلقات المجلبة مسبقاً
       return teacherGroups;
     } else {
@@ -416,8 +419,8 @@ const Absence = () => {
       const set = new Set<string>();
       students.forEach((s) => s.group && set.add(s.group));
       return [
-        "all",
-        ...Array.from(set).sort((a, b) => a.localeCompare(b, "ar")),
+        'all',
+        ...Array.from(set).sort((a, b) => a.localeCompare(b, 'ar')),
       ];
     }
   }, [currentUser, teacherGroups, students]);
@@ -425,9 +428,9 @@ const Absence = () => {
   // تحديد أول حلقة تلقائياً للمعلم
   useEffect(() => {
     if (!currentUser) return;
-    if (currentUser.role === "teacher" && groupsAvailable.length > 0) {
+    if (currentUser.role === 'teacher' && groupsAvailable.length > 0) {
       // إذا كان الفلتر على "all" أو فارغ، حدد أول حلقة
-      if (groupFilter === "all" || !groupsAvailable.includes(groupFilter)) {
+      if (groupFilter === 'all' || !groupsAvailable.includes(groupFilter)) {
         const firstGroup = groupsAvailable[0];
         console.log(`📌 تحديد الحلقة الأولى تلقائياً: ${firstGroup}`);
         setGroupFilter(firstGroup);
@@ -438,15 +441,15 @@ const Absence = () => {
   // فلترة + بحث (Teacher)
   const visibleStudents = useMemo(() => {
     let list = [...students];
-    if (groupFilter !== "all") {
-      list = list.filter((s) => (s.group ?? "") === groupFilter);
+    if (groupFilter !== 'all') {
+      list = list.filter((s) => (s.group ?? '') === groupFilter);
     }
     if (nameQuery.trim()) {
       const q = nameQuery.trim().toLowerCase();
       list = list.filter((s) => s.name.toLowerCase().includes(q));
     }
     // ترتيب أبجدي عربي
-    return list.sort((a, b) => a.name.localeCompare(b.name, "ar"));
+    return list.sort((a, b) => a.name.localeCompare(b.name, 'ar'));
   }, [students, groupFilter, nameQuery]);
 
   // تحديث حالة "تحديد الكل" حسب الطلاب المرئيين فقط
@@ -461,17 +464,17 @@ const Absence = () => {
 
   // قلب حالة طالب
   const toggleStudentPresence = (studentId: string) => {
-    console.log("🔄 تغيير حالة الطالب:", studentId);
+    console.log('🔄 تغيير حالة الطالب:', studentId);
     setStudents((prev) => {
       const next = prev.map((s) => {
         if (s._id === studentId) {
           const newState = !s.isPresent;
           console.log(
-            "✅ تم العثور على الطالب:",
+            '✅ تم العثور على الطالب:',
             s.name,
-            "الحالة الحالية:",
+            'الحالة الحالية:',
             s.isPresent,
-            "→ الحالة الجديدة:",
+            '→ الحالة الجديدة:',
             newState
           );
           return { ...s, isPresent: newState };
@@ -505,7 +508,7 @@ const Absence = () => {
     console.log(
       `🔄 تغيير حالة ${
         visibleStudents.length
-      } طالب في الحلقة "${groupFilter}" إلى: ${newState ? "حاضر" : "غائب"}`
+      } طالب في الحلقة "${groupFilter}" إلى: ${newState ? 'حاضر' : 'غائب'}`
     );
 
     setStudents((prev) => {
@@ -572,9 +575,9 @@ const Absence = () => {
       // ⏰ التحقق من أن التاريخ ليس أقدم من أسبوع
       if (isDateTooOld) {
         await showErrorMessage(
-          "لا يمكن التعديل",
+          'لا يمكن التعديل',
           `هذا التاريخ قديم (مضى عليه ${daysAgo} ${
-            daysAgo === 1 ? "يوم" : "أيام"
+            daysAgo === 1 ? 'يوم' : 'أيام'
           }). لا يمكن تعديل الحضور بعد مرور أسبوع.`
         );
         return;
@@ -600,13 +603,13 @@ const Absence = () => {
       console.log(
         `💾 حفظ الحضور لـ ${payload.length} طالب من الحلقة "${groupFilter}"`
       );
-      console.log("📋 التاريخ:", date);
+      console.log('📋 التاريخ:', date);
       console.log(`📊 الإحصائيات الفعلية:`);
       console.log(`   ✅ الحاضرين: ${actualPresentCount}`);
       console.log(`   ❌ الغائبين: ${actualAbsentCount}`);
       console.log(`   📈 نسبة الحضور: ${actualAttendanceRate}%`);
       console.log(
-        "📋 البيانات المرسلة:",
+        '📋 البيانات المرسلة:',
         JSON.stringify({ date, records: payload }, null, 2)
       );
 
@@ -617,31 +620,31 @@ const Absence = () => {
 
       // ✅ عرض رسالة النجاح مع الصوت
       await showSuccessMessage(
-        "تم رصد الحضور بنجاح",
+        'تم رصد الحضور بنجاح',
         `حاضر: ${actualPresentCount} | غائب: ${actualAbsentCount} | نسبة الحضور: ${actualAttendanceRate}%`,
         undefined,
-        "center",
+        'center',
         false
       );
     } catch (e: any) {
-      console.error("❌ خطأ في حفظ الحضور:", e);
-      console.error("📋 تفاصيل الخطأ:", e.response?.data);
+      console.error('❌ خطأ في حفظ الحضور:', e);
+      console.error('📋 تفاصيل الخطأ:', e.response?.data);
 
       // ❌ عرض رسالة الخطأ مع الصوت
       let errorMsg =
         e.response?.data?.message ||
         e.response?.data?.details ||
-        "تعذر حفظ السجل";
+        'تعذر حفظ السجل';
 
       // معالجة خاصة لخطأ التاريخ القديم
       if (e.response?.status === 403 && e.response?.data?.daysAgo) {
         const daysAgo = e.response.data.daysAgo;
         errorMsg = `لا يمكن تعديل الحضور بعد مرور أسبوع. هذا التاريخ قديم (مضى عليه ${daysAgo} ${
-          daysAgo === 1 ? "يوم" : "أيام"
+          daysAgo === 1 ? 'يوم' : 'أيام'
         }).`;
       }
 
-      await showErrorMessage("خطأ في الحفظ", errorMsg);
+      await showErrorMessage('خطأ في الحفظ', errorMsg);
     }
   };
 
@@ -653,11 +656,11 @@ const Absence = () => {
   // ================== منطق واجهة الطالب ==================
   // السنة والشهر المختارين من input type="month"
   const selectedYear = useMemo(
-    () => parseInt(yearMonth.split("-")[0], 10),
+    () => parseInt(yearMonth.split('-')[0], 10),
     [yearMonth]
   );
   const selectedMonthIndex = useMemo(
-    () => Math.max(0, parseInt(yearMonth.split("-")[1], 10) - 1),
+    () => Math.max(0, parseInt(yearMonth.split('-')[1], 10) - 1),
     [yearMonth]
   );
 
@@ -665,7 +668,7 @@ const Absence = () => {
   const filteredMonthlyStats = useMemo(() => {
     return monthlyStats.filter((stat) => {
       // stat.month شكلها: "يناير (01) 2025"
-      const lastSpace = stat.month.lastIndexOf(" ");
+      const lastSpace = stat.month.lastIndexOf(' ');
       if (lastSpace < 0) return false;
       const label = stat.month.substring(0, lastSpace); // "يناير (01)"
       const yy = parseInt(stat.month.substring(lastSpace + 1), 10);
@@ -677,7 +680,7 @@ const Absence = () => {
   // إجمالي السنة للطالب (حسب السنة المختارة)
   const yearTotals = useMemo(() => {
     const statsForYear = monthlyStats.filter((stat) => {
-      const lastSpace = stat.month.lastIndexOf(" ");
+      const lastSpace = stat.month.lastIndexOf(' ');
       const yy = parseInt(stat.month.substring(lastSpace + 1), 10);
       return yy === selectedYear;
     });
@@ -693,7 +696,8 @@ const Absence = () => {
   return (
     <div
       className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 py-8 px-4"
-      dir="rtl">
+      dir="rtl"
+    >
       <div className="container mx-auto max-w-6xl">
         {/* العنوان */}
         <div className="text-center mb-8">
@@ -706,15 +710,15 @@ const Absence = () => {
               <div className="relative group">
                 <div
                   className={`w-3 h-3 rounded-full ${
-                    socketConnected ? "bg-green-500" : "bg-yellow-500"
+                    socketConnected ? 'bg-green-500' : 'bg-yellow-500'
                   } animate-pulse`}
-                  title={socketConnected ? "متصل" : "غير متصل"}
+                  title={socketConnected ? 'متصل' : 'غير متصل'}
                 />
                 {/* Tooltip */}
                 <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
                   <div className="text-center">
                     <div className="font-semibold mb-1">
-                      {socketConnected ? "✓ متصل بالسوكت" : "⚠ غير متصل"}
+                      {socketConnected ? '✓ متصل بالسوكت' : '⚠ غير متصل'}
                     </div>
                     {socketId && (
                       <div className="text-gray-300 text-xs">
@@ -723,8 +727,8 @@ const Absence = () => {
                     )}
                     {socketLastUpdate && (
                       <div className="text-gray-300 text-xs mt-1">
-                        آخر تحديث:{" "}
-                        {new Date(socketLastUpdate).toLocaleTimeString("ar-EG")}
+                        آخر تحديث:{' '}
+                        {new Date(socketLastUpdate).toLocaleTimeString('ar-EG')}
                       </div>
                     )}
                     <div className="text-gray-400 text-xs mt-1 border-t border-gray-600 pt-1">
@@ -739,9 +743,9 @@ const Absence = () => {
           </div>
           <div className="w-24 h-1 bg-emerald-600 mx-auto mb-4"></div>
           <p className="text-gray-600">
-            {currentUser?.role === "student"
-              ? "اطّلع على سجل غيابك الشهري وإجمالي السنة"
-              : "سجّل حضور الطلاب يومياً مع أدوات فلترة وبحث"}
+            {currentUser?.role === 'student'
+              ? 'اطّلع على سجل غيابك الشهري وإجمالي السنة'
+              : 'سجّل حضور الطلاب يومياً مع أدوات فلترة وبحث'}
           </p>
         </div>
 
@@ -752,7 +756,7 @@ const Absence = () => {
           <div className="bg-white rounded-xl shadow-md p-8 text-center">
             <p className="text-red-500">{error}</p>
           </div>
-        ) : currentUser?.role === "student" ? (
+        ) : currentUser?.role === 'student' ? (
           /* ================== واجهة الطالب ================== */
           <div className="grid grid-cols-1 gap-6">
             {/* شريط أدوات الطالب */}
@@ -778,10 +782,11 @@ const Absence = () => {
                         const newMonth = parseInt(e.target.value, 10);
                         const newYear = selectedYear;
                         setYearMonth(
-                          `${newYear}-${String(newMonth + 1).padStart(2, "0")}`
+                          `${newYear}-${String(newMonth + 1).padStart(2, '0')}`
                         );
                       }}
-                      className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                      className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    >
                       {AR_MONTHS.map((label, idx) => (
                         <option key={idx} value={idx}>
                           {label}
@@ -900,7 +905,8 @@ const Absence = () => {
                       <tr>
                         <td
                           colSpan={4}
-                          className="text-center py-6 text-gray-500">
+                          className="text-center py-6 text-gray-500"
+                        >
                           لا توجد بيانات للعرض في هذا الشهر
                         </td>
                       </tr>
@@ -914,11 +920,12 @@ const Absence = () => {
                             <span
                               className={`px-2 py-1 rounded-full text-xs font-semibold ${
                                 m.absenceCount === 0
-                                  ? "bg-green-100 text-green-800"
+                                  ? 'bg-green-100 text-green-800'
                                   : m.absenceCount <= 2
-                                  ? "bg-amber-100 text-amber-800"
-                                  : "bg-red-100 text-red-800"
-                              }`}>
+                                    ? 'bg-amber-100 text-amber-800'
+                                    : 'bg-red-100 text-red-800'
+                              }`}
+                            >
                               {m.absenceCount}
                             </span>
                           </td>
@@ -930,10 +937,10 @@ const Absence = () => {
                               <div
                                 className={`h-2.5 rounded-full ${
                                   m.rate === 0
-                                    ? "bg-green-500"
+                                    ? 'bg-green-500'
                                     : m.rate <= 10
-                                    ? "bg-amber-500"
-                                    : "bg-red-500"
+                                      ? 'bg-amber-500'
+                                      : 'bg-red-500'
                                 } custom-width-bar`}
                                 data-rate={m.rate}
                               />
@@ -956,7 +963,8 @@ const Absence = () => {
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-5 w-5 ml-2 text-blue-500 mt-0.5 flex-shrink-0"
                     viewBox="0 0 20 20"
-                    fill="currentColor">
+                    fill="currentColor"
+                  >
                     <path
                       fillRule="evenodd"
                       d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
@@ -980,14 +988,15 @@ const Absence = () => {
           /* ================== واجهة المعلّم ================== */
           <div className="grid grid-cols-1 gap-6">
             {/* تحقق من وجود حلقات للمعلم */}
-            {currentUser?.role === "teacher" && groupsAvailable.length === 0 ? (
+            {currentUser?.role === 'teacher' && groupsAvailable.length === 0 ? (
               <div className="bg-white rounded-xl shadow-md p-8 text-center">
                 <div className="flex flex-col items-center justify-center py-12">
                   <svg
                     className="w-24 h-24 text-gray-400 mb-4"
                     fill="none"
                     stroke="currentColor"
-                    viewBox="0 0 24 24">
+                    viewBox="0 0 24 24"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -1036,10 +1045,11 @@ const Absence = () => {
                       <select
                         value={groupFilter}
                         onChange={(e) => setGroupFilter(e.target.value)}
-                        className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full">
+                        className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full"
+                      >
                         {groupsAvailable.map((g) => (
                           <option key={g} value={g}>
-                            {g === "all" ? "الكل" : g}
+                            {g === 'all' ? 'الكل' : g}
                           </option>
                         ))}
                       </select>
@@ -1068,10 +1078,11 @@ const Absence = () => {
                         }}
                         className={`flex-1 px-3 py-2 rounded-lg ${
                           selectedAll
-                            ? "bg-gray-200 text-gray-700"
-                            : "bg-emerald-600 text-white hover:bg-emerald-700"
-                        }`}>
-                        {selectedAll ? "إلغاء تحديد الكل" : "تحديد الكل حاضر"}
+                            ? 'bg-gray-200 text-gray-700'
+                            : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                        }`}
+                      >
+                        {selectedAll ? 'إلغاء تحديد الكل' : 'تحديد الكل حاضر'}
                       </button>
                     </div>
                   </div>
@@ -1107,7 +1118,8 @@ const Absence = () => {
                             className="w-6 h-6 text-red-600 animate-pulse"
                             fill="none"
                             stroke="currentColor"
-                            viewBox="0 0 24 24">
+                            viewBox="0 0 24 24"
+                          >
                             <path
                               strokeLinecap="round"
                               strokeLinejoin="round"
@@ -1121,18 +1133,19 @@ const Absence = () => {
                             ⏰ لا يمكن تعديل الحضور
                           </h3>
                           <p className="text-red-700 text-sm leading-relaxed">
-                            هذا التاريخ قديم (مضى عليه{" "}
+                            هذا التاريخ قديم (مضى عليه{' '}
                             <span className="font-bold">
-                              {daysAgo} {daysAgo === 1 ? "يوم" : "أيام"}
+                              {daysAgo} {daysAgo === 1 ? 'يوم' : 'أيام'}
                             </span>
-                            ). لا يمكن تعديل الحضور بعد مرور{" "}
+                            ). لا يمكن تعديل الحضور بعد مرور{' '}
                             <span className="font-bold">أسبوع (7 أيام)</span>.
                           </p>
                           <div className="mt-2 flex items-center gap-2 text-xs text-red-600">
                             <svg
                               className="w-4 h-4"
                               fill="currentColor"
-                              viewBox="0 0 20 20">
+                              viewBox="0 0 20 20"
+                            >
                               <path
                                 fillRule="evenodd"
                                 d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
@@ -1194,7 +1207,8 @@ const Absence = () => {
                           <tr>
                             <td
                               colSpan={6}
-                              className="text-center py-6 text-gray-500">
+                              className="text-center py-6 text-gray-500"
+                            >
                               لا يوجد طلاب مطابقين للفلترة/البحث
                             </td>
                           </tr>
@@ -1203,7 +1217,8 @@ const Absence = () => {
                             <tr
                               key={s._id}
                               className="hover:bg-gray-50 cursor-pointer"
-                              onClick={() => toggleStudentPresence(s._id)}>
+                              onClick={() => toggleStudentPresence(s._id)}
+                            >
                               <td className="px-4 py-3 text-sm text-gray-500">
                                 {s.studentId}
                               </td>
@@ -1211,25 +1226,27 @@ const Absence = () => {
                                 {s.name}
                               </td>
                               <td className="px-4 py-3 text-sm text-gray-500">
-                                {s.group ?? "-"}
+                                {s.group ?? '-'}
                               </td>
                               <td className="px-4 py-3 text-center">
                                 <span
                                   className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
                                     (s.totalAbsences ?? 0) === 0
-                                      ? "bg-green-100 text-green-700"
+                                      ? 'bg-green-100 text-green-700'
                                       : (s.totalAbsences ?? 0) <= 3
-                                      ? "bg-yellow-100 text-yellow-700"
-                                      : (s.totalAbsences ?? 0) <= 7
-                                      ? "bg-orange-100 text-orange-700"
-                                      : "bg-red-100 text-red-700"
-                                  }`}>
+                                        ? 'bg-yellow-100 text-yellow-700'
+                                        : (s.totalAbsences ?? 0) <= 7
+                                          ? 'bg-orange-100 text-orange-700'
+                                          : 'bg-red-100 text-red-700'
+                                  }`}
+                                >
                                   {s.totalAbsences ?? 0}
                                 </span>
                               </td>
                               <td
                                 className="px-4 py-3 text-center"
-                                onClick={(e) => e.stopPropagation()}>
+                                onClick={(e) => e.stopPropagation()}
+                              >
                                 {(s.absenceDates ?? []).length === 0 ? (
                                   <span className="text-xs text-gray-400 italic">
                                     لا يوجد غيابات
@@ -1244,9 +1261,10 @@ const Absence = () => {
                                             : s._id
                                         )
                                       }
-                                      className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium transition-colors">
+                                      className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium transition-colors"
+                                    >
                                       {expandedStudentId === s._id
-                                        ? "إخفاء"
+                                        ? 'إخفاء'
                                         : `عرض (${s.absenceDates?.length})`}
                                     </button>
 
@@ -1261,7 +1279,8 @@ const Absence = () => {
                                               e.stopPropagation();
                                               setExpandedStudentId(null);
                                             }}
-                                            className="hover:bg-blue-700 rounded-full w-6 h-6 flex items-center justify-center transition-colors">
+                                            className="hover:bg-blue-700 rounded-full w-6 h-6 flex items-center justify-center transition-colors"
+                                          >
                                             ✕
                                           </button>
                                         </div>
@@ -1273,7 +1292,8 @@ const Absence = () => {
                                               (date, idx) => (
                                                 <li
                                                   key={idx}
-                                                  className="flex items-center gap-2 text-sm bg-red-50 hover:bg-red-100 px-3 py-2 rounded-lg transition-colors">
+                                                  className="flex items-center gap-2 text-sm bg-red-50 hover:bg-red-100 px-3 py-2 rounded-lg transition-colors"
+                                                >
                                                   <span className="text-red-500 font-bold">
                                                     📅
                                                   </span>
@@ -1289,10 +1309,10 @@ const Absence = () => {
                                         {/* Footer */}
                                         <div className="bg-gray-50 px-4 py-2 border-t border-gray-200 text-center">
                                           <span className="text-xs text-gray-600">
-                                            إجمالي:{" "}
+                                            إجمالي:{' '}
                                             <span className="font-bold text-red-600">
                                               {s.absenceDates?.length}
-                                            </span>{" "}
+                                            </span>{' '}
                                             غياب
                                           </span>
                                         </div>
@@ -1303,7 +1323,8 @@ const Absence = () => {
                               </td>
                               <td
                                 className="px-6 py-3 text-center"
-                                onClick={(e) => e.stopPropagation()}>
+                                onClick={(e) => e.stopPropagation()}
+                              >
                                 <input
                                   type="checkbox"
                                   checked={s.isPresent}
@@ -1325,19 +1346,21 @@ const Absence = () => {
                       disabled={isDateTooOld}
                       className={`px-8 py-2 rounded-lg shadow-md flex items-center transition-all ${
                         isDateTooOld
-                          ? "bg-gray-400 text-gray-200 cursor-not-allowed opacity-60"
-                          : "bg-emerald-600 text-white hover:bg-emerald-700"
+                          ? 'bg-gray-400 text-gray-200 cursor-not-allowed opacity-60'
+                          : 'bg-emerald-600 text-white hover:bg-emerald-700'
                       }`}
                       title={
                         isDateTooOld
-                          ? "لا يمكن الحفظ - التاريخ أقدم من أسبوع"
-                          : "حفظ السجل"
-                      }>
+                          ? 'لا يمكن الحفظ - التاريخ أقدم من أسبوع'
+                          : 'حفظ السجل'
+                      }
+                    >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="h-5 w-5 ml-2"
                         viewBox="0 0 20 20"
-                        fill="currentColor">
+                        fill="currentColor"
+                      >
                         <path
                           fillRule="evenodd"
                           d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
@@ -1345,8 +1368,8 @@ const Absence = () => {
                         />
                       </svg>
                       {isDateTooOld
-                        ? "لا يمكن الحفظ (التاريخ قديم)"
-                        : "حفظ السجل"}
+                        ? 'لا يمكن الحفظ (التاريخ قديم)'
+                        : 'حفظ السجل'}
                     </button>
                   </div>
                 </div>
@@ -1358,7 +1381,8 @@ const Absence = () => {
                       xmlns="http://www.w3.org/2000/svg"
                       className="h-5 w-5 ml-1 text-amber-500"
                       viewBox="0 0 20 20"
-                      fill="currentColor">
+                      fill="currentColor"
+                    >
                       <path
                         fillRule="evenodd"
                         d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"

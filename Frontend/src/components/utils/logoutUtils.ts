@@ -1,5 +1,5 @@
 import Swal from 'sweetalert2';
-import { showCenteredSwal, showSuccessMessage, showErrorMessage } from './sweetalertUtils';
+import { showCenteredSwal, showErrorMessage } from './sweetalertUtils';
 import { soundPlayer } from '../../hooks/useSounds';
 
 interface LogoutOptions {
@@ -157,12 +157,15 @@ export const showLogoutConfirmation = async (options: LogoutOptions = {}) => {
 
     // تنفيذ التنظيف
     cleanupSession();
-    soundPlayer.playSuccess();
+    
+    // تشغيل صوت النجاح والانتظار حتى ينتهي
+    const soundDuration = await soundPlayer.playSuccess();
     if (onConfirm) onConfirm();
 
+    // الانتظار حسب مدة الصوت قبل إغلاق النافذة
     setTimeout(() => {
       Swal.close();
-    }, 800);
+    }, soundDuration);
 
     return true;
   } else {
@@ -172,18 +175,29 @@ export const showLogoutConfirmation = async (options: LogoutOptions = {}) => {
 };
 
 // تسجيل خروج سريع مع toast notification
-export const quickLogout = (onConfirm?: () => void) => {
+export const quickLogout = async (onConfirm?: () => void) => {
   cleanupSession();
   if (onConfirm) onConfirm();
-  soundPlayer.playLogout();
   
-  showSuccessMessage(
-    'تم تسجيل الخروج بنجاح',
-    'سيتم إعادة توجيهك إلى صفحة تسجيل الدخول',
-    undefined,
-    'top-end',
-    true
-  );
+  // تشغيل صوت الخروج والحصول على مدته
+  const soundDuration = await soundPlayer.playLogout();
+  
+  // عرض رسالة Toast مع المدة المتزامنة مع الصوت
+  Swal.fire({
+    title: 'تم تسجيل الخروج بنجاح',
+    text: 'سيتم إعادة توجيهك إلى صفحة تسجيل الدخول',
+    icon: "success",
+    toast: true,
+    position: "top-end",
+    showConfirmButton: false,
+    timer: soundDuration, // استخدام مدة الصوت
+    timerProgressBar: true,
+    customClass: {
+      popup: "!rounded-xl !shadow-2xl",
+      title: "!text-base !font-bold",
+      timerProgressBar: "!bg-green-500",
+    },
+  });
 };
 
 // رسالة خطأ في تسجيل الخروج

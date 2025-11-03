@@ -26,10 +26,12 @@ export const Input: React.FC<InputProps> = ({
   ...props
 }) => {
   const [showPassword, setShowPassword] = useState(false);
-  
+
   // تحديد نوع الـ input بناءً على حالة إظهار كلمة المرور
-  const inputType = showPasswordToggle 
-    ? (showPassword ? 'text' : 'password')
+  const inputType = showPasswordToggle
+    ? showPassword
+      ? 'text'
+      : 'password'
     : type;
 
   // التحقق من وجود قيمة لإظهار أيقونة العين
@@ -73,7 +75,7 @@ export const Input: React.FC<InputProps> = ({
             tabIndex={-1}
             onClick={() => setShowPassword(!showPassword)}
             className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-600 hover:text-emerald-700 focus:outline-none transition-colors duration-200"
-            aria-label={showPassword ? "إخفاء كلمة المرور" : "عرض كلمة المرور"}
+            aria-label={showPassword ? 'إخفاء كلمة المرور' : 'عرض كلمة المرور'}
           >
             {showPassword ? (
               <EyeOff className="w-5 h-5" />
@@ -84,7 +86,9 @@ export const Input: React.FC<InputProps> = ({
         )}
       </div>
       {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
-      {!error && helperText && <p className="text-gray-500 text-xs mt-1">{helperText}</p>}
+      {!error && helperText && (
+        <p className="text-gray-500 text-xs mt-1">{helperText}</p>
+      )}
     </div>
   );
 };

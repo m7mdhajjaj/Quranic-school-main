@@ -41,13 +41,31 @@ export const soundPlayer = {
   },
 
   playSuccess: () => {
-    try {
-      const audio = new Audio('/sounds/successful.mp3');
-      audio.volume = 0.7;
-      audio.play().catch((err) => console.log('Sound error:', err));
-    } catch (error) {
-      console.log('Sound init error:', error);
-    }
+    return new Promise<number>((resolve) => {
+      try {
+        const audio = new Audio('/sounds/successful.mp3');
+        audio.volume = 0.7;
+        
+        // حساب مدة الصوت عند التحميل
+        audio.addEventListener('loadedmetadata', () => {
+          const duration = Math.ceil(audio.duration * 1000); // تحويل إلى ميلي ثانية
+          resolve(duration);
+        });
+        
+        // في حالة عدم القدرة على تحميل البيانات، استخدم قيمة افتراضية
+        audio.addEventListener('error', () => {
+          resolve(800); // القيمة الافتراضية
+        });
+        
+        audio.play().catch((err) => {
+          console.log('Sound error:', err);
+          resolve(800); // القيمة الافتراضية
+        });
+      } catch (error) {
+        console.log('Sound init error:', error);
+        resolve(800); // القيمة الافتراضية
+      }
+    });
   },
 
   playNotification: () => {
@@ -61,13 +79,31 @@ export const soundPlayer = {
   },
 
   playLogout: () => {
-    try {
-      const audio = new Audio('/sounds/notification.mp3');
-      audio.volume = 0.5;
-      audio.play().catch((err) => console.log('Sound error:', err));
-    } catch (error) {
-      console.log('Sound init error:', error);
-    }
+    return new Promise<number>((resolve) => {
+      try {
+        const audio = new Audio('/sounds/notification.mp3');
+        audio.volume = 0.5;
+        
+        // حساب مدة الصوت عند التحميل
+        audio.addEventListener('loadedmetadata', () => {
+          const duration = Math.ceil(audio.duration * 1000); // تحويل إلى ميلي ثانية
+          resolve(duration);
+        });
+        
+        // في حالة عدم القدرة على تحميل البيانات، استخدم قيمة افتراضية
+        audio.addEventListener('error', () => {
+          resolve(800); // القيمة الافتراضية
+        });
+        
+        audio.play().catch((err) => {
+          console.log('Sound error:', err);
+          resolve(800); // القيمة الافتراضية
+        });
+      } catch (error) {
+        console.log('Sound init error:', error);
+        resolve(800); // القيمة الافتراضية
+      }
+    });
   },
 
   playLogin: () => {

@@ -555,6 +555,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
                 placeholder="أدخل كلمة المرور الجديدة (4 أحرف على الأقل)"
                 minLength={4}
                 showPasswordToggle
+                autoComplete="new-password"
                 required
               />
 
@@ -568,6 +569,7 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
                 placeholder="أعد إدخال كلمة المرور للتأكيد"
                 minLength={4}
                 showPasswordToggle
+                autoComplete="new-password"
                 required
               />
             </div>
