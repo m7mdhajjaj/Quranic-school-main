@@ -60,7 +60,7 @@ import Activities from './pages/Activities';
 // ============================================================================
 // Page Components - Attendance & Management
 // ============================================================================
-import Absence from './pages/Absence';
+import Absence from './pages/Absence/index';
 
 // ============================================================================
 // Page Components - Islamic Resources
