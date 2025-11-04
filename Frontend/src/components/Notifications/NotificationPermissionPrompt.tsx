@@ -6,16 +6,8 @@
 // ============================================================================
 
 import React, { useState, useEffect } from 'react';
+import type { NotificationPermissionPromptProps } from './types';
 import { useFirebaseMessaging } from "@/hooks/useFirebaseMessaging";
-
-interface NotificationPermissionPromptProps {
-  /** Show prompt automatically on mount */
-  autoShow?: boolean;
-  /** Callback when user grants permission */
-  onPermissionGranted?: () => void;
-  /** Callback when user denies permission */
-  onPermissionDenied?: () => void;
-}
 
 /**
  * مكون لطلب صلاحيات الإشعارات من المستخدم

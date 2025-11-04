@@ -8,20 +8,13 @@ import { useNavigate } from 'react-router-dom';
 import { useNotificationsSocket } from '../../Socket';
 import { useFirebaseMessaging } from '@/hooks/useFirebaseMessaging';
 import { useSound } from '@/components/Hooks/useSounds';
-import {
-  useNotificationData,
-  usePrayerAlerts,
-  type Notification,
-} from './hooks';
+import { useNotificationData, usePrayerAlerts } from './hooks';
+import type { Notification, NotificationHeaderProps } from './types';
 import {
   NotificationBell,
   NotificationDropdownHeader,
   NotificationList,
 } from './components';
-
-interface NotificationHeaderProps {
-  userId: string;
-}
 
 const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
   // ============================================================================

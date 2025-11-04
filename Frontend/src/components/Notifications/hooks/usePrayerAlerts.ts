@@ -7,20 +7,13 @@ import { useEffect, useCallback } from 'react';
 import Swal from 'sweetalert2';
 import { socketManager } from '@/Socket';
 import { useSound } from '@/components/Hooks/useSounds';
-
-interface PrayerData {
-  prayerName: string;
-  prayerTime: string;
-  emoji: string;
-  minutesRemaining?: number;
-  isAdhan?: boolean;
-}
+import type { PrayerData } from '../types';
 
 export const usePrayerAlerts = () => {
-  // استخدام hook الصوت المتقدم من useSounds
-  const { playSound, stopSound } = useSound({
-    soundPath: '/sounds/notification.mp3',
-    volume: 1.0,
+  // صوت الأذان بحجم منخفض نسبياً
+  const { playSound: playAdhan, stopSound: stopAdhan } = useSound({
+    soundPath: '/sounds/Adhan.mp3',
+    volume: 0.5,
   });
 
   // عرض تنبيه قبل الصلاة (10 دقائق)
@@ -48,8 +41,6 @@ export const usePrayerAlerts = () => {
 
   // عرض تنبيه قبل الأذان (4 دقائق) - تنبيه ثاني
   const showPreAdhanReminder = useCallback((data: PrayerData) => {
-    playSound();
-    
     Swal.fire({
       title: `${data.emoji} تنبيه أذان ${data.prayerName}`,
       html: `
@@ -73,12 +64,13 @@ export const usePrayerAlerts = () => {
         popup: 'animate__animated animate__headShake',
       },
     });
-  }, [playSound]);
+  }, []);
 
   // عرض إشعار الأذان
   const showPrayerAdhan = useCallback(
     (data: PrayerData) => {
-      playSound();
+      // تشغيل صوت الأذان
+      playAdhan();
 
       Swal.fire({
         title: `${data.emoji} أذان ${data.prayerName}`,
@@ -103,11 +95,12 @@ export const usePrayerAlerts = () => {
           popup: 'animate__animated animate__fadeInDown',
         },
         didClose: () => {
-          stopSound();
+          // إيقاف الصوت عند إغلاق الإشعار
+          stopAdhan();
         },
       });
     },
-    [playSound, stopSound]
+    [playAdhan, stopAdhan]
   );
 
   // الاستماع لأحداث الصلاة
@@ -141,9 +134,10 @@ export const usePrayerAlerts = () => {
       socketInstance.off('prayerReminder', handlePrayerReminder);
       socketInstance.off('preAdhanReminder', handlePreAdhanReminder);
       socketInstance.off('prayerAdhan', handlePrayerAdhan);
-      stopSound();
+      // إيقاف الصوت عند unmount
+      stopAdhan();
     };
-  }, [showPrayerReminder, showPreAdhanReminder, showPrayerAdhan, stopSound]);
+  }, [showPrayerReminder, showPreAdhanReminder, showPrayerAdhan, stopAdhan]);
 
   return {
     showPrayerReminder,

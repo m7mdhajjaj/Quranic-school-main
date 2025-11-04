@@ -9,10 +9,10 @@ const http = require("http");
 const { Server } = require("socket.io");
 const Chat = require("./schema/Chat");
 const Student = require("./schema/Student");
-const NotificationService = require("./services/NotificationService");
+const NotificationService = require("./Notifications/NotificationService");
 const MonthlyChampionService = require("./services/MonthlyChampionService");
 // Initialize FCM service (reads env FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_SERVICE_ACCOUNT_PATH)
-const FCMService = require("./services/FCMService");
+const FCMService = require("./Notifications/FCMService");
 
 // Connect to MongoDB
 connectDB();

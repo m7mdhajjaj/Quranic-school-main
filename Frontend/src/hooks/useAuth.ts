@@ -1,5 +1,5 @@
 import { useContext, useEffect } from 'react';
-import AuthContext, { type AuthContextType } from '../contexts/AuthContext';
+import AuthContext, { type AuthContextType } from './AuthContext';
 
 // Hook مخصص لاستخدام AuthContext
 export const useAuth = (): AuthContextType => {

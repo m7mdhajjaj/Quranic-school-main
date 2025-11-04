@@ -4,7 +4,7 @@ const {
   notifySectionAdded, 
   notifySectionUpdated, 
   notifySectionDeleted 
-} = require("./sectionNotifications");
+} = require("../Notifications/sectionNotifications");
 
 // Get all sections, sorted by date (newest first)
 // Support filtering by group and teacher via query params

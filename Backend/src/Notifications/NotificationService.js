@@ -7,6 +7,14 @@ const FCMService = require("./FCMService");
 const DeviceToken = require("../schema/DeviceToken");
 const adhan = require("adhan");
 
+/**
+ * NotificationService - خدمة الإشعارات المركزية
+ * 
+ * ملاحظة هامة: إشعارات الصلاة لا تُحفظ في قاعدة البيانات
+ * - يتم بثها فقط عبر Socket.IO و FCM للتنبيه الفوري
+ * - لا تظهر في Notification Header للمستخدمين
+ * - باقي الإشعارات (علامات، غياب، امتحانات، إلخ) تُحفظ عادياً
+ */
 class NotificationService {
   constructor(io) {
     this.io = io;
@@ -214,11 +222,16 @@ class NotificationService {
     }
   }
 
+  /**
+   * إرسال تنبيه الصلاة (قبل 10 دقائق)
+   * ملاحظة: لا يتم حفظ هذا الإشعار في قاعدة البيانات
+   * يُرسل فقط عبر Socket.IO و FCM للتنبيه الفوري
+   */
   async sendPrayerReminderNotification(prayerName, prayerTime, emoji) {
     try {
       const message = `${emoji} تنبيه: باقي 10 دقائق على صلاة ${prayerName} - ${prayerTime}\nاستعدوا للصلاة`;
       
-      // Broadcast via Socket.IO
+      // Broadcast via Socket.IO only (no database notification)
       this.io.emit("prayerReminder", {
         type: "prayer_reminder",
         title: `تنبيه صلاة ${prayerName}`,
@@ -262,11 +275,16 @@ class NotificationService {
     }
   }
 
+  /**
+   * إرسال إشعار الأذان (عند وقت الصلاة)
+   * ملاحظة: لا يتم حفظ هذا الإشعار في قاعدة البيانات
+   * يُرسل فقط عبر Socket.IO و FCM للتنبيه الفوري دون ظهوره في Notification Header
+   */
   async sendPrayerAdhanNotification(prayerName, prayerTime, emoji) {
     try {
       const message = `${emoji} حان وقت صلاة ${prayerName} - ${prayerTime}\n🕌 الله أكبر الله أكبر\nبارك الله فيكم`;
       
-      // Broadcast via Socket.IO
+      // Broadcast via Socket.IO only (no database notifications)
       this.io.emit("prayerAdhan", {
         type: "prayer_adhan",
         title: `أذان ${prayerName}`,
@@ -278,48 +296,9 @@ class NotificationService {
         timestamp: new Date(),
       });
       
-      // إرسال إشعار لجميع المستخدمين في قاعدة البيانات
-      try {
-        const [students, teachers] = await Promise.all([
-          Student.find({}).select('_id').lean(),
-          Teacher.find({}).select('_id').lean()
-        ]);
-
-        const notificationPromises = [];
-        
-        // إشعار للطلاب
-        students.forEach((student) => {
-          notificationPromises.push(
-            Notification.create({
-              recipient: student._id,
-              recipientModel: 'Student',
-              type: 'prayer_time',
-              title: `أذان ${prayerName}`,
-              message: `${emoji} حان وقت صلاة ${prayerName} - ${prayerTime}`,
-              data: { prayerName, prayerTime, isAdhan: true },
-            })
-          );
-        });
-
-        // إشعار للمعلمين
-        teachers.forEach((teacher) => {
-          notificationPromises.push(
-            Notification.create({
-              recipient: teacher._id,
-              recipientModel: 'Teacher',
-              type: 'prayer_time',
-              title: `أذان ${prayerName}`,
-              message: `${emoji} حان وقت صلاة ${prayerName} - ${prayerTime}`,
-              data: { prayerName, prayerTime, isAdhan: true },
-            })
-          );
-        });
-
-        await Promise.all(notificationPromises);
-        console.log(`📬 Prayer notifications saved to database for ${students.length + teachers.length} users`);
-      } catch (dbErr) {
-        console.error("❌ Error saving prayer notifications to database:", dbErr);
-      }
+      // ⚠️ تم إلغاء حفظ إشعارات الصلاة في قاعدة البيانات
+      // فقط يتم البث عبر Socket.IO و FCM للتنبيه الفوري
+      // دون إضافة إشعار في Notification Header
       
       // Send via FCM to all users
       if (FCMService && FCMService.initialized) {
@@ -399,9 +378,14 @@ class NotificationService {
     }
   }
 
+  /**
+   * إرسال تذكير القرآن اليومي (8 مساءً)
+   * ملاحظة: لا يتم حفظ هذا الإشعار في قاعدة البيانات
+   * يُرسل فقط عبر Socket.IO و FCM كتذكير فوري
+   */
   async sendQuranReminderNotification() {
     try {
-      // Broadcast via Socket.IO
+      // Broadcast via Socket.IO only (no database notification)
       this.io.emit("quranReminder", {
         type: "quran_reminder",
         title: "تذكير بقراءة القرآن",

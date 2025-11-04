@@ -4,7 +4,7 @@
 
 const Exam = require("../../schema/Exam");
 const { isTimeWithinAllowedRange, buildDuplicateQuery } = require("./examHelpers");
-const { notifyExamUpdated } = require("./examNotifications");
+const { notifyExamUpdated } = require("../../Notifications/examNotifications");
 
 /**
  * Update exam

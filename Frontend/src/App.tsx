@@ -17,8 +17,8 @@ import "react-toastify/dist/ReactToastify.css";
 // ============================================================================
 // Contexts & Hooks
 // ============================================================================
-import { AuthProvider } from "./contexts/AuthContext";
-import { UserStatusProvider } from "./contexts/UserStatusContext";
+import { AuthProvider } from "./hooks/AuthContext";
+import { UserStatusProvider } from "./hooks/UserStatusContext";
 import { useAuth } from "./hooks/useAuth";
 import { useFirebaseMessaging } from "./hooks/useFirebaseMessaging";
 

@@ -4,15 +4,9 @@
 // رأس القائمة المنسدلة
 
 import React from 'react';
+import type { NotificationDropdownHeaderProps } from '../types';
 import { Button, Badge } from '@/components/UI';
 import { IoClose } from 'react-icons/io5';
-
-interface NotificationDropdownHeaderProps {
-  unreadCount: number;
-  isMarkingAll: boolean;
-  onMarkAllAsRead: () => void;
-  onClose: () => void;
-}
 
 export const NotificationDropdownHeader: React.FC<NotificationDropdownHeaderProps> = ({
   unreadCount,

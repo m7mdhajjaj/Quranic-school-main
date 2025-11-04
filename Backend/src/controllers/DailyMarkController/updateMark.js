@@ -3,7 +3,7 @@
 // ============================================================================
 
 const Mark = require("../../schema/DailyMark");
-const { notifyMarkUpdated } = require("./dailyMarkNotifications");
+const { notifyMarkUpdated } = require("../../Notifications/dailyMarkNotifications");
 const {
   calculateAndUpdateMonthlyAverage,
 } = require("../../services/StudentAverageService");

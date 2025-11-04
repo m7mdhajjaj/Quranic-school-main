@@ -72,7 +72,7 @@ export const soundPlayer = {
   
   // تسجيل الدخول/الخروج
   playLogin: () => playSound('/sounds/Login.mp3', 0.6),
-  playLogout: () => playSoundWithDuration('/sounds/notification.mp3', 0.5),
+  playLogout: () => playSoundWithDuration('/sounds/Login.mp3', 0.5),
 };
 
 // ============================================================================

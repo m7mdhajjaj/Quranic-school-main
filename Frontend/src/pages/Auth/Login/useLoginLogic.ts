@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useAuth } from "@/hooks/useAuth";
 import { loginStudent, loginTeacher, loginAdmin } from "@/Api/authApi";
 import { useLogo } from "@/components/Hooks/useLogo";
-import type { User } from "@/contexts/AuthContext";
+import type { User } from "@/hooks/AuthContext";
 import type { LoginFormData } from '../types';
 
 export const useLoginLogic = () => {

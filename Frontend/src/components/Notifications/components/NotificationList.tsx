@@ -4,20 +4,9 @@
 // قائمة الإشعارات مع حالات التحميل والفارغة
 
 import React from 'react';
-import type { Notification } from '../hooks';
+import type { NotificationListProps } from '../types';
 import { NotificationCard } from './NotificationCard';
 import { LoadingSpinner, EmptyState, Button } from '@/components/UI';
-
-interface NotificationListProps {
-  notifications: Notification[];
-  isLoading: boolean;
-  hasMore: boolean;
-  refreshTime: number;
-  onLoadMore: () => void;
-  onMarkAsRead: (id: string) => void;
-  onDelete: (id: string, event: React.MouseEvent) => void;
-  onNotificationClick?: (notification: Notification) => void;
-}
 
 export const NotificationList: React.FC<NotificationListProps> = ({
   notifications,

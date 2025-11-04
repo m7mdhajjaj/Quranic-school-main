@@ -4,12 +4,8 @@
 // زر الإشعارات العصري مع تأثيرات متقدمة
 
 import React from 'react';
+import type { NotificationBellProps } from '../types';
 import { IoNotificationsOutline } from 'react-icons/io5';
-
-interface NotificationBellProps {
-  unreadCount: number;
-  onClick: () => void;
-}
 
 export const NotificationBell: React.FC<NotificationBellProps> = ({ unreadCount, onClick }) => {
   return (

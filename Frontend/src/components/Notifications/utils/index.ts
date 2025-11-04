@@ -7,4 +7,4 @@ export {
   getNotificationColor,
   formatRelativeTime,
   getPriorityBadge,
-} from './notificationUtils';
+} from './SendAgo';

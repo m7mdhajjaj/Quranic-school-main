@@ -28,5 +28,35 @@ export {
   getPriorityBadge,
 } from './utils';
 
-// Types
-export type { Notification, NotificationStats } from './hooks';
+// Types - Export all types from the types folder
+export type {
+  // Core Types
+  Notification,
+  NotificationType,
+  NotificationPriority,
+  NotificationStats,
+  PrayerData,
+  
+  // Component Props Types
+  NotificationHeaderProps,
+  NotificationBellProps,
+  NotificationDropdownHeaderProps,
+  NotificationListProps,
+  NotificationCardProps,
+  NotificationPermissionPromptProps,
+  
+  // Hook Types
+  UseNotificationDataProps,
+  UseNotificationDataReturn,
+  UsePrayerAlertsReturn,
+  
+  // API Types
+  NotificationsApiResponse,
+  UnreadCountApiResponse,
+  
+  // Utility Types
+  NotificationSoundOptions,
+  NotificationDisplayOptions,
+  NotificationColors,
+  NotificationIcons,
+} from './types';

@@ -5,4 +5,12 @@
 export { useNotificationData } from './useNotificationData';
 export { usePrayerAlerts } from './usePrayerAlerts';
 
-export type { Notification, NotificationStats } from './useNotificationData';
+// Re-export types from types folder
+export type {
+  Notification,
+  NotificationStats,
+  PrayerData,
+  UseNotificationDataProps,
+  UseNotificationDataReturn,
+  UsePrayerAlertsReturn,
+} from '../types';

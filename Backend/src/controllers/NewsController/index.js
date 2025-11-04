@@ -6,7 +6,7 @@ const getNews = require("./getNews");
 const createNews = require("./createNews");
 const updateNews = require("./updateNews");
 const deleteNews = require("./deleteNews");
-const newsNotifications = require("./newsNotifications");
+const newsNotifications = require("../../Notifications/newsNotifications");
 
 module.exports = {
   // Get operations

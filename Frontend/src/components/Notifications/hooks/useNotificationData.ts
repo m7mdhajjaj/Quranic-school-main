@@ -11,31 +11,11 @@ import {
   markAllAsRead,
   deleteNotification,
 } from '@/Api/notificationApi';
-
-export interface Notification {
-  _id: string;
-  type: 'grade' | 'message' | 'prayer_time' | 'activity' | 'attendance' | 'exam' | 'general';
-  title: string;
-  message: string;
-  createdAt: string;
-  sentAt: string;
-  isRead: boolean;
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  isNew?: boolean;
-  data?: any;
-}
-
-export interface NotificationStats {
-  unreadCount: number;
-  newCount: number;
-  totalCount: number;
-}
-
-interface UseNotificationDataProps {
-  userId: string;
-  autoRefresh?: boolean;
-  refreshInterval?: number;
-}
+import type {
+  Notification,
+  NotificationStats,
+  UseNotificationDataProps,
+} from '../types';
 
 export const useNotificationData = ({
   userId,

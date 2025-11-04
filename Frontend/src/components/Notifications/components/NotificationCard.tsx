@@ -4,18 +4,10 @@
 // بطاقة إشعار واحدة
 
 import React from 'react';
-import type { Notification } from '../hooks';
+import type { NotificationCardProps } from '../types';
 import { getNotificationIcon, getNotificationColor, formatRelativeTime, getPriorityBadge } from '../utils';
 import { Button } from '@/components/UI';
 import { IoTrashOutline } from 'react-icons/io5';
-
-interface NotificationCardProps {
-  notification: Notification;
-  refreshTime: number;
-  onMarkAsRead: (id: string) => void;
-  onDelete: (id: string, event: React.MouseEvent) => void;
-  onClick?: () => void;
-}
 
 export const NotificationCard: React.FC<NotificationCardProps> = ({
   notification,

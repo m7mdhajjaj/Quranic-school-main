@@ -1,6 +1,6 @@
 // contexts/UserStatusContext.tsx
 import React, { createContext, useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from './useAuth';
 import { API_BASE_URL } from '../config/config';
 import { io, Socket } from 'socket.io-client';
 import api from '../Api/api';
