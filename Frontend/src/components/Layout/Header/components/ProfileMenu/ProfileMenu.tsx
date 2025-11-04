@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { User, Key, LogOut, Mail } from "lucide-react";
+import { User, Key, LogOut } from "lucide-react";
 import { Card, Button } from "@/components/UI";
 import Avatar from "@/components/Avatar/Avatar";
 import type { ProfileMenuProps } from "../../types/navigation.types";
@@ -75,10 +75,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
                   : user?.firstName || "المستخدم"}
               </h3>
               {user?.email && (
-                <div className="flex items-center gap-2 mt-1">
-                  <Mail size={14} className="text-white/70 flex-shrink-0" />
-                  <p className="text-white/80 text-sm truncate">{user.email}</p>
-                </div>
+                <p className="text-white/80 text-sm mt-1">{user.email}</p>
               )}
               {user?.role && (
                 <div className="mt-2">
