@@ -4,6 +4,17 @@ import type { NavigationProps } from "../../types/navigation.types";
 const SecondaryNavigation: React.FC<NavigationProps> = ({ items, className = "" }) => {
   const location = useLocation();
 
+  // دالة لتحديد ما إذا كان الرابط نشطاً
+  const checkIsActive = (itemPath: string, currentPath: string): boolean => {
+    // الصفحة الرئيسية تكون نشطة فقط عندما نكون في المسار الدقيق "/"
+    if (itemPath === "/") {
+      return currentPath === "/";
+    }
+
+    // باقي الصفحات تكون نشطة إذا كان المسار الحالي يبدأ بمسار العنصر
+    return currentPath === itemPath || currentPath.startsWith(itemPath + "/");
+  };
+
   return (
     <div className={`hidden xl:flex items-center border-t border-white/20 py-3 ${className}`}>
       <div className="flex-1">
@@ -11,23 +22,13 @@ const SecondaryNavigation: React.FC<NavigationProps> = ({ items, className = "" 
           <nav className="flex items-center justify-center gap-2">
             {items.map((item) => {
               const IconComponent = item.icon;
+              const isCurrentActive = checkIsActive(item.to, location.pathname);
+
               return (
                 <NavLink
                   key={item.to}
                   to={item.to}
-                  end={item.to === "/"}
-                  className={({ isActive }) => {
-                    const currentPath = location.pathname;
-                    let isCurrentActive = isActive;
-
-                    if (item.to === "/" && currentPath !== "/") {
-                      isCurrentActive = false;
-                    }
-
-                    if (item.to !== "/" && !isActive) {
-                      isCurrentActive = currentPath.startsWith(item.to + "/");
-                    }
-
+                  className={() => {
                     return `group relative px-3 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 whitespace-nowrap hover:scale-105 ${
                       isCurrentActive
                         ? "bg-white text-emerald-600 shadow-lg border border-emerald-200 transform scale-105"
@@ -35,35 +36,20 @@ const SecondaryNavigation: React.FC<NavigationProps> = ({ items, className = "" 
                     }`;
                   }}
                 >
-                  {({ isActive }) => {
-                    const currentPath = location.pathname;
-                    let isCurrentActive = isActive;
-
-                    if (item.to === "/" && currentPath !== "/") {
-                      isCurrentActive = false;
-                    }
-
-                    if (item.to !== "/" && !isActive) {
-                      isCurrentActive = currentPath.startsWith(item.to + "/");
-                    }
-
-                    return (
-                      <>
-                        <IconComponent
-                          size={18}
-                          className={
-                            isCurrentActive ? "text-emerald-600" : "text-emerald-100"
-                          }
-                        />
-                        <span>{item.label}</span>
-                        {isCurrentActive && (
-                          <span
-                            className={`absolute -bottom-2 left-0 right-0 h-1 bg-gradient-to-r ${item.color} rounded-full animate-gradient-slide`}
-                          ></span>
-                        )}
-                      </>
-                    );
-                  }}
+                  <>
+                    <IconComponent
+                      size={18}
+                      className={
+                        isCurrentActive ? "text-emerald-600" : "text-emerald-100"
+                      }
+                    />
+                    <span>{item.label}</span>
+                    {isCurrentActive && (
+                      <span
+                        className={`absolute -bottom-2 left-0 right-0 h-1 bg-gradient-to-r ${item.color} rounded-full animate-gradient-slide`}
+                      ></span>
+                    )}
+                  </>
                 </NavLink>
               );
             })}

@@ -19,6 +19,17 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
 
   const allItems = [...primaryItems, ...secondaryItems];
 
+  // دالة لتحديد ما إذا كان الرابط نشطاً
+  const checkIsActive = (itemPath: string, currentPath: string): boolean => {
+    // الصفحة الرئيسية تكون نشطة فقط عندما نكون في المسار الدقيق "/"
+    if (itemPath === "/") {
+      return currentPath === "/";
+    }
+
+    // باقي الصفحات تكون نشطة إذا كان المسار الحالي يبدأ بمسار العنصر
+    return currentPath === itemPath || currentPath.startsWith(itemPath + "/");
+  };
+
   return (
     <div className="xl:hidden fixed inset-0 z-40 animate-fade-in">
       <div
@@ -40,20 +51,37 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
           </div>
 
           {user && (
-            <div className="flex items-center gap-4 mb-6 p-4 bg-white/10 rounded-2xl backdrop-blur-md">
-              <Avatar user={user} size="lg" border="thick" className="shadow-lg" />
-              <div className="flex-1">
-                <div className="text-white font-semibold text-lg truncate">
-                  {user.firstName && user.lastName
-                    ? `${user.firstName} ${user.lastName}`
-                    : user.firstName || "المستخدم"}
+            <div className="mb-6">
+              {/* بطاقة المستخدم */}
+              <div className="flex items-center gap-4 p-4 bg-white/10 rounded-2xl backdrop-blur-md">
+                {/* الأفاتار مع نقطة الحالة */}
+                <div className="relative flex-shrink-0">
+                  <Avatar user={user} size="lg" border="thick" className="shadow-lg" />
+                  {/* نقطة الحالة - متصل */}
+                  <div className="absolute bottom-0 right-0 translate-x-1/4 translate-y-1/4">
+                    <div className="relative">
+                      <div className="w-4 h-4 bg-green-500 rounded-full border-2 border-emerald-700"></div>
+                      <div className="absolute inset-0 w-4 h-4 bg-green-400 rounded-full animate-ping opacity-75"></div>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-emerald-200 text-sm">
-                  {user.role === "teacher"
-                    ? "معلم"
-                    : user.role === "admin"
-                    ? "مدير"
-                    : "طالب"}
+
+                <div className="flex-1 min-w-0">
+                  <div className="text-white font-semibold text-lg truncate">
+                    {user.firstName && user.lastName
+                      ? `${user.firstName} ${user.lastName}`
+                      : user.firstName || "المستخدم"}
+                  </div>
+                  <div className="flex items-center justify-between gap-2 mt-1">
+                    <span className="text-emerald-200 text-sm">
+                      {user.role === "teacher"
+                        ? "معلم"
+                        : user.role === "admin"
+                        ? "مدير"
+                        : "طالب"}
+                    </span>
+                    <span className="text-green-400 text-xs font-medium flex-shrink-0">متصل الآن</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -62,24 +90,14 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
           <div className="space-y-1">
             {allItems.map((item) => {
               const IconComponent = item.icon;
+              const isCurrentActive = checkIsActive(item.to, location.pathname);
+
               return (
                 <NavLink
                   key={item.to}
                   to={item.to}
-                  end={item.to === "/"}
                   onClick={onClose}
-                  className={({ isActive }) => {
-                    const currentPath = location.pathname;
-                    let isCurrentActive = isActive;
-
-                    if (item.to === "/" && currentPath !== "/") {
-                      isCurrentActive = false;
-                    }
-
-                    if (item.to !== "/" && !isActive) {
-                      isCurrentActive = currentPath.startsWith(item.to + "/");
-                    }
-
+                  className={() => {
                     return `flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                       isCurrentActive
                         ? "bg-white/20 text-white shadow-lg transform scale-105"
@@ -87,28 +105,13 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                     }`;
                   }}
                 >
-                  {({ isActive }) => {
-                    const currentPath = location.pathname;
-                    let isCurrentActive = isActive;
-
-                    if (item.to === "/" && currentPath !== "/") {
-                      isCurrentActive = false;
-                    }
-
-                    if (item.to !== "/" && !isActive) {
-                      isCurrentActive = currentPath.startsWith(item.to + "/");
-                    }
-
-                    return (
-                      <>
-                        <IconComponent
-                          size={22}
-                          className={isCurrentActive ? "text-white" : "text-white/70"}
-                        />
-                        <span className="font-medium flex-1">{item.label}</span>
-                      </>
-                    );
-                  }}
+                  <>
+                    <IconComponent
+                      size={22}
+                      className={isCurrentActive ? "text-white" : "text-white/70"}
+                    />
+                    <span className="font-medium flex-1">{item.label}</span>
+                  </>
                 </NavLink>
               );
             })}
