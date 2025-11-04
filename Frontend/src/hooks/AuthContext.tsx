@@ -1,7 +1,8 @@
-import React, { createContext, useState, useEffect, useRef, type ReactNode } from 'react';
-import { io, Socket } from 'socket.io-client';
-import { API_BASE_URL, API_URL } from '../config/config';
+import React, { createContext, useState, useEffect, type ReactNode } from 'react';
+import { Socket } from 'socket.io-client';
+import { API_URL } from '../config/config';
 import { verifyToken } from '../Api/authApi';
+import { socketManager } from '../Socket/SocketManager';
 
 // تعريف أنواع البيانات
 export interface User {
@@ -58,39 +59,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const socketRef = useRef<Socket | null>(null);
-
-  // Initialize socket connection
-  useEffect(() => {
-    socketRef.current = io(API_BASE_URL, {
-      autoConnect: false,
-      // Start with polling, allow upgrade to websocket
-      transports: ['polling', 'websocket'],
-      upgrade: true,
-      path: '/socket.io',
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      timeout: 20000,
-      forceNew: true, // Force new connection each time
-    });
-
-    return () => {
-      if (socketRef.current) {
-        // Remove all event listeners
-        socketRef.current.off('connect');
-        socketRef.current.off('connect_error');
-        socketRef.current.disconnect();
-      }
-    };
-  }, []);
 
   // Handle tab close/page unload
   useEffect(() => {
     const handleBeforeUnload = async () => {
-      if (user && socketRef.current) {
-        socketRef.current.emit('logout', {
+      if (user && socketManager.isConnected()) {
+        socketManager.emit('logout', {
           userId: user._id,
           role: user.role
         });
@@ -123,20 +97,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             
             if (response && response.success) {
               // Connect socket and emit login with delay
-              if (socketRef.current) {
-                socketRef.current.connect();
-                
-                // تأخير قصير لضمان استقرار الاتصال
-                setTimeout(() => {
-                  if (socketRef.current?.connected) {
-                    socketRef.current.emit('login', {
-                      userId: parsedUser._id,
-                      role: parsedUser.role,
-                      firstName: parsedUser.firstName || parsedUser.name
-                    });
-                  }
-                }, 500);
+              if (!socketManager.isConnected()) {
+                socketManager.connect(parsedUser._id, parsedUser.role);
               }
+              
+              // تأخير قصير لضمان استقرار الاتصال
+              setTimeout(() => {
+                if (socketManager.isConnected()) {
+                  socketManager.emit('login', {
+                    userId: parsedUser._id,
+                    role: parsedUser.role,
+                    firstName: parsedUser.firstName || parsedUser.name
+                  });
+                }
+              }, 500);
               
               // console.log('✅ تم تأكيد صحة بيانات المستخدم:', parsedUser.firstName || parsedUser.name);
             } else {
@@ -221,31 +195,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('loginTime', Date.now().toString());
 
       // Connect socket and emit login
-      if (socketRef.current && !socketRef.current.connected) {
-        socketRef.current.connect();
-        
-        // Wait for connection before emitting login
-        socketRef.current.on('connect', () => {
-          // console.log('🔌 Socket متصل');
-          socketRef.current?.emit('login', {
+      if (!socketManager.isConnected()) {
+        socketManager.connect(userData._id, userData.role);
+      }
+      
+      // تأخير قصير لضمان الاتصال
+      setTimeout(() => {
+        if (socketManager.isConnected()) {
+          socketManager.emit('login', {
             userId: userData._id,
             role: userData.role,
             firstName: userData.firstName || userData.name
           });
-        });
-
-        // Handle connection errors
-        socketRef.current.on('connect_error', (error) => {
-          console.warn('⚠️ خطأ في اتصال Socket:', error.message);
-        });
-      } else if (socketRef.current && socketRef.current.connected) {
-        // Already connected, just emit login
-        socketRef.current.emit('login', {
-          userId: userData._id,
-          role: userData.role,
-          firstName: userData.firstName || userData.name
-        });
-      }
+        }
+      }, 300);
 
       // console.log('✅ تم تسجيل الدخول بنجاح:', userData.firstName || userData.name);
     } catch (error) {
@@ -274,8 +237,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       // قطع اتصال Socket
-      if (socketRef.current && socketRef.current.connected) {
-        socketRef.current.disconnect();
+      if (socketManager.isConnected()) {
+        socketManager.disconnect();
         // console.log('🔌 تم قطع اتصال Socket');
       }
 
@@ -342,7 +305,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     token,
     isAuthenticated,
     isLoading,
-    socket: socketRef.current,
+    socket: socketManager.getSocket(),
     
     // الوظائف
     login,
