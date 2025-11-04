@@ -3,13 +3,13 @@ import {
   getAllStudents,
   deleteStudent,
   type Student as ApiStudent,
-} from "../../../Api/studentApi";
+} from "@/Api/studentApi";
 import {
   showCenteredSwal,
   showSuccessMessage,
   showWarningMessage,
   showErrorMessage,
-} from "../../utils/sweetalertUtils";
+} from "@/components/utils/sweetalertUtils";
 
 type Student = ApiStudent;
 type SortField = "studentId" | "firstName" | "age" | "group";

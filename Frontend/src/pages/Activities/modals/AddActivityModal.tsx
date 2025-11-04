@@ -7,7 +7,7 @@ import {
   Textarea,
   ImageUpload,
   DatePicker,
-} from '../../../components/UI';
+} from "@/components/UI";
 import { Plus, Tag } from 'lucide-react';
 import type { ActivityFormData } from '../types/activities';
 

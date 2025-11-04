@@ -3,8 +3,8 @@
 // ============================================================================
 
 import { useState, useEffect, useCallback } from "react";
-import { getAllSessions } from "../../../Api/sessionApi";
-import { getAllGroups } from "../../../Api/groupApi";
+import { getAllSessions } from "@/Api/sessionApi";
+import { getAllGroups } from "@/Api/groupApi";
 import type { Session } from "../types/timetable.types";
 import {
   getCurrentUser,

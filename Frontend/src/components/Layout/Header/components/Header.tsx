@@ -1,14 +1,14 @@
 import { useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useAuth } from '../../../hooks/useAuth';
-import { ChangePasswordModal } from '../../../pages/Auth/ChangePass';
-import { showLogoutConfirmation } from '../../utils/logoutUtils';
-import NotificationHeader from '../../Notifications/NotificationHeader';
+import { useAuth } from '@/hooks/useAuth';
+import { ChangePasswordModal } from '@/pages/Auth/ChangePass';
+import { showLogoutConfirmation } from '@/components/utils/logoutUtils';
+import NotificationHeader from '@/components/Notifications/NotificationHeader';
 
 // Import custom hooks
 import { useNavigation } from '../hooks/useNavigation';
-import { useLogo } from '../../../hooks/useLogo';
-import { Logo } from '../../UI';
+import { useLogo } from '@/components/Hooks/useLogo';
+import { Logo } from '@/components/UI';
 import PrimaryNavigation from './Navigation/PrimaryNavigation';
 import SecondaryNavigation from './Navigation/SecondaryNavigation';
 import ProfileButton from './ProfileMenu/ProfileButton';

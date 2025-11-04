@@ -3,8 +3,8 @@
 // ============================================================================
 
 import { useState, useEffect, useCallback } from "react";
-import { getStudentMarks, getAverageMarks } from "../../Api/reportApi";
-import { getProfile } from "../../Api/profileApi";
+import { getStudentMarks, getAverageMarks } from "@/Api/reportApi";
+import { getProfile } from "@/Api/profileApi";
 
 interface ChartData {
   labels: string[];

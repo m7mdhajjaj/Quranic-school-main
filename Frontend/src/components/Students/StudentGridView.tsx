@@ -8,7 +8,7 @@ import {
   FaMapMarkerAlt,
   FaUserGraduate,
 } from "react-icons/fa";
-import type { Student } from "../../Api/studentApi";
+import type { Student } from "@/Api/studentApi";
 
 interface StudentGridViewProps {
   students: Student[];

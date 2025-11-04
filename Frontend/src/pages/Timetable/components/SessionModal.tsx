@@ -3,10 +3,10 @@
 // ============================================================================
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Modal } from "../../../components/UI/Modal";
-import { Button } from "../../../components/UI/Button";
-import { Select } from "../../../components/UI/Select";
-import { Input } from "../../../components/UI/Input";
+import { Modal } from "@/components/UI/Modal";
+import { Button } from "@/components/UI/Button";
+import { Select } from "@/components/UI/Select";
+import { Input } from "@/components/UI/Input";
 import type {
   Session,
   SessionFormData,

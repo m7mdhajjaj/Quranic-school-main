@@ -4,7 +4,7 @@ import {
   getPointsRankings,
   getBadgesRankings,
   type RankingStudent,
-} from "../../../Api/pointsGameApi";
+} from "@/Api/pointsGameApi";
 
 export const useRankings = () => {
   const [loading, setLoading] = useState(false);

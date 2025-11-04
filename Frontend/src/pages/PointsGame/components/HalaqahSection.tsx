@@ -1,6 +1,6 @@
 // components/HalaqahSection.tsx
-import { Card } from "../../../components/UI/Card";
-import { Button } from "../../../components/UI/Button";
+import { Card } from "@/components/UI/Card";
+import { Button } from "@/components/UI/Button";
 import type { Halaqah } from "../types/pointsGame.types";
 
 interface HalaqahSectionProps {

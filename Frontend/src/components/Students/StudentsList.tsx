@@ -3,7 +3,7 @@ import { StudentTableView } from "./StudentTableView";
 import { StudentGridView } from "./StudentGridView";
 import { Card, EmptyState } from "../UI";
 import ResponsivePagination from "../UI/ResponsivePagination";
-import type { Student } from "../../Api/studentApi";
+import type { Student } from "@/Api/studentApi";
 
 type ViewMode = "table" | "grid";
 

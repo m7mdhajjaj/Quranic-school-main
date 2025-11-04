@@ -1,5 +1,5 @@
 import { Menu, X } from "lucide-react";
-import { Button } from "../../../UI/Button";
+import { Button } from "@/components/UI/Button";
 import type { MobileMenuButtonProps } from "../../types/navigation.types";
 
 const MobileMenuButton: React.FC<MobileMenuButtonProps> = ({ isOpen, onClick }) => {

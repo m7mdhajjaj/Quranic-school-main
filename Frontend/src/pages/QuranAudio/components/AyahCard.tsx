@@ -1,6 +1,6 @@
 import React, { memo } from "react";
-import type { Ayah } from "../../../Api/quranAudioApi";
-import { Card, Badge } from "../../../components/UI";
+import type { Ayah } from "@/Api/quranAudioApi";
+import { Card, Badge } from "@/components/UI";
 
 interface AyahCardProps {
   ayah: Ayah;

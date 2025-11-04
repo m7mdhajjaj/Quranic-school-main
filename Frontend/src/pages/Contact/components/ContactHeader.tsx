@@ -1,4 +1,4 @@
-import PageHeader from '../../../components/UI/PageHeader';
+import PageHeader from "@/components/UI/PageHeader";
 
 const ContactHeader = () => {
   return (

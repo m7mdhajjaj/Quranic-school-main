@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Input, ToggleSwitch, Alert, Tooltip } from '../../../components/UI';
+import { Button, Input, ToggleSwitch, Alert, Tooltip } from "@/components/UI";
 import { LogIn, Info } from 'lucide-react';
 import type { LoginFormData } from '../types';
 

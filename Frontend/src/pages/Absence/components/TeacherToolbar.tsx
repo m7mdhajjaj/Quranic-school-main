@@ -1,9 +1,9 @@
 // components/TeacherToolbar.tsx
-import { Card } from "../../../components/UI/Card";
-import { Input } from "../../../components/UI/Input";
-import { Button } from "../../../components/UI/Button";
-import { Select } from "../../../components/UI/Select";
-import { Alert } from "../../../components/UI/Alert";
+import { Card } from "@/components/UI/Card";
+import { Input } from "@/components/UI/Input";
+import { Button } from "@/components/UI/Button";
+import { Select } from "@/components/UI/Select";
+import { Alert } from "@/components/UI/Alert";
 import { CalendarDays, Users, Check, X } from "lucide-react";
 
 interface TeacherToolbarProps {

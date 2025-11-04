@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { Card } from "../../components/UI";
+import { Card } from "@/components/UI";
 import AyahCard from "../QuranAudio/components/AyahCard";
 import type { SurahData, Ayah } from "./types/quran.types";
 

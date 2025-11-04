@@ -1,9 +1,9 @@
 // components/StudentsTable.tsx
 import { useState } from "react";
-import { Table, type Column } from "../../../components/UI/Table";
-import { Button } from "../../../components/UI/Button";
-import { Badge } from "../../../components/UI/Badge";
-import { Modal } from "../../../components/UI/Modal";
+import { Table, type Column } from "@/components/UI/Table";
+import { Button } from "@/components/UI/Button";
+import { Badge } from "@/components/UI/Badge";
+import { Modal } from "@/components/UI/Modal";
 import { Eye, Check, X } from "lucide-react";
 import type {
   AttendanceStudent,

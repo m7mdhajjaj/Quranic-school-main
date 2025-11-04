@@ -1,12 +1,9 @@
 import { ChevronDown } from "lucide-react";
-import { Button, OnlineStatus } from "../../../UI";
-import Avatar from "../../../Avatar/Avatar";
+import { Button } from "@/components/UI";
+import Avatar from "@/components/Avatar/Avatar";
 import type { ProfileButtonProps } from "../../types/navigation.types";
 
 const ProfileButton: React.FC<ProfileButtonProps> = ({ user, isOpen, onClick }) => {
-  // استخدام حالة ثابتة للآن
-  const isOnline = true;
-
   return (
     <Button
       onClick={onClick}
@@ -21,19 +18,13 @@ const ProfileButton: React.FC<ProfileButtonProps> = ({ user, isOpen, onClick }) 
       }
     >
       <div className="flex items-center gap-2">
-        <div className="relative">
-          <Avatar
-            user={user}
-            size="sm"
-            border="none"
-            className="w-8 h-8 md:w-9 md:h-9"
-          />
-          <OnlineStatus 
-            isOnline={isOnline}
-            size="sm"
-            className="absolute -bottom-0.5 -right-0.5"
-          />
-        </div>
+        <Avatar
+          user={user}
+          size="sm"
+          border="none"
+          className="w-8 h-8 md:w-9 md:h-9"
+          showStatus={true}
+        />
         <span className="hidden md:block text-sm font-semibold truncate max-w-24">
           {user?.firstName || "المستخدم"}
         </span>

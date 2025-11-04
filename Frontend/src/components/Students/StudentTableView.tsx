@@ -1,7 +1,7 @@
 import React from "react";
 import { Table, type Column } from "../UI";
 import { FaEdit, FaTrash } from "react-icons/fa";
-import type { Student } from "../../Api/studentApi";
+import type { Student } from "@/Api/studentApi";
 
 interface StudentTableViewProps {
   students: Student[];

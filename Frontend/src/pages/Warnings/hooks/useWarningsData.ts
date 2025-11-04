@@ -3,11 +3,11 @@
 // ============================================================================
 
 import { useState, useEffect } from "react";
-import { useAuth } from "../../../hooks/useAuth";
-import api from "../../../Api/api";
-import { getAllStudents } from "../../../Api/studentApi";
+import { useAuth } from "@/hooks/useAuth";
+import api from "@/Api/api";
+import { getAllStudents } from "@/Api/studentApi";
 import type { Group, Warning, Student } from "../types/warnings";
-import { showErrorToast } from "../../../components/utils/toastUtils";
+import { showErrorToast } from "@/components/utils/toastUtils";
 
 export const useWarningsData = () => {
   const { user } = useAuth();

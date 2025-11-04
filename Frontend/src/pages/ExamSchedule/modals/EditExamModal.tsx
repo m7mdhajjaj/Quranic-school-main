@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { TransparentModal } from '../components/TransparentModal';
-import type { Exam } from '../../../Api/examApi';
+import type { Exam } from "@/Api/examApi";
 
 interface EditExamModalProps {
   open: boolean;

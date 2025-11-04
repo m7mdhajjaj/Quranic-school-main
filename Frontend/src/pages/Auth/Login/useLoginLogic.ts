@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { useAuth } from '../../../hooks/useAuth';
-import { loginStudent, loginTeacher, loginAdmin } from '../../../Api/authApi';
-import { useLogo } from '../../../hooks/useLogo';
-import type { User } from '../../../contexts/AuthContext';
+import { useAuth } from "@/hooks/useAuth";
+import { loginStudent, loginTeacher, loginAdmin } from "@/Api/authApi";
+import { useLogo } from "@/components/Hooks/useLogo";
+import type { User } from "@/contexts/AuthContext";
 import type { LoginFormData } from '../types';
 
 export const useLoginLogic = () => {

@@ -1,6 +1,6 @@
 // components/AvatarSection.tsx
 import { Camera, Trash2 } from "lucide-react";
-import Avatar from "../../../components/Avatar/Avatar";
+import Avatar from "@/components/Avatar/Avatar";
 import { getUserGender } from "../utils/profileHelpers";
 import type { UserProfile } from "../types/profile.types";
 

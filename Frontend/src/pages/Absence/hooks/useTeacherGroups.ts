@@ -19,7 +19,7 @@ export const useTeacherGroups = (currentUser: LoggedInUser | null) => {
       try {
         console.log("🔍 جلب حلقات المعلم من Groups API...");
 
-        const { getAllGroups } = await import("../../../Api/groupApi");
+        const { getAllGroups } = await import("@/Api/groupApi");
         const groupsRes = await getAllGroups();
 
         if (!groupsRes.success || !Array.isArray(groupsRes.data)) {

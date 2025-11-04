@@ -1,4 +1,4 @@
-import { Card, FeatureList } from '../../../components/UI';
+import { Card, FeatureList } from "@/components/UI";
 import { Database, Target } from 'lucide-react';
 
 const DataCollectionCard = () => {

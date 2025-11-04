@@ -3,9 +3,9 @@
 // ============================================================================
 
 import type { StudentViewProps } from "./types/warnings";
-import { LoadingSpinner } from "../../components/UI/LoadingSpinner";
-import { EmptyState } from "../../components/UI/EmptyState";
-import { Card } from "../../components/UI/Card";
+import { LoadingSpinner } from "@/components/UI/LoadingSpinner";
+import { EmptyState } from "@/components/UI/EmptyState";
+import { Card } from "@/components/UI/Card";
 import {
   getWarningColor,
   getWarningIcon,

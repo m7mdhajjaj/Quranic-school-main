@@ -3,7 +3,7 @@
 // ============================================================================
 
 import React from "react";
-import  PageHeader  from "../../components/UI/PageHeader";
+import  PageHeader  from "@/components/UI/PageHeader";
 import { BarChart3 } from "lucide-react";
 
 const ReportHeader: React.FC = () => {

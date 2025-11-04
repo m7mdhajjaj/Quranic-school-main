@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { useState } from "react";
-import { useWarningsSocket } from "../../Socket/useWarningsSocket";
+import { useWarningsSocket } from "@/Socket/useWarningsSocket";
 import { useWarningsData } from "./hooks/useWarningsData";
 import { useWarningsActions } from "./hooks/useWarningsActions";
 import { TeacherView } from "./TeacherView";

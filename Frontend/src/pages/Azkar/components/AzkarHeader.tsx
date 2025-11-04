@@ -1,5 +1,5 @@
-import PageHeader from "../../../components/UI/PageHeader";
-import { Button, Badge } from "../../../components/UI";
+import PageHeader from "@/components/UI/PageHeader";
+import { Button, Badge } from "@/components/UI";
 import type { ReactNode } from "react";
 
 interface AzkarHeaderProps {

@@ -1,6 +1,6 @@
 import React, { memo } from "react";
-import type { Surah, Reciter } from "../../../Api/quranAudioApi";
-import { Card, Button, Alert, Badge } from "../../../components/UI";
+import type { Surah, Reciter } from "@/Api/quranAudioApi";
+import { Card, Button, Alert, Badge } from "@/components/UI";
 import { Book, Play, Pause, Mic } from "lucide-react";
 
 interface AudioControlsProps {

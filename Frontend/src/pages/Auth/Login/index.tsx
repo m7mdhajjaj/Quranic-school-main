@@ -1,7 +1,7 @@
 import ForgotPasswordModal from "../ResetPassword/ForgotPasswordModal";
 import { LoginForm } from './LoginForm';
 import { WelcomeSection } from './WelcomeSection';
-import { AuthBackground } from '../../../components/Auth';
+import { AuthBackground } from "@/components/Auth";
 import { LoginCard } from './LoginCard';
 import { useLoginLogic } from './useLoginLogic';
 

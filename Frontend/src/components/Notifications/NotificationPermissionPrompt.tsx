@@ -6,7 +6,7 @@
 // ============================================================================
 
 import React, { useState, useEffect } from 'react';
-import { useFirebaseMessaging } from '../../hooks/useFirebaseMessaging';
+import { useFirebaseMessaging } from "@/hooks/useFirebaseMessaging";
 
 interface NotificationPermissionPromptProps {
   /** Show prompt automatically on mount */

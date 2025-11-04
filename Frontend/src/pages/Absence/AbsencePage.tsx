@@ -4,14 +4,14 @@ import { useAbsenceSocket } from "../../Socket";
 import { useAbsenceData, useTeacherGroups } from "./hooks";
 import { SocketIndicator, TeacherToolbar, StudentView } from "./components";
 import { isDateTooOld, getDaysAgo } from "./utils/dateHelpers";
-import { bulkSaveAttendance } from "../../Api/attendanceApi";
+import { bulkSaveAttendance } from "@/Api/attendanceApi";
 import {
   showSuccessMessage,
   showErrorMessage,
-} from "../../components/utils/sweetalertUtils";
-import { Card } from "../../components/UI/Card";
-import { EmptyState } from "../../components/UI/EmptyState";
-import { LoadingSpinner } from "../../components/UI/LoadingSpinner";
+} from "@/components/utils/sweetalertUtils";
+import { Card } from "@/components/UI/Card";
+import { EmptyState } from "@/components/UI/EmptyState";
+import { LoadingSpinner } from "@/components/UI/LoadingSpinner";
 
 const AbsencePage = () => {
   const {

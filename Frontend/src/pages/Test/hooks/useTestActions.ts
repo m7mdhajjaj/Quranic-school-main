@@ -7,7 +7,7 @@ import {
   saveTestResult,
   type Question,
   type TestResult,
-} from "../../../Api/testApi";
+} from "@/Api/testApi";
 
 export const useTestActions = () => {
   const [testStarted, setTestStarted] = useState(false);

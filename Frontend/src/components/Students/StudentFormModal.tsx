@@ -1,6 +1,6 @@
 import React from "react";
 import AddStudentFormWithYup from "../../Forms/AddStudentForm";
-import type { Student } from "../../Api/studentApi";
+import type { Student } from "@/Api/studentApi";
 
 interface StudentFormModalProps {
   isVisible: boolean;

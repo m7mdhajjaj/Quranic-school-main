@@ -1,4 +1,4 @@
-import { Card,Button ,ProgressBar} from "../../../components/UI";
+import { Card,Button ,ProgressBar} from "@/components/UI";
 interface DhikrCardProps {
   text: string;
   count: number;

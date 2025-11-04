@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { useState } from "react";
-import api from "../../../Api/api";
+import api from "@/Api/api";
 import type {
   Student,
   WarningType,
@@ -12,7 +12,7 @@ import type {
 import {
   showSuccessToast,
   showErrorToast,
-} from "../../../components/utils/toastUtils";
+} from "@/components/utils/toastUtils";
 
 export const useWarningsActions = (refetchData: () => void) => {
   const [loadingStatistics, setLoadingStatistics] = useState(false);

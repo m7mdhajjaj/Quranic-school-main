@@ -1,7 +1,7 @@
 // components/PointsSummaryCard.tsx
-import { Card } from "../../../components/UI/Card";
-import { Button } from "../../../components/UI/Button";
-import { StatCard } from "../../../components/UI/StatCard";
+import { Card } from "@/components/UI/Card";
+import { Button } from "@/components/UI/Button";
+import { StatCard } from "@/components/UI/StatCard";
 import type { StudentStats } from "../types/pointsGame.types";
 
 interface PointsSummaryCardProps {

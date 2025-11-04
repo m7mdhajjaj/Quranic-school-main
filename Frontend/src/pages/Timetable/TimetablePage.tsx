@@ -8,9 +8,9 @@ import { useTimetableData } from "./hooks/useTimetableData";
 import { useTimetableActions } from "./hooks/useTimetableActions";
 import { TimetableGrid } from "./components/TimetableGrid";
 import { SessionModal } from "./components/SessionModal";
-import PageHeader from "../../components/UI/PageHeader";
-import { Button } from "../../components/UI/Button";
-import { Alert } from "../../components/UI/Alert";
+import PageHeader from "@/components/UI/PageHeader";
+import { Button } from "@/components/UI/Button";
+import { Alert } from "@/components/UI/Alert";
 import type { Session } from "./types/timetable.types";
 import { Calendar, Plus } from "lucide-react";
 

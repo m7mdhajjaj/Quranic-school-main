@@ -13,11 +13,11 @@ import {
   Clock,
   AlertCircle,
 } from "lucide-react";
-import { useAuth } from "../../hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import {
   showSuccessMessage,
   showErrorMessage,
-} from "../../components/utils/sweetalertUtils";
+} from "@/components/utils/sweetalertUtils";
 import ChangePasswordModal from "../Auth/ChangePass/ChangePass";
 import {
   getUserWithFallback,
@@ -25,16 +25,16 @@ import {
   fetchAvatarBlobUrl,
   uploadUserAvatar,
   deleteUserAvatar,
-} from "../../Api/profileApi";
+} from "@/Api/profileApi";
 import {
   validateProfileData,
   validateField,
   type FieldErrors,
 } from "../../Validation/profileValidation";
 import { useProfileSocket } from "../../Socket";
-import { Card } from "../../components/UI/Card";
-import { EmptyState } from "../../components/UI/EmptyState";
-import { LoadingSpinner } from "../../components/UI/LoadingSpinner";
+import { Card } from "@/components/UI/Card";
+import { EmptyState } from "@/components/UI/EmptyState";
+import { LoadingSpinner } from "@/components/UI/LoadingSpinner";
 import {
   ProfileHeader,
   AvatarSection,

@@ -5,7 +5,7 @@
 import React, { useMemo, type JSX } from "react";
 import type { Session, UserRole } from "../types/timetable.types";
 import { WEEK_DAYS, generateHours } from "../utils/timetableHelpers";
-import { Button } from "../../../components/UI/Button";
+import { Button } from "@/components/UI/Button";
 import { Edit, Trash2 } from "lucide-react";
 
 interface TimetableGridProps {

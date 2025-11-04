@@ -1,1 +1,1 @@
-export { default } from '../../../components/UI/PageHeader';
+export { default } from "@/components/UI/PageHeader";

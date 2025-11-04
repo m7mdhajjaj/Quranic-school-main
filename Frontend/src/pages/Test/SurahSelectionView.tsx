@@ -4,7 +4,7 @@
 
 import { useState } from "react";
 import type { SurahSelectionViewProps } from "./types/test";
-import { Button ,LoadingSpinner} from "../../components//UI/";
+import { Button ,LoadingSpinner} from "@/components/UI/";
 import { SurahCard, StatisticsCards } from "./components";
 
 export const SurahSelectionView: React.FC<SurahSelectionViewProps> = ({

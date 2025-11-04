@@ -1,6 +1,6 @@
 import type { MonthYearFilterProps } from "../types/dailyMarks";
-import { FilterSelect, FilterContainer } from "../../../components/Filters";
-import type { FilterOption } from "../../../components/Filters";
+import { FilterSelect, FilterContainer } from "@/components/Filters";
+import type { FilterOption } from "@/components/Filters";
 
 /**
  * Month and Year filter component

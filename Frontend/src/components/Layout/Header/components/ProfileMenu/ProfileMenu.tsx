@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { User, Key, LogOut, Mail } from "lucide-react";
-import { Card, Button, OnlineStatus } from "../../../UI";
-import Avatar from "../../../Avatar/Avatar";
+import { Card, Button } from "@/components/UI";
+import Avatar from "@/components/Avatar/Avatar";
 import type { ProfileMenuProps } from "../../types/navigation.types";
 
 const ProfileMenu: React.FC<ProfileMenuProps> = ({
@@ -12,8 +12,6 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
   onChangePasswordClick,
   onLogout,
 }) => {
-  // استخدام حالة ثابتة للآن
-  const isOnline = true;
   const menuButtons = useMemo(() => [
     {
       label: "الملف الشخصي",
@@ -62,19 +60,13 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
           </div>
           
           <div className="relative flex items-center gap-4">
-            <div className="relative">
-              <Avatar
-                user={user}
-                size="xl"
-                border="none"
-                className="shadow-xl"
-              />
-              <OnlineStatus 
-                isOnline={isOnline}
-                size="lg"
-                className="absolute -bottom-1 -right-1"
-              />
-            </div>
+            <Avatar
+              user={user}
+              size="xl"
+              border="none"
+              className="shadow-xl"
+              showStatus={true}
+            />
             
             <div className="flex-1 min-w-0">
               <h3 className="text-white font-bold text-lg truncate">

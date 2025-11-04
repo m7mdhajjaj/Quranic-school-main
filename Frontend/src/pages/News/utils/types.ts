@@ -1,4 +1,4 @@
-import type { INews } from "../../../Api/newsApi";
+import type { INews } from "@/Api/newsApi";
 
 export type { INews };
 

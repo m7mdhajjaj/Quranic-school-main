@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-// import { useDashboardStats } from "../../hooks/useDashboardStats"; // Commented out - file doesn't exist
+// import { useDashboardStats } from "@/hooks/useDashboardStats"; // Commented out - file doesn't exist
 import { useDashboardSocket } from "../../Socket";
 import AddStudentForm from "../../Forms/AddStudentForm";
 import AddTeacherForm from "../../Forms/AddTeacherForm";

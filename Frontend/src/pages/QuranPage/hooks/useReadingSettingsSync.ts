@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { saveReadingSettings } from "../../../Api/quranAudioApi";
+import { saveReadingSettings } from "@/Api/quranAudioApi";
 import { useDebouncedSave } from "./useDebouncedSave";
 
 /**

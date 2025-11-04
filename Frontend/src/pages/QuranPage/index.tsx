@@ -1,5 +1,5 @@
 import { useState, useCallback, useTransition, lazy, Suspense } from "react";
-import { Alert } from "../../components/UI";
+import { Alert } from "@/components/UI";
 import { BookOpen, Sparkles } from "lucide-react";
 import SurahList from "./SurahList";
 import ReaderControls from "./ReaderControls";
@@ -7,7 +7,7 @@ import Pagination from "./Pagination";
 import { useQuranInit } from "./hooks/useQuranInit";
 import { usePagination } from "./hooks/usePagination";
 import { useReadingSettingsSync } from "./hooks/useReadingSettingsSync";
-import { getSurah, saveReadingBookmark } from "../../Api/quranAudioApi";
+import { getSurah, saveReadingBookmark } from "@/Api/quranAudioApi";
 import type { SurahData } from "./types/quran.types";
 
 // ✅ Lazy load heavy components

@@ -1,6 +1,6 @@
 // components/ProfileHeader.tsx
 import { Edit, Lock, CheckCircle2, X, Loader2 } from "lucide-react";
-import { Button } from "../../../components/UI/Button";
+import { Button } from "@/components/UI/Button";
 import type { RoleConfig } from "../types/profile.types";
 
 interface ProfileHeaderProps {

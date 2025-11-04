@@ -2,7 +2,7 @@
 // formatters.ts - Date, Time, and Number Formatting Utilities
 // ============================================================================
 
-import type { Exam } from '../../../Api/examApi';
+import type { Exam } from "@/Api/examApi";
 
 /**
  * Validates if time is within allowed range (09:00 - 19:00)

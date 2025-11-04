@@ -16,7 +16,7 @@ export function useTeacherGroups(role: 'student' | 'teacher' | 'admin') {
         if (!userStr) return;
         const currentUser = JSON.parse(userStr);
 
-  const { getAllGroups } = await import('../../../Api/groupApi');
+  const { getAllGroups } = await import("@/Api/groupApi");
         const groupsRes = await getAllGroups();
         if (!groupsRes.success || !Array.isArray(groupsRes.data)) {
           setTeacherGroups([]);

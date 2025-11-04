@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Card, Badge } from "../../components/UI";
+import { Card, Badge } from "@/components/UI";
 import { Book, MapPin } from "lucide-react";
 import type { Surah } from "./types/quran.types";
 

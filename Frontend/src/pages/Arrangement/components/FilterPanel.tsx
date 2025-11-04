@@ -6,8 +6,8 @@
 
 import type { FilterPanelProps } from "../types/arrangement";
 import { getMonthName } from "../utils/arrangementHelpers";
-import { FilterSelect, } from "../../../components/Filters";
-import type { FilterOption } from "../../../components/Filters";
+import { FilterSelect, } from "@/components/Filters";
+import type { FilterOption } from "@/components/Filters";
 
 export const FilterPanel = ({
   selectedYear,

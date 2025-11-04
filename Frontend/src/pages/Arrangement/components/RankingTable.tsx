@@ -7,8 +7,8 @@
 import type { RankingTableProps } from "../types/arrangement";
 import type { StudentWithAverage } from "../types/arrangement";
 import { getFullName } from "../utils/arrangementHelpers";
-import { Table } from "../../../components/UI/Table";
-import type { Column } from "../../../components/UI/Table";
+import { Table } from "@/components/UI/Table";
+import type { Column } from "@/components/UI/Table";
 
 export const RankingTable = ({ students }: RankingTableProps) => {
   // Medal colors helper

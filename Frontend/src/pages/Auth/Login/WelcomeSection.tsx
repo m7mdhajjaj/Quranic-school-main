@@ -1,5 +1,5 @@
 import React from 'react';
-import { Logo, Badge, FeatureList } from '../../../components/UI';
+import { Logo, Badge, FeatureList } from "@/components/UI";
 import { Star, BookOpen, BarChart, FileText } from 'lucide-react';
 
 interface WelcomeSectionProps {

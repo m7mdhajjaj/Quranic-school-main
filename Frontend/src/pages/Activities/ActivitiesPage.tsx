@@ -4,8 +4,8 @@ import 'aos/dist/aos.css';
 import {
   showSuccessToast,
   showErrorToast,
-} from '../../components/utils/toastUtils';
-import { createActivity, updateActivity } from '../../Api/activityApi';
+} from "@/components/utils/toastUtils";
+import { createActivity, updateActivity } from "@/Api/activityApi";
 import { useActivitiesSocket } from '../../Socket';
 import {
   validateActivityForm,
@@ -24,10 +24,10 @@ import {
 } from './modals';
 import FilterButtons, {
   type FilterButton,
-} from '../../components/Filters/FilterButtons';
-import SearchInput from '../../components/Filters/SearchInput';
-import { EmptyState } from '../../components/UI/EmptyState';
-import { Alert } from '../../components/UI/Alert';
+} from "@/components/Filters/FilterButtons";
+import SearchInput from "@/components/Filters/SearchInput";
+import { EmptyState } from "@/components/UI/EmptyState";
+import { Alert } from "@/components/UI/Alert";
 
 const ActivitiesPage = () => {
   // Socket Connection Hook

@@ -1,7 +1,7 @@
 // components/RankingsModal.tsx
-import { Modal } from "../../../components/UI/Modal";
-import { Button } from "../../../components/UI/Button";
-import type { RankingStudent } from "../../../Api/pointsGameApi";
+import { Modal } from "@/components/UI/Modal";
+import { Button } from "@/components/UI/Button";
+import type { RankingStudent } from "@/Api/pointsGameApi";
 
 interface RankingsModalProps {
   show: boolean;

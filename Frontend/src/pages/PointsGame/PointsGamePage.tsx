@@ -1,6 +1,6 @@
 // PointsGamePage.tsx
 import { useState } from "react";
-import { useAuth } from "../../hooks/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { usePointsGameData } from "./hooks/usePointsGameData";
 import { usePointsGameActions } from "./hooks/usePointsGameActions";
 import { useRankings } from "./hooks/useRankings";

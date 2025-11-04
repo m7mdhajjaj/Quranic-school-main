@@ -3,7 +3,7 @@
 // ============================================================================
 
 import type { GroupCardProps } from "../types/warnings";
-import { Card } from "../../../components/UI";
+import { Card } from "@/components/UI";
 
 export const GroupCard: React.FC<GroupCardProps> = ({ group, onClick }) => {
   return (

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { getAllStudents } from '../../../Api/studentApi';
-import { getExamMarks, type Exam, type MarkRow, type StudentDoc } from '../../../Api/examApi';
+import { getAllStudents } from "@/Api/studentApi";
+import { getExamMarks, type Exam, type MarkRow, type StudentDoc } from "@/Api/examApi";
 
 export function useMarksModal() {
   const [showMarkModal, setShowMarkModal] = useState(false);

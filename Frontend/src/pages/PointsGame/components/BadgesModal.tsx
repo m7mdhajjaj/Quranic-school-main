@@ -1,6 +1,6 @@
 // components/BadgesModal.tsx
-import { Modal } from "../../../components/UI/Modal";
-import { Button } from "../../../components/UI/Button";
+import { Modal } from "@/components/UI/Modal";
+import { Button } from "@/components/UI/Button";
 import type { Badge, BadgeProgress } from "../types/pointsGame.types";
 import { allBadges } from "../utils/badgeDefinitions";
 

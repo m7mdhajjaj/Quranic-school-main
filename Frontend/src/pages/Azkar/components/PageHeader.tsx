@@ -1,4 +1,4 @@
-import PageHeaderShared from "../../../components/UI/PageHeader";
+import PageHeaderShared from "@/components/UI/PageHeader";
 
 const PageHeader = () => {
   return (

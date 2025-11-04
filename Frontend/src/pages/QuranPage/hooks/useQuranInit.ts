@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import {
   getAllSurahs,
   getReadingSettings,
-} from "../../../Api/quranAudioApi";
+} from "@/Api/quranAudioApi";
 import type { Surah, ReadingSettings } from "../types/quran.types";
 
 /**

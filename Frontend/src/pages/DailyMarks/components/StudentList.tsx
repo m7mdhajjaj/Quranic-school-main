@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { StudentListProps } from "../types/dailyMarks";
-import { Select, Button,Card } from "../../../components/UI";
-import { SearchInput } from "../../../components/Filters";
+import { Select, Button,Card } from "@/components/UI";
+import { SearchInput } from "@/components/Filters";
 import { Users, Plus, Edit, Trash2 } from "lucide-react";
 
 /**

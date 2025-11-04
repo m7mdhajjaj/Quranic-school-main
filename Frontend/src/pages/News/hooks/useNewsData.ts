@@ -6,14 +6,14 @@ import {
   updateNews,
   deleteNews,
   type INews,
-} from '../../../Api/newsApi';
-import { useNewsSocket } from '../../../Socket';
-import { validateNewsForm } from '../../../Validation/NewsValidation';
+} from "@/Api/newsApi";
+import { useNewsSocket } from "@/Socket";
+import { validateNewsForm } from "@/Validation/NewsValidation";
 import {
   showSuccessToast,
   showErrorToast,
-} from '../../../components/utils/toastUtils';
-import { useAuth } from '../../../hooks/useAuth';
+} from "@/components/utils/toastUtils";
+import { useAuth } from "@/hooks/useAuth";
 
 export const useNewsData = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);

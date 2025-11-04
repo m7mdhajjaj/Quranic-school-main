@@ -24,18 +24,18 @@ import {
   FaSync,
   FaUserGraduate,
 } from 'react-icons/fa';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from "@/hooks/useAuth";
 import { useGroupsSocket } from '../../Socket';
 import AddGroupForm from '../../Forms/AddGroupForm';
-import ResponsivePagination from '../../components/UI/ResponsivePagination';
-import { getAllGroups, deleteGroup, type Group } from '../../Api/groupApi';
-import { getAllTeachers } from '../../Api/teacherApi';
+import ResponsivePagination from "@/components/UI/ResponsivePagination";
+import { getAllGroups, deleteGroup, type Group } from "@/Api/groupApi";
+import { getAllTeachers } from "@/Api/teacherApi";
 import { type GroupFormData } from '../../Validation/groupValidation';
 import {
   showCenteredSwal,
   showSuccessMessage,
   showErrorMessage,
-} from '../../components/utils/sweetalertUtils';
+} from "@/components/utils/sweetalertUtils";
 
 type SortField = 'name' | 'teacher' | 'capacity';
 type SortOrder = 'asc' | 'desc';

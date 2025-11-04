@@ -2,7 +2,7 @@ import type {
   Surah as ApiSurah,
   SurahData as ApiSurahData,
   Ayah as ApiAyah,
-} from "../../../Api/quranAudioApi";
+} from "@/Api/quranAudioApi";
 
 // ✅ نمد الأنواع من الـ API
 export interface Ayah extends ApiAyah {

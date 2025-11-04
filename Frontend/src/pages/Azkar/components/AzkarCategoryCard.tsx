@@ -1,4 +1,4 @@
-import { ProgressBar, Card, Badge } from '../../../components/UI';
+import { ProgressBar, Card, Badge } from "@/components/UI";
 
 interface AzkarCategoryCardProps {
   icon: string;

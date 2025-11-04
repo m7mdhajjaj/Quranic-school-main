@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { User, LogOut, X } from "lucide-react";
-import { Button } from "../../../UI/Button";
-import Avatar from "../../../Avatar/Avatar";
+import { Button } from "@/components/UI";
+import Avatar from "@/components/Avatar/Avatar";
 import type { MobileMenuProps } from "../../types/navigation.types";
 
 const MobileMenu: React.FC<MobileMenuProps> = ({
@@ -56,14 +56,13 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
               <div className="flex items-center gap-4 p-4 bg-white/10 rounded-2xl backdrop-blur-md">
                 {/* الأفاتار مع نقطة الحالة */}
                 <div className="relative flex-shrink-0">
-                  <Avatar user={user} size="lg" border="thick" className="shadow-lg" />
-                  {/* نقطة الحالة - متصل */}
-                  <div className="absolute bottom-0 right-0 translate-x-1/4 translate-y-1/4">
-                    <div className="relative">
-                      <div className="w-4 h-4 bg-green-500 rounded-full border-2 border-emerald-700"></div>
-                      <div className="absolute inset-0 w-4 h-4 bg-green-400 rounded-full animate-ping opacity-75"></div>
-                    </div>
-                  </div>
+                  <Avatar 
+                    user={user} 
+                    size="lg" 
+                    border="thick" 
+                    className="shadow-lg"
+                    showStatus={true}
+                  />
                 </div>
 
                 <div className="flex-1 min-w-0">

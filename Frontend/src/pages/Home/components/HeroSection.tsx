@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Button, LoadingSpinner } from '../../../components/UI';
+import { Button, LoadingSpinner } from "@/components/UI";
 import { Edit2 } from 'lucide-react';
 
 interface User {

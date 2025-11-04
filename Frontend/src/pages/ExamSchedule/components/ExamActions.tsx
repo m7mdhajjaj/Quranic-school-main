@@ -1,6 +1,6 @@
 import React from 'react';
 import { PillButton } from './PillButton';
-import type { Exam } from '../../../Api/examApi';
+import type { Exam } from "@/Api/examApi";
 import { safeExamId } from '../utils';
 
 export const ExamActions: React.FC<{

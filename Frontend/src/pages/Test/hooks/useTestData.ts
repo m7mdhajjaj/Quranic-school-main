@@ -9,7 +9,7 @@ import {
   generateTestQuestions,
   type Surah,
   type Question,
-} from "../../../Api/testApi";
+} from "@/Api/testApi";
 
 export const useTestData = () => {
   const [surahs, setSurahs] = useState<Surah[]>([]);

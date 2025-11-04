@@ -2,4 +2,4 @@
  * PageHeader - Re-export from shared components
  * Using the shared PageHeader component for consistency
  */
-export { default } from '../../../components/UI/PageHeader';
+export { default } from "@/components/UI/PageHeader";

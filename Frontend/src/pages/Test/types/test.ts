@@ -2,7 +2,7 @@
 // Types & Interfaces للاختبار القرآني
 // ============================================================================
 
-import type { Surah, Question, TestResult } from "../../../Api/testApi";
+import type { Surah, Question, TestResult } from "@/Api/testApi";
 
 // Re-export types from API
 export type { Surah, Question, TestResult };

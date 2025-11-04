@@ -1,8 +1,8 @@
 import React from "react";
-import { Button,Modal, Input, Select, Textarea, ImageUpload, DatePicker } from "../../../components/UI";
+import { Button,Modal, Input, Select, Textarea, ImageUpload, DatePicker } from "@/components/UI";
 import { Edit, Tag } from "lucide-react";
 import type { ActivityFormData } from "../types/activities";
-import { API_BASE_URL } from "../../../config/config";
+import { API_BASE_URL } from "@/config/config";
 
 interface EditActivityModalProps {
   isOpen: boolean;

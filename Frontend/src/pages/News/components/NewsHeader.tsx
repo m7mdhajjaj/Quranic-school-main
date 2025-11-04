@@ -1,6 +1,6 @@
 
 import type { NewsHeaderProps } from "../utils/types";
-import { Button } from '../../../components/UI';
+import { Button } from "@/components/UI";
 import { Plus } from 'lucide-react';
 
 

@@ -1,6 +1,6 @@
 // components/PrayersSection.tsx
-import { Card } from "../../../components/UI/Card";
-import { Button } from "../../../components/UI/Button";
+import { Card } from "@/components/UI/Card";
+import { Button } from "@/components/UI/Button";
 import type { Prayers, PrayerStatus } from "../types/pointsGame.types";
 import { prayerNames } from "../utils/badgeDefinitions";
 import { getPrayerPoints } from "../utils/pointsCalculator";

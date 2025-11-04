@@ -34,6 +34,6 @@ export { ImageUpload } from './ImageUpload';
 export { Logo } from './Logo';
 export { StatCard } from './StatCard';
 export { FeatureList } from './FeatureList';
-export { OnlineStatus } from './OnlineStatus';
+export { OnlineStatus } from '../Avatar/OnlineStatus';
 export { default as PageHeader } from './PageHeader';
 export { default as ResponsivePagination } from './ResponsivePagination';

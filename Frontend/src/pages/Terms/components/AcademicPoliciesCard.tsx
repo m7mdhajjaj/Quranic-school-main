@@ -1,4 +1,4 @@
-import { Card, FeatureList } from '../../../components/UI';
+import { Card, FeatureList } from "@/components/UI";
 import { CheckCircle, AlertCircle } from 'lucide-react';
 
 const AcademicPoliciesCard = () => {

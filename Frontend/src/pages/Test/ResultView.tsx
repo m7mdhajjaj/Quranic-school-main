@@ -3,7 +3,7 @@
 // ============================================================================
 
 import type { ResultViewProps } from "./types/test";
-import { Button } from "../../components//UI/Button";
+import { Button } from "@/components/UI/Button";
 import {
   calculatePercentage,
   getResultTitle,

@@ -1,6 +1,6 @@
 import React from 'react';
-import { Card, Badge, DropdownMenu, Button } from '../../../components/UI';
-import AddedAgo from '../../../components/UI/AddedAgo';
+import { Card, Badge, DropdownMenu, Button } from "@/components/UI";
+import AddedAgo from "@/components/UI/AddedAgo";
 import type { Activity } from '../types/activities';
 import { Edit, Trash2, MoreHorizontal } from 'lucide-react';
 

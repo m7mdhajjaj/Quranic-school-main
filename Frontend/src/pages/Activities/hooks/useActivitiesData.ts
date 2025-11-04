@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getAllActivities } from "../../../Api/activityApi";
+import { getAllActivities } from "@/Api/activityApi";
 import type { Activity, User } from "../types/activities";
 
 export const useActivitiesData = () => {

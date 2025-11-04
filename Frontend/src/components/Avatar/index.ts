@@ -1,6 +1,20 @@
 /**
  * Avatar Component Exports
  * @module Avatar
+ * 
+ * @description
+ * مكون الأفاتار مع دعم كامل لحالة الاتصال (Online Status)
+ * 
+ * @example
+ * // استخدام بسيط
+ * <Avatar user={user} size="md" />
+ * 
+ * @example
+ * // مع عرض حالة الاتصال
+ * <Avatar user={user} size="lg" showStatus={true} />
+ * 
+ * @note
+ * OnlineStatus مدمجة تلقائياً - لا حاجة لاستيرادها منفصلة
  */
 
 // Main Component

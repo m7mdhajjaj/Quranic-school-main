@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { changePassword } from '../../../Api/authApi';
-import { useLogo } from '../../../hooks/useLogo';
-import { showSuccessMessage, showErrorMessage } from '../../../components/utils/sweetalertUtils';
-import { Modal } from '../../../components/UI';
-import { Input, Button ,Logo} from '../../../components/UI';
-import { PasswordRequirements, SecurityTips, PasswordStrengthIndicator } from '../../../components/Auth';
-import { validatePassword, calculatePasswordStrength } from '../../../utils/passwordValidation';
+import { changePassword } from "@/Api/authApi";
+import { useLogo } from "@/components/Hooks/useLogo";
+import { showSuccessMessage, showErrorMessage } from "@/components/utils/sweetalertUtils";
+import { Modal } from "@/components/UI";
+import { Input, Button ,Logo} from "@/components/UI";
+import { PasswordRequirements, SecurityTips, PasswordStrengthIndicator } from "@/components/Auth";
+import { validatePassword, calculatePasswordStrength } from "@/utils/passwordValidation";
 import { Lock, CheckCircle2, XCircle } from 'lucide-react';
 import type {
   ChangePasswordModalProps,

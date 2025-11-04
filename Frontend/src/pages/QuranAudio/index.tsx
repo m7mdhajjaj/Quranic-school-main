@@ -1,7 +1,7 @@
 import React, { useCallback, lazy, Suspense } from "react";
 import { useQuranAudio } from "./hooks/useQuranAudio";
 import { PageHeader } from "./components";
-import { LoadingSpinner } from "../../components/UI";
+import { LoadingSpinner } from "@/components/UI";
 
 // ✅ Lazy load heavy components to reduce initial bundle size
 const ReciterSelector = lazy(() => import("./components/ReciterSelector"));

@@ -1,12 +1,12 @@
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { useEffect, useState, useRef } from 'react';
-import { useAuth } from '../../hooks/useAuth';
-import { getHeroImage, uploadHeroImage } from '../../Api/uploadApi';
+import { useAuth } from "@/hooks/useAuth";
+import { getHeroImage, uploadHeroImage } from "@/Api/uploadApi";
 import {
   showSuccessMessage,
   showErrorMessage,
-} from '../../components/utils/sweetalertUtils';
+} from "@/components/utils/sweetalertUtils";
 import { HeroSection, VisionSection, ValuesSection } from './components';
 
 const Home = () => {

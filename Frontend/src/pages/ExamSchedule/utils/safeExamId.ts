@@ -2,7 +2,7 @@
 // Exam ID utilities
 // ============================================================================
 
-import type { Exam } from "../../../Api/examApi";
+import type { Exam } from "@/Api/examApi";
 
 /**
  * Safely extracts exam ID from exam object

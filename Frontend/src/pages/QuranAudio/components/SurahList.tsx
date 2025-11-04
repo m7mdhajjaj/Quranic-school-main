@@ -1,10 +1,10 @@
 import React, { useState, useMemo, useCallback, memo } from "react";
-import type { Surah } from "../../../Api/quranAudioApi";
+import type { Surah } from "@/Api/quranAudioApi";
 import SurahCard from "./SurahCard";
-import { SearchInput, FilterSelect, FilterContainer } from "../../../components/Filters";
-import type { FilterOption } from "../../../components/Filters";
-import { EmptyState } from "../../../components/UI";
-import ResponsivePagination from "../../../components/UI/ResponsivePagination";
+import { SearchInput, FilterSelect, FilterContainer } from "@/components/Filters";
+import type { FilterOption } from "@/components/Filters";
+import { EmptyState } from "@/components/UI";
+import ResponsivePagination from "@/components/UI/ResponsivePagination";
 
 interface SurahListProps {
   surahs: Surah[];

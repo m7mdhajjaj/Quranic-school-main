@@ -7,7 +7,7 @@ import {
   createSession,
   updateSession,
   deleteSession,
-} from "../../../Api/sessionApi";
+} from "@/Api/sessionApi";
 import type { Session, SessionFormData } from "../types/timetable.types";
 import Swal from "sweetalert2";
 

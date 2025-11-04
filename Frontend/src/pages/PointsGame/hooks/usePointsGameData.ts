@@ -4,7 +4,7 @@ import {
   getDailyPoints,
   getStudentBadges,
   getStudentStats,
-} from "../../../Api/pointsGameApi";
+} from "@/Api/pointsGameApi";
 import type {
   Prayers,
   Nawafel,

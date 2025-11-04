@@ -11,7 +11,7 @@ import {
   type Surah,
   type Ayah,
   type Reciter,
-} from "../../../Api/quranAudioApi";
+} from "@/Api/quranAudioApi";
 
 export const useQuranAudio = () => {
   const [surahs, setSurahs] = useState<Surah[]>([]);

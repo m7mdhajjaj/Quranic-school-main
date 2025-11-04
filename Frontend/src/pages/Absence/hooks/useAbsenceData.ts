@@ -6,7 +6,7 @@ import type {
   AttendanceStudent,
   MonthlyAbsence,
 } from "../types/absence.types";
-import { getAttendanceByDate } from "../../../Api/attendanceApi";
+import { getAttendanceByDate } from "@/Api/attendanceApi";
 import { todayISO } from "../utils/dateHelpers";
 
 export const useAbsenceData = () => {

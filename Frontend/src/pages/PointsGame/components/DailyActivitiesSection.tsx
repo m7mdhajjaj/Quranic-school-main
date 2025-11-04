@@ -1,7 +1,7 @@
 // components/DailyActivitiesSection.tsx
-import { Card } from "../../../components/UI/Card";
-import { Button } from "../../../components/UI/Button";
-import { RangeSlider } from "../../../components/UI/RangeSlider";
+import { Card } from "@/components/UI/Card";
+import { Button } from "@/components/UI/Button";
+import { RangeSlider } from "@/components/UI/RangeSlider";
 
 interface DailyActivitiesSectionProps {
   parentRespect: number;

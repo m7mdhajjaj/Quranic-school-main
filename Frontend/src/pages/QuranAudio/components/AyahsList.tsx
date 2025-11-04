@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useCallback } from "react";
-import type { Ayah } from "../../../Api/quranAudioApi";
+import type { Ayah } from "@/Api/quranAudioApi";
 import AyahCard from "./AyahCard";
-import ResponsivePagination from "../../../components/UI/ResponsivePagination";
-import { Card, LoadingSpinner } from "../../../components/UI";
+import ResponsivePagination from "@/components/UI/ResponsivePagination";
+import { Card, LoadingSpinner } from "@/components/UI";
 import { Book } from "lucide-react";
 
 interface AyahsListProps {

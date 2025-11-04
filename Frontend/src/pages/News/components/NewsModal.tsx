@@ -1,5 +1,5 @@
 import type { NewsModalProps } from "../utils/types";
-import { Input, Textarea, Button, LoadingSpinner, ImageUpload } from '../../../components/UI';
+import { Input, Textarea, Button, LoadingSpinner, ImageUpload } from "@/components/UI";
 import { MessageSquare, Calendar, X, Plus } from 'lucide-react';
 
 const NewsModal = ({

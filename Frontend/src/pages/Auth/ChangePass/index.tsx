@@ -3,7 +3,7 @@
  */
 
 export { default as ChangePasswordModal } from './ChangePass';
-export { PasswordRequirements, SecurityTips, PasswordStrengthIndicator } from '../../../components/Auth';
+export { PasswordRequirements, SecurityTips, PasswordStrengthIndicator } from "@/components/Auth";
 export type {
   ChangePasswordModalProps,
   ChangePasswordFormData,

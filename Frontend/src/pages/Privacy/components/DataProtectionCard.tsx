@@ -1,4 +1,4 @@
-import { Card, FeatureList } from '../../../components/UI';
+import { Card, FeatureList } from "@/components/UI";
 import { ShieldCheck, UserCog } from 'lucide-react';
 
 const DataProtectionCard = () => {

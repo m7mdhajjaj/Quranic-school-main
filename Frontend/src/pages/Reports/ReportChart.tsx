@@ -3,8 +3,8 @@
 // ============================================================================
 
 import React from "react";
-import { Card } from "../../components/UI/Card";
-import MarksBarChart from "../../components/Chart/MarksBarChart";
+import { Card } from "@/components/UI/Card";
+import MarksBarChart from "@/components/Chart/MarksBarChart";
 
 interface ReportChartProps {
   labels: string[];

@@ -3,9 +3,9 @@
 // ============================================================================
 
 import type { StudentCardProps, WarningType } from "../types/warnings";
-import { Card } from "../../../components/UI/Card";
-import Avatar from "../../../components/Avatar/Avatar";
-import { Button } from "../../../components/UI/Button";
+import { Card } from "@/components/UI/Card";
+import Avatar from "@/components/Avatar/Avatar";
+import { Button } from "@/components/UI/Button";
 import { WarningBadge } from "./WarningBadge";
 
 export const StudentCard: React.FC<StudentCardProps> = ({

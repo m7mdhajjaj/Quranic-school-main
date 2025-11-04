@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { getRankingByAverages } from "../../../Api/rankingApi";
+import { getRankingByAverages } from "@/Api/rankingApi";
 import type { 
   StudentWithAverage, 
   User, 

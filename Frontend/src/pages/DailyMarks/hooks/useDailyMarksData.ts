@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import type { LoggedInUser, Student, Section, Mark, UseDailyMarksDataResult } from "../types/dailyMarks";
-import { getStudentsByTeacher } from "../../../Api/studentApi";
-import { getTeacherById } from "../../../Api/teacherApi";
-import { getAllSections } from "../../../Api/sectionApi";
-import { getStudentMarks } from "../../../Api/dailyMarksApi";
+import { getStudentsByTeacher } from "@/Api/studentApi";
+import { getTeacherById } from "@/Api/teacherApi";
+import { getAllSections } from "@/Api/sectionApi";
+import { getStudentMarks } from "@/Api/dailyMarksApi";
 
 /**
  * Custom hook for loading and managing daily marks data

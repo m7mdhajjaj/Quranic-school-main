@@ -1,9 +1,9 @@
 import Swal from 'sweetalert2';
-import { deleteActivity as deleteActivityApi } from '../../../Api/activityApi';
+import { deleteActivity as deleteActivityApi } from "@/Api/activityApi";
 import {
   showSuccessToast,
   showErrorToast,
-} from '../../../components/utils/toastUtils';
+} from "@/components/utils/toastUtils";
 
 interface DeleteActivityModalProps {
   activityId: string;

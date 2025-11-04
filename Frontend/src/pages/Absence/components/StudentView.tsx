@@ -1,6 +1,6 @@
 // components/StudentView.tsx
 import { useState, useMemo } from "react";
-import { Card } from "../../../components/UI/Card";
+import { Card } from "@/components/UI/Card";
 import { AR_MONTHS } from "../utils/dateHelpers";
 import type { MonthlyAbsence } from "../types/absence.types";
 

@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 import AOS from "aos";
 import { useEffect } from "react";
-import { Card } from "../../components/UI/Card";
-import { Button } from "../../components/UI/Button";
+import { Card } from "@/components/UI/Card";
+import { Button } from "@/components/UI/Button";
 import { ErrorIcon, ErrorContent } from "./components";
 
 const NotFound = () => {

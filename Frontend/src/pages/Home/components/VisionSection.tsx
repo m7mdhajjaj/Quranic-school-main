@@ -1,4 +1,4 @@
-import { Card } from '../../../components/UI';
+import { Card } from "@/components/UI";
 
 const VisionSection = () => {
   return (

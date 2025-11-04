@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getLogo } from "../Api/uploadApi";
+import { getLogo } from "@/Api/uploadApi";
 
 export const useLogo = () => {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);

@@ -1,8 +1,20 @@
 // ============================================================================
 // Layout.tsx - Main Layout Component
 // ============================================================================
-// This component provides a consistent layout structure across all pages
+// This component provides a consistent layout structure across ALL pages
 // with Header, Footer, and content area for children components.
+// 
+// Structure:
+// ┌─────────────────────────────────┐
+// │          Header                 │ ← Always visible (except login)
+// ├─────────────────────────────────┤
+// │                                 │
+// │      Main Content               │ ← Children render here
+// │      (Your Pages)               │
+// │                                 │
+// ├─────────────────────────────────┤
+// │          Footer                 │ ← Conditional based on route
+// └─────────────────────────────────┘
 // ============================================================================
 
 import React from 'react';

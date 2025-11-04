@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Button, Card, RangeSlider } from "../../components/UI";
+import { Button, Card, RangeSlider } from "@/components/UI";
 import { ArrowLeft, BookOpen } from "lucide-react";
 import type { SurahData } from "./types/quran.types";
 

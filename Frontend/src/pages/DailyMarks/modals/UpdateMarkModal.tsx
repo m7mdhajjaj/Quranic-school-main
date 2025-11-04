@@ -1,4 +1,4 @@
-import { Modal, Card,Button,RangeSlider} from "../../../components/UI";
+import { Modal, Card,Button,RangeSlider} from "@/components/UI";
 import type { UpdateMarkModalProps } from "../types/dailyMarks";
 
 /**

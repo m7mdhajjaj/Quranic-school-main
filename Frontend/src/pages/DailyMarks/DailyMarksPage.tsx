@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
-import { createSection, updateSection, deleteSection } from "../../Api/sectionApi";
-import { createMark } from "../../Api/dailyMarksApi";
+import { createSection, updateSection, deleteSection } from "@/Api/sectionApi";
+import { createMark } from "@/Api/dailyMarksApi";
 import {
   showCenteredSwal,
   showWarningMessage,
-} from "../../components/utils/sweetalertUtils";
+} from "@/components/utils/sweetalertUtils";
 import {
   showSuccessToast,
   showErrorToast,
-} from "../../components/utils/toastUtils";
+} from "@/components/utils/toastUtils";
 import { useDailyMarksSocket } from "../../Socket";
 
 // Import refactored components and hooks

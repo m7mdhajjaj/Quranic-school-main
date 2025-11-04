@@ -1,4 +1,4 @@
-import { Button, Input,Modal } from "../../../components/UI";
+import { Button, Input,Modal } from "@/components/UI";
 import { Plus, Calendar, BookOpen, FileText } from "lucide-react";
 import type { AddSectionModalProps } from "../types/dailyMarks";
 

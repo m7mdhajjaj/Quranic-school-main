@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { Lock, CheckCircle, Key } from 'lucide-react';
-import { forgotPassword, resetPassword } from '../../../Api/authApi';
+import { forgotPassword, resetPassword } from "@/Api/authApi";
 import {
   validateForgotPasswordData,
   validateResetPasswordData,
-} from '../../../Validation/forgotPasswordValidation';
-import { showSuccessMessage, showErrorMessage } from '../../../components/utils/sweetalertUtils';
-import { Modal, Button, Input, Alert } from '../../../components/UI';
-import { PasswordRequirements, PasswordStrengthIndicator } from '../../../components/Auth';
+} from "@/Validation/forgotPasswordValidation";
+import { showSuccessMessage, showErrorMessage } from "@/components/utils/sweetalertUtils";
+import { Modal, Button, Input, Alert } from "@/components/UI";
+import { PasswordRequirements, PasswordStrengthIndicator } from "@/components/Auth";
 import type {
   ForgotPasswordModalProps,
   ForgotPasswordFormData,

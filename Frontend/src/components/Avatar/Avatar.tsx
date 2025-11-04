@@ -1,7 +1,7 @@
 import React from 'react';
 import { User as UserIcon, Camera } from 'lucide-react';
 import { useAvatar } from '../Hooks/useAvatar';
-import { LoadingSpinner, Tooltip } from '../UI';
+import { LoadingSpinner, Tooltip, OnlineStatus } from '../UI';
 import {
   getUserInfo,
   getAvatarUrl,
@@ -115,29 +115,7 @@ const textSizeClasses = {
   '4xl': 'text-3xl md:text-5xl',
 };
 
-// أحجام نقطة الحالة
-const statusDotSizeClasses = {
-  xs: 'w-2 h-2',
-  sm: 'w-2.5 h-2.5',
-  md: 'w-3 h-3',
-  lg: 'w-3.5 h-3.5',
-  xl: 'w-4 h-4',
-  '2xl': 'w-5 h-5',
-  '3xl': 'w-6 h-6',
-  '4xl': 'w-7 h-7',
-};
 
-// موضع نقطة الحالة
-const statusDotPositionClasses = {
-  xs: 'bottom-0 right-0',
-  sm: 'bottom-0 right-0',
-  md: 'bottom-0.5 right-0.5',
-  lg: 'bottom-0.5 right-0.5',
-  xl: 'bottom-1 right-1',
-  '2xl': 'bottom-1 right-1',
-  '3xl': 'bottom-1.5 right-1.5',
-  '4xl': 'bottom-2 right-2',
-};
 
 const Avatar: React.FC<AvatarProps> = React.memo(({
   src,
@@ -302,38 +280,16 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
         )}
       </div>
 
-      {/* Status indicator مع Tooltip */}
+      {/* Status indicator مع Tooltip - استخدام OnlineStatus */}
       {showStatus && (
         <Tooltip content={statusTitle} position="top">
-          <div
-            className={`
-              absolute 
-              ${statusDotPositionClasses[size]} 
-              ${statusDotSizeClasses[size]} 
-              rounded-full 
-              border-2 
-              border-white 
-              shadow-lg
-              transition-all 
-              duration-300
-              ${
-                userIsOnline
-                  ? 'bg-green-500 shadow-green-500/50'
-                  : 'bg-red-500 shadow-red-500/50'
-              }
-              ${userIsOnline ? 'animate-pulse' : ''}
-            `}
-            aria-label={userIsOnline ? 'المستخدم متصل' : 'المستخدم غير متصل'}
-          >
-            {/* Inner glow effect */}
-            <div
-              className={`
-                absolute inset-0.5 rounded-full 
-                ${userIsOnline ? 'bg-green-400' : 'bg-red-400'} 
-                opacity-60
-              `}
-            />
-          </div>
+          <OnlineStatus 
+            isOnline={userIsOnline}
+            size={size}
+            position="absolute"
+            showPing={userIsOnline}
+            user={user}
+          />
         </Tooltip>
       )}
 

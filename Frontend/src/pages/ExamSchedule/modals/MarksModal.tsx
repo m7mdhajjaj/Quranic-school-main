@@ -5,7 +5,7 @@
 import React from 'react';
 import { TransparentModal, PillButton } from '../components';
 import { formatDateArabic, formatTime12Arabic, safeExamId } from '../utils';
-import type { Exam, StudentDoc } from '../../../Api/examApi';
+import type { Exam, StudentDoc } from "@/Api/examApi";
 
 interface MarksModalProps {
   open: boolean;

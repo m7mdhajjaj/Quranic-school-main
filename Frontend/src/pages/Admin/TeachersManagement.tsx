@@ -18,9 +18,9 @@ import {
   FaTimes,
   FaSync,
 } from 'react-icons/fa';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from "@/hooks/useAuth";
 import { useTeachersSocket } from '../../Socket';
-import { useSounds } from '../../components/Hooks/useSounds';
+import { useSounds } from "@/components/Hooks/useSounds";
 
 import { 
   getAllTeachers,
@@ -31,12 +31,12 @@ import {
   // getTeacherById,  // TODO: Will be used for details view
   // uploadTeacherAvatar,  // TODO: Will be used for avatar upload
   type Teacher 
-} from '../../Api/teacherApi';
+} from "@/Api/teacherApi";
 import type { TeacherFormData } from '../../Validation/teacherValidation';
 import EnhancedTeacherForm from '../../Forms/AddTeacherForm';
-import ResponsivePagination from '../../components/UI/ResponsivePagination';
-import Avatar from '../../components/Avatar/Avatar';
-import { showCenteredSwal, showSuccessMessage, showErrorMessage } from "../../components/utils/sweetalertUtils";
+import ResponsivePagination from "@/components/UI/ResponsivePagination";
+import Avatar from "@/components/Avatar/Avatar";
+import { showCenteredSwal, showSuccessMessage, showErrorMessage } from "@/components/utils/sweetalertUtils";
 
 type SortField = 'teacherId' | 'firstName' | 'age' | 'email';
 type SortOrder = 'asc' | 'desc';

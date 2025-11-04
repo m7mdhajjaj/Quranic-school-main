@@ -1,4 +1,4 @@
-import { Button,Modal, Card }from "../../../components/UI";
+import { Button,Modal, Card }from "@/components/UI";
 import { Trash2, AlertTriangle } from "lucide-react";
 import type { BulkDeleteModalProps } from "../types/dailyMarks";
 

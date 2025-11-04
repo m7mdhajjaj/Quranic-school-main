@@ -1,5 +1,5 @@
 // Re-export types from API for consistency
-import type { Mark as ApiMark, Section as ApiSection } from "../../../Api/dailyMarksApi";
+import type { Mark as ApiMark, Section as ApiSection } from "@/Api/dailyMarksApi";
 
 // Use API types directly
 export type Mark = ApiMark;

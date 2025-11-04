@@ -1,7 +1,7 @@
 // hooks/usePointsGameActions.ts
 import { useState } from "react";
 import Swal from "sweetalert2";
-import { saveDailyPoints } from "../../../Api/pointsGameApi";
+import { saveDailyPoints } from "@/Api/pointsGameApi";
 import type { DailyPointsData } from "../types/pointsGame.types";
 
 export const usePointsGameActions = (

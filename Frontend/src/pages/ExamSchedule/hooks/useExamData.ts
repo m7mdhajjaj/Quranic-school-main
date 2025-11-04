@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useExamScheduleSocket } from '../../../Socket';
-import { getAllExams, getExamAverage, type Exam, type ExamAverage } from '../../../Api/examApi';
+import { useExamScheduleSocket } from "@/Socket";
+import { getAllExams, getExamAverage, type Exam, type ExamAverage } from "@/Api/examApi";
 import { getTeacherPossibleNames, isTeacherMatch } from '../utils';
 
 export function useExamData(role: 'student' | 'teacher' | 'admin') {
@@ -74,7 +74,7 @@ export function useExamData(role: 'student' | 'teacher' | 'admin') {
         const userStr = localStorage.getItem('user');
         if (userStr) {
           const currentUser = JSON.parse(userStr);
-          const { getAllGroups } = await import('../../../Api/groupApi');
+          const { getAllGroups } = await import("@/Api/groupApi");
           const groupsRes = await getAllGroups();
           if (groupsRes.success && Array.isArray(groupsRes.data)) {
             const possibleNames = getTeacherPossibleNames(currentUser);

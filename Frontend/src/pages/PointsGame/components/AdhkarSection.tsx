@@ -1,6 +1,6 @@
 // components/AdhkarSection.tsx
-import { Card } from "../../../components/UI/Card";
-import { Button } from "../../../components/UI/Button";
+import { Card } from "@/components/UI/Card";
+import { Button } from "@/components/UI/Button";
 import type { Adhkar } from "../types/pointsGame.types";
 
 interface AdhkarSectionProps {

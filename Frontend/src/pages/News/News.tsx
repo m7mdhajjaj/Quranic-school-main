@@ -1,10 +1,10 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import { useAuth } from "../../hooks/useAuth";
-import { EmptyState } from "../../components/UI";
-import { SearchInput, FilterSelect, FilterContainer } from "../../components/Filters";
-import type { FilterOption } from "../../components/Filters";
+import { useAuth } from "@/hooks/useAuth";
+import { EmptyState } from "@/components/UI";
+import { SearchInput, FilterSelect, FilterContainer } from "@/components/Filters";
+import type { FilterOption } from "@/components/Filters";
 import { useNewsData } from "./hooks/useNewsData";
 import { 
   NewsHeader, 

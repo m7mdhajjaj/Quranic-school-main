@@ -18,7 +18,7 @@ import {
   FaTimes,
   FaSync,
 } from 'react-icons/fa';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from "@/hooks/useAuth";
 import { useStudentsSocket } from '../../Socket';
 import {
   getAllStudents,
@@ -27,17 +27,17 @@ import {
   searchStudents,
   bulkDeleteStudents,
   type Student as ApiStudent,
-} from '../../Api/studentApi';
+} from "@/Api/studentApi";
 
 import AddStudentFormWithYup from '../../Forms/AddStudentForm';
-import ResponsivePagination from '../../components/UI/ResponsivePagination';
-import Avatar from '../../components/Avatar/Avatar';
+import ResponsivePagination from "@/components/UI/ResponsivePagination";
+import Avatar from "@/components/Avatar/Avatar";
 import {
   showCenteredSwal,
   showSuccessMessage,
   showWarningMessage,
   showErrorMessage,
-} from '../../components/utils/sweetalertUtils';
+} from "@/components/utils/sweetalertUtils";
 
 // استخدام Student من API
 type Student = ApiStudent;
