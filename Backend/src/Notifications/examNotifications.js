@@ -2,8 +2,8 @@
 // examNotifications.js - Exam Notification Handlers
 // ============================================================================
 
-const Student = require("../../schema/Student");
-const { formatTime12Arabic } = require("../../utils/timeFormatter");
+const Student = require("../schema/Student");
+const { formatTime12Arabic } = require("../utils/timeFormatter");
 
 /**
  * Send notification when exam is created
@@ -15,10 +15,16 @@ const notifyExamCreated = async (exam, io = null) => {
   console.log("\n🔔 ========== EXAM NOTIFICATION START ==========");
   console.log(`📝 Exam: ${exam.name}`);
   console.log(`👥 Group: ${exam.group || "N/A"}`);
-  console.log(`🔧 NotificationService: ${global.notificationService ? "✅ Available" : "❌ Not Available"}`);
+  console.log(
+    `🔧 NotificationService: ${
+      global.notificationService ? "✅ Available" : "❌ Not Available"
+    }`
+  );
 
   if (!exam.group || !global.notificationService) {
-    console.log("⚠️ Cannot send notification: missing group or notificationService");
+    console.log(
+      "⚠️ Cannot send notification: missing group or notificationService"
+    );
     console.log("🔔 ========== EXAM NOTIFICATION END (SKIPPED) ==========\n");
     return;
   }
@@ -26,22 +32,30 @@ const notifyExamCreated = async (exam, io = null) => {
   try {
     // Get all students in this group
     console.log(`🔍 Searching for students in group "${exam.group}"...`);
-    const students = await Student.find({ 
-      group: exam.group, 
-      isActive: true 
+    const students = await Student.find({
+      group: exam.group,
+      isActive: true,
     }).select("_id firstName lastName");
-    
-    console.log(`👥 Found ${students.length} active students in group "${exam.group}"`);
-    
+
+    console.log(
+      `👥 Found ${students.length} active students in group "${exam.group}"`
+    );
+
     if (!students || students.length === 0) {
       console.log(`⚠️ No students found in group "${exam.group}"`);
-      console.log("🔔 ========== EXAM NOTIFICATION END (NO STUDENTS) ==========\n");
+      console.log(
+        "🔔 ========== EXAM NOTIFICATION END (NO STUDENTS) ==========\n"
+      );
       return;
     }
 
     // Log students list
     students.forEach((student, index) => {
-      console.log(`   ${index + 1}. ${student.firstName} ${student.lastName} (ID: ${student._id})`);
+      console.log(
+        `   ${index + 1}. ${student.firstName} ${student.lastName} (ID: ${
+          student._id
+        })`
+      );
     });
 
     const formattedDate = new Date(exam.date).toLocaleDateString("ar-EG", {
@@ -59,7 +73,11 @@ const notifyExamCreated = async (exam, io = null) => {
 
     // Send notification to each student (Socket.IO + Firebase + Database)
     const notificationPromises = students.map((student, index) => {
-      console.log(`   ${index + 1}. Sending to ${student.firstName} ${student.lastName}...`);
+      console.log(
+        `   ${index + 1}. Sending to ${student.firstName} ${
+          student.lastName
+        }...`
+      );
       return global.notificationService.createNotification({
         recipient: student._id,
         recipientModel: "Student",
@@ -80,8 +98,12 @@ const notifyExamCreated = async (exam, io = null) => {
 
     await Promise.all(notificationPromises);
     console.log(`\n✅ Exam creation notifications sent successfully!`);
-    console.log(`   👥 Recipients: ${students.length} students in group "${exam.group}"`);
-    console.log(`   📱 Via: Socket.IO (real-time) + Firebase (push) + Database (persistent)`);
+    console.log(
+      `   👥 Recipients: ${students.length} students in group "${exam.group}"`
+    );
+    console.log(
+      `   📱 Via: Socket.IO (real-time) + Firebase (push) + Database (persistent)`
+    );
     console.log("🔔 ========== EXAM NOTIFICATION END (SUCCESS) ==========\n");
   } catch (error) {
     console.error("\n❌ Error sending exam creation notifications:", error);
@@ -102,23 +124,29 @@ const notifyExamDeleted = async (exam, io = null) => {
   console.log(`👥 Group: ${exam.group || "N/A"}`);
 
   if (!exam.group || !global.notificationService) {
-    console.log("⚠️ Cannot send notification: missing group or notificationService");
-    console.log("🗑️ ========== EXAM DELETION NOTIFICATION END (SKIPPED) ==========\n");
+    console.log(
+      "⚠️ Cannot send notification: missing group or notificationService"
+    );
+    console.log(
+      "🗑️ ========== EXAM DELETION NOTIFICATION END (SKIPPED) ==========\n"
+    );
     return;
   }
 
   try {
     console.log(`🔍 Searching for students in group "${exam.group}"...`);
-    const students = await Student.find({ 
-      group: exam.group, 
-      isActive: true 
+    const students = await Student.find({
+      group: exam.group,
+      isActive: true,
     }).select("_id firstName lastName");
-    
+
     console.log(`👥 Found ${students.length} active students`);
-    
+
     if (!students || students.length === 0) {
       console.log(`⚠️ No students found in group "${exam.group}"`);
-      console.log("🗑️ ========== EXAM DELETION NOTIFICATION END (NO STUDENTS) ==========\n");
+      console.log(
+        "🗑️ ========== EXAM DELETION NOTIFICATION END (NO STUDENTS) ==========\n"
+      );
       return;
     }
 
@@ -131,10 +159,16 @@ const notifyExamDeleted = async (exam, io = null) => {
 
     const formattedTime = formatTime12Arabic(exam.time);
 
-    console.log(`📤 Sending deletion notifications to ${students.length} students...`);
+    console.log(
+      `📤 Sending deletion notifications to ${students.length} students...`
+    );
 
     const notificationPromises = students.map((student, index) => {
-      console.log(`   ${index + 1}. Sending to ${student.firstName} ${student.lastName}...`);
+      console.log(
+        `   ${index + 1}. Sending to ${student.firstName} ${
+          student.lastName
+        }...`
+      );
       return global.notificationService.createNotification({
         recipient: student._id,
         recipientModel: "Student",
@@ -156,11 +190,17 @@ const notifyExamDeleted = async (exam, io = null) => {
     await Promise.all(notificationPromises);
     console.log(`\n✅ Exam deletion notifications sent successfully!`);
     console.log(`   👥 Recipients: ${students.length} students`);
-    console.log(`   📱 Via: Socket.IO (real-time) + Firebase (push) + Database (persistent)`);
-    console.log("🗑️ ========== EXAM DELETION NOTIFICATION END (SUCCESS) ==========\n");
+    console.log(
+      `   📱 Via: Socket.IO (real-time) + Firebase (push) + Database (persistent)`
+    );
+    console.log(
+      "🗑️ ========== EXAM DELETION NOTIFICATION END (SUCCESS) ==========\n"
+    );
   } catch (error) {
     console.error("\n❌ Error sending exam deletion notifications:", error);
-    console.log("🗑️ ========== EXAM DELETION NOTIFICATION END (ERROR) ==========\n");
+    console.log(
+      "🗑️ ========== EXAM DELETION NOTIFICATION END (ERROR) ==========\n"
+    );
   }
 };
 
@@ -176,23 +216,29 @@ const notifyExamUpdated = async (exam, io = null) => {
   console.log(`👥 Group: ${exam.group || "N/A"}`);
 
   if (!exam.group || !global.notificationService) {
-    console.log("⚠️ Cannot send notification: missing group or notificationService");
-    console.log("✏️ ========== EXAM UPDATE NOTIFICATION END (SKIPPED) ==========\n");
+    console.log(
+      "⚠️ Cannot send notification: missing group or notificationService"
+    );
+    console.log(
+      "✏️ ========== EXAM UPDATE NOTIFICATION END (SKIPPED) ==========\n"
+    );
     return;
   }
 
   try {
     console.log(`🔍 Searching for students in group "${exam.group}"...`);
-    const students = await Student.find({ 
-      group: exam.group, 
-      isActive: true 
+    const students = await Student.find({
+      group: exam.group,
+      isActive: true,
     }).select("_id firstName lastName");
-    
+
     console.log(`👥 Found ${students.length} active students`);
-    
+
     if (!students || students.length === 0) {
       console.log(`⚠️ No students found in group "${exam.group}"`);
-      console.log("✏️ ========== EXAM UPDATE NOTIFICATION END (NO STUDENTS) ==========\n");
+      console.log(
+        "✏️ ========== EXAM UPDATE NOTIFICATION END (NO STUDENTS) ==========\n"
+      );
       return;
     }
 
@@ -205,10 +251,16 @@ const notifyExamUpdated = async (exam, io = null) => {
 
     const formattedTime = formatTime12Arabic(exam.time);
 
-    console.log(`📤 Sending update notifications to ${students.length} students...`);
+    console.log(
+      `📤 Sending update notifications to ${students.length} students...`
+    );
 
     const notificationPromises = students.map((student, index) => {
-      console.log(`   ${index + 1}. Sending to ${student.firstName} ${student.lastName}...`);
+      console.log(
+        `   ${index + 1}. Sending to ${student.firstName} ${
+          student.lastName
+        }...`
+      );
       return global.notificationService.createNotification({
         recipient: student._id,
         recipientModel: "Student",
@@ -230,11 +282,17 @@ const notifyExamUpdated = async (exam, io = null) => {
     await Promise.all(notificationPromises);
     console.log(`\n✅ Exam update notifications sent successfully!`);
     console.log(`   👥 Recipients: ${students.length} students`);
-    console.log(`   📱 Via: Socket.IO (real-time) + Firebase (push) + Database (persistent)`);
-    console.log("✏️ ========== EXAM UPDATE NOTIFICATION END (SUCCESS) ==========\n");
+    console.log(
+      `   📱 Via: Socket.IO (real-time) + Firebase (push) + Database (persistent)`
+    );
+    console.log(
+      "✏️ ========== EXAM UPDATE NOTIFICATION END (SUCCESS) ==========\n"
+    );
   } catch (error) {
     console.error("\n❌ Error sending exam update notifications:", error);
-    console.log("✏️ ========== EXAM UPDATE NOTIFICATION END (ERROR) ==========\n");
+    console.log(
+      "✏️ ========== EXAM UPDATE NOTIFICATION END (ERROR) ==========\n"
+    );
   }
 };
 

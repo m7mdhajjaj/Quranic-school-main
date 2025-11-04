@@ -2,7 +2,7 @@
 // dailyMarkNotifications.js - Daily Mark Notifications System
 // ============================================================================
 
-const Notification = require("../../schema/Notification");
+const Notification = require("../schema/Notification");
 
 /**
  * Send notification when a single mark is added
@@ -22,7 +22,9 @@ exports.notifyMarkAdded = async (mark, io) => {
     }
 
     const totalMark = (mark.reviewMark || 0) + (mark.memorizationMark || 0);
-    const studentName = `${student.firstName} ${student.fatherName || ""} ${student.lastName || ""}`.trim();
+    const studentName = `${student.firstName} ${student.fatherName || ""} ${
+      student.lastName || ""
+    }`.trim();
     const sectionDate = new Date(section.date).toLocaleDateString("ar-SA");
 
     const notificationData = {
@@ -48,7 +50,11 @@ exports.notifyMarkAdded = async (mark, io) => {
     await Notification.create(notificationData);
 
     console.log(`📝 Notification created for student ${studentName}`);
-    console.log(`📊 Mark: ${totalMark} (Review: ${mark.reviewMark || 0}, Memorization: ${mark.memorizationMark || 0})`);
+    console.log(
+      `📊 Mark: ${totalMark} (Review: ${mark.reviewMark || 0}, Memorization: ${
+        mark.memorizationMark || 0
+      })`
+    );
 
     // Emit via Socket.IO
     if (io) {
@@ -76,7 +82,7 @@ exports.notifyMarksAdded = async (marks, io) => {
 
     for (const markData of marks) {
       // Find the actual mark document
-      const Mark = require("../../schema/DailyMark");
+      const Mark = require("../schema/DailyMark");
       const mark = await Mark.findOne({
         studentId: markData.studentId,
         sectionId: markData.sectionId,
@@ -85,14 +91,18 @@ exports.notifyMarksAdded = async (marks, io) => {
         .populate("sectionId", "date memorizationSection reviewSection");
 
       if (!mark || !mark.studentId) {
-        console.warn(`⚠️ Mark not found or missing student: ${markData.studentId}`);
+        console.warn(
+          `⚠️ Mark not found or missing student: ${markData.studentId}`
+        );
         continue;
       }
 
       const student = mark.studentId;
       const section = mark.sectionId;
       const totalMark = (mark.reviewMark || 0) + (mark.memorizationMark || 0);
-      const studentName = `${student.firstName} ${student.fatherName || ""} ${student.lastName || ""}`.trim();
+      const studentName = `${student.firstName} ${student.fatherName || ""} ${
+        student.lastName || ""
+      }`.trim();
       const sectionDate = new Date(section.date).toLocaleDateString("ar-SA");
 
       const notificationData = {
@@ -120,7 +130,10 @@ exports.notifyMarksAdded = async (marks, io) => {
 
       // Emit via Socket.IO
       if (io) {
-        io.to(`student_${student._id}`).emit("newNotification", notificationData);
+        io.to(`student_${student._id}`).emit(
+          "newNotification",
+          notificationData
+        );
       }
     }
 
@@ -130,7 +143,9 @@ exports.notifyMarksAdded = async (marks, io) => {
       console.log(`📤 Saved ${notifications.length} notifications to database`);
     }
 
-    console.log("🔔 ========== BULK MARKS NOTIFICATION END (SUCCESS) ==========\n");
+    console.log(
+      "🔔 ========== BULK MARKS NOTIFICATION END (SUCCESS) ==========\n"
+    );
   } catch (error) {
     console.error("❌ Error in notifyMarksAdded:", error);
   }
@@ -144,7 +159,13 @@ exports.notifyMarksAdded = async (marks, io) => {
  * @param {Number} oldTotalMark - Old total mark (for updates)
  * @param {Number} newTotalMark - New total mark
  */
-exports.notifyMarkUpdated = async (mark, io, isNew = false, oldTotalMark = 0, newTotalMark = 0) => {
+exports.notifyMarkUpdated = async (
+  mark,
+  io,
+  isNew = false,
+  oldTotalMark = 0,
+  newTotalMark = 0
+) => {
   try {
     console.log("🔔 ========== MARK NOTIFICATION START (UPDATE) ==========");
 
@@ -156,7 +177,9 @@ exports.notifyMarkUpdated = async (mark, io, isNew = false, oldTotalMark = 0, ne
       return;
     }
 
-    const studentName = `${student.firstName} ${student.fatherName || ""} ${student.lastName || ""}`.trim();
+    const studentName = `${student.firstName} ${student.fatherName || ""} ${
+      student.lastName || ""
+    }`.trim();
     const sectionDate = new Date(section.date).toLocaleDateString("ar-SA");
 
     let title = "📊 علامة جديدة";
@@ -222,7 +245,9 @@ exports.notifyMarkDeleted = async (mark, io) => {
       return;
     }
 
-    const studentName = `${student.firstName} ${student.fatherName || ""} ${student.lastName || ""}`.trim();
+    const studentName = `${student.firstName} ${student.fatherName || ""} ${
+      student.lastName || ""
+    }`.trim();
     const sectionDate = new Date(section.date).toLocaleDateString("ar-SA");
     const totalMark = (mark.reviewMark || 0) + (mark.memorizationMark || 0);
 
@@ -270,7 +295,7 @@ exports.notifyMarkDeleted = async (mark, io) => {
  */
 exports.notifyStudentMarks = async (studentId, sectionId, mark, io) => {
   try {
-    const Mark = require("../../schema/DailyMark");
+    const Mark = require("../schema/DailyMark");
     const markDoc = await Mark.findOne({
       studentId,
       sectionId,
@@ -279,7 +304,9 @@ exports.notifyStudentMarks = async (studentId, sectionId, mark, io) => {
       .populate("sectionId");
 
     if (!markDoc) {
-      console.warn(`⚠️ Mark not found for student ${studentId} in section ${sectionId}`);
+      console.warn(
+        `⚠️ Mark not found for student ${studentId} in section ${sectionId}`
+      );
       return;
     }
 

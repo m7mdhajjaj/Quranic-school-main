@@ -112,7 +112,7 @@ exports.updateSection = async (req, res) => {
     if (io && updatedSection.group) {
       await notifySectionUpdated(updatedSection, oldSection, io);
     }
-
+ 
     res.json(updatedSection);
   } catch (error) {
     res.status(400).json({ message: error.message });
