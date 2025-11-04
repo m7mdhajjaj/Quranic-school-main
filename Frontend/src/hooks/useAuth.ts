@@ -1,4 +1,5 @@
 import { useContext, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AuthContext, { type AuthContextType } from './AuthContext';
 
 // Hook مخصص لاستخدام AuthContext
@@ -15,12 +16,13 @@ export const useAuth = (): AuthContextType => {
 // Hook للتحقق من المصادقة مع إعادة التوجه
 export const useAuthGuard = (redirectTo: string = '/login') => {
   const { isAuthenticated, isLoading } = useAuth();
+  const navigate = useNavigate();
   
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      window.location.href = redirectTo;
+      navigate(redirectTo, { replace: true });
     }
-  }, [isAuthenticated, isLoading, redirectTo]);
+  }, [isAuthenticated, isLoading, redirectTo, navigate]);
   
   return { isAuthenticated, isLoading };
 };
