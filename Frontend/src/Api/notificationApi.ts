@@ -17,7 +17,7 @@ export interface Notification {
   recipientModel?: string;
   createdAt: string;
   sentAt: string; // وقت الإرسال الفعلي
-  data?: any;
+  data?: Record<string, unknown>;
   isNew?: boolean;
   icon?: string;
   color?: string;
