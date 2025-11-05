@@ -83,7 +83,7 @@ import PointsGame from "./pages/PointsGame/PointsGamePage";
 // ============================================================================
 // Page Components - Admin
 // ============================================================================
-import AdminDashboard from "./pages/Admin/Dashboard";
+import AdminDashboard from "./pages/Admin/Dashboard/index";
 // import AdminManagement from "./pages/Managments/AdminManagement";
 import StudentsManagement from "./pages/Admin/StudentsManagement/index";
 import TeachersManagement from "./pages/Admin/TeachersManagement/index";

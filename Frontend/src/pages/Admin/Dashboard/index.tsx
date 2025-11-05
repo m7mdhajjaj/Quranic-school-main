@@ -1,0 +1,295 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  FaGraduationCap,
+  FaChalkboardTeacher,
+  FaUsers,
+  FaClipboardCheck,
+  FaChartLine,
+} from "react-icons/fa";
+import {
+  StatCard,
+  BarChart,
+  PieChart,
+  QuickActions,
+  AttendanceSection,
+  TopListsSection,
+  NotificationsSection,
+  type Notification,
+} from "./components";
+import { useDashboardData } from "./hooks";
+import type { ChartData } from "./types";
+
+const AdminDashboard = () => {
+  const navigate = useNavigate();
+
+  // استخدام hook لجلب البيانات
+  const { stats, isLoading, error, fetchStats, groupsDistribution } =
+    useDashboardData();
+
+  // State لإدارة الـ Modals (يمكن إضافتها لاحقاً عند إضافة الـ Forms)
+  const [, setShowAddStudentForm] = useState(false);
+  const [, setShowAddTeacherForm] = useState(false);
+  const [, setShowAddGroupForm] = useState(false);
+
+  // Navigation handlers
+  const handleTeachersClick = () => navigate("/admin/teachers");
+  const handleStudentsClick = () => navigate("/admin/students");
+  const handleGroupsClick = () => navigate("/admin/groups");
+  const handleExamsClick = () => navigate("/admin/exams");
+  const handleViewReports = () => navigate("/admin/reports");
+
+  // تحويل بيانات الحلقات للرسم البياني
+  const groupsWithStudents = groupsDistribution.filter(
+    (g) => g.studentCount > 0
+  );
+  const groupDistribution: ChartData = {
+    labels: groupsWithStudents.map((g) => g.groupName),
+    data: groupsWithStudents.map((g) => g.studentCount),
+  };
+
+  // بيانات وهمية للجنس (يمكن استبدالها بـ API لاحقاً)
+  const genderDistribution = {
+    labels: ["ذكور", "إناث"],
+    data: [60, 40],
+    colors: ["from-blue-500 to-blue-600", "from-pink-500 to-pink-600"],
+  };
+
+  // إشعارات وهمية
+  const notifications: Notification[] = [
+    {
+      id: "1",
+      type: "info",
+      title: "طالب جديد",
+      message: "تم تسجيل طالب جديد في الحلقة الأولى",
+      time: "منذ 5 دقائق",
+    },
+    {
+      id: "2",
+      type: "warning",
+      title: "غياب متكرر",
+      message: "الطالب أحمد محمد لديه 3 غيابات هذا الأسبوع",
+      time: "منذ ساعة",
+    },
+  ];
+
+  // بيانات أفضل الطلاب والمعلمين (وهمية)
+  const topStudents = [
+    { name: "محمد أحمد", value: 98 },
+    { name: "فاطمة علي", value: 95 },
+    { name: "عبدالله خالد", value: 93 },
+    { name: "مريم حسن", value: 91 },
+    { name: "يوسف إبراهيم", value: 89 },
+  ];
+
+  const topTeachers = [
+    { name: "أحمد محمود", value: 100 },
+    { name: "سارة علي", value: 98 },
+    { name: "خالد حسن", value: 95 },
+    { name: "نور فاطمة", value: 92 },
+    { name: "عمر يوسف", value: 90 },
+  ];
+
+  // بيانات الحضور (وهمية)
+  const attendanceData = {
+    present: 85,
+    absent: 10,
+    late: 5,
+  };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-green-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg font-medium">
+            جاري تحميل الإحصائيات...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-green-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded-xl shadow-lg max-w-md">
+            <svg
+              className="w-12 h-12 mx-auto mb-4 text-red-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+              />
+            </svg>
+            <p className="text-lg font-medium mb-4">{error}</p>
+            <button
+              onClick={() => fetchStats(true)}
+              className="px-6 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-all">
+              إعادة المحاولة
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100"
+      dir="rtl">
+      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-12">
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-gray-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent mb-3">
+            لوحة الإحصائيات
+          </h1>
+          <p className="text-gray-600 text-xl font-medium">
+            نظرة شاملة ومتطورة على أداء المنصة
+          </p>
+        </div>
+
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8 mb-12">
+          <StatCard
+            icon={<FaGraduationCap className="text-3xl" />}
+            title="إجمالي الطلاب"
+            value={stats.totalStudents}
+            color="bg-gradient-to-br from-blue-500 to-blue-700"
+            bgColor="bg-blue-50"
+            borderColor="border-blue-200"
+            trend="+12% هذا الشهر"
+            percentage={85}
+            onClick={handleStudentsClick}
+          />
+
+          <StatCard
+            icon={<FaChalkboardTeacher className="text-3xl" />}
+            title="إجمالي المعلمين"
+            value={stats.totalTeachers}
+            color="bg-gradient-to-br from-green-500 to-green-700"
+            bgColor="bg-green-50"
+            borderColor="border-green-200"
+            trend="+8% هذا الشهر"
+            percentage={92}
+            onClick={handleTeachersClick}
+          />
+
+          <StatCard
+            icon={<FaClipboardCheck className="text-3xl" />}
+            title="معدل الدرجات"
+            value={stats.averageExamMarks}
+            color="bg-gradient-to-br from-purple-500 to-purple-700"
+            bgColor="bg-purple-50"
+            borderColor="border-purple-200"
+            trend="+5% تحسن"
+            percentage={stats.averageExamMarks}
+          />
+
+          <StatCard
+            icon={<FaClipboardCheck className="text-3xl" />}
+            title="عدد الامتحانات"
+            value={stats.totalExams}
+            color="bg-gradient-to-br from-orange-500 to-orange-700"
+            bgColor="bg-orange-50"
+            borderColor="border-orange-200"
+            percentage={68}
+            onClick={handleExamsClick}
+          />
+
+          <StatCard
+            icon={<FaUsers className="text-3xl" />}
+            title="عدد الحلقات"
+            value={stats.totalGroups}
+            color="bg-gradient-to-br from-pink-500 to-pink-700"
+            bgColor="bg-pink-50"
+            borderColor="border-pink-200"
+            percentage={75}
+            onClick={handleGroupsClick}
+          />
+        </div>
+
+        {/* Quick Actions */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">
+            إجراءات سريعة
+          </h2>
+          <QuickActions
+            onAddStudent={() => setShowAddStudentForm(true)}
+            onAddTeacher={() => setShowAddTeacherForm(true)}
+            onAddGroup={() => setShowAddGroupForm(true)}
+            onViewReports={handleViewReports}
+          />
+        </div>
+
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+          {/* Bar Chart - توزيع الطلاب حسب الحلقات */}
+          <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
+            <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+              <FaChartLine className="text-blue-600" />
+              توزيع الطلاب حسب الحلقات
+            </h3>
+            <div className="h-80">
+              <BarChart
+                data={groupDistribution.data}
+                labels={groupDistribution.labels}
+                maxValue={Math.max(...groupDistribution.data, 20)}
+              />
+            </div>
+          </div>
+
+          {/* Pie Chart - توزيع الطلاب حسب الجنس */}
+          <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
+            <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+              <FaUsers className="text-purple-600" />
+              توزيع الطلاب حسب الجنس
+            </h3>
+            <div className="h-80">
+              <PieChart
+                data={genderDistribution.data}
+                labels={genderDistribution.labels}
+                colors={genderDistribution.colors}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Attendance Section */}
+        <div className="mb-12">
+          <AttendanceSection data={attendanceData} />
+        </div>
+
+        {/* Top Lists Section */}
+        <div className="mb-12">
+          <TopListsSection
+            topStudents={topStudents}
+            topTeachers={topTeachers}
+          />
+        </div>
+
+        {/* Notifications Section */}
+        <div className="mb-12">
+          <NotificationsSection
+            notifications={notifications}
+            onMarkAsRead={(id) => console.log("Mark as read:", id)}
+          />
+        </div>
+
+        {/* Forms Modals - يمكن إضافتها لاحقاً */}
+        {/* {showAddStudentForm && <AddStudentForm onClose={() => setShowAddStudentForm(false)} />} */}
+        {/* {showAddTeacherForm && <AddTeacherForm onClose={() => setShowAddTeacherForm(false)} />} */}
+        {/* {showAddGroupForm && <AddGroupForm onClose={() => setShowAddGroupForm(false)} />} */}
+      </div>
+    </div>
+  );
+};
+
+export default AdminDashboard;
