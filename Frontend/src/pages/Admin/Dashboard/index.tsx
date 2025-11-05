@@ -90,29 +90,29 @@ const AdminDashboard = () => {
     },
   ];
 
-  // بيانات أفضل الطلاب والمعلمين (وهمية)
-  const topStudents = [
-    { name: "محمد أحمد", value: 98 },
-    { name: "فاطمة علي", value: 95 },
-    { name: "عبدالله خالد", value: 93 },
-    { name: "مريم حسن", value: 91 },
-    { name: "يوسف إبراهيم", value: 89 },
-  ];
+  // بيانات أفضل الطلاب والمعلمين من API
+  const topStudents =
+    chartsData?.topStudents && chartsData.topStudents.length > 0
+      ? chartsData.topStudents
+      : [{ name: "لا يوجد بيانات", value: 0 }];
 
-  const topTeachers = [
-    { name: "أحمد محمود", value: 100 },
-    { name: "سارة علي", value: 98 },
-    { name: "خالد حسن", value: 95 },
-    { name: "نور فاطمة", value: 92 },
-    { name: "عمر يوسف", value: 90 },
-  ];
+  const topTeachers =
+    chartsData?.topTeachers && chartsData.topTeachers.length > 0
+      ? chartsData.topTeachers
+      : [{ name: "لا يوجد بيانات", value: 0 }];
 
-  // بيانات الحضور (وهمية)
-  const attendanceData = {
-    present: 85,
-    absent: 10,
-    late: 5,
-  };
+  // بيانات الحضور الشهري من API
+  const attendanceData = chartsData?.monthlyAttendance
+    ? {
+        present: chartsData.monthlyAttendance.present || 0,
+        absent: chartsData.monthlyAttendance.absent || 0,
+        late: chartsData.monthlyAttendance.late || 0,
+      }
+    : {
+        present: 0,
+        absent: 0,
+        late: 0,
+      };
 
   // Loading state
   if (isLoading) {

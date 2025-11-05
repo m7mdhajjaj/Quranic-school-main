@@ -48,7 +48,7 @@ export const AttendanceSection: React.FC<AttendanceSectionProps> = ({
     <Card className="p-6">
       <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
         <FaCheckCircle className="text-blue-600" />
-        الحضور اليوم
+        الحضور لهذا الشهر
       </h3>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

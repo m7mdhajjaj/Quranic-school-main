@@ -10,6 +10,27 @@ export interface ChartsData {
   genderDistribution: Array<{ _id: string; count: number }>;
   marksDistribution: any[];
   attendanceByMonth: any[];
+  monthlyAttendance?: {
+    present: number;
+    absent: number;
+    late: number;
+    total: number;
+  };
+  topStudents?: Array<{
+    name: string;
+    value: number;
+    avgMark?: number;
+    attendanceRate?: number;
+  }>;
+  topTeachers?: Array<{
+    name: string;
+    value: number;
+    studentCount?: number;
+    marksCount?: number;
+    attendanceCount?: number;
+    memorizedCount?: number;
+    reviewCount?: number;
+  }>;
 }
 
 export const useDashboardData = () => {
