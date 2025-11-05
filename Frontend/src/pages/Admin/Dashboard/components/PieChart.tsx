@@ -60,10 +60,31 @@ export const PieChart: React.FC<PieChartProps> = ({ data, labels, colors }) => {
               `Z`,
             ].join(" ");
 
-            // استخراج الألوان بشكل آمن
+            // استخراج الألوان بشكل آمن - تحويل Tailwind إلى HEX
+            const colorMap: { [key: string]: string } = {
+              "blue-500": "#3b82f6",
+              "blue-600": "#2563eb",
+              "pink-500": "#ec4899",
+              "pink-600": "#db2777",
+              "green-500": "#22c55e",
+              "green-600": "#16a34a",
+              "purple-500": "#a855f7",
+              "purple-600": "#9333ea",
+              "orange-500": "#f97316",
+              "orange-600": "#ea580c",
+            };
+
             const colorParts = segment.color.split(" ");
-            const fromColor = colorParts.find((c) => c.startsWith("from-"))?.replace("from-", "") || "#3b82f6";
-            const toColor = colorParts.find((c) => c.startsWith("to-"))?.replace("to-", "") || "#2563eb";
+            const fromColorClass =
+              colorParts
+                .find((c) => c.startsWith("from-"))
+                ?.replace("from-", "") || "blue-500";
+            const toColorClass =
+              colorParts.find((c) => c.startsWith("to-"))?.replace("to-", "") ||
+              "blue-600";
+
+            const fromColor = colorMap[fromColorClass] || "#3b82f6";
+            const toColor = colorMap[toColorClass] || "#2563eb";
 
             return (
               <g key={index}>

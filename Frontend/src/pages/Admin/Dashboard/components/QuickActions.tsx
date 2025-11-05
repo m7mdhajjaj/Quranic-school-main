@@ -1,23 +1,16 @@
 import React from "react";
-import {
-  FaUserPlus,
-  FaChalkboardTeacher,
-  FaUsers,
-  FaChartLine,
-} from "react-icons/fa";
+import { FaUserPlus, FaChalkboardTeacher, FaUsers } from "react-icons/fa";
 
 interface QuickActionsProps {
   onAddStudent: () => void;
   onAddTeacher: () => void;
   onAddGroup: () => void;
-  onViewReports: () => void;
 }
 
 export const QuickActions: React.FC<QuickActionsProps> = ({
   onAddStudent,
   onAddTeacher,
   onAddGroup,
-  onViewReports,
 }) => {
   const actions = [
     {
@@ -41,17 +34,10 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
       hoverColor: "hover:from-purple-600 hover:to-purple-700",
       onClick: onAddGroup,
     },
-    {
-      icon: FaChartLine,
-      label: "عرض التقارير",
-      color: "from-orange-500 to-orange-600",
-      hoverColor: "hover:from-orange-600 hover:to-orange-700",
-      onClick: onViewReports,
-    },
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {actions.map((action, index) => (
         <button
           key={index}

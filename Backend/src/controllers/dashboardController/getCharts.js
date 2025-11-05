@@ -1,4 +1,5 @@
 const Student = require("../../schema/Student");
+const Group = require("../../schema/Group");
 const DailyMark = require("../../schema/DailyMark");
 const Attendance = require("../../schema/Attendance");
 
@@ -16,36 +17,53 @@ const getDashboardCharts = async (req, res) => {
       marksDistribution,
       attendanceByMonth,
     ] = await Promise.all([
-      // Students distribution by group
+      // Students distribution by group - طريقة مباشرة وأكثر كفاءة
       Student.aggregate([
         {
-          $lookup: {
-            from: "groups",
-            localField: "group",
-            foreignField: "_id",
-            as: "groupInfo",
-          },
-        },
-        {
-          $unwind: { path: "$groupInfo", preserveNullAndEmptyArrays: true },
-        },
-        {
+          // تجميع حسب حقل group (سواء كان string أو ObjectId)
           $group: {
-            _id: "$groupInfo.name",
+            _id: "$group",
             count: { $sum: 1 },
           },
         },
         {
+          // إزالة الطلاب بدون حلقة
+          $match: {
+            _id: { $exists: true, $ne: null, $ne: "" },
+          },
+        },
+        {
+          // ترتيب حسب العدد
           $sort: { count: -1 },
+        },
+        {
+          // تحديد العدد لأفضل 10 حلقات
+          $limit: 10,
         },
       ]),
 
-      // Students by gender
+      // Students by gender - تجميع الجنس بشكل موحد
       Student.aggregate([
         {
           $group: {
             _id: "$gender",
             count: { $sum: 1 },
+          },
+        },
+        {
+          // تحويل القيم للإنجليزية لتسهيل العرض في Frontend
+          $project: {
+            _id: {
+              $switch: {
+                branches: [
+                  { case: { $eq: ["$_id", "ذكر"] }, then: "male" },
+                  { case: { $eq: ["$_id", "أنثى"] }, then: "female" },
+                  { case: { $eq: ["$_id", "انثى"] }, then: "female" },
+                ],
+                default: "$_id",
+              },
+            },
+            count: 1,
           },
         },
       ]),
@@ -102,6 +120,14 @@ const getDashboardCharts = async (req, res) => {
     };
 
     console.log("✅ تم جلب بيانات الرسوم البيانية بنجاح");
+    console.log(
+      "📊 Group Distribution:",
+      JSON.stringify(groupDistribution, null, 2)
+    );
+    console.log(
+      "📊 Gender Distribution:",
+      JSON.stringify(genderDistribution, null, 2)
+    );
 
     res.status(200).json({
       success: true,

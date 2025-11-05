@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FaGraduationCap,
@@ -19,41 +19,58 @@ import {
 } from "./components";
 import { useDashboardData } from "./hooks";
 import type { ChartData } from "./types";
+import AddStudentForm from "../../../Forms/AddStudentForm";
+import AddTeacherForm from "../../../Forms/AddTeacherForm";
+import AddGroupForm from "../../../Forms/AddGroupForm";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
 
   // استخدام hook لجلب البيانات
-  const { stats, isLoading, error, fetchStats, groupsDistribution } =
+  const { stats, isLoading, error, fetchStats, chartsData } =
     useDashboardData();
 
-  // State لإدارة الـ Modals (يمكن إضافتها لاحقاً عند إضافة الـ Forms)
-  const [, setShowAddStudentForm] = useState(false);
-  const [, setShowAddTeacherForm] = useState(false);
-  const [, setShowAddGroupForm] = useState(false);
+  // State لإدارة الـ Modals
+  const [showAddStudentForm, setShowAddStudentForm] = useState(false);
+  const [showAddTeacherForm, setShowAddTeacherForm] = useState(false);
+  const [showAddGroupForm, setShowAddGroupForm] = useState(false);
 
   // Navigation handlers
   const handleTeachersClick = () => navigate("/admin/teachers");
   const handleStudentsClick = () => navigate("/admin/students");
   const handleGroupsClick = () => navigate("/admin/groups");
   const handleExamsClick = () => navigate("/admin/exams");
-  const handleViewReports = () => navigate("/admin/reports");
 
-  // تحويل بيانات الحلقات للرسم البياني
-  const groupsWithStudents = groupsDistribution.filter(
-    (g) => g.studentCount > 0
-  );
-  const groupDistribution: ChartData = {
-    labels: groupsWithStudents.map((g) => g.groupName),
-    data: groupsWithStudents.map((g) => g.studentCount),
-  };
+  // تحويل بيانات الحلقات للرسم البياني من API
+  const groupDistribution: ChartData = chartsData?.groupDistribution
+    ? {
+        labels: chartsData.groupDistribution.map((g) => g._id || "غير محدد"),
+        data: chartsData.groupDistribution.map((g) => g.count),
+      }
+    : { labels: [], data: [] };
 
-  // بيانات وهمية للجنس (يمكن استبدالها بـ API لاحقاً)
-  const genderDistribution = {
-    labels: ["ذكور", "إناث"],
-    data: [60, 40],
-    colors: ["from-blue-500 to-blue-600", "from-pink-500 to-pink-600"],
-  };
+  // بيانات الجنس من API
+  const genderDistribution = chartsData?.genderDistribution
+    ? {
+        labels: chartsData.genderDistribution.map((g) =>
+          g._id === "male" ? "ذكور" : "إناث"
+        ),
+        data: chartsData.genderDistribution.map((g) => g.count),
+        colors: ["from-blue-500 to-blue-600", "from-pink-500 to-pink-600"],
+      }
+    : {
+        labels: ["ذكور", "إناث"],
+        data: [0, 0],
+        colors: ["from-blue-500 to-blue-600", "from-pink-500 to-pink-600"],
+      };
+
+  // Debug: عرض البيانات في console
+  useEffect(() => {
+    console.log("🔍 Dashboard Debug:");
+    console.log("chartsData:", chartsData);
+    console.log("groupDistribution:", groupDistribution);
+    console.log("genderDistribution:", genderDistribution);
+  }, [chartsData, groupDistribution, genderDistribution]);
 
   // إشعارات وهمية
   const notifications: Notification[] = [
@@ -225,39 +242,101 @@ const AdminDashboard = () => {
             onAddStudent={() => setShowAddStudentForm(true)}
             onAddTeacher={() => setShowAddTeacherForm(true)}
             onAddGroup={() => setShowAddGroupForm(true)}
-            onViewReports={handleViewReports}
           />
         </div>
 
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
           {/* Bar Chart - توزيع الطلاب حسب الحلقات */}
-          <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-              <FaChartLine className="text-blue-600" />
-              توزيع الطلاب حسب الحلقات
-            </h3>
+          <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transition-shadow duration-300">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                <FaChartLine className="text-blue-600" />
+                توزيع الطلاب حسب الحلقات
+              </h3>
+              {groupDistribution.data.length > 0 && (
+                <div className="bg-blue-50 px-3 py-1 rounded-lg">
+                  <span className="text-sm font-bold text-blue-600">
+                    {groupDistribution.data.reduce((a, b) => a + b, 0)} طالب
+                  </span>
+                </div>
+              )}
+            </div>
             <div className="h-80">
-              <BarChart
-                data={groupDistribution.data}
-                labels={groupDistribution.labels}
-                maxValue={Math.max(...groupDistribution.data, 20)}
-              />
+              {groupDistribution.data.length > 0 &&
+              groupDistribution.data.reduce((a, b) => a + b, 0) > 0 ? (
+                <BarChart
+                  data={groupDistribution.data}
+                  labels={groupDistribution.labels}
+                  maxValue={Math.max(...groupDistribution.data, 20)}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-400">
+                  <div className="text-center max-w-md mx-auto">
+                    <div className="bg-blue-50 rounded-full w-24 h-24 mx-auto mb-4 flex items-center justify-center">
+                      <FaChartLine className="text-5xl text-blue-300" />
+                    </div>
+                    <p className="text-lg font-bold text-gray-600 mb-2">
+                      لا توجد حلقات بها طلاب
+                    </p>
+                    <p className="text-sm text-gray-500 mb-4">
+                      لعرض التوزيع، يجب ربط الطلاب بالحلقات
+                    </p>
+                    <button
+                      onClick={handleGroupsClick}
+                      className="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105">
+                      إدارة الحلقات
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Pie Chart - توزيع الطلاب حسب الجنس */}
-          <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
-            <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-              <FaUsers className="text-purple-600" />
-              توزيع الطلاب حسب الجنس
-            </h3>
+          <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transition-shadow duration-300">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                <FaUsers className="text-purple-600" />
+                توزيع الطلاب حسب الجنس
+              </h3>
+              {genderDistribution.data.length > 0 &&
+                genderDistribution.data.reduce((a, b) => a + b, 0) > 0 && (
+                  <div className="bg-purple-50 px-3 py-1 rounded-lg">
+                    <span className="text-sm font-bold text-purple-600">
+                      {genderDistribution.data.reduce((a, b) => a + b, 0)} طالب
+                    </span>
+                  </div>
+                )}
+            </div>
             <div className="h-80">
-              <PieChart
-                data={genderDistribution.data}
-                labels={genderDistribution.labels}
-                colors={genderDistribution.colors}
-              />
+              {genderDistribution.data.length > 0 &&
+              genderDistribution.data.reduce((a, b) => a + b, 0) > 0 ? (
+                <PieChart
+                  data={genderDistribution.data}
+                  labels={genderDistribution.labels}
+                  colors={genderDistribution.colors}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-400">
+                  <div className="text-center max-w-md mx-auto">
+                    <div className="bg-purple-50 rounded-full w-24 h-24 mx-auto mb-4 flex items-center justify-center">
+                      <FaUsers className="text-5xl text-purple-300" />
+                    </div>
+                    <p className="text-lg font-bold text-gray-600 mb-2">
+                      لا توجد بيانات
+                    </p>
+                    <p className="text-sm text-gray-500 mb-4">
+                      قم بإضافة طلاب لعرض توزيع الجنس
+                    </p>
+                    <button
+                      onClick={() => setShowAddStudentForm(true)}
+                      className="px-6 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105">
+                      إضافة طالب
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -283,10 +362,36 @@ const AdminDashboard = () => {
           />
         </div>
 
-        {/* Forms Modals - يمكن إضافتها لاحقاً */}
-        {/* {showAddStudentForm && <AddStudentForm onClose={() => setShowAddStudentForm(false)} />} */}
-        {/* {showAddTeacherForm && <AddTeacherForm onClose={() => setShowAddTeacherForm(false)} />} */}
-        {/* {showAddGroupForm && <AddGroupForm onClose={() => setShowAddGroupForm(false)} />} */}
+        {/* Forms Modals */}
+        {showAddStudentForm && (
+          <AddStudentForm
+            onClose={() => setShowAddStudentForm(false)}
+            onSuccess={() => {
+              setShowAddStudentForm(false);
+              fetchStats(true); // إعادة تحميل البيانات بعد إضافة طالب
+            }}
+          />
+        )}
+
+        {showAddTeacherForm && (
+          <AddTeacherForm
+            onClose={() => setShowAddTeacherForm(false)}
+            onSuccess={() => {
+              setShowAddTeacherForm(false);
+              fetchStats(true); // إعادة تحميل البيانات بعد إضافة معلم
+            }}
+          />
+        )}
+
+        {showAddGroupForm && (
+          <AddGroupForm
+            onClose={() => setShowAddGroupForm(false)}
+            onSuccess={() => {
+              setShowAddGroupForm(false);
+              fetchStats(true); // إعادة تحميل البيانات بعد إضافة حلقة
+            }}
+          />
+        )}
       </div>
     </div>
   );

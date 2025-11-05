@@ -1,4 +1,4 @@
-import api from './api';
+import api from "./api";
 
 export interface GroupData {
   name: string;
@@ -33,21 +33,21 @@ export interface DashboardApiResponse {
  */
 export const fetchDashboardStats = async (): Promise<DashboardApiResponse> => {
   try {
-    console.log('📊 جلب إحصائيات لوحة التحكم...');
-    
-    const response = await api.get<DashboardApiResponse>('/dashboard/stats');
+    console.log("📊 جلب إحصائيات لوحة التحكم...");
+
+    const response = await api.get<DashboardApiResponse>("/dashboard/stats");
 
     if (!response.data.success) {
-      throw new Error(response.data.message || 'فشل في جلب الإحصائيات');
+      throw new Error(response.data.message || "فشل في جلب الإحصائيات");
     }
 
-    console.log('✅ تم جلب الإحصائيات بنجاح');
+    console.log("✅ تم جلب الإحصائيات بنجاح");
     return {
       ...response.data,
       timestamp: new Date().toISOString(),
     };
   } catch (error) {
-    console.error('❌ خطأ في جلب الإحصائيات:', error);
+    console.error("❌ خطأ في جلب الإحصائيات:", error);
     throw error;
   }
 };
@@ -55,20 +55,25 @@ export const fetchDashboardStats = async (): Promise<DashboardApiResponse> => {
 /**
  * جلب بيانات الحلقات
  */
-export const fetchGroupsData = async (): Promise<{ success: boolean; data: GroupData[] }> => {
+export const fetchGroupsData = async (): Promise<{
+  success: boolean;
+  data: GroupData[];
+}> => {
   try {
-    console.log('📋 جلب بيانات الحلقات...');
-    
-    const response = await api.get<{ success: boolean; data: GroupData[] }>('/groups');
+    console.log("📋 جلب بيانات الحلقات...");
+
+    const response = await api.get<{ success: boolean; data: GroupData[] }>(
+      "/groups"
+    );
 
     if (!response.data.success) {
-      throw new Error('فشل في جلب بيانات الحلقات');
+      throw new Error("فشل في جلب بيانات الحلقات");
     }
 
-    console.log('✅ تم جلب بيانات الحلقات بنجاح');
+    console.log("✅ تم جلب بيانات الحلقات بنجاح");
     return response.data;
   } catch (error) {
-    console.error('❌ خطأ في جلب بيانات الحلقات:', error);
+    console.error("❌ خطأ في جلب بيانات الحلقات:", error);
     throw error;
   }
 };
@@ -78,11 +83,11 @@ export const fetchGroupsData = async (): Promise<{ success: boolean; data: Group
  */
 export const fetchAllDashboardData = async () => {
   try {
-    console.log('🔄 جلب جميع بيانات الداشبورد...');
-    
+    console.log("🔄 جلب جميع بيانات الداشبورد...");
+
     const [statsResponse, groupsResponse] = await Promise.all([
       fetchDashboardStats(),
-      fetchGroupsData()
+      fetchGroupsData(),
     ]);
 
     return {
@@ -92,7 +97,7 @@ export const fetchAllDashboardData = async () => {
       timestamp: new Date().toISOString(),
     };
   } catch (error) {
-    console.error('❌ خطأ في جلب بيانات الداشبورد:', error);
+    console.error("❌ خطأ في جلب بيانات الداشبورد:", error);
     throw error;
   }
 };
@@ -104,18 +109,39 @@ export const fetchPartialStats = async (
   statsTypes: string[]
 ): Promise<Partial<DashboardStats>> => {
   try {
-    const response = await api.post<{ success: boolean; data: Partial<DashboardStats> }>(
-      '/dashboard/partial-stats',
-      { statsTypes }
-    );
+    const response = await api.post<{
+      success: boolean;
+      data: Partial<DashboardStats>;
+    }>("/dashboard/partial-stats", { statsTypes });
 
     if (!response.data.success) {
-      throw new Error('فشل في جلب الإحصائيات الجزئية');
+      throw new Error("فشل في جلب الإحصائيات الجزئية");
     }
 
     return response.data.data;
   } catch (error) {
-    console.error('❌ خطأ في جلب الإحصائيات الجزئية:', error);
+    console.error("❌ خطأ في جلب الإحصائيات الجزئية:", error);
+    throw error;
+  }
+};
+
+/**
+ * جلب بيانات الرسوم البيانية
+ */
+export const fetchDashboardCharts = async () => {
+  try {
+    console.log("📊 جلب بيانات الرسوم البيانية...");
+
+    const response = await api.get("/dashboard/charts");
+
+    if (!response.data.success) {
+      throw new Error("فشل في جلب بيانات الرسوم البيانية");
+    }
+
+    console.log("✅ تم جلب بيانات الرسوم البيانية بنجاح");
+    return response.data.data;
+  } catch (error) {
+    console.error("❌ خطأ في جلب بيانات الرسوم البيانية:", error);
     throw error;
   }
 };
@@ -125,4 +151,5 @@ export default {
   fetchGroupsData,
   fetchAllDashboardData,
   fetchPartialStats,
+  fetchDashboardCharts,
 };
