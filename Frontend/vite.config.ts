@@ -92,11 +92,12 @@ export default defineConfig({
   // تحسين الخادم المحلي
   server: {
     port: 5173,
+    host: 'localhost',
     hmr: {
-      // تحسين Hot Module Replacement
+      protocol: 'ws',
+      host: 'localhost',
       overlay: false
     },
-    // تحسين استجابة الخادم
     fs: {
       strict: false
     },
@@ -106,7 +107,6 @@ export default defineConfig({
         target: 'http://localhost:5005',
         changeOrigin: true,
         secure: false,
-        // Don't rewrite the path - backend already expects /api prefix
       }
     },
     headers: {
