@@ -86,7 +86,7 @@ import PointsGame from "./pages/PointsGame/PointsGamePage";
 import AdminDashboard from "./pages/Admin/Dashboard";
 // import AdminManagement from "./pages/Managments/AdminManagement";
 import StudentsManagement from "./pages/Admin/StudentsManagement/index";
-import TeachersManagement from "./pages/Admin/TeachersManagement";
+import TeachersManagement from "./pages/Admin/TeachersManagement/index";
 import GroupManagement from "./pages/Admin/GroupManagement";
 
 // ============================================================================
