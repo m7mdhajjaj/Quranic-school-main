@@ -39,16 +39,20 @@ export const TeacherTableView: React.FC<TeacherTableViewProps> = ({
       header: "رقم المعلم",
       sortable: true,
       width: "120px",
+      align: "center",
       render: (teacher) => (
-        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-          {teacher.teacherId}
-        </span>
+        <div className="flex justify-center">
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+            {teacher.teacherId}
+          </span>
+        </div>
       ),
     },
     {
       key: "avatar",
       header: "الصورة",
       width: "80px",
+      align: "center",
       render: (teacher) => (
         <div className="flex justify-center">
           <Avatar user={teacher} size="sm" border="ring" />
@@ -74,112 +78,138 @@ export const TeacherTableView: React.FC<TeacherTableViewProps> = ({
       key: "email",
       header: "البريد الإلكتروني",
       sortable: true,
+      align: "center",
       render: (teacher) => (
-        <span className="text-sm text-gray-900">{teacher.email}</span>
+        <div className="flex justify-center">
+          <span className="text-sm text-gray-900">{teacher.email}</span>
+        </div>
       ),
     },
     {
       key: "phoneNumber",
       header: "رقم الهاتف",
+      align: "center",
       render: (teacher) => (
-        <span className="text-sm text-gray-900 font-mono" dir="ltr">
-          {teacher.phoneNumber}
-        </span>
+        <div className="flex justify-center">
+          <span className="text-sm text-gray-900 font-mono" dir="ltr">
+            {teacher.phoneNumber}
+          </span>
+        </div>
       ),
     },
     {
       key: "idNumber",
       header: "رقم الهوية",
+      align: "center",
       render: (teacher) => (
-        <span className="text-sm text-gray-900 font-mono">
-          {teacher.idNumber || <span className="text-gray-400">-</span>}
-        </span>
+        <div className="flex justify-center">
+          <span className="text-sm text-gray-900 font-mono">
+            {teacher.idNumber || <span className="text-gray-400">-</span>}
+          </span>
+        </div>
       ),
     },
     {
       key: "gender",
       header: "الجنس",
       width: "100px",
-      render: (teacher) =>
-        teacher.gender ? (
-          <span
-            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              teacher.gender === "ذكر"
-                ? "bg-blue-100 text-blue-800"
-                : "bg-pink-100 text-pink-800"
-            }`}>
-            {teacher.gender}
-          </span>
-        ) : (
-          <span className="text-gray-400">-</span>
-        ),
+      align: "center",
+      render: (teacher) => (
+        <div className="flex justify-center">
+          {teacher.gender ? (
+            <span
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                teacher.gender === "ذكر"
+                  ? "bg-blue-100 text-blue-800"
+                  : "bg-pink-100 text-pink-800"
+              }`}>
+              {teacher.gender}
+            </span>
+          ) : (
+            <span className="text-gray-400">-</span>
+          )}
+        </div>
+      ),
     },
     {
       key: "age",
       header: "العمر",
       sortable: true,
       width: "80px",
-      render: (teacher) =>
-        teacher.age ? (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-            {teacher.age}
-          </span>
-        ) : (
-          <span className="text-gray-400">-</span>
-        ),
+      align: "center",
+      render: (teacher) => (
+        <div className="flex justify-center">
+          {teacher.age ? (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+              {teacher.age}
+            </span>
+          ) : (
+            <span className="text-gray-400">-</span>
+          )}
+        </div>
+      ),
     },
     {
       key: "groups",
       header: "الحلقات المدرسة",
+      align: "center",
       render: (teacher) => {
-        if (
-          teacher.groups &&
-          Array.isArray(teacher.groups) &&
-          teacher.groups.length > 0
-        ) {
-          if (teacher.groups.length === 1) {
-            return (
-              <div className="inline-flex items-center gap-1 px-2 py-1 bg-green-50 text-green-700 rounded text-xs font-medium border border-green-200">
-                <div className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0"></div>
-                <span className="font-semibold truncate max-w-[200px]">
-                  {getGroupDisplayName(teacher.groups[0])}
-                </span>
-              </div>
-            );
-          } else {
-            return (
-              <div className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-medium border border-blue-200">
-                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0"></div>
-                <span className="font-semibold">
-                  {teacher.groups.length} حلقة
-                </span>
-              </div>
-            );
+        const content = (() => {
+          if (
+            teacher.groups &&
+            Array.isArray(teacher.groups) &&
+            teacher.groups.length > 0
+          ) {
+            if (teacher.groups.length === 1) {
+              return (
+                <div className="inline-flex items-center gap-1 px-2 py-1 bg-green-50 text-green-700 rounded text-xs font-medium border border-green-200">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0"></div>
+                  <span className="font-semibold truncate max-w-[200px]">
+                    {getGroupDisplayName(teacher.groups[0])}
+                  </span>
+                </div>
+              );
+            } else {
+              return (
+                <div className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-medium border border-blue-200">
+                  <div className="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0"></div>
+                  <span className="font-semibold">
+                    {teacher.groups.length} حلقة
+                  </span>
+                </div>
+              );
+            }
           }
-        }
-        return (
-          <div className="inline-flex items-center gap-1 px-2 py-1 bg-red-50 rounded border border-red-200">
-            <div className="w-1.5 h-1.5 bg-red-500 rounded-full flex-shrink-0"></div>
-            <span className="text-red-600 text-xs font-medium">لا توجد</span>
-          </div>
-        );
+          return (
+            <div className="inline-flex items-center gap-1 px-2 py-1 bg-red-50 rounded border border-red-200">
+              <div className="w-1.5 h-1.5 bg-red-500 rounded-full flex-shrink-0"></div>
+              <span className="text-red-600 text-xs font-medium">لا توجد</span>
+            </div>
+          );
+        })();
+
+        return <div className="flex justify-center">{content}</div>;
       },
     },
     {
       key: "residence",
       header: "مكان السكن",
+      align: "center",
       render: (teacher) => (
-        <span className="text-sm text-gray-900">
-          {teacher.residence || teacher.address || (
-            <span className="text-gray-400">-</span>
-          )}
-        </span>
+        <div className="flex justify-center">
+          <span className="text-sm text-gray-900">
+            {teacher.residence || teacher.address || (
+              <span className="text-gray-400">-</span>
+            )}
+          </span>
+        </div>
       ),
     },
     {
       key: "actions",
       header: "الإجراءات",
       width: "120px",
+      align: "center",
       render: (teacher) => (
         <div className="flex items-center justify-center gap-2">
           <button
