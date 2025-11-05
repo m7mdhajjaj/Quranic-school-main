@@ -1,8 +1,7 @@
 // contexts/UserStatusContext.tsx
 import React, { createContext, useState, useEffect, useCallback } from 'react';
-import { useAuth } from './useAuth';
-import { API_BASE_URL } from '../config/config';
-import { io, Socket } from 'socket.io-client';
+import { useAuth } from '../hooks/useAuth';
+import { socketManager } from '../Socket/SocketManager';
 import api from '../Api/api';
 
 // تعريف الواجهات والأنواع
@@ -25,7 +24,6 @@ export const UserStatusContext = createContext<UserStatusContextType | undefined
 export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, token } = useAuth();
   const [userStatuses, setUserStatuses] = useState<Record<string, UserStatusState>>({});
-  const [, setSocket] = useState<Socket | null>(null);
 
   // الحالة الافتراضية - مستقرة
   const defaultStatus: UserStatusState = React.useMemo(() => ({
@@ -63,71 +61,42 @@ export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   }, [token, user]);
 
-  // إعداد Socket.IO للتحديثات الفورية
+  // إعداد Socket.IO للتحديثات الفورية باستخدام socketManager
   useEffect(() => {
     if (!token || !user?._id) {
       return;
     }
 
-    let socketInstance: Socket | null = null;
+    // جلب الحالة الأولية للمستخدم الحالي
+    fetchUserStatus(user._id);
 
-    try {
-      socketInstance = io(API_BASE_URL, {
-        transports: ['polling'],
-        upgrade: false,
-        auth: { token },
-        reconnection: true,
-        reconnectionAttempts: 3,
-        reconnectionDelay: 1000,
-        timeout: 5000,
-      });
+    // الاستماع لتحديثات حالة المستخدمين من socketManager
+    const handleUserStatusChange = (data: { 
+      userId: string; 
+      isActive: boolean; 
+      lastSeen?: string;
+    }) => {
+      setUserStatuses(prev => ({
+        ...prev,
+        [data.userId]: {
+          isActive: data.isActive,
+          lastSeen: data.lastSeen ? new Date(data.lastSeen) : undefined,
+          isLoading: false,
+        },
+      }));
+    };
 
-      socketInstance.on('connect', () => {
-        // console.log('UserStatus Socket connected');
-        setSocket(socketInstance);
-        
-        // جلب الحالة الأولية للمستخدم الحالي
-        if (user._id) {
-          fetchUserStatus(user._id);
-        }
-      });
-
-      socketInstance.on('disconnect', () => {
-        // console.log('UserStatus Socket disconnected');
-        setSocket(null);
-      });
-
-      // الاستماع لتحديثات حالة المستخدمين
-      socketInstance.on('userStatusChange', (data: { 
-        userId: string; 
-        isActive: boolean; 
-        lastSeen?: string;
-      }) => {
-        setUserStatuses(prev => ({
-          ...prev,
-          [data.userId]: {
-            isActive: data.isActive,
-            lastSeen: data.lastSeen ? new Date(data.lastSeen) : undefined,
-            isLoading: false,
-          },
-        }));
-      });
-
-      socketInstance.on('error', (error) => {
-        console.error('UserStatus Socket error:', error);
-      });
-
-    } catch (error) {
-      console.warn('Socket.IO not available for user status:', error);
-      // Fallback: جلب الحالة مباشرة
-      if (user._id) {
-        fetchUserStatus(user._id);
-      }
+    // الحصول على Socket من socketManager
+    const socket = socketManager.getSocket();
+    if (socket) {
+      socket.on('userStatusChange', handleUserStatusChange);
     }
 
+    // Cleanup: إزالة المستمع عند unmount
     return () => {
-      if (socketInstance) {
-        socketInstance.disconnect();
+      const socket = socketManager.getSocket();
+      if (socket) {
+        socket.off('userStatusChange', handleUserStatusChange);
       }
     };
   }, [token, user?._id, fetchUserStatus]);

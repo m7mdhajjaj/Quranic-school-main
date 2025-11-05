@@ -1,6 +1,6 @@
 import { useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AuthContext, { type AuthContextType } from './AuthContext';
+import AuthContext, { type AuthContextType } from '../Context/AuthContext';
 
 // Hook مخصص لاستخدام AuthContext
 export const useAuth = (): AuthContextType => {
