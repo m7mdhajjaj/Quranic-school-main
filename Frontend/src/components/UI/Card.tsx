@@ -7,6 +7,7 @@ interface CardProps {
   hover?: boolean;
   className?: string;
   onClick?: () => void;
+  [key: string]: any; // للسماح بتمرير أي attributes إضافية مثل data-aos
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -16,6 +17,7 @@ export const Card: React.FC<CardProps> = ({
   hover = false,
   className,
   onClick,
+  ...rest
 }) => {
   const variants = {
     default: 'bg-white shadow-xl border border-gray-100',
@@ -39,6 +41,7 @@ export const Card: React.FC<CardProps> = ({
       } ${onClick ? 'cursor-pointer' : ''} ${className || ''}`}
       onClick={onClick}
       dir="rtl"
+      {...rest}
     >
       {children}
     </div>

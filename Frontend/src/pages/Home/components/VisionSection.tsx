@@ -6,7 +6,10 @@ const VisionSection = () => {
       <div className="absolute inset-0 opacity-5 bg-repeat bg-[url('/src/images/islamic-pattern.png')]"></div>
 
       <div className="relative z-10 text-center">
-        <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-10">
+        <h2
+          className="text-2xl md:text-3xl font-bold text-slate-800 mb-10"
+          data-aos="fade-down"
+          data-aos-duration="600">
           رؤيتنا في تعليم القرآن الكريم
         </h2>
 
@@ -16,17 +19,17 @@ const VisionSection = () => {
             padding="lg"
             hover
             className="text-center"
-            data-aos="flip-left"
+            data-aos="fade-up"
             data-aos-delay="100"
-          >
+            data-aos-duration="700"
+            data-aos-easing="ease-in-out">
             <div className="w-16 h-16 mx-auto bg-emerald-100 rounded-full flex items-center justify-center mb-4">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-8 w-8 text-emerald-600"
                 fill="none"
                 viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
+                stroke="currentColor">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -48,17 +51,17 @@ const VisionSection = () => {
             padding="lg"
             hover
             className="text-center"
-            data-aos="flip-left"
+            data-aos="fade-up"
             data-aos-delay="300"
-          >
+            data-aos-duration="700"
+            data-aos-easing="ease-in-out">
             <div className="w-16 h-16 mx-auto bg-emerald-100 rounded-full flex items-center justify-center mb-4">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-8 w-8 text-emerald-600"
                 fill="none"
                 viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
+                stroke="currentColor">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -80,17 +83,17 @@ const VisionSection = () => {
             padding="lg"
             hover
             className="text-center"
-            data-aos="flip-left"
+            data-aos="fade-up"
             data-aos-delay="500"
-          >
+            data-aos-duration="700"
+            data-aos-easing="ease-in-out">
             <div className="w-16 h-16 mx-auto bg-emerald-100 rounded-full flex items-center justify-center mb-4">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-8 w-8 text-emerald-600"
                 fill="none"
                 viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
+                stroke="currentColor">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"

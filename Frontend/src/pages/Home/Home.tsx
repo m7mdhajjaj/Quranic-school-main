@@ -1,13 +1,13 @@
-import AOS from 'aos';
-import 'aos/dist/aos.css';
-import { useEffect, useState, useRef } from 'react';
+import AOS from "aos";
+import "aos/dist/aos.css";
+import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { getHeroImage, uploadHeroImage } from "@/Api/uploadApi";
 import {
   showSuccessMessage,
   showErrorMessage,
 } from "@/components/utils/sweetalertUtils";
-import { HeroSection, VisionSection, ValuesSection } from './components';
+import { HeroSection, VisionSection, ValuesSection } from "./components";
 
 const Home = () => {
   const { user: currentUser } = useAuth();
@@ -20,13 +20,34 @@ const Home = () => {
 
   // Initialize AOS
   useEffect(() => {
+    // Initialize AOS with settings
     AOS.init({
-      duration: 1000,
-      once: false,
-      mirror: true,
-      easing: 'ease-in-out',
+      duration: 800,
+      once: true,
+      easing: "ease-in-out",
+      offset: 50,
+      delay: 0,
+      anchorPlacement: "top-bottom",
     });
+
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      AOS.refresh();
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+    };
   }, []);
+
+  // Refresh AOS when hero image loads
+  useEffect(() => {
+    if (!heroImageLoading) {
+      setTimeout(() => {
+        AOS.refresh();
+      }, 100);
+    }
+  }, [heroImageLoading]);
 
   // Load Hero Image
   useEffect(() => {
@@ -38,7 +59,7 @@ const Home = () => {
           setHeroImage(data.url);
         }
       } catch (error) {
-        console.error('Error fetching hero image:', error);
+        console.error("Error fetching hero image:", error);
       } finally {
         setHeroImageLoading(false);
       }
@@ -49,7 +70,7 @@ const Home = () => {
 
   // Check if user is teacher or admin
   const isTeacherOrAdmin =
-    currentUser?.role === 'teacher' || currentUser?.role === 'admin';
+    currentUser?.role === "teacher" || currentUser?.role === "admin";
 
   // Handle Hero Image Upload
   const handleHeroImageChange = async (
@@ -59,10 +80,10 @@ const Home = () => {
     if (!file) return;
 
     // Validate file type
-    if (!file.type.startsWith('image/')) {
+    if (!file.type.startsWith("image/")) {
       showErrorMessage(
-        'خطأ في نوع الملف',
-        'يرجى اختيار صورة صالحة (PNG, JPG, JPEG)'
+        "خطأ في نوع الملف",
+        "يرجى اختيار صورة صالحة (PNG, JPG, JPEG)"
       );
       return;
     }
@@ -70,8 +91,8 @@ const Home = () => {
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       showErrorMessage(
-        'خطأ في حجم الملف',
-        'حجم الصورة يجب أن يكون أقل من 5 ميجابايت'
+        "خطأ في حجم الملف",
+        "حجم الصورة يجب أن يكون أقل من 5 ميجابايت"
       );
       return;
     }
@@ -83,23 +104,23 @@ const Home = () => {
 
       if (data.success && data.url) {
         setHeroImage(data.url);
-        showSuccessMessage('تم التحديث بنجاح', 'تم تحديث صورة الهيرو بنجاح');
+        showSuccessMessage("تم التحديث بنجاح", "تم تحديث صورة الهيرو بنجاح");
       } else {
         showErrorMessage(
-          'فشل في الرفع',
-          'حدث خطأ أثناء رفع الصورة. يرجى المحاولة مرة أخرى'
+          "فشل في الرفع",
+          "حدث خطأ أثناء رفع الصورة. يرجى المحاولة مرة أخرى"
         );
       }
     } catch (error) {
-      console.error('Error uploading hero image:', error);
+      console.error("Error uploading hero image:", error);
       showErrorMessage(
-        'خطأ في الاتصال',
-        'حدث خطأ أثناء رفع الصورة. يرجى التحقق من الاتصال بالإنترنت'
+        "خطأ في الاتصال",
+        "حدث خطأ أثناء رفع الصورة. يرجى التحقق من الاتصال بالإنترنت"
       );
     } finally {
       setUploading(false);
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = "";
       }
     }
   };
@@ -114,8 +135,7 @@ const Home = () => {
   return (
     <div
       className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100"
-      dir="rtl"
-    >
+      dir="rtl">
       <div className="container mx-auto py-12 px-4">
         {/* Hero Section */}
         <HeroSection
