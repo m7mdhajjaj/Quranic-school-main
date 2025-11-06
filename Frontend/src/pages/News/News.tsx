@@ -3,18 +3,18 @@ import AOS from "aos";
 import "aos/dist/aos.css";
 import { useAuth } from "@/hooks/useAuth";
 import { EmptyState } from "@/components/UI";
-import { SearchInput, FilterSelect, FilterContainer } from "@/components/Filters";
+import {
+  SearchInput,
+  FilterSelect,
+  FilterContainer,
+} from "@/components/Filters";
 import type { FilterOption } from "@/components/Filters";
 import { useNewsData } from "./hooks/useNewsData";
-import { 
-  NewsHeader, 
-  NewsCard, 
-  NewsModal
-} from "./components";
+import { NewsHeader, NewsCard, NewsModal } from "./components";
 
 const News = () => {
   const { user: currentUser } = useAuth();
-  
+
   // Check if user is teacher or admin
   const isTeacherOrAdmin =
     currentUser?.role === "teacher" || currentUser?.role === "admin";
@@ -76,10 +76,13 @@ const News = () => {
     return filtered;
   }, [newsItems, searchTerm, sortOrder]);
 
-  const sortOptions = useMemo((): FilterOption[] => [
-    { value: "newest", label: "الأحدث أولاً" },
-    { value: "oldest", label: "الأقدم أولاً" },
-  ], []);
+  const sortOptions = useMemo(
+    (): FilterOption[] => [
+      { value: "newest", label: "الأحدث أولاً" },
+      { value: "oldest", label: "الأقدم أولاً" },
+    ],
+    []
+  );
 
   const handleSearchChange = useCallback((value: string) => {
     setSearchTerm(value);
@@ -97,7 +100,7 @@ const News = () => {
   return (
     <main className="container mx-auto px-4 py-12" dir="rtl">
       {/* Header Section */}
-      <NewsHeader 
+      <NewsHeader
         isTeacherOrAdmin={isTeacherOrAdmin}
         onAddNews={handleOpenModal}
         socketConnected={socketConnected}
@@ -113,9 +116,8 @@ const News = () => {
           resultsLabel="خبر"
           onClear={handleClearFilters}
           showClearButton={searchTerm !== "" || sortOrder !== "newest"}
-          variant="gradient"
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          variant="gradient">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4 items-end">
             <SearchInput
               value={searchTerm}
               onChange={handleSearchChange}
@@ -123,13 +125,15 @@ const News = () => {
               size="md"
             />
 
-            <FilterSelect
-              label="الترتيب"
-              value={sortOrder}
-              options={sortOptions}
-              onChange={handleSortChange}
-              showAllOption={false}
-            />
+            <div className="w-full lg:w-64">
+              <FilterSelect
+                label="الترتيب"
+                value={sortOrder}
+                options={sortOptions}
+                onChange={handleSortChange}
+                showAllOption={false}
+              />
+            </div>
           </div>
         </FilterContainer>
       )}
@@ -141,33 +145,45 @@ const News = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {error && newsItems.length === 0 ? (
             <div className="col-span-2">
-              <EmptyState 
+              <EmptyState
                 illustration="error"
                 title="حدث خطأ!"
                 description={error}
                 action={{
                   label: "إعادة المحاولة",
                   onClick: refreshNews,
-                  icon: <span>🔄</span>
+                  icon: <span>🔄</span>,
                 }}
               />
             </div>
           ) : filteredNews.length === 0 ? (
             <div className="col-span-2">
-              <EmptyState 
+              <EmptyState
                 illustration={newsItems.length === 0 ? "no-data" : "search"}
-                title={newsItems.length === 0 ? "لا توجد أخبار متاحة حالياً" : "لم يتم العثور على نتائج"}
-                description={newsItems.length === 0 ? "لم يتم نشر أي أخبار بعد. تابعنا للحصول على آخر المستجدات!" : "جرب تغيير معايير البحث أو الفلترة"}
-                action={isTeacherOrAdmin && newsItems.length === 0 ? {
-                  label: "إضافة خبر جديد",
-                  onClick: handleOpenModal,
-                  icon: <span>➕</span>
-                } : undefined}
+                title={
+                  newsItems.length === 0
+                    ? "لا توجد أخبار متاحة حالياً"
+                    : "لم يتم العثور على نتائج"
+                }
+                description={
+                  newsItems.length === 0
+                    ? "لم يتم نشر أي أخبار بعد. تابعنا للحصول على آخر المستجدات!"
+                    : "جرب تغيير معايير البحث أو الفلترة"
+                }
+                action={
+                  isTeacherOrAdmin && newsItems.length === 0
+                    ? {
+                        label: "إضافة خبر جديد",
+                        onClick: handleOpenModal,
+                        icon: <span>➕</span>,
+                      }
+                    : undefined
+                }
               />
             </div>
           ) : (
             filteredNews.map((item, index) => (
-              <NewsCard 
+              <NewsCard
                 key={item._id}
                 news={item}
                 index={index}
@@ -181,7 +197,7 @@ const News = () => {
       )}
 
       {/* News Modal */}
-      <NewsModal 
+      <NewsModal
         isOpen={isModalOpen}
         isEditMode={isEditMode}
         isLoading={isLoading}
