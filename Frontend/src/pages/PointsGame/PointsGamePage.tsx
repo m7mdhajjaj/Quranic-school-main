@@ -207,8 +207,11 @@ const PointsGamePage = () => {
                         تذكر أن الله يراك
                       </h3>
                       <p className="text-orange-700 text-sm leading-relaxed">
-                        كن صادقاً في تسجيل نقاطك، فالله مطلع على كل شيء. قال رسول الله ﷺ:{" "}
-                        <span className="font-semibold">"من غشنا فليس منا"</span>
+                        كن صادقاً في تسجيل نقاطك، فالله مطلع على كل شيء. قال
+                        رسول الله ﷺ:{" "}
+                        <span className="font-semibold">
+                          "من غشنا فليس منا"
+                        </span>
                       </p>
                     </div>
                   </div>
@@ -224,7 +227,9 @@ const PointsGamePage = () => {
                       </h3>
                       <p className="text-blue-700 text-sm leading-relaxed">
                         يُفضل أن تملأ جميع البيانات{" "}
-                        <span className="font-semibold">مرة واحدة في نهاية اليوم</span>{" "}
+                        <span className="font-semibold">
+                          مرة واحدة في نهاية اليوم
+                        </span>{" "}
                         لضمان دقة التسجيل والحصول على النقاط بشكل صحيح.
                       </p>
                     </div>

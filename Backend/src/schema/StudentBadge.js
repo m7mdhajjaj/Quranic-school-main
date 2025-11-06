@@ -28,7 +28,7 @@ const studentBadgeSchema = new mongoose.Schema(
 
       // تاريخ آخر مشاركة لحساب التتالي
       lastParticipationDate: { type: Date, default: null },
-      
+
       // تواريخ آخر تحديث لكل شارة (لمنع التكرار في نفس اليوم)
       lastUpdate: {
         mosquePrayer: { type: String, default: null },

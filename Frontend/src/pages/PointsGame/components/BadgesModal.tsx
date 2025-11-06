@@ -28,7 +28,9 @@ export const BadgesModal = ({
       case "parent_respect_5_times":
         return (badgeProgress.parentRespectPerfect / 5) * 100;
       case "school_30_days":
-        return ((badgeProgress.monthlySchoolAttendance?.daysPresent || 0) / 20) * 100;
+        return (
+          ((badgeProgress.monthlySchoolAttendance?.daysPresent || 0) / 20) * 100
+        );
       case "overall_15_days":
         return (badgeProgress.overallStreak / 15) * 100;
       case "sunan_keeper":

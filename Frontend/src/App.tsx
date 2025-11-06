@@ -65,7 +65,7 @@ import Absence from "./pages/Absence/index";
 // ============================================================================
 // Page Components - Islamic Resources
 // ============================================================================
-// import PrayerTimes from './pages/PrayerTimes';
+import { PrayerTimesPage } from "./pages/PrayerTimes";
 import QuranPage from "./pages/QuranPage";
 import QuranAudio from "./pages/QuranAudio";
 import Azkar from "./pages/Azkar";
@@ -176,7 +176,7 @@ const TeacherRoutes: React.FC = () => {
         <Route path="/points-game" element={<PointsGame />} />
 
         {/* ====== Islamic Resources ====== */}
-        {/* <Route path="/prayer-times" element={<PrayerTimes />} /> */}
+        <Route path="/prayer-times" element={<PrayerTimesPage />} />
         <Route path="/quran" element={<QuranPage />} />
         <Route path="/quran-audio" element={<QuranAudio />} />
         <Route path="/azkar" element={<Azkar />} />
@@ -238,7 +238,7 @@ const StudentRoutes: React.FC = () => {
         <Route path="/points-game" element={<PointsGame />} />
 
         {/* ====== Islamic Resources ====== */}
-        {/* <Route path="/prayer-times" element={<PrayerTimes />} /> */}
+        <Route path="/prayer-times" element={<PrayerTimesPage />} />
         <Route path="/quran" element={<QuranPage />} />
         <Route path="/quran-audio" element={<QuranAudio />} />
         <Route path="/azkar" element={<Azkar />} />

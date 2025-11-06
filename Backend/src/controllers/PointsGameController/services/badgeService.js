@@ -72,8 +72,7 @@ async function updateBadgeProgress(studentId, dailyPoints, student) {
     if (lastParticipation) {
       lastParticipation.setHours(0, 0, 0, 0);
       const daysDiff = Math.floor(
-        (today.getTime() - lastParticipation.getTime()) /
-          (1000 * 60 * 60 * 24)
+        (today.getTime() - lastParticipation.getTime()) / (1000 * 60 * 60 * 24)
       );
 
       // إذا كان اليوم هو نفس اليوم، لا نفعل شيء (تحديث ثاني في نفس اليوم)
