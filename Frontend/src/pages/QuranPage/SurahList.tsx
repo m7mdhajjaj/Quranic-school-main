@@ -50,22 +50,25 @@ const SurahList = ({ surahs, onSelectSurah }: SurahListProps) => {
         resultsCount={filteredAndSorted.length}
         resultsLabel="سورة"
         onClear={handleClearFilters}
-        showClearButton={searchTerm !== '' || sortOrder !== 'asc'}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FilterSelect
-            label="ترتيب السور"
-            value={sortOrder}
-            options={sortOptions}
-            onChange={handleSortChange}
-            showAllOption={false}
-          />
-
+        showClearButton={searchTerm !== '' || sortOrder !== 'asc'}
+        variant="gradient">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4 items-end">
           <SearchInput
             value={searchTerm}
             onChange={handleSearchChange}
             placeholder="ابحث عن سورة بالاسم أو الرقم..."
             size="md"
           />
+
+          <div className="w-full lg:w-72">
+            <FilterSelect
+              label="ترتيب السور"
+              value={sortOrder}
+              options={sortOptions}
+              onChange={handleSortChange}
+              showAllOption={false}
+            />
+          </div>
         </div>
       </FilterContainer>
 
