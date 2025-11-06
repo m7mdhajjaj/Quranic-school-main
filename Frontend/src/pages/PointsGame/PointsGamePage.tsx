@@ -177,6 +177,61 @@ const PointsGamePage = () => {
             />
           ) : (
             <>
+              {/* تنبيهات مهمة */}
+              <div className="mb-6 space-y-3 animate-[fadeIn_0.6s_ease-in-out]">
+                {/* تحذير: تزوير النقاط */}
+                <div className="bg-gradient-to-r from-red-50 to-rose-50 border-r-4 border-red-500 rounded-lg p-4 shadow-lg">
+                  <div className="flex items-start gap-3">
+                    <div className="text-2xl mt-0.5">⚠️</div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-red-800 mb-1 text-lg">
+                        تحذير هام
+                      </h3>
+                      <p className="text-red-700 text-sm leading-relaxed font-semibold">
+                        أي طالب يُضبط يزور النقاط سيتم طرده من المسابقة فوراً!
+                        <br />
+                        <span className="text-red-600 text-xs mt-1 block">
+                          النزاهة والأمانة هي أساس المنافسة الشريفة
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* تنبيه: تذكر أن الله يراك */}
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-r-4 border-orange-400 rounded-lg p-4 shadow-md">
+                  <div className="flex items-start gap-3">
+                    <div className="text-2xl mt-0.5">👁️</div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-orange-800 mb-1 text-lg">
+                        تذكر أن الله يراك
+                      </h3>
+                      <p className="text-orange-700 text-sm leading-relaxed">
+                        كن صادقاً في تسجيل نقاطك، فالله مطلع على كل شيء. قال رسول الله ﷺ:{" "}
+                        <span className="font-semibold">"من غشنا فليس منا"</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* تنبيه: املأ البيانات مرة واحدة */}
+                <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border-r-4 border-blue-400 rounded-lg p-4 shadow-md">
+                  <div className="flex items-start gap-3">
+                    <div className="text-2xl mt-0.5">💡</div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-blue-800 mb-1 text-lg">
+                        نصيحة مهمة
+                      </h3>
+                      <p className="text-blue-700 text-sm leading-relaxed">
+                        يُفضل أن تملأ جميع البيانات{" "}
+                        <span className="font-semibold">مرة واحدة في نهاية اليوم</span>{" "}
+                        لضمان دقة التسجيل والحصول على النقاط بشكل صحيح.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* إجمالي النقاط اليومية - للطلاب فقط */}
               <PointsSummaryCard
                 totalPoints={totalPoints}

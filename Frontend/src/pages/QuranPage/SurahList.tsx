@@ -1,6 +1,10 @@
 import { useState, useMemo, useCallback } from "react";
 import { EmptyState } from "@/components/UI";
-import { SearchInput, FilterSelect, FilterContainer } from "@/components/Filters";
+import {
+  SearchInput,
+  FilterSelect,
+  FilterContainer,
+} from "@/components/Filters";
 import type { FilterOption } from "@/components/Filters";
 import SurahCard from "./SurahCard";
 import { filterSurahs } from "./utils/filterSurahs";
@@ -23,10 +27,13 @@ const SurahList = ({ surahs, onSelectSurah }: SurahListProps) => {
     return sortOrder === "asc" ? filtered : [...filtered].reverse();
   }, [surahs, debouncedSearch, sortOrder]);
 
-  const sortOptions = useMemo((): FilterOption[] => [
-    { value: "asc", label: "من الأولى إلى الأخيرة" },
-    { value: "desc", label: "من الأخيرة إلى الأولى" },
-  ], []);
+  const sortOptions = useMemo(
+    (): FilterOption[] => [
+      { value: "asc", label: "من الأولى إلى الأخيرة" },
+      { value: "desc", label: "من الأخيرة إلى الأولى" },
+    ],
+    []
+  );
 
   // ✅ استخدام useCallback لتحسين الأداء
   const handleSortChange = useCallback((value: string) => {
@@ -38,8 +45,8 @@ const SurahList = ({ surahs, onSelectSurah }: SurahListProps) => {
   }, []);
 
   const handleClearFilters = useCallback(() => {
-    setSearchTerm('');
-    setSortOrder('asc');
+    setSearchTerm("");
+    setSortOrder("asc");
   }, []);
 
   return (
@@ -50,7 +57,7 @@ const SurahList = ({ surahs, onSelectSurah }: SurahListProps) => {
         resultsCount={filteredAndSorted.length}
         resultsLabel="سورة"
         onClear={handleClearFilters}
-        showClearButton={searchTerm !== '' || sortOrder !== 'asc'}
+        showClearButton={searchTerm !== "" || sortOrder !== "asc"}
         variant="gradient">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4 items-end">
           <SearchInput
@@ -85,7 +92,7 @@ const SurahList = ({ surahs, onSelectSurah }: SurahListProps) => {
             {filteredAndSorted.map((surah) => {
               // ✅ تحسين الأداء - استخدام key مع useCallback
               const handleClick = () => onSelectSurah(surah.number);
-              
+
               return (
                 <SurahCard
                   key={surah.number}

@@ -1,5 +1,5 @@
-import React from 'react';
-import { Filter, X } from 'lucide-react';
+import React from "react";
+import { Filter, X } from "lucide-react";
 
 interface FilterContainerProps {
   children: React.ReactNode;
@@ -7,7 +7,7 @@ interface FilterContainerProps {
   onClear?: () => void;
   showClearButton?: boolean;
   className?: string;
-  variant?: 'default' | 'gradient' | 'bordered';
+  variant?: "default" | "gradient" | "bordered";
   resultsCount?: number;
   resultsLabel?: string;
 }
@@ -22,23 +22,24 @@ const FilterContainer: React.FC<FilterContainerProps> = ({
   onClear,
   showClearButton = true,
   className = "",
-  variant = 'gradient',
+  variant = "gradient",
   resultsCount,
   resultsLabel = "نتيجة",
 }) => {
   const getVariantClasses = () => {
     switch (variant) {
-      case 'gradient':
-        return 'bg-gradient-to-br from-white via-emerald-50/30 to-teal-50/40 border border-emerald-100/50';
-      case 'bordered':
-        return 'bg-white border-2 border-emerald-200';
+      case "gradient":
+        return "bg-gradient-to-br from-white via-emerald-50/30 to-teal-50/40 border border-emerald-100/50";
+      case "bordered":
+        return "bg-white border-2 border-emerald-200";
       default:
-        return 'bg-white';
+        return "bg-white";
     }
   };
 
   return (
-    <div className={`${getVariantClasses()} rounded-2xl shadow-lg backdrop-blur-sm p-6 mb-8 ${className}`}>
+    <div
+      className={`${getVariantClasses()} rounded-2xl shadow-lg backdrop-blur-sm p-6 mb-8 ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -49,7 +50,7 @@ const FilterContainer: React.FC<FilterContainerProps> = ({
             {title}
           </h3>
         </div>
-        
+
         {showClearButton && onClear && (
           <button
             onClick={onClear}
@@ -62,9 +63,7 @@ const FilterContainer: React.FC<FilterContainerProps> = ({
       </div>
 
       {/* Filters Content */}
-      <div className="space-y-4">
-        {children}
-      </div>
+      <div className="space-y-4">{children}</div>
 
       {/* Results Count */}
       {resultsCount !== undefined && (
@@ -73,7 +72,9 @@ const FilterContainer: React.FC<FilterContainerProps> = ({
             <span className="text-emerald-700 font-bold text-xl">
               {resultsCount}
             </span>
-            <span className="text-emerald-600 font-semibold">{resultsLabel}</span>
+            <span className="text-emerald-600 font-semibold">
+              {resultsLabel}
+            </span>
           </div>
         </div>
       )}

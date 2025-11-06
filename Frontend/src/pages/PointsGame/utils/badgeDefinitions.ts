@@ -6,7 +6,7 @@ export const allBadges: Omit<Badge, "count">[] = [
     id: "mosque_30_days",
     name: "المصلي المجتهد",
     icon: "🕌",
-    description: "صلى في المسجد 30 يوم متتالي",
+    description: "صلى 3 صلوات في المسجد لمدة 30 يوم متتالي",
     requirement: "30 يوم متتالي",
   },
   {
@@ -27,14 +27,14 @@ export const allBadges: Omit<Badge, "count">[] = [
     id: "school_30_days",
     name: "الطالب المنضبط",
     icon: "🎒",
-    description: "لم يغب عن المدرسة شهر كامل",
-    requirement: "30 يوم حضور",
+    description: "حضر 20 يوم في المدرسة خلال الشهر",
+    requirement: "20 يوم في الشهر",
   },
   {
     id: "overall_15_days",
     name: "سلسلة الإنجاز",
     icon: "🔥",
-    description: "15 يوم متواصل بدون انقطاع",
+    description: "شارك في اللعبة 15 يوم متتالي",
     requirement: "15 يوم متواصل",
   },
   {

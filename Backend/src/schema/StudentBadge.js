@@ -14,10 +14,29 @@ const studentBadgeSchema = new mongoose.Schema(
       mosquePrayerStreak: { type: Number, default: 0 }, // سلسلة الصلاة في المسجد
       adhkarStreak: { type: Number, default: 0 }, // سلسلة الأذكار
       parentRespectPerfect: { type: Number, default: 0 }, // عدد مرات 10/10
-      schoolAttendanceStreak: { type: Number, default: 0 }, // سلسلة الحضور
-      overallStreak: { type: Number, default: 0 }, // سلسلة الإنجاز الشامل
+      schoolAttendanceStreak: { type: Number, default: 0 }, // سلسلة الحضور (ليوم متتالي)
+      overallStreak: { type: Number, default: 0 }, // سلسلة المشاركة (15 يوم متتالي)
       sunanStreak: { type: Number, default: 0 }, // سلسلة السنن
       mosqueTwoPrayersWeek: { type: Number, default: 0 }, // أسابيع صلاتين
+
+      // إضافة جديدة: حضور المدرسة الشهري
+      monthlySchoolAttendance: {
+        month: { type: String, default: "" }, // مثلاً: "2025-11"
+        daysPresent: { type: Number, default: 0 }, // عدد أيام الحضور في هذا الشهر
+        lastAttendanceDate: { type: String, default: null }, // آخر تاريخ حضور (لتجنب التكرار)
+      },
+
+      // تاريخ آخر مشاركة لحساب التتالي
+      lastParticipationDate: { type: Date, default: null },
+      
+      // تواريخ آخر تحديث لكل شارة (لمنع التكرار في نفس اليوم)
+      lastUpdate: {
+        mosquePrayer: { type: String, default: null },
+        adhkar: { type: String, default: null },
+        parentRespect: { type: String, default: null },
+        sunan: { type: String, default: null },
+        mosqueTwoPrayers: { type: String, default: null },
+      },
     },
 
     // الشارات المكتسبة

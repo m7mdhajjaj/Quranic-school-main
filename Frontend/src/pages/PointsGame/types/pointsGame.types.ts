@@ -69,6 +69,19 @@ export interface BadgeProgress {
   overallStreak: number;
   sunanStreak: number;
   mosqueTwoPrayersWeek: number;
+  monthlySchoolAttendance?: {
+    month: string;
+    daysPresent: number;
+    lastAttendanceDate?: string | null;
+  };
+  lastParticipationDate?: string | null;
+  lastUpdate?: {
+    mosquePrayer?: string | null;
+    adhkar?: string | null;
+    parentRespect?: string | null;
+    sunan?: string | null;
+    mosqueTwoPrayers?: string | null;
+  };
 }
 
 export interface StudentStats {
