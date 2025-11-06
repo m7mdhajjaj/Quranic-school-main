@@ -1,9 +1,9 @@
 import ForgotPasswordModal from "../ResetPassword/ForgotPasswordModal";
-import { LoginForm } from './LoginForm';
-import { WelcomeSection } from './WelcomeSection';
+import { LoginForm } from "./LoginForm";
+import { WelcomeSection } from "./WelcomeSection";
 import { AuthBackground } from "@/components/Auth";
-import { LoginCard } from './LoginCard';
-import { useLoginLogic } from './useLoginLogic';
+import { LoginCard } from "./LoginCard";
+import { useLoginLogic } from "./useLoginLogic";
 
 const Login = () => {
   const {
@@ -27,8 +27,7 @@ const Login = () => {
       <AuthBackground variant="emerald" showPattern={true} />
 
       {/* Main Content Container - Two Columns */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12 xl:gap-16 px-4 sm:px-6 lg:px-8 py-8 lg:py-0">
-        
+      <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-16 xl:gap-20 px-4 sm:px-6 lg:px-12 xl:px-16 py-12 lg:py-8">
         {/* Right Side - Login Form */}
         <LoginCard>
           <LoginForm
@@ -45,7 +44,6 @@ const Login = () => {
 
         {/* Left Side - Welcome Content */}
         <WelcomeSection logoUrl={logoUrl} logoLoading={logoLoading} />
-
       </div>
 
       {/* Forgot Password Modal */}
