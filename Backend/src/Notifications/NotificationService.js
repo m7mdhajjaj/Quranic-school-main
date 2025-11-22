@@ -3,7 +3,7 @@ const Student = require("../schema/Student");
 const Teacher = require("../schema/Teacher");
 const cron = require("node-cron");
 const moment = require("moment-timezone");
-const FCMService = require("./FCMService");
+const FCMService = require("./config/FCMService");
 const DeviceToken = require("../schema/DeviceToken");
 const adhan = require("adhan");
 

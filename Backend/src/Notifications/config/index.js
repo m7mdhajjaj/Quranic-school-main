@@ -1,23 +1,23 @@
 // ============================================================================
-// index.js - Notifications Module Exports
+// config/index.js - Notifications Module Exports
 // ============================================================================
 
 /**
  * Central export file for all notification-related services and handlers
  * 
  * Usage:
- * const { NotificationService, FCMService, examNotifications } = require('./Notifications');
+ * const { NotificationService, FCMService, examNotifications } = require('./Notifications/config');
  */
 
 // Main Services
-const NotificationService = require("./NotificationService");
+const NotificationService = require("../NotificationService");
 const FCMService = require("./FCMService");
 
 // Notification Handlers
-const sectionNotifications = require("./sectionNotifications");
-const examNotifications = require("./examNotifications");
-const dailyMarkNotifications = require("./dailyMarkNotifications");
-const newsNotifications = require("./newsNotifications");
+const sectionNotifications = require("../sectionNotifications");
+const examNotifications = require("../examNotifications");
+const dailyMarkNotifications = require("../dailyMarkNotifications");
+const newsNotifications = require("../newsNotifications");
 
 module.exports = {
   // Main Services

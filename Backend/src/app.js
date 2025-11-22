@@ -12,7 +12,7 @@ const Student = require('./schema/Student');
 const NotificationService = require('./Notifications/NotificationService');
 const MonthlyChampionService = require('./services/ChampionService');
 // Initialize FCM service (reads env FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_SERVICE_ACCOUNT_PATH)
-const FCMService = require('./Notifications/FCMService');
+const FCMService = require('./Notifications/config/FCMService');
 
 // Connect to MongoDB
 connectDB();
