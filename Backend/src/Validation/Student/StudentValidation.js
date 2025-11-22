@@ -1,6 +1,6 @@
 // Student Validation - متطابق مع Frontend validation
 // التحقق من صحة بيانات الطلاب - نفس المنطق المستخدم في الفرونت إند
-const { checkDuplicateFields } = require('../../utils/duplicateChecker');
+const { checkDuplicateFields } = require('../../utils/validators/duplicateChecker');
 
 // تطبيع الجنس - نفس المنطق في Frontend
 const normalizeGender = (value) => {

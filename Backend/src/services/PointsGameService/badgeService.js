@@ -2,8 +2,8 @@
 // Badge Service - خدمات إدارة الشارات
 // ============================================================================
 
-const StudentBadge = require("../../../schema/StudentBadge");
-const { allBadges } = require("../utils/badgeDefinitions");
+const StudentBadge = require("../../schema/StudentBadge");
+const { allBadges } = require("../../utils/helpers/badgeDefinitions");
 
 /**
  * تحديث التقدم نحو الشارات

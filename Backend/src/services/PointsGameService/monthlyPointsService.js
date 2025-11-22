@@ -2,9 +2,9 @@
 // Monthly Points Service - خدمات إدارة النقاط الشهرية
 // ============================================================================
 
-const MonthlyPoints = require("../../../schema/MonthlyPoints");
-const DailyPoints = require("../../../schema/DailyPoints");
-const { getCurrentMonth, getMonthRange } = require("../utils/dateHelpers");
+const MonthlyPoints = require("../../schema/MonthlyPoints");
+const DailyPoints = require("../../schema/DailyPoints");
+const { getCurrentMonth, getMonthRange } = require("../../utils/helpers/dateHelpers");
 
 /**
  * تحديث نقاط الشهر الحالي للطالب

@@ -4,8 +4,8 @@
 
 const DailyPoints = require("../../schema/DailyPoints");
 const Student = require("../../schema/Student");
-const { updateBadgeProgress } = require("./services/badgeService");
-const { updateMonthlyPoints } = require("./services/monthlyPointsService");
+const { updateBadgeProgress } = require("../../services/PointsGameService/badgeService");
+const { updateMonthlyPoints } = require("../../services/PointsGameService/monthlyPointsService");
 
 /**
  * @desc    حفظ النقاط اليومية للطالب

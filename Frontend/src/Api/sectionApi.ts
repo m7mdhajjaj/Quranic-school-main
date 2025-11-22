@@ -2,6 +2,8 @@ import api from "./api";
 
 // ============================================================================
 // Section API - Daily Assignment Sections Management
+// Note: Sections are now part of DailyMarks system
+// Base URL: /api/daily-marks/sections
 // ============================================================================
 
 export interface Section {
@@ -30,7 +32,7 @@ export interface UpdateSectionData extends Partial<CreateSectionData> {
 // Get all sections
 export const getAllSections = async (): Promise<Section[]> => {
   try {
-    const response = await api.get("/sections");
+    const response = await api.get("/daily-marks/sections");
     return response.data.data || response.data || [];
   } catch (error) {
     console.error("Failed to get all sections:", error);
@@ -43,7 +45,7 @@ export const getSectionsByGroup = async (
   groupId: string
 ): Promise<Section[]> => {
   try {
-    const response = await api.get(`/sections/group/${groupId}`);
+    const response = await api.get(`/daily-marks/sections?group=${groupId}`);
     return response.data.data || response.data || [];
   } catch (error) {
     console.error("Failed to get sections by group:", error);
@@ -56,7 +58,7 @@ export const getSectionById = async (
   sectionId: string
 ): Promise<Section | null> => {
   try {
-    const response = await api.get(`/sections/${sectionId}`);
+    const response = await api.get(`/daily-marks/sections/${sectionId}`);
     return response.data.data || response.data;
   } catch (error) {
     console.error("Failed to get section by ID:", error);
@@ -69,7 +71,7 @@ export const createSection = async (
   sectionData: CreateSectionData
 ): Promise<Section | null> => {
   try {
-    const response = await api.post("/sections", sectionData);
+    const response = await api.post("/daily-marks/sections", sectionData);
     return response.data.data || response.data;
   } catch (error) {
     console.error("Failed to create section:", error);
@@ -83,7 +85,7 @@ export const updateSection = async (
   sectionData: Partial<CreateSectionData>
 ): Promise<Section | null> => {
   try {
-    const response = await api.put(`/sections/${sectionId}`, sectionData);
+    const response = await api.put(`/daily-marks/sections/${sectionId}`, sectionData);
     return response.data.data || response.data;
   } catch (error) {
     console.error("Failed to update section:", error);
@@ -94,7 +96,7 @@ export const updateSection = async (
 // Delete section
 export const deleteSection = async (sectionId: string): Promise<boolean> => {
   try {
-    const response = await api.delete(`/sections/${sectionId}`);
+    const response = await api.delete(`/daily-marks/sections/${sectionId}`);
     return response.data.success || true;
   } catch (error) {
     console.error("Failed to delete section:", error);
@@ -105,7 +107,7 @@ export const deleteSection = async (sectionId: string): Promise<boolean> => {
 // Get active sections
 export const getActiveSections = async (): Promise<Section[]> => {
   try {
-    const response = await api.get("/sections/active");
+    const response = await api.get("/daily-marks/sections/active");
     return response.data.data || response.data || [];
   } catch (error) {
     console.error("Failed to get active sections:", error);
@@ -118,7 +120,7 @@ export const toggleSectionStatus = async (
   sectionId: string
 ): Promise<Section | null> => {
   try {
-    const response = await api.patch(`/sections/${sectionId}/toggle-status`);
+    const response = await api.patch(`/daily-marks/sections/${sectionId}/toggle-status`);
     return response.data.data || response.data;
   } catch (error) {
     console.error("Failed to toggle section status:", error);

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const quranController = require('../../controllers/QuranContoller');
+const quranController = require('../../controllers/QuranController');
 
 /**
  * Quran Routes

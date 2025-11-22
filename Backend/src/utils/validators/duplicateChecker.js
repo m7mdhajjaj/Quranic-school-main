@@ -1,6 +1,6 @@
-const Student = require("../schema/Student");
-const Teacher = require("../schema/Teacher");
-const Admin = require("../schema/Admin");
+const Student = require("../../schema/Student");
+const Teacher = require("../../schema/Teacher");
+const Admin = require("../../schema/Admin");
 
 /**
  * التحقق من وجود تكرار للحقول الحساسة عبر جميع أنواع المستخدمين

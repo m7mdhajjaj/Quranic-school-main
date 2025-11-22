@@ -1,4 +1,4 @@
-// services/MonthlyChampionService.js
+// services/ChampionService/index.js
 const cron = require("node-cron");
 const axios = require("axios");
 

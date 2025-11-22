@@ -3,7 +3,7 @@
 // ============================================================================
 
 const StudentBadge = require("../../schema/StudentBadge");
-const { allBadges } = require("./utils/badgeDefinitions");
+const { allBadges } = require("../../utils/helpers/badgeDefinitions");
 
 /**
  * @desc    الحصول على شارات الطالب

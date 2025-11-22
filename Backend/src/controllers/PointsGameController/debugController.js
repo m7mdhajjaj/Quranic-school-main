@@ -5,7 +5,7 @@
 const Student = require("../../schema/Student");
 const MonthlyPoints = require("../../schema/MonthlyPoints");
 const DailyPoints = require("../../schema/DailyPoints");
-const { getCurrentMonth, getMonthName } = require("./utils/dateHelpers");
+const { getCurrentMonth, getMonthName } = require("../../utils/helpers/dateHelpers");
 
 /**
  * @desc    [DEBUG] جلب جميع نقاط الشهر الحالي (للتطوير)

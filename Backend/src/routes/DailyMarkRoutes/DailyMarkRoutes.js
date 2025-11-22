@@ -11,6 +11,15 @@ const {
   validateDeleteSectionMarks,
 } = require("../../Validation/DailyMark/DailyMarksValidation");
 
+// Import Section Routes (part of DailyMark system)
+const sectionRoutes = require("./SectionRoutes");
+
+// ============================================================================
+// SECTION ROUTES - إدارة المقاطع (جزء من نظام العلامات اليومية)
+// ============================================================================
+// Mount section routes under /sections
+router.use("/sections", sectionRoutes);
+
 // ============================================================================
 // GET ROUTES - جلب العلامات
 // ============================================================================

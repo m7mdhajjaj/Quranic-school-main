@@ -7,7 +7,7 @@ const Teacher = require("../../schema/Teacher");
 const MonthlyPoints = require("../../schema/MonthlyPoints");
 const StudentBadge = require("../../schema/StudentBadge");
 const DailyPoints = require("../../schema/DailyPoints");
-const { getCurrentMonth, getMonthName } = require("./utils/dateHelpers");
+const { getCurrentMonth, getMonthName } = require("../../utils/helpers/dateHelpers");
 
 /**
  * @desc    ترتيب الطلاب حسب النقاط (الشهر الحالي فقط)

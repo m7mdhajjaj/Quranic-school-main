@@ -3,7 +3,7 @@ const {
   getMonthlyAverage,
   getAllMonthlyAverages,
   calculateOverallAverage,
-} = require("../../utils/studentAverageCalculator");
+} = require("../../services/StudentAverageService");
 
 /**
  * جلب المعدل الشهري لطالب

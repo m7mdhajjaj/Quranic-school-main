@@ -1,18 +1,18 @@
 // ⚠️ CRITICAL: Load environment variables FIRST before any other modules
-require("dotenv").config();
+require('dotenv').config();
 
-const express = require("express");
-const cors = require("cors");
-const path = require("path");
-const connectDB = require("./config/db");
-const http = require("http");
-const { Server } = require("socket.io");
-const Chat = require("./schema/Chat");
-const Student = require("./schema/Student");
-const NotificationService = require("./Notifications/NotificationService");
-const MonthlyChampionService = require("./services/MonthlyChampionService");
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const connectDB = require('./config/db');
+const http = require('http');
+const { Server } = require('socket.io');
+const Chat = require('./schema/Chat');
+const Student = require('./schema/Student');
+const NotificationService = require('./Notifications/NotificationService');
+const MonthlyChampionService = require('./services/ChampionService');
 // Initialize FCM service (reads env FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_SERVICE_ACCOUNT_PATH)
-const FCMService = require("./Notifications/FCMService");
+const FCMService = require('./Notifications/FCMService');
 
 // Connect to MongoDB
 connectDB();
@@ -21,23 +21,23 @@ const app = express();
 
 // Middleware to parse JSON and URL-encoded bodies.
 // This MUST come before any routes that need to access req.body.
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // CORS configuration
 const allowedOrigins = process.env.CORS_ORIGINS
-  ? process.env.CORS_ORIGINS.split(",")
-  : ["http://localhost:5173", "http://localhost:5174"];
+  ? process.env.CORS_ORIGINS.split(',')
+  : ['http://localhost:5173', 'http://localhost:5174'];
 app.use(
   cors({
-    origin: "*", // Allow all origins for development
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    origin: '*', // Allow all origins for development
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "Cache-Control",
-      "Accept",
-      "X-Requested-With",
+      'Content-Type',
+      'Authorization',
+      'Cache-Control',
+      'Accept',
+      'X-Requested-With',
     ],
     credentials: false,
   })
@@ -46,7 +46,7 @@ app.use(
 // Centralized request logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
-  res.on("finish", () => {
+  res.on('finish', () => {
     const duration = Date.now() - start;
     console.log(
       `[${new Date().toISOString()}] ${req.method} ${req.originalUrl} ${
@@ -55,12 +55,12 @@ app.use((req, res, next) => {
     );
   });
 
-  if (req.method === "POST" || req.method === "PUT") {
+  if (req.method === 'POST' || req.method === 'PUT') {
     // Only log body if it exists and has keys
     if (req.body && Object.keys(req.body).length > 0) {
-      console.log("Request Body:", JSON.stringify(req.body, null, 2));
+      console.log('Request Body:', JSON.stringify(req.body, null, 2));
     } else {
-      console.log("Request Body: [Empty or Not Parsed]");
+      console.log('Request Body: [Empty or Not Parsed]');
     }
   }
   next();
@@ -68,69 +68,69 @@ app.use((req, res, next) => {
 
 // Add request logging for uploaded files
 app.use((req, res, next) => {
-  if (req.url.includes("/uploads/")) {
-    console.log("Static file request:", req.url);
+  if (req.url.includes('/uploads/')) {
+    console.log('Static file request:', req.url);
   }
   next();
 });
 
 // Serve static files from public folder
-app.use("/uploads", express.static(path.join(__dirname, "../public/uploads")));
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 console.log(
-  "Serving static files from:",
-  path.join(__dirname, "../public/uploads")
+  'Serving static files from:',
+  path.join(__dirname, '../public/uploads')
 );
 
 // Serve test upload page
-app.get("/test-upload", (req, res) => {
-  res.sendFile(path.join(__dirname, "test-upload.html"));
+app.get('/test-upload', (req, res) => {
+  res.sendFile(path.join(__dirname, 'test-upload.html'));
 });
 
 // Routes
-app.use("/api/students", require("./routes/studentRoutes"));
-app.use("/api/teachers", require("./routes/teacherRoutes"));
-app.use("/api/admins", require("./routes/adminRoutes"));
-app.use("/api/auth", require("./routes/authRoutes"));
-app.use("/api/news", require("./routes/NewsRoutes/newsRoutes"));
-app.use("/api/activities", require("./routes/activityRoutes/activityRoutes"));
-app.use("/api/rankings", require("./routes/rankingRoutes"));
-app.use("/api/sections", require("./routes/sectionRoutes"));
+app.use('/api/students', require('./routes/studentRoutes'));
+app.use('/api/teachers', require('./routes/teacherRoutes'));
+app.use('/api/admins', require('./routes/adminRoutes'));
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/news', require('./routes/NewsRoutes/newsRoutes'));
+app.use('/api/activities', require('./routes/activityRoutes/activityRoutes'));
+app.use('/api/rankings', require('./routes/rankingRoutes'));
+// Sections now part of daily-marks: /api/daily-marks/sections
 app.use(
-  "/api/daily-marks",
-  require("./routes/DailyMarkRoutes/DailyMarkRoutes")
+  '/api/daily-marks',
+  require('./routes/DailyMarkRoutes/DailyMarkRoutes')
 );
-app.use("/api/attendance", require("./routes/attendanceRoutes"));
-app.use("/api/chat", require("./routes/chatRoutes"));
+app.use('/api/attendance', require('./routes/attendanceRoutes'));
+app.use('/api/chat', require('./routes/chatRoutes'));
 app.use(
-  "/api/notifications",
-  require("./routes/NotificationRoutes/notificationRoutes")
+  '/api/notifications',
+  require('./routes/NotificationRoutes/notificationRoutes')
 );
-app.use("/api/exams", require("./routes/ExamRoutes/examRoutes"));
-app.use("/api/exam-marks", require("./routes/ExamMarkRoutes/examMarkRoutes"));
-app.use("/api/sessions", require("./routes/timetableRoutes/TimeTableRoutes"));
-app.use("/api/groups", require("./routes/groupRoutes"));
-app.use("/api/dashboard", require("./routes/dashboardRoutes"));
-app.use("/api/points-game", require("./routes/pointsGameRoutes")); // لعبة النقاط والشارات
-app.use("/api/reports", require("./routes/ReportRoutes"));
-app.use("/api/goals", require("./routes/Goals/goalRoutes"));
-app.use("/api", require("./routes/profileRoutes"));
-app.use("/api/upload", require("./routes/UploadRoutes/uploadRoutes"));
-app.use("/api/warnings", require("./routes/WarningRoutes/WarningRoutes"));
-app.use("/api/quran", require("./routes/QuranRoutes/quranRoutes"));
+app.use('/api/exams', require('./routes/ExamRoutes/examRoutes'));
+app.use('/api/exam-marks', require('./routes/ExamMarkRoutes/examMarkRoutes'));
+app.use('/api/sessions', require('./routes/timetableRoutes/TimeTableRoutes'));
+app.use('/api/groups', require('./routes/groupRoutes'));
+app.use('/api/dashboard', require('./routes/dashboardRoutes'));
+app.use('/api/points-game', require('./routes/pointsGameRoutes')); // لعبة النقاط والشارات
+app.use('/api/reports', require('./routes/ReportRoutes'));
+app.use('/api/goals', require('./routes/Goals/goalRoutes'));
+app.use('/api', require('./routes/profileRoutes'));
+app.use('/api/upload', require('./routes/UploadRoutes/uploadRoutes'));
+app.use('/api/warnings', require('./routes/WarningRoutes/WarningRoutes'));
+app.use('/api/quran', require('./routes/QuranRoutes/quranRoutes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error("Global error handler caught:", err);
+  console.error('Global error handler caught:', err);
   res.status(500).json({
-    message: "خطأ في الخادم",
+    message: 'خطأ في الخادم',
     error: err.message,
-    stack: process.env.NODE_ENV === "production" ? "🥞" : err.stack,
+    stack: process.env.NODE_ENV === 'production' ? '🥞' : err.stack,
   });
 });
 
 // Handle 404s
 app.use((req, res) => {
-  res.status(404).json({ message: "الصفحة غير موجودة" });
+  res.status(404).json({ message: 'الصفحة غير موجودة' });
 });
 
 // Start server
@@ -142,16 +142,16 @@ const server = app.listen(PORT, () => {
 // Initialize Socket.IO with simple settings
 const io = new Server(server, {
   cors: {
-    origin: "*", // Allow all origins in development
-    methods: ["GET", "POST"],
+    origin: '*', // Allow all origins in development
+    methods: ['GET', 'POST'],
     credentials: false,
   },
-  transports: ["polling", "websocket"], // Start with polling first
+  transports: ['polling', 'websocket'], // Start with polling first
   allowEIO3: true,
 });
 
 // Make io available to routes
-app.set("io", io);
+app.set('io', io);
 
 // Store online users
 const onlineUsers = new Map();
@@ -166,37 +166,37 @@ global.notifyDashboardUpdate = (updateType, data = null) => {
     };
 
     console.log(`📊 Broadcasting dashboard update: ${updateType}`);
-    io.to("dashboard").emit("dashboardUpdate", payload);
+    io.to('dashboard').emit('dashboardUpdate', payload);
   }
 };
 
 // Initialize Notification Service immediately after Socket.IO is ready
 const notificationService = new NotificationService(io);
 global.notificationService = notificationService; // Make it globally accessible
-app.set("notificationService", notificationService); // ✅ لاستخدامه في الـ routes
+app.set('notificationService', notificationService); // ✅ لاستخدامه في الـ routes
 global.onlineUsers = onlineUsers; // Make onlineUsers globally accessible
 global.io = io; // Make io globally accessible for chat controllers
 global.fcmService = FCMService;
 
 // تشغيل Cron Job لتتويج أبطال الشهر
 MonthlyChampionService.start();
-console.log("🏆 خدمة تتويج الأبطال الشهرية تم تفعيلها");
+console.log('🏆 خدمة تتويج الأبطال الشهرية تم تفعيلها');
 
 // Socket.IO error handling
-io.engine.on("connection_error", (err) => {
-  console.log("Socket.IO connection error:", err.message);
+io.engine.on('connection_error', (err) => {
+  console.log('Socket.IO connection error:', err.message);
 });
 
 // Socket.IO connection
-io.on("connection", (socket) => {
+io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
 
   // Handle socket errors
-  socket.on("error", (error) => {
+  socket.on('error', (error) => {
     console.error(`Socket ${socket.id} error:`, error);
   });
 
-  socket.on("disconnect", (reason) => {
+  socket.on('disconnect', (reason) => {
     console.log(`User disconnected: ${socket.id}, reason: ${reason}`);
     // Clean up user from online users when they disconnect
     for (const [userId, userData] of onlineUsers.entries()) {
@@ -209,14 +209,14 @@ io.on("connection", (socket) => {
   });
 
   // User login - store their user ID and socket ID with improved handling
-  socket.on("login", async (userData) => {
+  socket.on('login', async (userData) => {
     const { userId, role, firstName } = userData;
 
     // Store user in online users map
     onlineUsers.set(userId, {
       socketId: socket.id,
       role: role,
-      firstName: firstName || "مستخدم",
+      firstName: firstName || 'مستخدم',
       loginTime: new Date().toISOString(),
     });
 
@@ -227,21 +227,21 @@ io.on("connection", (socket) => {
     // Set isActive to true in database with better error handling
     try {
       let updateResult;
-      if (role === "student") {
+      if (role === 'student') {
         updateResult = await Student.findByIdAndUpdate(
           userId,
           { isActive: true, lastSeen: new Date() },
           { new: true, upsert: false }
         );
-      } else if (role === "admin") {
-        const Admin = require("./schema/Admin");
+      } else if (role === 'admin') {
+        const Admin = require('./schema/Admin');
         updateResult = await Admin.findByIdAndUpdate(
           userId,
           { isActive: true, lastSeen: new Date() },
           { new: true, upsert: false }
         );
-      } else if (role === "teacher") {
-        const Teacher = require("./schema/Teacher");
+      } else if (role === 'teacher') {
+        const Teacher = require('./schema/Teacher');
         updateResult = await Teacher.findByIdAndUpdate(
           userId,
           { isActive: true, lastSeen: new Date() },
@@ -255,7 +255,7 @@ io.on("connection", (socket) => {
         );
 
         // إرسال إشعار لجميع العملاء بتغيير حالة المستخدم إلى متصل
-        io.emit("userStatusChange", {
+        io.emit('userStatusChange', {
           userId: userId,
           isActive: true,
           lastSeen:
@@ -275,10 +275,10 @@ io.on("connection", (socket) => {
   });
 
   // Heartbeat System - استقبال ping من Client
-  socket.on("ping", (data) => {
+  socket.on('ping', (data) => {
     console.log(`💓 Heartbeat received from ${socket.id}:`, data);
     // إرسال pong للتأكيد
-    socket.emit("pong", {
+    socket.emit('pong', {
       timestamp: Date.now(),
       serverId: socket.id,
       clientTimestamp: data?.timestamp,
@@ -286,142 +286,142 @@ io.on("connection", (socket) => {
   });
 
   // Dashboard Socket Events
-  socket.on("joinDashboard", (data) => {
-    socket.join("dashboard");
+  socket.on('joinDashboard', (data) => {
+    socket.join('dashboard');
     console.log(`📊 User ${socket.id} joined dashboard room`, data);
   });
 
-  socket.on("leaveDashboard", (data) => {
-    socket.leave("dashboard");
+  socket.on('leaveDashboard', (data) => {
+    socket.leave('dashboard');
     console.log(`📊 User ${socket.id} left dashboard room`, data);
   });
 
   // Teachers Socket Events
-  socket.on("joinTeachers", (data) => {
-    socket.join("teachers");
+  socket.on('joinTeachers', (data) => {
+    socket.join('teachers');
     console.log(`👨‍🏫 User ${socket.id} joined teachers room`, data);
   });
 
-  socket.on("leaveTeachers", (data) => {
-    socket.leave("teachers");
+  socket.on('leaveTeachers', (data) => {
+    socket.leave('teachers');
     console.log(`👨‍🏫 User ${socket.id} left teachers room`, data);
   });
 
   // Students Socket Events
-  socket.on("joinStudents", (data) => {
-    socket.join("students");
+  socket.on('joinStudents', (data) => {
+    socket.join('students');
     console.log(`👨‍🎓 User ${socket.id} joined students room`, data);
   });
 
-  socket.on("leaveStudents", (data) => {
-    socket.leave("students");
+  socket.on('leaveStudents', (data) => {
+    socket.leave('students');
     console.log(`👨‍🎓 User ${socket.id} left students room`, data);
   });
 
   // Groups Socket Events
-  socket.on("joinGroups", (data) => {
-    socket.join("groups");
+  socket.on('joinGroups', (data) => {
+    socket.join('groups');
     console.log(`👥 User ${socket.id} joined groups room`, data);
   });
 
-  socket.on("leaveGroups", (data) => {
-    socket.leave("groups");
+  socket.on('leaveGroups', (data) => {
+    socket.leave('groups');
     console.log(`👥 User ${socket.id} left groups room`, data);
   });
 
   // Marks Socket Events (for Rankings/Arrangement)
-  socket.on("joinMarks", (data) => {
-    socket.join("marks");
+  socket.on('joinMarks', (data) => {
+    socket.join('marks');
     console.log(`📝 User ${socket.id} joined marks room`, data);
   });
 
-  socket.on("leaveMarks", (data) => {
-    socket.leave("marks");
+  socket.on('leaveMarks', (data) => {
+    socket.leave('marks');
     console.log(`📝 User ${socket.id} left marks room`, data);
   });
 
   // Attendance Socket Events (for Absence)
-  socket.on("joinAttendance", (data) => {
-    socket.join("attendance");
+  socket.on('joinAttendance', (data) => {
+    socket.join('attendance');
     console.log(`📋 User ${socket.id} joined attendance room`, data);
   });
 
-  socket.on("leaveAttendance", (data) => {
-    socket.leave("attendance");
+  socket.on('leaveAttendance', (data) => {
+    socket.leave('attendance');
     console.log(`📋 User ${socket.id} left attendance room`, data);
   });
 
   // Activities Socket Events
-  socket.on("joinActivities", (data) => {
-    socket.join("activities");
+  socket.on('joinActivities', (data) => {
+    socket.join('activities');
     console.log(`🎯 User ${socket.id} joined activities room`, data);
   });
 
-  socket.on("leaveActivities", (data) => {
-    socket.leave("activities");
+  socket.on('leaveActivities', (data) => {
+    socket.leave('activities');
     console.log(`🎯 User ${socket.id} left activities room`, data);
   });
 
   // News Socket Events
-  socket.on("joinNews", (data) => {
-    socket.join("news");
+  socket.on('joinNews', (data) => {
+    socket.join('news');
     console.log(`📰 User ${socket.id} joined news room`, data);
   });
 
-  socket.on("leaveNews", (data) => {
-    socket.leave("news");
+  socket.on('leaveNews', (data) => {
+    socket.leave('news');
     console.log(`📰 User ${socket.id} left news room`, data);
   });
 
   // Exams Socket Events
-  socket.on("joinExams", (data) => {
-    socket.join("exams");
+  socket.on('joinExams', (data) => {
+    socket.join('exams');
     console.log(`📝 User ${socket.id} joined exams room`, data);
   });
 
-  socket.on("leaveExams", (data) => {
-    socket.leave("exams");
+  socket.on('leaveExams', (data) => {
+    socket.leave('exams');
     console.log(`📝 User ${socket.id} left exams room`, data);
   });
 
   // Sessions Socket Events
-  socket.on("joinSessions", (data) => {
-    socket.join("sessions");
+  socket.on('joinSessions', (data) => {
+    socket.join('sessions');
     console.log(`📅 User ${socket.id} joined sessions room`, data);
   });
 
-  socket.on("leaveSessions", (data) => {
-    socket.leave("sessions");
+  socket.on('leaveSessions', (data) => {
+    socket.leave('sessions');
     console.log(`📅 User ${socket.id} left sessions room`, data);
   });
 
-  socket.on("joinProfile", (data) => {
-    socket.join("profile");
+  socket.on('joinProfile', (data) => {
+    socket.join('profile');
     console.log(`👤 User ${socket.id} joined profile room`, data);
   });
 
-  socket.on("leaveProfile", (data) => {
-    socket.leave("profile");
+  socket.on('leaveProfile', (data) => {
+    socket.leave('profile');
     console.log(`👤 User ${socket.id} left profile room`, data);
   });
 
   // Warnings Socket Events
-  socket.on("joinWarnings", (data) => {
-    socket.join("warnings");
+  socket.on('joinWarnings', (data) => {
+    socket.join('warnings');
     console.log(`⚠️ User ${socket.id} joined warnings room`, data);
   });
 
-  socket.on("leaveWarnings", (data) => {
-    socket.leave("warnings");
+  socket.on('leaveWarnings', (data) => {
+    socket.leave('warnings');
     console.log(`⚠️ User ${socket.id} left warnings room`, data);
   });
 
   // ✅ Notifications Socket Events
-  socket.on("joinNotifications", (data) => {
+  socket.on('joinNotifications', (data) => {
     const { userId, role } = data;
 
     // انضمام للـ room الخاص بالإشعارات العامة
-    socket.join("notifications");
+    socket.join('notifications');
 
     // انضمام للـ room الخاص بالمستخدم (باستخدام userId)
     if (userId) {
@@ -432,51 +432,51 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("leaveNotifications", (data) => {
+  socket.on('leaveNotifications', (data) => {
     const { userId } = data;
-    socket.leave("notifications");
+    socket.leave('notifications');
     if (userId) {
       socket.leave(userId);
     }
     console.log(`🔔 User ${socket.id} left notifications room`, data);
   });
 
-  socket.on("requestDashboardUpdate", async (data) => {
+  socket.on('requestDashboardUpdate', async (data) => {
     console.log(`📊 Dashboard update requested by ${socket.id}`, data);
     try {
       // يمكن إضافة منطق لجلب البيانات المحدثة وإرسالها
-      socket.emit("dashboardUpdate", {
-        type: "full",
+      socket.emit('dashboardUpdate', {
+        type: 'full',
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
-      console.error("Error handling dashboard update request:", error);
-      socket.emit("error", {
-        message: "فشل في تحديث الداشبورد",
+      console.error('Error handling dashboard update request:', error);
+      socket.emit('error', {
+        message: 'فشل في تحديث الداشبورد',
         timestamp: new Date().toISOString(),
       });
     }
   });
 
   // Handle logout
-  socket.on("logout", async (userData) => {
+  socket.on('logout', async (userData) => {
     console.log(`User logging out: ${userData.userId}`);
 
     // Set isActive to false in database
     try {
-      if (userData.role === "student") {
+      if (userData.role === 'student') {
         await Student.findByIdAndUpdate(userData.userId, { isActive: false });
-      } else if (userData.role === "admin") {
-        await require("./schema/Admin").findByIdAndUpdate(userData.userId, {
+      } else if (userData.role === 'admin') {
+        await require('./schema/Admin').findByIdAndUpdate(userData.userId, {
           isActive: false,
         });
       } else {
-        await require("./schema/Teacher").findByIdAndUpdate(userData.userId, {
+        await require('./schema/Teacher').findByIdAndUpdate(userData.userId, {
           isActive: false,
         });
       }
     } catch (error) {
-      console.error("Error setting isActive=false on logout:", error);
+      console.error('Error setting isActive=false on logout:', error);
     }
 
     // Remove from online users
@@ -485,7 +485,7 @@ io.on("connection", (socket) => {
   });
 
   // Handle private messages
-  socket.on("sendMessage", async (messageData) => {
+  socket.on('sendMessage', async (messageData) => {
     try {
       const {
         sender,
@@ -497,9 +497,9 @@ io.on("connection", (socket) => {
         replyTo,
       } = messageData;
 
-      console.log("sendMessage received with data:", messageData);
+      console.log('sendMessage received with data:', messageData);
       console.log(
-        "Saving message to database:",
+        'Saving message to database:',
         JSON.stringify(
           {
             sender,
@@ -514,7 +514,7 @@ io.on("connection", (socket) => {
           2
         )
       );
-      console.log("Recipient online status:", onlineUsers.has(recipient));
+      console.log('Recipient online status:', onlineUsers.has(recipient));
 
       // Create and save the message
       const newMessage = new Chat({
@@ -532,19 +532,19 @@ io.on("connection", (socket) => {
       // Populate the saved message with reply information
       const populatedMessage = await Chat.findById(savedMessage._id)
         .populate({
-          path: "sender",
-          select: "firstName lastName",
+          path: 'sender',
+          select: 'firstName lastName',
         })
         .populate({
-          path: "recipient",
-          select: "firstName lastName",
+          path: 'recipient',
+          select: 'firstName lastName',
         })
         .populate({
-          path: "replyTo",
-          select: "text sender createdAt",
+          path: 'replyTo',
+          select: 'text sender createdAt',
           populate: {
-            path: "sender",
-            select: "firstName lastName",
+            path: 'sender',
+            select: 'firstName lastName',
           },
         });
 
@@ -560,53 +560,53 @@ io.on("connection", (socket) => {
 
       // Check if recipient is online
       const recipientData = onlineUsers.get(recipient);
-      console.log("Looking for recipient:", recipient, "in online users");
-      console.log("Current online users:", [...onlineUsers.entries()]);
-      console.log("Recipient data found:", recipientData);
+      console.log('Looking for recipient:', recipient, 'in online users');
+      console.log('Current online users:', [...onlineUsers.entries()]);
+      console.log('Recipient data found:', recipientData);
 
       let recipientOnline = false;
       if (recipientData) {
         console.log(
-          "Sending message to recipient socket:",
+          'Sending message to recipient socket:',
           recipientData.socketId
         );
         recipientOnline = true;
         // Send the message to the recipient with populated data
-        io.to(recipientData.socketId).emit("receiveMessage", {
+        io.to(recipientData.socketId).emit('receiveMessage', {
           ...populatedMessage._doc,
           senderName,
         });
 
         // إرسال حدث التوصيل للمرسل
-        socket.emit("messageDelivered", {
+        socket.emit('messageDelivered', {
           messageId: savedMessage._id,
           recipientOnline: true,
         });
       } else {
         console.log(
-          "Recipient is not online, message not delivered in real-time"
+          'Recipient is not online, message not delivered in real-time'
         );
         // إرسال حدث التوصيل للمرسل (غير متصل)
-        socket.emit("messageDelivered", {
+        socket.emit('messageDelivered', {
           messageId: savedMessage._id,
           recipientOnline: false,
         });
       }
 
       // Send confirmation back to sender with delivery status and populated data
-      socket.emit("messageSent", {
+      socket.emit('messageSent', {
         ...populatedMessage._doc,
         delivered: true,
         recipientOnline,
       });
     } catch (error) {
-      console.error("Error sending message:", error);
-      socket.emit("error", { message: "Error sending message" });
+      console.error('Error sending message:', error);
+      socket.emit('error', { message: 'Error sending message' });
     }
   });
 
   // Handle group messages (for teachers sending to students)
-  socket.on("sendGroupMessage", async (messageData) => {
+  socket.on('sendGroupMessage', async (messageData) => {
     try {
       const { sender, senderModel, group, text, senderName, replyTo } =
         messageData;
@@ -626,25 +626,25 @@ io.on("connection", (socket) => {
       // Populate the saved message with reply information
       const populatedMessage = await Chat.findById(savedMessage._id)
         .populate({
-          path: "sender",
-          select: "firstName lastName",
+          path: 'sender',
+          select: 'firstName lastName',
         })
         .populate({
-          path: "replyTo",
-          select: "text sender createdAt",
+          path: 'replyTo',
+          select: 'text sender createdAt',
           populate: {
-            path: "sender",
-            select: "firstName lastName",
+            path: 'sender',
+            select: 'firstName lastName',
           },
         });
 
       // Emit to all students in the group who are online
       for (const [userId, userData] of onlineUsers.entries()) {
-        if (userData.role === "student") {
+        if (userData.role === 'student') {
           // Check if student belongs to this group
           const student = await Student.findById(userId);
           if (student && student.group === group) {
-            io.to(userData.socketId).emit("receiveMessage", {
+            io.to(userData.socketId).emit('receiveMessage', {
               ...populatedMessage._doc,
               senderName,
             });
@@ -653,28 +653,28 @@ io.on("connection", (socket) => {
       }
 
       // Send confirmation back to teacher with populated data
-      socket.emit("messageSent", populatedMessage);
+      socket.emit('messageSent', populatedMessage);
     } catch (error) {
-      console.error("Error sending group message:", error);
-      socket.emit("error", { message: "Error sending group message" });
+      console.error('Error sending group message:', error);
+      socket.emit('error', { message: 'Error sending group message' });
     }
   });
 
   // Handle message editing
-  socket.on("editMessage", async (data) => {
+  socket.on('editMessage', async (data) => {
     try {
       const { messageId, text } = data;
 
-      if (!messageId || !text || text.trim() === "") {
-        socket.emit("messageEditError", {
-          error: "Message ID and text are required",
+      if (!messageId || !text || text.trim() === '') {
+        socket.emit('messageEditError', {
+          error: 'Message ID and text are required',
         });
         return;
       }
 
       const message = await Chat.findById(messageId);
       if (!message) {
-        socket.emit("messageEditError", { error: "Message not found" });
+        socket.emit('messageEditError', { error: 'Message not found' });
         return;
       }
 
@@ -685,35 +685,35 @@ io.on("connection", (socket) => {
 
       // Get populated message
       const updatedMessage = await Chat.findById(messageId)
-        .populate("sender", "firstName lastName")
-        .populate("recipient", "firstName lastName");
+        .populate('sender', 'firstName lastName')
+        .populate('recipient', 'firstName lastName');
 
-      socket.emit("messageEdited", updatedMessage);
+      socket.emit('messageEdited', updatedMessage);
 
       // Find recipient's socket and emit to them
       const recipientData = onlineUsers.get(message.recipient.toString());
       if (recipientData) {
-        io.to(recipientData.socketId).emit("messageEdited", updatedMessage);
+        io.to(recipientData.socketId).emit('messageEdited', updatedMessage);
       }
     } catch (error) {
-      console.error("Error editing message:", error);
-      socket.emit("messageEditError", { error: "Failed to edit message" });
+      console.error('Error editing message:', error);
+      socket.emit('messageEditError', { error: 'Failed to edit message' });
     }
   });
 
   // Handle message deletion
-  socket.on("deleteMessage", async (data) => {
+  socket.on('deleteMessage', async (data) => {
     try {
       const { messageId } = data;
 
       if (!messageId) {
-        socket.emit("messageDeleteError", { error: "Message ID is required" });
+        socket.emit('messageDeleteError', { error: 'Message ID is required' });
         return;
       }
 
       const message = await Chat.findById(messageId);
       if (!message) {
-        socket.emit("messageDeleteError", { error: "Message not found" });
+        socket.emit('messageDeleteError', { error: 'Message not found' });
         return;
       }
 
@@ -724,24 +724,24 @@ io.on("connection", (socket) => {
       await Chat.findByIdAndDelete(messageId);
 
       // Emit to both sender and recipient
-      socket.emit("messageDeleted", { messageId });
+      socket.emit('messageDeleted', { messageId });
 
       // Find recipient's socket and emit to them
       const recipientData = onlineUsers.get(recipientId);
       if (recipientData) {
-        io.to(recipientData.socketId).emit("messageDeleted", { messageId });
+        io.to(recipientData.socketId).emit('messageDeleted', { messageId });
       }
     } catch (error) {
-      console.error("Error deleting message:", error);
-      socket.emit("messageDeleteError", { error: "Failed to delete message" });
+      console.error('Error deleting message:', error);
+      socket.emit('messageDeleteError', { error: 'Failed to delete message' });
     }
   });
 
   // Handle user typing
-  socket.on("typing", (data) => {
+  socket.on('typing', (data) => {
     const recipientData = onlineUsers.get(data.recipient);
     if (recipientData) {
-      io.to(recipientData.socketId).emit("userTyping", {
+      io.to(recipientData.socketId).emit('userTyping', {
         sender: data.sender,
         isTyping: data.isTyping,
       });
@@ -749,14 +749,14 @@ io.on("connection", (socket) => {
   });
 
   // Handle chat opened event
-  socket.on("chatOpened", async (data) => {
+  socket.on('chatOpened', async (data) => {
     const { userId, chatWith } = data;
     console.log(`📖 User ${userId} opened chat with ${chatWith}`);
 
     // إشعار الطرف الآخر بفتح المحادثة
     const otherUserData = onlineUsers.get(chatWith);
     if (otherUserData) {
-      io.to(otherUserData.socketId).emit("chatOpened", {
+      io.to(otherUserData.socketId).emit('chatOpened', {
         userId: userId,
         chatWith: chatWith,
       });
@@ -776,12 +776,12 @@ io.on("connection", (socket) => {
         }
       );
     } catch (error) {
-      console.error("Error updating message delivery status:", error);
+      console.error('Error updating message delivery status:', error);
     }
   });
 
   // Handle message delivered confirmation
-  socket.on("messageDeliveredConfirm", async (data) => {
+  socket.on('messageDeliveredConfirm', async (data) => {
     const { messageId, recipientId, deliveredAt } = data;
     console.log(`✅ Message ${messageId} delivered to ${recipientId}`);
 
@@ -794,9 +794,9 @@ io.on("connection", (socket) => {
 
       // إشعار المرسل بالتوصيل
       for (const [userId, userData] of onlineUsers.entries()) {
-        const message = await Chat.findById(messageId).populate("sender");
+        const message = await Chat.findById(messageId).populate('sender');
         if (message && message.sender._id.toString() === userId) {
-          io.to(userData.socketId).emit("messageDelivered", {
+          io.to(userData.socketId).emit('messageDelivered', {
             messageId: messageId,
             recipientOnline: true,
             deliveredAt: deliveredAt,
@@ -805,12 +805,12 @@ io.on("connection", (socket) => {
         }
       }
     } catch (error) {
-      console.error("Error confirming message delivery:", error);
+      console.error('Error confirming message delivery:', error);
     }
   });
 
   // Handle message read confirmation
-  socket.on("messageReadConfirm", async (data) => {
+  socket.on('messageReadConfirm', async (data) => {
     const { messageId, recipientId, readAt } = data;
     console.log(`👁️ Message ${messageId} read by ${recipientId}`);
 
@@ -823,9 +823,9 @@ io.on("connection", (socket) => {
 
       // إشعار المرسل بالقراءة
       for (const [userId, userData] of onlineUsers.entries()) {
-        const message = await Chat.findById(messageId).populate("sender");
+        const message = await Chat.findById(messageId).populate('sender');
         if (message && message.sender._id.toString() === userId) {
-          io.to(userData.socketId).emit("messageRead", {
+          io.to(userData.socketId).emit('messageRead', {
             messageId: messageId,
             readAt: readAt,
           });
@@ -833,12 +833,12 @@ io.on("connection", (socket) => {
         }
       }
     } catch (error) {
-      console.error("Error confirming message read:", error);
+      console.error('Error confirming message read:', error);
     }
   });
 
   // Handle disconnect with improved cleanup
-  socket.on("disconnect", async (reason) => {
+  socket.on('disconnect', async (reason) => {
     console.log(`🔌 Socket disconnected: ${socket.id} (reason: ${reason})`);
 
     // Remove user from online users and set isActive to false
@@ -849,21 +849,21 @@ io.on("connection", (socket) => {
         // Set isActive to false in database
         try {
           let updateResult;
-          if (role === "student") {
+          if (role === 'student') {
             updateResult = await Student.findByIdAndUpdate(
               userId,
               { isActive: false, lastSeen: new Date() },
               { new: true }
             );
-          } else if (role === "admin") {
-            const Admin = require("./schema/Admin");
+          } else if (role === 'admin') {
+            const Admin = require('./schema/Admin');
             updateResult = await Admin.findByIdAndUpdate(
               userId,
               { isActive: false, lastSeen: new Date() },
               { new: true }
             );
-          } else if (role === "teacher") {
-            const Teacher = require("./schema/Teacher");
+          } else if (role === 'teacher') {
+            const Teacher = require('./schema/Teacher');
             updateResult = await Teacher.findByIdAndUpdate(
               userId,
               { isActive: false, lastSeen: new Date() },
@@ -874,7 +874,7 @@ io.on("connection", (socket) => {
           console.log(`✅ User ${firstName} (${userId}) marked as inactive`);
 
           // إرسال إشعار لجميع العملاء بتغيير حالة المستخدم
-          io.emit("userStatusChange", {
+          io.emit('userStatusChange', {
             userId: userId,
             isActive: false,
             lastSeen:
@@ -897,9 +897,9 @@ io.on("connection", (socket) => {
 });
 
 // Handle server errors
-server.on("error", (error) => {
-  console.error("Server error:", error);
-  if (error.code === "EADDRINUSE") {
+server.on('error', (error) => {
+  console.error('Server error:', error);
+  if (error.code === 'EADDRINUSE') {
     console.error(`Port ${PORT} is already in use. Try a different port.`);
     process.exit(1);
   }
