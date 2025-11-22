@@ -1,5 +1,5 @@
 const multer = require("multer");
-const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const CloudinaryStorage = require("multer-storage-cloudinary");
 const cloudinary = require("./cloudinary");
 
 // Configure Cloudinary storage for activities with dynamic folders
