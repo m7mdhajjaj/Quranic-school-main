@@ -31,6 +31,14 @@ try {
   console.warn('⚠️ Firebase Messaging not supported:', error);
 }
 
+// Use window object to persist across hot reloads
+declare global {
+  interface Window {
+    __FCM_TOKEN_LOGGED__?: string;
+    __FCM_TOKEN_REGISTERED__?: string;
+  }
+}
+
 /**
  * Get FCM token without requesting permission (if already granted)
  * @returns FCM token string or null if failed
@@ -52,7 +60,11 @@ export const getExistingToken = async (): Promise<string | null> => {
     });
     
     if (token) {
-      console.log('📱 FCM Token retrieved:', token);
+      // Only log if token is different from last logged
+      if (token !== window.__FCM_TOKEN_LOGGED__) {
+        console.log('📱 FCM Token retrieved:', token);
+        window.__FCM_TOKEN_LOGGED__ = token;
+      }
       return token;
     } else {
       console.warn('⚠️ No registration token available');
@@ -135,6 +147,11 @@ export const registerTokenWithBackend = async (
   apiUrl: string = '/api/notifications/register-token',
   authToken?: string
 ): Promise<boolean> => {
+  // Skip if token was already registered (use window object to persist)
+  if (token === window.__FCM_TOKEN_REGISTERED__) {
+    return true;
+  }
+
   try {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
@@ -156,6 +173,7 @@ export const registerTokenWithBackend = async (
     const data = await response.json();
     
     if (data.success) {
+      window.__FCM_TOKEN_REGISTERED__ = token;
       console.log('✅ Token registered with backend');
       return true;
     } else {

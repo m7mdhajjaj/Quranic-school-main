@@ -52,12 +52,13 @@ export const useFirebaseMessaging = (): UseFirebaseMessagingReturn => {
         setFcmToken(token);
         setIsPermissionGranted(true);
         
-        // تسجيل Token مع الباكيند
+        // تسجيل Token مع الباكيند (استخدام registerTokenWithBackend الذي يحتوي على منطق منع التكرار)
         if (authToken) {
-          // Use relative URL - Vite proxy will handle forwarding to backend
           const apiUrl = '/api/notifications/register-token';
-          await registerTokenWithBackend(token, apiUrl, authToken);
-          console.log('✅ تم تسجيل FCM Token بنجاح');
+          const success = await registerTokenWithBackend(token, apiUrl, authToken);
+          if (success) {
+            console.log('✅ تم تسجيل FCM Token بنجاح');
+          }
         }
       } else {
         setIsPermissionGranted(false);
@@ -81,10 +82,12 @@ export const useFirebaseMessaging = (): UseFirebaseMessagingReturn => {
             setFcmToken(token);
             setIsPermissionGranted(true);
             
-            // تسجيل Token مع الباكيند
+            // تسجيل Token مع الباكيند (استخدام registerTokenWithBackend الذي يحتوي على منطق منع التكرار)
             const apiUrl = '/api/notifications/register-token';
-            await registerTokenWithBackend(token, apiUrl, authToken);
-            console.log('✅ تم تسجيل FCM Token بنجاح');
+            const success = await registerTokenWithBackend(token, apiUrl, authToken);
+            if (success) {
+              console.log('✅ تم تسجيل FCM Token بنجاح');
+            }
           }
         })();
       } else if (Notification.permission === 'default') {

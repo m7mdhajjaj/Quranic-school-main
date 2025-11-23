@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import type { Plugin } from 'vite';
+import path from 'path';
 
 // Plugin to serve service worker with correct MIME type
 const serviceWorkerPlugin = (): Plugin => ({
@@ -121,7 +122,7 @@ export default defineConfig({
   // تحسين حل الملفات
   resolve: {
     alias: {
-      '@': '/src'
+      '@': path.resolve(__dirname, './src')
     }
   },
   
