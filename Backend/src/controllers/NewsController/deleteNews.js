@@ -22,14 +22,26 @@ exports.deleteNews = async (req, res) => {
       });
     }
 
+    // التحقق من الصلاحيات: المعلم يمكنه فقط حذف أخباره
+    const currentUserId = req.user?._id.toString();
+    const currentUserRole = req.user?.role;
+    const newsAuthorId = news.author.toString();
+
+    if (currentUserRole === 'teacher' && currentUserId !== newsAuthorId) {
+      return res.status(403).json({
+        success: false,
+        message: "لا يمكنك حذف أخبار منشورة من قبل معلمين آخرين",
+      });
+    }
+
     // Delete image from Cloudinary if exists
-    if (news.image) {
+    if (news.image && news.imagePublicId) {
       try {
         console.log("🗑️ Deleting image from Cloudinary...");
+        console.log("  - Public ID:", news.imagePublicId);
 
-        const publicId = news.image.split("/").pop().split(".")[0];
-        await cloudinary.uploader.destroy(`quranic-school/news/${publicId}`);
-        console.log("✅ Image deleted successfully");
+        await cloudinary.uploader.destroy(news.imagePublicId);
+        console.log("✅ Image deleted successfully from Cloudinary");
       } catch (deleteError) {
         console.warn("⚠️ Could not delete image:", deleteError);
         // Continue with news deletion even if image deletion fails
@@ -93,12 +105,9 @@ exports.deleteBulkNews = async (req, res) => {
     // Delete images from Cloudinary
     let deletedImages = 0;
     for (let news of newsItems) {
-      if (news.image) {
+      if (news.image && news.imagePublicId) {
         try {
-          const publicId = news.image.split("/").pop().split(".")[0];
-          await cloudinary.uploader.destroy(
-            `quranic-school/news/${publicId}`
-          );
+          await cloudinary.uploader.destroy(news.imagePublicId);
           deletedImages++;
         } catch (deleteError) {
           console.warn("⚠️ Could not delete image:", deleteError);
@@ -201,12 +210,9 @@ exports.clearArchivedNews = async (req, res) => {
 
     // Delete images
     for (let news of archivedNews) {
-      if (news.image) {
+      if (news.image && news.imagePublicId) {
         try {
-          const publicId = news.image.split("/").pop().split(".")[0];
-          await cloudinary.uploader.destroy(
-            `quranic-school/news/${publicId}`
-          );
+          await cloudinary.uploader.destroy(news.imagePublicId);
         } catch (deleteError) {
           console.warn("⚠️ Could not delete image:", deleteError);
         }

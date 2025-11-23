@@ -4,7 +4,7 @@ import type { ToastOptions } from 'react-toastify';
 // دالة لتشغيل الصوت
 const playSound = (soundFile: string) => {
   try {
-    const audio = new Audio(`/sounds/${soundFile}`);
+    const audio = new Audio(`/src/assets/sounds/${soundFile}`);
     audio.volume = 0.6; // ضبط مستوى الصوت (60%)
     audio.play().catch((error) => {
       console.warn('Could not play sound:', error);

@@ -4,7 +4,7 @@ import type { SweetAlertOptions } from "sweetalert2";
 // دالة لتشغيل الصوت
 const playSound = (soundFile: string) => {
   try {
-    const audio = new Audio(`/sounds/${soundFile}`);
+    const audio = new Audio(`/src/assets/sounds/${soundFile}`);
     audio.volume = 0.5; // ضبط مستوى الصوت (50%)
     audio.play().catch((error) => {
       console.warn('Could not play sound:', error);
@@ -32,18 +32,25 @@ export const showCenteredSwal = (options: SweetAlertOptions) => {
       popup: `!fixed !top-1/2 !left-1/2 !-translate-x-1/2 !-translate-y-1/2 !m-0 !rounded-xl !shadow-2xl ${
         options.customClass?.popup || ""
       }`,
-      container: "!z-[10000]",
+      container: "!z-[10000] !flex !items-center !justify-center",
       ...options.customClass,
     },
     didOpen: () => {
       const popup = Swal.getPopup();
       if (popup) {
-        // إضافة Tailwind classes مباشرة
-        popup.style.position = "fixed";
-        popup.style.top = "50%";
-        popup.style.left = "50%";
-        popup.style.transform = "translate(-50%, -50%)";
-        popup.style.margin = "0";
+        // فرض المركزية بقوة باستخدام important
+        popup.style.setProperty("position", "fixed", "important");
+        popup.style.setProperty("top", "50%", "important");
+        popup.style.setProperty("left", "50%", "important");
+        popup.style.setProperty("transform", "translate(-50%, -50%)", "important");
+        popup.style.setProperty("margin", "0", "important");
+      }
+
+      const container = document.querySelector(".swal2-container") as HTMLElement;
+      if (container) {
+        container.style.setProperty("display", "flex", "important");
+        container.style.setProperty("align-items", "center", "important");
+        container.style.setProperty("justify-content", "center", "important");
       }
 
       const backdrop = document.querySelector(".swal2-backdrop") as HTMLElement;

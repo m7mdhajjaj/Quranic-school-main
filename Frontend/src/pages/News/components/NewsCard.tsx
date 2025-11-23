@@ -9,12 +9,24 @@ const NewsCard = ({
   news,
   index,
   isTeacherOrAdmin,
+  currentUserId,
+  currentUserRole,
   onEdit,
   onDelete,
 }: NewsCardProps) => {
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
   const displayDate = news.createdAt || news.date;
+
+  // استخراج author ID بشكل صحيح (قد يكون string أو object)
+  const newsAuthorId = typeof news.author === 'string' 
+    ? news.author 
+    : news.author?._id;
+
+  // التحقق من صلاحيات التعديل/الحذف
+  const canEditOrDelete = 
+    isTeacherOrAdmin && 
+    (currentUserRole === 'admin' || newsAuthorId === currentUserId);
 
   return (
     <div data-aos="fade-up" data-aos-delay={index * 100}>
@@ -112,7 +124,7 @@ const NewsCard = ({
                 className="group-hover/btn:translate-x-1 transition-transform"
               />
             </Button>
-            {isTeacherOrAdmin && (
+            {canEditOrDelete && (
               <div className="flex gap-2">
                 <Button
                   variant="warning"

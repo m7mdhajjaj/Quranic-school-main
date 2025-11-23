@@ -6,8 +6,7 @@ import { useNewsData } from './hooks/useNewsData';
 import {
   NewsHeader,
   NewsCard,
-  AddNewsModal,
-  EditNewsModal,
+  NewsModal,
   NewsFilters,
   NewsEmptyState,
 } from './components';
@@ -152,26 +151,17 @@ const News = () => {
               news={item}
               index={index}
               isTeacherOrAdmin={isTeacherOrAdmin}
+              currentUserId={currentUser?._id}
+              currentUserRole={currentUser?.role}
               onEdit={handleEditNews}
               onDelete={handleDeleteNews}
             />
           ))
         )}
       </div>
-      <AddNewsModal
-        isOpen={isModalOpen && !isEditMode}
-        isLoading={isLoading}
-        newNews={newNews}
-        selectedFile={selectedFile}
-        fileInputRef={fileInputRef}
-        fieldErrors={fieldErrors}
-        onClose={handleCloseModal}
-        onSubmit={handleAddNews}
-        onInputChange={handleInputChange}
-        onFileChange={handleFileChange}
-      />
-      <EditNewsModal
-        isOpen={isModalOpen && isEditMode}
+      <NewsModal
+        isOpen={isModalOpen}
+        isEditMode={isEditMode}
         isLoading={isLoading}
         newNews={newNews}
         selectedFile={selectedFile}

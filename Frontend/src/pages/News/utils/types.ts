@@ -14,6 +14,8 @@ export interface NewsCardProps {
   news: INews;
   index: number;
   isTeacherOrAdmin: boolean;
+  currentUserId?: string;
+  currentUserRole?: string;
   onEdit: (news: INews) => void;
   onDelete: (id: string) => void;
 }

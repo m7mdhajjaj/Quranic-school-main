@@ -26,10 +26,20 @@ export const useNewsData = () => {
 
   const [error, setError] = useState<string | null>(null);
   const [newsItems, setNewsItems] = useState<INews[]>([]);
+
+  // دالة للحصول على التاريخ المحلي الصحيح
+  const getLocalDate = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [newNews, setNewNews] = useState<Partial<INews>>({
     title: '',
     content: '',
-    date: new Date().toISOString().split('T')[0],
+    date: getLocalDate(),
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -95,6 +105,15 @@ export const useNewsData = () => {
   };
 
   const handleOpenModal = () => {
+    // تعيين التاريخ الحالي تلقائياً عند فتح المودال
+    setNewNews({
+      title: '',
+      content: '',
+      date: getLocalDate(),
+      image: undefined,
+    });
+    setFieldErrors({});
+    setSelectedFile(null);
     setIsModalOpen(true);
     setIsEditMode(false);
   };
@@ -108,7 +127,7 @@ export const useNewsData = () => {
     setNewNews({
       title: '',
       content: '',
-      date: new Date().toISOString().split('T')[0],
+      date: getLocalDate(),
       image: undefined, // لا صورة افتراضية
     });
   };
@@ -248,7 +267,8 @@ export const useNewsData = () => {
             )
           );
 
-          showSuccessToast('تم تحديث الخبر بنجاح');
+          // عرض Toast مع صوت النجاح
+          showSuccessToast('تم تحديث الخبر بنجاح ✅');
         }
       } else {
         const response = await createNews(formData);
@@ -257,16 +277,22 @@ export const useNewsData = () => {
         if (response) {
           setNewsItems([response, ...newsItems]);
 
-          showSuccessToast('تم إضافة الخبر بنجاح');
+          // عرض Toast مع صوت النجاح
+          showSuccessToast('تم إضافة الخبر بنجاح ✅');
         }
       }
     } catch (err) {
       console.error('Failed to save news:', err);
-      const error = err as { response?: { data?: { message?: string, errors?: string[] } } };
+      const error = err as {
+        response?: { data?: { message?: string; errors?: string[] } };
+      };
       console.error('Error details:', error.response?.data);
-      
+
       // إذا كانت هناك أخطاء تحقق من الخادم، اعرضها في النموذج
-      if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
+      if (
+        error.response?.data?.errors &&
+        Array.isArray(error.response.data.errors)
+      ) {
         const serverErrors: Record<string, string> = {};
         error.response.data.errors.forEach((errorMsg: string) => {
           // تحليل رسائل الأخطاء وربطها بالحقول
@@ -283,14 +309,16 @@ export const useNewsData = () => {
             showErrorToast(errorMsg);
           }
         });
-        
+
         if (Object.keys(serverErrors).length > 0) {
           setFieldErrors(serverErrors);
+          // عرض Toast مع صوت الفشل
+          showErrorToast('يرجى تصحيح الأخطاء في النموذج ❌');
           return; // لا تغلق النموذج
         }
       }
-      
-      // خطأ عام من الخادم
+
+      // خطأ عام من الخادم - عرض Toast مع صوت الفشل
       showErrorToast(
         error.response?.data?.message ||
           'حدث خطأ أثناء حفظ الخبر، يرجى المحاولة مرة أخرى'
@@ -333,7 +361,6 @@ export const useNewsData = () => {
       title: 'هل أنت متأكد؟',
       text: 'سيتم حذف هذا الخبر نهائياً ولا يمكن التراجع عن هذا الإجراء!',
       icon: 'warning',
-      position: 'center',
       showCancelButton: true,
       confirmButtonText: 'نعم، احذف الخبر',
       cancelButtonText: 'إلغاء',
@@ -348,24 +375,12 @@ export const useNewsData = () => {
     try {
       await deleteNews(_id);
       setNewsItems(newsItems.filter((item) => item._id !== _id));
-      await showCenteredSwal({
-        title: 'تم الحذف!',
-        text: 'تم حذف الخبر بنجاح.',
-        icon: 'success',
-        position: 'center',
-        confirmButtonText: 'موافق',
-      });
-      showSuccessToast('تم حذف الخبر بنجاح');
+      // عرض Toast مع صوت النجاح
+      showSuccessToast('تم حذف الخبر بنجاح ✅');
     } catch (err) {
       console.error('Failed to delete news:', err);
-      await showCenteredSwal({
-        title: 'خطأ!',
-        text: 'حدث خطأ أثناء حذف الخبر، يرجى المحاولة مرة أخرى',
-        icon: 'error',
-        position: 'center',
-        confirmButtonText: 'موافق',
-      });
-      showErrorToast('حدث خطأ أثناء حذف الخبر، يرجى المحاولة مرة أخرى');
+      // عرض Toast مع صوت الفشل
+      showErrorToast('حدث خطأ أثناء حذف الخبر، يرجى المحاولة مرة أخرى ❌');
     } finally {
       setIsLoading(false);
     }

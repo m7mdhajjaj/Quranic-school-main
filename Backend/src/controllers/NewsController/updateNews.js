@@ -27,6 +27,18 @@ exports.updateNews = async (req, res) => {
       });
     }
 
+    // التحقق من الصلاحيات: المعلم يمكنه فقط تعديل أخباره
+    const currentUserId = req.user?._id.toString();
+    const currentUserRole = req.user?.role;
+    const newsAuthorId = news.author.toString();
+
+    if (currentUserRole === 'teacher' && currentUserId !== newsAuthorId) {
+      return res.status(403).json({
+        success: false,
+        message: "لا يمكنك تعديل أخبار منشورة من قبل معلمين آخرين",
+      });
+    }
+
     // Update fields
     if (title) {
       if (title.length < 3 || title.length > 200) {
