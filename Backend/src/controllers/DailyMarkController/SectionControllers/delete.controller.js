@@ -1,6 +1,6 @@
 const Section = require("../../../schema/Section");
 const DailyMark = require("../../../schema/DailyMark");
-const { notifySectionDeleted } = require("../../../Notifications/sectionNotifications");
+const { notifySectionDeleted } = require("../../../Notifications/handlers/sectionNotifications");
 
 /**
  * Delete a section

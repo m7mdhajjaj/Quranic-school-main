@@ -1,5 +1,5 @@
 const Section = require("../../../schema/Section");
-const { notifySectionUpdated } = require("../../../Notifications/sectionNotifications");
+const { notifySectionUpdated } = require("../../../Notifications/handlers/sectionNotifications");
 
 /**
  * Update a section

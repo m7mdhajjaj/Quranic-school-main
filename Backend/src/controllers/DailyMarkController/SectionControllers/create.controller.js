@@ -1,5 +1,5 @@
 const Section = require("../../../schema/Section");
-const { notifySectionAdded } = require("../../../Notifications/sectionNotifications");
+const { notifySectionAdded } = require("../../../Notifications/handlers/sectionNotifications");
 
 /**
  * Create a new section
@@ -24,7 +24,7 @@ exports.createSection = async (req, res) => {
     const newSection = await section.save();
     console.log(" Section saved successfully:", newSection);
     
-    // ÅÑÓÇá ÅÔÚÇÑÇÊ áÌãíÚ ØáÇÈ ÇáÍáŞÉ
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     const io = req.app.get("io");
     if (io && newSection.group) {
       await notifySectionAdded(newSection, io);
@@ -41,7 +41,7 @@ exports.createSection = async (req, res) => {
         .join(", ");
 
       return res.status(400).json({
-        message: `ÎØÃ İí ÇáÊÍŞŞ ãä ÇáÈíÇäÇÊ: ${validationErrors}`,
+        message: `ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½: ${validationErrors}`,
         error: validationErrors,
       });
     }
