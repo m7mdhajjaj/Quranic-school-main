@@ -18,7 +18,7 @@ const NewsModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black/50 backdrop-blur-sm" dir="rtl">
       <div
         className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-auto relative overflow-hidden animate-fadeIn"
         onClick={(e) => e.stopPropagation()}>
@@ -127,15 +127,11 @@ const NewsModal = ({
             <div className="flex gap-3 pt-6 border-t mt-6">
               <Button
                 type="button"
-                onClick={() => {
-                  console.log('❌ Cancel button clicked');
-                  onClose();
-                }}
+                onClick={onClose}
                 disabled={isLoading}
-                loading={isLoading}
-                variant="secondary"
+                variant="danger"
                 size="md"
-                className="px-6 py-2 min-w-[120px]"
+                className="px-6 py-2 min-w-[120px] bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                 leftIcon={<X size={20} />}
               >
                 إلغاء

@@ -102,54 +102,54 @@ const NewsCard = ({
           )}
         </div>
         <div className="px-6 pt-4 flex items-center justify-between">
-          <h3 className="text-sm font-bold text-emerald-700">أخبار</h3>
+          <h3 className="text-xs sm:text-sm font-bold text-emerald-700">أخبار</h3>
           <AddedAgo date={displayDate} />
         </div>
         <div className="p-6 pt-2 pb-4 flex flex-col gap-3">
-          <h2 className="text-2xl font-extrabold text-emerald-800 transition-colors mb-2 line-clamp-2 group-hover:text-emerald-900 leading-tight">
+          <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold text-emerald-800 transition-colors mb-2 line-clamp-2 group-hover:text-emerald-900 leading-tight">
             {news.title}
           </h2>
-          <p className="text-gray-600 text-base leading-relaxed line-clamp-4 mb-3">
+          <p className="text-gray-600 text-sm sm:text-base leading-relaxed line-clamp-4 mb-3">
             {news.content}
           </p>
-          <div className="flex flex-wrap justify-between items-center mt-2 gap-2">
+          <div className="flex justify-between items-center mt-2 gap-1.5 sm:gap-2">
             <Button
               variant="primary"
               size="md"
-              className="rounded-xl shadow-md hover:shadow-lg group/btn"
+              className="rounded-xl shadow-md hover:shadow-lg group/btn flex-1 max-w-[130px] sm:max-w-[150px] text-[10px] xs:text-xs sm:text-sm"
             >
               <span>اقرأ المزيد</span>
               <ArrowLeft
-                size={20}
-                className="group-hover/btn:translate-x-1 transition-transform"
+                size={14}
+                className="group-hover/btn:translate-x-1 transition-transform sm:w-4 sm:h-4"
               />
             </Button>
             {canEditOrDelete && (
-              <div className="flex gap-2">
+              <div className="flex gap-1.5 sm:gap-2 flex-shrink-0">
                 <Button
                   variant="warning"
                   size="md"
-                  className="rounded-lg shadow-md hover:shadow-lg"
+                  className="rounded-lg shadow-md hover:shadow-lg px-2 sm:px-3 text-[10px] xs:text-xs sm:text-sm"
                   title="تعديل الخبر"
                   onClick={(e) => {
                     e.stopPropagation();
                     onEdit(news);
                   }}
                 >
-                  <Edit size={20} />
+                  <Edit size={14} className="sm:w-4 sm:h-4" />
                   <span>تعديل</span>
                 </Button>
                 <Button
                   variant="danger"
                   size="md"
-                  className="rounded-lg shadow-md hover:shadow-lg"
+                  className="rounded-lg shadow-md hover:shadow-lg px-2 sm:px-3 text-[10px] xs:text-xs sm:text-sm"
                   title="حذف الخبر"
                   onClick={(e) => {
                     e.stopPropagation();
                     onDelete(news._id);
                   }}
                 >
-                  <Trash2 size={20} />
+                  <Trash2 size={14} className="sm:w-4 sm:h-4" />
                   <span>حذف</span>
                 </Button>
               </div>
