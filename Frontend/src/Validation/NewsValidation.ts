@@ -19,7 +19,6 @@ export const newsValidationSchema = Yup.object().shape({
   content: Yup.string()
     .required('محتوى الخبر مطلوب')
     .min(3, 'محتوى الخبر يجب أن يكون 3 أحرف على الأقل')
-    .max(5000, 'محتوى الخبر يجب أن يكون 5000 حرف أو أقل')
     .trim(),
 
   date: Yup.string()

@@ -33,16 +33,18 @@ exports.updateNews = async (req, res) => {
         return res.status(400).json({
           success: false,
           message: "العنوان يجب أن يكون بين 3 و 200 حرف",
+          errors: ["العنوان يجب أن يكون بين 3 و 200 حرف"]
         });
       }
       news.title = title.trim();
     }
 
     if (content) {
-      if (content.length < 10) {
+      if (content.length < 3) {
         return res.status(400).json({
           success: false,
-          message: "المحتوى يجب أن يكون أكثر من 10 أحرف",
+          message: "المحتوى يجب أن يكون 3 أحرف على الأقل",
+          errors: ["المحتوى يجب أن يكون 3 أحرف على الأقل"]
         });
       }
       news.content = content.trim();
@@ -180,6 +182,17 @@ exports.updateNews = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error updating news:", error);
+    
+    // إذا كان الخطأ من التحقق من صحة البيانات
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: "بيانات الخبر غير صحيحة",
+        errors: errors,
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: "حدث خطأ أثناء تحديث الخبر",

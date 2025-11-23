@@ -199,6 +199,17 @@ exports.createNews = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error creating news:", error);
+    
+    // إذا كان الخطأ من التحقق من صحة البيانات
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: "بيانات الخبر غير صحيحة",
+        errors: errors,
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: "حدث خطأ أثناء إنشاء الخبر",

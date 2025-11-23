@@ -24,7 +24,7 @@ export const Textarea: React.FC<TextareaProps> = ({
         </label>
       )}
       <textarea
-        className={`w-full px-5 py-4 bg-white border-2 rounded-2xl transition-all resize-none text-right text-base shadow-sm ${
+        className={`w-full px-5 py-4 bg-white border-2 rounded-2xl transition-all resize-y text-right text-base shadow-sm ${
           error
             ? 'border-red-500 focus:border-red-500 focus:ring-red-200'
             : 'border-emerald-300 focus:border-emerald-500 focus:ring-emerald-500'

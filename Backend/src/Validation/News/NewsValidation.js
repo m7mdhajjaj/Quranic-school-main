@@ -45,10 +45,6 @@ const validateContent = (content) => {
     return { isValid: false, message: 'محتوى الخبر يجب أن يكون 3 أحرف على الأقل' };
   }
   
-  if (contentStr.length > 5000) {
-    return { isValid: false, message: 'محتوى الخبر يجب أن يكون 5000 حرف أو أقل' };
-  }
-  
   return { isValid: true, value: contentStr };
 };
 

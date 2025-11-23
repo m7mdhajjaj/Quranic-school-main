@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import type { ChangeEvent } from 'react';
+import { showCenteredSwal } from '@/components/utils/sweetalertUtils';
 import {
   getAllNews,
   createNews,
@@ -261,8 +262,35 @@ export const useNewsData = () => {
       }
     } catch (err) {
       console.error('Failed to save news:', err);
-      const error = err as { response?: { data?: { message?: string } } };
+      const error = err as { response?: { data?: { message?: string, errors?: string[] } } };
       console.error('Error details:', error.response?.data);
+      
+      // إذا كانت هناك أخطاء تحقق من الخادم، اعرضها في النموذج
+      if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
+        const serverErrors: Record<string, string> = {};
+        error.response.data.errors.forEach((errorMsg: string) => {
+          // تحليل رسائل الأخطاء وربطها بالحقول
+          if (errorMsg.includes('العنوان')) {
+            serverErrors.title = errorMsg;
+          } else if (errorMsg.includes('المحتوى')) {
+            serverErrors.content = errorMsg;
+          } else if (errorMsg.includes('التاريخ')) {
+            serverErrors.date = errorMsg;
+          } else if (errorMsg.includes('الصورة')) {
+            serverErrors.image = errorMsg;
+          } else {
+            // خطأ عام يظهر كـ toast
+            showErrorToast(errorMsg);
+          }
+        });
+        
+        if (Object.keys(serverErrors).length > 0) {
+          setFieldErrors(serverErrors);
+          return; // لا تغلق النموذج
+        }
+      }
+      
+      // خطأ عام من الخادم
       showErrorToast(
         error.response?.data?.message ||
           'حدث خطأ أثناء حفظ الخبر، يرجى المحاولة مرة أخرى'
@@ -301,21 +329,42 @@ export const useNewsData = () => {
   };
 
   const handleDeleteNews = async (_id: string) => {
-    const confirmed = await window.confirm(
-      'هل أنت متأكد من حذف هذا الخبر؟ لا يمكن التراجع عن هذا الإجراء!'
-    );
+    const result = await showCenteredSwal({
+      title: 'هل أنت متأكد؟',
+      text: 'سيتم حذف هذا الخبر نهائياً ولا يمكن التراجع عن هذا الإجراء!',
+      icon: 'warning',
+      position: 'center',
+      showCancelButton: true,
+      confirmButtonText: 'نعم، احذف الخبر',
+      cancelButtonText: 'إلغاء',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      reverseButtons: true,
+    });
 
-    if (!confirmed) return;
+    if (!result.isConfirmed) return;
 
-    // ✅ loading واحد للحذف أيضاً
     setIsLoading(true);
     try {
       await deleteNews(_id);
       setNewsItems(newsItems.filter((item) => item._id !== _id));
-
+      await showCenteredSwal({
+        title: 'تم الحذف!',
+        text: 'تم حذف الخبر بنجاح.',
+        icon: 'success',
+        position: 'center',
+        confirmButtonText: 'موافق',
+      });
       showSuccessToast('تم حذف الخبر بنجاح');
     } catch (err) {
       console.error('Failed to delete news:', err);
+      await showCenteredSwal({
+        title: 'خطأ!',
+        text: 'حدث خطأ أثناء حذف الخبر، يرجى المحاولة مرة أخرى',
+        icon: 'error',
+        position: 'center',
+        confirmButtonText: 'موافق',
+      });
       showErrorToast('حدث خطأ أثناء حذف الخبر، يرجى المحاولة مرة أخرى');
     } finally {
       setIsLoading(false);
