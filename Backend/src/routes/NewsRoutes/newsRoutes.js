@@ -26,7 +26,24 @@ router.get("/:id", protect, newsController.getNewsById);
 // ============================================================================
 
 // Create single news item with image upload
-router.post("/", protect, uploadNews.single("image"), validateNewsData, newsController.createNews);
+router.post("/", protect, (req, res, next) => {
+  console.log('🔍 POST /api/news route hit');
+  console.log('📋 Headers:', req.headers);
+  uploadNews.single("image")(req, res, (err) => {
+    if (err) {
+      console.error('❌ Multer error:', err);
+      return res.status(400).json({
+        success: false,
+        message: 'خطأ في رفع الصورة',
+        error: err.message
+      });
+    }
+    console.log('✅ Multer processed successfully');
+    console.log('📎 File:', req.file);
+    console.log('📋 Body:', req.body);
+    next();
+  });
+}, validateNewsData, newsController.createNews);
 
 // Create multiple news items (bulk)
 router.post("/bulk", protect, newsController.createBulkNews);

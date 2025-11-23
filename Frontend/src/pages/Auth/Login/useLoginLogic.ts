@@ -26,12 +26,9 @@ export const useLoginLogic = () => {
   // Navigation and saved credentials
   useEffect(() => {
     const initializeAuth = async () => {
-      const user = localStorage.getItem('user');
-      if (user) {
-        navigate('/', { replace: true });
-        return;
-      }
-
+      // ✅ لا تقم بالـ navigate هنا - دع AppContent يتعامل مع ذلك
+      // هذا يمنع إعادة التوجيه التلقائي للـ Home بعد refresh
+      
       const savedCredentials = localStorage.getItem('savedCredentials');
       if (savedCredentials) {
         try {
@@ -54,12 +51,13 @@ export const useLoginLogic = () => {
 
     initializeAuth();
 
-    if (isAuthenticated) {
-      const userRole = JSON.parse(localStorage.getItem('user') || '{}').role;
-      const targetPage = userRole === 'admin' ? '/admin/dashboard' : '/';
-      navigate(targetPage, { replace: true });
-      return;
-    }
+    // ✅ لا تقم بالـ navigate إذا كان المستخدم مسجل - دع AppContent يتعامل معه
+    // if (isAuthenticated) {
+    //   const userRole = JSON.parse(localStorage.getItem('user') || '{}').role;
+    //   const targetPage = userRole === 'admin' ? '/admin/dashboard' : '/';
+    //   navigate(targetPage, { replace: true });
+    //   return;
+    // }
 
     const preventBack = () => {
       window.history.pushState(null, '', window.location.href);
@@ -172,8 +170,22 @@ export const useLoginLogic = () => {
         }
 
         const userRole = response.user.role;
-        const targetPage = userRole === 'admin' ? '/admin/dashboard' : '/';
-
+        
+        // ✅ التحقق من وجود صفحة محفوظة للعودة إليها
+        const lastVisitedPage = sessionStorage.getItem('lastVisitedPage');
+        
+        // تحديد الصفحة المستهدفة
+        let targetPage = '/';
+        
+        if (lastVisitedPage && lastVisitedPage !== '/login') {
+          // العودة للصفحة السابقة إذا كانت موجودة
+          targetPage = lastVisitedPage;
+          sessionStorage.removeItem('lastVisitedPage'); // تنظيف
+        } else if (userRole === 'admin') {
+          // Admin dashboard كافتراضي للـ Admin
+          targetPage = '/admin/dashboard';
+        }
+        
         setTimeout(() => {
           navigate(targetPage, { replace: true });
         }, 100);

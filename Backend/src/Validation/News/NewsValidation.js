@@ -230,6 +230,9 @@ const sanitizeNewsData = (data) => {
 const validateNewsData = async (req, res, next) => {
   try {
     console.log('📝 Validating news data:', req.body);
+    console.log('📎 File attached:', req.file ? 'Yes' : 'No');
+    console.log('📋 Full request body:', JSON.stringify(req.body, null, 2));
+    
     const { title, content, summary, category, priority, tags } = req.body;
     const errors = [];
 
@@ -309,6 +312,7 @@ const validateNewsData = async (req, res, next) => {
     if (errors.length > 0) {
       console.log('❌ Validation errors:', errors);
       return res.status(400).json({
+        success: false,
         message: "بيانات الخبر غير صحيحة",
         errors: errors,
       });
@@ -320,8 +324,9 @@ const validateNewsData = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.error('Validation error:', error);
+    console.error('❌ Validation error:', error);
     res.status(500).json({
+      success: false,
       message: "خطأ في خادم التحقق من البيانات",
       error: error.message,
     });

@@ -87,46 +87,46 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (savedUser && savedToken) {
           const parsedUser = JSON.parse(savedUser);
           
-          // استخدم البيانات المحفوظة فوراً لتجنب إعادة التوجيه
+          // ✅ استخدم البيانات المحفوظة فوراً وأنهي التحميل
           setUser(parsedUser);
           setToken(savedToken);
+          setIsLoading(false); // ✅ أنهي التحميل فوراً
           
-          // تحقق من صحة التوكن باستخدام authApi
-          try {
-            const response = await verifyToken();
-            
-            if (response && response.success) {
-              // Connect socket and emit login with delay
-              if (!socketManager.isConnected()) {
-                socketManager.connect(parsedUser._id, parsedUser.role);
-              }
-              
-              // تأخير قصير لضمان استقرار الاتصال
-              setTimeout(() => {
-                if (socketManager.isConnected()) {
-                  socketManager.emit('login', {
-                    userId: parsedUser._id,
-                    role: parsedUser.role,
-                    firstName: parsedUser.firstName || parsedUser.name
-                  });
+          // تحقق من صحة التوكن في الخلفية (دون انتظار)
+          verifyToken()
+            .then((response) => {
+              if (response && response.success) {
+                // Connect socket and emit login with delay
+                if (!socketManager.isConnected()) {
+                  socketManager.connect(parsedUser._id, parsedUser.role);
                 }
-              }, 500);
-              
-              // console.log('✅ تم تأكيد صحة بيانات المستخدم:', parsedUser.firstName || parsedUser.name);
-            } else {
-              console.warn('⚠️ فشل في التحقق من التوكن');
-            }
-          } catch (verifyError) {
-            console.warn('⚠️  فشل في التحقق من التوكن:', verifyError);
-            
-            // استخدم البيانات المحفوظة مؤقتاً حتى لو فشل التحقق
-            // هذا يمنع إعادة التوجيه المستمر إذا كان الخادم غير متاح
-            // console.log('🔄 سيتم استخدام البيانات المحفوظة مؤقتاً');
-            setUser(parsedUser);
-            setToken(savedToken);
-            
-            // إذا كان التوكن غير صالح فعلياً، ستظهر الأخطاء في الـ API calls وسيتم التعامل معها
-          }
+                
+                // تأخير قصير لضمان استقرار الاتصال
+                setTimeout(() => {
+                  if (socketManager.isConnected()) {
+                    socketManager.emit('login', {
+                      userId: parsedUser._id,
+                      role: parsedUser.role,
+                      firstName: parsedUser.firstName || parsedUser.name
+                    });
+                  }
+                }, 500);
+              } else {
+                // Token غير صالح - تسجيل خروج
+                console.warn('⚠️ التوكن غير صالح - تسجيل خروج');
+                setUser(null);
+                setToken(null);
+                localStorage.clear();
+              }
+            })
+            .catch((verifyError) => {
+              console.warn('⚠️ فشل في التحقق من التوكن:', verifyError);
+              // إذا كان خطأ في الشبكة، احتفظ بالبيانات
+              // إذا كان التوكن غير صالح، ستظهر الأخطاء في API calls
+            });
+        } else {
+          // لا توجد بيانات محفوظة
+          setIsLoading(false);
         }
       } catch (error) {
         console.error('❌ خطأ في تحميل بيانات المستخدم:', error);
@@ -134,7 +134,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         localStorage.removeItem('user');
         localStorage.removeItem('token');
         localStorage.removeItem('userId');
-      } finally {
         setIsLoading(false);
       }
     };

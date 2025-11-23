@@ -1,4 +1,4 @@
-import { Card } from "@/components/UI";
+import { Card } from '@/components/UI';
 
 interface ValueCardProps {
   icon: React.ReactNode;
@@ -18,7 +18,8 @@ const ValueCard = ({ icon, title, description, delay }: ValueCardProps) => {
       data-aos-delay={delay}
       data-aos-duration="800"
       data-aos-easing="ease-in-out"
-      data-aos-anchor-placement="top-bottom">
+      data-aos-anchor-placement="top-bottom"
+    >
       <div className="w-20 h-20 bg-white/95 rounded-full mx-auto mb-4 flex items-center justify-center shadow-md">
         <div className="text-teal-600">{icon}</div>
       </div>
@@ -39,7 +40,8 @@ const ValuesSection = () => {
           className="h-10 w-10"
           fill="none"
           viewBox="0 0 24 24"
-          stroke="currentColor">
+          stroke="currentColor"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -48,9 +50,9 @@ const ValuesSection = () => {
           />
         </svg>
       ),
-      title: "التحفيز",
+      title: 'التحفيز',
       description:
-        "نؤمن بأن التحفيز وجود الإنجاز فكلما زاد التحفيز زاد الإنجاز بإذن الله تعالى",
+        'نؤمن بأن التحفيز وجود الإنجاز فكلما زاد التحفيز زاد الإنجاز بإذن الله تعالى',
       delay: 0,
     },
     {
@@ -60,7 +62,8 @@ const ValuesSection = () => {
           className="h-10 w-10"
           fill="none"
           viewBox="0 0 24 24"
-          stroke="currentColor">
+          stroke="currentColor"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -69,9 +72,9 @@ const ValuesSection = () => {
           />
         </svg>
       ),
-      title: "العمل",
+      title: 'العمل',
       description:
-        "العمل بالقرآن غايتنا لنكون على عقيدة نقية على خطى خير البرية ﷺ نصر بالقرآن أوطاننا ونسعد به مجتمعاتنا",
+        'العمل بالقرآن غايتنا لنكون على عقيدة نقية على خطى خير البرية ﷺ نصر بالقرآن أوطاننا ونسعد به مجتمعاتنا',
       delay: 100,
     },
     {
@@ -81,7 +84,8 @@ const ValuesSection = () => {
           className="h-10 w-10"
           fill="none"
           viewBox="0 0 24 24"
-          stroke="currentColor">
+          stroke="currentColor"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -90,8 +94,8 @@ const ValuesSection = () => {
           />
         </svg>
       ),
-      title: "الدعاء",
-      description: "سر نجاح وتميز المؤمن",
+      title: 'الدعاء',
+      description: 'سر نجاح وتميز المؤمن',
       delay: 200,
     },
     {
@@ -101,7 +105,8 @@ const ValuesSection = () => {
           className="h-10 w-10"
           fill="none"
           viewBox="0 0 24 24"
-          stroke="currentColor">
+          stroke="currentColor"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -110,8 +115,8 @@ const ValuesSection = () => {
           />
         </svg>
       ),
-      title: "التطوير",
-      description: "شغف يتجدد وينجاح بتحقيق",
+      title: 'التطوير',
+      description: 'شغف يتجدد وينجاح بتحقيق',
       delay: 0,
     },
     {
@@ -121,7 +126,8 @@ const ValuesSection = () => {
           className="h-10 w-10"
           fill="none"
           viewBox="0 0 24 24"
-          stroke="currentColor">
+          stroke="currentColor"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -130,8 +136,8 @@ const ValuesSection = () => {
           />
         </svg>
       ),
-      title: "الصبر",
-      description: "أساس كل إنجاز",
+      title: 'الصبر',
+      description: 'أساس كل إنجاز',
       delay: 100,
     },
     {
@@ -141,7 +147,8 @@ const ValuesSection = () => {
           className="h-10 w-10"
           fill="none"
           viewBox="0 0 24 24"
-          stroke="currentColor">
+          stroke="currentColor"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -150,8 +157,8 @@ const ValuesSection = () => {
           />
         </svg>
       ),
-      title: "التعاون",
-      description: "به تحقق النجاحات وتكون الإنجازات",
+      title: 'التعاون',
+      description: 'به تحقق النجاحات وتكون الإنجازات',
       delay: 200,
     },
     {
@@ -161,7 +168,8 @@ const ValuesSection = () => {
           className="h-10 w-10"
           fill="none"
           viewBox="0 0 24 24"
-          stroke="currentColor">
+          stroke="currentColor"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -170,8 +178,8 @@ const ValuesSection = () => {
           />
         </svg>
       ),
-      title: "العطاء والإحسان",
-      description: "ثمرة من ثمرات صحبة القرآن وأجمله وأبسطه الكلمة الطيبة",
+      title: 'العطاء والإحسان',
+      description: 'ثمرة من ثمرات صحبة القرآن وأجمله وأبسطه الكلمة الطيبة',
       delay: 0,
     },
     {
@@ -181,7 +189,8 @@ const ValuesSection = () => {
           className="h-10 w-10"
           fill="none"
           viewBox="0 0 24 24"
-          stroke="currentColor">
+          stroke="currentColor"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -190,8 +199,8 @@ const ValuesSection = () => {
           />
         </svg>
       ),
-      title: "الحلم",
-      description: "بداية كل نجاح ما رأيك أن تحلم الآن بحفظك للقرآن؟",
+      title: 'الحلم',
+      description: 'بداية كل نجاح ما رأيك أن تحلم الآن بحفظك للقرآن؟',
       delay: 100,
     },
     {
@@ -201,7 +210,8 @@ const ValuesSection = () => {
           className="h-10 w-10"
           fill="none"
           viewBox="0 0 24 24"
-          stroke="currentColor">
+          stroke="currentColor"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -210,8 +220,8 @@ const ValuesSection = () => {
           />
         </svg>
       ),
-      title: "الطموح",
-      description: "من دونه لن نصل ولن نواصل!",
+      title: 'الطموح',
+      description: 'من دونه لن نصل ولن نواصل!',
       delay: 200,
     },
   ];
@@ -222,14 +232,16 @@ const ValuesSection = () => {
         <h2
           className="text-2xl md:text-3xl font-bold text-slate-800 mb-3"
           data-aos="fade-down"
-          data-aos-duration="600">
+          data-aos-duration="600"
+        >
           قيمنا في أكاديمية ازهار الحمد
         </h2>
         <div
           className="w-24 h-1 bg-emerald-600 mx-auto"
           data-aos="fade-in"
           data-aos-delay="200"
-          data-aos-duration="600"></div>
+          data-aos-duration="600"
+        ></div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

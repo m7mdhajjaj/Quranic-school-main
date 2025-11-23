@@ -7,6 +7,7 @@ import {
   FaClipboardCheck,
   FaChartLine,
 } from "react-icons/fa";
+import { LoadingSpinner } from "@/components/UI";
 import {
   StatCard,
   BarChart,
@@ -118,12 +119,11 @@ const AdminDashboard = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-green-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg font-medium">
-            جاري تحميل الإحصائيات...
-          </p>
-        </div>
+        <LoadingSpinner 
+          size="xl" 
+          color="blue" 
+          text="جاري تحميل الإحصائيات..." 
+        />
       </div>
     );
   }

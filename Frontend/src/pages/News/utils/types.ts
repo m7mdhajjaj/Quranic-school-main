@@ -31,3 +31,23 @@ export interface NewsModalProps {
   onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
+
+export interface NewsEmptyStateProps {
+  hasError: boolean;
+  error: string | null;
+  hasNews: boolean;
+  isFiltered: boolean;
+  isTeacherOrAdmin: boolean;
+  onRetry: () => void;
+  onAddNews: () => void;
+}
+
+export interface NewsFiltersProps {
+  searchTerm: string;
+  sortOrder: 'newest' | 'oldest';
+  onSearchChange: (value: string) => void;
+  onSortChange: (value: string) => void;
+  onClearFilters: () => void;
+  filteredCount: number;
+  totalCount: number;
+}

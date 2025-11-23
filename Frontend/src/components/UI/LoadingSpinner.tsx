@@ -5,6 +5,7 @@ interface LoadingSpinnerProps {
   color?: 'emerald' | 'blue' | 'red' | 'amber' | 'purple';
   fullScreen?: boolean;
   text?: string;
+  showIcon?: boolean;
 }
 
 export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
@@ -12,6 +13,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   color = 'emerald',
   fullScreen = false,
   text,
+  showIcon = true,
 }) => {
   const sizes = {
     xs: 'h-4 w-4 border-2',
@@ -29,13 +31,30 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
     purple: 'border-purple-600',
   };
 
+  const iconSizes = {
+    xs: 'text-sm',
+    sm: 'text-lg',
+    md: 'text-2xl',
+    lg: 'text-3xl',
+    xl: 'text-4xl',
+  };
+
   const spinner = (
     <>
-      <div
-        className={`animate-spin rounded-full border-t-transparent ${sizes[size]} ${colors[color]}`}
-      />
+      <div className="relative">
+        {showIcon && (
+          <div className={`absolute inset-0 flex items-center justify-center ${iconSizes[size]} opacity-60`}>
+            📚
+          </div>
+        )}
+        <div
+          className={`animate-spin rounded-full border-t-transparent ${sizes[size]} ${colors[color]} shadow-sm`}
+        />
+      </div>
       {text && (
-        <p className="mt-4 text-gray-600 font-medium animate-pulse">{text}</p>
+        <p className="mt-6 text-gray-700 font-semibold animate-pulse text-lg">
+          {text}
+        </p>
       )}
     </>
   );
@@ -43,7 +62,9 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   if (fullScreen) {
     return (
       <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center z-50">
-        {spinner}
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-gray-200/50">
+          {spinner}
+        </div>
       </div>
     );
   }

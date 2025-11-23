@@ -9,8 +9,8 @@
 // ============================================================================
 // External Dependencies
 // ============================================================================
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import React from "react";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import React, { useEffect } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -30,7 +30,12 @@ import { Layout } from "./components/Layout";
 // ============================================================================
 // Page Components - General
 // ============================================================================
-import Home from "./pages/Home";
+import { lazy } from "react";
+
+// Lazy load Home and News pages
+const Home = lazy(() => import("./pages/Home"));
+const News = lazy(() => import("./pages/News"));
+
 import Login from "./pages/Auth/Login/index";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
@@ -53,7 +58,6 @@ import MyStudents from "./pages/MyStudents";
 // ============================================================================
 // Page Components - Communication & Activities
 // ============================================================================
-import News from "./pages/News";
 // import Chat from "./pages/Chat";
 import Activities from "./pages/Activities";
 
@@ -163,7 +167,18 @@ const TeacherRoutes: React.FC = () => {
         <Route path="/timetable" element={<Timetable />} />
 
         {/* ====== Communication & Activities ====== */}
-        <Route path="/news" element={<News />} />
+        <Route path="/news" element={
+          <React.Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
+                <p className="mt-4 text-gray-600 font-medium">جاري تحميل الأخبار...</p>
+              </div>
+            </div>
+          }>
+            <News />
+          </React.Suspense>
+        } />
         {/* <Route path="/chat" element={<Chat />} /> */}
         <Route path="/activities" element={<Activities />} />
 
@@ -226,7 +241,18 @@ const StudentRoutes: React.FC = () => {
         <Route path="/timetable" element={<Timetable />} />
         <Route path="/test" element={<Test />} />
         {/* ====== Communication & Activities ====== */}
-        <Route path="/news" element={<News />} />
+        <Route path="/news" element={
+          <React.Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
+                <p className="mt-4 text-gray-600 font-medium">جاري تحميل الأخبار...</p>
+              </div>
+            </div>
+          }>
+            <News />
+          </React.Suspense>
+        } />
         {/* <Route path="/chat" element={<Chat />} /> */}
         <Route path="/activities" element={<Activities />} />
 
@@ -273,6 +299,20 @@ const StudentRoutes: React.FC = () => {
  * 2. Redirects to login if not authenticated
  * 3. Routes to appropriate layout based on user role (admin vs user)
  */
+// Component to track last visited page
+const PageTracker: React.FC = () => {
+  const location = useLocation();
+  
+  useEffect(() => {
+    // حفظ آخر صفحة تمت زيارتها (ماعدا صفحة Login)
+    if (location.pathname !== '/login' && location.pathname !== '/') {
+      sessionStorage.setItem('lastVisitedPage', location.pathname);
+    }
+  }, [location]);
+  
+  return null;
+};
+
 function AppContent() {
   const { isLoading, isAuthenticated, user } = useAuth();
 
@@ -290,15 +330,18 @@ function AppContent() {
   }, [isPermissionGranted, lastNotification]);
 
   // ====== Loading State ======
-  // Show loading spinner while authentication data is being fetched
+  // Show loading screen while checking authentication
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-emerald-600 mx-auto mb-4"></div>
-          <p className="text-emerald-700 text-lg font-semibold">
-            جاري تحميل بيانات المستخدم...
-          </p>
+          <div className="relative inline-flex">
+            <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-8 h-8 bg-blue-600 rounded-full opacity-20 animate-pulse"></div>
+            </div>
+          </div>
+          <p className="mt-4 text-gray-600 font-medium animate-pulse">جاري التحميل...</p>
         </div>
       </div>
     );
@@ -338,6 +381,7 @@ function AppContent() {
 
   return (
     <>
+      <PageTracker />
       {routeComponent}
       {/* Show notification permission prompt after login */}
       <NotificationPermissionPrompt autoShow={true} />

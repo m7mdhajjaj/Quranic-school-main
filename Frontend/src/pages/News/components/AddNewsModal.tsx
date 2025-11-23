@@ -1,15 +1,9 @@
-/**
- * @deprecated This component is deprecated. Use AddNewsModal or EditNewsModal instead.
- * This file is kept for backward compatibility only.
- */
-
 import type { NewsModalProps } from "../utils/types";
 import { Input, Textarea, Button, ImageUpload, DatePicker } from "@/components/UI";
 import { MessageSquare, X, Plus } from 'lucide-react';
 
-const NewsModal = ({
+const AddNewsModal = ({
   isOpen,
-  isEditMode,
   isLoading,
   newNews,
   selectedFile,
@@ -19,7 +13,7 @@ const NewsModal = ({
   onSubmit,
   onInputChange,
   onFileChange,
-}: NewsModalProps) => {
+}: Omit<NewsModalProps, 'isEditMode'>) => {
   if (!isOpen) return null;
 
   return (
@@ -30,46 +24,22 @@ const NewsModal = ({
         {/* Header */}
         <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-4 flex items-center justify-between">
           <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-8 w-8"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"
-              />
-            </svg>
-            {isEditMode ? "تعديل الخبر" : "إضافة خبر جديد"}
+            <Plus size={32} className="text-white" />
+            إضافة خبر جديد
           </h2>
           <button
             onClick={onClose}
             title="إغلاق"
             aria-label="إغلاق"
             className="text-white/90 hover:text-white hover:bg-white/20 rounded-lg p-2 transition-all">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <X size={24} />
           </button>
         </div>
 
         {/* Form Content */}
         <div className="p-6 max-h-[calc(100vh-200px)] overflow-y-auto">
           <form onSubmit={(e) => {
-            console.log('📋 NewsModal form submitted');
+            console.log('📋 AddNewsModal form submitted');
             onSubmit(e);
           }} className="space-y-6">
             {/* Title Field */}
@@ -118,13 +88,11 @@ const NewsModal = ({
                 onFileChange(event);
               }}
               onImageRemove={() => {
-                // إزالة الصورة المختارة الجديدة والعودة للصورة الأصلية أو إزالة كليا
                 const event = {
                   target: { name: 'image', value: '' }
                 } as React.ChangeEvent<HTMLInputElement>;
                 onInputChange(event);
                 
-                // إعادة تعيين file input
                 if (fileInputRef?.current) {
                   fileInputRef.current.value = '';
                 }
@@ -152,10 +120,7 @@ const NewsModal = ({
             <div className="flex gap-3 pt-6 border-t mt-6">
               <Button
                 type="button"
-                onClick={() => {
-                  console.log('❌ Cancel button clicked');
-                  onClose();
-                }}
+                onClick={onClose}
                 disabled={isLoading}
                 loading={isLoading}
                 variant="secondary"
@@ -167,7 +132,6 @@ const NewsModal = ({
               </Button>
               <Button
                 type="submit"
-                onClick={() => console.log('✅ Submit button clicked, isLoading:', isLoading)}
                 disabled={isLoading}
                 loading={isLoading}
                 variant="primary"
@@ -175,7 +139,7 @@ const NewsModal = ({
                 className="px-6 py-2 min-w-[160px] shadow-lg hover:shadow-xl"
                 leftIcon={<Plus size={20} />}
               >
-                {isEditMode ? "تحديث الخبر" : "إضافة الخبر"}
+                إضافة الخبر
               </Button>
             </div>
           </form>
@@ -185,4 +149,4 @@ const NewsModal = ({
   );
 };
 
-export default NewsModal;
+export default AddNewsModal;

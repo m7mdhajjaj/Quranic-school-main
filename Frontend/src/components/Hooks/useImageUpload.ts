@@ -26,6 +26,7 @@ export const useImageUpload = ({
   const fileInputRef = externalFileInputRef || internalFileInputRef;
   const [preview, setPreview] = useState<string | null>(currentImage || null);
   const [isDragging, setIsDragging] = useState(false);
+  const [selectedFileInfo, setSelectedFileInfo] = useState<File | null>(null);
 
   // Update preview when currentImage changes
   useEffect(() => {
@@ -65,6 +66,9 @@ export const useImageUpload = ({
       return;
     }
 
+    // Save file info
+    setSelectedFileInfo(file);
+
     // Create preview
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -92,6 +96,7 @@ export const useImageUpload = ({
       e.stopPropagation();
     }
     setPreview(null);
+    setSelectedFileInfo(null);
     if (onImageRemove) {
       onImageRemove();
     }
@@ -147,6 +152,7 @@ export const useImageUpload = ({
     preview,
     isDragging,
     fileInputRef,
+    selectedFileInfo,
 
     // Handlers
     handleClick,

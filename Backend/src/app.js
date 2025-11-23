@@ -56,8 +56,12 @@ app.use((req, res, next) => {
   });
 
   if (req.method === 'POST' || req.method === 'PUT') {
-    // Only log body if it exists and has keys
-    if (req.body && Object.keys(req.body).length > 0) {
+    // Check if this is a multipart/form-data request (file upload)
+    const isMultipart = req.headers['content-type']?.includes('multipart/form-data');
+    
+    if (isMultipart) {
+      console.log('Request Body: [Multipart Form Data - will be parsed by multer]');
+    } else if (req.body && Object.keys(req.body).length > 0) {
       console.log('Request Body:', JSON.stringify(req.body, null, 2));
     } else {
       console.log('Request Body: [Empty or Not Parsed]');

@@ -16,6 +16,11 @@ const { sendNotificationToDevices } = require("../../Notifications/NotificationS
 exports.createNews = async (req, res) => {
   try {
     console.log("📝 Creating new news...");
+    console.log("📋 Request headers:", req.headers);
+    console.log("📋 Full request body:", JSON.stringify(req.body, null, 2));
+    console.log("📎 File:", req.file);
+    console.log("📊 Body keys:", Object.keys(req.body));
+    console.log("📊 File exists?", !!req.file);
 
     const { title, content, description, author, category, tags } = req.body;
     
@@ -42,6 +47,8 @@ exports.createNews = async (req, res) => {
     console.log("  - Author Role:", authorRole);
     console.log("  - Author Name:", authorName);
     console.log("  - Has file:", !!req.file);
+    console.log("  - Category:", category);
+    console.log("  - Tags:", tags);
 
 
     // Validation using NewsValidation.js
@@ -72,27 +79,21 @@ exports.createNews = async (req, res) => {
     const trimmedContent = contentValidation.value;
 
     let imageUrl = null;
+    let imagePublicId = null;
 
-    // Upload image if provided
+    // Get image from multer-cloudinary upload (already uploaded)
     if (req.file) {
-      try {
-        console.log("📤 Uploading image to Cloudinary...");
-
-        const result = await cloudinary.uploader.upload(req.file.path, {
-          folder: "quranic-school/news",
-          resource_type: "auto",
-        });
-
-        imageUrl = result.secure_url;
-        console.log("✅ Image uploaded successfully");
-      } catch (uploadError) {
-        console.error("❌ Image upload failed:", uploadError);
-        return res.status(400).json({
-          success: false,
-          message: "فشل تحميل الصورة",
-          error: uploadError.message,
-        });
-      }
+      console.log("📤 Image uploaded via multer-cloudinary");
+      console.log("  - File path:", req.file.path);
+      console.log("  - Filename:", req.file.filename);
+      
+      // Multer-cloudinary already uploaded the file
+      // req.file.path contains the Cloudinary URL
+      imageUrl = req.file.path;
+      imagePublicId = req.file.filename; // This is the public_id
+      
+      console.log("✅ Image URL:", imageUrl);
+      console.log("✅ Image Public ID:", imagePublicId);
     }
 
     // Determine author model based on role
@@ -107,6 +108,7 @@ exports.createNews = async (req, res) => {
       content: trimmedContent,
       description: description?.trim() || null,
       image: imageUrl,
+      imagePublicId: imagePublicId,
       author: authorId,
       authorModel: authorModel,
       authorName: authorName,

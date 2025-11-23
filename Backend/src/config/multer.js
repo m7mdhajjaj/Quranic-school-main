@@ -1,6 +1,9 @@
 const multer = require("multer");
 const CloudinaryStorage = require("multer-storage-cloudinary");
-const cloudinary = require("./cloudinary");
+const cloudinary = require("../config/cloudinary");
+
+// Cloudinary is already configured in config/cloudinary.js
+console.log("🔧 Multer-Cloudinary storage initialized");
 
 // Configure Cloudinary storage for activities with dynamic folders
 const activityStorage = new CloudinaryStorage({
@@ -10,7 +13,6 @@ const activityStorage = new CloudinaryStorage({
     const category = req.body.category || 'عام';
     
     // الحصول على معرف النشاط (للتعديل) أو استخدام timestamp (للإضافة)
-    // عند الإضافة، سنستخدم timestamp كمعرف مؤقت ثم نعيد تسمية المجلد لاحقاً
     let activityIdentifier;
     
     if (req.params.id) {
@@ -42,21 +44,33 @@ const activityStorage = new CloudinaryStorage({
   },
 });
 
-// Configure Cloudinary storage for news
+// Configure Cloudinary storage for news with user-specific folders
 const newsStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: {
-    folder: "quranic-school/news",
-    allowed_formats: ["jpg", "jpeg", "png", "gif", "webp"],
-    transformation: [
-      {
-        width: 1200,
-        height: 800,
-        crop: "limit",
-        quality: "auto",
-        fetch_format: "auto",
-      },
-    ],
+  params: async (req, file) => {
+    // الحصول على معلومات المستخدم
+    const userId = req.user?._id || req.body.author || 'unknown';
+    const userName = req.user?.firstName 
+      ? `${req.user.firstName}_${req.user.lastName || ''}`.replace(/\s+/g, '_')
+      : req.user?.name?.replace(/\s+/g, '_') || 'unknown_user';
+    
+    // إنشاء اسم فريد للصورة
+    const uniqueId = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    
+    return {
+      folder: `quranic-school/news/${userName}_${userId}`,
+      allowed_formats: ["jpg", "jpeg", "png", "gif", "webp"],
+      public_id: `news_${uniqueId}`,
+      transformation: [
+        {
+          width: 1200,
+          height: 800,
+          crop: "limit",
+          quality: "auto",
+          fetch_format: "auto",
+        },
+      ],
+    };
   },
 });
 
@@ -94,7 +108,7 @@ const uploadNews = multer({
 // Configure Cloudinary storage for avatars with dynamic folders
 const avatarStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: (req, file) => {
+  params: async (req, file) => {
     // تحديد المجلد الفرعي حسب نوع المستخدم داخل مجلد Avatar
     let userSubFolder;
     
@@ -149,18 +163,20 @@ const uploadAvatar = multer({
 // Configure Cloudinary storage for hero images
 const heroStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: {
-    folder: "quranic-school/Hero",
-    allowed_formats: ["jpg", "jpeg", "png", "gif", "webp"],
-    transformation: [
-      {
-        width: 1920,
-        height: 1080,
-        crop: "limit",
-        quality: "auto",
-        fetch_format: "auto",
-      },
-    ],
+  params: async (req, file) => {
+    return {
+      folder: "quranic-school/Hero",
+      allowed_formats: ["jpg", "jpeg", "png", "gif", "webp"],
+      transformation: [
+        {
+          width: 1920,
+          height: 1080,
+          crop: "limit",
+          quality: "auto",
+          fetch_format: "auto",
+        },
+      ],
+    };
   },
 });
 
@@ -183,18 +199,20 @@ const uploadHero = multer({
 // Configure Cloudinary storage for logo
 const logoStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: {
-    folder: "quranic-school/Logo",
-    allowed_formats: ["jpg", "jpeg", "png", "gif", "webp", "svg"],
-    transformation: [
-      {
-        width: 500,
-        height: 500,
-        crop: "limit",
-        quality: "auto",
-        fetch_format: "auto",
-      },
-    ],
+  params: async (req, file) => {
+    return {
+      folder: "quranic-school/Logo",
+      allowed_formats: ["jpg", "jpeg", "png", "gif", "webp", "svg"],
+      transformation: [
+        {
+          width: 500,
+          height: 500,
+          crop: "limit",
+          quality: "auto",
+          fetch_format: "auto",
+        },
+      ],
+    };
   },
 });
 

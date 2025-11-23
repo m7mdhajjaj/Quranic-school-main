@@ -1,5 +1,5 @@
 import { useState, useCallback, useTransition, lazy, Suspense } from "react";
-import { Alert } from "@/components/UI";
+import { Alert, LoadingSpinner } from "@/components/UI";
 import { BookOpen, Sparkles } from "lucide-react";
 import SurahList from "./SurahList";
 import ReaderControls from "./ReaderControls";
@@ -79,7 +79,13 @@ const QuranPage = () => {
   }, [currentPage, goToNextPage, goToPreviousPage, startTransition]);
 
   if (initLoading) {
-    return <div className="text-center py-8">جاري التحميل...</div>;
+    return (
+      <LoadingSpinner 
+        size="lg" 
+        color="emerald" 
+        text="جاري تحميل القرآن الكريم..." 
+      />
+    );
   }
 
   return (
@@ -123,9 +129,13 @@ const QuranPage = () => {
             />
 
             {loading || isPending ? (
-              <div className="text-center py-8">جاري التحميل...</div>
+              <LoadingSpinner 
+                size="lg" 
+                color="emerald" 
+                text="جاري تحميل السورة..." 
+              />
             ) : (
-              <Suspense fallback={<div className="text-center py-8">جاري التحميل...</div>}>
+              <Suspense fallback={<LoadingSpinner size="lg" color="emerald" text="جاري تحميل السورة..." />}>
                 <SurahReader
                   surah={selectedSurah}
                   ayahs={currentAyahs}

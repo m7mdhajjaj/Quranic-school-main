@@ -56,34 +56,34 @@ exports.updateNews = async (req, res) => {
     // Handle image update
     if (req.file) {
       try {
-        console.log("📤 Uploading new image...");
+        console.log("📤 Updating image...");
 
         // Delete old image if exists
-        if (news.image) {
+        if (news.imagePublicId) {
           try {
-            const publicId = news.image.split("/").pop().split(".")[0];
-            await cloudinary.uploader.destroy(
-              `quranic-school/news/${publicId}`
-            );
+            await cloudinary.uploader.destroy(news.imagePublicId);
             console.log("✅ Old image deleted");
           } catch (deleteError) {
             console.warn("⚠️ Could not delete old image:", deleteError);
           }
         }
 
-        // Upload new image
-        const result = await cloudinary.uploader.upload(req.file.path, {
-          folder: "quranic-school/news",
-          resource_type: "auto",
-        });
-
-        news.image = result.secure_url;
-        console.log("✅ New image uploaded");
+        // Get new image from multer-cloudinary upload (already uploaded)
+        console.log("📤 Image uploaded via multer-cloudinary");
+        console.log("  - File path:", req.file.path);
+        console.log("  - Filename:", req.file.filename);
+        
+        // Multer-cloudinary already uploaded the file
+        news.image = req.file.path;
+        news.imagePublicId = req.file.filename;
+        
+        console.log("✅ New image URL:", news.image);
+        console.log("✅ New image Public ID:", news.imagePublicId);
       } catch (uploadError) {
-        console.error("❌ Image upload failed:", uploadError);
+        console.error("❌ Image update failed:", uploadError);
         return res.status(400).json({
           success: false,
-          message: "فشل تحميل الصورة",
+          message: "فشل تحديث الصورة",
           error: uploadError.message,
         });
       }

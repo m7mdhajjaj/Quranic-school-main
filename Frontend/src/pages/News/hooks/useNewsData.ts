@@ -6,20 +6,23 @@ import {
   updateNews,
   deleteNews,
   type INews,
-} from "@/Api/newsApi";
-import { useNewsSocket } from "@/Socket";
-import { validateNewsForm } from "@/Validation/NewsValidation";
+} from '@/Api/newsApi';
+import { useNewsSocket } from '@/Socket';
+import { validateNewsForm } from '@/Validation/NewsValidation';
 import {
   showSuccessToast,
   showErrorToast,
-} from "@/components/utils/toastUtils";
-import { useAuth } from "@/hooks/useAuth";
+} from '@/components/utils/toastUtils';
+import { useAuth } from '@/hooks/useAuth';
 
 export const useNewsData = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingNewsId, setEditingNewsId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // ✅ loading واحد لكل شيء
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
   const [error, setError] = useState<string | null>(null);
   const [newsItems, setNewsItems] = useState<INews[]>([]);
   const [newNews, setNewNews] = useState<Partial<INews>>({
@@ -42,20 +45,21 @@ export const useNewsData = () => {
     socketId,
   } = useNewsSocket();
 
-  // Load news on mount
+  // ✅ تحميل الأخبار عند فتح الصفحة أول مرة فقط
   useEffect(() => {
     loadNews();
   }, []);
 
-  // Auto-refresh when socket receives updates
+  // ✅ تحديث تلقائي صامت عند استلام تحديثات من السوكت
   useEffect(() => {
     if (socketLastUpdate) {
       console.log('🔄 News Socket update received, refreshing news...');
-      refreshNews();
+      refreshNews(); // لا يظهر loading spinner
     }
   }, [socketLastUpdate]);
 
   const loadNews = async () => {
+    // ✅ يظهر loading spinner في الصفحة الرئيسية
     setIsLoading(true);
     setError(null);
     try {
@@ -75,7 +79,7 @@ export const useNewsData = () => {
   };
 
   const refreshNews = async () => {
-    // Don't show loading spinner for live updates
+    // ✅ تحديث صامت - لا يظهر loading spinner
     setError(null);
     try {
       const response = await getAllNews();
@@ -104,7 +108,7 @@ export const useNewsData = () => {
       title: '',
       content: '',
       date: new Date().toISOString().split('T')[0],
-      image: 'https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+جديدة',
+      image: undefined, // لا صورة افتراضية
     });
   };
 
@@ -205,6 +209,8 @@ export const useNewsData = () => {
     }
 
     console.log('✅ Validation passed, proceeding to save...');
+    console.log('🔄 Setting isLoading to true...');
+    // ✅ loading واحد لكل العمليات
     setIsLoading(true);
     console.log('Adding/updating news with image:', selectedFile);
 
@@ -301,6 +307,7 @@ export const useNewsData = () => {
 
     if (!confirmed) return;
 
+    // ✅ loading واحد للحذف أيضاً
     setIsLoading(true);
     try {
       await deleteNews(_id);

@@ -99,7 +99,7 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 shadow-2xl backdrop-blur-sm ${className}`}
+        className={`fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 shadow-2xl backdrop-blur-sm contain-layout ${className}`}
         dir="rtl"
       >
         <div className="max-w-[2000px] mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
@@ -121,7 +121,7 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
                 />
               </div>
               <div className="hidden sm:block min-w-0">
-                <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-white drop-shadow-lg leading-tight truncate">
+                <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-white drop-shadow-lg leading-tight truncate lcp-optimized-title">
                   مدرسة القرآن الكريم
                 </h1>
                 <p className="text-[10px] sm:text-xs md:text-sm text-emerald-100/90 font-medium truncate">

@@ -7,4 +7,11 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+// تحقق من الإعدادات عند التشغيل
+console.log("🌤️ Cloudinary initialized:", {
+  cloud_name: cloudinary.config().cloud_name || "❌ Not set",
+  api_key: cloudinary.config().api_key ? "✅ Set" : "❌ Not set",
+  api_secret: cloudinary.config().api_secret ? "✅ Set" : "❌ Not set"
+});
+
 module.exports = cloudinary;

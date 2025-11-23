@@ -100,6 +100,13 @@
   contain: layout style paint;
 }
 
+/* ✨ تحسين LCP - Header Title Optimization */
+.lcp-optimized-title {
+  font-display: swap;
+  contain: layout style paint;
+  content-visibility: auto;
+}
+
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-out;
 }
