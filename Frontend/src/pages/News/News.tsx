@@ -87,12 +87,31 @@ const News = () => {
     setSortOrder('newest');
   }, []);
 
+  // ترتيب العرض حسب المطلوب:
+  // 1. عند mount: يبدأ التحميل ويظهر Skeleton فقط
+  // 2. بعد التحميل: تظهر البيانات أو رسالة فارغة
+  if (isLoading && newsItems.length === 0) {
+    return (
+      <main className="container mx-auto px-4 py-12" dir="rtl">
+        <NewsHeader />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {[1, 2, 3, 4].map((i) => (
+            <CardSkeleton
+              key={i}
+              hasImage={true}
+              imageHeight="h-60 sm:h-64 md:h-72"
+              contentLines={3}
+            />
+          ))}
+        </div>
+      </main>
+    );
+  }
+
+  // بعد التحميل: تظهر الصفحة كاملة
   return (
     <main className="container mx-auto px-4 py-12" dir="rtl">
-      {/* Header Section */}
       <NewsHeader />
-
-      {/* Filter and Add News Section */}
       <div className="space-y-4">
         <NewsFilters
           searchTerm={searchTerm}
@@ -103,8 +122,6 @@ const News = () => {
           filteredCount={filteredNews.length}
           totalCount={newsItems.length}
         />
-
-        {/* Independent Add News Button */}
         {isTeacherOrAdmin && (
           <div className="flex justify-end">
             <button
@@ -117,22 +134,8 @@ const News = () => {
           </div>
         )}
       </div>
-
-      {/* News Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {isLoading && newsItems.length === 0 ? (
-          // Skeleton Loading Cards
-          <>
-            {[1, 2, 3, 4].map((i) => (
-              <CardSkeleton
-                key={i}
-                hasImage={true}
-                imageHeight="h-60 sm:h-64 md:h-72"
-                contentLines={3}
-              />
-            ))}
-          </>
-        ) : filteredNews.length === 0 && !isLoading ? (
+        {filteredNews.length === 0 ? (
           <NewsEmptyState
             hasError={!!error && newsItems.length === 0}
             error={error}
@@ -155,8 +158,6 @@ const News = () => {
           ))
         )}
       </div>
-
-      {/* Add News Modal */}
       <AddNewsModal
         isOpen={isModalOpen && !isEditMode}
         isLoading={isLoading}
@@ -169,8 +170,6 @@ const News = () => {
         onInputChange={handleInputChange}
         onFileChange={handleFileChange}
       />
-
-      {/* Edit News Modal */}
       <EditNewsModal
         isOpen={isModalOpen && isEditMode}
         isLoading={isLoading}
