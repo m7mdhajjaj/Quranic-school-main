@@ -2,8 +2,8 @@
 // examNotifications.js - Exam Notification Handlers
 // ============================================================================
 
-const Student = require("../schema/Student");
-const { formatTime12Arabic } = require("../utils/formatters/timeFormatter");
+const Student = require("../../schema/Student");
+const { formatTime12Arabic } = require("../../utils/formatters/timeFormatter");
 
 /**
  * Send notification when exam is created

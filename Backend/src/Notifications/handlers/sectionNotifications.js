@@ -2,8 +2,8 @@
 // sectionNotifications.js - Section Notifications System
 // ============================================================================
 
-const Notification = require("../schema/Notification");
-const Student = require("../schema/Student");
+const Notification = require("../../schema/Notification");
+const Student = require("../../schema/Student");
 
 /**
  * إرسال إشعار عند إضافة مقطع جديد
