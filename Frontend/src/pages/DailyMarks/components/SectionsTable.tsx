@@ -1,6 +1,7 @@
-import type { Section, Mark, SectionsTableProps } from "../types/dailyMarks";
-import { Button, Tooltip } from "@/components/UI";
+import type { Section, Mark, SectionsTableProps } from "../types/types";
+import { Tooltip } from "@/components/UI";
 import { Table } from "@/components/UI";
+import { LoadingSpinner } from "@/components/UI/LoadingSpinner";
 import type { Column } from "@/components/UI/Table";
 import { useMemo, memo } from "react";
 import { RefreshCw, Plus, Edit, Trash2, RotateCcw, BookOpen, Calendar } from "lucide-react";
@@ -22,22 +23,6 @@ const SectionsTableComponent = ({
   onEditSection,
   onDeleteSection,
 }: SectionsTableProps) => {
-  // Find mark for a section
-  const findMark = (sectionId: string) => {
-    return marks.find((m) => {
-      // Check if mark and sectionId exist
-      if (!m || !m.sectionId) {
-        return false;
-      }
-      
-      if (typeof m.sectionId === "string") {
-        return m.sectionId === sectionId;
-      } else {
-        return m.sectionId._id === sectionId;
-      }
-    });
-  };
-
   // Render mark cell - plain text only
   const renderMarkCell = (mark: Mark | undefined, type: "review" | "memorization") => {
     const markValue = type === "review" ? mark?.reviewMark : mark?.memorizationMark;
@@ -58,13 +43,24 @@ const SectionsTableComponent = ({
   };
 
   // Prepare data with marks attached (memoized for performance)
-  const tableData: SectionWithMark[] = useMemo(() => 
-    sections.map((section) => ({
+  const tableData: SectionWithMark[] = useMemo(() => {
+    // Find mark for a section
+    const findMark = (sectionId: string) => {
+      return marks.find((m) => {
+        if (!m || !m.sectionId) return false;
+        if (typeof m.sectionId === "string") {
+          return m.sectionId === sectionId;
+        } else {
+          return m.sectionId._id === sectionId;
+        }
+      });
+    };
+
+    return sections.map((section) => ({
       ...section,
       mark: findMark(section._id),
-    })),
-    [sections, marks]
-  );
+    }));
+  }, [sections, marks]);
 
   // Define table columns with enhanced styling
   const columns: Column<SectionWithMark>[] = [
@@ -133,7 +129,7 @@ const SectionsTableComponent = ({
             <Tooltip content="تحديث العلامة" position="top">
               <button
                 onClick={() => onUpdateMark && onUpdateMark(row.mark!, row)}
-                className="group relative w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-150 flex items-center justify-center transform hover:scale-105 active:scale-95 will-change-transform"
+                className="group relative w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-150 flex items-center justify-center"
                 title="تحديث العلامة"
                 type="button">
                 <RefreshCw size={16} className="group-hover:rotate-180 transition-transform duration-200" />
@@ -143,7 +139,7 @@ const SectionsTableComponent = ({
             <Tooltip content="إضافة علامة" position="top">
               <button
                 onClick={() => onAddMark && onAddMark(row)}
-                className="group relative w-9 h-9 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-md hover:shadow-lg transition-all duration-150 flex items-center justify-center transform hover:scale-105 active:scale-95 animate-pulse hover:animate-none will-change-transform"
+                className="group relative w-9 h-9 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-md hover:shadow-lg transition-all duration-150 flex items-center justify-center animate-pulse hover:animate-none"
                 title="إضافة علامة"
                 type="button">
                 <Plus size={16} className="group-hover:rotate-90 transition-transform duration-150" />
@@ -153,7 +149,7 @@ const SectionsTableComponent = ({
           <Tooltip content="تعديل المقطع" position="top">
             <button
               onClick={() => onEditSection && onEditSection(row)}
-              className="group relative w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white shadow-md hover:shadow-lg transition-all duration-150 flex items-center justify-center transform hover:scale-105 active:scale-95 will-change-transform"
+              className="group relative w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white shadow-md hover:shadow-lg transition-all duration-150 flex items-center justify-center"
               title="تعديل المقطع"
               type="button">
               <Edit size={16} className="group-hover:scale-110 transition-transform duration-150" />
@@ -162,7 +158,7 @@ const SectionsTableComponent = ({
           <Tooltip content="حذف المقطع" position="top">
             <button
               onClick={() => onDeleteSection && onDeleteSection(row._id)}
-              className="group relative w-9 h-9 rounded-full bg-gradient-to-br from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white shadow-md hover:shadow-lg transition-all duration-150 flex items-center justify-center transform hover:scale-105 active:scale-95 will-change-transform"
+              className="group relative w-9 h-9 rounded-full bg-gradient-to-br from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white shadow-md hover:shadow-lg transition-all duration-150 flex items-center justify-center"
               title="حذف المقطع"
               type="button">
               <Trash2 size={16} className="group-hover:scale-110 transition-transform duration-150" />
@@ -190,7 +186,6 @@ const SectionsTableComponent = ({
           renderActions={renderActions}
           actionsHeader="الإجراءات"
           actionsWidth="160px"
-          loadingRows={3}
           className="shadow-none border-none"
         />
       </div>
@@ -198,12 +193,7 @@ const SectionsTableComponent = ({
       {/* Mobile Card View - Shown on mobile/tablet */}
       <div className="lg:hidden space-y-4 p-4">
         {loadingMarks ? (
-          Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-xl p-4 border-2 border-gray-200 animate-pulse">
-              <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
-              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-            </div>
-          ))
+          <LoadingSpinner size="lg" text="جاري التحميل..." />
         ) : tableData.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">📝</div>

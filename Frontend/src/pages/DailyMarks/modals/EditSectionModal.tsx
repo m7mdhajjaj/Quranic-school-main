@@ -1,7 +1,7 @@
 import { Modal, Button, Input, DatePicker } from '@/components/UI';
 import { Edit } from 'lucide-react';
 import { useCallback } from 'react';
-import type { EditSectionModalProps } from '../types/dailyMarks';
+import type { EditSectionModalProps } from '../types/types';
 
 import { memo } from 'react';
 
@@ -11,6 +11,7 @@ import { memo } from 'react';
 const EditSectionModalComponent = ({
   isOpen,
   editingSection,
+  isLoading,
   onClose,
   onSubmit,
   onChange,
@@ -81,15 +82,24 @@ const EditSectionModalComponent = ({
             onClick={onClose}
             variant="secondary"
             className="flex-1 py-3 px-6 rounded-xl"
+            disabled={isLoading}
           >
             إلغاء
           </Button>
           <Button
             type="submit"
             variant="primary"
-            className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+            className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 py-3 px-8 rounded-xl shadow-lg hover:shadow-xl min-h-[52px]"
+            disabled={isLoading}
           >
-            حفظ التعديل
+            {isLoading ? (
+              <span className="flex items-center gap-2">
+                <span className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+                جاري التحديث...
+              </span>
+            ) : (
+              'حفظ التعديل'
+            )}
           </Button>
         </div>
       </form>

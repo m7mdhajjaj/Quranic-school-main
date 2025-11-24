@@ -1,4 +1,4 @@
-import type { Section, Mark } from "../types/dailyMarks";
+import type { Section, Mark } from "../types/types";
 
 interface UseModalActionsProps {
   setSelectedSection: (section: Section | null) => void;

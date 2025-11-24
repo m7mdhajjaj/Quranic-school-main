@@ -5,8 +5,11 @@ import {
   Modal,
   DatePicker,
 } from '@/components/UI';
+
+// Performance constants
+const INPUT_DEBOUNCE = 300; // ms
 import { BookOpen, FileText } from 'lucide-react';
-import type { AddSectionModalProps } from '../types/dailyMarks';
+import type { AddSectionModalProps } from '../types/types';
 
 /**
  * Modal for adding a new section
@@ -61,11 +64,11 @@ const AddSectionModalComponent = ({
         clearTimeout(debounceTimer.current);
       }
 
-      // Debounce parent state update (300ms delay prevents re-render storm)
+      // Debounce parent state update
       debounceTimer.current = setTimeout(() => {
         onChange(e); // Only trigger heavy parent re-render after user stops typing
         debounceTimer.current = null;
-      }, 300);
+      }, INPUT_DEBOUNCE);
     },
     [onChange]
   );

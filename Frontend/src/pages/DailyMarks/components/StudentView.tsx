@@ -1,5 +1,5 @@
 import { memo } from "react";
-import type { StudentViewProps } from "../types/dailyMarks";
+import type { StudentViewProps } from "../types/types";
 import { SectionsTable } from "./SectionsTable";
 import { AveragesBar } from "./AveragesBar";
 import { Card } from "@/components/UI";

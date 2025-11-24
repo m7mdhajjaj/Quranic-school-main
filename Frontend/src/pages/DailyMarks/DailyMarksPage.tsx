@@ -3,10 +3,10 @@
 // ============================================================================
 
 // React & Hooks
-import { useState, useEffect, useMemo, useCallback, memo, useTransition } from "react";
+import { useState, useEffect, useMemo, useCallback, useTransition, lazy, Suspense } from "react";
 
 // Socket & Data Hooks
-import { useDailyMarksSocket } from "../../Socket";
+import { useDailyMarksSocket, useNotificationsSocket } from "../../Socket";
 import { useDailyMarksData } from "./hooks/useDailyMarksData";
 import { useSectionsFilter } from "./hooks/useSectionsFilter";
 import { useDailyMarksState } from "./hooks/useDailyMarksState";
@@ -15,22 +15,23 @@ import { useModalActions } from "./hooks/useModalActions";
 
 // UI Components
 import PageHeader from "@/components/UI/PageHeader";
+import { LoadingSpinner } from "@/components/UI/LoadingSpinner";
 import { BookOpen } from "lucide-react";
 
 // Page Components
 import { MonthYearFilter } from "./components/MonthYearFilter";
 import { StudentList } from "./components/StudentList";
 import { AveragesSection } from "./components/AveragesSection";
-import { TeacherView } from "./components/TeacherView";
 import { StudentView } from "./components/StudentView";
 
-// Modal Components
-import { AddSectionModal } from "./modals/AddSectionModal";
-import { EditSectionModal } from "./modals/EditSectionModal";
-import { AddMarkModal } from "./modals/AddMarkModal";
-import { UpdateMarkModal } from "./modals/UpdateMarkModal";
-import { BulkUpdateModal } from "./modals/BulkUpdateModal";
-import { BulkDeleteModal } from "./modals/BulkDeleteModal";
+// Lazy load heavy components
+const TeacherView = lazy(() => import("./components/TeacherView").then(m => ({ default: m.TeacherView })));
+const AddSectionModal = lazy(() => import("./modals/AddSectionModal").then(m => ({ default: m.AddSectionModal })));
+const EditSectionModal = lazy(() => import("./modals/EditSectionModal").then(m => ({ default: m.EditSectionModal })));
+const AddMarkModal = lazy(() => import("./modals/AddMarkModal").then(m => ({ default: m.AddMarkModal })));
+const UpdateMarkModal = lazy(() => import("./modals/UpdateMarkModal").then(m => ({ default: m.UpdateMarkModal })));
+const BulkUpdateModal = lazy(() => import("./modals/BulkUpdateModal").then(m => ({ default: m.BulkUpdateModal })));
+const BulkDeleteModal = lazy(() => import("./modals/BulkDeleteModal").then(m => ({ default: m.BulkDeleteModal })));
 
 // ============================================================================
 // MAIN COMPONENT
@@ -44,13 +45,25 @@ const DailyMarksPage = () => {
   // Local Selection State
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<string>("");
+  const [isPending, startTransition] = useTransition();
+  
+  // Optimistic student selection
+  const handleStudentSelect = useCallback((studentId: string) => {
+    // Update UI immediately
+    setSelectedStudentId(studentId);
+    // Mark as pending for heavy operations
+    startTransition(() => {
+      // Heavy re-renders happen in transition
+    });
+  }, []);
 
   // ==========================================================================
   // CUSTOM HOOKS
   // ==========================================================================
   
-  // Socket Connection
+  // Socket Connections
   const { lastUpdate: socketLastUpdate } = useDailyMarksSocket();
+  const { lastNotification } = useNotificationsSocket();
 
   // Data Fetching & Management
   const {
@@ -64,6 +77,7 @@ const DailyMarksPage = () => {
     setMarks,
     setSections,
     refetchMarks,
+    refetchSections,
   } = useDailyMarksData(selectedStudentId, selectedGroup);
 
   // Component State (Modals, Forms, etc.)
@@ -132,6 +146,18 @@ const DailyMarksPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socketLastUpdate, currentUser, selectedStudentId]);
 
+  // Listen to notifications and refetch sections when assignment notification received
+  useEffect(() => {
+    if (!lastNotification || !currentUser) return;
+    
+    // Only refetch for assignment notifications (sections related)
+    if (lastNotification.type === "assignment") {
+      console.log("📚 Section notification received, refetching sections...");
+      refetchSections();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastNotification, currentUser]);
+
   // ==========================================================================
   // INPUT CHANGE HANDLERS
   // ==========================================================================
@@ -141,21 +167,21 @@ const DailyMarksPage = () => {
   ) => {
     const { name, value } = e.target;
     state.setNewSection((prev) => ({ ...prev, [name]: value }));
-  }, [state.setNewSection]);
+  }, []);
 
   const handleEditSectionInputChange = useCallback((
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     state.setEditingSection((prev) => prev ? { ...prev, [name]: value } : null);
-  }, [state.setEditingSection]);
+  }, []);
 
   const handleMarkInputChange = useCallback((
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     state.setNewMark((prev) => ({ ...prev, [name]: Number(value) }));
-  }, [state.setNewMark]);
+  }, []);
 
   // ==========================================================================
   // COMPUTED VALUES & HELPERS
@@ -229,10 +255,7 @@ const DailyMarksPage = () => {
 
         {/* Main Content Area */}
         {loading ? (
-          <div className="text-center py-8">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
-            <p className="mt-4 text-gray-600 font-medium">جاري التحميل...</p>
-          </div>
+          <LoadingSpinner size="lg" text="جاري التحميل..." />
         ) : (
           <>
             {currentUser?.role !== "student" ? (
@@ -246,7 +269,7 @@ const DailyMarksPage = () => {
                     selectedGroup={selectedGroup}
                     selectedStudentId={selectedStudentId}
                     onGroupChange={setSelectedGroup}
-                    onStudentSelect={setSelectedStudentId}
+                    onStudentSelect={handleStudentSelect}
                     onAddSection={() => state.setIsAddSectionModalOpen(true)}
                     onBulkUpdate={() => state.setIsBulkUpdateModalOpen(true)}
                     onBulkDelete={() => state.setIsBulkDeleteModalOpen(true)}
@@ -255,17 +278,19 @@ const DailyMarksPage = () => {
 
                 {/* Marks Table - 3 columns */}
                 <div className="xl:col-span-3">
-                  <TeacherView
-                    students={students}
-                    selectedStudentId={selectedStudentId}
-                    sections={filteredSections}
-                    marks={marks}
-                    loadingMarks={loadingMarks}
-                    onAddMark={modalActions.openAddMarkModal}
-                    onUpdateMark={modalActions.openUpdateMarkModal}
-                    onEditSection={modalActions.openEditSectionModal}
-                    onDeleteSection={handlers.handleDeleteSection}
-                  />
+                  <Suspense fallback={<LoadingSpinner size="md" />}>
+                    <TeacherView
+                      students={students}
+                      selectedStudentId={selectedStudentId}
+                      sections={filteredSections}
+                      marks={marks}
+                      loadingMarks={loadingMarks || isPending}
+                      onAddMark={modalActions.openAddMarkModal}
+                      onUpdateMark={modalActions.openUpdateMarkModal}
+                      onEditSection={modalActions.openEditSectionModal}
+                      onDeleteSection={handlers.handleDeleteSection}
+                    />
+                  </Suspense>
                 </div>
               </div>
             ) : (
@@ -283,7 +308,7 @@ const DailyMarksPage = () => {
 
       {/* Modal Components - Teacher Only */}
       {currentUser?.role !== "student" && (
-        <>
+        <Suspense fallback={null}>
           {/* Add Section Modal */}
           <AddSectionModal
             isOpen={state.isAddSectionModalOpen}
@@ -299,11 +324,12 @@ const DailyMarksPage = () => {
           <EditSectionModal
             isOpen={state.isEditSectionModalOpen}
             editingSection={state.editingSection}
+            isLoading={state.isEditingSectionLoading}
             onClose={() => {
               state.setIsEditSectionModalOpen(false);
               state.setEditingSection(null);
             }}
-            onSubmit={(e) => handlers.handleEditSection(e, state.editingSection)}
+            onSubmit={(e) => handlers.handleEditSection(e, state.editingSection, state.setIsEditingSectionLoading)}
             onChange={handleEditSectionInputChange}
           />
 
@@ -326,11 +352,12 @@ const DailyMarksPage = () => {
             selectedStudent={getSelectedStudent()}
             editingMark={state.editingMark}
             newMark={state.newMark}
+            isLoading={state.isUpdatingMarkLoading}
             onClose={() => {
               state.setIsUpdateMarkModalOpen(false);
               state.setEditingMark(null);
             }}
-            onSubmit={(e) => handlers.handleUpdateMark(e, state.editingMark, selectedStudentId, state.selectedSection, state.newMark)}
+            onSubmit={(e) => handlers.handleUpdateMark(e, state.editingMark, selectedStudentId, state.selectedSection, state.newMark, state.setIsUpdatingMarkLoading)}
             onChange={handleMarkInputChange}
           />
 
@@ -339,12 +366,13 @@ const DailyMarksPage = () => {
             isOpen={state.isBulkUpdateModalOpen}
             sections={filteredSections}
             selectedSectionsForBulk={state.selectedSectionsForBulk}
+            isLoading={state.isBulkUpdating}
             onClose={() => {
               state.setIsBulkUpdateModalOpen(false);
               state.setSelectedSectionsForBulk([]);
             }}
             onToggleSection={modalActions.toggleSectionSelection}
-            onSubmit={(updateData) => handlers.executeBulkUpdate(filteredSections, state.selectedSectionsForBulk, updateData)}
+            onSubmit={(updateData) => handlers.executeBulkUpdate(filteredSections, state.selectedSectionsForBulk, updateData, state.setIsBulkUpdating)}
           />
 
           {/* Bulk Delete Modal */}
@@ -352,14 +380,15 @@ const DailyMarksPage = () => {
             isOpen={state.isBulkDeleteModalOpen}
             sections={filteredSections}
             selectedSectionsForBulk={state.selectedSectionsForBulk}
+            isLoading={state.isBulkDeleting}
             onClose={() => {
               state.setIsBulkDeleteModalOpen(false);
               state.setSelectedSectionsForBulk([]);
             }}
             onToggleSection={modalActions.toggleSectionSelection}
-            onConfirm={() => handlers.executeBulkDelete(state.selectedSectionsForBulk)}
+            onConfirm={() => handlers.executeBulkDelete(state.selectedSectionsForBulk, state.setIsBulkDeleting)}
           />
-        </>
+        </Suspense>
       )}
 
      

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Section, Mark, AverageResults } from "../types/dailyMarks";
+import type { Section, Mark, AverageResults } from "../types/types";
 
 /**
  * Custom hook for filtering sections by month/year and calculating averages

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import type { Section, Mark, Student } from "../types/dailyMarks";
+import type { Section, Mark, Student } from "../types/types";
 
 interface UseDailyMarksStateProps {
   students: Student[];
@@ -21,6 +21,10 @@ export const useDailyMarksState = ({ students, teacherGroups }: UseDailyMarksSta
   const [isAddMarkModalOpen, setIsAddMarkModalOpen] = useState(false);
   const [isAddingMarkLoading, setIsAddingMarkLoading] = useState(false);
   const [isUpdateMarkModalOpen, setIsUpdateMarkModalOpen] = useState(false);
+  const [isUpdatingMarkLoading, setIsUpdatingMarkLoading] = useState(false);
+  const [isEditingSectionLoading, setIsEditingSectionLoading] = useState(false);
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   // Selected Data States
   const [selectedSection, setSelectedSection] = useState<Section | null>(null);
@@ -92,6 +96,14 @@ export const useDailyMarksState = ({ students, teacherGroups }: UseDailyMarksSta
     setIsAddingMarkLoading,
     isUpdateMarkModalOpen,
     setIsUpdateMarkModalOpen,
+    isUpdatingMarkLoading,
+    setIsUpdatingMarkLoading,
+    isEditingSectionLoading,
+    setIsEditingSectionLoading,
+    isBulkUpdating,
+    setIsBulkUpdating,
+    isBulkDeleting,
+    setIsBulkDeleting,
     
     // Selected Data
     selectedSection,

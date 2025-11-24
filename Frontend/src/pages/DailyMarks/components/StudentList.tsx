@@ -1,5 +1,5 @@
 import { useState, memo, useMemo } from "react";
-import type { StudentListProps } from "../types/dailyMarks";
+import type { StudentListProps } from "../types/types";
 import { Select, Button,Card } from "@/components/UI";
 import { SearchInput } from "@/components/Filters";
 import { Users, Plus, Edit, Trash2 } from "lucide-react";

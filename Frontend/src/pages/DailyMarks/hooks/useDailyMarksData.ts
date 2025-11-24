@@ -1,7 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import type { LoggedInUser, Student, Section, Mark, UseDailyMarksDataResult } from "../types/dailyMarks";
+import type { LoggedInUser, Student, Section, Mark, UseDailyMarksDataResult } from "../types/types";
 import { getStudentsByTeacher } from "@/Api/studentApi";
+
+// Performance constants
+const MARKS_REFETCH_DEBOUNCE = 100; // ms
 import { getTeacherById } from "@/Api/teacherApi";
 import { getAllSections } from "@/Api/sectionApi";
 import { getStudentMarks } from "@/Api/dailyMarksApi";
@@ -146,9 +149,39 @@ export const useDailyMarksData = (selectedStudentId: string | null, selectedGrou
     }
   }, [currentUser]); // Only recreate when currentUser changes
 
-  // Fetch marks based on user role
+  // Function to refetch sections - memoized
+  const refetchSections = useCallback(async () => {
+    if (!currentUser) return;
+
+    try {
+      const sectionsData = await getAllSections();
+
+      if (currentUser.role === "student") {
+        // For students, filter by their group
+        const filteredSections = Array.isArray(sectionsData)
+          ? sectionsData.filter((s: Section) => s.group === currentUser.group)
+          : [];
+        setSections(filteredSections);
+      } else if (selectedGroup) {
+        // For teachers, filter by selected group
+        const filteredSections = Array.isArray(sectionsData)
+          ? sectionsData.filter((s: Section) => s.group === selectedGroup)
+          : [];
+        setSections(filteredSections);
+      }
+      console.log("✅ Sections refetched successfully");
+    } catch (err) {
+      console.error("❌ Error refetching sections:", err);
+    }
+  }, [currentUser, selectedGroup]);
+
+  // Fetch marks based on user role with debounce
   useEffect(() => {
-    refetchMarks(selectedStudentId || undefined);
+    const timer = setTimeout(() => {
+      refetchMarks(selectedStudentId || undefined);
+    }, MARKS_REFETCH_DEBOUNCE);
+
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser, selectedStudentId]);
 
@@ -163,5 +196,6 @@ export const useDailyMarksData = (selectedStudentId: string | null, selectedGrou
     setMarks,
     setSections,
     refetchMarks,
+    refetchSections,
   };
 };

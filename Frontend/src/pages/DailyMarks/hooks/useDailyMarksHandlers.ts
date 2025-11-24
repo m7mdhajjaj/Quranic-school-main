@@ -8,7 +8,7 @@ import {
   showSuccessToast,
   showErrorToast,
 } from "@/components/utils/toastUtils";
-import type { Section, Mark } from "../types/dailyMarks";
+import type { Section, Mark } from "../types/types";
 
 interface UseHandlersProps {
   selectedGroup: string;
@@ -103,11 +103,14 @@ export const useDailyMarksHandlers = ({
   // Handler: Edit Section
   const handleEditSection = async (
     e: React.FormEvent,
-    editingSection: Section | null
+    editingSection: Section | null,
+    setIsEditingSectionLoading?: (loading: boolean) => void
   ) => {
     e.preventDefault();
 
     if (!editingSection) return;
+
+    setIsEditingSectionLoading?.(true);
 
     try {
       const updatedSectionData = await updateSection(editingSection._id, {
@@ -127,6 +130,8 @@ export const useDailyMarksHandlers = ({
     } catch (err) {
       console.error("Error updating section:", err);
       showErrorToast("❌ حدث خطأ أثناء تحديث المقطع");
+    } finally {
+      setIsEditingSectionLoading?.(false);
     }
   };
 
@@ -214,11 +219,14 @@ export const useDailyMarksHandlers = ({
     editingMark: Mark | null,
     selectedStudentId: string | null,
     selectedSection: Section | null,
-    newMark: { reviewMark: number; memorizationMark: number }
+    newMark: { reviewMark: number; memorizationMark: number },
+    setIsUpdatingMarkLoading?: (loading: boolean) => void
   ) => {
     e.preventDefault();
 
     if (!editingMark || !selectedStudentId || !selectedSection) return;
+
+    setIsUpdatingMarkLoading?.(true);
 
     try {
       const markData = {
@@ -244,6 +252,8 @@ export const useDailyMarksHandlers = ({
     } catch (err) {
       console.error("Error updating mark:", err);
       showErrorToast("❌ حدث خطأ أثناء تحديث العلامة");
+    } finally {
+      setIsUpdatingMarkLoading?.(false);
     }
   };
 
@@ -254,12 +264,15 @@ export const useDailyMarksHandlers = ({
     updateData: {
       reviewSection?: string;
       memorizationSection?: string;
-    }
+    },
+    setIsBulkUpdating?: (loading: boolean) => void
   ) => {
     if (selectedSectionsForBulk.length === 0) {
       showWarningMessage("الرجاء اختيار مقطع واحد على الأقل للتحديث", "تنبيه");
       return;
     }
+
+    setIsBulkUpdating?.(true);
 
     try {
       const updatePromises = selectedSectionsForBulk.map(async (sectionId) => {
@@ -293,11 +306,13 @@ export const useDailyMarksHandlers = ({
     } catch (err) {
       console.error("Error bulk updating sections:", err);
       showErrorToast("❌ حدث خطأ أثناء تحديث المقاطع");
+    } finally {
+      setIsBulkUpdating?.(false);
     }
   };
 
   // Handler: Bulk Delete
-  const executeBulkDelete = async (selectedSectionsForBulk: string[]) => {
+  const executeBulkDelete = async (selectedSectionsForBulk: string[], setIsBulkDeleting?: (loading: boolean) => void) => {
     if (selectedSectionsForBulk.length === 0) {
       showWarningMessage("الرجاء اختيار مقطع واحد على الأقل للحذف", "تنبيه");
       return;
@@ -345,6 +360,8 @@ export const useDailyMarksHandlers = ({
     } catch (err) {
       console.error("Error bulk deleting sections:", err);
       showErrorToast("❌ حدث خطأ أثناء حذف المقاطع");
+    } finally {
+      setIsBulkDeleting?.(false);
     }
   };
 

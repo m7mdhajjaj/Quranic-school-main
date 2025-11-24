@@ -32,36 +32,12 @@ export interface TableProps<T = unknown> {
   maxHeight?: string;
   responsive?: boolean;
   className?: string;
-  loadingRows?: number;
   renderActions?: (row: T, index: number) => ReactNode;
   actionsWidth?: string;
   actionsHeader?: string;
 }
 
-// ====================================
-// Loading Skeleton
-// ====================================
 
-const TableSkeleton: React.FC<{ rows?: number; columns: number }> = ({
-  rows = 5,
-  columns,
-}) => {
-  return (
-    <>
-      {Array.from({ length: rows }).map((_, rowIndex) => (
-        <tr key={`skeleton-${rowIndex}`} className="animate-pulse">
-          {Array.from({ length: columns }).map((_, colIndex) => (
-            <td
-              key={`skeleton-cell-${rowIndex}-${colIndex}`}
-              className="px-4 py-3 md:px-6 md:py-4">
-              <div className="h-3 md:h-4 bg-gray-200 rounded"></div>
-            </td>
-          ))}
-        </tr>
-      ))}
-    </>
-  );
-};
 
 // ====================================
 // Empty State
@@ -118,7 +94,6 @@ export const Table = <T,>({
   dense = false,
   maxHeight,
   className = "",
-  loadingRows = 5,
   renderActions,
   actionsWidth = "150px",
   actionsHeader = "الإجراءات",
@@ -241,7 +216,13 @@ export const Table = <T,>({
           {/* Table Body */}
           <tbody className="divide-y divide-emerald-100/50 bg-white/80">
             {loading ? (
-              <TableSkeleton rows={loadingRows} columns={totalColumns} />
+              <tr>
+                <td colSpan={totalColumns} className="px-4 py-8">
+                  <div className="flex justify-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-3 border-emerald-600 border-t-transparent"></div>
+                  </div>
+                </td>
+              </tr>
             ) : data.length === 0 ? (
               <EmptyState
                 message={emptyMessage}

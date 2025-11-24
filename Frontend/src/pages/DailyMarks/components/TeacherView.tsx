@@ -1,5 +1,5 @@
 import { memo } from "react";
-import type { TeacherViewProps } from "../types/dailyMarks";
+import type { TeacherViewProps } from "../types/types";
 import { SectionsTable } from "./SectionsTable";
 import { EmptyState, Card } from "@/components/UI";
 

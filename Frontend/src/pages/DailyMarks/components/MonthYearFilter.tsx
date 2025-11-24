@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import type { MonthYearFilterProps } from "../types/dailyMarks";
+import type { MonthYearFilterProps } from "../types/types";
 import { FilterSelect, FilterContainer } from "@/components/Filters";
 import type { FilterOption } from "@/components/Filters";
 

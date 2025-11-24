@@ -1,5 +1,5 @@
 import { Button, RangeSlider, Modal, Card } from "@/components/UI";
-import type { AddMarkModalProps } from '../types/dailyMarks';
+import type { AddMarkModalProps } from '../types/types';
 
 /**
  * Modal for adding a new mark for a student

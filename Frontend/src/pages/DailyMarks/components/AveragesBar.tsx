@@ -1,5 +1,5 @@
 import { memo } from "react";
-import type { AveragesBarProps } from "../types/dailyMarks";
+import type { AveragesBarProps } from "../types/types";
 import { StatCard } from "@/components/UI";
 import { Award, TrendingUp } from "lucide-react";
 

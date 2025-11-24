@@ -1,6 +1,6 @@
 import { Button, Modal, Card } from '@/components/UI';
 import { AlertTriangle } from 'lucide-react';
-import type { BulkDeleteModalProps } from '../types/dailyMarks';
+import type { BulkDeleteModalProps } from '../types/types';
 
 /**
  * Modal for bulk deleting multiple sections
@@ -9,6 +9,7 @@ export const BulkDeleteModal = ({
   isOpen,
   sections,
   selectedSectionsForBulk,
+  isLoading,
   onClose,
   onToggleSection,
   onConfirm,
@@ -61,7 +62,8 @@ export const BulkDeleteModal = ({
             type="button"
             onClick={onClose}
             variant="secondary"
-            className="flex-1 py-3 px-6 rounded-xl"
+            className="flex-1 py-3 px-6 rounded-xl min-h-[52px]"
+            disabled={isLoading}
           >
             إلغاء
           </Button>
@@ -69,9 +71,17 @@ export const BulkDeleteModal = ({
             type="button"
             onClick={onConfirm}
             variant="danger"
-            className="flex-1 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+            className="flex-1 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 py-3 px-8 rounded-xl shadow-lg hover:shadow-xl min-h-[52px]"
+            disabled={isLoading}
           >
-            حذف المقاطع المحددة
+            {isLoading ? (
+              <span className="flex items-center gap-2">
+                <span className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+                جاري الحذف...
+              </span>
+            ) : (
+              'حذف المقاطع المحددة'
+            )}
           </Button>
         </div>
       </div>

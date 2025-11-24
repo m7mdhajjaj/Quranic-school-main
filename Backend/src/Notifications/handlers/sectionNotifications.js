@@ -4,6 +4,7 @@
 
 const Notification = require("../../schema/Notification");
 const Student = require("../../schema/Student");
+const { sendPushNotification } = require("../NotificationService/helpers/pushNotifications");
 
 /**
  * إرسال إشعار عند إضافة مقطع جديد
@@ -74,8 +75,19 @@ exports.notifySectionAdded = async (section, io) => {
           isRead: savedNotification.isRead,
           createdAt: savedNotification.createdAt,
         });
-        console.log(`📤 Sent to room: ${student._id.toString()} with ID: ${savedNotification._id}`);
+        console.log(`📤 Socket sent to: ${student._id.toString()}`);
       });
+    }
+
+    // إرسال عبر Firebase Push Notification
+    if (savedNotifications.length > 0) {
+      for (let i = 0; i < students.length; i++) {
+        try {
+          await sendPushNotification(students[i]._id, savedNotifications[i]);
+        } catch (pushErr) {
+          console.error(`❌ Push error for ${students[i]._id}:`, pushErr.message);
+        }
+      }
     }
 
     console.log("🔔 ========== SECTION NOTIFICATION END (SUCCESS) ==========\n");
@@ -167,8 +179,19 @@ exports.notifySectionUpdated = async (section, oldSection, io) => {
           isRead: savedNotification.isRead,
           createdAt: savedNotification.createdAt,
         });
-        console.log(`📤 Sent to room: ${student._id.toString()} with ID: ${savedNotification._id}`);
+        console.log(`📤 Socket sent to: ${student._id.toString()}`);
       });
+    }
+
+    // إرسال عبر Firebase Push Notification
+    if (savedNotifications.length > 0) {
+      for (let i = 0; i < students.length; i++) {
+        try {
+          await sendPushNotification(students[i]._id, savedNotifications[i]);
+        } catch (pushErr) {
+          console.error(`❌ Error sending push to student ${students[i]._id}:`, pushErr.message);
+        }
+      }
     }
 
     console.log("🔔 ========== SECTION NOTIFICATION END (SUCCESS) ==========\n");
@@ -246,8 +269,19 @@ exports.notifySectionDeleted = async (section, io) => {
           isRead: savedNotification.isRead,
           createdAt: savedNotification.createdAt,
         });
-        console.log(`📤 Sent to room: ${student._id.toString()} with ID: ${savedNotification._id}`);
+        console.log(`📤 Socket sent to: ${student._id.toString()}`);
       });
+    }
+
+    // إرسال عبر Firebase Push Notification
+    if (savedNotifications.length > 0) {
+      for (let i = 0; i < students.length; i++) {
+        try {
+          await sendPushNotification(students[i]._id, savedNotifications[i]);
+        } catch (pushErr) {
+          console.error(`❌ Error sending push to student ${students[i]._id}:`, pushErr.message);
+        }
+      }
     }
 
     console.log("🔔 ========== SECTION NOTIFICATION END (SUCCESS) ==========\n");
@@ -332,7 +366,14 @@ exports.notifyStudentAboutSection = async (studentId, section, type, io) => {
         isRead: savedNotification.isRead,
         createdAt: savedNotification.createdAt,
       });
-      console.log(`📤 Sent to room: ${student._id.toString()} with ID: ${savedNotification._id}`);
+      console.log(`📤 Socket sent to: ${student._id.toString()}`);
+    }
+
+    // إرسال عبر Firebase Push Notification
+    try {
+      await sendPushNotification(student._id, savedNotification);
+    } catch (pushErr) {
+      console.error(`❌ Error sending push notification:`, pushErr.message);
     }
 
     console.log(`✅ Notification sent to student ${student._id}`);

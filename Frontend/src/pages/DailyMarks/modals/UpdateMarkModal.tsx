@@ -1,5 +1,5 @@
 import { Modal, Card, Button, RangeSlider } from '@/components/UI';
-import type { UpdateMarkModalProps } from '../types/dailyMarks';
+import type { UpdateMarkModalProps } from '../types/types';
 
 /**
  * Modal for updating an existing mark
@@ -10,6 +10,7 @@ export const UpdateMarkModal = ({
   selectedStudent,
   editingMark,
   newMark,
+  isLoading,
   onClose,
   onSubmit,
   onChange,
@@ -88,6 +89,7 @@ export const UpdateMarkModal = ({
             onClick={onClose}
             variant="secondary"
             className="py-2 px-6"
+            disabled={isLoading}
           >
             إلغاء
           </Button>
@@ -95,8 +97,16 @@ export const UpdateMarkModal = ({
             type="submit"
             variant="primary"
             className="bg-blue-600 hover:bg-blue-700 py-2 px-8"
+            disabled={isLoading}
           >
-            تحديث العلامات
+            {isLoading ? (
+              <span className="flex items-center gap-2">
+                <span className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+                جاري التحديث...
+              </span>
+            ) : (
+              'تحديث العلامات'
+            )}
           </Button>
         </div>
       </form>

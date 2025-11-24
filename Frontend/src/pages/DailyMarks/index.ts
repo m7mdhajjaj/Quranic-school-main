@@ -1,5 +1,5 @@
 // Types
-export * from './types/dailyMarks';
+export * from './types/types';
 
 // Hooks
 export { useDailyMarksData } from './hooks/useDailyMarksData';

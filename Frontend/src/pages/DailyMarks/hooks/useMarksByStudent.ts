@@ -1,4 +1,4 @@
-import type { Mark, Section } from "../types/dailyMarks";
+import type { Mark, Section } from "../types/types";
 
 /**
  * Custom hook for filtering marks by student and sections

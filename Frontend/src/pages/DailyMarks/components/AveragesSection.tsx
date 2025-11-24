@@ -1,5 +1,5 @@
 import { AveragesBar } from "./AveragesBar";
-import type { AverageResults } from "../types/dailyMarks";
+import type { AverageResults } from "../types/types";
 
 interface AveragesSectionProps {
   selectedStudentId: string | null;

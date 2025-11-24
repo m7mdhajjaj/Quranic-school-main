@@ -1,6 +1,6 @@
 import { Modal, Card, Button, Input } from '@/components/UI';
 import { RefreshCw } from 'lucide-react';
-import type { BulkUpdateModalProps } from '../types/dailyMarks';
+import type { BulkUpdateModalProps } from '../types/types';
 
 /**
  * Modal for bulk updating multiple sections
@@ -9,6 +9,7 @@ export const BulkUpdateModal = ({
   isOpen,
   sections,
   selectedSectionsForBulk,
+  isLoading,
   onClose,
   onToggleSection,
   onSubmit,
@@ -80,6 +81,7 @@ export const BulkUpdateModal = ({
             onClick={onClose}
             variant="secondary"
             className="flex-1 py-3 px-6 rounded-xl min-h-[52px]"
+            disabled={isLoading}
           >
             إلغاء
           </Button>
@@ -87,9 +89,19 @@ export const BulkUpdateModal = ({
             type="submit"
             variant="primary"
             className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 py-3 px-8 rounded-xl shadow-lg hover:shadow-xl min-h-[52px]"
+            disabled={isLoading}
           >
-            <RefreshCw className="w-5 h-5 ml-2" />
-            تحديث المقاطع المحددة
+            {isLoading ? (
+              <span className="flex items-center gap-2">
+                <span className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+                جاري التحديث...
+              </span>
+            ) : (
+              <>
+                <RefreshCw className="w-5 h-5 ml-2" />
+                تحديث المقاطع المحددة
+              </>
+            )}
           </Button>
         </div>
       </form>
