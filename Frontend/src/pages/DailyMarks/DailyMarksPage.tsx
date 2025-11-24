@@ -141,21 +141,21 @@ const DailyMarksPage = () => {
   ) => {
     const { name, value } = e.target;
     state.setNewSection((prev) => ({ ...prev, [name]: value }));
-  }, [state]);
+  }, [state.setNewSection]);
 
   const handleEditSectionInputChange = useCallback((
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     state.setEditingSection((prev) => prev ? { ...prev, [name]: value } : null);
-  }, [state]);
+  }, [state.setEditingSection]);
 
   const handleMarkInputChange = useCallback((
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     state.setNewMark((prev) => ({ ...prev, [name]: Number(value) }));
-  }, [state]);
+  }, [state.setNewMark]);
 
   // ==========================================================================
   // COMPUTED VALUES & HELPERS

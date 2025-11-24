@@ -99,11 +99,14 @@ const InputComponent: React.FC<InputProps> = ({
 };
 
 export const Input = memo(InputComponent, (prevProps, nextProps) => {
-  // Only re-render if these props change
+  // Return true to skip re-render (props are equal)
+  // Return false to re-render (props have changed)
   return (
     prevProps.value === nextProps.value &&
     prevProps.error === nextProps.error &&
     prevProps.disabled === nextProps.disabled &&
-    prevProps.className === nextProps.className
+    prevProps.className === nextProps.className &&
+    prevProps.placeholder === nextProps.placeholder &&
+    prevProps.name === nextProps.name
   );
 });

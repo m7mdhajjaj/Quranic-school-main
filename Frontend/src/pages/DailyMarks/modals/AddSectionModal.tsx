@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useCallback, useRef, useState, useEffect } from 'react';
 import {
   Button,
   Input,
@@ -11,6 +11,7 @@ import type { AddSectionModalProps } from '../types/dailyMarks';
 
 /**
  * Modal for adding a new section
+ * Optimized with local state + debounced parent updates for 60+ fps typing
  */
 const AddSectionModalComponent = ({
   isOpen,
@@ -20,6 +21,53 @@ const AddSectionModalComponent = ({
   onSubmit,
   onChange,
 }: AddSectionModalProps) => {
+  // Local controlled state for instant UI updates (no parent re-render)
+  const [localReviewSection, setLocalReviewSection] = useState('');
+  const [localMemorizationSection, setLocalMemorizationSection] = useState('');
+  
+  // Debounce timer ref
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+
+  // Sync with parent state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setLocalReviewSection(newSection.reviewSection);
+      setLocalMemorizationSection(newSection.memorizationSection);
+    }
+  }, [isOpen, newSection.reviewSection, newSection.memorizationSection]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+    };
+  }, []);
+
+  // Debounced onChange - updates parent ONLY after 300ms of no typing
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    
+    // Update local state immediately for 0ms input lag
+    if (name === 'reviewSection') {
+      setLocalReviewSection(value);
+    } else if (name === 'memorizationSection') {
+      setLocalMemorizationSection(value);
+    }
+
+    // Clear previous timer
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+
+    // Debounce parent state update (300ms delay prevents re-render storm)
+    debounceTimer.current = setTimeout(() => {
+      onChange(e); // Only trigger heavy parent re-render after user stops typing
+      debounceTimer.current = null;
+    }, 300);
+  }, [onChange]);
+
   if (!isOpen) return null;
 
   return (
@@ -51,9 +99,11 @@ const AddSectionModalComponent = ({
             name="reviewSection"
             label="مقطع المراجعة"
             placeholder="مثال: البقرة (1-10)"
-            value={newSection.reviewSection}
-            onChange={onChange}
+            value={localReviewSection}
+            onChange={handleInputChange}
             autoComplete="off"
+            spellCheck={false}
+            inputMode="text"
             className="border-gray-200 focus:border-emerald-500 focus:ring-emerald-100"
           />
         </div>
@@ -70,9 +120,11 @@ const AddSectionModalComponent = ({
             name="memorizationSection"
             label="مقطع الحفظ"
             placeholder="مثال: البقرة (11-15)"
-            value={newSection.memorizationSection}
-            onChange={onChange}
+            value={localMemorizationSection}
+            onChange={handleInputChange}
             autoComplete="off"
+            spellCheck={false}
+            inputMode="text"
             className="border-gray-200 focus:border-amber-500 focus:ring-amber-100"
           />
         </div>
@@ -109,13 +161,6 @@ const AddSectionModalComponent = ({
   );
 };
 
-export const AddSectionModal = memo(AddSectionModalComponent, (prev, next) => {
-  // Only re-render if these specific props change
-  return (
-    prev.isOpen === next.isOpen &&
-    prev.isLoading === next.isLoading &&
-    prev.newSection.date === next.newSection.date &&
-    prev.newSection.reviewSection === next.newSection.reviewSection &&
-    prev.newSection.memorizationSection === next.newSection.memorizationSection
-  );
-});
+// Remove custom comparison - let React handle it naturally
+// The modal should re-render when newSection changes (that's the point)
+export const AddSectionModal = memo(AddSectionModalComponent);
