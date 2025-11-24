@@ -228,6 +228,15 @@ const DailyMarksPage = () => {
           showDivider={true}
         />
 
+        {/* Averages Section - Above All Content (Teacher Only) */}
+        {currentUser?.role !== "student" && (
+          <AveragesSection
+            selectedStudentId={selectedStudentId}
+            sectionsCount={filteredSections.length}
+            averages={averages}
+          />
+        )}
+
         {/* Filters Row - Teacher Only */}
         {currentUser?.role !== "student" && (
           <div className="mb-8">
@@ -241,15 +250,6 @@ const DailyMarksPage = () => {
               onSearchChange={state.setSearchQuery}
             />
           </div>
-        )}
-
-        {/* Averages Section - Above All Content (Teacher Only) */}
-        {currentUser?.role !== "student" && (
-          <AveragesSection
-            selectedStudentId={selectedStudentId}
-            sectionsCount={filteredSections.length}
-            averages={averages}
-          />
         )}
 
         {/* Main Content Area */}
