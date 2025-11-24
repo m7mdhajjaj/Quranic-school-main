@@ -71,8 +71,9 @@ const SectionsTableComponent = ({
     {
       key: "reviewSection",
       header: "مقطع المراجعة",
+      width: "200px",
       render: (row) => (
-        <div className="bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg font-medium text-sm">
+        <div className="text-emerald-700 font-medium text-sm">
           {row.reviewSection}
         </div>
       ),
@@ -80,13 +81,16 @@ const SectionsTableComponent = ({
     {
       key: "reviewMark",
       header: "علامة المراجعة",
+      width: "120px",
+      align: "center",
       render: (row) => renderMarkCell(row.mark, "review"),
     },
     {
       key: "memorizationSection",
       header: "مقطع الحفظ",
+      width: "200px",
       render: (row) => (
-        <div className="bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg font-medium text-sm">
+        <div className="text-amber-700 font-medium text-sm">
           {row.memorizationSection}
         </div>
       ),
@@ -94,11 +98,14 @@ const SectionsTableComponent = ({
     {
       key: "memorizationMark",
       header: "علامة الحفظ",
+      width: "120px",
+      align: "center",
       render: (row) => renderMarkCell(row.mark, "memorization"),
     },
     {
       key: "date",
       header: "التاريخ",
+      width: "150px",
       render: (row) => {
         const date = new Date(row.date);
         const formattedDate = date.toLocaleDateString("en-GB", {
@@ -168,7 +175,7 @@ const SectionsTableComponent = ({
   return (
     <>
       {/* Desktop Table View - Hidden on mobile */}
-      <div className="hidden lg:block overflow-x-auto -m-6 -p-6">
+      <div className="hidden lg:block">
         <Table
           columns={columns}
           data={tableData}
@@ -177,14 +184,14 @@ const SectionsTableComponent = ({
           hoverable={true}
           bordered={false}
           dense={false}
-          responsive={false}
+          responsive={true}
           showHeader={true}
           stickyHeader={false}
           renderActions={renderActions}
           actionsHeader="الإجراءات"
           actionsWidth="160px"
           loadingRows={3}
-          className="shadow-none border-none m-0 p-0"
+          className="shadow-none border-none"
         />
       </div>
 
@@ -231,7 +238,7 @@ const SectionsTableComponent = ({
                   <RotateCcw size={14} className="text-emerald-600" />
                   <span className="text-xs text-gray-500">مقطع المراجعة</span>
                 </div>
-                <div className="bg-emerald-100 text-emerald-700 px-3 py-2 rounded-lg font-medium text-sm mb-2">
+                <div className="text-emerald-700 font-medium text-sm mb-2">
                   {row.reviewSection}
                 </div>
                 {renderMarkCell(row.mark, "review")}
@@ -243,7 +250,7 @@ const SectionsTableComponent = ({
                   <BookOpen size={14} className="text-amber-600" />
                   <span className="text-xs text-gray-500">مقطع الحفظ</span>
                 </div>
-                <div className="bg-amber-100 text-amber-700 px-3 py-2 rounded-lg font-medium text-sm mb-2">
+                <div className="text-amber-700 font-medium text-sm mb-2">
                   {row.memorizationSection}
                 </div>
                 {renderMarkCell(row.mark, "memorization")}

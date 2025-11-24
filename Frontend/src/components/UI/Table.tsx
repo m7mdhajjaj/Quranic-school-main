@@ -117,7 +117,6 @@ export const Table = <T,>({
   bordered = true,
   dense = false,
   maxHeight,
-  responsive = true,
   className = "",
   loadingRows = 5,
   renderActions,
@@ -139,8 +138,6 @@ export const Table = <T,>({
 
   // Container classes
   const containerClasses = [
-    responsive &&
-      "overflow-x-auto scrollbar-thin scrollbar-thumb-emerald-400 scrollbar-track-emerald-50",
     "rounded-2xl",
     "border-2",
     "border-emerald-200",

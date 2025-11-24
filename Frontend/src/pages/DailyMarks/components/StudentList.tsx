@@ -21,36 +21,39 @@ const StudentListComponent = ({
 }: StudentListProps) => {
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Pre-compute student data with full names - memoized
+  const studentsWithNames = useMemo(() => {
+    return students.map(student => ({
+      ...student,
+      fullName: `${student.firstName} ${student.fatherName} ${student.lastName}`,
+      fullNameLower: `${student.firstName} ${student.fatherName} ${student.lastName}`.toLowerCase()
+    }));
+  }, [students]);
+
   // Filter students by search term - memoized
   const filteredStudents = useMemo(() => {
-    return students.filter((student) => {
-      const fullName = `${student.firstName} ${student.fatherName} ${student.lastName}`.toLowerCase();
-      return fullName.includes(searchTerm.toLowerCase());
+    return studentsWithNames.filter((student) => {
+      return student.fullNameLower.includes(searchTerm.toLowerCase());
     });
-  }, [students, searchTerm]);
+  }, [studentsWithNames, searchTerm]);
 
   return (
-    <Card padding="none" className="lg:col-span-1 overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
-      {/* Header with gradient */}
-      <div className="bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-600 py-5 px-6 relative overflow-hidden">
-        <div className="absolute inset-0 bg-white opacity-10"></div>
-        <div className="relative flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
-              <Users className="text-white" size={24} />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-white">قائمة الطلاب</h2>
-              <p className="text-emerald-50 text-xs mt-0.5">
-                {filteredStudents.length} من {students.length} طالب
-              </p>
-            </div>
+    <Card padding="none" className="lg:col-span-1 overflow-hidden">
+      {/* Header */}
+      <div className="bg-emerald-600 py-4 px-5 border-b border-emerald-700">
+        <div className="flex items-center gap-2.5">
+          <Users className="text-white" size={20} />
+          <div>
+            <h2 className="text-lg font-bold text-white">قائمة الطلاب</h2>
+            <p className="text-emerald-100 text-xs mt-0.5">
+              {filteredStudents.length} من {students.length} طالب
+            </p>
           </div>
         </div>
       </div>
 
       {/* Group Filter */}
-      <div className="p-4 border-b bg-gradient-to-r from-gray-50 to-gray-100">
+      <div className="p-4 border-b bg-gray-50">
         <Select
           label="اختر الحلقة"
           value={selectedGroup}
@@ -111,51 +114,21 @@ const StudentListComponent = ({
             <p className="text-gray-400 text-sm mt-1">جرب مصطلح بحث آخر</p>
           </div>
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-1.5">
             {filteredStudents
               .sort((a, b) =>
                 `${a.firstName} ${a.lastName}`.localeCompare(
                   `${b.firstName} ${b.lastName}`
                 )
               )
-              .map((student, index) => (
-                <li key={student._id} className="relative">
+              .map((student) => (
+                <li key={student._id}>
                   <button
                     onClick={() => onStudentSelect(student._id)}
                     type="button"
-                    className={`w-full text-right py-3 px-4 rounded-xl transition-all duration-150 will-change-transform ${
-                      selectedStudentId === student._id
-                        ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg transform scale-[1.02]"
-                        : "bg-white hover:bg-gray-50 hover:shadow-md border border-gray-200"
-                    }`}>
-                    <div className="flex items-center gap-3">
-                      <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
-                        selectedStudentId === student._id
-                          ? "bg-white/20 text-white"
-                          : "bg-emerald-100 text-emerald-600"
-                      }`}>
-                        {index + 1}
-                      </div>
-                      <div className="flex-1 text-right">
-                        <span className={`block font-medium ${
-                          selectedStudentId === student._id ? "text-white" : "text-gray-800"
-                        }`}>
-                          {`${student.firstName} ${student.fatherName} ${student.lastName}`}
-                        </span>
-                        <span className={`text-xs mt-0.5 block ${
-                          selectedStudentId === student._id ? "text-emerald-50" : "text-gray-500"
-                        }`}>
-                          {student.group}
-                        </span>
-                      </div>
-                      {selectedStudentId === student._id && (
-                        <div className="flex-shrink-0">
-                          <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        </div>
-                      )}
-                    </div>
+                    data-selected={selectedStudentId === student._id}
+                    className="student-btn">
+                    {student.fullName}
                   </button>
                 </li>
               ))}
@@ -163,16 +136,14 @@ const StudentListComponent = ({
         )}
       </div>
 
-      {/* Action Buttons with enhanced styling */}
-      <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 border-t space-y-2.5">
+      {/* Action Buttons */}
+      <div className="p-4 bg-gray-50 border-t space-y-2">
         <Button
           onClick={onAddSection}
           variant="success"
           size="md"
           fullWidth
-          leftIcon={<Plus size={20} strokeWidth={2.5} />}
-          gradient={true}
-          className="shadow-md hover:shadow-xl transform hover:scale-[1.03] transition-all duration-200 font-semibold">
+          leftIcon={<Plus size={18} />}>
           إضافة مقطع للحلقة
         </Button>
 
@@ -181,9 +152,7 @@ const StudentListComponent = ({
           variant="primary"
           size="md"
           fullWidth
-          leftIcon={<Edit size={20} strokeWidth={2.5} />}
-          gradient={true}
-          className="shadow-md hover:shadow-xl transform hover:scale-[1.03] transition-all duration-200 font-semibold">
+          leftIcon={<Edit size={18} />}>
           تحديث المقاطع
         </Button>
 
@@ -192,28 +161,43 @@ const StudentListComponent = ({
           variant="danger"
           size="md"
           fullWidth
-          leftIcon={<Trash2 size={20} strokeWidth={2.5} />}
-          gradient={true}
-          className="shadow-md hover:shadow-xl transform hover:scale-[1.03] transition-all duration-200 font-semibold">
+          leftIcon={<Trash2 size={18} />}>
           حذف المقاطع
         </Button>
       </div>
 
-      {/* Custom Scrollbar Styles */}
+      {/* Styles */}
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
+          width: 5px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-          background: #f1f1f1;
-          border-radius: 10px;
+          background: #f3f4f6;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #10b981;
+          background: #d1d5db;
           border-radius: 10px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #059669;
+          background: #9ca3af;
+        }
+        
+        .student-btn {
+          width: 100%;
+          text-align: right;
+          padding: 10px 16px;
+          background: white;
+          color: #374151;
+          font-size: 14px;
+          border-radius: 6px;
+        }
+        .student-btn:hover {
+          background: #f9fafb;
+        }
+        .student-btn[data-selected="true"] {
+          background: #10b981;
+          color: white;
+          font-weight: 500;
         }
       `}</style>
     </Card>
