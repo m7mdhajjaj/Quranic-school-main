@@ -2,9 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import type { LoggedInUser, Student, Section, Mark, UseDailyMarksDataResult } from "../types/types";
 import { getStudentsByTeacher } from "@/Api/studentApi";
-
-// Performance constants
-const MARKS_REFETCH_DEBOUNCE = 100; // ms
 import { getTeacherById } from "@/Api/teacherApi";
 import { getAllSections } from "@/Api/sectionApi";
 import { getStudentMarks } from "@/Api/dailyMarksApi";
@@ -174,16 +171,6 @@ export const useDailyMarksData = (selectedStudentId: string | null, selectedGrou
       console.error("❌ Error refetching sections:", err);
     }
   }, [currentUser, selectedGroup]);
-
-  // Fetch marks based on user role with debounce
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      refetchMarks(selectedStudentId || undefined);
-    }, MARKS_REFETCH_DEBOUNCE);
-
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser, selectedStudentId]);
 
   return {
     currentUser,

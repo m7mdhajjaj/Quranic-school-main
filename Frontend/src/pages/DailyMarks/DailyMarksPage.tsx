@@ -139,6 +139,13 @@ const DailyMarksPage = () => {
     setSelectedStudentId(null);
   }, [selectedGroup]);
 
+  // Fetch marks when student is selected (initial fetch)
+  useEffect(() => {
+    if (!currentUser) return;
+    refetchMarks(selectedStudentId || undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedStudentId, currentUser]);
+
   // Refetch marks on socket updates
   useEffect(() => {
     if (!socketLastUpdate || !currentUser) return;
