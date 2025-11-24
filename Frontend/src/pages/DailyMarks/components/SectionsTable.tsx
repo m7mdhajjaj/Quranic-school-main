@@ -216,29 +216,100 @@ const SectionsTableComponent = ({
     : undefined;
 
   return (
-    <div className="overflow-hidden -m-6 -p-6">
-      <Table
-        columns={columns}
-        data={tableData}
-        loading={loadingMarks}
-        emptyMessage="📝 لا توجد مقاطع في الشهر والسنة المحددة"
-        hoverable={true}
-        bordered={false}
-        dense={false}
-        responsive={true}
-        showHeader={true}
-        stickyHeader={false}
-        renderActions={renderActions}
-        actionsHeader={
-          <div className="flex items-center gap-2 justify-center">
-            <Edit size={16} className="text-gray-600" />
-            <span>الإجراءات</span>
+    <>
+      {/* Desktop Table View - Hidden on mobile */}
+      <div className="hidden lg:block overflow-hidden -m-6 -p-6">
+        <Table
+          columns={columns}
+          data={tableData}
+          loading={loadingMarks}
+          emptyMessage="📝 لا توجد مقاطع في الشهر والسنة المحددة"
+          hoverable={true}
+          bordered={false}
+          dense={false}
+          responsive={true}
+          showHeader={true}
+          stickyHeader={false}
+          renderActions={renderActions}
+          actionsHeader="الإجراءات"
+          actionsWidth="160px"
+          loadingRows={3}
+          className="shadow-none border-none m-0 p-0"
+        />
+      </div>
+
+      {/* Mobile Card View - Shown on mobile/tablet */}
+      <div className="lg:hidden space-y-4 p-4">
+        {loadingMarks ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="bg-white rounded-xl p-4 border-2 border-gray-200 animate-pulse">
+              <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
+              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+            </div>
+          ))
+        ) : tableData.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">📝</div>
+            <p className="text-gray-500 font-medium">لا توجد مقاطع في الشهر والسنة المحددة</p>
           </div>
-        }
-        actionsWidth="160px"
-        loadingRows={3}
-        className="shadow-none border-none m-0 p-0"
-      />
+        ) : (
+          tableData.map((row, index) => (
+            <div
+              key={row._id || index}
+              className="bg-white rounded-xl p-4 border-2 border-emerald-200 shadow-md hover:shadow-lg transition-all duration-200"
+            >
+              {/* Date */}
+              <div className="flex items-center gap-2 mb-3 pb-3 border-b border-gray-200">
+                <Calendar size={16} className="text-gray-600" />
+                <div className="flex-1">
+                  <span className="font-semibold text-gray-800">
+                    {new Date(row.date).toLocaleDateString("en-GB", {
+                      year: "numeric",
+                      month: "2-digit",
+                      day: "2-digit",
+                    })}
+                  </span>
+                  <span className="text-xs text-gray-500 mr-2">
+                    {new Date(row.date).toLocaleDateString("ar-SA", { weekday: "long" })}
+                  </span>
+                </div>
+              </div>
+
+              {/* Review Section */}
+              <div className="mb-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <RotateCcw size={14} className="text-emerald-600" />
+                  <span className="text-xs text-gray-500">مقطع المراجعة</span>
+                </div>
+                <div className="bg-emerald-100 text-emerald-700 px-3 py-2 rounded-lg font-medium text-sm mb-2">
+                  {row.reviewSection}
+                </div>
+                {renderMarkCell(row.mark, "review")}
+              </div>
+
+              {/* Memorization Section */}
+              <div className="mb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <BookOpen size={14} className="text-amber-600" />
+                  <span className="text-xs text-gray-500">مقطع الحفظ</span>
+                </div>
+                <div className="bg-amber-100 text-amber-700 px-3 py-2 rounded-lg font-medium text-sm mb-2">
+                  {row.memorizationSection}
+                </div>
+                {renderMarkCell(row.mark, "memorization")}
+              </div>
+
+              {/* Actions */}
+              {isTeacher && renderActions && (
+                <div className="pt-3 border-t border-gray-200">
+                  {renderActions(row)}
+                </div>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+
       <style>{`
         /* Enhanced table row hover effect */
         .table-row-hover {
@@ -249,7 +320,7 @@ const SectionsTableComponent = ({
           transform: scale(1.005);
         }
       `}</style>
-    </div>
+    </>
   );
 };
 
