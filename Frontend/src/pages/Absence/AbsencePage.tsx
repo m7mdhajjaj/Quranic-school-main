@@ -229,6 +229,7 @@ const AbsencePage = () => {
                   groupFilter={groupFilter}
                   onGroupFilterChange={setGroupFilter}
                   groupsAvailable={groupsAvailable}
+                  teacherGroups={teacherGroups}
                   nameQuery={nameQuery}
                   onNameQueryChange={setNameQuery}
                   totalStudents={displayStats.totalStudents}

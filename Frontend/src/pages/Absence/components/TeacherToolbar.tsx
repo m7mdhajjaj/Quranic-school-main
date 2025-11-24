@@ -14,6 +14,7 @@ export const TeacherToolbar = ({
   groupFilter,
   onGroupFilterChange,
   groupsAvailable,
+  teacherGroups = [],
   nameQuery,
   onNameQueryChange,
   totalStudents,
@@ -26,6 +27,27 @@ export const TeacherToolbar = ({
   isSaving,
   isLoading = false,
 }: TeacherToolbarProps) => {
+  // إنشاء map لعدد الطلاب في كل حلقة
+  const groupStudentCountMap = new Map(
+    teacherGroups.map(g => [g.name, g.totalStudents || 0])
+  );
+
+  // حساب إجمالي الطلاب حسب الحلقة المختارة
+  const getGroupTotalStudents = () => {
+    if (groupFilter === 'all') {
+      // إذا كان "جميع الحلقات"، أرجع totalStudents (العدد الكلي)
+      return totalStudents;
+    } else if (groupFilter === '') {
+      // إذا كان "بدون حلقة"، أرجع عدد الطلاب المعروضين
+      return totalStudents;
+    } else {
+      // إذا كانت حلقة محددة، أرجع عدد طلاب تلك الحلقة
+      return groupStudentCountMap.get(groupFilter) || totalStudents;
+    }
+  };
+
+  const displayTotalStudents = getGroupTotalStudents();
+
   return (
     <div className="space-y-4">
       {/* Stats Cards - استخدام Card من UI Library */}
@@ -42,9 +64,16 @@ export const TeacherToolbar = ({
             <Card variant="elevated" className="border-r-4 border-blue-500">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-600 text-sm mb-1">إجمالي الطلاب</p>
+                  <p className="text-gray-600 text-sm mb-1">
+                    إجمالي الطلاب
+                    {groupFilter !== 'all' && groupFilter !== '' && (
+                      <span className="text-xs mr-1 text-blue-500">
+                        ({groupFilter})
+                      </span>
+                    )}
+                  </p>
                   <p className="text-3xl font-bold text-blue-600">
-                    {totalStudents}
+                    {displayTotalStudents}
                   </p>
                 </div>
                 <Users className="w-12 h-12 text-blue-500 opacity-30" />
@@ -126,10 +155,24 @@ export const TeacherToolbar = ({
               <Select
                 value={groupFilter}
                 onChange={(e) => onGroupFilterChange(e.target.value)}
-                options={groupsAvailable.map((g) => ({
-                  value: g,
-                  label: g === 'all' ? 'جميع الحلقات' : g === '' ? 'بدون حلقة' : g,
-                }))}
+                options={groupsAvailable.map((g) => {
+                  const studentCount = groupStudentCountMap.get(g) || 0;
+                  let label = '';
+                  
+                  if (g === 'all') {
+                    label = 'جميع الحلقات';
+                  } else if (g === '') {
+                    label = 'بدون حلقة';
+                  } else {
+                    // إضافة عدد الطلاب بجانب اسم الحلقة
+                    label = `${g} (${studentCount} طالب)`;
+                  }
+                  
+                  return {
+                    value: g,
+                    label,
+                  };
+                })}
               />
             </div>
 
