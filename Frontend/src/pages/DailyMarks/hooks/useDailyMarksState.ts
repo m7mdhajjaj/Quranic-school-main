@@ -11,6 +11,7 @@ export const useDailyMarksState = ({ students, teacherGroups }: UseDailyMarksSta
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<string>("");
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   // Modal States
   const [isAddSectionModalOpen, setIsAddSectionModalOpen] = useState(false);
@@ -78,6 +79,8 @@ export const useDailyMarksState = ({ students, teacherGroups }: UseDailyMarksSta
     selectedGroup,
     setSelectedGroup,
     filteredStudents,
+    searchQuery,
+    setSearchQuery,
     
     // Modals
     isAddSectionModalOpen,

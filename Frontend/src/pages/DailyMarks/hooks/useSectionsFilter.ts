@@ -4,7 +4,7 @@ import type { Section, Mark, AverageResults } from "../types/types";
 /**
  * Custom hook for filtering sections by month/year and calculating averages
  */
-export const useSectionsFilter = (sections: Section[]) => {
+export const useSectionsFilter = (sections: Section[], searchQuery: string = "") => {
   const [selectedMonth, setSelectedMonth] = useState<number>(
     new Date().getMonth() + 1
   ); // Current month (1-12)
@@ -12,13 +12,26 @@ export const useSectionsFilter = (sections: Section[]) => {
     new Date().getFullYear()
   ); // Current year
 
-  // Filter sections by selected month and year
+  // Filter sections by selected month, year, and search query
   const getFilteredSections = () => {
     return sections.filter((section) => {
       const sectionDate = new Date(section.date);
       const sectionMonth = sectionDate.getMonth() + 1; // getMonth() returns 0-11, so add 1
       const sectionYear = sectionDate.getFullYear();
-      return sectionMonth === selectedMonth && sectionYear === selectedYear;
+      
+      const matchesDate = sectionMonth === selectedMonth && sectionYear === selectedYear;
+      
+      if (!searchQuery.trim()) {
+        return matchesDate;
+      }
+      
+      // Search in review and memorization sections
+      const query = searchQuery.toLowerCase().trim();
+      const matchesSearch = 
+        section.reviewSection?.toLowerCase().includes(query) ||
+        section.memorizationSection?.toLowerCase().includes(query);
+      
+      return matchesDate && matchesSearch;
     });
   };
 

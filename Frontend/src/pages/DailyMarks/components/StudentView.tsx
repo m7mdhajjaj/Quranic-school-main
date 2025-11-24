@@ -2,6 +2,7 @@ import { memo } from "react";
 import type { StudentViewProps } from "../types/types";
 import { SectionsTable } from "./SectionsTable";
 import { AveragesBar } from "./AveragesBar";
+import { MonthYearFilter } from "./MonthYearFilter";
 import { Card } from "@/components/UI";
 
 /**
@@ -12,6 +13,12 @@ const StudentViewComponent = ({
   marks,
   loadingMarks,
   averages,
+  selectedMonth,
+  selectedYear,
+  onMonthChange,
+  onYearChange,
+  searchQuery,
+  onSearchChange,
 }: StudentViewProps) => {
   return (
     <div className="grid grid-cols-1 gap-6">
@@ -36,6 +43,30 @@ const StudentViewComponent = ({
           </div>
         </div>
 
+        {/* Averages Section for Student View - Above Table */}
+        {sections.length > 0 && (
+          <div className="px-6 pt-6 pb-4">
+            <AveragesBar
+              reviewAverage={averages.reviewAverage}
+              memorizationAverage={averages.memorizationAverage}
+              overallAverage={averages.overallAverage}
+              totalMarks={averages.totalMarks}
+            />
+          </div>
+        )}
+
+        {/* Month Year Filter - Below Averages */}
+        <div className="px-6 pb-4">
+          <MonthYearFilter
+            selectedMonth={selectedMonth}
+            selectedYear={selectedYear}
+            onMonthChange={onMonthChange}
+            onYearChange={onYearChange}
+            searchQuery={searchQuery}
+            onSearchChange={onSearchChange}
+          />
+        </div>
+
         <div className="p-0">
           <SectionsTable
             sections={sections}
@@ -44,16 +75,6 @@ const StudentViewComponent = ({
             isTeacher={false}
           />
         </div>
-
-        {/* Averages Section for Student View */}
-        {sections.length > 0 && (
-          <AveragesBar
-            reviewAverage={averages.reviewAverage}
-            memorizationAverage={averages.memorizationAverage}
-            overallAverage={averages.overallAverage}
-            totalMarks={averages.totalMarks}
-          />
-        )}
       </Card>
     </div>
   );

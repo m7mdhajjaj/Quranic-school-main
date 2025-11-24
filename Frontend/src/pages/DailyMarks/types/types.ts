@@ -62,6 +62,8 @@ export interface MonthYearFilterProps {
   selectedYear: number;
   onMonthChange: (month: number) => void;
   onYearChange: (year: number) => void;
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
 }
 
 // AveragesBar Component Props
@@ -203,4 +205,10 @@ export interface StudentViewProps {
   marks: Mark[];
   loadingMarks: boolean;
   averages: AverageResults;
+  selectedMonth: number;
+  selectedYear: number;
+  onMonthChange: (month: number) => void;
+  onYearChange: (year: number) => void;
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
 }

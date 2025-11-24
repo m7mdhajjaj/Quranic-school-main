@@ -91,7 +91,7 @@ const DailyMarksPage = () => {
     setSelectedYear,
     getFilteredSections,
     calculateAverages,
-  } = useSectionsFilter(sections);
+  } = useSectionsFilter(sections, state.searchQuery);
 
   // Event Handlers
   const handlers = useDailyMarksHandlers({
@@ -237,21 +237,13 @@ const DailyMarksPage = () => {
               selectedYear={selectedYear}
               onMonthChange={setSelectedMonth}
               onYearChange={setSelectedYear}
+              searchQuery={state.searchQuery}
+              onSearchChange={state.setSearchQuery}
             />
           </div>
         )}
 
-        {/* Month Filter for Students */}
-        {currentUser?.role === "student" && (
-          <MonthYearFilter
-            selectedMonth={selectedMonth}
-            selectedYear={selectedYear}
-            onMonthChange={setSelectedMonth}
-            onYearChange={setSelectedYear}
-          />
-        )}
-
-        {/* Averages Section - Above All Content */}
+        {/* Averages Section - Above All Content (Teacher Only) */}
         {currentUser?.role !== "student" && (
           <AveragesSection
             selectedStudentId={selectedStudentId}
@@ -307,6 +299,12 @@ const DailyMarksPage = () => {
                 marks={marks}
                 loadingMarks={loadingMarks}
                 averages={averages}
+                selectedMonth={selectedMonth}
+                selectedYear={selectedYear}
+                onMonthChange={setSelectedMonth}
+                onYearChange={setSelectedYear}
+                searchQuery={state.searchQuery}
+                onSearchChange={state.setSearchQuery}
               />
             )}
           </>

@@ -1,6 +1,6 @@
 import { memo, useMemo } from "react";
 import type { MonthYearFilterProps } from "../types/types";
-import { FilterSelect, FilterContainer } from "@/components/Filters";
+import { FilterSelect, FilterContainer, SearchInput } from "@/components/Filters";
 import type { FilterOption } from "@/components/Filters";
 
 /**
@@ -12,6 +12,8 @@ const MonthYearFilterComponent = ({
   selectedYear,
   onMonthChange,
   onYearChange,
+  searchQuery = "",
+  onSearchChange,
 }: MonthYearFilterProps) => {
   const monthOptions: FilterOption[] = useMemo(() => [
     { value: "1", label: "يناير (1)" },
@@ -47,9 +49,9 @@ const MonthYearFilterComponent = ({
       title="📅 فلترة العلامات حسب الشهر والسنة"
       variant="gradient"
       showClearButton={false}
-      className="mb-8 max-w-3xl mx-auto"
+      className="mb-8 max-w-5xl mx-auto"
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         <FilterSelect
           label="🗓️ اختر الشهر"
           value={selectedMonth.toString()}
@@ -66,6 +68,22 @@ const MonthYearFilterComponent = ({
           showAllOption={false}
         />
       </div>
+
+      {/* Search Input */}
+      {onSearchChange && (
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            🔍 ابحث عن المقطع
+          </label>
+          <SearchInput
+            value={searchQuery}
+            onChange={onSearchChange}
+            placeholder="ابحث بمقطع المراجعة أو الحفظ..."
+            size="md"
+            showClearButton={true}
+          />
+        </div>
+      )}
 
       {/* Current Selection Display */}
       <div className="mt-5 pt-4 border-t border-emerald-200">

@@ -29,10 +29,10 @@ export const showCenteredSwal = (options: SweetAlertOptions) => {
       backdrop: "",
     },
     customClass: {
-      popup: `!fixed !top-1/2 !left-1/2 !-translate-x-1/2 !-translate-y-1/2 !m-0 !rounded-xl !shadow-2xl ${
+      popup: `!fixed !top-1/2 !left-1/2 !m-0 !rounded-xl !shadow-2xl ${
         options.customClass?.popup || ""
       }`,
-      container: "!z-[10000] !flex !items-center !justify-center",
+      container: "!fixed !inset-0 !z-[10000] !flex !items-center !justify-center",
       ...options.customClass,
     },
     didOpen: () => {
@@ -44,13 +44,17 @@ export const showCenteredSwal = (options: SweetAlertOptions) => {
         popup.style.setProperty("left", "50%", "important");
         popup.style.setProperty("transform", "translate(-50%, -50%)", "important");
         popup.style.setProperty("margin", "0", "important");
+        popup.style.setProperty("z-index", "10001", "important");
       }
 
       const container = document.querySelector(".swal2-container") as HTMLElement;
       if (container) {
+        container.style.setProperty("position", "fixed", "important");
+        container.style.setProperty("inset", "0", "important");
         container.style.setProperty("display", "flex", "important");
         container.style.setProperty("align-items", "center", "important");
         container.style.setProperty("justify-content", "center", "important");
+        container.style.setProperty("z-index", "10000", "important");
       }
 
       const backdrop = document.querySelector(".swal2-backdrop") as HTMLElement;
