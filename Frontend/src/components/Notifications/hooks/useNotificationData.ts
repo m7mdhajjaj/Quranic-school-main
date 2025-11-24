@@ -3,7 +3,7 @@
 // ============================================================================
 // Custom hook لإدارة بيانات الإشعارات والـ API calls
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   getRecentNotifications,
   getUnreadNotificationCount,
@@ -19,7 +19,7 @@ import type {
 
 export const useNotificationData = ({
   userId,
-  autoRefresh = false,
+  autoRefresh = true,
   refreshInterval = 60000,
 }: UseNotificationDataProps) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -32,6 +32,10 @@ export const useNotificationData = ({
   const [isMarkingAll, setIsMarkingAll] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  
+  // Buffer للإشعارات المتعددة القادمة في نفس الوقت
+  const pendingNotificationsRef = useRef<Notification[]>([]);
+  const batchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // جلب الإشعارات من الخادم
   const fetchNotifications = useCallback(
@@ -77,11 +81,19 @@ export const useNotificationData = ({
         });
 
         if (reset) {
-          setNotifications(sortedNotifications);
-        } else {
+          // حتى عند reset، نحتفظ بالإشعارات الجديدة من Socket إذا لم تكن موجودة في البيانات من الخادم
           setNotifications((prev) => {
-            const combined = [...prev, ...sortedNotifications];
-            return combined.sort((a, b) => {
+            // جلب الإشعارات من Socket فقط (isNew = true) التي ربما لم تصل للخادم بعد
+            const recentSocketNotifications = prev.filter(n => n.isNew || 
+              new Date().getTime() - new Date(n.createdAt).getTime() < 5000 // آخر 5 ثواني
+            );
+            
+            // دمج مع البيانات من الخادم وإزالة التكرار
+            const serverIds = new Set(sortedNotifications.map(n => n._id));
+            const uniqueSocketNotifications = recentSocketNotifications.filter(n => !serverIds.has(n._id));
+            
+            const merged = [...uniqueSocketNotifications, ...sortedNotifications];
+            return merged.sort((a, b) => {
               if (!a.isRead && b.isRead) return -1;
               if (a.isRead && !b.isRead) return 1;
               const dateA = new Date(a.sentAt || a.createdAt).getTime();
@@ -89,21 +101,20 @@ export const useNotificationData = ({
               return dateB - dateA;
             });
           });
-        }
-
-        // جلب الإحصائيات
-        try {
-          const unreadCount = await getUnreadNotificationCount(userId);
-          setStats({
-            unreadCount,
-            newCount: 0,
-            totalCount: newNotifications.length,
-          });
-        } catch {
-          setStats({
-            unreadCount: newNotifications.filter((n) => !n.isRead).length,
-            newCount: 0,
-            totalCount: newNotifications.length,
+        } else {
+          setNotifications((prev) => {
+            // تصفية المكرر عند التحميل المزيد
+            const prevIds = new Set(prev.map(n => n._id));
+            const uniqueNew = sortedNotifications.filter(n => !prevIds.has(n._id));
+            const combined = [...prev, ...uniqueNew];
+            
+            return combined.sort((a, b) => {
+              if (!a.isRead && b.isRead) return -1;
+              if (a.isRead && !b.isRead) return 1;
+              const dateA = new Date(a.sentAt || a.createdAt).getTime();
+              const dateB = new Date(b.sentAt || b.createdAt).getTime();
+              return dateB - dateA;
+            });
           });
         }
 
@@ -136,7 +147,6 @@ export const useNotificationData = ({
       await markAllAsRead(userId);
 
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true, isNew: false })));
-      setStats((prev) => ({ ...prev, unreadCount: 0, newCount: 0 }));
 
       return { success: true };
     } catch (error) {
@@ -160,12 +170,6 @@ export const useNotificationData = ({
           prev.map((n) => (n._id === notificationId ? { ...n, isRead: true, isNew: false } : n))
         );
 
-        setStats((prev) => ({
-          ...prev,
-          unreadCount: Math.max(0, prev.unreadCount - 1),
-          newCount: notification.isNew ? Math.max(0, prev.newCount - 1) : prev.newCount,
-        }));
-
         return { success: true };
       } catch (error) {
         console.error('Error marking notification as read:', error);
@@ -181,19 +185,7 @@ export const useNotificationData = ({
       try {
         await deleteNotification(notificationId);
 
-        const deletedNotification = notifications.find((n) => n._id === notificationId);
-
         setNotifications((prev) => prev.filter((n) => n._id !== notificationId));
-        setStats((prev) => ({
-          ...prev,
-          totalCount: prev.totalCount - 1,
-          unreadCount:
-            deletedNotification && !deletedNotification.isRead
-              ? prev.unreadCount - 1
-              : prev.unreadCount,
-          newCount:
-            deletedNotification && deletedNotification.isNew ? prev.newCount - 1 : prev.newCount,
-        }));
 
         return { success: true };
       } catch (error) {
@@ -201,21 +193,32 @@ export const useNotificationData = ({
         return { success: false, error };
       }
     },
-    [notifications]
+    []
   );
 
-  // إضافة إشعار جديد (من Socket)
-  const addNotification = useCallback((newNotification: Notification) => {
-    const notificationWithSentAt = {
-      ...newNotification,
-      sentAt:
-        (newNotification as any).sentAt ||
-        newNotification.createdAt ||
-        new Date().toISOString(),
-    };
+  // معالجة الإشعارات المتراكمة (batch processing)
+  const processPendingNotifications = useCallback(() => {
+    if (pendingNotificationsRef.current.length === 0) return;
+
+    const newNotifications = [...pendingNotificationsRef.current];
+    const count = newNotifications.length;
+    pendingNotificationsRef.current = []; // مسح الـ buffer
+
+    console.log(`📦 معالجة ${count} إشعار دفعة واحدة`);
 
     setNotifications((prev) => {
-      const updated = [notificationWithSentAt, ...prev];
+      // تصفية الإشعارات المكررة
+      const existingIds = new Set(prev.map(n => n._id));
+      const uniqueNew = newNotifications.filter(n => !existingIds.has(n._id));
+
+      if (uniqueNew.length === 0) {
+        console.log('⚠️ جميع الإشعارات مكررة، تم تجاهلها');
+        return prev;
+      }
+
+      console.log(`✅ إضافة ${uniqueNew.length} إشعار جديد فعلياً (بعد تصفية المكرر)`);
+
+      const updated = [...uniqueNew, ...prev];
       return updated.sort((a, b) => {
         if (!a.isRead && b.isRead) return -1;
         if (a.isRead && !b.isRead) return 1;
@@ -224,13 +227,32 @@ export const useNotificationData = ({
         return dateB - dateA;
       });
     });
-
-    setStats((prev) => ({
-      unreadCount: prev.unreadCount + 1,
-      newCount: prev.newCount + 1,
-      totalCount: prev.totalCount + 1,
-    }));
   }, []);
+
+  // إضافة إشعار جديد (من Socket) مع batch processing
+  const addNotification = useCallback((newNotification: Notification) => {
+    const notificationWithSentAt = {
+      ...newNotification,
+      sentAt:
+        newNotification.sentAt ||
+        newNotification.createdAt ||
+        new Date().toISOString(),
+    };
+
+    // إضافة للـ buffer بدلاً من المعالجة الفورية
+    pendingNotificationsRef.current.push(notificationWithSentAt);
+
+    // إلغاء التايمر السابق إذا كان موجوداً
+    if (batchTimeoutRef.current) {
+      clearTimeout(batchTimeoutRef.current);
+    }
+
+    // تعيين تايمر جديد - معالجة بعد 300ms من آخر إشعار
+    batchTimeoutRef.current = setTimeout(() => {
+      processPendingNotifications();
+      batchTimeoutRef.current = null;
+    }, 300);
+  }, [processPendingNotifications]);
 
   // تحديث الإحصائيات
   const updateStats = useCallback((newStats: Partial<NotificationStats>) => {
@@ -256,6 +278,34 @@ export const useNotificationData = ({
 
     return () => clearInterval(interval);
   }, [autoRefresh, userId, refreshInterval, isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // حساب الإحصائيات تلقائياً عند تغيير الإشعارات
+  useEffect(() => {
+    const unreadCount = notifications.filter((n) => !n.isRead).length;
+    const newCount = notifications.filter((n) => n.isNew).length;
+    const totalCount = notifications.length;
+
+    setStats({
+      unreadCount,
+      newCount,
+      totalCount,
+    });
+
+    console.log(`📊 Stats auto-updated: ${unreadCount} unread, ${newCount} new, ${totalCount} total`);
+  }, [notifications]);
+
+  // Cleanup للـ batch timeout عند unmount
+  useEffect(() => {
+    return () => {
+      if (batchTimeoutRef.current) {
+        clearTimeout(batchTimeoutRef.current);
+        // معالجة أي إشعارات متبقية
+        if (pendingNotificationsRef.current.length > 0) {
+          processPendingNotifications();
+        }
+      }
+    };
+  }, [processPendingNotifications]);
 
   return {
     notifications,

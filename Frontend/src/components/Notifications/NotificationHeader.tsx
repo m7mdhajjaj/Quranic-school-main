@@ -105,14 +105,6 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-refresh عند وصول إشعار جديد من Socket
-  useEffect(() => {
-    if (refreshTrigger > 0 && userId) {
-      console.log('🔄 Auto-refresh triggered by Socket notification');
-      fetchNotifications(1, true);
-    }
-  }, [refreshTrigger, userId, fetchNotifications]);
-
   // معالجة الإشعار الجديد من Socket
   useEffect(() => {
     if (socketNotification) {
@@ -122,14 +114,18 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
     }
   }, [socketNotification, addNotification, playSound]);
 
-  // معالجة الإشعار من Firebase
+  // ملاحظة: تم تعطيل Auto-refresh من refreshTrigger لأن addNotification يضيف الإشعار مباشرة
+  // لا حاجة لإعادة جلب كل الإشعارات من الخادم
+
+  // معالجة الإشعار من Firebase (بدون fetch لتجنب التكرار)
   useEffect(() => {
     if (firebaseNotification?.notification && userId) {
       console.log('🔥 Firebase notification received:', firebaseNotification);
-      fetchNotifications(1, true);
-      playSound();
+      // لا نستدعي fetchNotifications هنا لأن Socket سيرسل الإشعار
+      // فقط نشغل الصوت إذا لم يكن Socket قد شغله
+      // playSound(); // معطل لأن Socket يشغل الصوت
     }
-  }, [firebaseNotification, userId, fetchNotifications, playSound]);
+  }, [firebaseNotification, userId]);
 
   // إغلاق القائمة عند النقر خارجها
   useEffect(() => {

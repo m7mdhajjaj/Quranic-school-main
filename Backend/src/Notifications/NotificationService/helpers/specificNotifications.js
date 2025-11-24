@@ -124,35 +124,8 @@ async function notifyAbsence(createNotificationFn, studentId, date, teacherName)
     const notificationTitle = `⚠️ تنبيه غياب`;
     const notificationMessage = `تم تسجيل غيابك بتاريخ ${date} بواسطة ${teacherName}. يرجى المتابعة مع معلمك.`;
     
-    // Send via FCM
-    if (FCMService && FCMService.initialized) {
-      try {
-        const deviceTokens = await DeviceToken.find({ 
-          user: studentId,
-          userModel: 'Student'
-        }).lean();
-        
-        if (deviceTokens.length > 0) {
-          const tokens = deviceTokens.map(d => d.token).filter(Boolean);
-          const payload = {
-            notification: {
-              title: notificationTitle,
-              body: notificationMessage,
-            },
-            data: {
-              type: "attendance",
-              date,
-              teacherName,
-              absenceType: "absent",
-            },
-          };
-          await FCMService.sendToTokens(tokens, payload);
-          console.log(`📱 Absence notification sent via FCM to ${tokens.length} devices`);
-        }
-      } catch (fcmErr) {
-        console.error("❌ Error sending absence FCM:", fcmErr);
-      }
-    }
+    // FCM will be sent automatically by createNotification in NotificationService
+    // No need to send it here to avoid duplication
     
     return await createNotificationFn({
       recipient: studentId,
@@ -191,35 +164,8 @@ async function notifyAbsenceRemoved(createNotificationFn, studentId, date, teach
     const notificationTitle = `✅ تم إزالة الغياب`;
     const notificationMessage = `تم إزالة غيابك بتاريخ ${date} بواسطة ${teacherName}. تم تسجيلك حاضراً.`;
     
-    // Send via FCM
-    if (FCMService && FCMService.initialized) {
-      try {
-        const deviceTokens = await DeviceToken.find({ 
-          user: studentId,
-          userModel: 'Student'
-        }).lean();
-        
-        if (deviceTokens.length > 0) {
-          const tokens = deviceTokens.map(d => d.token).filter(Boolean);
-          const payload = {
-            notification: {
-              title: notificationTitle,
-              body: notificationMessage,
-            },
-            data: {
-              type: "attendance",
-              date,
-              teacherName,
-              absenceType: "removed",
-            },
-          };
-          await FCMService.sendToTokens(tokens, payload);
-          console.log(`📱 Absence removal notification sent via FCM to ${tokens.length} devices`);
-        }
-      } catch (fcmErr) {
-        console.error("❌ Error sending absence removal FCM:", fcmErr);
-      }
-    }
+    // FCM will be sent automatically by createNotification in NotificationService
+    // No need to send it here to avoid duplication
     
     return await createNotificationFn({
       recipient: studentId,

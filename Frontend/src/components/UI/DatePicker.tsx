@@ -88,13 +88,13 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   return (
     <div className={`w-full ${className}`}>
       {label && (
-        <label className="flex items-center gap-2 text-base font-semibold text-gray-700 mb-3">
-          <Calendar className="h-5 w-5 text-emerald-600" />
+        <label className="flex items-center gap-2 text-base font-semibold text-gray-700 mb-3 min-h-[28px]">
+          <Calendar className="h-5 w-5 text-emerald-600 flex-shrink-0" />
           {label} {required && <span className="text-red-500">*</span>}
         </label>
       )}
       
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-3 min-h-[44px]">
         {/* Day */}
         <Select
           value={day}

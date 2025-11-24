@@ -9,7 +9,7 @@
 // ============================================================================
 // External Dependencies
 // ============================================================================
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Routes, Route, useLocation, Outlet } from "react-router-dom";
 import React, { useEffect } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -439,7 +439,7 @@ function AppContent() {
 /**
  * Root application component
  * Wraps the entire app with necessary providers:
- * - BrowserRouter: Enables routing
+ * - RouterProvider with createBrowserRouter: Enables modern routing with data APIs
  * - AuthProvider: Manages authentication state
  * - UserStatusProvider: Manages user online/offline status
  *
@@ -449,9 +449,12 @@ function AppContent() {
  * استخدم النظام الجديد Socket/SocketManager
  * كل صفحة تستخدم الـ hook المناسب (useDashboardSocket, useStudentsSocket, etc.)
  */
-function App() {
-  return (
-    <BrowserRouter>
+
+// Create router instance
+const router = createBrowserRouter([
+  {
+    path: "*",
+    element: (
       <AuthProvider>
         <UserStatusProvider>
           <AppContent />
@@ -485,8 +488,12 @@ function App() {
           />
         </UserStatusProvider>
       </AuthProvider>
-    </BrowserRouter>
-  );
+    ),
+  },
+]);
+
+function App() {
+  return <RouterProvider router={router} />;
 }
 
 export default App;

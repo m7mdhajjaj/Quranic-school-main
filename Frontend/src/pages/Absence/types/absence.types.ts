@@ -46,3 +46,38 @@ export interface YearTotals {
   totalDays: number;
   rate: number;
 }
+
+// ============================================
+// Component Props Interfaces
+// ============================================
+
+// TeacherToolbar Component
+export interface TeacherToolbarProps {
+  date: string;
+  onDateChange: (date: string) => void;
+  groupFilter: string;
+  onGroupFilterChange: (group: string) => void;
+  groupsAvailable: string[];
+  nameQuery: string;
+  onNameQueryChange: (query: string) => void;
+  presentCount: number;
+  absentCount: number;
+  attendanceRate: number;
+  isDateTooOld: boolean;
+  daysAgo: number;
+  onSave: () => void;
+  isSaving: boolean;
+}
+
+// StudentsTable Component
+export interface StudentsTableProps {
+  students: AttendanceStudent[];
+  selectedAll: boolean;
+  onToggleAll: () => void;
+  onTogglePresence: (studentId: string) => void;
+}
+
+// StudentView Component
+export interface StudentViewProps {
+  monthlyStats: MonthlyAbsence[];
+}

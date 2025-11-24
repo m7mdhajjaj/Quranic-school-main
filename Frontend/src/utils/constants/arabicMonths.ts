@@ -45,3 +45,10 @@ export const getMonthOptions = () => {
     label: `${month.label} (${month.value})`,
   }));
 };
+
+/**
+ * أسماء الأشهر بالتنسيق العربي مع الأرقام (للاستخدام في arrays)
+ */
+export const AR_MONTHS = ARABIC_MONTHS.map(
+  (month) => `${month.label} (${month.value.toString().padStart(2, '0')})`
+);

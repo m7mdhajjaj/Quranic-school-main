@@ -1,15 +1,19 @@
 // AbsencePage.tsx
 import { useState, useEffect, useMemo } from "react";
+import { useBlocker } from "react-router-dom";
 import { useAbsenceSocket } from "../../Socket";
 import { useAbsenceData, useTeacherGroups } from "./hooks";
-import { TeacherToolbar, StudentView } from "./components";
+import { TeacherToolbar, StudentView, StudentsTable } from "./components";
 import { isDateTooOld, getDaysAgo } from "./utils/dateHelpers";
 import { bulkSaveAttendance } from "@/Api/attendanceApi";
 import {
-  showSuccessMessage,
-  showErrorMessage,
-} from "@/components/utils/sweetalertUtils";
+  showSuccessToast,
+  showErrorToast,
+} from "@/components/utils/toastUtils";
 import { Card } from "@/components/UI/Card";
+import PageHeader from "@/components/UI/PageHeader";
+import ResponsivePagination from "@/components/UI/ResponsivePagination";
+import { LoadingSpinner } from "@/components/UI/LoadingSpinner";
 
 const AbsencePage = () => {
   const {
@@ -35,17 +39,65 @@ const AbsencePage = () => {
   const [selectedAll, setSelectedAll] = useState(false);
   const [groupFilter, setGroupFilter] = useState<string>("all");
   const [nameQuery, setNameQuery] = useState<string>("");
-  const [expandedStudentId, setExpandedStudentId] = useState<string | null>(
-    null
-  );
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingDate, setIsLoadingDate] = useState(true); // Start with true for initial load
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  // Re-fetch on date change
+  // Initial load and re-fetch on date change
   useEffect(() => {
     if (!currentUser) return;
-    if (currentUser.role === "teacher" || currentUser.role === "admin") {
-      fetchStudentsForTeacher(date);
+    const loadData = async () => {
+      if (currentUser.role === "teacher" || currentUser.role === "admin") {
+        setIsLoadingDate(true);
+        try {
+          await fetchStudentsForTeacher(date);
+          setHasUnsavedChanges(false); // Reset unsaved changes after loading
+        } finally {
+          setIsLoadingDate(false);
+        }
+      }
+    };
+    loadData();
+  }, [date, currentUser]);
+
+  // Warn before leaving page with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = "لديك تغييرات غير محفوظة. هل أنت متأكد من الخروج?";
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [hasUnsavedChanges]);
+
+  // Block navigation when there are unsaved changes
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      hasUnsavedChanges && currentLocation.pathname !== nextLocation.pathname
+  );
+
+  // Handle navigation blocker
+  useEffect(() => {
+    if (blocker.state === "blocked") {
+      const confirmLeave = window.confirm(
+        "⚠️ لديك تغييرات غير محفوظة!\n\nهل أنت متأكد من مغادرة الصفحة؟\nسيتم فقدان جميع التغييرات غير المحفوظة."
+      );
+      if (confirmLeave) {
+        blocker.proceed();
+      } else {
+        blocker.reset();
+      }
     }
-  }, [date]);
+  }, [blocker]);
 
   // Re-fetch on socket update
   useEffect(() => {
@@ -67,7 +119,7 @@ const AbsencePage = () => {
   // Groups available
   const groupsAvailable = useMemo(() => {
     if (currentUser?.role === "teacher") {
-      return teacherGroups;
+      return ["all", ...teacherGroups];
     } else {
       const set = new Set<string>();
       students.forEach((s) => s.group && set.add(s.group));
@@ -78,12 +130,12 @@ const AbsencePage = () => {
     }
   }, [currentUser, teacherGroups, students]);
 
-  // Auto-select first group for teacher
+  // Auto-select "all" for teacher by default
   useEffect(() => {
     if (!currentUser) return;
     if (currentUser.role === "teacher" && groupsAvailable.length > 0) {
-      if (groupFilter === "all" || !groupsAvailable.includes(groupFilter)) {
-        setGroupFilter(groupsAvailable[0]);
+      if (!groupsAvailable.includes(groupFilter)) {
+        setGroupFilter("all");
       }
     }
   }, [currentUser, groupsAvailable, groupFilter]);
@@ -101,6 +153,23 @@ const AbsencePage = () => {
     return list.sort((a, b) => a.name.localeCompare(b.name, "ar"));
   }, [students, groupFilter, nameQuery]);
 
+  // Paginated students
+  const paginatedStudents = useMemo(() => {
+    if (visibleStudents.length <= itemsPerPage) {
+      return visibleStudents;
+    }
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return visibleStudents.slice(startIndex, endIndex);
+  }, [visibleStudents, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(visibleStudents.length / itemsPerPage);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [groupFilter, nameQuery]);
+
   // Update selectedAll based on visible students
   useEffect(() => {
     if (visibleStudents.length > 0) {
@@ -117,6 +186,7 @@ const AbsencePage = () => {
         s._id === studentId ? { ...s, isPresent: !s.isPresent } : s
       )
     );
+    setHasUnsavedChanges(true);
   };
 
   // Toggle all students
@@ -129,6 +199,7 @@ const AbsencePage = () => {
         visibleIds.includes(s._id) ? { ...s, isPresent: newState } : s
       )
     );
+    setHasUnsavedChanges(true);
   };
 
   // Stats
@@ -155,12 +226,13 @@ const AbsencePage = () => {
   const handleSave = async () => {
     try {
       if (dateTooOld) {
-        await showErrorMessage(
-          "لا يمكن التعديل",
-          `هذا التاريخ قديم (مضى عليه ${daysAgo} يوم). لا يمكن تعديل الحضور بعد مرور أسبوع.`
+        showErrorToast(
+          `⚠️ لا يمكن التعديل - التاريخ قديم (مضى عليه ${daysAgo} يوم). لا يمكن تعديل الحضور بعد مرور أسبوع.`
         );
         return;
       }
+
+      setIsSaving(true);
 
       const payload = visibleStudents
         .filter((s) => s._id)
@@ -172,12 +244,10 @@ const AbsencePage = () => {
 
       await bulkSaveAttendance({ date, records: payload });
 
-      await showSuccessMessage(
-        "تم رصد الحضور بنجاح",
-        `حاضر: ${presentCount} | غائب: ${absentCount} | نسبة الحضور: ${attendanceRate}%`,
-        undefined,
-        "center",
-        false
+      setHasUnsavedChanges(false); // Clear unsaved changes flag after successful save
+
+      showSuccessToast(
+        `✓ تم رصد الحضور بنجاح - حاضر: ${presentCount} | غائب: ${absentCount} | نسبة الحضور: ${attendanceRate}%`
       );
     } catch (e: any) {
       console.error("❌ خطأ في حفظ الحضور:", e);
@@ -185,7 +255,9 @@ const AbsencePage = () => {
         e.response?.data?.message ||
         e.response?.data?.details ||
         "تعذر حفظ السجل";
-      await showErrorMessage("خطأ في الحفظ", errorMsg);
+      showErrorToast(`✗ خطأ في الحفظ - ${errorMsg}`);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -207,21 +279,21 @@ const AbsencePage = () => {
     <div
       className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 py-8 px-4"
       dir="rtl">
-      <div className="container mx-auto max-w-7xl">
+      <div className="container mx-auto max-w-[1800px]">
         {/* العنوان */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <h1 className="text-3xl md:text-4xl font-bold text-slate-800">
-              سجل الحضور والغياب
-            </h1>
-          </div>
-          <div className="w-24 h-1 bg-emerald-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">
-            {currentUser?.role === "student"
+        <PageHeader
+          title="سجل الحضور والغياب"
+          subtitle={
+            currentUser?.role === "student"
               ? "اطّلع على سجل غيابك الشهري وإجمالي السنة"
-              : "سجّل حضور الطلاب يومياً مع أدوات فلترة وبحث"}
-          </p>
-        </div>
+              : "سجّل حضور الطلاب يومياً مع أدوات فلترة وبحث"
+          }
+          icon={
+            <div className="text-6xl">
+              {currentUser?.role === "student" ? "📊" : "📝"}
+            </div>
+          }
+        />
 
         {currentUser?.role === "student" ? (
           <StudentView monthlyStats={monthlyStats} />
@@ -235,219 +307,53 @@ const AbsencePage = () => {
                   groupsAvailable={groupsAvailable}
                   nameQuery={nameQuery}
                   onNameQueryChange={setNameQuery}
-                  selectedAll={selectedAll}
-                  onToggleAll={toggleAllStudents}
                   presentCount={presentCount}
                   absentCount={absentCount}
                   attendanceRate={attendanceRate}
                   isDateTooOld={dateTooOld}
                   daysAgo={daysAgo}
+                  onSave={handleSave}
+                  isSaving={isSaving}
                 />
 
-                {/* جدول الطلاب - التصميم القديم */}
-                <Card variant="elevated" className="overflow-hidden">
-                  <div className="bg-gradient-to-r from-emerald-600 to-teal-500 py-4 px-6 flex justify-between items-center">
-                    <h2 className="text-xl font-bold text-white">
-                      قائمة الطلاب
-                    </h2>
-                  </div>
+                {/* جدول الطلاب */}
+                {isLoadingDate || isSaving ? (
+                  <Card variant="elevated" className="overflow-hidden">
+                    <div className="flex flex-col items-center justify-center min-h-[300px] gap-4">
+                      <LoadingSpinner size="lg" />
+                      <p className="text-lg text-gray-600 font-semibold">
+                        {isSaving ? "جاري حفظ الحضور..." : "جاري تحميل البيانات..."}
+                      </p>
+                    </div>
+                  </Card>
+                ) : (
+                  <>
+                    <StudentsTable
+                      students={paginatedStudents}
+                      selectedAll={selectedAll}
+                      onToggleAll={toggleAllStudents}
+                      onTogglePresence={toggleStudentPresence}
+                    />
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-gray-50 sticky top-0 z-10">
-                        <tr>
-                          <th className="py-3 px-4 text-right text-sm font-medium text-gray-500">
-                            رقم الطالب
-                          </th>
-                          <th className="py-3 px-4 text-right text-sm font-medium text-gray-500">
-                            اسم الطالب
-                          </th>
-                          <th className="py-3 px-4 text-right text-sm font-medium text-gray-500">
-                            الحلقة
-                          </th>
-                          <th className="py-3 px-4 text-center text-sm font-medium text-gray-500">
-                            عدد الغيابات
-                          </th>
-                          <th className="py-3 px-4 text-center text-sm font-medium text-gray-500">
-                            تواريخ الغيابات
-                          </th>
-                          <th className="py-3 px-6 text-center text-sm font-medium text-gray-500">
-                            <div className="flex items-center justify-center">
-                              <input
-                                type="checkbox"
-                                checked={selectedAll}
-                                onChange={toggleAllStudents}
-                                className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
-                              />
-                              <span className="mr-2">الحضور</span>
-                            </div>
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {visibleStudents.length === 0 ? (
-                          <tr>
-                            <td
-                              colSpan={6}
-                              className="text-center py-6 text-gray-500">
-                              لا يوجد طلاب مطابقين للفلترة/البحث
-                            </td>
-                          </tr>
-                        ) : (
-                          visibleStudents.map((s) => (
-                            <tr
-                              key={s._id}
-                              className="hover:bg-gray-50 cursor-pointer"
-                              onClick={() => toggleStudentPresence(s._id)}>
-                              <td className="px-4 py-3 text-sm text-gray-500">
-                                {s.studentId}
-                              </td>
-                              <td className="px-4 py-3 font-medium text-gray-900">
-                                {s.name}
-                              </td>
-                              <td className="px-4 py-3 text-sm text-gray-500">
-                                {s.group ?? "-"}
-                              </td>
-                              <td className="px-4 py-3 text-center">
-                                <span
-                                  className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
-                                    (s.totalAbsences ?? 0) === 0
-                                      ? "bg-green-100 text-green-700"
-                                      : (s.totalAbsences ?? 0) <= 3
-                                      ? "bg-yellow-100 text-yellow-700"
-                                      : (s.totalAbsences ?? 0) <= 7
-                                      ? "bg-orange-100 text-orange-700"
-                                      : "bg-red-100 text-red-700"
-                                  }`}>
-                                  {s.totalAbsences ?? 0}
-                                </span>
-                              </td>
-                              <td
-                                className="px-4 py-3 text-center"
-                                onClick={(e) => e.stopPropagation()}>
-                                {(s.absenceDates ?? []).length === 0 ? (
-                                  <span className="text-xs text-gray-400 italic">
-                                    لا يوجد غيابات
-                                  </span>
-                                ) : (
-                                  <div className="relative inline-block">
-                                    <button
-                                      onClick={() =>
-                                        setExpandedStudentId(
-                                          expandedStudentId === s._id
-                                            ? null
-                                            : s._id
-                                        )
-                                      }
-                                      className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium transition-colors">
-                                      {expandedStudentId === s._id
-                                        ? "إخفاء"
-                                        : `عرض (${s.absenceDates?.length})`}
-                                    </button>
-
-                                    {/* قائمة التواريخ المنسدلة */}
-                                    {expandedStudentId === s._id && (
-                                      <div className="absolute left-1/2 transform -translate-x-1/2 top-full mt-2 w-56 bg-white border-2 border-blue-200 rounded-lg shadow-2xl z-50 max-h-64 overflow-hidden">
-                                        {/* Header */}
-                                        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 font-bold text-sm flex items-center justify-between">
-                                          <span>تواريخ الغيابات</span>
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setExpandedStudentId(null);
-                                            }}
-                                            className="hover:bg-blue-700 rounded-full w-6 h-6 flex items-center justify-center transition-colors">
-                                            ✕
-                                          </button>
-                                        </div>
-
-                                        {/* Content with scroll */}
-                                        <div className="max-h-48 overflow-y-auto p-3">
-                                          <ul className="space-y-2">
-                                            {s.absenceDates?.map(
-                                              (date, idx) => (
-                                                <li
-                                                  key={idx}
-                                                  className="flex items-center gap-2 text-sm bg-red-50 hover:bg-red-100 px-3 py-2 rounded-lg transition-colors">
-                                                  <span className="text-red-500 font-bold">
-                                                    📅
-                                                  </span>
-                                                  <span className="text-gray-700 font-medium">
-                                                    {date}
-                                                  </span>
-                                                </li>
-                                              )
-                                            )}
-                                          </ul>
-                                        </div>
-
-                                        {/* Footer */}
-                                        <div className="bg-gray-50 px-4 py-2 border-t border-gray-200 text-center">
-                                          <span className="text-xs text-gray-600">
-                                            إجمالي:{" "}
-                                            <span className="font-bold text-red-600">
-                                              {s.absenceDates?.length}
-                                            </span>{" "}
-                                            غياب
-                                          </span>
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </td>
-                              <td
-                                className="px-6 py-3 text-center"
-                                onClick={(e) => e.stopPropagation()}>
-                                <input
-                                  type="checkbox"
-                                  checked={s.isPresent}
-                                  onChange={() => toggleStudentPresence(s._id)}
-                                  className="w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500"
-                                />
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* أزرار حفظ */}
-                  <div className="p-4 bg-gray-50 flex justify-center">
-                    <button
-                      onClick={handleSave}
-                      disabled={dateTooOld}
-                      className={`px-8 py-2 rounded-lg shadow-md flex items-center transition-all ${
-                        dateTooOld
-                          ? "bg-gray-400 text-gray-200 cursor-not-allowed opacity-60"
-                          : "bg-emerald-600 text-white hover:bg-emerald-700"
-                      }`}
-                      title={
-                        dateTooOld
-                          ? "لا يمكن الحفظ - التاريخ أقدم من أسبوع"
-                          : "حفظ السجل"
-                      }>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5 ml-2"
-                        viewBox="0 0 20 20"
-                        fill="currentColor">
-                        <path
-                          fillRule="evenodd"
-                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                          clipRule="evenodd"
+                    {/* Pagination */}
+                    {visibleStudents.length > itemsPerPage && (
+                      <div className="px-6">
+                        <ResponsivePagination
+                          currentPage={currentPage}
+                          totalPages={totalPages}
+                          totalItems={visibleStudents.length}
+                          itemsPerPage={itemsPerPage}
+                          onPageChange={setCurrentPage}
+                          itemName="طالب"
+                          showQuickJump={true}
                         />
-                      </svg>
-                      {dateTooOld
-                        ? "لا يمكن الحفظ (التاريخ قديم)"
-                        : "حفظ السجل"}
-                    </button>
-                  </div>
-                </Card>
+                      </div>
+                    )}
+                  </>
+                )}
 
                 {/* تعليمات سريعة */}
-                <Card>
+                <Card className="min-h-[200px]">
                   <h3 className="font-bold text-gray-700 mb-2 flex items-center">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"

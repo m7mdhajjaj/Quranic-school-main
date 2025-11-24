@@ -1,161 +1,195 @@
 // components/StudentsTable.tsx
 import { useState } from "react";
-import { Table, type Column } from "@/components/UI/Table";
-import { Button } from "@/components/UI/Button";
-import { Badge } from "@/components/UI/Badge";
-import { Modal } from "@/components/UI/Modal";
-import { Eye, Check, X } from "lucide-react";
+import { Card } from "@/components/UI/Card";
 import type {
   AttendanceStudent,
-  MonthlyAttendanceStats,
+  StudentsTableProps,
 } from "../types/absence.types";
-
-interface StudentsTableProps {
-  students: AttendanceStudent[];
-  onTogglePresence: (studentId: string) => void;
-  monthlyStats: Record<string, MonthlyAttendanceStats>;
-  onViewHistory: (studentId: string) => void;
-}
 
 export const StudentsTable = ({
   students,
+  selectedAll,
+  onToggleAll,
   onTogglePresence,
-  monthlyStats,
-  onViewHistory,
 }: StudentsTableProps) => {
-  const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
-
-  const columns: Column<AttendanceStudent>[] = [
-    {
-      key: "name",
-      header: "اسم الطالب",
-      width: "250px",
-      render: (student) => (
-        <div className="font-medium text-gray-900">{student.name}</div>
-      ),
-    },
-    {
-      key: "group",
-      header: "الحلقة",
-      width: "150px",
-      align: "center",
-      render: (student) => (
-        <Badge variant="info" size="sm">
-          {student.group || "غير محدد"}
-        </Badge>
-      ),
-    },
-    {
-      key: "isPresent",
-      header: "الحالة",
-      width: "120px",
-      align: "center",
-      render: (student) =>
-        student.isPresent ? (
-          <Badge variant="success" size="md">
-            <Check className="w-4 h-4 inline ml-1" />
-            حاضر
-          </Badge>
-        ) : (
-          <Badge variant="danger" size="md">
-            <X className="w-4 h-4 inline ml-1" />
-            غائب
-          </Badge>
-        ),
-    },
-    {
-      key: "stats",
-      header: "إحصائيات الشهر",
-      width: "180px",
-      align: "center",
-      render: (student) => {
-        const stats = monthlyStats[student._id];
-        if (!stats) return <span className="text-gray-400 text-sm">-</span>;
-
-        const rate =
-          stats.totalDays > 0
-            ? Math.round((stats.presentDays / stats.totalDays) * 100)
-            : 0;
-
-        return (
-          <div className="flex flex-col gap-1">
-            <div className="text-xs text-gray-600">
-              {stats.presentDays} / {stats.totalDays}
-            </div>
-            <div
-              className={`text-sm font-bold ${
-                rate >= 90
-                  ? "text-emerald-600"
-                  : rate >= 70
-                  ? "text-amber-600"
-                  : "text-red-600"
-              }`}>
-              {rate}%
-            </div>
-          </div>
-        );
-      },
-    },
-  ];
+  const [expandedStudentId, setExpandedStudentId] = useState<string | null>(
+    null
+  );
 
   return (
-    <>
-      <Table<AttendanceStudent>
-        columns={columns}
-        data={students}
-        onRowClick={(student) => onTogglePresence(student._id)}
-        hoverable
-        striped
-        responsive
-        emptyMessage="لا يوجد طلاب"
-        emptyDescription="لم يتم العثور على طلاب في هذه الحلقة"
-        emptyIcon="👥"
-        renderActions={(student) => (
-          <>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={(e) => {
-                e.stopPropagation();
-                onViewHistory(student._id);
-                setSelectedStudent(student._id);
-              }}
-              leftIcon={<Eye className="w-4 h-4" />}>
-              السجل
-            </Button>
-            <Button
-              size="sm"
-              variant={student.isPresent ? "danger" : "success"}
-              onClick={(e) => {
-                e.stopPropagation();
-                onTogglePresence(student._id);
-              }}
-              leftIcon={
-                student.isPresent ? (
-                  <X className="w-4 h-4" />
-                ) : (
-                  <Check className="w-4 h-4" />
-                )
-              }>
-              {student.isPresent ? "تغيب" : "حضور"}
-            </Button>
-          </>
-        )}
-        actionsWidth="180px"
-        actionsHeader="الإجراءات"
-      />
+    <Card variant="elevated" className="overflow-hidden">
+      <div className="bg-gradient-to-r from-emerald-600 to-teal-500 py-6 px-8 flex justify-between items-center">
+        <h2 className="text-3xl font-bold text-white">قائمة الطلاب</h2>
+      </div>
 
-      {selectedStudent && (
-        <Modal
-          isOpen={!!selectedStudent}
-          onClose={() => setSelectedStudent(null)}
-          title="سجل الحضور"
-          size="lg">
-          <div className="text-center text-gray-600">
-            سيتم عرض سجل الحضور التفصيلي هنا...
-          </div>
-        </Modal>
-      )}
-    </>
+      <div className="overflow-x-auto relative">
+        <table className="w-full table-fixed">
+          <thead className="bg-gray-50 sticky top-0 z-10">
+            <tr className="min-h-[60px]">
+              <th className="py-5 px-6 text-right text-lg font-bold text-gray-700 w-[140px]">
+                رقم الطالب
+              </th>
+              <th className="py-5 px-6 text-right text-lg font-bold text-gray-700 w-[250px]">
+                اسم الطالب
+              </th>
+              <th className="py-5 px-6 text-right text-lg font-bold text-gray-700 w-[150px]">
+                الحلقة
+              </th>
+              <th className="py-5 px-6 text-center text-lg font-bold text-gray-700 w-[160px]">
+                عدد الغيابات
+              </th>
+              <th className="py-5 px-6 text-center text-lg font-bold text-gray-700 w-[180px]">
+                تواريخ الغيابات
+              </th>
+              <th className="py-5 px-8 text-center text-lg font-bold text-gray-700 w-[160px]">
+                <div className="flex items-center justify-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedAll}
+                    onChange={onToggleAll}
+                    className="w-6 h-6 text-emerald-600 rounded focus:ring-emerald-500"
+                    aria-label="تحديد الكل"
+                    title="تحديد الكل"
+                  />
+                  <span className="text-lg">الحضور</span>
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {students.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={6}
+                  className="text-center py-10 text-xl text-gray-500"
+                >
+                  لا يوجد طلاب مطابقين للفلترة/البحث
+                </td>
+              </tr>
+            ) : (
+              students.map((s) => (
+                <tr
+                  key={s._id}
+                  className="hover:bg-gray-50 cursor-pointer transition-colors min-h-[70px]"
+                  onClick={() => onTogglePresence(s._id)}
+                >
+                  <td className="px-6 py-5 text-lg text-gray-600 font-medium">
+                    {s.studentId}
+                  </td>
+                  <td className="px-6 py-5 text-lg font-bold text-gray-900">
+                    {s.name}
+                  </td>
+                  <td className="px-6 py-5 text-lg text-gray-600">
+                    {s.group ?? "-"}
+                  </td>
+                  <td className="px-6 py-5 text-center">
+                    <span
+                      className={`inline-flex items-center justify-center w-12 h-12 rounded-full text-lg font-bold ${
+                        (s.totalAbsences ?? 0) === 0
+                          ? "bg-green-100 text-green-700"
+                          : (s.totalAbsences ?? 0) <= 3
+                          ? "bg-yellow-100 text-yellow-700"
+                          : (s.totalAbsences ?? 0) <= 7
+                          ? "bg-orange-100 text-orange-700"
+                          : "bg-red-100 text-red-700"
+                      }`}
+                    >
+                      {s.totalAbsences ?? 0}
+                    </span>
+                  </td>
+                  <td
+                    className="px-6 py-5 text-center"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {(s.absenceDates ?? []).length === 0 ? (
+                      <span className="text-base text-gray-400 italic">
+                        لا يوجد غيابات
+                      </span>
+                    ) : (
+                      <div className="relative inline-block">
+                        <button
+                          onClick={() =>
+                            setExpandedStudentId(
+                              expandedStudentId === s._id ? null : s._id
+                            )
+                          }
+                          className="text-base bg-blue-50 hover:bg-blue-100 text-blue-700 px-5 py-2 rounded-full font-bold transition-colors"
+                        >
+                          {expandedStudentId === s._id
+                            ? "إخفاء"
+                            : `عرض (${s.absenceDates?.length})`}
+                        </button>
+
+                        {/* قائمة التواريخ المنسدلة */}
+                        {expandedStudentId === s._id && (
+                          <div className="absolute left-1/2 transform -translate-x-1/2 top-full mt-2 w-56 bg-white border-2 border-blue-200 rounded-lg shadow-2xl z-50 max-h-64 overflow-hidden">
+                            {/* Header */}
+                            <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 font-bold text-sm flex items-center justify-between">
+                              <span>تواريخ الغيابات</span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setExpandedStudentId(null);
+                                }}
+                                className="hover:bg-blue-700 rounded-full w-6 h-6 flex items-center justify-center transition-colors"
+                              >
+                                ✕
+                              </button>
+                            </div>
+
+                            {/* Content with scroll */}
+                            <div className="max-h-48 overflow-y-auto p-3">
+                              <ul className="space-y-2">
+                                {s.absenceDates?.map((date, idx) => (
+                                  <li
+                                    key={idx}
+                                    className="flex items-center gap-2 text-sm bg-red-50 hover:bg-red-100 px-3 py-2 rounded-lg transition-colors"
+                                  >
+                                    <span className="text-red-500 font-bold">
+                                      📅
+                                    </span>
+                                    <span className="text-gray-700 font-medium">
+                                      {date}
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+
+                            {/* Footer */}
+                            <div className="bg-gray-50 px-4 py-2 border-t border-gray-200 text-center">
+                              <span className="text-xs text-gray-600">
+                                إجمالي:{" "}
+                                <span className="font-bold text-red-600">
+                                  {s.absenceDates?.length}
+                                </span>{" "}
+                                غياب
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </td>
+                  <td
+                    className="px-8 py-5 text-center"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={s.isPresent}
+                      onChange={() => onTogglePresence(s._id)}
+                      className="w-7 h-7 text-emerald-600 rounded focus:ring-emerald-500 cursor-pointer"
+                      aria-label={`حضور ${s.name}`}
+                      title={`حضور ${s.name}`}
+                    />
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </Card>
   );
 };

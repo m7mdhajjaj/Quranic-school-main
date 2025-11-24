@@ -1,19 +1,8 @@
 // utils/dateHelpers.ts
+import { AR_MONTHS } from "@/utils/constants/arabicMonths";
 
-export const AR_MONTHS = [
-  "يناير (01)",
-  "فبراير (02)",
-  "مارس (03)",
-  "أبريل (04)",
-  "مايو (05)",
-  "يونيو (06)",
-  "يوليو (07)",
-  "أغسطس (08)",
-  "سبتمبر (09)",
-  "أكتوبر (10)",
-  "نوفمبر (11)",
-  "ديسمبر (12)",
-];
+// إعادة تصدير AR_MONTHS للاستخدام في ملفات Absence
+export { AR_MONTHS };
 
 export const todayISO = () => new Date().toISOString().split("T")[0];
 

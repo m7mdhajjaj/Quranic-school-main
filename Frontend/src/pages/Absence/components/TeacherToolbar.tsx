@@ -1,27 +1,11 @@
 // components/TeacherToolbar.tsx
-import { Card } from "@/components/UI/Card";
-import { Input } from "@/components/UI/Input";
-import { Button } from "@/components/UI/Button";
-import { Select } from "@/components/UI/Select";
-import { Alert } from "@/components/UI/Alert";
-import { CalendarDays, Users, Check, X } from "lucide-react";
-
-interface TeacherToolbarProps {
-  date: string;
-  onDateChange: (date: string) => void;
-  groupFilter: string;
-  onGroupFilterChange: (group: string) => void;
-  groupsAvailable: string[];
-  nameQuery: string;
-  onNameQueryChange: (query: string) => void;
-  selectedAll: boolean;
-  onToggleAll: () => void;
-  presentCount: number;
-  absentCount: number;
-  attendanceRate: number;
-  isDateTooOld: boolean;
-  daysAgo: number;
-}
+import { Card } from '@/components/UI/Card';
+import { Input } from '@/components/UI/Input';
+import { Select } from '@/components/UI/Select';
+import { Alert } from '@/components/UI/Alert';
+import { DatePicker } from '@/components/UI/DatePicker';
+import { Users, Check, X } from 'lucide-react';
+import type { TeacherToolbarProps } from '../types/absence.types';
 
 export const TeacherToolbar = ({
   date,
@@ -31,13 +15,13 @@ export const TeacherToolbar = ({
   groupsAvailable,
   nameQuery,
   onNameQueryChange,
-  selectedAll,
-  onToggleAll,
   presentCount,
   absentCount,
   attendanceRate,
   isDateTooOld,
   daysAgo,
+  onSave,
+  isSaving,
 }: TeacherToolbarProps) => {
   return (
     <div className="space-y-4">
@@ -78,9 +62,91 @@ export const TeacherToolbar = ({
         </Card>
       </div>
 
-      {/* Controls - استخدام Card من UI Library */}
+      {/* Filters Card - استخدام Card من UI Library */}
       <Card>
         <div className="space-y-4">
+          {/* عنوان القسم */}
+          <div className="border-b border-gray-200 pb-3">
+            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <Users className="w-6 h-6 text-emerald-600" />
+              أدوات الفلترة والبحث
+            </h3>
+            <p className="text-sm text-gray-600 mt-1">
+              اختر الحلقة وابحث عن الطلاب
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* الحلقة - استخدام Select من UI Library */}
+            <div>
+              <label className="flex items-center gap-2 text-base font-semibold text-gray-700 mb-3">
+                <Users className="h-5 w-5 text-emerald-600" />
+                الحلقة
+              </label>
+              <Select
+                value={groupFilter}
+                onChange={(e) => onGroupFilterChange(e.target.value)}
+                options={groupsAvailable.map((g) => ({
+                  value: g,
+                  label: g === 'all' ? 'جميع الحلقات' : g,
+                }))}
+              />
+            </div>
+
+            {/* بحث */}
+            <div>
+              <label className="flex items-center gap-2 text-base font-semibold text-gray-700 mb-3">
+                <svg
+                  className="h-5 w-5 text-emerald-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+                بحث بالاسم
+              </label>
+              <Input
+                type="text"
+                placeholder="ابحث عن طالب..."
+                value={nameQuery}
+                onChange={(e) => onNameQueryChange(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Date and Save Card */}
+      <Card>
+        <div className="space-y-4">
+          {/* عنوان القسم */}
+          <div className="border-b border-gray-200 pb-3">
+            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6 text-emerald-600"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              التاريخ وحفظ السجل
+            </h3>
+            <p className="text-sm text-gray-600 mt-1">
+              اختر التاريخ واحفظ بيانات الحضور
+            </p>
+          </div>
+
           {/* تحذير - استخدام Alert من UI Library */}
           {isDateTooOld && (
             <Alert variant="warning">
@@ -89,56 +155,73 @@ export const TeacherToolbar = ({
             </Alert>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
             {/* التاريخ */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <CalendarDays className="w-4 h-4 inline-block ml-1" />
-                التاريخ
-              </label>
-              <Input
-                type="date"
-                value={date}
-                onChange={(e) => onDateChange(e.target.value)}
-              />
-            </div>
+            <DatePicker
+              label="التاريخ"
+              value={date}
+              onChange={onDateChange}
+            />
 
-            {/* الحلقة - استخدام Select من UI Library */}
+            {/* زر الحفظ */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                الحلقة
-              </label>
-              <Select
-                value={groupFilter}
-                onChange={(e) => onGroupFilterChange(e.target.value)}
-                options={groupsAvailable.map((g) => ({
-                  value: g,
-                  label: g === "all" ? "الكل" : g,
-                }))}
-              />
-            </div>
-
-            {/* بحث */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                بحث بالاسم
-              </label>
-              <Input
-                type="text"
-                placeholder="ابحث..."
-                value={nameQuery}
-                onChange={(e) => onNameQueryChange(e.target.value)}
-              />
-            </div>
-
-            {/* أزرار */}
-            <div className="flex items-end">
-              <Button
-                onClick={onToggleAll}
-                variant={selectedAll ? "secondary" : "primary"}
-                className="w-full">
-                {selectedAll ? "إلغاء التحديد" : "تحديد الكل"}
-              </Button>
+              <button
+                onClick={onSave}
+                disabled={isDateTooOld || isSaving}
+                className={`w-full px-8 py-3 text-lg rounded-xl shadow-lg flex items-center justify-center gap-3 font-bold transition-all min-h-[52px] ${
+                  isDateTooOld || isSaving
+                    ? "bg-gray-400 text-gray-200 cursor-not-allowed opacity-60"
+                    : "bg-emerald-600 text-white hover:bg-emerald-700"
+                }`}
+                title={
+                  isDateTooOld
+                    ? "لا يمكن الحفظ - التاريخ أقدم من أسبوع"
+                    : isSaving
+                    ? "جاري الحفظ..."
+                    : "حفظ السجل"
+                }
+              >
+                {isSaving ? (
+                  <svg
+                    className="animate-spin h-6 w-6"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                ) : (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                )}
+                {isDateTooOld
+                  ? "لا يمكن الحفظ (التاريخ قديم)"
+                  : isSaving
+                  ? "جاري الحفظ..."
+                  : "حفظ السجل"}
+              </button>
             </div>
           </div>
         </div>

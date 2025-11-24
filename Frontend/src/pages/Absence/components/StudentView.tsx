@@ -63,6 +63,7 @@ export const StudentView = ({ monthlyStats }: StudentViewProps) => {
             <div className="flex gap-3 items-center">
               {/* اختيار من قائمة عربية */}
               <select
+                aria-label="Select month"
                 value={selectedMonthIndex}
                 onChange={(e) => {
                   const newMonth = parseInt(e.target.value, 10);
