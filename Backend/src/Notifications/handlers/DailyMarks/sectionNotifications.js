@@ -2,9 +2,9 @@
 // sectionNotifications.js - Section Notifications System
 // ============================================================================
 
-const Notification = require("../../schema/Notification");
-const Student = require("../../schema/Student");
-const { sendPushNotification } = require("../NotificationService/helpers/pushNotifications");
+const Notification = require("../../../schema/Notification");
+const Student = require("../../../schema/Student");
+const { sendPushNotification } = require("../../NotificationService/helpers/pushNotifications");
 
 /**
  * إرسال إشعار عند إضافة مقطع جديد
@@ -107,6 +107,7 @@ exports.notifySectionUpdated = async (section, oldSection, io) => {
     console.log("🔔 ========== SECTION NOTIFICATION START (UPDATE) ==========");
     console.log(`📝 Section ID: ${section._id}`);
     console.log(`👥 Group: ${section.group}`);
+    console.log(`🔌 Socket.IO instance available:`, !!io);
 
     // جلب جميع الطلاب في الحلقة
     const students = await Student.find({ group: section.group });
@@ -117,6 +118,7 @@ exports.notifySectionUpdated = async (section, oldSection, io) => {
     }
 
     console.log(`📤 Sending notifications to ${students.length} students`);
+    console.log(`📋 Students IDs:`, students.map(s => s._id.toString()).join(', '));
 
     const sectionDate = new Date(section.date).toLocaleDateString("ar-SA");
     const notifications = [];
@@ -165,9 +167,12 @@ exports.notifySectionUpdated = async (section, oldSection, io) => {
 
     // إرسال عبر Socket.IO بعد الحفظ (مع _id من قاعدة البيانات)
     if (io && savedNotifications.length > 0) {
+      console.log(`📡 Starting Socket.IO emission...`);
       students.forEach((student, index) => {
         const savedNotification = savedNotifications[index].toObject();
-        io.to(student._id.toString()).emit("newNotification", {
+        const studentRoom = student._id.toString();
+        
+        const payload = {
           _id: savedNotification._id,
           id: savedNotification._id, // للتوافق
           recipient: savedNotification.recipient,
@@ -178,13 +183,21 @@ exports.notifySectionUpdated = async (section, oldSection, io) => {
           priority: savedNotification.priority,
           isRead: savedNotification.isRead,
           createdAt: savedNotification.createdAt,
-        });
-        console.log(`📤 Socket sent to: ${student._id.toString()}`);
+        };
+        
+        console.log(`📤 Emitting to room [${studentRoom}]: "${payload.title}"`);
+        io.to(studentRoom).emit("newNotification", payload);
       });
+      console.log(`✅ Finished Socket.IO emission for ${students.length} students`);
+    } else if (!io) {
+      console.error(`❌ Socket.IO instance is NULL! Cannot send notifications!`);
+    } else if (savedNotifications.length === 0) {
+      console.warn(`⚠️ No saved notifications to send via Socket.IO`);
     }
 
     // إرسال عبر Firebase Push Notification
     if (savedNotifications.length > 0) {
+      console.log(`📱 Sending Firebase Push notifications...`);
       for (let i = 0; i < students.length; i++) {
         try {
           await sendPushNotification(students[i]._id, savedNotifications[i]);
@@ -192,6 +205,7 @@ exports.notifySectionUpdated = async (section, oldSection, io) => {
           console.error(`❌ Error sending push to student ${students[i]._id}:`, pushErr.message);
         }
       }
+      console.log(`✅ Firebase Push notifications sent`);
     }
 
     console.log("🔔 ========== SECTION NOTIFICATION END (SUCCESS) ==========\n");

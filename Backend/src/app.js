@@ -226,7 +226,8 @@ io.on('connection', (socket) => {
 
     // ✅ انضمام المستخدم لغرفة خاصة به لاستقبال الإشعارات
     socket.join(userId);
-    console.log(`🔔 User ${userId} joined their notification room`);
+    socket.join('notifications'); // انضمام للغرفة العامة أيضاً
+    console.log(`🔔 User ${userId} (${firstName}) joined notification rooms [${userId}, notifications]`);
 
     // Set isActive to true in database with better error handling
     try {
@@ -431,8 +432,9 @@ io.on('connection', (socket) => {
     if (userId) {
       socket.join(userId);
       console.log(
-        `🔔 User ${socket.id} (${role}) joined notifications room for user ID: ${userId}`
+        `🔔 [JOIN] Socket ${socket.id} (${role}) ✅ joined notification rooms: [${userId}, notifications]`
       );
+      console.log(`📊 Socket rooms for ${socket.id}:`, Array.from(socket.rooms));
     }
   });
 

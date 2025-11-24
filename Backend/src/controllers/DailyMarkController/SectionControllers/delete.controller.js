@@ -1,6 +1,9 @@
+// ============================================================================
+// Delete Section Controller
+// ============================================================================
 const Section = require("../../../schema/Section");
 const DailyMark = require("../../../schema/DailyMark");
-const { notifySectionDeleted } = require("../../../Notifications/handlers/sectionNotifications");
+const { notifySectionDeleted } = require("../../../Notifications/handlers/DailyMarks/sectionNotifications");
 
 /**
  * Delete a section
