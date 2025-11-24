@@ -25,21 +25,21 @@ router.get("/:id", protect, newsController.getNewsById);
 // POST ROUTES
 // ============================================================================
 
-// Create single news item with image upload
+// Create single news item with multiple images upload (up to 10)
 router.post("/", protect, (req, res, next) => {
   console.log('🔍 POST /api/news route hit');
   console.log('📋 Headers:', req.headers);
-  uploadNews.single("image")(req, res, (err) => {
+  uploadNews.array("images", 10)(req, res, (err) => {
     if (err) {
       console.error('❌ Multer error:', err);
       return res.status(400).json({
         success: false,
-        message: 'خطأ في رفع الصورة',
+        message: err.message || 'خطأ في رفع الصور',
         error: err.message
       });
     }
     console.log('✅ Multer processed successfully');
-    console.log('📎 File:', req.file);
+    console.log('📎 Files:', req.files?.length || 0);
     console.log('📋 Body:', req.body);
     next();
   });
@@ -55,8 +55,8 @@ router.post("/bulk", protect, newsController.createBulkNews);
 // Publish news item
 router.put("/:id/publish", protect, newsController.publishNews);
 
-// Update single news item
-router.put("/:id", protect, uploadNews.single("image"), validateNewsData, newsController.updateNews);
+// Update single news item with multiple images
+router.put("/:id", protect, uploadNews.array("images", 10), validateNewsData, newsController.updateNews);
 
 // Update multiple news items (bulk)
 router.put("/bulk", protect, newsController.updateBulkNews);

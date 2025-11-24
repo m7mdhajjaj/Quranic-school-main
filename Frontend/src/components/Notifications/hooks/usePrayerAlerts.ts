@@ -12,7 +12,7 @@ import type { PrayerData } from '../types';
 export const usePrayerAlerts = () => {
   // صوت الأذان بحجم منخفض نسبياً
   const { playSound: playAdhan, stopSound: stopAdhan } = useSound({
-    soundPath: '/sounds/Adhan.mp3',
+    soundPath: '/src/assets/sounds/Adhan.mp3',
     volume: 0.5,
   });
 

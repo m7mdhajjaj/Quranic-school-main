@@ -152,7 +152,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
   return (
     <>
       <div
-        className={`relative ${showDropdown ? 'z-50' : ''}`}
+        className="relative"
         ref={dropdownRef}
         dir="rtl"
       >
@@ -164,17 +164,19 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
 
         {/* القائمة المنسدلة */}
         {showDropdown && (
-          <div className="absolute top-full left-0 sm:left-0 mt-3 w-screen sm:w-[420px] max-w-[95vw] sm:max-w-none max-h-[85vh] sm:max-h-[600px] bg-white rounded-2xl shadow-2xl overflow-hidden z-[1000] animate-slideDown -ml-4 sm:ml-0 border border-gray-200">
+          <div className="absolute top-full left-0 sm:left-0 mt-3 w-screen sm:w-[420px] max-w-[95vw] sm:max-w-none bg-white rounded-2xl shadow-2xl z-[150] animate-slideDown -ml-4 sm:ml-0 border border-gray-200 flex flex-col max-h-[85vh] sm:max-h-[600px]">
             {/* رأس القائمة */}
-            <NotificationDropdownHeader
-              unreadCount={stats.unreadCount}
-              isMarkingAll={isMarkingAll}
-              onMarkAllAsRead={handleMarkAllAsRead}
-              onClose={() => setShowDropdown(false)}
-            />
+            <div className="flex-shrink-0 rounded-t-2xl overflow-hidden">
+              <NotificationDropdownHeader
+                unreadCount={stats.unreadCount}
+                isMarkingAll={isMarkingAll}
+                onMarkAllAsRead={handleMarkAllAsRead}
+                onClose={() => setShowDropdown(false)}
+              />
+            </div>
 
             {/* محتوى الإشعارات */}
-            <div className="max-h-[calc(85vh-120px)] sm:max-h-[450px] overflow-y-auto custom-scrollbar bg-gradient-to-b from-gray-50 to-white">
+            <div className="flex-1 overflow-y-auto custom-scrollbar bg-gradient-to-b from-gray-50 to-white rounded-b-2xl min-h-0">
               <NotificationList
                 notifications={notifications}
                 isLoading={isLoading}

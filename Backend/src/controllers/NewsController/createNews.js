@@ -15,12 +15,20 @@ const { sendNotificationToDevices } = require("../../Notifications/NotificationS
  */
 exports.createNews = async (req, res) => {
   try {
+    console.log("========================================");
     console.log("📝 Creating new news...");
-    console.log("📋 Request headers:", req.headers);
-    console.log("📋 Full request body:", JSON.stringify(req.body, null, 2));
-    console.log("📎 File:", req.file);
-    console.log("📊 Body keys:", Object.keys(req.body));
-    console.log("📊 File exists?", !!req.file);
+    console.log("========================================");
+    console.log("📋 Request body:", JSON.stringify(req.body, null, 2));
+    console.log("📎 Single File (req.file):", req.file ? "موجود" : "غير موجود");
+    console.log("📎 Multiple Files (req.files):", req.files ? `موجود (${req.files.length})` : "غير موجود");
+    
+    if (req.files && req.files.length > 0) {
+      console.log("📸 تفاصيل الصور المرسلة:");
+      req.files.forEach((file, index) => {
+        console.log(`  ${index + 1}. ${file.originalname} - ${(file.size / 1024).toFixed(2)} KB`);
+      });
+    }
+    console.log("========================================");
 
     const { title, content, description, author, category, tags } = req.body;
     
@@ -80,17 +88,41 @@ exports.createNews = async (req, res) => {
 
     let imageUrl = null;
     let imagePublicId = null;
+    let images = [];
 
-    // Get image from multer-cloudinary upload (already uploaded)
-    if (req.file) {
-      console.log("📤 Image uploaded via multer-cloudinary");
+    // Handle multiple images from multer-cloudinary upload (already uploaded)
+    if (req.files && req.files.length > 0) {
+      console.log(`📤 ${req.files.length} images uploaded via multer-cloudinary`);
+      
+      // Process all uploaded images
+      images = req.files.map((file) => {
+        console.log("  - File path:", file.path);
+        console.log("  - Filename:", file.filename);
+        
+        return {
+          url: file.path,
+          publicId: file.filename,
+        };
+      });
+      
+      // For backward compatibility, set first image as main image
+      imageUrl = images[0].url;
+      imagePublicId = images[0].publicId;
+      
+      console.log(`✅ Processed ${images.length} images`);
+    } else if (req.file) {
+      // Handle single file upload (backward compatibility)
+      console.log("📤 Single image uploaded via multer-cloudinary");
       console.log("  - File path:", req.file.path);
       console.log("  - Filename:", req.file.filename);
       
-      // Multer-cloudinary already uploaded the file
-      // req.file.path contains the Cloudinary URL
       imageUrl = req.file.path;
-      imagePublicId = req.file.filename; // This is the public_id
+      imagePublicId = req.file.filename;
+      
+      images = [{
+        url: req.file.path,
+        publicId: req.file.filename,
+      }];
       
       console.log("✅ Image URL:", imageUrl);
       console.log("✅ Image Public ID:", imagePublicId);
@@ -107,8 +139,9 @@ exports.createNews = async (req, res) => {
       title: trimmedTitle,
       content: trimmedContent,
       description: description?.trim() || null,
-      image: imageUrl,
-      imagePublicId: imagePublicId,
+      images: images, // Array of images
+      image: imageUrl, // First image for backward compatibility
+      imagePublicId: imagePublicId, // First image public ID for backward compatibility
       author: authorId,
       authorModel: authorModel,
       authorName: authorName,

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import type { ChangeEvent } from 'react';
 import { showCenteredSwal } from '@/components/utils/sweetalertUtils';
 import {
@@ -42,8 +42,7 @@ export const useNewsData = () => {
     date: getLocalDate(),
   });
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | File[] | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // Get current user for author field
@@ -163,22 +162,57 @@ export const useNewsData = () => {
     }
   };
 
-  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement> | File[]) => {
+    let filesArray: File[];
+    
+    // التحقق إذا كان Event أو Array من Files
+    if (Array.isArray(e)) {
+      // Array من Files من MultiImageUpload
+      filesArray = e;
+      console.log('📸 استلام ملفات من MultiImageUpload:', filesArray.length);
+    } else {
+      // Event عادي من input
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
+      filesArray = Array.from(files);
+      console.log('📸 استلام ملفات من input:', filesArray.length);
+    }
 
-    if (!file.type.startsWith('image/')) {
-      showErrorToast('يجب اختيار صورة فقط');
+    if (filesArray.length === 0) {
+      setSelectedFile(null);
+      setNewNews((prev) => ({
+        ...prev,
+        image: undefined,
+      }));
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      showErrorToast('حجم الصورة يجب أن يكون أقل من 5 ميجابايت');
+    // التحقق من أن جميع الملفات صور
+    const invalidFiles = filesArray.filter(file => !file.type.startsWith('image/'));
+    if (invalidFiles.length > 0) {
+      showErrorToast('يجب اختيار صور فقط');
       return;
     }
 
-    setSelectedFile(file);
-    const imageUrl = URL.createObjectURL(file);
+    // التحقق من حجم الملفات
+    const oversizedFiles = filesArray.filter(file => file.size > 5 * 1024 * 1024);
+    if (oversizedFiles.length > 0) {
+      showErrorToast('حجم كل صورة يجب أن يكون أقل من 5 ميجابايت');
+      return;
+    }
+
+    // التحقق من العدد الأقصى
+    if (filesArray.length > 10) {
+      showErrorToast('يمكنك رفع حتى 10 صور فقط');
+      return;
+    }
+
+    // حفظ الملفات
+    setSelectedFile(filesArray as any);
+    console.log('✅ تم حفظ', filesArray.length, 'صور');
+    
+    // إنشاء معاينة للصورة الأولى فقط (للتوافق مع الإصدار السابق)
+    const imageUrl = URL.createObjectURL(filesArray[0]);
     setNewNews((prev) => ({
       ...prev,
       image: imageUrl,
@@ -205,7 +239,7 @@ export const useNewsData = () => {
       content: newNews.content || '',
       date: newNews.date || new Date().toISOString().split('T')[0],
       imageUrl: newNews.image,
-      selectedFile: selectedFile,
+      selectedFile: Array.isArray(selectedFile) ? selectedFile[0] : selectedFile,
     });
 
     // Check if there are any errors
@@ -247,13 +281,25 @@ export const useNewsData = () => {
       console.log('  - Content length:', newNews.content?.length || 0);
       console.log('  - Author:', user?._id);
       console.log('  - User Name:', user?.firstName || user?.name);
-      console.log('  - Has image:', !!selectedFile);
+      console.log('  - Has images:', !!selectedFile);
 
-      // Add the image file if selected
+      // Add the image files if selected (support multiple files)
       if (selectedFile) {
-        formData.append('image', selectedFile);
-        console.log('  - Image name:', selectedFile.name);
-        console.log('  - Image size:', selectedFile.size);
+        if (Array.isArray(selectedFile)) {
+          // Multiple images
+          console.log('📤 إضافة صور متعددة إلى FormData...');
+          selectedFile.forEach((file, index) => {
+            formData.append('images', file);
+            console.log(`  ✅ صورة ${index + 1}: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
+          });
+          console.log(`📸 إجمالي الصور: ${selectedFile.length}`);
+        } else {
+          // Single image (backward compatibility)
+          formData.append('images', selectedFile);
+          console.log('📤 إضافة صورة واحدة:', selectedFile.name);
+        }
+      } else {
+        console.log('⚠️ لا توجد صور محددة!');
       }
 
       if (isEditMode && editingNewsId !== null) {
@@ -348,7 +394,9 @@ export const useNewsData = () => {
       title: news.title,
       content: news.content,
       date: formattedDate,
-      image: news.image,
+      // Use first image from images array or fallback to single image
+      image: news.images && news.images.length > 0 ? news.images[0].url : news.image,
+      images: news.images, // Keep reference to all images
     });
     setSelectedFile(null);
     setIsEditMode(true);
@@ -394,8 +442,6 @@ export const useNewsData = () => {
     error,
     newsItems,
     newNews,
-    selectedFile,
-    fileInputRef,
     fieldErrors,
     socketConnected,
     socketLastUpdate,

@@ -1,5 +1,6 @@
 import type { NewsModalProps } from "../utils/types";
-import { Input, Textarea, Button, ImageUpload, DatePicker } from "@/components/UI";
+import { Input, Textarea, Button, DatePicker } from "@/components/UI";
+import MultiImageUpload from "@/components/Forms/MultiImageUpload";
 import { MessageSquare, X, Plus, Edit } from 'lucide-react';
 
 const NewsModal = ({
@@ -7,8 +8,6 @@ const NewsModal = ({
   isEditMode,
   isLoading,
   newNews,
-  selectedFile,
-  fileInputRef,
   fieldErrors = {},
   onClose,
   onSubmit,
@@ -82,32 +81,23 @@ const NewsModal = ({
               maxYear={new Date().getFullYear() + 5}
             />
 
-            {/* Image Upload */}
-            <ImageUpload
-              label="صورة الخبر"
-              currentImage={newNews.image}
-              onImageSelect={(file) => {
-                const event = {
-                  target: { files: [file] }
-                } as unknown as React.ChangeEvent<HTMLInputElement>;
-                onFileChange(event);
+            {/* Multiple Images Upload */}
+            <MultiImageUpload
+              label="صور الخبر"
+              mode="multiple"
+              existingImages={
+                newNews.images && newNews.images.length > 0
+                  ? newNews.images.map(img => img.url)
+                  : newNews.image
+                  ? [newNews.image]
+                  : []
+              }
+              onImagesChange={(files) => {
+                console.log('📸 NewsModal: تمرير', files.length, 'صور إلى handleFileChange');
+                onFileChange(files as any);
               }}
-              onImageRemove={() => {
-                // إزالة الصورة المختارة الجديدة والعودة للصورة الأصلية أو إزالة كليا
-                const event = {
-                  target: { name: 'image', value: '' }
-                } as React.ChangeEvent<HTMLInputElement>;
-                onInputChange(event);
-                
-                // إعادة تعيين file input
-                if (fileInputRef?.current) {
-                  fileInputRef.current.value = '';
-                }
-              }}
-              disabled={isLoading}
+              maxImages={10}
               error={fieldErrors.image}
-              showNewBadge={!!selectedFile}
-              fileInputRef={fileInputRef as React.RefObject<HTMLInputElement>}
             />
 
             {/* Content Field */}
@@ -124,28 +114,31 @@ const NewsModal = ({
             />
 
             {/* Footer Actions */}
-            <div className="flex gap-3 pt-6 border-t mt-6">
+            <div className="flex justify-between items-center gap-3 pt-6 border-t mt-6">
+              {/* زر الإلغاء - أقصى اليسار */}
               <Button
                 type="button"
                 onClick={onClose}
                 disabled={isLoading}
                 variant="danger"
                 size="md"
-                className="px-6 py-2 min-w-[120px] bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="px-6 py-2 min-w-[120px] bg-red-600 hover:bg-red-700 text-white shadow-md hover:shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed transition-all"
                 leftIcon={<X size={20} />}
               >
                 إلغاء
               </Button>
+              
+              {/* زر الإضافة/التحديث - أقصى اليمين */}
               <Button
                 type="submit"
                 disabled={isLoading}
                 loading={isLoading}
                 variant="primary"
                 size="md"
-                className={`px-6 py-2 min-w-[160px] shadow-lg hover:shadow-xl ${
+                className={`px-6 py-2 min-w-[160px] shadow-lg hover:shadow-xl transition-all ${
                   isEditMode 
                     ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700' 
-                    : ''
+                    : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700'
                 }`}
                 leftIcon={isEditMode ? <Edit size={20} /> : <Plus size={20} />}
               >

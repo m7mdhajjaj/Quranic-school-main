@@ -59,20 +59,20 @@ const playSoundWithDuration = (soundPath: string, volume: number = 0.6): Promise
 
 export const soundPlayer = {
   // عمليات CRUD
-  playAdd: () => playSound('/sounds/successful.mp3', 0.6),
-  playUpdate: () => playSound('/sounds/successful.mp3', 0.6),
-  playDelete: () => playSound('/sounds/successful.mp3', 0.5),
+  playAdd: () => playSound('/src/assets/sounds/successful.mp3', 0.6),
+  playUpdate: () => playSound('/src/assets/sounds/successful.mp3', 0.6),
+  playDelete: () => playSound('/src/assets/sounds/successful.mp3', 0.5),
   
   // حالات النجاح والخطأ
-  playError: () => playSound('/sounds/error.wav', 0.6),
-  playSuccess: () => playSoundWithDuration('/sounds/successful.mp3', 0.7),
+  playError: () => playSound('/src/assets/sounds/error.wav', 0.6),
+  playSuccess: () => playSoundWithDuration('/src/assets/sounds/successful.mp3', 0.7),
   
   // إشعارات
-  playNotification: () => playSound('/sounds/notification.mp3', 0.7),
+  playNotification: () => playSound('/src/assets/sounds/notification.mp3', 0.7),
   
   // تسجيل الدخول/الخروج
-  playLogin: () => playSound('/sounds/Login.mp3', 0.6),
-  playLogout: () => playSoundWithDuration('/sounds/Login.mp3', 0.5),
+  playLogin: () => playSound('/src/assets/sounds/Login.mp3', 0.6),
+  playLogout: () => playSoundWithDuration('/src/assets/sounds/Login.mp3', 0.5),
 };
 
 // ============================================================================
@@ -91,7 +91,7 @@ interface UseSoundOptions {
  * @returns { playSound, stopSound, setVolume }
  */
 export const useSound = ({
-  soundPath = '/sounds/notification.mp3',
+  soundPath = '/src/assets/sounds/notification.mp3',
   volume = 0.6,
   preload = true,
 }: UseSoundOptions = {}) => {

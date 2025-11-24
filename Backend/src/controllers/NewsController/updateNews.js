@@ -14,7 +14,20 @@ const { sendNotificationToDevices } = require("../../Notifications/NotificationS
  */
 exports.updateNews = async (req, res) => {
   try {
+    console.log("========================================");
     console.log("✏️ Updating news:", req.params.id);
+    console.log("========================================");
+    console.log("📋 Request body:", JSON.stringify(req.body, null, 2));
+    console.log("📎 Single File (req.file):", req.file ? "موجود" : "غير موجود");
+    console.log("📎 Multiple Files (req.files):", req.files ? `موجود (${req.files.length})` : "غير موجود");
+    
+    if (req.files && req.files.length > 0) {
+      console.log("📸 تفاصيل الصور المرسلة:");
+      req.files.forEach((file, index) => {
+        console.log(`  ${index + 1}. ${file.originalname} - ${(file.size / 1024).toFixed(2)} KB`);
+      });
+    }
+    console.log("========================================");
 
     const { title, content, description, author, category, tags } = req.body;
 
@@ -67,13 +80,25 @@ exports.updateNews = async (req, res) => {
     if (category) news.category = category;
     if (tags) news.tags = tags.split(",").map((t) => t.trim());
 
-    // Handle image update
-    if (req.file) {
+    // Handle images update
+    if (req.files && req.files.length > 0) {
       try {
-        console.log("📤 Updating image...");
+        console.log(`📤 Updating with ${req.files.length} new images...`);
 
-        // Delete old image if exists
-        if (news.imagePublicId) {
+        // Delete old images from news folder in Cloudinary
+        if (news.images && news.images.length > 0) {
+          console.log(`🗑️ Deleting ${news.images.length} old images...`);
+          
+          for (const img of news.images) {
+            try {
+              await cloudinary.uploader.destroy(img.publicId);
+              console.log(`✅ Deleted old image: ${img.publicId}`);
+            } catch (deleteError) {
+              console.warn("⚠️ Could not delete old image:", deleteError);
+            }
+          }
+        } else if (news.imagePublicId) {
+          // Backward compatibility: delete single old image
           try {
             await cloudinary.uploader.destroy(news.imagePublicId);
             console.log("✅ Old image deleted");
@@ -82,17 +107,64 @@ exports.updateNews = async (req, res) => {
           }
         }
 
-        // Get new image from multer-cloudinary upload (already uploaded)
-        console.log("📤 Image uploaded via multer-cloudinary");
-        console.log("  - File path:", req.file.path);
-        console.log("  - Filename:", req.file.filename);
+        // Process all new uploaded images
+        const newImages = req.files.map((file) => {
+          console.log("  - File path:", file.path);
+          console.log("  - Filename:", file.filename);
+          
+          return {
+            url: file.path,
+            publicId: file.filename,
+          };
+        });
+
+        // Update images array
+        news.images = newImages;
         
-        // Multer-cloudinary already uploaded the file
+        // Update backward compatibility fields
+        news.image = newImages[0].url;
+        news.imagePublicId = newImages[0].publicId;
+        
+        console.log(`✅ Updated with ${newImages.length} new images`);
+      } catch (uploadError) {
+        console.error("❌ Images update failed:", uploadError);
+        return res.status(400).json({
+          success: false,
+          message: "فشل تحديث الصور",
+          error: uploadError.message,
+        });
+      }
+    } else if (req.file) {
+      // Handle single file upload (backward compatibility)
+      try {
+        console.log("📤 Updating with single image...");
+
+        // Delete old images
+        if (news.images && news.images.length > 0) {
+          for (const img of news.images) {
+            try {
+              await cloudinary.uploader.destroy(img.publicId);
+            } catch (deleteError) {
+              console.warn("⚠️ Could not delete old image:", deleteError);
+            }
+          }
+        } else if (news.imagePublicId) {
+          try {
+            await cloudinary.uploader.destroy(news.imagePublicId);
+          } catch (deleteError) {
+            console.warn("⚠️ Could not delete old image:", deleteError);
+          }
+        }
+
+        // Update with single image
         news.image = req.file.path;
         news.imagePublicId = req.file.filename;
+        news.images = [{
+          url: req.file.path,
+          publicId: req.file.filename,
+        }];
         
-        console.log("✅ New image URL:", news.image);
-        console.log("✅ New image Public ID:", news.imagePublicId);
+        console.log("✅ Updated with single image");
       } catch (uploadError) {
         console.error("❌ Image update failed:", uploadError);
         return res.status(400).json({

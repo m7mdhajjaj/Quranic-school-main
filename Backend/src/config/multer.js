@@ -44,23 +44,38 @@ const activityStorage = new CloudinaryStorage({
   },
 });
 
-// Configure Cloudinary storage for news with user-specific folders
+// Configure Cloudinary storage for news with organized folder structure
+// Structure: news/{teacherId}/{newsId}/image_1.jpg
 const newsStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: async (req, file) => {
-    // الحصول على معلومات المستخدم
+    // الحصول على معلومات المستخدم (المعلم أو الأدمن)
     const userId = req.user?._id || req.body.author || 'unknown';
     const userName = req.user?.firstName 
       ? `${req.user.firstName}_${req.user.lastName || ''}`.replace(/\s+/g, '_')
       : req.user?.name?.replace(/\s+/g, '_') || 'unknown_user';
     
-    // إنشاء اسم فريد للصورة
-    const uniqueId = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    // الحصول على معرف الخبر أو إنشاء واحد مؤقت
+    let newsId;
+    if (req.params.id) {
+      // عند التعديل: استخدم ID الخبر الموجود
+      newsId = req.params.id;
+    } else {
+      // عند الإضافة: إنشاء معرف مؤقت واحد لكل طلب
+      if (!req.tempNewsId) {
+        req.tempNewsId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      }
+      newsId = req.tempNewsId;
+    }
+    
+    // إنشاء اسم فريد لكل صورة
+    const imageTimestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(2, 8);
     
     return {
-      folder: `quranic-school/news/${userName}_${userId}`,
+      folder: `quranic-school/news/${userName}_${userId}/${newsId}`,
       allowed_formats: ["jpg", "jpeg", "png", "gif", "webp"],
-      public_id: `news_${uniqueId}`,
+      public_id: `image_${imageTimestamp}_${randomString}`,
       transformation: [
         {
           width: 1200,
@@ -93,7 +108,8 @@ const uploadActivity = multer({
 const uploadNews = multer({
   storage: newsStorage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB max
+    fileSize: 5 * 1024 * 1024, // 5MB max per file
+    files: 10, // Maximum 10 files
   },
   fileFilter: (req, file, cb) => {
     // Check file type

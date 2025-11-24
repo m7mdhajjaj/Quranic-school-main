@@ -27,8 +27,6 @@ const News = () => {
     error,
     newsItems,
     newNews,
-    selectedFile,
-    fileInputRef,
     fieldErrors,
     handleOpenModal,
     handleCloseModal,
@@ -164,8 +162,6 @@ const News = () => {
         isEditMode={isEditMode}
         isLoading={isLoading}
         newNews={newNews}
-        selectedFile={selectedFile}
-        fileInputRef={fileInputRef}
         fieldErrors={fieldErrors}
         onClose={handleCloseModal}
         onSubmit={handleAddNews}

@@ -99,10 +99,10 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 shadow-2xl backdrop-blur-sm contain-layout ${className}`}
+        className={`fixed top-0 left-0 right-0 z-[100] bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 shadow-2xl backdrop-blur-sm ${className}`}
         dir="rtl"
       >
-        <div className="max-w-[2000px] mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+        <div className="max-w-[2000px] mx-auto px-3 sm:px-4 md:px-6 lg:px-8 overflow-visible">
           {/* الصف الأول - الرئيسي */}
           <div className="flex items-center justify-between h-14 sm:h-16 md:h-18 lg:h-20 gap-2 sm:gap-3 md:gap-4">
             {/* اللوجو */}
@@ -134,9 +134,9 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
             <PrimaryNavigation items={primaryNavItems} />
 
             {/* الأدوات اليمنى */}
-            <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-shrink-0 overflow-visible">
               {/* الإشعارات */}
-              <div className="relative">
+              <div className="relative overflow-visible">
                 <NotificationHeader userId={currentUser._id} />
               </div>
 

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { NewsCardProps } from '../utils/types';
 import AddedAgo from '@/components/UI/AddedAgo';
 import { Button, Card } from '@/components/UI';
-import { ArrowLeft, Edit, Trash2 } from 'lucide-react';
+import { ArrowLeft, Edit, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import ImageSkeleton from '@/components/skeletons/ImageSkeleton';
 
 const NewsCard = ({
@@ -16,7 +16,27 @@ const NewsCard = ({
 }: NewsCardProps) => {
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const displayDate = news.createdAt || news.date;
+
+  // استخراج الصور - دعم الصور المتعددة أو الصورة الواحدة
+  const images = news.images && news.images.length > 0
+    ? news.images.map(img => img.url).filter(url => url && url.trim() !== '')
+    : news.image && news.image.trim() !== ''
+    ? [news.image]
+    : [];
+
+  const hasMultipleImages = images.length > 1;
+  
+  // Log للتحقق من الصور
+  if (index === 0) {
+    console.log('📸 NewsCard:', news.title);
+    console.log('  - عدد الصور:', images.length);
+    console.log('  - hasMultipleImages:', hasMultipleImages);
+    if (images.length > 0) {
+      console.log('  - أول صورة:', images[0]);
+    }
+  }
 
   // استخراج author ID بشكل صحيح (قد يكون string أو object)
   const newsAuthorId = typeof news.author === 'string' 
@@ -44,9 +64,10 @@ const NewsCard = ({
           </div>
         )}
         
+        {/* Main Image */}
         <img
-            src={news.image}
-            alt={news.title}
+            src={images[currentImageIndex] || 'https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+الخبر'}
+            alt={`${news.title} - صورة ${currentImageIndex + 1}`}
             loading={index < 2 ? 'eager' : 'lazy'}
             decoding="async"
             fetchPriority={index === 0 ? 'high' : 'auto'}
@@ -59,17 +80,18 @@ const NewsCard = ({
             }}
             onError={(e) => {
               const imgElement = e.target as HTMLImageElement;
-              const originalSrc = news.image;
+              const originalSrc = images[currentImageIndex];
+              console.warn('⚠️ فشل تحميل الصورة:', originalSrc);
               setImageLoading(false);
               setImageError(true);
 
-              if (originalSrc.includes('placehold.co')) return;
-              if (originalSrc.includes('uploads/news/')) {
+              // إذا كان placeholder، لا تفعل شيء
+              if (originalSrc?.includes('placehold.co')) return;
+              
+              // محاولة إصلاح المسار للصور المحلية
+              if (originalSrc?.includes('uploads/news/')) {
                 if (originalSrc.includes('/api/uploads/')) {
-                  imgElement.src = originalSrc.replace(
-                    '/api/uploads/',
-                    '/uploads/'
-                  );
+                  imgElement.src = originalSrc.replace('/api/uploads/', '/uploads/');
                   setImageError(false);
                   return;
                 }
@@ -79,11 +101,74 @@ const NewsCard = ({
                   return;
                 }
               }
-              imgElement.src =
-                'https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+الخبر';
+              
+              // استخدام صورة بديلة
+              imgElement.src = 'https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+غير+متوفرة';
               setImageError(false);
             }}
           />
+          
+          {/* Navigation Arrows for Multiple Images */}
+          {hasMultipleImages && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrentImageIndex((prev) => 
+                    prev === 0 ? images.length - 1 : prev - 1
+                  );
+                  setImageLoading(true);
+                }}
+                className="absolute left-3 top-1/2 -translate-y-1/2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full p-2.5 transition-all z-30 backdrop-blur-sm shadow-xl hover:scale-110 opacity-90 hover:opacity-100"
+                aria-label="الصورة السابقة"
+              >
+                <ChevronLeft size={24} strokeWidth={3} />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrentImageIndex((prev) => 
+                    prev === images.length - 1 ? 0 : prev + 1
+                  );
+                  setImageLoading(true);
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full p-2.5 transition-all z-30 backdrop-blur-sm shadow-xl hover:scale-110 opacity-90 hover:opacity-100"
+                aria-label="الصورة التالية"
+              >
+                <ChevronRight size={24} strokeWidth={3} />
+              </button>
+              
+              {/* Image Counter and Badge */}
+              <div className="absolute top-3 left-3 flex flex-col gap-2 z-30">
+                <div className="bg-emerald-600 text-white text-sm font-bold px-3 py-1.5 rounded-full backdrop-blur-sm shadow-lg flex items-center gap-1.5">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                  </svg>
+                  {currentImageIndex + 1} / {images.length}
+                </div>
+              </div>
+              
+              {/* Image Indicators */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-30">
+                {images.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImageIndex(idx);
+                      setImageLoading(true);
+                    }}
+                    className={`h-2.5 rounded-full transition-all shadow-md ${
+                      idx === currentImageIndex
+                        ? 'bg-emerald-500 w-8'
+                        : 'bg-white/70 hover:bg-white w-2.5'
+                    }`}
+                    aria-label={`الذهاب للصورة ${idx + 1}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 pointer-events-none"></div>
           {/* Author top right, Date top left */}
           {news.authorName && (

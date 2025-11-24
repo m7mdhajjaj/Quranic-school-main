@@ -19,6 +19,19 @@ const newsSchema = new mongoose.Schema(
       default: null,
       maxlength: [500, "الوصف لا يجب أن يتجاوز 500 حرف"],
     },
+    images: [
+      {
+        url: {
+          type: String,
+          required: true,
+        },
+        publicId: {
+          type: String,
+          required: true,
+        },
+      },
+    ],
+    // Keep old fields for backward compatibility
     image: {
       type: String,
       default: null,

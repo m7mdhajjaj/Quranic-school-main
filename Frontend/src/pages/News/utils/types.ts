@@ -25,13 +25,11 @@ export interface NewsModalProps {
   isEditMode: boolean;
   isLoading: boolean;
   newNews: Partial<INews>;
-  selectedFile: File | null;
-  fileInputRef: React.RefObject<HTMLInputElement | null>;
   fieldErrors?: Record<string, string>;
   onClose: () => void;
   onSubmit: (e: React.FormEvent) => Promise<void>;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-  onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onFileChange: (e: React.ChangeEvent<HTMLInputElement> | File[]) => void;
 }
 
 export interface NewsEmptyStateProps {

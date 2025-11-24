@@ -27,11 +27,11 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
 
   return (
     <div
-      className={`group relative mx-2 my-2 rounded-xl transition-all duration-300 cursor-pointer overflow-hidden ${
+      className={`group relative mx-3 my-2 rounded-xl transition-all duration-300 cursor-pointer overflow-hidden ${
         !notification.isRead
-          ? 'bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50 border-2 border-blue-200 shadow-md hover:shadow-xl opacity-100'
-          : 'bg-white border border-gray-200 hover:border-gray-300 hover:shadow-lg opacity-40 hover:opacity-70'
-      } ${notification.isNew ? 'animate-[slideIn_0.5s_ease-out]' : ''} transform hover:scale-[1.02] active:scale-[0.98]`}
+          ? 'bg-gradient-to-br from-blue-50 via-cyan-50 to-teal-50 border-2 border-blue-200 shadow-md hover:shadow-xl'
+          : 'bg-white border border-gray-200 hover:border-gray-300 hover:shadow-lg opacity-70 hover:opacity-90'
+      } ${notification.isNew ? 'animate-[slideIn_0.5s_ease-out]' : ''} transform hover:scale-[1.01] active:scale-[0.99]`}
       onClick={handleClick}>
       {/* شريط جانبي ملون */}
       <div className={`absolute right-0 top-0 bottom-0 w-1.5 bg-gradient-to-b ${colorClass}`}></div>

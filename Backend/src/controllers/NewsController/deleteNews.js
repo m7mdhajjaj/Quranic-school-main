@@ -34,8 +34,45 @@ exports.deleteNews = async (req, res) => {
       });
     }
 
-    // Delete image from Cloudinary if exists
-    if (news.image && news.imagePublicId) {
+    // Delete all images from Cloudinary
+    if (news.images && news.images.length > 0) {
+      try {
+        console.log(`🗑️ Deleting ${news.images.length} images from Cloudinary...`);
+        
+        // Delete all images in the array
+        for (const img of news.images) {
+          try {
+            await cloudinary.uploader.destroy(img.publicId);
+            console.log(`✅ Deleted image: ${img.publicId}`);
+          } catch (deleteError) {
+            console.warn(`⚠️ Could not delete image ${img.publicId}:`, deleteError);
+          }
+        }
+        
+        // Try to delete the entire news folder
+        // Extract folder path from first image public ID
+        // Format: quranic-school/news/{teacherName}_{teacherId}/{newsId}/image_xxx
+        if (news.images[0]?.publicId) {
+          const publicId = news.images[0].publicId;
+          const folderPath = publicId.substring(0, publicId.lastIndexOf('/'));
+          
+          try {
+            // Delete folder and all its contents
+            await cloudinary.api.delete_resources_by_prefix(folderPath);
+            await cloudinary.api.delete_folder(folderPath);
+            console.log(`✅ Deleted news folder: ${folderPath}`);
+          } catch (folderError) {
+            console.warn("⚠️ Could not delete news folder:", folderError);
+          }
+        }
+        
+        console.log("✅ All images deleted successfully from Cloudinary");
+      } catch (deleteError) {
+        console.warn("⚠️ Could not delete images:", deleteError);
+        // Continue with news deletion even if image deletion fails
+      }
+    } else if (news.image && news.imagePublicId) {
+      // Backward compatibility: delete single image
       try {
         console.log("🗑️ Deleting image from Cloudinary...");
         console.log("  - Public ID:", news.imagePublicId);
@@ -105,7 +142,32 @@ exports.deleteBulkNews = async (req, res) => {
     // Delete images from Cloudinary
     let deletedImages = 0;
     for (let news of newsItems) {
-      if (news.image && news.imagePublicId) {
+      if (news.images && news.images.length > 0) {
+        // Delete all images in the array
+        for (const img of news.images) {
+          try {
+            await cloudinary.uploader.destroy(img.publicId);
+            deletedImages++;
+          } catch (deleteError) {
+            console.warn("⚠️ Could not delete image:", deleteError);
+          }
+        }
+        
+        // Try to delete the entire news folder
+        if (news.images[0]?.publicId) {
+          const publicId = news.images[0].publicId;
+          const folderPath = publicId.substring(0, publicId.lastIndexOf('/'));
+          
+          try {
+            await cloudinary.api.delete_resources_by_prefix(folderPath);
+            await cloudinary.api.delete_folder(folderPath);
+            console.log(`✅ Deleted news folder: ${folderPath}`);
+          } catch (folderError) {
+            console.warn("⚠️ Could not delete news folder:", folderError);
+          }
+        }
+      } else if (news.image && news.imagePublicId) {
+        // Backward compatibility
         try {
           await cloudinary.uploader.destroy(news.imagePublicId);
           deletedImages++;
@@ -210,7 +272,28 @@ exports.clearArchivedNews = async (req, res) => {
 
     // Delete images
     for (let news of archivedNews) {
-      if (news.image && news.imagePublicId) {
+      if (news.images && news.images.length > 0) {
+        for (const img of news.images) {
+          try {
+            await cloudinary.uploader.destroy(img.publicId);
+          } catch (deleteError) {
+            console.warn("⚠️ Could not delete image:", deleteError);
+          }
+        }
+        
+        // Try to delete the entire news folder
+        if (news.images[0]?.publicId) {
+          const publicId = news.images[0].publicId;
+          const folderPath = publicId.substring(0, publicId.lastIndexOf('/'));
+          
+          try {
+            await cloudinary.api.delete_resources_by_prefix(folderPath);
+            await cloudinary.api.delete_folder(folderPath);
+          } catch (folderError) {
+            console.warn("⚠️ Could not delete news folder:", folderError);
+          }
+        }
+      } else if (news.image && news.imagePublicId) {
         try {
           await cloudinary.uploader.destroy(news.imagePublicId);
         } catch (deleteError) {

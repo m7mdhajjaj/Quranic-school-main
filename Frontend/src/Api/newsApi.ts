@@ -10,6 +10,12 @@ export interface INews {
   title: string;
   content: string;
   date: string;
+  // Support for multiple images
+  images?: Array<{
+    url: string;
+    publicId: string;
+  }>;
+  // Backward compatibility - single image
   image: string;
   imagePublicId?: string;
   isPublished?: boolean;
