@@ -105,22 +105,6 @@ export const SectionsTable = ({
       },
     },
     {
-      key: "memorizationSection",
-      header: "📖 مقطع الحفظ",
-      render: (row) => (
-        <div className="flex items-center gap-2">
-          <div className="bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg font-medium text-sm">
-            {row.memorizationSection}
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "memorizationMark",
-      header: "⭐ علامة الحفظ",
-      render: (row) => renderMarkCell(row.mark, "memorization"),
-    },
-    {
       key: "reviewSection",
       header: "🔄 مقطع المراجعة",
       render: (row) => (
@@ -136,12 +120,28 @@ export const SectionsTable = ({
       header: "✨ علامة المراجعة",
       render: (row) => renderMarkCell(row.mark, "review"),
     },
+    {
+      key: "memorizationSection",
+      header: "📖 مقطع الحفظ",
+      render: (row) => (
+        <div className="flex items-center gap-2">
+          <div className="bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg font-medium text-sm">
+            {row.memorizationSection}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "memorizationMark",
+      header: "⭐ علامة الحفظ",
+      render: (row) => renderMarkCell(row.mark, "memorization"),
+    },
   ];
 
   // Render action buttons for teachers with enhanced styling
   const renderActions = isTeacher
     ? (row: SectionWithMark) => (
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center justify-center gap-2">
           {row.mark ? (
             <Button
               onClick={() => onUpdateMark && onUpdateMark(row.mark!, row)}
@@ -150,7 +150,7 @@ export const SectionsTable = ({
               gradient={true}
               className="shadow-sm hover:shadow-md transition-all duration-200"
               title="تحديث العلامة">
-              🔄 تحديث
+              🔄
             </Button>
           ) : (
             <Button
@@ -160,7 +160,7 @@ export const SectionsTable = ({
               gradient={true}
               className="shadow-sm hover:shadow-md transition-all duration-200 animate-pulse"
               title="إضافة علامة">
-              ➕ إضافة
+              ➕
             </Button>
           )}
           <Button
@@ -170,7 +170,7 @@ export const SectionsTable = ({
             gradient={true}
             className="shadow-sm hover:shadow-md transition-all duration-200"
             title="تعديل المقطع">
-            ✏️ تعديل
+            ✏️
           </Button>
           <Button
             onClick={() => onDeleteSection && onDeleteSection(row._id)}
@@ -179,7 +179,7 @@ export const SectionsTable = ({
             gradient={true}
             className="shadow-sm hover:shadow-md transition-all duration-200"
             title="حذف المقطع">
-            🗑️ حذف
+            🗑️
           </Button>
         </div>
       )
@@ -200,7 +200,7 @@ export const SectionsTable = ({
         stickyHeader={false}
         renderActions={renderActions}
         actionsHeader="⚙️ الإجراءات"
-        actionsWidth="220px"
+        actionsWidth="160px"
         loadingRows={3}
         className="shadow-none border-none"
       />

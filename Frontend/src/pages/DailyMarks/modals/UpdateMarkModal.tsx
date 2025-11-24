@@ -1,5 +1,5 @@
-import { Modal, Card,Button,RangeSlider} from "@/components/UI";
-import type { UpdateMarkModalProps } from "../types/dailyMarks";
+import { Modal, Card, Button, RangeSlider } from '@/components/UI';
+import type { UpdateMarkModalProps } from '../types/dailyMarks';
 
 /**
  * Modal for updating an existing mark
@@ -14,17 +14,18 @@ export const UpdateMarkModal = ({
   onSubmit,
   onChange,
 }: UpdateMarkModalProps) => {
-  if (!isOpen || !selectedSection || !selectedStudent || !editingMark) return null;
+  if (!isOpen || !selectedSection || !selectedStudent || !editingMark)
+    return null;
 
   const handleReviewMarkChange = (value: number) => {
     onChange({
-      target: { name: "reviewMark", value: value.toString() },
+      target: { name: 'reviewMark', value: value.toString() },
     } as React.ChangeEvent<HTMLInputElement>);
   };
 
   const handleMemorizationMarkChange = (value: number) => {
     onChange({
-      target: { name: "memorizationMark", value: value.toString() },
+      target: { name: 'memorizationMark', value: value.toString() },
     } as React.ChangeEvent<HTMLInputElement>);
   };
 
@@ -38,19 +39,19 @@ export const UpdateMarkModal = ({
         <Card className="bg-gray-50 mb-6">
           <h4 className="font-bold text-gray-700 mb-2">معلومات المقطع:</h4>
           <p className="text-sm text-gray-600 mb-1">
-            <span className="font-semibold">التاريخ:</span>{" "}
-            {new Date(selectedSection.date).toLocaleDateString("en-GB", {
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit",
+            <span className="font-semibold">التاريخ:</span>{' '}
+            {new Date(selectedSection.date).toLocaleDateString('en-GB', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
             })}
           </p>
           <p className="text-sm text-gray-600 mb-1">
-            <span className="font-semibold">مقطع المراجعة:</span>{" "}
+            <span className="font-semibold">مقطع المراجعة:</span>{' '}
             {selectedSection.reviewSection}
           </p>
           <p className="text-sm text-gray-600">
-            <span className="font-semibold">مقطع الحفظ:</span>{" "}
+            <span className="font-semibold">مقطع الحفظ:</span>{' '}
             {selectedSection.memorizationSection}
           </p>
         </Card>

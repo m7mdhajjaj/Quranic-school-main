@@ -1,6 +1,6 @@
-import { Button,Modal, Card }from "@/components/UI";
-import { Trash2, AlertTriangle } from "lucide-react";
-import type { BulkDeleteModalProps } from "../types/dailyMarks";
+import { Button, Modal, Card } from '@/components/UI';
+import { AlertTriangle } from 'lucide-react';
+import type { BulkDeleteModalProps } from '../types/dailyMarks';
 
 /**
  * Modal for bulk deleting multiple sections
@@ -17,17 +17,6 @@ export const BulkDeleteModal = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="حذف المقاطع لجميع الطلاب">
-      <div className="bg-gradient-to-r from-red-500 to-rose-600 p-6 -mt-6 -mx-6 mb-6">
-        <div className="flex items-center gap-3">
-          <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
-            <Trash2 className="h-6 w-6 text-white" />
-          </div>
-          <h3 className="text-xl font-bold text-white">
-            حذف المقاطع لجميع الطلاب
-          </h3>
-        </div>
-      </div>
-
       <div>
         <div className="mb-6">
           <h4 className="text-md font-bold text-gray-700 mb-4">
@@ -46,9 +35,8 @@ export const BulkDeleteModal = ({
                   className="ml-3 w-4 h-4 accent-red-600"
                 />
                 <span className="text-sm text-gray-700">
-                  {new Date(section.date).toLocaleDateString("en-GB")} -
-                  مراجعة: {section.reviewSection} - حفظ:{" "}
-                  {section.memorizationSection}
+                  {new Date(section.date).toLocaleDateString('en-GB')} - مراجعة:{' '}
+                  {section.reviewSection} - حفظ: {section.memorizationSection}
                 </span>
               </label>
             ))}

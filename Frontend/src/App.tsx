@@ -37,6 +37,7 @@ const Home = lazy(() => import("./pages/Home"));
 const News = lazy(() => import("./pages/News"));
 
 import Login from "./pages/Auth/Login/index";
+import Goals from "./pages/Goals/Goals";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import Privacy from "./pages/Privacy/Privacy";
@@ -46,8 +47,7 @@ import Contact from "./pages/Contact/components/Contact";
 // ============================================================================
 // Page Components - Academic
 // ============================================================================
-import Goals from "./pages/Goals/Goals";
-import DailyMarks from "./pages/DailyMarks/DailyMarksPage";
+const DailyMarks = lazy(() => import("./pages/DailyMarks/DailyMarksPage"));
 import Arrangement from "./pages/Arrangement";
 import Test from "./pages/Test/TestPage";
 import ExamSchedule from "./pages/ExamSchedule";
@@ -159,7 +159,18 @@ const TeacherRoutes: React.FC = () => {
 
         {/* ====== Academic Pages - Teacher Access ====== */}
         <Route path="/goals" element={<Goals />} />
-        <Route path="/daily-marks" element={<DailyMarks />} />
+        <Route path="/daily-marks" element={
+          <React.Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
+                <p className="mt-4 text-gray-600 font-medium">جاري تحميل العلامات اليومية...</p>
+              </div>
+            </div>
+          }>
+            <DailyMarks />
+          </React.Suspense>
+        } />
         <Route path="/arrangement" element={<Arrangement />} />
         <Route path="/test" element={<Test />} />
         <Route path="/exam-schedule" element={<ExamSchedule />} />
@@ -234,7 +245,18 @@ const StudentRoutes: React.FC = () => {
 
         {/* ====== Academic Pages - Student View Only ====== */}
         <Route path="/goals" element={<Goals />} />
-        <Route path="/daily-marks" element={<DailyMarks />} />
+        <Route path="/daily-marks" element={
+          <React.Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
+                <p className="mt-4 text-gray-600 font-medium">جاري تحميل العلامات اليومية...</p>
+              </div>
+            </div>
+          }>
+            <DailyMarks />
+          </React.Suspense>
+        } />
         <Route path="/arrangement" element={<Arrangement />} />
         <Route path="/exam-schedule" element={<ExamSchedule />} />
         <Route path="/reports" element={<Reports />} />

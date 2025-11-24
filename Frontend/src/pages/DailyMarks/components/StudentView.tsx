@@ -1,6 +1,6 @@
-import type { StudentViewProps } from "./types/dailyMarks";
-import { SectionsTable } from "./components/SectionsTable";
-import { AveragesBar } from "./components/AveragesBar";
+import type { StudentViewProps } from "../types/dailyMarks";
+import { SectionsTable } from "./SectionsTable";
+import { AveragesBar } from "./AveragesBar";
 import { Card } from "@/components/UI";
 
 /**

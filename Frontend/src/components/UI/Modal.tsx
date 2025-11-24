@@ -65,11 +65,11 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div
-      className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 ${overlayClassName || ''}`}
+      className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 ${overlayClassName || ''}`}
       onClick={closeOnOverlayClick ? onClose : undefined}
     >
       <div
-        className={`bg-white rounded-2xl shadow-2xl ${sizeClasses[size]} w-full max-h-[90vh] overflow-y-auto animate-fadeIn scrollbar-hide`}
+        className={`bg-white rounded-2xl shadow-2xl ${sizeClasses[size]} w-full max-h-[90vh] overflow-y-auto animate-fadeIn scrollbar-hide relative z-[10000]`}
         onClick={(e) => e.stopPropagation()}
       >
         {(title || showCloseButton) && (

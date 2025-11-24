@@ -107,6 +107,7 @@ export interface AddSectionModalProps {
   isOpen: boolean;
   selectedGroup: string;
   newSection: Omit<Section, "_id">;
+  isLoading?: boolean;
   onClose: () => void;
   onSubmit: (e: React.FormEvent) => void;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
@@ -180,19 +181,10 @@ export interface BulkDeleteModalProps {
 // TeacherView Props
 export interface TeacherViewProps {
   students: Student[];
-  filteredStudents: Student[];
-  teacherGroups: string[];
-  selectedGroup: string;
   selectedStudentId: string | null;
   sections: Section[];
   marks: Mark[];
   loadingMarks: boolean;
-  averages: AverageResults;
-  onGroupChange: (group: string) => void;
-  onStudentSelect: (studentId: string) => void;
-  onAddSection: () => void;
-  onBulkUpdate: () => void;
-  onBulkDelete: () => void;
   onAddMark: (section: Section) => void;
   onUpdateMark: (mark: Mark, section: Section) => void;
   onEditSection: (section: Section) => void;

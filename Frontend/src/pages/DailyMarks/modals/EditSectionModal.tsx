@@ -1,6 +1,6 @@
-import { Modal,Button, Input } from "@/components/UI";
-import { Calendar, Edit } from "lucide-react";
-import type { EditSectionModalProps } from "../types/dailyMarks";
+import { Modal, Button, Input, DatePicker } from '@/components/UI';
+import { Edit } from 'lucide-react';
+import type { EditSectionModalProps } from '../types/dailyMarks';
 
 /**
  * Modal for editing an existing section
@@ -27,17 +27,15 @@ export const EditSectionModal = ({
 
       <form onSubmit={onSubmit}>
         <div className="mb-6">
-          <label className="flex items-center gap-2 text-gray-700 text-sm font-bold mb-3">
-            <Calendar className="h-5 w-5 text-blue-600" />
-            التاريخ
-          </label>
-          <Input
-            type="date"
-            id="edit-date"
-            name="date"
+          <DatePicker
+            label="التاريخ"
             value={editingSection.date}
-            onChange={onChange}
-            className="border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+            onChange={(date) => {
+              const event = {
+                target: { name: 'date', value: date },
+              } as React.ChangeEvent<HTMLInputElement>;
+              onChange(event);
+            }}
             required
           />
         </div>
@@ -52,7 +50,6 @@ export const EditSectionModal = ({
             value={editingSection.reviewSection}
             onChange={onChange}
             className="border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-            required
           />
         </div>
 
@@ -66,7 +63,6 @@ export const EditSectionModal = ({
             value={editingSection.memorizationSection}
             onChange={onChange}
             className="border-2 border-gray-200 rounded-xl focus:border-amber-500 focus:ring-4 focus:ring-amber-100"
-            required
           />
         </div>
 

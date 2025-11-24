@@ -1,12 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import { Users, BookOpen, GraduationCap, Heart, Clock, UserPlus, MessageCircle } from "lucide-react";
+import { Users, BookOpen, GraduationCap, Heart, Clock, UserPlus, MessageCircle, Target } from "lucide-react";
 import { Card } from "@/components/UI/Card";
+import PageHeader from "@/components/UI/PageHeader";
 
 const Goals = () => {
-  const [loading, setLoading] = useState(true);
-
   // Initialize AOS
   useEffect(() => {
     AOS.init({
@@ -15,18 +14,7 @@ const Goals = () => {
       mirror: true,
       easing: "ease-in-out",
     });
-
-    // Simulate loading for demonstration
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1500);
-
-    return () => clearTimeout(timer);
   }, []);
-
-  if (loading) {
-    return <div className="text-center py-8">جاري التحميل...</div>;
-  }
 
   return (
     <div
@@ -34,15 +22,14 @@ const Goals = () => {
       dir="rtl">
       <div className="container mx-auto py-12 px-4">
         {/* Header Section */}
-        <div className="text-center mb-16" data-aos="fade-down">
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-800 mb-4">
-            أهـــدافـــنا
-          </h1>
-          <div className="w-24 h-1 bg-emerald-600 mx-auto mb-6"></div>
-          <p className="text-slate-600 text-lg max-w-3xl mx-auto">
-            نسعى في مدرسة المهاجرين لتحقيق مجموعة من الأهداف السامية التي تعزز
-            الارتقاء بمستوى تعليم القرآن الكريم وخدمته
-          </p>
+        <div data-aos="fade-down">
+          <PageHeader
+            title="أهـــدافـــنا"
+            subtitle="نسعى في مدرسة المهاجرين لتحقيق مجموعة من الأهداف السامية التي تعزز الارتقاء بمستوى تعليم القرآن الكريم وخدمته"
+            icon={<Target className="w-12 h-12 sm:w-16 sm:h-16 text-white" />}
+            showDivider={true}
+            className="mb-16"
+          />
         </div>
 
         {/* Main Goals Section */}
