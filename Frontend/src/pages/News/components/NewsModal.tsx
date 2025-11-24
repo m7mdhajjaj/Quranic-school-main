@@ -200,5 +200,4 @@ const NewsModal = ({
     </div>
   );
 };
-
 export default NewsModal;
