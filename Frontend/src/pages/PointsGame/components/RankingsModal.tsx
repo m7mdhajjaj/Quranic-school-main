@@ -41,11 +41,6 @@ export const RankingsModal = ({
         style={{ animation: "slideUp 0.3s ease-out" }}>
         {/* Header */}
         <div className="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 p-6 text-white relative">
-          <button
-            onClick={onClose}
-            className="absolute top-4 left-4 text-white hover:bg-white/20 rounded-full p-2 transition-colors">
-            <span className="text-2xl">✕</span>
-          </button>
           <div className="text-center">
             <div className="text-6xl mb-3">
               {rankingType === "points" ? "🏆" : "🎖️"}

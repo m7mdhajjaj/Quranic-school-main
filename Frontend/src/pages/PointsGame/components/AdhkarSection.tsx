@@ -2,6 +2,7 @@
 import { Card } from "@/components/UI/Card";
 import { Button } from "@/components/UI/Button";
 import type { Adhkar } from "../types/pointsGame.types";
+import { CircleDot, Sun, Sunset, Moon, Hand } from "lucide-react";
 
 interface AdhkarSectionProps {
   adhkar: Adhkar;
@@ -12,25 +13,25 @@ export const AdhkarSection = ({ adhkar, onToggle }: AdhkarSectionProps) => {
   const adhkarItems = [
     {
       key: "morning" as keyof Adhkar,
-      icon: "🌅",
+      IconComponent: Sun,
       name: "أذكار الصباح",
       points: 5,
     },
     {
       key: "evening" as keyof Adhkar,
-      icon: "🌇",
+      IconComponent: Sunset,
       name: "أذكار المساء",
       points: 5,
     },
     {
       key: "sleep" as keyof Adhkar,
-      icon: "🌙",
+      IconComponent: Moon,
       name: "أذكار النوم",
       points: 3,
     },
     {
       key: "afterPrayer" as keyof Adhkar,
-      icon: "🤲",
+      IconComponent: Hand,
       name: "بعد الصلاة",
       points: 5,
     },
@@ -51,7 +52,7 @@ export const AdhkarSection = ({ adhkar, onToggle }: AdhkarSectionProps) => {
   return (
     <Card className="p-6 mb-6">
       <div className="flex items-center gap-3 mb-6">
-        <div className="text-4xl">📿</div>
+        <CircleDot className="w-10 h-10 text-emerald-600" />
         <h2 className="text-2xl font-bold text-gray-800">الأذكار اليومية</h2>
         <span className="text-sm text-gray-500">(اضغط لتفعيل/إلغاء)</span>
       </div>
@@ -66,7 +67,7 @@ export const AdhkarSection = ({ adhkar, onToggle }: AdhkarSectionProps) => {
               adhkar[item.key]
             )}`}>
             <div className="text-center">
-              <div className="text-4xl mb-2">{item.icon}</div>
+              <item.IconComponent className="w-10 h-10 mx-auto mb-2" />
               <h3 className="font-bold text-lg mb-2">{item.name}</h3>
               <div className="text-sm font-medium">
                 {adhkar[item.key]

@@ -1,7 +1,7 @@
 // components/PointsSummaryCard.tsx
 import { Card } from "@/components/UI/Card";
 import { Button } from "@/components/UI/Button";
-import { StatCard } from "@/components/UI/StatCard";
+import { Trophy, Save, Award, TrendingUp } from "lucide-react";
 import type { StudentStats } from "../types/pointsGame.types";
 
 interface PointsSummaryCardProps {
@@ -26,28 +26,61 @@ export const PointsSummaryCard = ({
   earnedBadgesCount,
 }: PointsSummaryCardProps) => {
   return (
-    <Card className="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 rounded-3xl shadow-2xl p-8 mb-8 text-white text-center relative">
-      <div className="text-7xl mb-4">🏆</div>
-      <h2 className="text-3xl font-bold mb-2">نقاطك اليوم</h2>
-      <div className="text-8xl font-black mb-4">{totalPoints}</div>
-      <p className="text-xl opacity-90">نقطة</p>
+    <Card className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 md:p-8 mb-6 sm:mb-8 text-white text-center relative">
+      <div className="flex justify-center mb-3 sm:mb-4">
+        <Trophy className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24" />
+      </div>
+      <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">نقاطك اليوم</h2>
+      <div className="text-6xl sm:text-7xl md:text-8xl font-black mb-3 sm:mb-4">{totalPoints}</div>
+      <p className="text-lg sm:text-xl opacity-90">نقطة</p>
+
+      {/* الإحصائيات */}
+      <div className="mt-4 sm:mt-6 grid grid-cols-3 gap-2 sm:gap-4">
+        <div className="bg-white/20 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 text-center">
+          <p className="text-white/80 text-xs sm:text-sm mb-1">هذا الأسبوع</p>
+          <p className="text-white text-2xl sm:text-3xl font-bold">{stats?.weeklyPoints || 0}</p>
+        </div>
+        <div className="bg-white/20 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 text-center">
+          <p className="text-white/80 text-xs sm:text-sm mb-1">هذا الشهر</p>
+          <p className="text-white text-2xl sm:text-3xl font-bold">{stats?.monthlyPoints || 0}</p>
+        </div>
+        <div className="bg-white/20 backdrop-blur-sm rounded-lg sm:rounded-xl p-2 sm:p-3 text-center">
+          <p className="text-white/80 text-xs sm:text-sm mb-1">ترتيبك</p>
+          <p className="text-white text-2xl sm:text-3xl font-bold">{stats?.currentRank || "-"}</p>
+        </div>
+      </div>
+
+      {/* زر حفظ التقدم اليومي */}
+      <div className="mt-4 sm:mt-6 text-center">
+        <Button
+          onClick={onSavePoints}
+          disabled={saving}
+          variant="success"
+          className="bg-emerald-600 text-white px-6 sm:px-10 py-3 sm:py-4 rounded-full font-bold text-base sm:text-lg shadow-xl flex items-center gap-2 sm:gap-3 mx-auto w-full sm:w-auto justify-center pointer-events-auto cursor-pointer">
+          <Save className="w-5 h-5 sm:w-6 sm:h-6" />
+          <span>{saving ? "جاري الحفظ..." : "حفظ النقاط اليومية"}</span>
+        </Button>
+        <p className="text-white text-xs sm:text-sm mt-2 px-2">
+          اضغط بعد الانتهاء من تسجيل نشاطاتك لحفظ التقدم والتحقق من الشارات!
+        </p>
+      </div>
 
       {/* أزرار لوحة الترتيب والشارات */}
-      <div className="mt-6 flex gap-4 justify-center flex-wrap">
+      <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-2 sm:gap-4 justify-center items-center text-center">
         <Button
           onClick={onShowRankings}
           disabled={loading}
           variant="primary"
-          className="bg-white text-orange-600 px-8 py-4 rounded-full font-bold text-lg hover:scale-110 transition-transform shadow-2xl flex items-center gap-2">
+          className="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white border border-white/30 px-6 sm:px-8 py-3 sm:py-4 rounded-full font-bold text-base sm:text-lg hover:scale-105 transition-all shadow-lg flex items-center justify-center gap-2 w-full sm:w-auto">
           {loading ? (
             <>
-              <div className="w-6 h-6 border-4 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
-              <span>جاري التحميل...</span>
+              <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-white">جاري التحميل...</span>
             </>
           ) : (
             <>
-              <span className="text-2xl">🏅</span>
-              <span>لوحة الترتيب</span>
+              <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6" />
+              <span className="text-white">لوحة الترتيب</span>
             </>
           )}
         </Button>
@@ -55,49 +88,15 @@ export const PointsSummaryCard = ({
         <Button
           onClick={onShowBadges}
           variant="primary"
-          className="bg-white text-purple-600 px-8 py-4 rounded-full font-bold text-lg hover:scale-110 transition-transform shadow-2xl flex items-center gap-2 relative">
-          <span className="text-2xl">🏆</span>
-          <span>شاراتي</span>
+          className="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white border border-white/30 px-6 sm:px-8 py-3 sm:py-4 rounded-full font-bold text-base sm:text-lg hover:scale-105 transition-all shadow-lg flex items-center justify-center gap-2 relative w-full sm:w-auto">
+          <Award className="w-5 h-5 sm:w-6 sm:h-6" />
+          <span className="text-white">شاراتي</span>
           {earnedBadgesCount > 0 && (
             <div className="absolute -top-2 -right-2 bg-gradient-to-br from-red-500 to-pink-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-black text-sm shadow-lg border-2 border-white">
               {earnedBadgesCount}
             </div>
           )}
         </Button>
-      </div>
-
-      {/* زر حفظ التقدم اليومي */}
-      <div className="mt-6">
-        <Button
-          onClick={onSavePoints}
-          disabled={saving}
-          variant="success"
-          className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-10 py-4 rounded-full font-bold text-lg hover:scale-110 transition-transform shadow-2xl flex items-center gap-3 mx-auto">
-          <span className="text-2xl">{saving ? "⏳" : "💾"}</span>
-          <span>{saving ? "جاري الحفظ..." : "حفظ النقاط اليومية"}</span>
-          <span className="text-2xl">✨</span>
-        </Button>
-        <p className="text-white/80 text-sm mt-2">
-          اضغط بعد الانتهاء من تسجيل نشاطاتك لحفظ التقدم والتحقق من الشارات!
-        </p>
-      </div>
-
-      <div className="mt-6 grid grid-cols-3 gap-4 text-center">
-        <StatCard
-          title="هذا الأسبوع"
-          value={stats?.weeklyPoints || 0}
-          className="bg-white/20 rounded-xl"
-        />
-        <StatCard
-          title="هذا الشهر"
-          value={stats?.monthlyPoints || 0}
-          className="bg-white/20 rounded-xl"
-        />
-        <StatCard
-          title="ترتيبك"
-          value={stats?.currentRank || "-"}
-          className="bg-white/20 rounded-xl"
-        />
       </div>
     </Card>
   );

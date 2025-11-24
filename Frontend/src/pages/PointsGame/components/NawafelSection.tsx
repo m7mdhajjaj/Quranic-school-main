@@ -2,6 +2,7 @@
 import { Card } from "@/components/UI/Card";
 import { Button } from "@/components/UI/Button";
 import type { Nawafel } from "../types/pointsGame.types";
+import { Sparkles, Sun, Moon, HandHeart, Star } from "lucide-react";
 
 interface NawafelSectionProps {
   nawafel: Nawafel;
@@ -10,15 +11,15 @@ interface NawafelSectionProps {
 
 export const NawafelSection = ({ nawafel, onToggle }: NawafelSectionProps) => {
   const nawafelItems = [
-    { key: "duha" as keyof Nawafel, icon: "☀️", name: "صلاة الضحى", points: 5 },
+    { key: "duha" as keyof Nawafel, IconComponent: Sun, name: "صلاة الضحى", points: 5 },
     {
       key: "qiyamAlayl" as keyof Nawafel,
-      icon: "🌙",
+      IconComponent: Moon,
       name: "قيام الليل",
       points: 10,
     },
-    { key: "rawatib" as keyof Nawafel, icon: "🙏", name: "الرواتب", points: 5 },
-    { key: "witr" as keyof Nawafel, icon: "🌟", name: "الوتر", points: 5 },
+    { key: "rawatib" as keyof Nawafel, IconComponent: HandHeart, name: "الرواتب", points: 5 },
+    { key: "witr" as keyof Nawafel, IconComponent: Star, name: "الوتر", points: 5 },
   ];
 
   const getGradientClass = (index: number, isActive: boolean) => {
@@ -36,7 +37,7 @@ export const NawafelSection = ({ nawafel, onToggle }: NawafelSectionProps) => {
   return (
     <Card className="p-6 mb-6">
       <div className="flex items-center gap-3 mb-6">
-        <div className="text-4xl">✨</div>
+        <Sparkles className="w-10 h-10 text-emerald-600" />
         <h2 className="text-2xl font-bold text-gray-800">الصلوات النوافل</h2>
         <span className="text-sm text-gray-500">(اضغط لتفعيل/إلغاء)</span>
       </div>
@@ -51,7 +52,7 @@ export const NawafelSection = ({ nawafel, onToggle }: NawafelSectionProps) => {
               nawafel[item.key]
             )}`}>
             <div className="text-center">
-              <div className="text-4xl mb-2">{item.icon}</div>
+              <item.IconComponent className="w-10 h-10 mx-auto mb-2" />
               <h3 className="font-bold text-lg mb-2">{item.name}</h3>
               <div className="text-sm font-medium">
                 {nawafel[item.key]

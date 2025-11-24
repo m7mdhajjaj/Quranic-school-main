@@ -82,7 +82,7 @@ import Warnings from "./pages/Warnings/Warnings";
 // ============================================================================
 // Page Components - Points Game
 // ============================================================================
-import PointsGame from "./pages/PointsGame/PointsGamePage";
+const PointsGame = lazy(() => import("./pages/PointsGame/PointsGamePage"));
 
 // ============================================================================
 // Page Components - Admin

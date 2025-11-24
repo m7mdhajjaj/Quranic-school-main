@@ -1,5 +1,6 @@
 // components/MotivationalMessage.tsx
 import { getMotivationalMessage } from "../utils/pointsCalculator";
+import { Sparkles } from "lucide-react";
 
 interface MotivationalMessageProps {
   totalPoints: number;
@@ -9,8 +10,8 @@ export const MotivationalMessage = ({
   totalPoints,
 }: MotivationalMessageProps) => {
   return (
-    <div className="bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 rounded-2xl shadow-2xl p-8 text-white text-center">
-      <div className="text-6xl mb-4">💪</div>
+    <div className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-2xl shadow-2xl p-8 text-white text-center">
+      <Sparkles className="w-16 h-16 mx-auto mb-4" />
       <h2 className="text-3xl font-bold mb-4">واصل التميز!</h2>
       <p className="text-xl opacity-90 mb-4">
         {getMotivationalMessage(totalPoints)}

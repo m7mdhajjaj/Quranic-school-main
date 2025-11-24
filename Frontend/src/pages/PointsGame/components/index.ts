@@ -7,5 +7,6 @@ export { AdhkarSection } from "./AdhkarSection";
 export { HalaqahSection } from "./HalaqahSection";
 export { RankingsModal } from "./RankingsModal";
 export { BadgesModal } from "./BadgesModal";
-export { TeacherView } from "./TeacherView";
 export { MotivationalMessage } from "./MotivationalMessage";
+export { StudentView } from "./StudentView";
+export { TeacherRankingsView } from "./TeacherRankingsView";

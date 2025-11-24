@@ -4,6 +4,7 @@ import { Button } from "@/components/UI/Button";
 import type { Prayers, PrayerStatus } from "../types/pointsGame.types";
 import { prayerNames } from "../utils/badgeDefinitions";
 import { getPrayerPoints } from "../utils/pointsCalculator";
+import { Building2, Home, Clock, X } from "lucide-react";
 
 interface PrayersSectionProps {
   prayers: Prayers;
@@ -17,7 +18,7 @@ export const PrayersSection = ({
   return (
     <Card className="p-6 mb-6">
       <div className="flex items-center gap-3 mb-6">
-        <div className="text-4xl">🕌</div>
+        <Building2 className="w-10 h-10 text-emerald-600" />
         <h2 className="text-2xl font-bold text-gray-800">الصلوات الفروض</h2>
         <span className="text-sm text-gray-500">(اضغط لتحديد الحالة)</span>
       </div>
@@ -38,7 +39,7 @@ export const PrayersSection = ({
                       ? "bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-lg scale-105"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}>
-                  <div className="text-2xl">🕌</div>
+                  <Building2 className="w-8 h-8 mx-auto" />
                   <div className="text-xs mt-1">مسجد (12)</div>
                 </Button>
                 <Button
@@ -49,7 +50,7 @@ export const PrayersSection = ({
                       ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg scale-105"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}>
-                  <div className="text-2xl">🏠</div>
+                  <Home className="w-8 h-8 mx-auto" />
                   <div className="text-xs mt-1">منزل (5)</div>
                 </Button>
                 <Button
@@ -60,7 +61,7 @@ export const PrayersSection = ({
                       ? "bg-gradient-to-br from-yellow-500 to-orange-500 text-white shadow-lg scale-105"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}>
-                  <div className="text-2xl">⏰</div>
+                  <Clock className="w-8 h-8 mx-auto" />
                   <div className="text-xs mt-1">متأخر (2)</div>
                 </Button>
                 <Button
@@ -68,10 +69,10 @@ export const PrayersSection = ({
                   variant={prayer.status === "missed" ? "danger" : "ghost"}
                   className={`p-3 rounded-lg text-center transition-all ${
                     prayer.status === "missed"
-                      ? "bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg scale-105"
+                      ? "bg-gradient-to-br from-rose-400 to-red-500 text-white shadow-lg scale-105"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}>
-                  <div className="text-2xl">❌</div>
+                  <X className="w-8 h-8 mx-auto" />
                   <div className="text-xs mt-1">لم أصلِّ (0)</div>
                 </Button>
               </div>
