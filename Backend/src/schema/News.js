@@ -54,8 +54,13 @@ const newsSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
-   
-   
+    // News visibility type
+    visibility: {
+      type: String,
+      enum: ['general', 'group', 'administrative'],
+      default: 'group',
+      required: true,
+    },
     views: {
       type: Number,
       default: 0,
@@ -86,6 +91,7 @@ newsSchema.index({ title: "text", content: "text" });
 newsSchema.index({ isPublished: 1, createdAt: -1 });
 newsSchema.index({ category: 1 });
 newsSchema.index({ isArchived: 1 });
+newsSchema.index({ visibility: 1 });
 
 const News = mongoose.model("News", newsSchema);
 

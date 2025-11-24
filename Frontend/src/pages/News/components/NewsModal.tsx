@@ -1,6 +1,6 @@
-import type { NewsModalProps } from "../utils/types";
-import { Input, Textarea, Button, DatePicker } from "@/components/UI";
-import MultiImageUpload from "@/components/Forms/MultiImageUpload";
+import type { NewsModalProps } from '../utils/types';
+import { Input, Textarea, Button, DatePicker } from '@/components/UI';
+import MultiImageUpload from '@/components/Forms/MultiImageUpload';
 import { MessageSquare, X, Plus, Edit } from 'lucide-react';
 
 const NewsModal = ({
@@ -17,39 +17,52 @@ const NewsModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black/50 backdrop-blur-sm" dir="rtl">
+    <div
+      className="fixed inset-0 flex items-center justify-center z-[200] p-4 bg-black/50 backdrop-blur-sm"
+      dir="rtl"
+    >
       <div
-        className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-auto relative overflow-hidden animate-fadeIn"
-        onClick={(e) => e.stopPropagation()}>
+        className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full mx-auto relative overflow-hidden animate-fadeIn flex flex-col max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className={`px-6 py-4 flex items-center justify-between ${
-          isEditMode 
-            ? 'bg-gradient-to-r from-blue-600 to-indigo-600' 
-            : 'bg-gradient-to-r from-emerald-600 to-teal-600'
-        }`}>
+        <div
+          className={`px-6 py-4 flex items-center justify-between flex-shrink-0 ${
+            isEditMode
+              ? 'bg-gradient-to-r from-blue-600 to-indigo-600'
+              : 'bg-gradient-to-r from-emerald-600 to-teal-600'
+          }`}
+        >
           <h2 className="text-2xl font-bold text-white flex items-center gap-3">
             {isEditMode ? <Edit size={32} /> : <Plus size={32} />}
-            {isEditMode ? "تعديل الخبر" : "إضافة خبر جديد"}
+            {isEditMode ? 'تعديل الخبر' : 'إضافة خبر جديد'}
           </h2>
           <button
             onClick={onClose}
             title="إغلاق"
             aria-label="إغلاق"
-            className="text-white/90 hover:text-white hover:bg-white/20 rounded-lg p-2 transition-all">
+            className="text-white/90 hover:text-white hover:bg-white/20 rounded-lg p-2 transition-all"
+          >
             <X size={24} />
           </button>
         </div>
 
         {/* Form Content */}
-        <div className="p-6 max-h-[calc(100vh-200px)] overflow-y-auto">
-          <form onSubmit={(e) => {
-            console.log('📋 NewsModal form submitted');
-            onSubmit(e);
-          }} className="space-y-6">
+        <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
+          <form
+            onSubmit={(e) => {
+              console.log('📋 NewsModal form submitted');
+              onSubmit(e);
+            }}
+            className="space-y-6"
+          >
             {/* Title Field */}
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-base font-semibold text-gray-700">
-                <MessageSquare size={20} className={isEditMode ? "text-blue-600" : "text-emerald-600"} />
+                <MessageSquare
+                  size={20}
+                  className={isEditMode ? 'text-blue-600' : 'text-emerald-600'}
+                />
                 عنوان الخبر <span className="text-red-500">*</span>
               </label>
               <Input
@@ -70,7 +83,7 @@ const NewsModal = ({
               value={newNews.date || new Date().toISOString().split('T')[0]}
               onChange={(date) => {
                 const event = {
-                  target: { name: 'date', value: date }
+                  target: { name: 'date', value: date },
                 } as React.ChangeEvent<HTMLInputElement>;
                 onInputChange(event);
               }}
@@ -81,19 +94,55 @@ const NewsModal = ({
               maxYear={new Date().getFullYear() + 5}
             />
 
+            {/* Visibility Type Field */}
+            <div className="space-y-2">
+              <label
+                htmlFor="visibility"
+                className="flex items-center gap-2 text-base font-semibold text-gray-700"
+              >
+                نوع الخبر <span className="text-red-500">*</span>
+              </label>
+              <select
+                id="visibility"
+                name="visibility"
+                value={newNews.visibility || 'group'}
+                onChange={(e) => onInputChange(e as any)}
+                disabled={isLoading}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all bg-white text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                title="اختر نوع الخبر"
+              >
+                <option value="general">📢 خبر عام (يظهر لجميع الطلاب)</option>
+                <option value="group">
+                  👥 خبر الحلقة (يظهر لطلاب المعلم فقط)
+                </option>
+                <option value="administrative">
+                  🏫 خبر إداري (من الإدارة)
+                </option>
+              </select>
+              {fieldErrors.visibility && (
+                <p className="text-sm text-red-600 mt-1">
+                  {fieldErrors.visibility}
+                </p>
+              )}
+            </div>
+
             {/* Multiple Images Upload */}
             <MultiImageUpload
               label="صور الخبر"
               mode="multiple"
               existingImages={
                 newNews.images && newNews.images.length > 0
-                  ? newNews.images.map(img => img.url)
+                  ? newNews.images.map((img) => img.url)
                   : newNews.image
-                  ? [newNews.image]
-                  : []
+                    ? [newNews.image]
+                    : []
               }
               onImagesChange={(files) => {
-                console.log('📸 NewsModal: تمرير', files.length, 'صور إلى handleFileChange');
+                console.log(
+                  '📸 NewsModal: تمرير',
+                  files.length,
+                  'صور إلى handleFileChange'
+                );
                 onFileChange(files as any);
               }}
               maxImages={10}
@@ -127,7 +176,7 @@ const NewsModal = ({
               >
                 إلغاء
               </Button>
-              
+
               {/* زر الإضافة/التحديث - أقصى اليمين */}
               <Button
                 type="submit"
@@ -136,13 +185,13 @@ const NewsModal = ({
                 variant="primary"
                 size="md"
                 className={`px-6 py-2 min-w-[160px] shadow-lg hover:shadow-xl transition-all ${
-                  isEditMode 
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700' 
+                  isEditMode
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
                     : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700'
                 }`}
                 leftIcon={isEditMode ? <Edit size={20} /> : <Plus size={20} />}
               >
-                {isEditMode ? "تحديث الخبر" : "إضافة الخبر"}
+                {isEditMode ? 'تحديث الخبر' : 'إضافة الخبر'}
               </Button>
             </div>
           </form>

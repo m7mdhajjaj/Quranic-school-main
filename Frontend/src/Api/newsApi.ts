@@ -28,6 +28,7 @@ export interface INews {
   } | string;
   authorName?: string;
   authorModel?: string;
+  visibility?: 'general' | 'group' | 'administrative';
   createdAt?: string;
   updatedAt?: string;
 }

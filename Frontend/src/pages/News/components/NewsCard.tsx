@@ -170,7 +170,26 @@ const NewsCard = ({
             </>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 pointer-events-none"></div>
-          {/* Author top right, Date top left */}
+          {/* Visibility Badge top left */}
+          <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
+            {news.visibility === 'general' && (
+              <span className="bg-blue-500/90 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg backdrop-blur-sm flex items-center gap-1.5">
+                📢 عام
+              </span>
+            )}
+            {news.visibility === 'group' && (
+              <span className="bg-emerald-500/90 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg backdrop-blur-sm flex items-center gap-1.5">
+                👥 حلقة
+              </span>
+            )}
+            {news.visibility === 'administrative' && (
+              <span className="bg-purple-500/90 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg backdrop-blur-sm flex items-center gap-1.5">
+                🏫 إداري
+              </span>
+            )}
+          </div>
+
+          {/* Author top right */}
           {news.authorName && (
             <div className="absolute top-4 right-4 z-20 flex items-center gap-1">
               <span className="bg-white/90 text-teal-700 text-xs font-semibold px-3 py-1 rounded-full shadow border border-teal-100 flex items-center gap-1 backdrop-blur-sm">

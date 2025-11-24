@@ -134,6 +134,17 @@ exports.createNews = async (req, res) => {
     else if (authorRole === 'teacher') authorModel = 'Teacher';
     else if (authorRole === 'admin') authorModel = 'Admin';
 
+    // Determine visibility based on request or default
+    const visibility = req.body.visibility || 'group'; // Default to 'group' if not specified
+    
+    // Validate visibility
+    if (!['general', 'group', 'administrative'].includes(visibility)) {
+      return res.status(400).json({
+        success: false,
+        message: "نوع الظهور يجب أن يكون: general (عام), group (حلقة), أو administrative (إداري)",
+      });
+    }
+
     // Create news
     const newNews = new News({
       title: trimmedTitle,
@@ -145,6 +156,7 @@ exports.createNews = async (req, res) => {
       author: authorId,
       authorModel: authorModel,
       authorName: authorName,
+      visibility: visibility, // Add visibility type
       category: category || "عام",
       tags: tags ? tags.split(",").map((t) => t.trim()) : [],
       isPublished: false,
@@ -155,9 +167,33 @@ exports.createNews = async (req, res) => {
 
     console.log("✅ News created successfully:", newNews._id);
 
-    // Send notification to all students
+    // Send notification to students based on visibility type
     try {
-      const students = await Student.find({}).select('_id firstName lastName');
+      let students = [];
+      
+      if (visibility === 'general') {
+        // General news: send to ALL students
+        students = await Student.find({}).select('_id firstName lastName');
+        console.log(`📧 General news: Sending to all ${students.length} students`);
+      } else if (visibility === 'group') {
+        // Group news: send only to teacher's students
+        if (authorRole === 'teacher') {
+          const teacher = await require('../../schema/Teacher').findById(authorId);
+          if (teacher) {
+            const teacherName = `${teacher.firstName} ${teacher.lastName}`;
+            students = await Student.find({ teacher: teacherName }).select('_id firstName lastName');
+            console.log(`📧 Group news: Sending to ${students.length} students of teacher: ${teacherName}`);
+          }
+        } else if (authorRole === 'admin') {
+          // If admin chooses 'group', treat as general
+          students = await Student.find({}).select('_id firstName lastName');
+          console.log(`📧 Admin group news: Sending to all ${students.length} students`);
+        }
+      } else if (visibility === 'administrative') {
+        // Administrative news: send to ALL students (from admin only)
+        students = await Student.find({}).select('_id firstName lastName');
+        console.log(`📧 Administrative news: Sending to all ${students.length} students`);
+      }
       
       if (students && students.length > 0) {
         const notificationPromises = students.map(async (student) => {
