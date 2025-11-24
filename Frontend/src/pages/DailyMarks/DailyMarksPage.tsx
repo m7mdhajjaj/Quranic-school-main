@@ -3,15 +3,23 @@
 // ============================================================================
 
 // React & Hooks
-import { useState, useEffect, useMemo, useCallback, useTransition, lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 
-// Socket & Data Hooks
-import { useDailyMarksSocket, useNotificationsSocket } from "../../Socket";
+// Socket Hooks
+import { useDailyMarksSocket, useDailyMarksSocketEffects, useNotificationsSocket } from "../../Socket";
+
+// Custom Hooks - Data Management
 import { useDailyMarksData } from "./hooks/useDailyMarksData";
-import { useSectionsFilter } from "./hooks/useSectionsFilter";
 import { useDailyMarksState } from "./hooks/useDailyMarksState";
+import { useSectionsFilter } from "./hooks/useSectionsFilter";
+
+// Custom Hooks - Business Logic
 import { useDailyMarksHandlers } from "./hooks/useDailyMarksHandlers";
 import { useModalActions } from "./hooks/useModalActions";
+import { useStudentSelection } from "./hooks/useStudentSelection";
+import { useInputHandlers } from "./hooks/useInputHandlers";
+import { useComputedValues } from "./hooks/useComputedValues";
+import { useFilteredStudents } from "./hooks/useFilteredStudents";
 
 // UI Components
 import PageHeader from "@/components/UI/PageHeader";
@@ -25,13 +33,37 @@ import { AveragesSection } from "./components/AveragesSection";
 import { StudentView } from "./components/StudentView";
 
 // Lazy load heavy components
-const TeacherView = lazy(() => import("./components/TeacherView").then(m => ({ default: m.TeacherView })));
-const AddSectionModal = lazy(() => import("./modals/AddSectionModal").then(m => ({ default: m.AddSectionModal })));
-const EditSectionModal = lazy(() => import("./modals/EditSectionModal").then(m => ({ default: m.EditSectionModal })));
-const AddMarkModal = lazy(() => import("./modals/AddMarkModal").then(m => ({ default: m.AddMarkModal })));
-const UpdateMarkModal = lazy(() => import("./modals/UpdateMarkModal").then(m => ({ default: m.UpdateMarkModal })));
-const BulkUpdateModal = lazy(() => import("./modals/BulkUpdateModal").then(m => ({ default: m.BulkUpdateModal })));
-const BulkDeleteModal = lazy(() => import("./modals/BulkDeleteModal").then(m => ({ default: m.BulkDeleteModal })));
+const TeacherView = lazy(() =>
+  import("./components/TeacherView").then((m) => ({ default: m.TeacherView }))
+);
+const AddSectionModal = lazy(() =>
+  import('./modals/AddSectionModal').then((m) => ({
+    default: m.AddSectionModal,
+  }))
+);
+const EditSectionModal = lazy(() =>
+  import('./modals/EditSectionModal').then((m) => ({
+    default: m.EditSectionModal,
+  }))
+);
+const AddMarkModal = lazy(() =>
+  import('./modals/AddMarkModal').then((m) => ({ default: m.AddMarkModal }))
+);
+const UpdateMarkModal = lazy(() =>
+  import('./modals/UpdateMarkModal').then((m) => ({
+    default: m.UpdateMarkModal,
+  }))
+);
+const BulkUpdateModal = lazy(() =>
+  import('./modals/BulkUpdateModal').then((m) => ({
+    default: m.BulkUpdateModal,
+  }))
+);
+const BulkDeleteModal = lazy(() =>
+  import('./modals/BulkDeleteModal').then((m) => ({
+    default: m.BulkDeleteModal,
+  }))
+);
 
 // ============================================================================
 // MAIN COMPONENT
@@ -39,33 +71,25 @@ const BulkDeleteModal = lazy(() => import("./modals/BulkDeleteModal").then(m => 
 
 const DailyMarksPage = () => {
   // ==========================================================================
-  // STATE MANAGEMENT
+  // SOCKET CONNECTIONS
   // ==========================================================================
-  
-  // Local Selection State
-  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
-  const [selectedGroup, setSelectedGroup] = useState<string>("");
-  const [isPending, startTransition] = useTransition();
-  
-  // Optimistic student selection
-  const handleStudentSelect = useCallback((studentId: string) => {
-    // Update UI immediately
-    setSelectedStudentId(studentId);
-    // Mark as pending for heavy operations
-    startTransition(() => {
-      // Heavy re-renders happen in transition
-    });
-  }, []);
-
-  // ==========================================================================
-  // CUSTOM HOOKS
-  // ==========================================================================
-  
-  // Socket Connections
   const { lastUpdate: socketLastUpdate } = useDailyMarksSocket();
   const { lastNotification } = useNotificationsSocket();
 
-  // Data Fetching & Management
+  // ==========================================================================
+  // DATA & STATE HOOKS
+  // ==========================================================================
+  
+  // Student Selection
+  const {
+    selectedStudentId,
+    selectedGroup,
+    isPending,
+    handleStudentSelect,
+    setSelectedGroup,
+  } = useStudentSelection();
+
+  // Data Fetching & Management - pass current selection
   const {
     currentUser,
     students,
@@ -80,8 +104,19 @@ const DailyMarksPage = () => {
     refetchSections,
   } = useDailyMarksData(selectedStudentId, selectedGroup);
 
+  // Filtered Students
+  const filteredStudents = useFilteredStudents({ students, selectedGroup });
+
   // Component State (Modals, Forms, etc.)
-  const state = useDailyMarksState({ students, teacherGroups });
+  const state = useDailyMarksState();
+
+  // Auto-select first group after data loads
+  useEffect(() => {
+    if (teacherGroups.length > 0 && !selectedGroup && !loading) {
+      console.log("🎯 Auto-selecting first group:", teacherGroups[0]);
+      setSelectedGroup(teacherGroups[0]);
+    }
+  }, [teacherGroups, selectedGroup, loading, setSelectedGroup]);
 
   // Sections Filtering
   const {
@@ -93,6 +128,10 @@ const DailyMarksPage = () => {
     calculateAverages,
   } = useSectionsFilter(sections, state.searchQuery);
 
+  // ==========================================================================
+  // BUSINESS LOGIC HOOKS
+  // ==========================================================================
+  
   // Event Handlers
   const handlers = useDailyMarksHandlers({
     selectedGroup,
@@ -122,88 +161,37 @@ const DailyMarksPage = () => {
     setSelectedSectionsForBulk: state.setSelectedSectionsForBulk,
   });
 
+  // Input Change Handlers
+  const inputHandlers = useInputHandlers({
+    setNewSection: state.setNewSection,
+    setEditingSection: state.setEditingSection,
+    setNewMark: state.setNewMark,
+  });
+
+  // Computed Values & Helpers
+  const filteredSections = getFilteredSections();
+  const { getSelectedStudent, averages, sectionsCount } = useComputedValues({
+    students,
+    selectedStudentId,
+    sections: filteredSections,
+    marks,
+    currentUserId: currentUser?.role === "student" ? currentUser._id : undefined,
+    calculateAverages,
+  });
+
   // ==========================================================================
   // SIDE EFFECTS
   // ==========================================================================
   
-  // Auto-select first group when loaded
-  useEffect(() => {
-    if (teacherGroups.length > 0 && !selectedGroup) {
-      setSelectedGroup(teacherGroups[0]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [teacherGroups]);
-
-  // Reset student selection when group changes
-  useEffect(() => {
-    setSelectedStudentId(null);
-  }, [selectedGroup]);
-
-  // Fetch marks when student is selected (initial fetch)
-  useEffect(() => {
-    if (!currentUser) return;
-    refetchMarks(selectedStudentId || undefined);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedStudentId, currentUser]);
-
-  // Refetch marks on socket updates
-  useEffect(() => {
-    if (!socketLastUpdate || !currentUser) return;
-    refetchMarks(selectedStudentId || undefined);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [socketLastUpdate, currentUser, selectedStudentId]);
-
-  // Listen to notifications and refetch sections when assignment notification received
-  useEffect(() => {
-    if (!lastNotification || !currentUser) return;
-    
-    // Only refetch for assignment notifications (sections related)
-    if (lastNotification.type === "assignment") {
-      console.log("📚 Section notification received, refetching sections...");
-      refetchSections();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lastNotification, currentUser]);
-
-  // ==========================================================================
-  // INPUT CHANGE HANDLERS
-  // ==========================================================================
-  
-  const handleSectionInputChange = useCallback((
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    state.setNewSection((prev) => ({ ...prev, [name]: value }));
-  }, []);
-
-  const handleEditSectionInputChange = useCallback((
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    state.setEditingSection((prev) => prev ? { ...prev, [name]: value } : null);
-  }, []);
-
-  const handleMarkInputChange = useCallback((
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    state.setNewMark((prev) => ({ ...prev, [name]: Number(value) }));
-  }, []);
-
-  // ==========================================================================
-  // COMPUTED VALUES & HELPERS
-  // ==========================================================================
-  
-  const filteredSections = useMemo(() => getFilteredSections(), [getFilteredSections]);
-  
-  const averages = useMemo(() => calculateAverages(
-    marks,
-    currentUser?.role === "student" ? currentUser._id : selectedStudentId
-  ), [marks, currentUser, selectedStudentId, calculateAverages]);
-
-  const getSelectedStudent = useCallback(() => {
-    return students.find((s) => s._id === selectedStudentId) || null;
-  }, [students, selectedStudentId]);
+  // Socket-based effects (marks refetch, notifications)
+  useDailyMarksSocketEffects({
+    socketLastUpdate,
+    lastNotification,
+    currentUser,
+    selectedStudentId,
+    refetchMarks,
+    refetchSections,
+  });
 
   // ==========================================================================
   // RENDER
@@ -232,7 +220,7 @@ const DailyMarksPage = () => {
         {currentUser?.role !== "student" && (
           <AveragesSection
             selectedStudentId={selectedStudentId}
-            sectionsCount={filteredSections.length}
+            sectionsCount={sectionsCount}
             averages={averages}
           />
         )}
@@ -263,7 +251,7 @@ const DailyMarksPage = () => {
                 {/* Student List - 1 column on Right */}
                 <div className="xl:col-span-1">
                   <StudentList
-                    students={state.filteredStudents}
+                    students={filteredStudents}
                     teacherGroups={teacherGroups}
                     selectedGroup={selectedGroup}
                     selectedStudentId={selectedStudentId}
@@ -322,7 +310,7 @@ const DailyMarksPage = () => {
             isLoading={state.isAddingSectionLoading}
             onClose={() => state.setIsAddSectionModalOpen(false)}
             onSubmit={(e) => handlers.handleAddSection(e, state.newSection, state.setNewSection, state.setIsAddingSectionLoading)}
-            onChange={handleSectionInputChange}
+            onChange={inputHandlers.handleSectionInputChange}
           />
 
           {/* Edit Section Modal */}
@@ -335,7 +323,7 @@ const DailyMarksPage = () => {
               state.setEditingSection(null);
             }}
             onSubmit={(e) => handlers.handleEditSection(e, state.editingSection, state.setIsEditingSectionLoading)}
-            onChange={handleEditSectionInputChange}
+            onChange={inputHandlers.handleEditSectionInputChange}
           />
 
           {/* Add Mark Modal */}
@@ -347,7 +335,7 @@ const DailyMarksPage = () => {
             isLoading={state.isAddingMarkLoading}
             onClose={() => state.setIsAddMarkModalOpen(false)}
             onSubmit={(e) => handlers.handleAddMark(e, selectedStudentId, state.selectedSection, state.newMark, state.setIsAddingMarkLoading)}
-            onChange={handleMarkInputChange}
+            onChange={inputHandlers.handleMarkInputChange}
           />
 
           {/* Update Mark Modal */}
@@ -363,7 +351,7 @@ const DailyMarksPage = () => {
               state.setEditingMark(null);
             }}
             onSubmit={(e) => handlers.handleUpdateMark(e, state.editingMark, selectedStudentId, state.selectedSection, state.newMark, state.setIsUpdatingMarkLoading)}
-            onChange={handleMarkInputChange}
+            onChange={inputHandlers.handleMarkInputChange}
           />
 
           {/* Bulk Update Modal */}
@@ -395,8 +383,6 @@ const DailyMarksPage = () => {
           />
         </Suspense>
       )}
-
-     
     </div>
   );
 };

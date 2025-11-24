@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import type { LoggedInUser, Student, Section, Mark, UseDailyMarksDataResult } from "../types/types";
 import { getStudentsByTeacher } from "@/Api/studentApi";
-import { getTeacherById } from "@/Api/teacherApi";
+import { getGroupsByTeacherIdWithFilters } from "@/Api/groupApi";
 import { getAllSections } from "@/Api/sectionApi";
 import { getStudentMarks } from "@/Api/dailyMarksApi";
 
@@ -62,12 +62,18 @@ export const useDailyMarksData = (selectedStudentId: string | null, selectedGrou
         if (user.role === "teacher" || user.role === "admin") {
           const teacherName = `${user.firstName} ${user.lastName}`;
 
-          // Fetch teacher's full details to get groups
-          const teacherResponse = await getTeacherById(user._id);
-          if (teacherResponse.success && teacherResponse.data?.groups) {
-            const groups = teacherResponse.data.groups.map((g: { name: string }) => g.name);
+          // Fetch ALL groups for this teacher (with or without students)
+          const groupsResponse = await getGroupsByTeacherIdWithFilters(
+            user._id,
+            'all', // جلب كل الحلقات سواء فيها طلاب أو فارغة
+            false  // لا نحتاج معلومات الطلاب هنا
+          );
+
+          if (groupsResponse.success && groupsResponse.data?.groups) {
+            const groups = groupsResponse.data.groups.map((g) => g.name);
             setTeacherGroups(groups);
-            console.log("Teacher groups:", groups);
+            console.log("📚 Teacher groups (all):", groups);
+            console.log("📊 Groups summary:", groupsResponse.data.summary);
           }
 
           // Fetch students
@@ -77,7 +83,7 @@ export const useDailyMarksData = (selectedStudentId: string | null, selectedGrou
               ? studentsResponse.data
               : [];
           setStudents(students);
-          console.log("Loaded students:", students);
+          console.log("👥 Loaded students:", students);
         }
       } catch (err) {
         console.error("Error fetching data:", err);

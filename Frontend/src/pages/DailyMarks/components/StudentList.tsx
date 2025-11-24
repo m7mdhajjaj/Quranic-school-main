@@ -90,7 +90,7 @@ const StudentListComponent = ({
         </div>
       )}
 
-      <div className="p-4 max-h-80 overflow-y-auto custom-scrollbar">
+      <div className="p-4 max-h-80 min-h-[320px] overflow-y-auto custom-scrollbar">
         {teacherGroups.length === 0 ? (
           <div className="text-center py-8">
             <div className="bg-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
@@ -137,7 +137,7 @@ const StudentListComponent = ({
       </div>
 
       {/* Action Buttons */}
-      <div className="p-4 bg-gray-50 border-t space-y-2">
+      <div className="p-4 bg-gray-50 border-t space-y-2 min-h-[180px]">
         <Button
           onClick={onAddSection}
           variant="success"

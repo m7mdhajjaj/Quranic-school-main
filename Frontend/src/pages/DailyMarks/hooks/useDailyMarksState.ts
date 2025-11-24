@@ -1,16 +1,8 @@
-import { useState, useEffect } from "react";
-import type { Section, Mark, Student } from "../types/types";
+import { useState } from "react";
+import type { Section, Mark } from "../types/types";
 
-interface UseDailyMarksStateProps {
-  students: Student[];
-  teacherGroups: string[];
-}
-
-export const useDailyMarksState = ({ students, teacherGroups }: UseDailyMarksStateProps) => {
-  // Selection States
-  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
-  const [selectedGroup, setSelectedGroup] = useState<string>("");
-  const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
+export const useDailyMarksState = () => {
+  // Search Query
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   // Modal States
@@ -45,40 +37,8 @@ export const useDailyMarksState = ({ students, teacherGroups }: UseDailyMarksSta
     memorizationMark: 8,
   });
 
-  // Auto-select first group when teacher groups are loaded
-  useEffect(() => {
-    if (teacherGroups.length > 0 && !selectedGroup) {
-      setSelectedGroup(teacherGroups[0]);
-    }
-  }, [teacherGroups, selectedGroup]);
-
-  // Filter students by selected group
-  useEffect(() => {
-    if (selectedGroup) {
-      const normalizeString = (str: string | undefined | null) => {
-        if (!str) return "";
-        return str.trim().toLowerCase();
-      };
-      const normalizedSelectedGroup = normalizeString(selectedGroup);
-
-      const filtered = students.filter(
-        (s) => normalizeString(s.group) === normalizedSelectedGroup
-      );
-
-      setFilteredStudents(filtered);
-      setSelectedStudentId(null);
-    } else {
-      setFilteredStudents([]);
-    }
-  }, [selectedGroup, students]);
-
   return {
-    // Selection
-    selectedStudentId,
-    setSelectedStudentId,
-    selectedGroup,
-    setSelectedGroup,
-    filteredStudents,
+    // Search Query
     searchQuery,
     setSearchQuery,
     

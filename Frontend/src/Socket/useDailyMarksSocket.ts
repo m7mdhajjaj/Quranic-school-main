@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { socketManager } from './SocketManager';
 import { useAuth } from '../hooks/useAuth';
 
@@ -129,4 +129,54 @@ export const useDailyMarksSocket = () => {
     lastUpdate,
     socketId,
   };
+};
+
+// ============================================================================
+// Socket Effects Hook
+// ============================================================================
+
+interface UseDailyMarksSocketEffectsProps {
+  socketLastUpdate: unknown;
+  lastNotification: { type: string } | null;
+  currentUser: { role: string; _id: string } | null;
+  selectedStudentId: string | null;
+  refetchMarks: (studentId?: string) => Promise<void>;
+  refetchSections: () => Promise<void>;
+}
+
+/**
+ * Hook لإدارة التأثيرات الجانبية للـ Socket في صفحة العلامات اليومية
+ * يدير التحديثات المباشرة وجلب البيانات عند حدوث تغييرات
+ */
+export const useDailyMarksSocketEffects = ({
+  socketLastUpdate,
+  lastNotification,
+  currentUser,
+  selectedStudentId,
+  refetchMarks,
+  refetchSections,
+}: UseDailyMarksSocketEffectsProps) => {
+  
+  // Initial marks fetch when student is selected
+  useEffect(() => {
+    if (!currentUser) return;
+    refetchMarks(selectedStudentId || undefined);
+  }, [selectedStudentId, currentUser, refetchMarks]);
+
+  // Refetch marks on socket updates
+  useEffect(() => {
+    if (!socketLastUpdate || !currentUser) return;
+    refetchMarks(selectedStudentId || undefined);
+  }, [socketLastUpdate, currentUser, selectedStudentId, refetchMarks]);
+
+  // Listen to notifications and refetch sections when assignment notification received
+  useEffect(() => {
+    if (!lastNotification || !currentUser) return;
+    
+    // Only refetch for assignment notifications (sections related)
+    if (lastNotification.type === "assignment") {
+      console.log("📚 Section notification received, refetching sections...");
+      refetchSections();
+    }
+  }, [lastNotification, currentUser, refetchSections]);
 };
