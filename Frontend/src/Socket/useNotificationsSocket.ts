@@ -13,7 +13,7 @@ import { useAuth } from '../hooks/useAuth';
 // ================== Types ==================
 interface NotificationData {
   action?: 'section_added' | 'section_updated' | 'section_deleted' | 'mark_added' | 'mark_updated' | 'mark_deleted';
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface Notification {
@@ -24,9 +24,10 @@ interface Notification {
   message: string;
   data?: NotificationData;
   createdAt: string;
+  sentAt?: string;
   isRead: boolean;
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  data?: Record<string, unknown>;
+  priority?: string;
+  isNew?: boolean;
 }
 
 interface NotificationStats {
@@ -147,17 +148,19 @@ export const useNotificationsSocket = (): UseNotificationsSocketReturn => {
     console.log('📬 [NotificationsSocket] New notification received:', data);
 
     try {
-      const notificationData = data as any;
+      const notificationData = data as Record<string, unknown>;
       
       const notification: Notification = {
-        _id: notificationData.id || notificationData._id,
-        type: notificationData.type || 'general',
-        title: notificationData.title || 'إشعار جديد',
-        message: notificationData.message || '',
-        createdAt: notificationData.createdAt || new Date().toISOString(),
+        _id: String(notificationData.id || notificationData._id || ''),
+        type: (notificationData.type as Notification['type']) || 'general',
+        title: String(notificationData.title || 'إشعار جديد'),
+        message: String(notificationData.message || ''),
+        createdAt: String(notificationData.createdAt || new Date().toISOString()),
+        sentAt: String(notificationData.sentAt || notificationData.createdAt || new Date().toISOString()),
         isRead: false,
-        priority: notificationData.priority || 'medium',
-        data: notificationData.data,
+        priority: String(notificationData.priority || 'medium'),
+        isNew: true, // مهم: تعليم الإشعار كجديد من Socket
+        data: notificationData.data as NotificationData,
       };
 
       // Update last notification
@@ -173,7 +176,12 @@ export const useNotificationsSocket = (): UseNotificationsSocketReturn => {
       // Trigger refresh
       setRefreshTrigger((prev) => prev + 1);
 
-      console.log('✅ [NotificationsSocket] Notification processed successfully');
+      console.log('✅ [NotificationsSocket] Notification processed successfully:', {
+        id: notification._id,
+        type: notification.type,
+        title: notification.title,
+        isNew: notification.isNew
+      });
     } catch (error) {
       console.error('❌ [NotificationsSocket] Error processing notification:', error);
     }
@@ -184,11 +192,11 @@ export const useNotificationsSocket = (): UseNotificationsSocketReturn => {
     console.log('📊 [NotificationsSocket] Stats update received:', data);
 
     try {
-      const statsData = data as any;
+      const statsData = data as Record<string, unknown>;
       setNotificationStats({
-        unreadCount: statsData.unreadCount || 0,
-        newCount: statsData.newCount || 0,
-        totalCount: statsData.totalCount || 0,
+        unreadCount: Number(statsData.unreadCount) || 0,
+        newCount: Number(statsData.newCount) || 0,
+        totalCount: Number(statsData.totalCount) || 0,
       });
     } catch (error) {
       console.error('❌ [NotificationsSocket] Error processing stats:', error);
@@ -200,8 +208,8 @@ export const useNotificationsSocket = (): UseNotificationsSocketReturn => {
     console.log('✓ [NotificationsSocket] Notification marked as read:', data);
 
     try {
-      const readData = data as any;
-      if (readData.notificationId === lastNotification?._id) {
+      const readData = data as Record<string, unknown>;
+      if (String(readData.notificationId) === lastNotification?._id) {
         setLastNotification((prev) => prev ? { ...prev, isRead: true } : null);
       }
 
@@ -237,8 +245,8 @@ export const useNotificationsSocket = (): UseNotificationsSocketReturn => {
     console.log('🗑️ [NotificationsSocket] Notification deleted:', data);
 
     try {
-      const deleteData = data as any;
-      if (deleteData.notificationId === lastNotification?._id) {
+      const deleteData = data as Record<string, unknown>;
+      if (String(deleteData.notificationId) === lastNotification?._id) {
         setLastNotification(null);
       }
 

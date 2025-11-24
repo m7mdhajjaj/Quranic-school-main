@@ -25,7 +25,6 @@ const notificationSchema = new mongoose.Schema(
         "news",
         "general",
         // "assignment",
-        // Daily Marks Object
         "daily_marks",
       ],
     },

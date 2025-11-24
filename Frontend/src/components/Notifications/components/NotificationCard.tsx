@@ -5,6 +5,7 @@
 
 import React from 'react';
 import type { NotificationCardProps } from '../types';
+import type { DailyMarkAction } from '../types';
 import { getNotificationIcon, getNotificationColor, formatRelativeTime, getPriorityBadge, getDailyMarkActionText } from '../utils';
 import { Button } from '@/components/UI';
 import { IoTrashOutline } from 'react-icons/io5';
@@ -69,7 +70,7 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
           {/* معلومات إضافية للعلامات اليومية */}
           {notification.type === 'daily_marks' && notification.data?.action && (
             <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-lg mb-2 inline-block">
-              {getDailyMarkActionText(notification.data.action)}
+              {getDailyMarkActionText(notification.data.action as DailyMarkAction)}
             </div>
           )}
 

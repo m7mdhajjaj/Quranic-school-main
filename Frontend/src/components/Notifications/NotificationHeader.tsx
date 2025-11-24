@@ -104,9 +104,25 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
   // معالجة الإشعار الجديد من Socket
   useEffect(() => {
     if (socketNotification) {
-      console.log('📬 New Socket notification:', socketNotification);
+      console.log('📬 New Socket notification received in NotificationHeader:', {
+        id: socketNotification._id,
+        type: socketNotification.type,
+        title: socketNotification.title,
+        isNew: socketNotification.isNew
+      });
+      
+      // التأكد من إضافة الإشعار فوراً
       addNotification(socketNotification as Notification);
-      playSound();
+      
+      // تشغيل الصوت
+      try {
+        playSound();
+        console.log('🔊 Notification sound played');
+      } catch (soundError) {
+        console.warn('⚠️ Could not play notification sound:', soundError);
+      }
+      
+      console.log('✅ Socket notification processed in NotificationHeader');
     }
   }, [socketNotification, addNotification, playSound]);
 

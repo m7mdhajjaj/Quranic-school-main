@@ -198,15 +198,26 @@ export const useNotificationData = ({
 
   // معالجة الإشعارات المتراكمة (batch processing)
   const processPendingNotifications = useCallback(() => {
-    if (pendingNotificationsRef.current.length === 0) return;
+    if (pendingNotificationsRef.current.length === 0) {
+      console.log('📦 No pending notifications to process');
+      return;
+    }
 
     const newNotifications = [...pendingNotificationsRef.current];
     const count = newNotifications.length;
     pendingNotificationsRef.current = []; // مسح الـ buffer
 
     console.log(`📦 معالجة ${count} إشعار دفعة واحدة`);
+    console.log('📋 Notifications to process:', newNotifications.map(n => ({
+      id: n._id,
+      type: n.type,
+      title: n.title,
+      isNew: n.isNew
+    })));
 
     setNotifications((prev) => {
+      console.log(`📊 Current notifications count: ${prev.length}`);
+      
       // تصفية الإشعارات المكررة
       const existingIds = new Set(prev.map(n => n._id));
       const uniqueNew = newNotifications.filter(n => !existingIds.has(n._id));
@@ -217,20 +228,36 @@ export const useNotificationData = ({
       }
 
       console.log(`✅ إضافة ${uniqueNew.length} إشعار جديد فعلياً (بعد تصفية المكرر)`);
+      console.log('🆕 New unique notifications:', uniqueNew.map(n => ({
+        id: n._id,
+        type: n.type,
+        title: n.title,
+        isNew: n.isNew
+      })));
 
       const updated = [...uniqueNew, ...prev];
-      return updated.sort((a, b) => {
+      const sorted = updated.sort((a, b) => {
         if (!a.isRead && b.isRead) return -1;
         if (a.isRead && !b.isRead) return 1;
         const dateA = new Date(a.sentAt || a.createdAt).getTime();
         const dateB = new Date(b.sentAt || b.createdAt).getTime();
         return dateB - dateA;
       });
+
+      console.log(`📈 Updated notifications count: ${sorted.length}`);
+      return sorted;
     });
   }, []);
 
   // إضافة إشعار جديد (من Socket) مع batch processing
   const addNotification = useCallback((newNotification: Notification) => {
+    console.log('🆕 Adding new notification from Socket:', {
+      id: newNotification._id,
+      type: newNotification.type,
+      title: newNotification.title,
+      isNew: newNotification.isNew
+    });
+
     const notificationWithSentAt = {
       ...newNotification,
       sentAt:
@@ -239,16 +266,43 @@ export const useNotificationData = ({
         new Date().toISOString(),
     };
 
-    // إضافة للـ buffer بدلاً من المعالجة الفورية
+    // إضافة فورية للاختبار (بدون buffer)
+    setNotifications((prev) => {
+      console.log(`📊 Current notifications count: ${prev.length}`);
+      
+      // تحقق من التكرار
+      const exists = prev.find(n => n._id === notificationWithSentAt._id);
+      if (exists) {
+        console.log('⚠️ Notification already exists, skipping:', notificationWithSentAt._id);
+        return prev;
+      }
+
+      const updated = [notificationWithSentAt, ...prev];
+      const sorted = updated.sort((a, b) => {
+        if (!a.isRead && b.isRead) return -1;
+        if (a.isRead && !b.isRead) return 1;
+        const dateA = new Date(a.sentAt || a.createdAt).getTime();
+        const dateB = new Date(b.sentAt || b.createdAt).getTime();
+        return dateB - dateA;
+      });
+
+      console.log(`✅ Notification added successfully! New count: ${sorted.length}`);
+      return sorted;
+    });
+
+    // إضافة للـ buffer أيضاً للـ batch processing العادي
     pendingNotificationsRef.current.push(notificationWithSentAt);
+
+    console.log(`📦 Also added to buffer. Current buffer size: ${pendingNotificationsRef.current.length}`);
 
     // إلغاء التايمر السابق إذا كان موجوداً
     if (batchTimeoutRef.current) {
       clearTimeout(batchTimeoutRef.current);
     }
 
-    // تعيين تايمر جديد - معالجة بعد 300ms من آخر إشعار
+    // تعيين تايمر جديد - معالجة بعد 300ms من آخر إشعار  
     batchTimeoutRef.current = setTimeout(() => {
+      console.log('⏰ Processing buffer timeout triggered (backup)');
       processPendingNotifications();
       batchTimeoutRef.current = null;
     }, 300);
@@ -292,6 +346,13 @@ export const useNotificationData = ({
     });
 
     console.log(`📊 Stats auto-updated: ${unreadCount} unread, ${newCount} new, ${totalCount} total`);
+    console.log('📋 Current notifications list:', notifications.slice(0, 3).map(n => ({
+      id: n._id,
+      type: n.type,
+      title: n.title,
+      isRead: n.isRead,
+      isNew: n.isNew
+    })));
   }, [notifications]);
 
   // Cleanup للـ batch timeout عند unmount
