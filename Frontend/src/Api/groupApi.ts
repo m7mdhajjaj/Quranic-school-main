@@ -190,6 +190,7 @@ export interface GroupWithStudents extends Group {
     studentId: number;
     name: string;
   }>;
+  totalStudents?: number; // إجمالي عدد الطلاب في الحلقة
   hasStudents?: boolean;
   isEmpty?: boolean;
 }

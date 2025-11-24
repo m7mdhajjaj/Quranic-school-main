@@ -83,6 +83,7 @@ export interface TeacherToolbarProps {
   groupFilter: string;
   onGroupFilterChange: (group: string) => void;
   groupsAvailable: string[];
+  teacherGroups?: Array<{ _id: string; name: string; totalStudents?: number }>;
   nameQuery: string;
   onNameQueryChange: (query: string) => void;
   totalStudents: number;

@@ -95,7 +95,11 @@ const AbsencePage = () => {
         result.push("");
       }
       
-      console.log(`📋 الحلقات المتاحة في الفلتر: ${result.join(', ')}`);
+      console.log(`📋 الحلقات المتاحة في الفلتر:`);
+      teacherGroups.forEach(g => {
+        console.log(`   • ${g.name}: ${g.totalStudents || 0} طالب`);
+      });
+      
       return result;
     }
     

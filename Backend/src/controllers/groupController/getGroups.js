@@ -252,6 +252,7 @@ exports.getGroupsByTeacherIdWithFilters = async (req, res) => {
       return {
         ...group,
         currentStudents,
+        totalStudents: currentStudents, // إجمالي عدد الطلاب (نفس currentStudents)
         capacity: group.capacity || 30,
         hasStudents: currentStudents > 0,
         isEmpty: currentStudents === 0,
@@ -285,6 +286,7 @@ exports.getGroupsByTeacherIdWithFilters = async (req, res) => {
               studentId: s.studentId,
               name: `${s.firstName} ${s.lastName}`,
             })),
+            totalStudents: students.length, // تحديث العدد الفعلي من الطلاب المجلوبين
           };
         })
       );

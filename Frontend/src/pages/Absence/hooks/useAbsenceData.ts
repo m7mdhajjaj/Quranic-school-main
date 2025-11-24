@@ -16,7 +16,11 @@ export const useAbsenceData = () => {
   const [students, setStudents] = useState<AttendanceStudent[]>([]);
   const [date, setDate] = useState<string>(todayISO());
   const [monthlyStats, setMonthlyStats] = useState<MonthlyAbsence[]>([]);
-  const [teacherGroups, setTeacherGroups] = useState<Array<{ _id: string; name: string }>>([]);
+  const [teacherGroups, setTeacherGroups] = useState<Array<{ 
+    _id: string; 
+    name: string; 
+    totalStudents?: number;
+  }>>([]);
 
   // Fetch students for teacher
   const fetchStudentsForTeacher = useCallback(async (forDate: string) => {
@@ -53,9 +57,18 @@ export const useAbsenceData = () => {
       
       console.log(`📊 تم استلام بيانات المعلم: ${teacher.name}`);
       console.log(`📚 ملخص الحلقات:`, summary);
+      
+      // عرض تفاصيل كل حلقة مع عدد طلابها
+      groups.forEach(group => {
+        console.log(`   📖 ${group.name}: ${group.totalStudents || 0} طالب`);
+      });
 
       // حفظ جميع الحلقات (سواء فيها طلاب أو فارغة)
-      setTeacherGroups(groups.map(g => ({ _id: g._id, name: g.name })));
+      setTeacherGroups(groups.map(g => ({ 
+        _id: g._id, 
+        name: g.name,
+        totalStudents: g.totalStudents || 0
+      })));
       console.log(`💾 تم حفظ ${groups.length} حلقة في state`);
 
       // استخراج الطلاب من جميع الحلقات
@@ -69,36 +82,55 @@ export const useAbsenceData = () => {
 
       console.log(`👥 إجمالي الطلاب: ${allStudents.length}`);
 
-      if (studentsWithStats.length === 0) {
+      if (allStudents.length === 0) {
         console.warn('⚠️ لم يتم العثور على طلاب لهذا المعلم');
         console.warn(`   المعلم: ${teacher.name} (ID: ${teacher._id})`);
+        console.warn(`   عدد الحلقات: ${groups.length}`);
         console.warn(`   الحلقات: ${groups.map(g => g.name).join(', ') || 'لا توجد حلقات'}`);
       }
 
-      let formatted: AttendanceStudent[] = studentsWithStats.map((s) => ({
-        _id: s._id,
-        studentId: s.studentId,
-        name: s.name,
-        group: s.group || 'بدون حلقة',
-        teacher: s.teacher,
-        isPresent: true,
-        totalAbsences: s.totalAbsences,
-        absenceDates: s.absenceDates
-          .map((date: any) => {
-            const d = new Date(date);
-            const day = String(d.getDate()).padStart(2, '0');
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const year = d.getFullYear();
-            return `${day}/${month}/${year}`;
-          })
-          .sort((a, b) => {
-            const [dayA, monthA, yearA] = a.split('/').map(Number);
-            const [dayB, monthB, yearB] = b.split('/').map(Number);
-            const dateA = new Date(yearA, monthA - 1, dayA);
-            const dateB = new Date(yearB, monthB - 1, dayB);
-            return dateB.getTime() - dateA.getTime();
-          }),
-      }));
+      // جلب إحصائيات الغياب للطلاب
+      const { getStudentsWithAbsenceStats } = await import(
+        '../../../Api/studentApi'
+      );
+      
+      const studentsWithAbsenceData = await getStudentsWithAbsenceStats(teacher.name);
+
+      // دمج بيانات الطلاب مع إحصائيات الغياب
+      const absenceMap = new Map(
+        studentsWithAbsenceData.map(s => [s._id, {
+          totalAbsences: s.totalAbsences,
+          absenceDates: s.absenceDates
+        }])
+      );
+
+      let formatted: AttendanceStudent[] = allStudents.map((s) => {
+        const absenceData = absenceMap.get(s._id);
+        return {
+          _id: s._id,
+          studentId: s.studentId,
+          name: s.name,
+          group: s.group || 'بدون حلقة',
+          teacher: s.teacher,
+          isPresent: true,
+          totalAbsences: absenceData?.totalAbsences || 0,
+          absenceDates: (absenceData?.absenceDates || [])
+            .map((date: any) => {
+              const d = new Date(date);
+              const day = String(d.getDate()).padStart(2, '0');
+              const month = String(d.getMonth() + 1).padStart(2, '0');
+              const year = d.getFullYear();
+              return `${day}/${month}/${year}`;
+            })
+            .sort((a, b) => {
+              const [dayA, monthA, yearA] = a.split('/').map(Number);
+              const [dayB, monthB, yearB] = b.split('/').map(Number);
+              const dateA = new Date(yearA, monthA - 1, dayA);
+              const dateB = new Date(yearB, monthB - 1, dayB);
+              return dateB.getTime() - dateA.getTime();
+            }),
+        };
+      });
 
       const duration = Date.now() - startTime;
       console.log(
