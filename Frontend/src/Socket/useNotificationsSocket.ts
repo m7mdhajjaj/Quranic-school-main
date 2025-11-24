@@ -11,12 +11,18 @@ import { socketManager } from './SocketManager';
 import { useAuth } from '../hooks/useAuth';
 
 // ================== Types ==================
+interface NotificationData {
+  action?: 'section_added' | 'section_updated' | 'section_deleted' | 'mark_added' | 'mark_updated' | 'mark_deleted';
+  [key: string]: any;
+}
+
 interface Notification {
   _id: string;
   id?: string;
-  type: 'grade' | 'message' | 'prayer_time' | 'activity' | 'attendance' | 'exam' | 'assignment' | 'news' | 'general';
+  type: 'grade' | 'message' | 'prayer_time' | 'activity' | 'attendance' | 'exam' | 'assignment' | 'news' | 'general' | 'daily_marks';
   title: string;
   message: string;
+  data?: NotificationData;
   createdAt: string;
   isRead: boolean;
   priority: 'low' | 'medium' | 'high' | 'urgent';

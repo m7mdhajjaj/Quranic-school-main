@@ -30,10 +30,11 @@ exports.notifyMarkAdded = async (mark, io) => {
     const notificationData = {
       recipient: student._id,
       recipientModel: "Student",
-      type: "grade",
+      type: "daily_marks",
       title: "📊 علامة جديدة",
       message: `تم إضافة علامتك في ${sectionDate}: ${totalMark} درجة`,
       data: {
+        action: "mark_added",
         studentId: student._id,
         studentName,
         sectionId: section._id,
@@ -108,10 +109,11 @@ exports.notifyMarksAdded = async (marks, io) => {
       const notificationData = {
         recipient: student._id,
         recipientModel: "Student",
-        type: "grade",
+        type: "daily_marks",
         title: "📊 علامة جديدة",
         message: `تم إضافة علامتك في ${sectionDate}: ${totalMark} درجة`,
         data: {
+          action: "mark_added",
           studentId: student._id,
           studentName,
           sectionId: section._id,
@@ -192,10 +194,11 @@ exports.notifyMarkUpdated = async (
     const notificationData = {
       recipient: student._id,
       recipientModel: "Student",
-      type: "grade",
+      type: "daily_marks",
       title,
       message: `${messagePrefix} علامتك في ${sectionDate}: ${newTotalMark} درجة`,
       data: {
+        action: isNew ? "mark_added" : "mark_updated",
         studentId: student._id,
         studentName,
         sectionId: section._id,
@@ -254,10 +257,11 @@ exports.notifyMarkDeleted = async (mark, io) => {
     const notificationData = {
       recipient: student._id,
       recipientModel: "Student",
-      type: "grade",
+      type: "daily_marks",
       title: "🗑️ تم حذف علامة",
       message: `تم حذف علامتك من ${sectionDate} (كانت: ${totalMark} درجة)`,
       data: {
+        action: "mark_deleted",
         studentId: student._id,
         studentName,
         sectionId: section._id,

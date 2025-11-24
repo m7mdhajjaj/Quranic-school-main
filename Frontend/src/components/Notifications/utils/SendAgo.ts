@@ -3,10 +3,47 @@
 // ============================================================================
 // Helper functions للإشعارات
 
+import type { DailyMarkAction, DailyMarkNotificationData } from '../types';
+
+/**
+ * الحصول على أيقونة أكثر تفصيلاً للعلامات اليومية
+ */
+export const getDailyMarkIcon = (action: DailyMarkAction): string => {
+  const actionIcons: Record<DailyMarkAction, string> = {
+    section_added: '📚',
+    section_updated: '✏️',
+    section_deleted: '🗑️',
+    mark_added: '⭐',
+    mark_updated: '📝',
+    mark_deleted: '❌',
+  };
+  return actionIcons[action] || '📊';
+};
+
+/**
+ * الحصول على نص وصفي للعملية
+ */
+export const getDailyMarkActionText = (action: DailyMarkAction): string => {
+  const actionTexts: Record<DailyMarkAction, string> = {
+    section_added: 'إضافة مقطع جديد',
+    section_updated: 'تعديل مقطع',
+    section_deleted: 'حذف مقطع',
+    mark_added: 'إضافة علامة جديدة',
+    mark_updated: 'تحديث علامة',
+    mark_deleted: 'حذف علامة',
+  };
+  return actionTexts[action] || 'عملية غير محددة';
+};
+
 /**
  * الحصول على أيقونة الإشعار حسب النوع
  */
-export const getNotificationIcon = (type: string): string => {
+export const getNotificationIcon = (type: string, data?: any): string => {
+  // للعلامات اليومية، نستخدم أيقونة مخصصة حسب العملية
+  if (type === 'daily_marks' && data?.action) {
+    return getDailyMarkIcon(data.action);
+  }
+  
   const icons: Record<string, string> = {
     grade: '🎯',
     message: '💬',
@@ -14,7 +51,10 @@ export const getNotificationIcon = (type: string): string => {
     activity: '✨',
     attendance: '⚡',
     exam: '📝',
+    assignment: '📚',
+    news: '📰',
     general: '🔔',
+    daily_marks: '📊',
   };
   return icons[type] || '🔔';
 };
@@ -30,7 +70,10 @@ export const getNotificationColor = (type: string): string => {
     prayer_time: 'from-purple-400 to-purple-600',
     activity: 'from-orange-400 to-orange-600',
     exam: 'from-pink-400 to-pink-600',
+    assignment: 'from-indigo-400 to-indigo-600',
+    news: 'from-cyan-400 to-cyan-600',
     general: 'from-gray-400 to-gray-600',
+    daily_marks: 'from-emerald-400 to-emerald-600',
   };
   return colors[type] || 'from-gray-400 to-gray-600';
 };

@@ -5,7 +5,7 @@
 
 import React from 'react';
 import type { NotificationCardProps } from '../types';
-import { getNotificationIcon, getNotificationColor, formatRelativeTime, getPriorityBadge } from '../utils';
+import { getNotificationIcon, getNotificationColor, formatRelativeTime, getPriorityBadge, getDailyMarkActionText } from '../utils';
 import { Button } from '@/components/UI';
 import { IoTrashOutline } from 'react-icons/io5';
 
@@ -16,7 +16,7 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
   onDelete,
   onClick,
 }) => {
-  const icon = getNotificationIcon(notification.type);
+  const icon = getNotificationIcon(notification.type, notification.data);
   const colorClass = getNotificationColor(notification.type);
   const priorityBadge = getPriorityBadge(notification.priority);
 
@@ -63,6 +63,13 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
                 !notification.isRead ? 'text-gray-700' : 'text-gray-600'
               }`}>
               {notification.message}
+            </div>
+          )}
+
+          {/* معلومات إضافية للعلامات اليومية */}
+          {notification.type === 'daily_marks' && notification.data?.action && (
+            <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-lg mb-2 inline-block">
+              {getDailyMarkActionText(notification.data.action)}
             </div>
           )}
 

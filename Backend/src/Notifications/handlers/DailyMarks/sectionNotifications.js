@@ -34,10 +34,11 @@ exports.notifySectionAdded = async (section, io) => {
       const notificationData = {
         recipient: student._id,
         recipientModel: "Student",
-        type: "assignment",
+        type: "daily_marks",
         title: "📚 مقطع جديد",
         message: `تم إضافة مقطع جديد بتاريخ ${sectionDate}\nالحفظ: ${section.memorizationSection}\nالمراجعة: ${section.reviewSection}`,
         data: {
+          action: "section_added",
           sectionId: section._id,
           sectionDate,
           memorizationSection: section.memorizationSection,
@@ -138,10 +139,11 @@ exports.notifySectionUpdated = async (section, oldSection, io) => {
       const notificationData = {
         recipient: student._id,
         recipientModel: "Student",
-        type: "assignment",
+        type: "daily_marks",
         title: "✏️ تم تعديل مقطع",
         message: `تم تعديل المقطع بتاريخ ${sectionDate}${changesText}`,
         data: {
+          action: "section_updated",
           sectionId: section._id,
           sectionDate,
           memorizationSection: section.memorizationSection,
@@ -242,10 +244,11 @@ exports.notifySectionDeleted = async (section, io) => {
       const notificationData = {
         recipient: student._id,
         recipientModel: "Student",
-        type: "assignment",
+        type: "daily_marks",
         title: "🗑️ تم حذف مقطع",
         message: `تم حذف المقطع بتاريخ ${sectionDate}\nالحفظ: ${section.memorizationSection}\nالمراجعة: ${section.reviewSection}`,
         data: {
+          action: "section_deleted",
           sectionId: section._id,
           sectionDate,
           memorizationSection: section.memorizationSection,
@@ -348,10 +351,11 @@ exports.notifyStudentAboutSection = async (studentId, section, type, io) => {
     const notificationData = {
       recipient: student._id,
       recipientModel: "Student",
-      type: "assignment",
+      type: "daily_marks",
       title,
       message,
       data: {
+        action: type,
         sectionId: section._id,
         sectionDate,
         memorizationSection: section.memorizationSection,

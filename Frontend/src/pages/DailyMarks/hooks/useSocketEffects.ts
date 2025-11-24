@@ -39,7 +39,7 @@ export const useSocketEffects = ({
     if (!lastNotification || !currentUser) return;
     
     // Only refetch for assignment notifications (sections related)
-    if (lastNotification.type === "assignment") {
+    if (lastNotification.type === "daily_marks") {
       console.log("📚 Section notification received, refetching sections...");
       refetchSections();
     }

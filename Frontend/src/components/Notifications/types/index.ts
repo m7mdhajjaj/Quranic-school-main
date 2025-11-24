@@ -19,12 +19,44 @@ export type NotificationType =
   | 'exam'            // امتحان
   | 'assignment'      // مقطع/واجب
   | 'news'            // خبر/منشور
-  | 'general';        // عام
+  | 'general'         // عام
+  | 'daily_marks';    // العلامات اليومية
 
 /**
  * أولوية الإشعار
  */
 export type NotificationPriority = 'low' | 'medium' | 'high' | 'urgent';
+
+/**
+ * أنواع العمليات للعلامات اليومية
+ */
+export type DailyMarkAction = 
+  | 'section_added'      // إضافة مقطع
+  | 'section_updated'    // تعديل مقطع
+  | 'section_deleted'    // حذف مقطع
+  | 'mark_added'         // إضافة علامة
+  | 'mark_updated'       // تعديل علامة
+  | 'mark_deleted';      // حذف علامة
+
+/**
+ * بيانات إشعار العلامات اليومية
+ */
+export interface DailyMarkNotificationData {
+  action: DailyMarkAction;
+  sectionId?: string;
+  studentId?: string;
+  sectionDate?: string;
+  memorizationSection?: string;
+  reviewSection?: string;
+  group?: string;
+  teacher?: string;
+  totalMark?: number;
+  reviewMark?: number;
+  memorizationMark?: number;
+  oldTotalMark?: number;
+  deletedMark?: number;
+  [key: string]: unknown;
+}
 
 /**
  * واجهة الإشعار الرئيسية
@@ -39,7 +71,7 @@ export interface Notification {
   isRead: boolean;
   priority: NotificationPriority;
   isNew?: boolean;
-  data?: Record<string, unknown>;
+  data?: DailyMarkNotificationData | Record<string, unknown>;
 }
 
 /**

@@ -9,7 +9,7 @@ export interface Notification {
   id?: number;
   title: string;
   message: string;
-  type: 'grade' | 'message' | 'prayer_time' | 'activity' | 'attendance' | 'exam' | 'general'; // ✅ متطابق مع Backend
+  type: 'grade' | 'message' | 'prayer_time' | 'activity' | 'attendance' | 'exam' | 'general' | 'daily_marks'; // ✅ متطابق مع Backend
   priority: 'low' | 'medium' | 'high' | 'urgent'; // ✅ متطابق مع Backend
   isRead: boolean;
   userId?: string;

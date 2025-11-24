@@ -7,4 +7,6 @@ export {
   getNotificationColor,
   formatRelativeTime,
   getPriorityBadge,
+  getDailyMarkIcon,
+  getDailyMarkActionText,
 } from './SendAgo';

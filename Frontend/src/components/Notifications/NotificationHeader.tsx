@@ -22,10 +22,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
   // ============================================================================
 
   // Socket & Firebase للإشعارات الفورية
-  const {
-    lastNotification: socketNotification,
-    refreshTrigger,
-  } = useNotificationsSocket();
+  const { lastNotification: socketNotification } = useNotificationsSocket();
 
   const { lastNotification: firebaseNotification } = useFirebaseMessaging();
 
@@ -36,7 +33,6 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
     isLoading,
     isMarkingAll,
     hasMore,
-    fetchNotifications,
     loadMore,
     markAllAsReadLocal,
     markNotificationAsRead,
@@ -147,11 +143,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
 
   return (
     <>
-      <div
-        className="relative"
-        ref={dropdownRef}
-        dir="rtl"
-      >
+      <div className="relative" ref={dropdownRef} dir="rtl">
         {/* زر الإشعارات */}
         <NotificationBell
           unreadCount={stats.unreadCount}

@@ -55,7 +55,8 @@ async function notifyNewGrade(createNotificationFn, studentId, subject, grade, t
               body: message,
             },
             data: {
-              type: "grade",
+              type: "daily_marks",
+              action: isUpdate ? "mark_updated" : "mark_added",
               subject,
               grade: grade.toString(),
               teacherName,
@@ -74,9 +75,16 @@ async function notifyNewGrade(createNotificationFn, studentId, subject, grade, t
     return await createNotificationFn({
       recipient: studentId,
       recipientModel: "Student",
-      type: "grade",
+      type: "daily_marks",
       title: `${gradeEmoji} ${actionText}`,
       message: message,
+      data: {
+        action: isUpdate ? "mark_updated" : "mark_added",
+        subject,
+        grade,
+        teacherName,
+        oldGrade,
+      },
       priority: grade >= 18 ? "high" : "medium",
       data: { subject, grade, teacherName, gradeEmoji, isUpdate, oldGrade },
     });

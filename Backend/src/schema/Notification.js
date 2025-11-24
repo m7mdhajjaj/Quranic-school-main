@@ -24,6 +24,9 @@ const notificationSchema = new mongoose.Schema(
         "exam",
         "news",
         "general",
+        // "assignment",
+        // Daily Marks Object
+        "daily_marks",
       ],
     },
     title: {
@@ -41,6 +44,33 @@ const notificationSchema = new mongoose.Schema(
     data: {
       type: Object,
       default: {},
+      /**
+       * استخدم data.action للتمييز بين العمليات المختلفة:
+       * 
+       * للمقاطع: 
+       * - { action: "section_added", sectionId: "...", memorizationSection: "البقرة 1-10" }
+       * - { action: "section_updated", sectionId: "...", oldSection: {...}, newSection: {...} }
+       * - { action: "section_deleted", sectionId: "...", deletedSection: {...} }
+       * 
+       * للعلامات:
+       * - { action: "mark_added", studentId: "...", totalMark: 95, reviewMark: 45 }
+       * - { action: "mark_updated", studentId: "...", oldMark: 85, newMark: 95 }
+       * - { action: "mark_deleted", studentId: "...", deletedMark: 85 }
+       * 
+       * مثال كامل:
+       * {
+       *   type: "daily_marks",
+       *   title: "📚 مقطع جديد", 
+       *   message: "تم إضافة مقطع جديد: البقرة 1-10",
+       *   data: {
+       *     action: "section_added",
+       *     sectionId: "648a1b2c3d4e5f6789012345",
+       *     memorizationSection: "البقرة 1-10",
+       *     reviewSection: "البقرة 11-20",
+       *     group: "الحلقة الأولى"
+       *   }
+       * }
+       */
     },
     isRead: {
       type: Boolean,
