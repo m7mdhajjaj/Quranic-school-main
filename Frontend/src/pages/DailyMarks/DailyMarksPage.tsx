@@ -3,7 +3,7 @@
 // ============================================================================
 
 // React & Hooks
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback, memo, useTransition } from "react";
 
 // Socket & Data Hooks
 import { useDailyMarksSocket } from "../../Socket";
@@ -136,41 +136,41 @@ const DailyMarksPage = () => {
   // INPUT CHANGE HANDLERS
   // ==========================================================================
   
-  const handleSectionInputChange = (
+  const handleSectionInputChange = useCallback((
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     state.setNewSection((prev) => ({ ...prev, [name]: value }));
-  };
+  }, [state]);
 
-  const handleEditSectionInputChange = (
+  const handleEditSectionInputChange = useCallback((
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     state.setEditingSection((prev) => prev ? { ...prev, [name]: value } : null);
-  };
+  }, [state]);
 
-  const handleMarkInputChange = (
+  const handleMarkInputChange = useCallback((
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     state.setNewMark((prev) => ({ ...prev, [name]: Number(value) }));
-  };
+  }, [state]);
 
   // ==========================================================================
   // COMPUTED VALUES & HELPERS
   // ==========================================================================
   
-  const filteredSections = getFilteredSections();
+  const filteredSections = useMemo(() => getFilteredSections(), [getFilteredSections]);
   
-  const averages = calculateAverages(
+  const averages = useMemo(() => calculateAverages(
     marks,
     currentUser?.role === "student" ? currentUser._id : selectedStudentId
-  );
+  ), [marks, currentUser, selectedStudentId, calculateAverages]);
 
-  const getSelectedStudent = () => {
+  const getSelectedStudent = useCallback(() => {
     return students.find((s) => s._id === selectedStudentId) || null;
-  };
+  }, [students, selectedStudentId]);
 
   // ==========================================================================
   // RENDER

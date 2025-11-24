@@ -1,3 +1,4 @@
+import { memo, useMemo } from "react";
 import type { MonthYearFilterProps } from "../types/dailyMarks";
 import { FilterSelect, FilterContainer } from "@/components/Filters";
 import type { FilterOption } from "@/components/Filters";
@@ -6,13 +7,13 @@ import type { FilterOption } from "@/components/Filters";
  * Month and Year filter component
  * Uses shared FilterContainer and FilterSelect components for consistent styling
  */
-export const MonthYearFilter = ({
+const MonthYearFilterComponent = ({
   selectedMonth,
   selectedYear,
   onMonthChange,
   onYearChange,
 }: MonthYearFilterProps) => {
-  const monthOptions: FilterOption[] = [
+  const monthOptions: FilterOption[] = useMemo(() => [
     { value: "1", label: "يناير (1)" },
     { value: "2", label: "فبراير (2)" },
     { value: "3", label: "مارس (3)" },
@@ -25,19 +26,21 @@ export const MonthYearFilter = ({
     { value: "10", label: "أكتوبر (10)" },
     { value: "11", label: "نوفمبر (11)" },
     { value: "12", label: "ديسمبر (12)" },
-  ];
+  ], []);
 
-  const yearOptions: FilterOption[] = [
+  const yearOptions: FilterOption[] = useMemo(() => [
     { value: "2023", label: "2023" },
     { value: "2024", label: "2024" },
     { value: "2025", label: "2025" },
     { value: "2026", label: "2026" },
     { value: "2027", label: "2027" },
-  ];
+  ], []);
 
-  const selectedMonthLabel = monthOptions.find(
-    (m) => m.value === selectedMonth.toString()
-  )?.label;
+  const selectedMonthLabel = useMemo(() => {
+    return monthOptions.find(
+      (m) => m.value === selectedMonth.toString()
+    )?.label;
+  }, [monthOptions, selectedMonth]);
 
   return (
     <FilterContainer
@@ -76,3 +79,5 @@ export const MonthYearFilter = ({
     </FilterContainer>
   );
 };
+
+export const MonthYearFilter = memo(MonthYearFilterComponent);

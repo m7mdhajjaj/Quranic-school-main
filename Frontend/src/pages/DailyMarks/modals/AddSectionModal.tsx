@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import {
   Button,
   Input,
@@ -11,7 +12,7 @@ import type { AddSectionModalProps } from '../types/dailyMarks';
 /**
  * Modal for adding a new section
  */
-export const AddSectionModal = ({
+const AddSectionModalComponent = ({
   isOpen,
   newSection,
   isLoading = false,
@@ -31,12 +32,7 @@ export const AddSectionModal = ({
           <DatePicker
             label="التاريخ"
             value={newSection.date}
-            onChange={(date) => {
-              const event = {
-                target: { name: 'date', value: date },
-              } as React.ChangeEvent<HTMLInputElement>;
-              onChange(event);
-            }}
+            onChange={(date) => onChange({ target: { name: 'date', value: date } } as React.ChangeEvent<HTMLInputElement>)}
             required
           />
         </div>
@@ -57,7 +53,8 @@ export const AddSectionModal = ({
             placeholder="مثال: البقرة (1-10)"
             value={newSection.reviewSection}
             onChange={onChange}
-            className="border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+            autoComplete="off"
+            className="border-gray-200 focus:border-emerald-500 focus:ring-emerald-100"
           />
         </div>
 
@@ -75,7 +72,8 @@ export const AddSectionModal = ({
             placeholder="مثال: البقرة (11-15)"
             value={newSection.memorizationSection}
             onChange={onChange}
-            className="border-2 border-gray-200 rounded-xl focus:border-amber-500 focus:ring-4 focus:ring-amber-100"
+            autoComplete="off"
+            className="border-gray-200 focus:border-amber-500 focus:ring-amber-100"
           />
         </div>
 
@@ -110,3 +108,14 @@ export const AddSectionModal = ({
     </Modal>
   );
 };
+
+export const AddSectionModal = memo(AddSectionModalComponent, (prev, next) => {
+  // Only re-render if these specific props change
+  return (
+    prev.isOpen === next.isOpen &&
+    prev.isLoading === next.isLoading &&
+    prev.newSection.date === next.newSection.date &&
+    prev.newSection.reviewSection === next.newSection.reviewSection &&
+    prev.newSection.memorizationSection === next.newSection.memorizationSection
+  );
+});

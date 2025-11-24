@@ -68,6 +68,10 @@ export const Logo: React.FC<LogoProps> = ({
             <img
               src={logoUrl}
               alt={alt}
+              loading="eager"
+              decoding="async"
+              width="48"
+              height="48"
               className="w-9 h-9 md:w-10 md:h-10 lg:w-12 lg:h-12 rounded-full object-cover"
             />
           </div>
@@ -75,6 +79,10 @@ export const Logo: React.FC<LogoProps> = ({
           <img
             src={logoUrl}
             alt={alt}
+            loading="eager"
+            decoding="async"
+            width="192"
+            height="192"
             className={`relative ${sizes[size]} ${headerStyles.container} object-cover`}
           />
         )

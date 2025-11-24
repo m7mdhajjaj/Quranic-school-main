@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { socketManager } from './SocketManager';
 import { useAuth } from '../hooks/useAuth';
 
@@ -78,19 +78,35 @@ export const useDailyMarksSocket = () => {
 
     console.log('👂 Setting up DailyMarks event listeners...');
 
-    const handleMarkCreated = (...args: unknown[]) => {
-      console.log('➕ Mark created (DailyMarks):', args[0]);
-      setLastUpdate(new Date());
+    // Debounce timer
+    let updateTimer: NodeJS.Timeout | null = null;
+
+    const debouncedUpdate = () => {
+      if (updateTimer) clearTimeout(updateTimer);
+      updateTimer = setTimeout(() => {
+        setLastUpdate(new Date());
+      }, 300); // تأخير 300ms
     };
 
-    const handleMarkUpdated = (...args: unknown[]) => {
-      console.log('✏️ Mark updated (DailyMarks):', args[0]);
-      setLastUpdate(new Date());
+    const handleMarkCreated = () => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('➕ Mark created');
+      }
+      debouncedUpdate();
     };
 
-    const handleMarkDeleted = (...args: unknown[]) => {
-      console.log('🗑️ Mark deleted (DailyMarks):', args[0]);
-      setLastUpdate(new Date());
+    const handleMarkUpdated = () => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✏️ Mark updated');
+      }
+      debouncedUpdate();
+    };
+
+    const handleMarkDeleted = () => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🗑️ Mark deleted');
+      }
+      debouncedUpdate();
     };
 
     // الاشتراك في الأحداث
@@ -100,6 +116,7 @@ export const useDailyMarksSocket = () => {
 
     // التنظيف
     return () => {
+      if (updateTimer) clearTimeout(updateTimer);
       console.log('🧹 Removing DailyMarks event listeners...');
       socketManager.off('markCreated', handleMarkCreated);
       socketManager.off('markUpdated', handleMarkUpdated);

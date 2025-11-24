@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { TeacherViewProps } from "../types/dailyMarks";
 import { SectionsTable } from "./SectionsTable";
 import { EmptyState, Card } from "@/components/UI";
@@ -5,7 +6,7 @@ import { EmptyState, Card } from "@/components/UI";
 /**
  * Teacher view component - Shows marks table for selected student
  */
-export const TeacherView = ({
+const TeacherViewComponent = ({
   students,
   selectedStudentId,
   sections,
@@ -46,3 +47,5 @@ export const TeacherView = ({
     </div>
   );
 };
+
+export const TeacherView = memo(TeacherViewComponent);

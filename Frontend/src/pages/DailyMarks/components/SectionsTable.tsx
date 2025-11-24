@@ -1,8 +1,10 @@
 import type { Section, Mark, SectionsTableProps } from "../types/dailyMarks";
-import { Button } from "@/components/UI";
+import { Button, Tooltip } from "@/components/UI";
 import { ProgressBar } from "@/components/UI";
 import { Table } from "@/components/UI";
 import type { Column } from "@/components/UI/Table";
+import { useMemo, memo } from "react";
+import { RefreshCw, Plus, Edit, Trash2, RotateCcw, BookOpen, Calendar } from "lucide-react";
 
 // Extended section type with mark for table rendering
 type SectionWithMark = Section & { mark?: Mark };
@@ -11,7 +13,7 @@ type SectionWithMark = Section & { mark?: Mark };
  * Sections table component showing sections with marks and actions
  * Uses shared Table component with custom rendering
  */
-export const SectionsTable = ({
+const SectionsTableComponent = ({
   sections,
   marks,
   loadingMarks,
@@ -76,17 +78,77 @@ export const SectionsTable = ({
     );
   };
 
-  // Prepare data with marks attached
-  const tableData: SectionWithMark[] = sections.map((section) => ({
-    ...section,
-    mark: findMark(section._id),
-  }));
+  // Prepare data with marks attached (memoized for performance)
+  const tableData: SectionWithMark[] = useMemo(() => 
+    sections.map((section) => ({
+      ...section,
+      mark: findMark(section._id),
+    })),
+    [sections, marks]
+  );
 
   // Define table columns with enhanced styling
   const columns: Column<SectionWithMark>[] = [
     {
+      key: "reviewSection",
+      header: (
+        <div className="flex items-center gap-2">
+          <RotateCcw size={16} className="text-emerald-600" />
+          <span>مقطع المراجعة</span>
+        </div>
+      ),
+      render: (row) => (
+        <div className="flex items-center gap-2">
+          <div className="bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg font-medium text-sm">
+            {row.reviewSection}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "reviewMark",
+      header: (
+        <div className="flex items-center gap-2">
+          <RefreshCw size={16} className="text-emerald-600" />
+          <span>علامة المراجعة</span>
+        </div>
+      ),
+      render: (row) => renderMarkCell(row.mark, "review"),
+    },
+    {
+      key: "memorizationSection",
+      header: (
+        <div className="flex items-center gap-2">
+          <BookOpen size={16} className="text-amber-600" />
+          <span>مقطع الحفظ</span>
+        </div>
+      ),
+      render: (row) => (
+        <div className="flex items-center gap-2">
+          <div className="bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg font-medium text-sm">
+            {row.memorizationSection}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "memorizationMark",
+      header: (
+        <div className="flex items-center gap-2">
+          <BookOpen size={16} className="text-amber-600" />
+          <span>علامة الحفظ</span>
+        </div>
+      ),
+      render: (row) => renderMarkCell(row.mark, "memorization"),
+    },
+    {
       key: "date",
-      header: "📅 التاريخ",
+      header: (
+        <div className="flex items-center gap-2">
+          <Calendar size={16} className="text-gray-600" />
+          <span>التاريخ</span>
+        </div>
+      ),
       render: (row) => {
         const date = new Date(row.date);
         const formattedDate = date.toLocaleDateString("en-GB", {
@@ -104,38 +166,6 @@ export const SectionsTable = ({
         );
       },
     },
-    {
-      key: "reviewSection",
-      header: "🔄 مقطع المراجعة",
-      render: (row) => (
-        <div className="flex items-center gap-2">
-          <div className="bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg font-medium text-sm">
-            {row.reviewSection}
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "reviewMark",
-      header: "✨ علامة المراجعة",
-      render: (row) => renderMarkCell(row.mark, "review"),
-    },
-    {
-      key: "memorizationSection",
-      header: "📖 مقطع الحفظ",
-      render: (row) => (
-        <div className="flex items-center gap-2">
-          <div className="bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg font-medium text-sm">
-            {row.memorizationSection}
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "memorizationMark",
-      header: "⭐ علامة الحفظ",
-      render: (row) => renderMarkCell(row.mark, "memorization"),
-    },
   ];
 
   // Render action buttons for teachers with enhanced styling
@@ -143,50 +173,50 @@ export const SectionsTable = ({
     ? (row: SectionWithMark) => (
         <div className="flex items-center justify-center gap-2">
           {row.mark ? (
-            <Button
-              onClick={() => onUpdateMark && onUpdateMark(row.mark!, row)}
-              variant="primary"
-              size="xs"
-              gradient={true}
-              className="shadow-sm hover:shadow-md transition-all duration-200"
-              title="تحديث العلامة">
-              🔄
-            </Button>
+            <Tooltip content="تحديث العلامة" position="top">
+              <button
+                onClick={() => onUpdateMark && onUpdateMark(row.mark!, row)}
+                className="group relative w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-150 flex items-center justify-center transform hover:scale-105 active:scale-95 will-change-transform"
+                title="تحديث العلامة"
+                type="button">
+                <RefreshCw size={16} className="group-hover:rotate-180 transition-transform duration-200" />
+              </button>
+            </Tooltip>
           ) : (
-            <Button
-              onClick={() => onAddMark && onAddMark(row)}
-              variant="success"
-              size="xs"
-              gradient={true}
-              className="shadow-sm hover:shadow-md transition-all duration-200 animate-pulse"
-              title="إضافة علامة">
-              ➕
-            </Button>
+            <Tooltip content="إضافة علامة" position="top">
+              <button
+                onClick={() => onAddMark && onAddMark(row)}
+                className="group relative w-9 h-9 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-md hover:shadow-lg transition-all duration-150 flex items-center justify-center transform hover:scale-105 active:scale-95 animate-pulse hover:animate-none will-change-transform"
+                title="إضافة علامة"
+                type="button">
+                <Plus size={16} className="group-hover:rotate-90 transition-transform duration-150" />
+              </button>
+            </Tooltip>
           )}
-          <Button
-            onClick={() => onEditSection && onEditSection(row)}
-            variant="warning"
-            size="xs"
-            gradient={true}
-            className="shadow-sm hover:shadow-md transition-all duration-200"
-            title="تعديل المقطع">
-            ✏️
-          </Button>
-          <Button
-            onClick={() => onDeleteSection && onDeleteSection(row._id)}
-            variant="danger"
-            size="xs"
-            gradient={true}
-            className="shadow-sm hover:shadow-md transition-all duration-200"
-            title="حذف المقطع">
-            🗑️
-          </Button>
+          <Tooltip content="تعديل المقطع" position="top">
+            <button
+              onClick={() => onEditSection && onEditSection(row)}
+              className="group relative w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white shadow-md hover:shadow-lg transition-all duration-150 flex items-center justify-center transform hover:scale-105 active:scale-95 will-change-transform"
+              title="تعديل المقطع"
+              type="button">
+              <Edit size={16} className="group-hover:scale-110 transition-transform duration-150" />
+            </button>
+          </Tooltip>
+          <Tooltip content="حذف المقطع" position="top">
+            <button
+              onClick={() => onDeleteSection && onDeleteSection(row._id)}
+              className="group relative w-9 h-9 rounded-full bg-gradient-to-br from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white shadow-md hover:shadow-lg transition-all duration-150 flex items-center justify-center transform hover:scale-105 active:scale-95 will-change-transform"
+              title="حذف المقطع"
+              type="button">
+              <Trash2 size={16} className="group-hover:scale-110 transition-transform duration-150" />
+            </button>
+          </Tooltip>
         </div>
       )
     : undefined;
 
   return (
-    <div className="overflow-hidden">
+    <div className="overflow-hidden -m-6 -p-6">
       <Table
         columns={columns}
         data={tableData}
@@ -199,10 +229,15 @@ export const SectionsTable = ({
         showHeader={true}
         stickyHeader={false}
         renderActions={renderActions}
-        actionsHeader="⚙️ الإجراءات"
+        actionsHeader={
+          <div className="flex items-center gap-2 justify-center">
+            <Edit size={16} className="text-gray-600" />
+            <span>الإجراءات</span>
+          </div>
+        }
         actionsWidth="160px"
         loadingRows={3}
-        className="shadow-none border-none"
+        className="shadow-none border-none m-0 p-0"
       />
       <style>{`
         /* Enhanced table row hover effect */
@@ -217,3 +252,5 @@ export const SectionsTable = ({
     </div>
   );
 };
+
+export const SectionsTable = memo(SectionsTableComponent);

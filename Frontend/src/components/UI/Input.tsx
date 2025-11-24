@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo, useCallback } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -11,7 +11,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   showPasswordToggle?: boolean; // خاصية جديدة لإظهار/إخفاء كلمة المرور
 }
 
-export const Input: React.FC<InputProps> = ({
+const InputComponent: React.FC<InputProps> = ({
   label,
   error,
   helperText,
@@ -26,6 +26,11 @@ export const Input: React.FC<InputProps> = ({
   ...props
 }) => {
   const [showPassword, setShowPassword] = useState(false);
+
+  // Memoize toggle function
+  const togglePassword = useCallback(() => {
+    setShowPassword(prev => !prev);
+  }, []);
 
   // تحديد نوع الـ input بناءً على حالة إظهار كلمة المرور
   const inputType = showPasswordToggle
@@ -53,12 +58,12 @@ export const Input: React.FC<InputProps> = ({
         <input
           type={inputType}
           value={value}
-          className={`w-full px-5 py-4 bg-white border-2 rounded-2xl transition-all text-right placeholder-gray-400 text-base shadow-sm ${
+          className={`w-full px-5 py-4 bg-white border-2 rounded-2xl text-right placeholder-gray-400 text-base shadow-sm ${
             leftIcon ? 'pl-10' : ''
           } ${rightIcon || (showPasswordToggle && hasValue) ? 'pl-14' : ''} ${
             error
               ? 'border-red-500 focus:border-red-500 focus:ring-red-200'
-              : 'border-emerald-300 focus:border-emerald-500 focus:ring-emerald-500'
+              : 'border-gray-200 focus:border-emerald-500 focus:ring-emerald-100'
           } focus:ring-2 focus:outline-none ${className || ''}`}
           required={required}
           {...props}
@@ -73,7 +78,7 @@ export const Input: React.FC<InputProps> = ({
           <button
             type="button"
             tabIndex={-1}
-            onClick={() => setShowPassword(!showPassword)}
+            onClick={togglePassword}
             className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-600 hover:text-emerald-700 focus:outline-none transition-colors duration-200"
             aria-label={showPassword ? 'إخفاء كلمة المرور' : 'عرض كلمة المرور'}
           >
@@ -92,3 +97,13 @@ export const Input: React.FC<InputProps> = ({
     </div>
   );
 };
+
+export const Input = memo(InputComponent, (prevProps, nextProps) => {
+  // Only re-render if these props change
+  return (
+    prevProps.value === nextProps.value &&
+    prevProps.error === nextProps.error &&
+    prevProps.disabled === nextProps.disabled &&
+    prevProps.className === nextProps.className
+  );
+});

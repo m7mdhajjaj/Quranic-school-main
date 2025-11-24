@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { StudentViewProps } from "../types/dailyMarks";
 import { SectionsTable } from "./SectionsTable";
 import { AveragesBar } from "./AveragesBar";
@@ -6,7 +7,7 @@ import { Card } from "@/components/UI";
 /**
  * Student view component - single table layout with averages
  */
-export const StudentView = ({
+const StudentViewComponent = ({
   sections,
   marks,
   loadingMarks,
@@ -63,3 +64,5 @@ export const StudentView = ({
     </div>
   );
 };
+
+export const StudentView = memo(StudentViewComponent);

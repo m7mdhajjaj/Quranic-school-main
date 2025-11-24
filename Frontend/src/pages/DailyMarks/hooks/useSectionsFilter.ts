@@ -86,8 +86,9 @@ export const useSectionsFilter = (sections: Section[]) => {
           memorizationMarks.length
         : 0;
 
-    // Overall average out of 100 (combining both review and memorization)
-    const overallAverage = ((reviewAverage + memorizationAverage) / 2) * 10; // Convert to percentage
+    // Overall average out of 100: (review + memorization) * 5
+    // Each is out of 10, so total is 20, multiply by 5 to get percentage
+    const overallAverage = (reviewAverage + memorizationAverage) * 5;
 
     return {
       reviewAverage: Number(reviewAverage.toFixed(2)),

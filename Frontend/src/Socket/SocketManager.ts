@@ -58,7 +58,9 @@ class SocketManager {
     if (!this.socket) return;
 
     this.socket.on('connect', () => {
-      console.log('✅ Socket connected successfully:', this.socket?.id);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ Socket connected:', this.socket?.id);
+      }
       this.reconnectAttempts = 0;
       this.isConnecting = false;
       this.notifyConnectionStatus(true);
@@ -106,8 +108,11 @@ class SocketManager {
     });
 
     // استقبال heartbeat من الخادم
-    this.socket.on('pong', (data) => {
-      console.log('💓 Heartbeat received from server:', data);
+    this.socket.on('pong', () => {
+      // Heartbeat received - no logging needed in production
+      if (process.env.NODE_ENV === 'development') {
+        console.log('💓 Heartbeat OK');
+      }
     });
   }
 
@@ -119,13 +124,10 @@ class SocketManager {
 
     this.heartbeatInterval = setInterval(() => {
       if (this.socket?.connected) {
-        console.log('💓 Sending heartbeat...');
         this.socket.emit('ping', {
           timestamp: Date.now(),
           clientId: this.socket.id,
         });
-      } else {
-        console.warn('⚠️ Socket not connected, skipping heartbeat');
       }
     }, this.heartbeatIntervalTime);
 
@@ -159,12 +161,15 @@ class SocketManager {
    * إشعار جميع المشتركين بتغيير حالة الاتصال
    */
   private notifyConnectionStatus(connected: boolean): void {
-    this.connectionCallbacks.forEach(callback => {
-      try {
-        callback(connected);
-      } catch (error) {
-        console.error('Error in connection callback:', error);
-      }
+    // استخدام requestAnimationFrame لتحسين الأداء
+    requestAnimationFrame(() => {
+      this.connectionCallbacks.forEach(callback => {
+        try {
+          callback(connected);
+        } catch (error) {
+          console.error('Error in connection callback:', error);
+        }
+      });
     });
   }
 

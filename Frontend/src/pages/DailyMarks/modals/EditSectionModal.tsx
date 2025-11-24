@@ -1,11 +1,14 @@
 import { Modal, Button, Input, DatePicker } from '@/components/UI';
 import { Edit } from 'lucide-react';
+import { useCallback } from 'react';
 import type { EditSectionModalProps } from '../types/dailyMarks';
+
+import { memo } from 'react';
 
 /**
  * Modal for editing an existing section
  */
-export const EditSectionModal = ({
+const EditSectionModalComponent = ({
   isOpen,
   editingSection,
   onClose,
@@ -13,6 +16,17 @@ export const EditSectionModal = ({
   onChange,
 }: EditSectionModalProps) => {
   if (!isOpen || !editingSection) return null;
+
+  const handleDateChange = useCallback((date: string) => {
+    const event = {
+      target: { name: 'date', value: date },
+    } as React.ChangeEvent<HTMLInputElement>;
+    onChange(event);
+  }, [onChange]);
+
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange(e);
+  }, [onChange]);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="تعديل المقطع">
@@ -30,12 +44,7 @@ export const EditSectionModal = ({
           <DatePicker
             label="التاريخ"
             value={editingSection.date}
-            onChange={(date) => {
-              const event = {
-                target: { name: 'date', value: date },
-              } as React.ChangeEvent<HTMLInputElement>;
-              onChange(event);
-            }}
+            onChange={handleDateChange}
             required
           />
         </div>
@@ -48,8 +57,8 @@ export const EditSectionModal = ({
             label="مقطع المراجعة"
             placeholder="مثال: البقرة (1-10)"
             value={editingSection.reviewSection}
-            onChange={onChange}
-            className="border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+            onChange={handleInputChange}
+            className="border-gray-200 focus:border-emerald-500 focus:ring-emerald-100"
           />
         </div>
 
@@ -61,8 +70,8 @@ export const EditSectionModal = ({
             label="مقطع الحفظ"
             placeholder="مثال: البقرة (11-15)"
             value={editingSection.memorizationSection}
-            onChange={onChange}
-            className="border-2 border-gray-200 rounded-xl focus:border-amber-500 focus:ring-4 focus:ring-amber-100"
+            onChange={handleInputChange}
+            className="border-gray-200 focus:border-amber-500 focus:ring-amber-100"
           />
         </div>
 
@@ -87,3 +96,5 @@ export const EditSectionModal = ({
     </Modal>
   );
 };
+
+export const EditSectionModal = memo(EditSectionModalComponent);

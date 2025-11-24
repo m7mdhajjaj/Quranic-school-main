@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { AveragesBarProps } from "../types/dailyMarks";
 import { StatCard } from "@/components/UI";
 import { Award, TrendingUp } from "lucide-react";
@@ -6,7 +7,7 @@ import { Award, TrendingUp } from "lucide-react";
  * Enhanced Averages bar component with visual indicators
  * Shows 3 metric cards with progress rings and performance badges
  */
-export const AveragesBar = ({
+const AveragesBarComponent = ({
   reviewAverage,
   memorizationAverage,
   overallAverage,
@@ -42,7 +43,7 @@ export const AveragesBar = ({
         </div>
         
         {/* Overall Performance Badge */}
-        <div className={`flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-${overallPerformance.color}-500 to-${overallPerformance.color}-600 rounded-full shadow-lg`}>
+        <div className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full shadow-lg">
           <TrendingUp className="text-white" size={20} />
           <span className="text-white font-bold text-sm">
             {overallPerformance.emoji} الأداء: {overallPerformance.label}
@@ -76,8 +77,8 @@ export const AveragesBar = ({
           />
           {/* Progress Ring */}
           <div className="mt-3 flex justify-center">
-            <div className="relative w-20 h-20">
-              <svg className="transform -rotate-90 w-20 h-20">
+            <div className="relative inline-flex items-center justify-center">
+              <svg className="transform -rotate-90" width="80" height="80">
                 <circle
                   cx="40"
                   cy="40"
@@ -99,7 +100,7 @@ export const AveragesBar = ({
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-amber-600 font-bold text-sm">{Math.round((memorizationAverage / 10) * 100)}%</span>
+                <span className="text-amber-600 font-bold text-base">{Math.round((memorizationAverage / 10) * 100)}%</span>
               </div>
             </div>
           </div>
@@ -130,8 +131,8 @@ export const AveragesBar = ({
           />
           {/* Progress Ring */}
           <div className="mt-3 flex justify-center">
-            <div className="relative w-20 h-20">
-              <svg className="transform -rotate-90 w-20 h-20">
+            <div className="relative inline-flex items-center justify-center">
+              <svg className="transform -rotate-90" width="80" height="80">
                 <circle
                   cx="40"
                   cy="40"
@@ -153,7 +154,7 @@ export const AveragesBar = ({
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-emerald-600 font-bold text-sm">{Math.round((reviewAverage / 10) * 100)}%</span>
+                <span className="text-emerald-600 font-bold text-base">{Math.round((reviewAverage / 10) * 100)}%</span>
               </div>
             </div>
           </div>
@@ -184,8 +185,8 @@ export const AveragesBar = ({
           />
           {/* Progress Ring */}
           <div className="mt-3 flex justify-center">
-            <div className="relative w-20 h-20">
-              <svg className="transform -rotate-90 w-20 h-20">
+            <div className="relative inline-flex items-center justify-center">
+              <svg className="transform -rotate-90" width="80" height="80">
                 <circle
                   cx="40"
                   cy="40"
@@ -207,7 +208,7 @@ export const AveragesBar = ({
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-blue-600 font-bold text-sm">{Math.round(overallAverage)}%</span>
+                <span className="text-blue-600 font-bold text-base">{Math.round(overallAverage)}%</span>
               </div>
             </div>
           </div>
@@ -216,3 +217,5 @@ export const AveragesBar = ({
     </div>
   );
 };
+
+export const AveragesBar = memo(AveragesBarComponent);

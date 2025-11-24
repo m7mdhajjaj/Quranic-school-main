@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo, useMemo } from "react";
 import type { StudentListProps } from "../types/dailyMarks";
 import { Select, Button,Card } from "@/components/UI";
 import { SearchInput } from "@/components/Filters";
@@ -8,7 +8,7 @@ import { Users, Plus, Edit, Trash2 } from "lucide-react";
  * Enhanced Student list component with search, group filter, and statistics
  * Shows list of students for selected group with action buttons
  */
-export const StudentList = ({
+const StudentListComponent = ({
   students,
   teacherGroups,
   selectedGroup,
@@ -21,11 +21,13 @@ export const StudentList = ({
 }: StudentListProps) => {
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Filter students by search term
-  const filteredStudents = students.filter((student) => {
-    const fullName = `${student.firstName} ${student.fatherName} ${student.lastName}`.toLowerCase();
-    return fullName.includes(searchTerm.toLowerCase());
-  });
+  // Filter students by search term - memoized
+  const filteredStudents = useMemo(() => {
+    return students.filter((student) => {
+      const fullName = `${student.firstName} ${student.fatherName} ${student.lastName}`.toLowerCase();
+      return fullName.includes(searchTerm.toLowerCase());
+    });
+  }, [students, searchTerm]);
 
   return (
     <Card padding="none" className="lg:col-span-1 overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
@@ -120,7 +122,8 @@ export const StudentList = ({
                 <li key={student._id} className="relative">
                   <button
                     onClick={() => onStudentSelect(student._id)}
-                    className={`w-full text-right py-3 px-4 rounded-xl transition-all duration-200 ${
+                    type="button"
+                    className={`w-full text-right py-3 px-4 rounded-xl transition-all duration-150 will-change-transform ${
                       selectedStudentId === student._id
                         ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg transform scale-[1.02]"
                         : "bg-white hover:bg-gray-50 hover:shadow-md border border-gray-200"
@@ -167,9 +170,9 @@ export const StudentList = ({
           variant="success"
           size="md"
           fullWidth
-          leftIcon={<Plus size={20} />}
+          leftIcon={<Plus size={20} strokeWidth={2.5} />}
           gradient={true}
-          className="shadow-md hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200">
+          className="shadow-md hover:shadow-xl transform hover:scale-[1.03] transition-all duration-200 font-semibold">
           إضافة مقطع للحلقة
         </Button>
 
@@ -178,9 +181,9 @@ export const StudentList = ({
           variant="primary"
           size="md"
           fullWidth
-          leftIcon={<Edit size={20} />}
+          leftIcon={<Edit size={20} strokeWidth={2.5} />}
           gradient={true}
-          className="shadow-md hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200">
+          className="shadow-md hover:shadow-xl transform hover:scale-[1.03] transition-all duration-200 font-semibold">
           تحديث المقاطع
         </Button>
 
@@ -189,9 +192,9 @@ export const StudentList = ({
           variant="danger"
           size="md"
           fullWidth
-          leftIcon={<Trash2 size={20} />}
+          leftIcon={<Trash2 size={20} strokeWidth={2.5} />}
           gradient={true}
-          className="shadow-md hover:shadow-lg transform hover:scale-[1.02] transition-all duration-200">
+          className="shadow-md hover:shadow-xl transform hover:scale-[1.03] transition-all duration-200 font-semibold">
           حذف المقاطع
         </Button>
       </div>
@@ -216,3 +219,5 @@ export const StudentList = ({
     </Card>
   );
 };
+
+export const StudentList = memo(StudentListComponent);
