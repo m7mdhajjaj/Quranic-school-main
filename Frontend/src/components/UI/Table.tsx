@@ -133,7 +133,6 @@ export const Table = <T,>({
     "text-right",
     "rtl",
     bordered && "border-collapse",
-    "min-w-[640px]", // Minimum width for horizontal scroll
   ]
     .filter(Boolean)
     .join(" ");
@@ -287,7 +286,7 @@ export const Table = <T,>({
                             : "px-4 py-3 md:px-6 md:py-4",
                           "text-xs md:text-sm",
                           "text-gray-900",
-                          "align-middle",
+                          "align-top",
                           getAlignClass(column.align),
                           column.className,
                           column.width && `w-[${column.width}]`,
@@ -308,7 +307,7 @@ export const Table = <T,>({
                             ? "px-2 py-2 md:px-4 md:py-3"
                             : "px-3 py-3 md:px-6 md:py-4",
                           "text-center",
-                          "align-middle",
+                          "align-top",
                           `w-[${actionsWidth}]`,
                         ]
                           .filter(Boolean)

@@ -79,15 +79,16 @@ export const BulkUpdateModal = ({
             type="button"
             onClick={onClose}
             variant="secondary"
-            className="flex-1 py-3 px-6 rounded-xl"
+            className="flex-1 py-3 px-6 rounded-xl min-h-[52px]"
           >
             إلغاء
           </Button>
           <Button
             type="submit"
             variant="primary"
-            className="flex-1 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+            className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 py-3 px-8 rounded-xl shadow-lg hover:shadow-xl min-h-[52px]"
           >
+            <RefreshCw className="w-5 h-5 ml-2" />
             تحديث المقاطع المحددة
           </Button>
         </div>

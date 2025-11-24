@@ -19,6 +19,7 @@ export const useDailyMarksState = ({ students, teacherGroups }: UseDailyMarksSta
   const [isBulkUpdateModalOpen, setIsBulkUpdateModalOpen] = useState(false);
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
   const [isAddMarkModalOpen, setIsAddMarkModalOpen] = useState(false);
+  const [isAddingMarkLoading, setIsAddingMarkLoading] = useState(false);
   const [isUpdateMarkModalOpen, setIsUpdateMarkModalOpen] = useState(false);
 
   // Selected Data States
@@ -87,6 +88,8 @@ export const useDailyMarksState = ({ students, teacherGroups }: UseDailyMarksSta
     setIsBulkDeleteModalOpen,
     isAddMarkModalOpen,
     setIsAddMarkModalOpen,
+    isAddingMarkLoading,
+    setIsAddingMarkLoading,
     isUpdateMarkModalOpen,
     setIsUpdateMarkModalOpen,
     

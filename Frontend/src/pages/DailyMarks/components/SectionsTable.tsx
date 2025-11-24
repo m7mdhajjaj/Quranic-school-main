@@ -1,6 +1,5 @@
 import type { Section, Mark, SectionsTableProps } from "../types/dailyMarks";
 import { Button, Tooltip } from "@/components/UI";
-import { ProgressBar } from "@/components/UI";
 import { Table } from "@/components/UI";
 import type { Column } from "@/components/UI/Table";
 import { useMemo, memo } from "react";
@@ -39,41 +38,21 @@ const SectionsTableComponent = ({
     });
   };
 
-  // Render mark cell with enhanced progress bar and badge
+  // Render mark cell - plain text only
   const renderMarkCell = (mark: Mark | undefined, type: "review" | "memorization") => {
     const markValue = type === "review" ? mark?.reviewMark : mark?.memorizationMark;
     
     if (!markValue && markValue !== 0) {
       return (
-        <div className="flex items-center justify-center">
-          <span className="px-3 py-1.5 bg-gray-100 text-gray-400 rounded-lg text-sm font-medium">
-            لم يتم الرصد
-          </span>
+        <div className="text-center text-gray-400 text-sm">
+          -
         </div>
       );
     }
 
-    const color = markValue >= 9 ? "emerald" : markValue >= 7 ? "amber" : "red";
-    const bgColor = markValue >= 9 ? "bg-emerald-50" : markValue >= 7 ? "bg-amber-50" : "bg-red-50";
-    const textColor = markValue >= 9 ? "text-emerald-700" : markValue >= 7 ? "text-amber-700" : "text-red-700";
-    const borderColor = markValue >= 9 ? "border-emerald-200" : markValue >= 7 ? "border-amber-200" : "border-red-200";
-
     return (
-      <div className="flex items-center gap-3">
-        <div className={`px-3 py-1.5 ${bgColor} border ${borderColor} rounded-lg`}>
-          <span className={`font-bold ${textColor} text-sm`}>
-            {markValue}/10
-          </span>
-        </div>
-        <div className="flex-1 min-w-[60px] max-w-[100px]">
-          <ProgressBar
-            value={markValue}
-            max={10}
-            color={color}
-            size="sm"
-            showPercentage={false}
-          />
-        </div>
+      <div className="text-center font-bold text-gray-800 text-base">
+        {markValue}/10
       </div>
     );
   };
@@ -91,64 +70,35 @@ const SectionsTableComponent = ({
   const columns: Column<SectionWithMark>[] = [
     {
       key: "reviewSection",
-      header: (
-        <div className="flex items-center gap-2">
-          <RotateCcw size={16} className="text-emerald-600" />
-          <span>مقطع المراجعة</span>
-        </div>
-      ),
+      header: "مقطع المراجعة",
       render: (row) => (
-        <div className="flex items-center gap-2">
-          <div className="bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg font-medium text-sm">
-            {row.reviewSection}
-          </div>
+        <div className="bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg font-medium text-sm">
+          {row.reviewSection}
         </div>
       ),
     },
     {
       key: "reviewMark",
-      header: (
-        <div className="flex items-center gap-2">
-          <RefreshCw size={16} className="text-emerald-600" />
-          <span>علامة المراجعة</span>
-        </div>
-      ),
+      header: "علامة المراجعة",
       render: (row) => renderMarkCell(row.mark, "review"),
     },
     {
       key: "memorizationSection",
-      header: (
-        <div className="flex items-center gap-2">
-          <BookOpen size={16} className="text-amber-600" />
-          <span>مقطع الحفظ</span>
-        </div>
-      ),
+      header: "مقطع الحفظ",
       render: (row) => (
-        <div className="flex items-center gap-2">
-          <div className="bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg font-medium text-sm">
-            {row.memorizationSection}
-          </div>
+        <div className="bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg font-medium text-sm">
+          {row.memorizationSection}
         </div>
       ),
     },
     {
       key: "memorizationMark",
-      header: (
-        <div className="flex items-center gap-2">
-          <BookOpen size={16} className="text-amber-600" />
-          <span>علامة الحفظ</span>
-        </div>
-      ),
+      header: "علامة الحفظ",
       render: (row) => renderMarkCell(row.mark, "memorization"),
     },
     {
       key: "date",
-      header: (
-        <div className="flex items-center gap-2">
-          <Calendar size={16} className="text-gray-600" />
-          <span>التاريخ</span>
-        </div>
-      ),
+      header: "التاريخ",
       render: (row) => {
         const date = new Date(row.date);
         const formattedDate = date.toLocaleDateString("en-GB", {
@@ -218,7 +168,7 @@ const SectionsTableComponent = ({
   return (
     <>
       {/* Desktop Table View - Hidden on mobile */}
-      <div className="hidden lg:block overflow-hidden -m-6 -p-6">
+      <div className="hidden lg:block overflow-x-auto -m-6 -p-6">
         <Table
           columns={columns}
           data={tableData}
@@ -227,7 +177,7 @@ const SectionsTableComponent = ({
           hoverable={true}
           bordered={false}
           dense={false}
-          responsive={true}
+          responsive={false}
           showHeader={true}
           stickyHeader={false}
           renderActions={renderActions}

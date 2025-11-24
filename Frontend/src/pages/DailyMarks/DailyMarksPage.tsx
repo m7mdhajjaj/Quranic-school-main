@@ -313,8 +313,9 @@ const DailyMarksPage = () => {
             selectedSection={state.selectedSection}
             selectedStudent={getSelectedStudent()}
             newMark={state.newMark}
+            isLoading={state.isAddingMarkLoading}
             onClose={() => state.setIsAddMarkModalOpen(false)}
-            onSubmit={(e) => handlers.handleAddMark(e, selectedStudentId, state.selectedSection, state.newMark)}
+            onSubmit={(e) => handlers.handleAddMark(e, selectedStudentId, state.selectedSection, state.newMark, state.setIsAddingMarkLoading)}
             onChange={handleMarkInputChange}
           />
 

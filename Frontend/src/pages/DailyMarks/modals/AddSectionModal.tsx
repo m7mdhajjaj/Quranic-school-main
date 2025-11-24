@@ -4,7 +4,6 @@ import {
   Input,
   Modal,
   DatePicker,
-  LoadingSpinner,
 } from '@/components/UI';
 import { BookOpen, FileText } from 'lucide-react';
 import type { AddSectionModalProps } from '../types/dailyMarks';
@@ -24,7 +23,7 @@ const AddSectionModalComponent = ({
   // Local controlled state for instant UI updates (no parent re-render)
   const [localReviewSection, setLocalReviewSection] = useState('');
   const [localMemorizationSection, setLocalMemorizationSection] = useState('');
-  
+
   // Debounce timer ref
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
@@ -46,27 +45,30 @@ const AddSectionModalComponent = ({
   }, []);
 
   // Debounced onChange - updates parent ONLY after 300ms of no typing
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    
-    // Update local state immediately for 0ms input lag
-    if (name === 'reviewSection') {
-      setLocalReviewSection(value);
-    } else if (name === 'memorizationSection') {
-      setLocalMemorizationSection(value);
-    }
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const { name, value } = e.target;
 
-    // Clear previous timer
-    if (debounceTimer.current) {
-      clearTimeout(debounceTimer.current);
-    }
+      // Update local state immediately for 0ms input lag
+      if (name === 'reviewSection') {
+        setLocalReviewSection(value);
+      } else if (name === 'memorizationSection') {
+        setLocalMemorizationSection(value);
+      }
 
-    // Debounce parent state update (300ms delay prevents re-render storm)
-    debounceTimer.current = setTimeout(() => {
-      onChange(e); // Only trigger heavy parent re-render after user stops typing
-      debounceTimer.current = null;
-    }, 300);
-  }, [onChange]);
+      // Clear previous timer
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+
+      // Debounce parent state update (300ms delay prevents re-render storm)
+      debounceTimer.current = setTimeout(() => {
+        onChange(e); // Only trigger heavy parent re-render after user stops typing
+        debounceTimer.current = null;
+      }, 300);
+    },
+    [onChange]
+  );
 
   if (!isOpen) return null;
 
@@ -80,7 +82,11 @@ const AddSectionModalComponent = ({
           <DatePicker
             label="التاريخ"
             value={newSection.date}
-            onChange={(date) => onChange({ target: { name: 'date', value: date } } as React.ChangeEvent<HTMLInputElement>)}
+            onChange={(date) =>
+              onChange({
+                target: { name: 'date', value: date },
+              } as React.ChangeEvent<HTMLInputElement>)
+            }
             required
           />
         </div>
@@ -136,24 +142,19 @@ const AddSectionModalComponent = ({
             onClick={onClose}
             variant="secondary"
             disabled={isLoading}
-            className="flex-1 py-3 px-6 rounded-xl"
+            className="flex-1 py-3 px-6 rounded-xl min-h-[52px]"
           >
-            إلغاء
+            <span className="block">إلغاء</span>
           </Button>
           <Button
             type="submit"
             variant="primary"
             disabled={isLoading}
-            className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 py-3 px-8 rounded-xl shadow-lg hover:shadow-xl disabled:opacity-70 disabled:cursor-not-allowed"
+            className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 py-3 px-8 rounded-xl shadow-lg hover:shadow-xl disabled:opacity-70 disabled:cursor-not-allowed min-h-[52px]"
           >
-            {isLoading ? (
-              <div className="flex items-center justify-center gap-2">
-                <LoadingSpinner size="sm" color="emerald" showIcon={false} />
-                <span>جاري الإضافة...</span>
-              </div>
-            ) : (
-              'إضافة المقطع'
-            )}
+            <span className="block">
+              {isLoading ? 'جاري الإضافة...' : 'إضافة المقطع'}
+            </span>
           </Button>
         </div>
       </form>

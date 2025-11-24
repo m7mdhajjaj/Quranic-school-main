@@ -9,6 +9,7 @@ export const AddMarkModal = ({
   selectedSection,
   selectedStudent,
   newMark,
+  isLoading = false,
   onClose,
   onSubmit,
   onChange,
@@ -80,21 +81,24 @@ export const AddMarkModal = ({
           />
         </div>
 
-        <div className="flex justify-between mt-8">
+        <div className="flex gap-3 mt-8">
           <Button
             type="button"
             onClick={onClose}
             variant="secondary"
-            className="py-2 px-6"
+            disabled={isLoading}
+            className="flex-1 py-3 px-6 rounded-xl min-h-[52px]"
           >
             إلغاء
           </Button>
           <Button
             type="submit"
             variant="primary"
-            className="bg-emerald-600 hover:bg-emerald-700 py-2 px-8"
+            disabled={isLoading}
+            loading={isLoading}
+            className="flex-1 bg-emerald-600 hover:bg-emerald-700 py-3 px-8 rounded-xl min-h-[52px]"
           >
-            إضافة العلامات
+            {isLoading ? 'جاري الإضافة...' : 'إضافة العلامات'}
           </Button>
         </div>
       </form>

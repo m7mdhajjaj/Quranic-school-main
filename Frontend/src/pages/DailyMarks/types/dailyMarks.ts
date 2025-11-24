@@ -131,6 +131,7 @@ export interface AddMarkModalProps {
     reviewMark: number;
     memorizationMark: number;
   };
+  isLoading?: boolean;
   onClose: () => void;
   onSubmit: (e: React.FormEvent) => void;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;

@@ -175,13 +175,16 @@ export const useDailyMarksHandlers = ({
     e: React.FormEvent,
     selectedStudentId: string | null,
     selectedSection: Section | null,
-    newMark: { reviewMark: number; memorizationMark: number }
+    newMark: { reviewMark: number; memorizationMark: number },
+    setIsAddingMarkLoading?: (loading: boolean) => void
   ) => {
     e.preventDefault();
 
     if (!selectedStudentId || !selectedSection) return;
 
     try {
+      setIsAddingMarkLoading?.(true);
+      
       const markData = {
         studentId: selectedStudentId,
         sectionId: selectedSection._id,
@@ -200,6 +203,8 @@ export const useDailyMarksHandlers = ({
     } catch (err) {
       console.error("Error adding mark:", err);
       showErrorToast("❌ حدث خطأ أثناء إضافة العلامة");
+    } finally {
+      setIsAddingMarkLoading?.(false);
     }
   };
 

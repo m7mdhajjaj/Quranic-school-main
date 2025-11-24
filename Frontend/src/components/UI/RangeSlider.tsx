@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 
 interface RangeSliderProps {
   min: number;
@@ -28,6 +28,8 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
   className,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
+  const [localValue, setLocalValue] = useState(value);
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   const colors = {
     emerald: 'accent-emerald-600',
@@ -45,7 +47,38 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
     purple: 'bg-purple-500',
   };
 
-  const percentage = ((value - min) / (max - min)) * 100;
+  const percentage = ((localValue - min) / (max - min)) * 100;
+
+  // Debounced onChange - only update parent after user stops dragging
+  const handleChange = useCallback((newValue: number) => {
+    // Update local state immediately for smooth UI
+    setLocalValue(newValue);
+
+    // Clear previous timer
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+
+    // Debounce parent update
+    debounceTimer.current = setTimeout(() => {
+      onChange(newValue);
+      debounceTimer.current = null;
+    }, 100); // 100ms debounce for sliders (faster than text input)
+  }, [onChange]);
+
+  // Sync local value when prop changes externally
+  React.useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
+  // Cleanup on unmount
+  React.useEffect(() => {
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+    };
+  }, []);
 
   return (
     <div className={`w-full ${className || ''}`}>
@@ -54,7 +87,7 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
           <label className="text-sm font-medium text-gray-700">{label}</label>
           {showValue && (
             <span className="text-lg font-bold text-gray-800 min-w-[60px] text-center">
-              {value}
+              {localValue}
               {max === 10 && '/10'}
               {max === 100 && '%'}
             </span>
@@ -63,35 +96,28 @@ export const RangeSlider: React.FC<RangeSliderProps> = ({
       )}
       
       <div className="relative">
-        <input
-          type="range"
-          min={min}
-          max={max}
-          step={step}
-          value={value}
-          onChange={(e) => onChange(Number(e.target.value))}
-          onMouseDown={() => setIsDragging(true)}
-          onMouseUp={() => setIsDragging(false)}
-          onTouchStart={() => setIsDragging(true)}
-          onTouchEnd={() => setIsDragging(false)}
-          disabled={disabled}
-          className={`w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer ${colors[color]} ${
-            disabled ? 'opacity-50 cursor-not-allowed' : ''
-          } ${isDragging ? 'scale-105' : ''} transition-transform`}
-          style={{
-            background: `linear-gradient(to right, 
-              ${bgColors[color].replace('bg-', '')} 0%, 
-              ${bgColors[color].replace('bg-', '')} ${percentage}%, 
-              #e5e7eb ${percentage}%, 
-              #e5e7eb 100%)`,
-          }}
-        />
-        
-        {/* Visual bar underneath */}
-        <div className="mt-2 h-1.5 w-full rounded-full bg-gray-200 overflow-hidden">
+        {/* Single progress bar with gradient fill */}
+        <div className="relative w-full h-3 rounded-lg bg-gray-200 overflow-hidden">
           <div
-            className={`h-full ${bgColors[color]} transition-all duration-200`}
+            className={`absolute inset-y-0 right-0 ${bgColors[color]}`}
             style={{ width: `${percentage}%` }}
+          />
+          <input
+            type="range"
+            min={min}
+            max={max}
+            step={step}
+            value={localValue}
+            onChange={(e) => handleChange(Number(e.target.value))}
+            onMouseDown={() => setIsDragging(true)}
+            onMouseUp={() => setIsDragging(false)}
+            onTouchStart={() => setIsDragging(true)}
+            onTouchEnd={() => setIsDragging(false)}
+            disabled={disabled}
+            aria-label={label || 'Range slider'}
+            className={`absolute inset-0 w-full h-full appearance-none cursor-pointer bg-transparent ${colors[color]} ${
+              disabled ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
           />
         </div>
       </div>
