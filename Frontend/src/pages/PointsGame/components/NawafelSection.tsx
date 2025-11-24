@@ -1,13 +1,8 @@
 // components/NawafelSection.tsx
 import { Card } from "@/components/UI/Card";
 import { Button } from "@/components/UI/Button";
-import type { Nawafel } from "../types/pointsGame.types";
+import type { NawafelSectionProps, Nawafel } from "../types/pointsGame.types";
 import { Sparkles, Sun, Moon, HandHeart, Star } from "lucide-react";
-
-interface NawafelSectionProps {
-  nawafel: Nawafel;
-  onToggle: (key: keyof Nawafel) => void;
-}
 
 export const NawafelSection = ({ nawafel, onToggle }: NawafelSectionProps) => {
   const nawafelItems = [

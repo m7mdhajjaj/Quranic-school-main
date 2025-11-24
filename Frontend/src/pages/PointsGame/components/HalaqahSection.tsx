@@ -1,13 +1,8 @@
 // components/HalaqahSection.tsx
 import { Card } from "@/components/UI/Card";
 import { Button } from "@/components/UI/Button";
-import type { Halaqah } from "../types/pointsGame.types";
+import type { HalaqahSectionProps } from "../types/pointsGame.types";
 import { BookOpen, Book, RefreshCw } from "lucide-react";
-
-interface HalaqahSectionProps {
-  halaqah: Halaqah;
-  onUpdate: (key: keyof Halaqah, value: number) => void;
-}
 
 export const HalaqahSection = ({ halaqah, onUpdate }: HalaqahSectionProps) => {
   return (

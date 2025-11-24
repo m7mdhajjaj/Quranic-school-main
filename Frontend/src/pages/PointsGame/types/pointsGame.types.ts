@@ -1,4 +1,8 @@
 // types/pointsGame.types.ts
+
+// ============================================
+// Prayer Types
+// ============================================
 export type PrayerStatus = "mosque" | "home" | "late" | "missed";
 
 export interface Prayer {
@@ -13,6 +17,9 @@ export interface Prayers {
   isha: Prayer;
 }
 
+// ============================================
+// Nawafel Types
+// ============================================
 export interface Nawafel {
   duha: boolean;
   qiyamAlayl: boolean;
@@ -20,6 +27,9 @@ export interface Nawafel {
   witr: boolean;
 }
 
+// ============================================
+// Adhkar Types
+// ============================================
 export interface Adhkar {
   morning: boolean;
   evening: boolean;
@@ -27,11 +37,17 @@ export interface Adhkar {
   afterPrayer: boolean;
 }
 
+// ============================================
+// Halaqah Types
+// ============================================
 export interface Halaqah {
   memorizedMinutes: number;
   reviewedMinutes: number;
 }
 
+// ============================================
+// Daily Points Data
+// ============================================
 export interface DailyPointsData {
   date: string;
   prayers: {
@@ -52,6 +68,9 @@ export interface DailyPointsData {
   };
 }
 
+// ============================================
+// Badge Types
+// ============================================
 export interface Badge {
   id: string;
   name: string;
@@ -84,6 +103,9 @@ export interface BadgeProgress {
   };
 }
 
+// ============================================
+// Student Stats & Rankings
+// ============================================
 export interface StudentStats {
   weeklyPoints: number;
   monthlyPoints: number;
@@ -100,4 +122,128 @@ export interface RankingStudent {
   badgesCount?: number;
   totalBadgeRepeats?: number;
   activeDays?: number;
+}
+
+// ============================================
+// Component Props Interfaces
+// ============================================
+
+// MotivationalMessage Component
+export interface MotivationalMessageProps {
+  totalPoints: number;
+}
+
+// NawafelSection Component
+export interface NawafelSectionProps {
+  nawafel: Nawafel;
+  onToggle: (key: keyof Nawafel) => void;
+}
+
+// PrayersSection Component
+export interface PrayersSectionProps {
+  prayers: Prayers;
+  onUpdatePrayer: (prayerName: keyof Prayers, status: PrayerStatus) => void;
+}
+
+// AdhkarSection Component
+export interface AdhkarSectionProps {
+  adhkar: Adhkar;
+  onToggle: (key: keyof Adhkar) => void;
+}
+
+// HalaqahSection Component
+export interface HalaqahSectionProps {
+  halaqah: Halaqah;
+  onUpdate: (key: keyof Halaqah, value: number) => void;
+}
+
+// DailyActivitiesSection Component
+export interface DailyActivitiesSectionProps {
+  parentRespect: number;
+  schoolAttendance: boolean;
+  dailyStudy: number;
+  onParentRespectChange: (value: number) => void;
+  onSchoolAttendanceToggle: () => void;
+  onDailyStudyChange: (value: number) => void;
+}
+
+// PointsSummaryCard Component
+export interface PointsSummaryCardProps {
+  totalPoints: number;
+  stats: StudentStats | null;
+  onShowRankings: () => void;
+  onShowBadges: () => void;
+  onSavePoints: () => void;
+  loading: boolean;
+  saving: boolean;
+  earnedBadgesCount: number;
+}
+
+// BadgesModal Component
+export interface BadgesModalProps {
+  show: boolean;
+  earnedBadges: Badge[];
+  badgeProgress: BadgeProgress;
+  onClose: () => void;
+}
+
+// RankingsModal Component
+export interface RankingsModalProps {
+  show: boolean;
+  loading: boolean;
+  rankingType: "points" | "badges";
+  realRankings: RankingStudent[];
+  realBadgeRankings: RankingStudent[];
+  currentUserId: string | undefined;
+  currentUserName: string;
+  onClose: () => void;
+  onChangeType: (type: "points" | "badges") => void;
+}
+
+// StudentView Component
+export interface StudentViewProps {
+  // Stats & Points
+  totalPoints: number;
+  stats: StudentStats | null;
+  earnedBadgesCount: number;
+  loading: boolean;
+  saving: boolean;
+
+  // Prayers
+  prayers: Prayers;
+  onUpdatePrayer: (prayerName: keyof Prayers, status: PrayerStatus) => void;
+
+  // Nawafel
+  nawafel: Nawafel;
+  onToggleNawafel: (key: keyof Nawafel) => void;
+
+  // Daily Activities
+  parentRespect: number;
+  schoolAttendance: boolean;
+  dailyStudy: number;
+  onParentRespectChange: (value: number) => void;
+  onSchoolAttendanceToggle: () => void;
+  onDailyStudyChange: (value: number) => void;
+
+  // Adhkar
+  adhkar: Adhkar;
+  onToggleAdhkar: (key: keyof Adhkar) => void;
+
+  // Halaqah
+  halaqah: Halaqah;
+  onUpdateHalaqah: (key: keyof Halaqah, value: number) => void;
+
+  // Actions
+  onShowRankings: () => void;
+  onShowBadges: () => void;
+  onSavePoints: () => void;
+}
+
+// TeacherRankingsView Component
+export interface TeacherRankingsViewProps {
+  loading: boolean;
+  rankingType: "points" | "badges";
+  realRankings: RankingStudent[];
+  realBadgeRankings: RankingStudent[];
+  onChangeType: (type: "points" | "badges") => void;
 }

@@ -1,15 +1,8 @@
 // components/BadgesModal.tsx
-import { Modal } from "@/components/UI/Modal";
-import { Button } from "@/components/UI/Button";
-import type { Badge, BadgeProgress } from "../types/pointsGame.types";
-import { allBadges } from "../utils/badgeDefinitions";
-
-interface BadgesModalProps {
-  show: boolean;
-  earnedBadges: Badge[];
-  badgeProgress: BadgeProgress;
-  onClose: () => void;
-}
+import { Modal } from '@/components/UI/Modal';
+import { Button } from '@/components/UI/Button';
+import type { BadgesModalProps } from '../types/pointsGame.types';
+import { allBadges } from '../utils/badgeDefinitions';
 
 export const BadgesModal = ({
   show,
@@ -21,21 +14,21 @@ export const BadgesModal = ({
 
   const getBadgeProgress = (badgeId: string): number => {
     switch (badgeId) {
-      case "mosque_30_days":
+      case 'mosque_30_days':
         return (badgeProgress.mosquePrayerStreak / 30) * 100;
-      case "adhkar_7_days":
+      case 'adhkar_7_days':
         return (badgeProgress.adhkarStreak / 7) * 100;
-      case "parent_respect_5_times":
+      case 'parent_respect_5_times':
         return (badgeProgress.parentRespectPerfect / 5) * 100;
-      case "school_30_days":
+      case 'school_30_days':
         return (
           ((badgeProgress.monthlySchoolAttendance?.daysPresent || 0) / 20) * 100
         );
-      case "overall_15_days":
+      case 'overall_15_days':
         return (badgeProgress.overallStreak / 15) * 100;
-      case "sunan_keeper":
+      case 'sunan_keeper':
         return (badgeProgress.sunanStreak / 7) * 100;
-      case "mosque_two_week":
+      case 'mosque_two_week':
         return (badgeProgress.mosqueTwoPrayersWeek / 7) * 100;
       default:
         return 0;
@@ -44,22 +37,22 @@ export const BadgesModal = ({
 
   const getBadgeProgressText = (badgeId: string): string => {
     switch (badgeId) {
-      case "mosque_30_days":
+      case 'mosque_30_days':
         return `${badgeProgress.mosquePrayerStreak}/30`;
-      case "adhkar_7_days":
+      case 'adhkar_7_days':
         return `${badgeProgress.adhkarStreak}/7`;
-      case "parent_respect_5_times":
+      case 'parent_respect_5_times':
         return `${badgeProgress.parentRespectPerfect}/5`;
-      case "school_30_days":
+      case 'school_30_days':
         return `${badgeProgress.monthlySchoolAttendance?.daysPresent || 0}/20`;
-      case "overall_15_days":
+      case 'overall_15_days':
         return `${badgeProgress.overallStreak}/15`;
-      case "sunan_keeper":
+      case 'sunan_keeper':
         return `${badgeProgress.sunanStreak}/7`;
-      case "mosque_two_week":
+      case 'mosque_two_week':
         return `${badgeProgress.mosqueTwoPrayersWeek}/7`;
       default:
-        return "";
+        return '';
     }
   };
 
@@ -80,12 +73,15 @@ export const BadgesModal = ({
             </div>
             <button
               onClick={onClose}
-              className="bg-white/20 hover:bg-white/30 p-2 rounded-full transition-colors">
+              title="Close"
+              className="bg-white/20 hover:bg-white/30 p-2 rounded-full transition-colors"
+            >
               <svg
                 className="w-6 h-6"
                 fill="none"
                 stroke="currentColor"
-                viewBox="0 0 24 24">
+                viewBox="0 0 24 24"
+              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -98,11 +94,7 @@ export const BadgesModal = ({
 
           {/* شريط التقدم */}
           <div className="mt-4 bg-white/20 rounded-full h-3 overflow-hidden">
-            <div
-              className="bg-white h-full rounded-full transition-all duration-500"
-              style={{
-                width: `${(earnedBadges.length / allBadges.length) * 100}%`,
-              }}></div>
+            <div className="bg-white h-full rounded-full transition-all duration-500"></div>
           </div>
         </div>
 
@@ -119,16 +111,18 @@ export const BadgesModal = ({
                   key={badge.id}
                   className={`rounded-2xl p-6 transition-all duration-300 ${
                     isEarned
-                      ? "bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-400 shadow-lg hover:shadow-xl"
-                      : "bg-gray-100 border-2 border-gray-300 opacity-60"
-                  }`}>
+                      ? 'bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-400 shadow-lg hover:shadow-xl'
+                      : 'bg-gray-100 border-2 border-gray-300 opacity-60'
+                  }`}
+                >
                   <div className="flex items-start gap-4">
                     {/* أيقونة الشارة */}
                     <div className="relative flex-shrink-0">
                       <div
                         className={`text-6xl ${
-                          isEarned ? "animate-pulse" : "grayscale opacity-50"
-                        }`}>
+                          isEarned ? 'animate-pulse' : 'grayscale opacity-50'
+                        }`}
+                      >
                         {badge.icon}
                       </div>
                       {isEarned && count > 1 && (
@@ -142,23 +136,26 @@ export const BadgesModal = ({
                     <div className="flex-1">
                       <h3
                         className={`font-bold text-lg mb-1 ${
-                          isEarned ? "text-gray-800" : "text-gray-500"
-                        }`}>
+                          isEarned ? 'text-gray-800' : 'text-gray-500'
+                        }`}
+                      >
                         {badge.name}
                       </h3>
                       <p
                         className={`text-sm mb-2 ${
-                          isEarned ? "text-gray-600" : "text-gray-400"
-                        }`}>
+                          isEarned ? 'text-gray-600' : 'text-gray-400'
+                        }`}
+                      >
                         {badge.description}
                       </p>
                       <div
                         className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
                           isEarned
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-200 text-gray-500"
-                        }`}>
-                        {isEarned ? "✅ مكتملة" : `📋 ${badge.requirement}`}
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-gray-200 text-gray-500'
+                        }`}
+                      >
+                        {isEarned ? '✅ مكتملة' : `📋 ${badge.requirement}`}
                       </div>
 
                       {isEarned && count > 1 && (
@@ -170,18 +167,14 @@ export const BadgesModal = ({
                   </div>
 
                   {/* شريط التقدم للشارات غير المكتملة */}
-                  {!isEarned && badge.id !== "all_badges" && (
+                  {!isEarned && badge.id !== 'all_badges' && (
                     <div className="mt-4">
                       <div className="flex justify-between text-xs text-gray-500 mb-1">
                         <span>التقدم</span>
                         <span>{getBadgeProgressText(badge.id)}</span>
                       </div>
                       <div className="w-full bg-gray-300 rounded-full h-2">
-                        <div
-                          className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-500"
-                          style={{
-                            width: `${getBadgeProgress(badge.id)}%`,
-                          }}></div>
+                        <div className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-500"></div>
                       </div>
                     </div>
                   )}
@@ -223,7 +216,8 @@ export const BadgesModal = ({
           <Button
             onClick={onClose}
             variant="warning"
-            className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-8 py-3 rounded-full font-bold hover:scale-105 transition-transform shadow-lg">
+            className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-8 py-3 rounded-full font-bold hover:scale-105 transition-transform shadow-lg"
+          >
             إغلاق
           </Button>
         </div>

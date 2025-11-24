@@ -1,13 +1,8 @@
 // components/AdhkarSection.tsx
 import { Card } from "@/components/UI/Card";
 import { Button } from "@/components/UI/Button";
-import type { Adhkar } from "../types/pointsGame.types";
+import type { AdhkarSectionProps, Adhkar } from "../types/pointsGame.types";
 import { CircleDot, Sun, Sunset, Moon, Hand } from "lucide-react";
-
-interface AdhkarSectionProps {
-  adhkar: Adhkar;
-  onToggle: (key: keyof Adhkar) => void;
-}
 
 export const AdhkarSection = ({ adhkar, onToggle }: AdhkarSectionProps) => {
   const adhkarItems = [

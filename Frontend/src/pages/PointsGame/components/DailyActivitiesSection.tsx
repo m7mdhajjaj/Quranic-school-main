@@ -3,15 +3,7 @@ import { Card } from "@/components/UI/Card";
 import { Button } from "@/components/UI/Button";
 import { RangeSlider } from "@/components/UI/RangeSlider";
 import { Heart, Backpack, BookOpen, Check, X } from "lucide-react";
-
-interface DailyActivitiesSectionProps {
-  parentRespect: number;
-  schoolAttendance: boolean;
-  dailyStudy: number;
-  onParentRespectChange: (value: number) => void;
-  onSchoolAttendanceToggle: () => void;
-  onDailyStudyChange: (value: number) => void;
-}
+import type { DailyActivitiesSectionProps } from "../types/pointsGame.types";
 
 export const DailyActivitiesSection = ({
   parentRespect,

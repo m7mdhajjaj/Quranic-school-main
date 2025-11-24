@@ -1,10 +1,7 @@
 // components/MotivationalMessage.tsx
 import { getMotivationalMessage } from "../utils/pointsCalculator";
 import { Sparkles } from "lucide-react";
-
-interface MotivationalMessageProps {
-  totalPoints: number;
-}
+import type { MotivationalMessageProps } from "../types/pointsGame.types";
 
 export const MotivationalMessage = ({
   totalPoints,

@@ -8,52 +8,7 @@ import {
   HalaqahSection,
   MotivationalMessage,
 } from './';
-import type {
-  PrayerStatus,
-  Prayers,
-  Nawafel,
-  Adhkar,
-  Halaqah,
-  StudentStats,
-} from '../types/pointsGame.types';
-
-interface StudentViewProps {
-  // Stats & Points
-  totalPoints: number;
-  stats: StudentStats | null;
-  earnedBadgesCount: number;
-  loading: boolean;
-  saving: boolean;
-
-  // Prayers
-  prayers: Prayers;
-  onUpdatePrayer: (prayerName: keyof Prayers, status: PrayerStatus) => void;
-
-  // Nawafel
-  nawafel: Nawafel;
-  onToggleNawafel: (key: keyof Nawafel) => void;
-
-  // Daily Activities
-  parentRespect: number;
-  schoolAttendance: boolean;
-  dailyStudy: number;
-  onParentRespectChange: (value: number) => void;
-  onSchoolAttendanceToggle: () => void;
-  onDailyStudyChange: (value: number) => void;
-
-  // Adhkar
-  adhkar: Adhkar;
-  onToggleAdhkar: (key: keyof Adhkar) => void;
-
-  // Halaqah
-  halaqah: Halaqah;
-  onUpdateHalaqah: (key: keyof Halaqah, value: number) => void;
-
-  // Actions
-  onShowRankings: () => void;
-  onShowBadges: () => void;
-  onSavePoints: () => void;
-}
+import type { StudentViewProps } from '../types/pointsGame.types';
 
 export const StudentView = ({
   totalPoints,

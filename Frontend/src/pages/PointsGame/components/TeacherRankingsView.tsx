@@ -1,13 +1,6 @@
 // components/TeacherRankingsView.tsx
-import type { RankingStudent } from '@/Api/pointsGameApi';
-
-interface TeacherRankingsViewProps {
-  loading: boolean;
-  rankingType: 'points' | 'badges';
-  realRankings: RankingStudent[];
-  realBadgeRankings: RankingStudent[];
-  onChangeType: (type: 'points' | 'badges') => void;
-}
+import type { TeacherRankingsViewProps } from '../types/pointsGame.types';
+import { LoadingSpinner } from '@/components/UI/LoadingSpinner';
 
 export const TeacherRankingsView = ({
   loading,
@@ -44,7 +37,8 @@ export const TeacherRankingsView = ({
               rankingType === 'points'
                 ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-lg scale-105'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}>
+            }`}
+          >
             <span className="ml-2">📊</span>
             ترتيب النقاط
           </button>
@@ -54,7 +48,8 @@ export const TeacherRankingsView = ({
               rankingType === 'badges'
                 ? 'bg-gradient-to-r from-purple-400 to-pink-500 text-white shadow-lg scale-105'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}>
+            }`}
+          >
             <span className="ml-2">🏆</span>
             ترتيب الشارات
           </button>
@@ -63,23 +58,12 @@ export const TeacherRankingsView = ({
         {/* قائمة الترتيب */}
         <div className="max-h-[400px] sm:max-h-[500px] md:max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-emerald-500 scrollbar-track-emerald-100 hover:scrollbar-thumb-emerald-600">
           {loading ? (
-            <div className="text-center py-16">
-              <div className="flex justify-center mb-6">
-                <div className="relative">
-                  <div className="w-20 h-20 border-8 border-orange-200 rounded-full"></div>
-                  <div className="absolute top-0 left-0 w-20 h-20 border-8 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
-                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-3xl">
-                    🏆
-                  </div>
-                </div>
-              </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">
-                جاري تحميل الترتيبات...
-              </h3>
-              <p className="text-gray-500 text-sm">
-                نقوم بجلب أحدث البيانات من السيرفر
-              </p>
-            </div>
+            <LoadingSpinner 
+              size="lg" 
+              color="emerald" 
+              text="جاري تحميل الترتيبات..." 
+              showIcon={true}
+            />
           ) : rankings.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">📊</div>
@@ -101,7 +85,8 @@ export const TeacherRankingsView = ({
                     student.rank <= 3
                       ? 'bg-gradient-to-r from-yellow-100 to-orange-100 shadow-lg'
                       : 'bg-gray-50 hover:bg-gray-100 hover:shadow-md'
-                  }`}>
+                  }`}
+                >
                   {/* الترتيب */}
                   <div className="flex-shrink-0">
                     <div
@@ -109,11 +94,12 @@ export const TeacherRankingsView = ({
                         student.rank === 1
                           ? 'bg-gradient-to-br from-yellow-300 to-yellow-500 text-yellow-900'
                           : student.rank === 2
-                          ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-gray-800'
-                          : student.rank === 3
-                          ? 'bg-gradient-to-br from-orange-300 to-orange-500 text-orange-900'
-                          : 'bg-gray-300 text-gray-700'
-                      }`}>
+                            ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-gray-800'
+                            : student.rank === 3
+                              ? 'bg-gradient-to-br from-orange-300 to-orange-500 text-orange-900'
+                              : 'bg-gray-300 text-gray-700'
+                      }`}
+                    >
                       {student.rank}
                     </div>
                   </div>

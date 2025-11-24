@@ -2,18 +2,7 @@
 import { Card } from "@/components/UI/Card";
 import { Button } from "@/components/UI/Button";
 import { Trophy, Save, Award, TrendingUp } from "lucide-react";
-import type { StudentStats } from "../types/pointsGame.types";
-
-interface PointsSummaryCardProps {
-  totalPoints: number;
-  stats: StudentStats | null;
-  onShowRankings: () => void;
-  onShowBadges: () => void;
-  onSavePoints: () => void;
-  loading: boolean;
-  saving: boolean;
-  earnedBadgesCount: number;
-}
+import type { PointsSummaryCardProps } from "../types/pointsGame.types";
 
 export const PointsSummaryCard = ({
   totalPoints,
@@ -73,10 +62,10 @@ export const PointsSummaryCard = ({
           variant="primary"
           className="bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white border border-white/30 px-6 sm:px-8 py-3 sm:py-4 rounded-full font-bold text-base sm:text-lg hover:scale-105 transition-all shadow-lg flex items-center justify-center gap-2 w-full sm:w-auto">
           {loading ? (
-            <>
-              <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-white">جاري التحميل...</span>
-            </>
+            <span className="text-white flex items-center gap-2">
+              <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+              جاري التحميل...
+            </span>
           ) : (
             <>
               <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6" />

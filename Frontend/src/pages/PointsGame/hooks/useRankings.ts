@@ -3,8 +3,8 @@ import { useState } from "react";
 import {
   getPointsRankings,
   getBadgesRankings,
-  type RankingStudent,
 } from "@/Api/pointsGameApi";
+import type { RankingStudent } from "../types/pointsGame.types";
 
 export const useRankings = () => {
   const [loading, setLoading] = useState(false);
