@@ -29,6 +29,14 @@ router.get(
   groupController.getGroupsByTeacher
 );
 
+// 🆕 الحصول على حلقات المعلم بفلاتر مرنة (بواسطة ID)
+// Query params: filter=all|withStudents|withoutStudents, includeStudents=true|false
+router.get(
+  '/teacher-id/:teacherId/filtered',
+  authMiddleware.protect,
+  groupController.getGroupsByTeacherIdWithFilters
+);
+
 // تحديث حلقة - إداري فقط
 router.put(
   '/:id',

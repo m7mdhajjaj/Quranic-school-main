@@ -1,10 +1,7 @@
 // components/StudentsTable.tsx
-import { useState } from "react";
-import { Card } from "@/components/UI/Card";
-import type {
-  AttendanceStudent,
-  StudentsTableProps,
-} from "../types/absence.types";
+import { useState } from 'react';
+import { Card } from '@/components/UI/Card';
+import type { StudentsTableProps } from '../types/absence.types';
 
 export const StudentsTable = ({
   students,
@@ -19,7 +16,9 @@ export const StudentsTable = ({
   return (
     <Card variant="elevated" className="overflow-hidden">
       <div className="bg-gradient-to-r from-emerald-600 to-teal-500 py-4 sm:py-6 px-4 sm:px-8 flex justify-between items-center">
-        <h2 className="text-xl sm:text-3xl font-bold text-white">قائمة الطلاب</h2>
+        <h2 className="text-xl sm:text-3xl font-bold text-white">
+          قائمة الطلاب
+        </h2>
         {/* زر تحديد الكل للموبايل */}
         <div className="md:hidden flex items-center gap-2 bg-white/20 px-3 py-2 rounded-lg">
           <input
@@ -88,18 +87,18 @@ export const StudentsTable = ({
                       {s.name}
                     </td>
                     <td className="px-6 py-5 text-lg text-gray-600">
-                      {s.group ?? "-"}
+                      {s.group ?? '-'}
                     </td>
                     <td className="px-6 py-5 text-center">
                       <span
                         className={`inline-flex items-center justify-center w-12 h-12 rounded-full text-lg font-bold ${
                           (s.totalAbsences ?? 0) === 0
-                            ? "bg-green-100 text-green-700"
+                            ? 'bg-green-100 text-green-700'
                             : (s.totalAbsences ?? 0) <= 3
-                            ? "bg-yellow-100 text-yellow-700"
-                            : (s.totalAbsences ?? 0) <= 7
-                            ? "bg-orange-100 text-orange-700"
-                            : "bg-red-100 text-red-700"
+                              ? 'bg-yellow-100 text-yellow-700'
+                              : (s.totalAbsences ?? 0) <= 7
+                                ? 'bg-orange-100 text-orange-700'
+                                : 'bg-red-100 text-red-700'
                         }`}
                       >
                         {s.totalAbsences ?? 0}
@@ -124,7 +123,7 @@ export const StudentsTable = ({
                             className="text-base bg-blue-50 hover:bg-blue-100 text-blue-700 px-5 py-2 rounded-full font-bold transition-colors"
                           >
                             {expandedStudentId === s._id
-                              ? "إخفاء"
+                              ? 'إخفاء'
                               : `عرض (${s.absenceDates?.length})`}
                           </button>
 
@@ -163,10 +162,10 @@ export const StudentsTable = ({
 
                               <div className="bg-gray-50 px-4 py-2 border-t border-gray-200 text-center">
                                 <span className="text-xs text-gray-600">
-                                  إجمالي:{" "}
+                                  إجمالي:{' '}
                                   <span className="font-bold text-red-600">
                                     {s.absenceDates?.length}
-                                  </span>{" "}
+                                  </span>{' '}
                                   غياب
                                 </span>
                               </div>
@@ -252,12 +251,12 @@ export const StudentsTable = ({
                     <span
                       className={`inline-flex items-center justify-center min-w-[36px] h-9 px-2 rounded-full text-sm font-bold ${
                         (s.totalAbsences ?? 0) === 0
-                          ? "bg-green-100 text-green-700"
+                          ? 'bg-green-100 text-green-700'
                           : (s.totalAbsences ?? 0) <= 3
-                          ? "bg-yellow-100 text-yellow-700"
-                          : (s.totalAbsences ?? 0) <= 7
-                          ? "bg-orange-100 text-orange-700"
-                          : "bg-red-100 text-red-700"
+                            ? 'bg-yellow-100 text-yellow-700'
+                            : (s.totalAbsences ?? 0) <= 7
+                              ? 'bg-orange-100 text-orange-700'
+                              : 'bg-red-100 text-red-700'
                       }`}
                     >
                       {s.totalAbsences ?? 0}
@@ -276,7 +275,7 @@ export const StudentsTable = ({
                       className="text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-full font-bold transition-colors"
                     >
                       {expandedStudentId === s._id
-                        ? "إخفاء التواريخ"
+                        ? 'إخفاء التواريخ'
                         : `عرض التواريخ (${s.absenceDates?.length})`}
                     </button>
                   )}

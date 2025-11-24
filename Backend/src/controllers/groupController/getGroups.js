@@ -191,3 +191,131 @@ exports.getGroupsMonthlyStats = async (req, res) => {
     });
   }
 };
+
+/**
+ * 🆕 الحصول على حلقات المعلم بفلاتر مرنة
+ * Query params:
+ * - teacherId: ID المعلم (required)
+ * - filter: 'all' | 'withStudents' | 'withoutStudents' (default: 'all')
+ * - includeStudents: true | false (default: false) - هل نجلب بيانات الطلاب مع الحلقات
+ */
+exports.getGroupsByTeacherIdWithFilters = async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+    const { filter = 'all', includeStudents = 'false' } = req.query;
+
+    console.log(`⚡ جلب حلقات المعلم - ID: ${teacherId}, فلتر: ${filter}, مع الطلاب: ${includeStudents}`);
+    const startTime = Date.now();
+
+    // 1. جلب المعلم
+    const Teacher = require("../../schema/Teacher");
+    const teacher = await Teacher.findById(teacherId).select("firstName lastName");
+
+    if (!teacher) {
+      return res.status(404).json({
+        success: false,
+        message: "المعلم غير موجود",
+      });
+    }
+
+    const teacherFullName = `${teacher.firstName} ${teacher.lastName}`;
+
+    // 2. جلب حلقات المعلم
+    const groups = await Group.find({
+      $or: [
+        { teacher: teacherId },
+        { teacher: teacherId.toString() },
+        { teacherName: teacherFullName },
+      ],
+      isActive: true,
+    })
+      .select("name _id capacity description schedule")
+      .lean()
+      .sort({ name: 1 });
+
+    console.log(`📚 تم جلب ${groups.length} حلقة للمعلم`);
+
+    // 3. جلب عدد الطلاب لكل حلقة
+    const groupNames = groups.map((g) => g.name);
+    const studentCounts = await Student.aggregate([
+      { $match: { group: { $in: groupNames } } },
+      { $group: { _id: "$group", count: { $sum: 1 } } },
+    ]);
+
+    const studentCountMap = new Map(
+      studentCounts.map((item) => [item._id, item.count])
+    );
+
+    // 4. إضافة معلومات الطلاب لكل حلقة
+    let groupsWithInfo = groups.map((group) => {
+      const currentStudents = studentCountMap.get(group.name) || 0;
+      return {
+        ...group,
+        currentStudents,
+        capacity: group.capacity || 30,
+        hasStudents: currentStudents > 0,
+        isEmpty: currentStudents === 0,
+      };
+    });
+
+    // 5. تطبيق الفلتر
+    if (filter === 'withStudents') {
+      groupsWithInfo = groupsWithInfo.filter((g) => g.hasStudents);
+      console.log(`🔍 فلترة: ${groupsWithInfo.length} حلقة فيها طلاب`);
+    } else if (filter === 'withoutStudents') {
+      groupsWithInfo = groupsWithInfo.filter((g) => g.isEmpty);
+      console.log(`🔍 فلترة: ${groupsWithInfo.length} حلقة فارغة`);
+    }
+
+    // 6. جلب الطلاب إذا كان مطلوباً
+    if (includeStudents === 'true') {
+      console.log('👥 جلب بيانات الطلاب...');
+      
+      const groupsWithStudents = await Promise.all(
+        groupsWithInfo.map(async (group) => {
+          const students = await Student.find({ group: group.name })
+            .select("studentId firstName lastName group")
+            .lean()
+            .sort({ firstName: 1 });
+
+          return {
+            ...group,
+            students: students.map(s => ({
+              _id: s._id,
+              studentId: s.studentId,
+              name: `${s.firstName} ${s.lastName}`,
+            })),
+          };
+        })
+      );
+
+      groupsWithInfo = groupsWithStudents;
+    }
+
+    const duration = Date.now() - startTime;
+    console.log(`✅ تم جلب ${groupsWithInfo.length} حلقة في ${duration}ms`);
+
+    res.json({
+      success: true,
+      data: {
+        teacher: {
+          _id: teacher._id,
+          name: teacherFullName,
+        },
+        groups: groupsWithInfo,
+        summary: {
+          totalGroups: groups.length,
+          groupsWithStudents: groups.filter(g => studentCountMap.get(g.name) > 0).length,
+          emptyGroups: groups.filter(g => (studentCountMap.get(g.name) || 0) === 0).length,
+          totalStudents: Array.from(studentCountMap.values()).reduce((sum, count) => sum + count, 0),
+        },
+      },
+    });
+  } catch (error) {
+    console.error("❌ خطأ في جلب حلقات المعلم:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "حدث خطأ أثناء جلب الحلقات",
+    });
+  }
+};

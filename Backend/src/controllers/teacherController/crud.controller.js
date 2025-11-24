@@ -448,3 +448,138 @@ function handleTeacherError(error, res, operation) {
     error: process.env.NODE_ENV === "development" ? error.message : "Internal server error",
   });
 }
+
+/**
+ * جلب المعلم مع جميع حلقاته وطلابه مع إحصائيات الغياب
+ * هذا endpoint محسّن خصيصاً لصفحة الحضور والغياب
+ * يستخدم الـ functions الموجودة في studentController
+ */
+exports.getTeacherWithGroupsAndStudents = async (req, res) => {
+  try {
+    const { id: teacherId } = req.params;
+    console.log(`⚡ جلب بيانات المعلم مع الحلقات والطلاب - ID: ${teacherId}`);
+    const startTime = Date.now();
+
+    // 1. جلب المعلم
+    const teacher = await Teacher.findById(teacherId).select(
+      "teacherId firstName lastName fatherName groups"
+    );
+
+    if (!teacher) {
+      return res.status(404).json({
+        success: false,
+        message: "المعلم غير موجود",
+      });
+    }
+
+    const teacherFullName = `${teacher.firstName} ${teacher.lastName}`;
+    console.log(`👨‍🏫 المعلم: ${teacherFullName}`);
+
+    // 2. جلب جميع حلقات المعلم من جدول Group
+    const groups = await Group.find({
+      $or: [
+        { teacher: teacher._id },
+        { teacher: teacher._id.toString() },
+        { teacherName: teacherFullName },
+      ],
+    })
+      .select("name _id")
+      .lean();
+
+    console.log(`📚 عدد الحلقات: ${groups.length}`);
+    if (groups.length > 0) {
+      console.log(`   الحلقات: ${groups.map((g) => g.name).join(", ")}`);
+    }
+
+    // 3. استخدام الـ function الموجودة في studentController للحصول على الطلاب مع إحصائيات الغياب
+    const { getStudentsWithAbsenceStats } = require("../studentController/absence.controller");
+    
+    // محاكاة request object
+    const mockReq = {
+      query: {
+        teacher: teacherFullName,
+      },
+    };
+
+    // محاكاة response object
+    let studentsWithStats = [];
+    const mockRes = {
+      json: (data) => {
+        studentsWithStats = data;
+        return mockRes;
+      },
+      status: (code) => mockRes,
+    };
+
+    // استدعاء الـ function الموجودة
+    await getStudentsWithAbsenceStats(mockReq, mockRes);
+
+    const duration = Date.now() - startTime;
+    console.log(
+      `✅ تم جلب بيانات المعلم مع ${groups.length} حلقة و ${studentsWithStats.length} طالب في ${duration}ms`
+    );
+
+    res.json({
+      success: true,
+      data: {
+        teacher: {
+          _id: teacher._id,
+          teacherId: teacher.teacherId,
+          name: teacherFullName,
+        },
+        groups: groups.map((g) => ({ _id: g._id, name: g.name })),
+        students: studentsWithStats,
+      },
+    });
+  } catch (error) {
+    console.error("❌ خطأ في جلب بيانات المعلم مع الحلقات والطلاب:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "حدث خطأ أثناء جلب البيانات",
+    });
+  }
+};
+
+/**
+ * جلب الطلاب حسب ID المعلم (نسخة مبسطة للاستخدام العام)
+ * يستخدم الـ function الموجودة في studentController
+ */
+exports.getStudentsByTeacherId = async (req, res) => {
+  try {
+    const { id: teacherId } = req.params;
+    console.log(`🔍 جلب طلاب المعلم - ID: ${teacherId}`);
+
+    const teacher = await Teacher.findById(teacherId).select(
+      "firstName lastName"
+    );
+    
+    if (!teacher) {
+      return res.status(404).json({
+        success: false,
+        message: "المعلم غير موجود",
+      });
+    }
+
+    const teacherFullName = `${teacher.firstName} ${teacher.lastName}`;
+
+    // استخدام الـ function الموجودة في studentController
+    const { getStudentsByTeacher } = require("../studentController/query.controller");
+    
+    // محاكاة request object
+    const mockReq = {
+      params: {
+        teacher: encodeURIComponent(teacherFullName),
+      },
+    };
+
+    // استدعاء الـ function الموجودة مباشرة
+    await getStudentsByTeacher(mockReq, res);
+  } catch (error) {
+    console.error("❌ خطأ في جلب طلاب المعلم:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "حدث خطأ أثناء جلب الطلاب",
+    });
+  }
+};
+

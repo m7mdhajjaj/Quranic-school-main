@@ -164,3 +164,79 @@ export const deleteGroup = async (
     };
   }
 };
+
+// 🆕 Get groups by teacher ID with flexible filters
+/**
+ * جلب حلقات المعلم بفلاتر مرنة
+ * 
+ * أمثلة الاستخدام:
+ * ```ts
+ * // جلب كل الحلقات (فيها طلاب + فارغة)
+ * const result = await getGroupsByTeacherIdWithFilters(teacherId, 'all');
+ * 
+ * // جلب الحلقات اللي فيها طلاب فقط
+ * const result = await getGroupsByTeacherIdWithFilters(teacherId, 'withStudents');
+ * 
+ * // جلب الحلقات الفارغة فقط
+ * const result = await getGroupsByTeacherIdWithFilters(teacherId, 'withoutStudents');
+ * 
+ * // جلب كل الحلقات مع معلومات الطلاب
+ * const result = await getGroupsByTeacherIdWithFilters(teacherId, 'all', true);
+ * ```
+ */
+export interface GroupWithStudents extends Group {
+  students?: Array<{
+    _id: string;
+    studentId: number;
+    name: string;
+  }>;
+  hasStudents?: boolean;
+  isEmpty?: boolean;
+}
+
+export interface GroupsByTeacherResponse {
+  teacher: {
+    _id: string;
+    name: string;
+  };
+  groups: GroupWithStudents[];
+  summary: {
+    totalGroups: number;
+    groupsWithStudents: number;
+    emptyGroups: number;
+    totalStudents: number;
+  };
+}
+
+export type GroupFilter = 'all' | 'withStudents' | 'withoutStudents';
+
+export const getGroupsByTeacherIdWithFilters = async (
+  teacherId: string,
+  filter: GroupFilter = 'all',
+  includeStudents: boolean = false
+): Promise<{ success: boolean; data?: GroupsByTeacherResponse; message?: string }> => {
+  try {
+    console.log(`⚡ [API] جلب حلقات المعلم - ID: ${teacherId}, فلتر: ${filter}, مع الطلاب: ${includeStudents}`);
+    const startTime = Date.now();
+
+    const params = new URLSearchParams();
+    params.append('filter', filter);
+    params.append('includeStudents', includeStudents.toString());
+
+    const response = await api.get(
+      `/groups/teacher-id/${teacherId}/filtered?${params.toString()}`
+    );
+
+    const duration = Date.now() - startTime;
+    console.log(`✅ [API] تم جلب الحلقات في ${duration}ms`);
+
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في جلب حلقات المعلم:', error);
+    const axiosError = error as AxiosError<{ message?: string }>;
+    return {
+      success: false,
+      message: axiosError.response?.data?.message || 'حدث خطأ أثناء جلب حلقات المعلم',
+    };
+  }
+};

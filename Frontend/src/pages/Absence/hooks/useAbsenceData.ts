@@ -1,5 +1,5 @@
 // hooks/useAbsenceData.ts
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type {
   LoggedInUser,
@@ -16,30 +16,70 @@ export const useAbsenceData = () => {
   const [students, setStudents] = useState<AttendanceStudent[]>([]);
   const [date, setDate] = useState<string>(todayISO());
   const [monthlyStats, setMonthlyStats] = useState<MonthlyAbsence[]>([]);
+  const [teacherGroups, setTeacherGroups] = useState<Array<{ _id: string; name: string }>>([]);
 
   // Fetch students for teacher
-  const fetchStudentsForTeacher = async (forDate: string) => {
+  const fetchStudentsForTeacher = useCallback(async (forDate: string) => {
     try {
       setError(null);
-      console.log('⚡ [OPTIMIZED] بدء جلب الطلاب مع إحصائيات الغياب...');
+      console.log('⚡ [OPTIMIZED V2] بدء جلب الطلاب عن طريق ID المعلم...');
       const startTime = Date.now();
 
-      const { getStudentsWithAbsenceStats } = await import(
-        '../../../Api/studentApi'
+      if (!currentUser?._id) {
+        console.error('❌ معرف المعلم غير موجود');
+        setError('معرف المعلم غير موجود');
+        return;
+      }
+
+      // 🆕 استخدام API الجديد المحسّن - جلب الحلقات مع الطلاب
+      const { getGroupsByTeacherIdWithFilters } = await import(
+        '../../../Api/groupApi'
       );
 
-      const teacherName =
-        currentUser?.role === 'teacher'
-          ? `${currentUser.firstName} ${currentUser.lastName}`.trim()
-          : undefined;
+      // جلب جميع الحلقات مع الطلاب
+      const groupsResult = await getGroupsByTeacherIdWithFilters(
+        currentUser._id,
+        'all', // جميع الحلقات (فيها طلاب + فارغة)
+        true   // جلب معلومات الطلاب
+      );
 
-      const studentsWithStats = await getStudentsWithAbsenceStats(teacherName);
+      if (!groupsResult.success || !groupsResult.data) {
+        console.error('❌ فشل جلب حلقات المعلم:', groupsResult.message);
+        setError(groupsResult.message || 'تعذر جلب بيانات الحلقات');
+        return;
+      }
+
+      const { teacher, groups, summary } = groupsResult.data;
+      
+      console.log(`📊 تم استلام بيانات المعلم: ${teacher.name}`);
+      console.log(`📚 ملخص الحلقات:`, summary);
+
+      // حفظ جميع الحلقات (سواء فيها طلاب أو فارغة)
+      setTeacherGroups(groups.map(g => ({ _id: g._id, name: g.name })));
+      console.log(`💾 تم حفظ ${groups.length} حلقة في state`);
+
+      // استخراج الطلاب من جميع الحلقات
+      const allStudents = groups.flatMap(group => 
+        (group.students || []).map(student => ({
+          ...student,
+          group: group.name,
+          teacher: teacher.name,
+        }))
+      );
+
+      console.log(`👥 إجمالي الطلاب: ${allStudents.length}`);
+
+      if (studentsWithStats.length === 0) {
+        console.warn('⚠️ لم يتم العثور على طلاب لهذا المعلم');
+        console.warn(`   المعلم: ${teacher.name} (ID: ${teacher._id})`);
+        console.warn(`   الحلقات: ${groups.map(g => g.name).join(', ') || 'لا توجد حلقات'}`);
+      }
 
       let formatted: AttendanceStudent[] = studentsWithStats.map((s) => ({
         _id: s._id,
         studentId: s.studentId,
         name: s.name,
-        group: s.group,
+        group: s.group || 'بدون حلقة',
         teacher: s.teacher,
         isPresent: true,
         totalAbsences: s.totalAbsences,
@@ -62,9 +102,10 @@ export const useAbsenceData = () => {
 
       const duration = Date.now() - startTime;
       console.log(
-        `✅ [OPTIMIZED] تم جلب ${formatted.length} طالب مع الإحصائيات في ${duration}ms`
+        `✅ [OPTIMIZED V2] تم جلب ${formatted.length} طالب مع الإحصائيات في ${duration}ms`
       );
 
+      // جلب بيانات الحضور للتاريخ المحدد
       try {
         const attData = await getAttendanceByDate(forDate);
         if (Array.isArray(attData) && attData.length > 0) {
@@ -81,13 +122,13 @@ export const useAbsenceData = () => {
 
       setStudents(formatted);
     } catch (e) {
-      console.error(e);
+      console.error('❌ خطأ في جلب بيانات الطلاب:', e);
       setError('تعذر جلب بيانات الطلاب');
     }
-  };
+  }, [currentUser]);
 
   // Fetch student absence stats
-  const fetchStudentAbsenceStats = async (studentId: string) => {
+  const fetchStudentAbsenceStats = useCallback(async (studentId: string) => {
     try {
       setError(null);
       const { getStudentAttendance } = await import(
@@ -139,9 +180,9 @@ export const useAbsenceData = () => {
       setMonthlyStats([]);
       setError('تعذر جلب إحصائيات الغياب');
     }
-  };
+  }, []);
 
-  // Initialize user
+  // Initialize user (مرة واحدة فقط عند التحميل)
   useEffect(() => {
     const run = async () => {
       try {
@@ -152,12 +193,6 @@ export const useAbsenceData = () => {
         }
         const user: LoggedInUser = JSON.parse(raw);
         setCurrentUser(user);
-
-        if (user.role === 'teacher' || user.role === 'admin') {
-          await fetchStudentsForTeacher(date);
-        } else {
-          await fetchStudentAbsenceStats(user._id);
-        }
       } catch (e) {
         console.error(e);
         setError('حدث خطأ أثناء جلب البيانات');
@@ -174,6 +209,7 @@ export const useAbsenceData = () => {
     date,
     setDate,
     monthlyStats,
+    teacherGroups,
     fetchStudentsForTeacher,
     fetchStudentAbsenceStats,
   };

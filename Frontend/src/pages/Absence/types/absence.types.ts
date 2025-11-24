@@ -48,6 +48,31 @@ export interface YearTotals {
 }
 
 // ============================================
+// Hook Interfaces
+// ============================================
+
+// useAttendanceStats Hook
+export interface UseAttendanceStatsProps {
+  allStudents: AttendanceStudent[]; // كل الطلاب (بدون فلترة)
+  visibleStudents: AttendanceStudent[]; // الطلاب المرئيين (بعد الفلترة)
+  isLoadingDate: boolean;
+}
+
+export interface AttendanceStats {
+  totalStudents: number;
+  presentCount: number;
+  absentCount: number;
+  attendanceRate: number;
+}
+
+// useStudentStats Hook
+export interface UseStudentStatsProps {
+  monthlyStats: MonthlyAbsence[];
+  selectedYear: number;
+  selectedMonthIndex: number;
+}
+
+// ============================================
 // Component Props Interfaces
 // ============================================
 
@@ -60,6 +85,7 @@ export interface TeacherToolbarProps {
   groupsAvailable: string[];
   nameQuery: string;
   onNameQueryChange: (query: string) => void;
+  totalStudents: number;
   presentCount: number;
   absentCount: number;
   attendanceRate: number;
@@ -67,6 +93,7 @@ export interface TeacherToolbarProps {
   daysAgo: number;
   onSave: () => void;
   isSaving: boolean;
+  isLoading?: boolean;
 }
 
 // StudentsTable Component

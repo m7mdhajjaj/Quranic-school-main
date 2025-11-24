@@ -9,6 +9,7 @@ const {
   getGroupById,
   getGroupsByTeacher,
   getGroupsMonthlyStats,
+  getGroupsByTeacherIdWithFilters,
 } = require('./getGroups');
 const { updateGroup, renameGroup } = require('./updateGroup');
 const { deleteGroup } = require('./deleteGroup');
@@ -23,6 +24,7 @@ module.exports = {
   getGroupById,
   getGroupsByTeacher,
   getGroupsMonthlyStats,
+  getGroupsByTeacherIdWithFilters,
 
   // Update operations
   updateGroup,

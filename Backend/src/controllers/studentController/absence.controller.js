@@ -14,8 +14,17 @@ exports.getStudentsWithAbsenceStats = async (req, res) => {
     // 1. بناء فلتر الطلاب
     let filter = {};
     if (teacher) {
-      filter.teacher = teacher;
-      console.log(`🔍 فلترة حسب المعلم: ${teacher}`);
+      // استخدام regex للبحث المرن عن اسم المعلم (يدعم الأسماء الجزئية)
+      const teacherRegex = new RegExp(
+        teacher
+          .split(/\s+/)
+          .filter(Boolean)
+          .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+          .join(".*"),
+        "i"
+      );
+      filter.teacher = teacherRegex;
+      console.log(`🔍 فلترة حسب المعلم: ${teacher} (regex)`);
     }
     if (group && group !== "all") {
       filter.group = group;
@@ -29,6 +38,15 @@ exports.getStudentsWithAbsenceStats = async (req, res) => {
       .sort({ firstName: 1 });
 
     console.log(`📋 تم جلب ${students.length} طالب`);
+    if (students.length > 0 && students.length <= 3) {
+      console.log('📝 عينة من الطلاب:', students.map(s => `${s.firstName} ${s.lastName} (${s.group || 'بدون حلقة'})`));
+    }
+    if (teacher && students.length === 0) {
+      console.log('⚠️ لم يتم العثور على طلاب لهذا المعلم. تحقق من اسم المعلم في قاعدة البيانات.');
+      // جلب عينة من أسماء المعلمين المتاحة
+      const sampleTeachers = await Student.distinct("teacher");
+      console.log('👥 أسماء المعلمين المتاحة:', sampleTeachers.slice(0, 10));
+    }
 
     if (students.length === 0) {
       const duration = Date.now() - startTime;

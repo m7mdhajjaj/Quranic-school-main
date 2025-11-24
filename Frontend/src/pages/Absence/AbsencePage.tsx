@@ -1,15 +1,9 @@
 // AbsencePage.tsx
 import { useState, useEffect, useMemo } from "react";
-import { useBlocker } from "react-router-dom";
 import { useAbsenceSocket } from "../../Socket";
-import { useAbsenceData, useTeacherGroups } from "./hooks";
+import { useAbsenceData, useAttendanceStats, useUnsavedChanges, useStudentFilters, useStudentSelection, useAttendanceSave } from "./hooks";
 import { TeacherToolbar, StudentView, StudentsTable } from "./components";
 import { isDateTooOld, getDaysAgo } from "./utils/dateHelpers";
-import { bulkSaveAttendance } from "@/Api/attendanceApi";
-import {
-  showSuccessToast,
-  showErrorToast,
-} from "@/components/utils/toastUtils";
 import { Card } from "@/components/UI/Card";
 import PageHeader from "@/components/UI/PageHeader";
 import ResponsivePagination from "@/components/UI/ResponsivePagination";
@@ -17,9 +11,7 @@ import { LoadingSpinner } from "@/components/UI/LoadingSpinner";
 
 const AbsencePage = () => {
   const {
-    isConnected: socketConnected,
     lastUpdate: socketLastUpdate,
-    socketId,
   } = useAbsenceSocket();
 
   const {
@@ -30,80 +22,49 @@ const AbsencePage = () => {
     date,
     setDate,
     monthlyStats,
+    teacherGroups,
     fetchStudentsForTeacher,
     fetchStudentAbsenceStats,
   } = useAbsenceData();
 
-  const teacherGroups = useTeacherGroups(currentUser);
-
-  const [selectedAll, setSelectedAll] = useState(false);
-  const [groupFilter, setGroupFilter] = useState<string>("all");
-  const [nameQuery, setNameQuery] = useState<string>("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-  const [isSaving, setIsSaving] = useState(false);
   const [isLoadingDate, setIsLoadingDate] = useState(true); // Start with true for initial load
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // استخدام hook للتحذير من التغييرات غير المحفوظة
+  useUnsavedChanges({ hasUnsavedChanges});
 
   // Initial load and re-fetch on date change
   useEffect(() => {
     if (!currentUser) return;
+    
     const loadData = async () => {
       if (currentUser.role === "teacher" || currentUser.role === "admin") {
         setIsLoadingDate(true);
         try {
           await fetchStudentsForTeacher(date);
-          setHasUnsavedChanges(false); // Reset unsaved changes after loading
+          setHasUnsavedChanges(false);
         } finally {
           setIsLoadingDate(false);
         }
+      } else if (currentUser.role === "student") {
+        await fetchStudentAbsenceStats(currentUser._id);
       }
     };
+    
     loadData();
-  }, [date, currentUser]);
+  }, [date, currentUser, fetchStudentsForTeacher, fetchStudentAbsenceStats]);
 
-  // Warn before leaving page with unsaved changes
+  // Re-fetch on socket update (فقط إذا كان هناك تحديث جديد)
   useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasUnsavedChanges) {
-        e.preventDefault();
-        e.returnValue = "لديك تغييرات غير محفوظة. هل أنت متأكد من الخروج?";
-        return e.returnValue;
-      }
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, [hasUnsavedChanges]);
-
-  // Block navigation when there are unsaved changes
-  const blocker = useBlocker(
-    ({ currentLocation, nextLocation }) =>
-      hasUnsavedChanges && currentLocation.pathname !== nextLocation.pathname
-  );
-
-  // Handle navigation blocker
-  useEffect(() => {
-    if (blocker.state === "blocked") {
-      const confirmLeave = window.confirm(
-        "⚠️ لديك تغييرات غير محفوظة!\n\nهل أنت متأكد من مغادرة الصفحة؟\nسيتم فقدان جميع التغييرات غير المحفوظة."
-      );
-      if (confirmLeave) {
-        blocker.proceed();
-      } else {
-        blocker.reset();
-      }
-    }
-  }, [blocker]);
-
-  // Re-fetch on socket update
-  useEffect(() => {
-    if (!socketLastUpdate || !currentUser) return;
+    if (!socketLastUpdate || !currentUser || isLoadingDate) return;
+    
+    // منع re-fetch إذا كان آخر تحديث قبل أقل من 2 ثانية
+    const timeSinceLastUpdate = Date.now() - socketLastUpdate.getTime();
+    if (timeSinceLastUpdate < 2000) return;
+    
     const refetchData = async () => {
       try {
+        console.log('🔄 Re-fetching data due to socket update...');
         if (currentUser.role === "teacher" || currentUser.role === "admin") {
           await fetchStudentsForTeacher(date);
         } else if (currentUser.role === "student") {
@@ -113,153 +74,112 @@ const AbsencePage = () => {
         console.error("Error refetching attendance after socket update:", err);
       }
     };
+    
     refetchData();
-  }, [socketLastUpdate, currentUser, date]);
+  }, [socketLastUpdate]);  // فقط socketLastUpdate للتجنب من re-renders غير ضرورية
 
-  // Groups available
+  // Groups available - استخدام جميع حلقات المعلم (سواء فيها طلاب أو فارغة)
   const groupsAvailable = useMemo(() => {
-    if (currentUser?.role === "teacher") {
-      return ["all", ...teacherGroups];
-    } else {
-      const set = new Set<string>();
-      students.forEach((s) => s.group && set.add(s.group));
-      return [
-        "all",
-        ...Array.from(set).sort((a, b) => a.localeCompare(b, "ar")),
-      ];
-    }
-  }, [currentUser, teacherGroups, students]);
-
-  // Auto-select "all" for teacher by default
-  useEffect(() => {
-    if (!currentUser) return;
-    if (currentUser.role === "teacher" && groupsAvailable.length > 0) {
-      if (!groupsAvailable.includes(groupFilter)) {
-        setGroupFilter("all");
+    // إذا كان المعلم لديه حلقات محددة من API، استخدمها
+    if (currentUser?.role === 'teacher' && teacherGroups.length > 0) {
+      const groupNames = teacherGroups.map(g => g.name).sort((a, b) => a.localeCompare(b, "ar"));
+      
+      // تحقق من وجود طلاب بدون حلقة
+      const hasStudentsWithoutGroup = students.some(s => !s.group);
+      
+      // إضافة "all" في البداية
+      const result = ["all", ...groupNames];
+      
+      // إضافة "بدون حلقة" إذا وُجد طلاب بدون حلقة
+      if (hasStudentsWithoutGroup) {
+        result.push("");
       }
+      
+      console.log(`📋 الحلقات المتاحة في الفلتر: ${result.join(', ')}`);
+      return result;
     }
-  }, [currentUser, groupsAvailable, groupFilter]);
-
-  // Visible students (filtered)
-  const visibleStudents = useMemo(() => {
-    let list = [...students];
-    if (groupFilter !== "all") {
-      list = list.filter((s) => (s.group ?? "") === groupFilter);
+    
+    // في حالة الأدمن أو عدم وجود حلقات من API، احسبها من الطلاب الموجودين
+    const set = new Set<string>();
+    let hasStudentsWithoutGroup = false;
+    
+    students.forEach((s) => {
+      if (s.group) {
+        set.add(s.group);
+      } else {
+        hasStudentsWithoutGroup = true;
+      }
+    });
+    
+    const groups = Array.from(set).sort((a, b) => a.localeCompare(b, "ar"));
+    
+    // إضافة "all" في البداية
+    const result = ["all", ...groups];
+    
+    // إضافة "بدون حلقة" في النهاية إذا وُجد طلاب بدون حلقة
+    if (hasStudentsWithoutGroup) {
+      result.push("");
     }
-    if (nameQuery.trim()) {
-      const q = nameQuery.trim().toLowerCase();
-      list = list.filter((s) => s.name.toLowerCase().includes(q));
-    }
-    return list.sort((a, b) => a.name.localeCompare(b.name, "ar"));
-  }, [students, groupFilter, nameQuery]);
+    
+    return result;
+  }, [students, teacherGroups, currentUser]);
 
-  // Paginated students
-  const paginatedStudents = useMemo(() => {
-    if (visibleStudents.length <= itemsPerPage) {
-      return visibleStudents;
-    }
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return visibleStudents.slice(startIndex, endIndex);
-  }, [visibleStudents, currentPage, itemsPerPage]);
 
-  const totalPages = Math.ceil(visibleStudents.length / itemsPerPage);
 
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [groupFilter, nameQuery]);
 
-  // Update selectedAll based on visible students
-  useEffect(() => {
-    if (visibleStudents.length > 0) {
-      setSelectedAll(visibleStudents.every((s) => s.isPresent));
-    } else {
-      setSelectedAll(false);
-    }
-  }, [visibleStudents]);
 
-  // Toggle student presence
-  const toggleStudentPresence = (studentId: string) => {
-    setStudents((prev) =>
-      prev.map((s) =>
-        s._id === studentId ? { ...s, isPresent: !s.isPresent } : s
-      )
-    );
-    setHasUnsavedChanges(true);
-  };
 
-  // Toggle all students
-  const toggleAllStudents = () => {
-    const newState = !selectedAll;
-    setSelectedAll(newState);
-    const visibleIds = visibleStudents.map((s) => s._id);
-    setStudents((prev) =>
-      prev.map((s) =>
-        visibleIds.includes(s._id) ? { ...s, isPresent: newState } : s
-      )
-    );
-    setHasUnsavedChanges(true);
-  };
 
-  // Stats
-  const presentCount = useMemo(
-    () => visibleStudents.filter((s) => s.isPresent).length,
-    [visibleStudents]
-  );
-  const absentCount = useMemo(
-    () => visibleStudents.length - presentCount,
-    [visibleStudents, presentCount]
-  );
-  const attendanceRate = useMemo(
-    () =>
-      visibleStudents.length
-        ? Math.round((presentCount / visibleStudents.length) * 100)
-        : 0,
-    [visibleStudents.length, presentCount]
-  );
+  // استخدام hook للفلترة والبحث والصفحات
+  const {
+    groupFilter,
+    setGroupFilter,
+    nameQuery,
+    setNameQuery,
+    currentPage,
+    setCurrentPage,
+    visibleStudents,
+    paginatedStudents,
+    totalPages,
+    itemsPerPage,
+  } = useStudentFilters({
+    students,
+    groupsAvailable,
+    itemsPerPage: 10,
+  });
+
+  // استخدام hook لإدارة اختيار الطلاب
+  const { selectedAll, toggleStudentPresence, toggleAllStudents } =
+    useStudentSelection({
+      visibleStudents,
+      setStudents,
+      onChangeDetected: () => setHasUnsavedChanges(true),
+    });
+
+  // استخدام hook منفصل لحساب الإحصائيات
+  const { displayStats, realStats } = useAttendanceStats({
+    allStudents: students,
+    visibleStudents,
+    isLoadingDate,
+  });
+
+  // استخراج الأرقام الحقيقية للاستخدام الداخلي
+  const { presentCount, absentCount, attendanceRate } = realStats;
 
   const dateTooOld = useMemo(() => isDateTooOld(date), [date]);
   const daysAgo = useMemo(() => getDaysAgo(date), [date]);
 
-  // Save attendance
-  const handleSave = async () => {
-    try {
-      if (dateTooOld) {
-        showErrorToast(
-          `⚠️ لا يمكن التعديل - التاريخ قديم (مضى عليه ${daysAgo} يوم). لا يمكن تعديل الحضور بعد مرور أسبوع.`
-        );
-        return;
-      }
-
-      setIsSaving(true);
-
-      const payload = visibleStudents
-        .filter((s) => s._id)
-        .map((s) => ({
-          studentId: s._id,
-          date,
-          isPresent: s.isPresent,
-        }));
-
-      await bulkSaveAttendance({ date, records: payload });
-
-      setHasUnsavedChanges(false); // Clear unsaved changes flag after successful save
-
-      showSuccessToast(
-        `✓ تم رصد الحضور بنجاح - حاضر: ${presentCount} | غائب: ${absentCount} | نسبة الحضور: ${attendanceRate}%`
-      );
-    } catch (e: any) {
-      console.error("❌ خطأ في حفظ الحضور:", e);
-      let errorMsg =
-        e.response?.data?.message ||
-        e.response?.data?.details ||
-        "تعذر حفظ السجل";
-      showErrorToast(`✗ خطأ في الحفظ - ${errorMsg}`);
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  // استخدام hook لحفظ الحضور
+  const { isSaving, handleSave } = useAttendanceSave({
+    visibleStudents,
+    date,
+    presentCount,
+    absentCount,
+    attendanceRate,
+    onSaveSuccess: () => setHasUnsavedChanges(false),
+    isDateTooOld: dateTooOld,
+    daysAgo,
+  });
 
   if (error) {
     return (
@@ -307,13 +227,15 @@ const AbsencePage = () => {
                   groupsAvailable={groupsAvailable}
                   nameQuery={nameQuery}
                   onNameQueryChange={setNameQuery}
-                  presentCount={presentCount}
-                  absentCount={absentCount}
-                  attendanceRate={attendanceRate}
+                  totalStudents={displayStats.totalStudents}
+                  presentCount={displayStats.presentCount}
+                  absentCount={displayStats.absentCount}
+                  attendanceRate={displayStats.attendanceRate}
                   isDateTooOld={dateTooOld}
                   daysAgo={daysAgo}
                   onSave={handleSave}
                   isSaving={isSaving}
+                  isLoading={isLoadingDate}
                 />
 
                 {/* جدول الطلاب */}

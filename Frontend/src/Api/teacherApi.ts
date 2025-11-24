@@ -150,3 +150,65 @@ export const uploadTeacherAvatar = async (id: string, avatarFile: File): Promise
     };
   }
 };
+
+// ⚡ NEW: Get teacher with all groups and students (for attendance page)
+export interface TeacherWithGroupsAndStudents {
+  teacher: {
+    _id: string;
+    teacherId: number;
+    name: string;
+  };
+  groups: Array<{
+    _id: string;
+    name: string;
+  }>;
+  students: Array<{
+    _id: string;
+    studentId: number;
+    name: string;
+    group: string;
+    teacher?: string;
+    totalAbsences: number;
+    absenceDates: Date[];
+  }>;
+}
+
+export const getTeacherWithGroupsAndStudents = async (
+  teacherId: string
+): Promise<{ success: boolean; data?: TeacherWithGroupsAndStudents; message?: string }> => {
+  try {
+    console.log('⚡ [API] جلب بيانات المعلم مع الحلقات والطلاب - ID:', teacherId);
+    const startTime = Date.now();
+    
+    const response = await api.get(`/teachers/${teacherId}/with-groups-and-students`);
+    
+    const duration = Date.now() - startTime;
+    console.log(`✅ [API] تم جلب البيانات في ${duration}ms`);
+    
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في جلب بيانات المعلم مع الحلقات والطلاب:', error);
+    const axiosError = error as AxiosError<{message?: string}>;
+    return {
+      success: false,
+      message: axiosError.response?.data?.message || 'حدث خطأ أثناء جلب البيانات'
+    };
+  }
+};
+
+// Get students by teacher ID
+export const getStudentsByTeacherId = async (
+  teacherId: string
+): Promise<{ success: boolean; data?: any[]; message?: string }> => {
+  try {
+    const response = await api.get(`/teachers/${teacherId}/students`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching students by teacher ID:', error);
+    const axiosError = error as AxiosError<{message?: string}>;
+    return {
+      success: false,
+      message: axiosError.response?.data?.message || 'حدث خطأ أثناء جلب الطلاب'
+    };
+  }
+};

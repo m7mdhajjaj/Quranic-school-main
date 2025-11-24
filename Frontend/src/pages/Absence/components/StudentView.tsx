@@ -2,11 +2,8 @@
 import { useState, useMemo } from "react";
 import { Card } from "@/components/UI/Card";
 import { AR_MONTHS } from "../utils/dateHelpers";
-import type { MonthlyAbsence } from "../types/absence.types";
-
-interface StudentViewProps {
-  monthlyStats: MonthlyAbsence[];
-}
+import { useStudentStats } from "../hooks";
+import type { StudentViewProps } from "../types/absence.types";
 
 export const StudentView = ({ monthlyStats }: StudentViewProps) => {
   // السنة والشهر المختارين
@@ -24,32 +21,12 @@ export const StudentView = ({ monthlyStats }: StudentViewProps) => {
     [yearMonth]
   );
 
-  // فلترة السجل ليعرض فقط الشهر المحدد
-  const filteredMonthlyStats = useMemo(() => {
-    return monthlyStats.filter((stat) => {
-      const lastSpace = stat.month.lastIndexOf(" ");
-      if (lastSpace < 0) return false;
-      const label = stat.month.substring(0, lastSpace);
-      const yy = parseInt(stat.month.substring(lastSpace + 1), 10);
-      const mmIndex = AR_MONTHS.findIndex((x) => x === label);
-      return yy === selectedYear && mmIndex === selectedMonthIndex;
-    });
-  }, [monthlyStats, selectedYear, selectedMonthIndex]);
-
-  // إجمالي السنة
-  const yearTotals = useMemo(() => {
-    const statsForYear = monthlyStats.filter((stat) => {
-      const lastSpace = stat.month.lastIndexOf(" ");
-      const yy = parseInt(stat.month.substring(lastSpace + 1), 10);
-      return yy === selectedYear;
-    });
-    const absenceCount = statsForYear.reduce((a, m) => a + m.absenceCount, 0);
-    const totalDays = statsForYear.reduce((a, m) => a + m.totalDays, 0);
-    const rate = totalDays
-      ? Math.round((absenceCount / totalDays) * 1000) / 10
-      : 0;
-    return { absenceCount, totalDays, rate };
-  }, [monthlyStats, selectedYear]);
+  // استخدام hook منفصل لحساب الإحصائيات
+  const { filteredMonthlyStats, yearTotals } = useStudentStats({
+    monthlyStats,
+    selectedYear,
+    selectedMonthIndex,
+  });
 
   return (
     <div className="grid grid-cols-1 gap-6">

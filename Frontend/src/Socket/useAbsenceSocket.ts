@@ -78,19 +78,33 @@ export const useAbsenceSocket = () => {
 
     console.log('👂 Setting up Absence event listeners...');
 
+    // استخدام ref لتجنب تحديث lastUpdate بشكل متكرر
+    let lastUpdateTime = Date.now();
+    const minUpdateInterval = 2000; // على الأقل ثانيتين بين التحديثات
+
+    const updateLastUpdate = () => {
+      const now = Date.now();
+      if (now - lastUpdateTime >= minUpdateInterval) {
+        lastUpdateTime = now;
+        setLastUpdate(new Date());
+      } else {
+        console.log('⏭️ Skipping update - too soon');
+      }
+    };
+
     const handleAttendanceCreated = (...args: unknown[]) => {
       console.log('➕ Attendance created:', args[0]);
-      setLastUpdate(new Date());
+      updateLastUpdate();
     };
 
     const handleAttendanceUpdated = (...args: unknown[]) => {
       console.log('✏️ Attendance updated:', args[0]);
-      setLastUpdate(new Date());
+      updateLastUpdate();
     };
 
     const handleAttendanceDeleted = (...args: unknown[]) => {
       console.log('🗑️ Attendance deleted:', args[0]);
-      setLastUpdate(new Date());
+      updateLastUpdate();
     };
 
     // الاشتراك في الأحداث

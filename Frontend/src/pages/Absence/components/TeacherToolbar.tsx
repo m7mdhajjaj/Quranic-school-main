@@ -5,6 +5,7 @@ import { Select } from '@/components/UI/Select';
 import { Alert } from '@/components/UI/Alert';
 import { DatePicker } from '@/components/UI/DatePicker';
 import { Users, Check, X } from 'lucide-react';
+import StatCardSkeleton from '@/components/skeletons/StatCardSkeleton';
 import type { TeacherToolbarProps } from '../types/absence.types';
 
 export const TeacherToolbar = ({
@@ -15,6 +16,7 @@ export const TeacherToolbar = ({
   groupsAvailable,
   nameQuery,
   onNameQueryChange,
+  totalStudents,
   presentCount,
   absentCount,
   attendanceRate,
@@ -22,44 +24,82 @@ export const TeacherToolbar = ({
   daysAgo,
   onSave,
   isSaving,
+  isLoading = false,
 }: TeacherToolbarProps) => {
   return (
     <div className="space-y-4">
       {/* Stats Cards - استخدام Card من UI Library */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card variant="elevated" className="border-r-4 border-emerald-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm mb-1">الحاضرون</p>
-              <p className="text-3xl font-bold text-emerald-600">
-                {presentCount}
-              </p>
-            </div>
-            <Check className="w-12 h-12 text-emerald-500 opacity-30" />
-          </div>
-        </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {isLoading ? (
+          <>
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+          </>
+        ) : (
+          <>
+            <Card variant="elevated" className="border-r-4 border-blue-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-600 text-sm mb-1">إجمالي الطلاب</p>
+                  <p className="text-3xl font-bold text-blue-600">
+                    {totalStudents}
+                  </p>
+                </div>
+                <Users className="w-12 h-12 text-blue-500 opacity-30" />
+              </div>
+            </Card>
 
-        <Card variant="elevated" className="border-r-4 border-red-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm mb-1">الغائبون</p>
-              <p className="text-3xl font-bold text-red-600">{absentCount}</p>
-            </div>
-            <X className="w-12 h-12 text-red-500 opacity-30" />
-          </div>
-        </Card>
+            <Card variant="elevated" className="border-r-4 border-emerald-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-600 text-sm mb-1">الحاضرون</p>
+                  <p className="text-3xl font-bold text-emerald-600">
+                    {presentCount}
+                  </p>
+                </div>
+                <Check className="w-12 h-12 text-emerald-500 opacity-30" />
+              </div>
+            </Card>
 
-        <Card variant="elevated" className="border-r-4 border-blue-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm mb-1">نسبة الحضور</p>
-              <p className="text-3xl font-bold text-blue-600">
-                {attendanceRate}%
-              </p>
-            </div>
-            <Users className="w-12 h-12 text-blue-500 opacity-30" />
-          </div>
-        </Card>
+            <Card variant="elevated" className="border-r-4 border-red-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-600 text-sm mb-1">الغائبون</p>
+                  <p className="text-3xl font-bold text-red-600">
+                    {absentCount}
+                  </p>
+                </div>
+                <X className="w-12 h-12 text-red-500 opacity-30" />
+              </div>
+            </Card>
+
+            <Card variant="elevated" className="border-r-4 border-purple-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-600 text-sm mb-1">نسبة الحضور</p>
+                  <p className="text-3xl font-bold text-purple-600">
+                    {attendanceRate}%
+                  </p>
+                </div>
+                <svg
+                  className="w-12 h-12 text-purple-500 opacity-30"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  />
+                </svg>
+              </div>
+            </Card>
+          </>
+        )}
       </div>
 
       {/* Filters Card - استخدام Card من UI Library */}
@@ -88,7 +128,7 @@ export const TeacherToolbar = ({
                 onChange={(e) => onGroupFilterChange(e.target.value)}
                 options={groupsAvailable.map((g) => ({
                   value: g,
-                  label: g === 'all' ? 'جميع الحلقات' : g,
+                  label: g === 'all' ? 'جميع الحلقات' : g === '' ? 'بدون حلقة' : g,
                 }))}
               />
             </div>
@@ -157,11 +197,7 @@ export const TeacherToolbar = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
             {/* التاريخ */}
-            <DatePicker
-              label="التاريخ"
-              value={date}
-              onChange={onDateChange}
-            />
+            <DatePicker label="التاريخ" value={date} onChange={onDateChange} />
 
             {/* زر الحفظ */}
             <div>
@@ -170,15 +206,15 @@ export const TeacherToolbar = ({
                 disabled={isDateTooOld || isSaving}
                 className={`w-full px-8 py-3 text-lg rounded-xl shadow-lg flex items-center justify-center gap-3 font-bold transition-all min-h-[52px] ${
                   isDateTooOld || isSaving
-                    ? "bg-gray-400 text-gray-200 cursor-not-allowed opacity-60"
-                    : "bg-emerald-600 text-white hover:bg-emerald-700"
+                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed opacity-60'
+                    : 'bg-emerald-600 text-white hover:bg-emerald-700'
                 }`}
                 title={
                   isDateTooOld
-                    ? "لا يمكن الحفظ - التاريخ أقدم من أسبوع"
+                    ? 'لا يمكن الحفظ - التاريخ أقدم من أسبوع'
                     : isSaving
-                    ? "جاري الحفظ..."
-                    : "حفظ السجل"
+                      ? 'جاري الحفظ...'
+                      : 'حفظ السجل'
                 }
               >
                 {isSaving ? (
@@ -217,10 +253,10 @@ export const TeacherToolbar = ({
                   </svg>
                 )}
                 {isDateTooOld
-                  ? "لا يمكن الحفظ (التاريخ قديم)"
+                  ? 'لا يمكن الحفظ (التاريخ قديم)'
                   : isSaving
-                  ? "جاري الحفظ..."
-                  : "حفظ السجل"}
+                    ? 'جاري الحفظ...'
+                    : 'حفظ السجل'}
               </button>
             </div>
           </div>

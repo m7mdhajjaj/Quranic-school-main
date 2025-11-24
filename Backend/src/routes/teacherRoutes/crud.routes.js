@@ -17,6 +17,12 @@ const {
 // Get all teachers
 router.get("/", protect, controller.getAllTeachers);
 
+// Get teacher with groups and students (for attendance page)
+router.get("/:id/with-groups-and-students", protect, controller.getTeacherWithGroupsAndStudents);
+
+// Get students by teacher ID
+router.get("/:id/students", protect, controller.getStudentsByTeacherId);
+
 // Get teacher by ID
 router.get("/:id", protect, controller.getTeacherById);
 
