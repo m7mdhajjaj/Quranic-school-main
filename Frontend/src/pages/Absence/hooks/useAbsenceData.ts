@@ -1,18 +1,17 @@
 // hooks/useAbsenceData.ts
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type {
   LoggedInUser,
   AttendanceStudent,
   MonthlyAbsence,
-} from "../types/absence.types";
-import { getAttendanceByDate } from "@/Api/attendanceApi";
-import { todayISO } from "../utils/dateHelpers";
+} from '../types/absence.types';
+import { getAttendanceByDate } from '@/Api/attendanceApi';
+import { todayISO } from '../utils/dateHelpers';
 
 export const useAbsenceData = () => {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState<LoggedInUser | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [students, setStudents] = useState<AttendanceStudent[]>([]);
   const [date, setDate] = useState<string>(todayISO());
@@ -22,15 +21,15 @@ export const useAbsenceData = () => {
   const fetchStudentsForTeacher = async (forDate: string) => {
     try {
       setError(null);
-      console.log("⚡ [OPTIMIZED] بدء جلب الطلاب مع إحصائيات الغياب...");
+      console.log('⚡ [OPTIMIZED] بدء جلب الطلاب مع إحصائيات الغياب...');
       const startTime = Date.now();
 
       const { getStudentsWithAbsenceStats } = await import(
-        "../../../Api/studentApi"
+        '../../../Api/studentApi'
       );
 
       const teacherName =
-        currentUser?.role === "teacher"
+        currentUser?.role === 'teacher'
           ? `${currentUser.firstName} ${currentUser.lastName}`.trim()
           : undefined;
 
@@ -47,14 +46,14 @@ export const useAbsenceData = () => {
         absenceDates: s.absenceDates
           .map((date: any) => {
             const d = new Date(date);
-            const day = String(d.getDate()).padStart(2, "0");
-            const month = String(d.getMonth() + 1).padStart(2, "0");
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
             const year = d.getFullYear();
             return `${day}/${month}/${year}`;
           })
           .sort((a, b) => {
-            const [dayA, monthA, yearA] = a.split("/").map(Number);
-            const [dayB, monthB, yearB] = b.split("/").map(Number);
+            const [dayA, monthA, yearA] = a.split('/').map(Number);
+            const [dayB, monthB, yearB] = b.split('/').map(Number);
             const dateA = new Date(yearA, monthA - 1, dayA);
             const dateB = new Date(yearB, monthB - 1, dayB);
             return dateB.getTime() - dateA.getTime();
@@ -83,7 +82,7 @@ export const useAbsenceData = () => {
       setStudents(formatted);
     } catch (e) {
       console.error(e);
-      setError("تعذر جلب بيانات الطلاب");
+      setError('تعذر جلب بيانات الطلاب');
     }
   };
 
@@ -92,7 +91,7 @@ export const useAbsenceData = () => {
     try {
       setError(null);
       const { getStudentAttendance } = await import(
-        "../../../Api/attendanceApi"
+        '../../../Api/attendanceApi'
       );
       const data = await getStudentAttendance(studentId);
 
@@ -106,9 +105,9 @@ export const useAbsenceData = () => {
         if (!r.isPresent) grouped[key].absences++;
       });
 
-      const { AR_MONTHS } = await import("../utils/dateHelpers");
+      const { AR_MONTHS } = await import('../utils/dateHelpers');
       const stats: MonthlyAbsence[] = Object.entries(grouped).map(([k, v]) => {
-        const [yy, m] = k.split("-").map(Number);
+        const [yy, m] = k.split('-').map(Number);
         const label = AR_MONTHS[m];
         const rate =
           v.total > 0 ? Math.round((v.absences / v.total) * 1000) / 10 : 0;
@@ -121,8 +120,8 @@ export const useAbsenceData = () => {
       });
 
       stats.sort((a, b) => {
-        const aLastSpace = a.month.lastIndexOf(" ");
-        const bLastSpace = b.month.lastIndexOf(" ");
+        const aLastSpace = a.month.lastIndexOf(' ');
+        const bLastSpace = b.month.lastIndexOf(' ');
         const aLabel = a.month.substring(0, aLastSpace);
         const bLabel = b.month.substring(0, bLastSpace);
         const aYear = parseInt(a.month.substring(aLastSpace + 1), 10);
@@ -138,7 +137,7 @@ export const useAbsenceData = () => {
     } catch (e) {
       console.error(e);
       setMonthlyStats([]);
-      setError("تعذر جلب إحصائيات الغياب");
+      setError('تعذر جلب إحصائيات الغياب');
     }
   };
 
@@ -146,24 +145,22 @@ export const useAbsenceData = () => {
   useEffect(() => {
     const run = async () => {
       try {
-        const raw = localStorage.getItem("user");
+        const raw = localStorage.getItem('user');
         if (!raw) {
-          navigate("/login");
+          navigate('/login');
           return;
         }
         const user: LoggedInUser = JSON.parse(raw);
         setCurrentUser(user);
 
-        if (user.role === "teacher" || user.role === "admin") {
+        if (user.role === 'teacher' || user.role === 'admin') {
           await fetchStudentsForTeacher(date);
         } else {
           await fetchStudentAbsenceStats(user._id);
         }
       } catch (e) {
         console.error(e);
-        setError("حدث خطأ أثناء جلب البيانات");
-      } finally {
-        setLoading(false);
+        setError('حدث خطأ أثناء جلب البيانات');
       }
     };
     run();
@@ -171,7 +168,6 @@ export const useAbsenceData = () => {
 
   return {
     currentUser,
-    loading,
     error,
     students,
     setStudents,

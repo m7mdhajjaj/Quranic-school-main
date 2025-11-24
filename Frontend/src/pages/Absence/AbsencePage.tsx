@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAbsenceSocket } from "../../Socket";
 import { useAbsenceData, useTeacherGroups } from "./hooks";
-import { SocketIndicator, TeacherToolbar, StudentView } from "./components";
+import { TeacherToolbar, StudentView } from "./components";
 import { isDateTooOld, getDaysAgo } from "./utils/dateHelpers";
 import { bulkSaveAttendance } from "@/Api/attendanceApi";
 import {
@@ -10,8 +10,6 @@ import {
   showErrorMessage,
 } from "@/components/utils/sweetalertUtils";
 import { Card } from "@/components/UI/Card";
-import { EmptyState } from "@/components/UI/EmptyState";
-import { LoadingSpinner } from "@/components/UI/LoadingSpinner";
 
 const AbsencePage = () => {
   const {
@@ -22,7 +20,6 @@ const AbsencePage = () => {
 
   const {
     currentUser,
-    loading,
     error,
     students,
     setStudents,
@@ -35,24 +32,12 @@ const AbsencePage = () => {
 
   const teacherGroups = useTeacherGroups(currentUser);
 
-  const [showSocketIndicator, setShowSocketIndicator] = useState(false);
   const [selectedAll, setSelectedAll] = useState(false);
   const [groupFilter, setGroupFilter] = useState<string>("all");
   const [nameQuery, setNameQuery] = useState<string>("");
   const [expandedStudentId, setExpandedStudentId] = useState<string | null>(
     null
   );
-
-  // Socket indicator toggle
-  useEffect(() => {
-    const handleKeyPress = (event: KeyboardEvent) => {
-      if (event.key === "d" || event.key === "D") {
-        setShowSocketIndicator((prev) => !prev);
-      }
-    };
-    window.addEventListener("keydown", handleKeyPress);
-    return () => window.removeEventListener("keydown", handleKeyPress);
-  }, []);
 
   // Re-fetch on date change
   useEffect(() => {
@@ -204,17 +189,15 @@ const AbsencePage = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <LoadingSpinner fullScreen size="xl" text="جاري تحميل البيانات..." />
-    );
-  }
-
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <Card variant="elevated" className="max-w-md">
-          <EmptyState icon="❌" title="حدث خطأ" description={error} />
+        <Card variant="elevated" className="max-w-md p-6">
+          <div className="text-center">
+            <div className="text-6xl mb-4">❌</div>
+            <h2 className="text-xl font-bold text-gray-800 mb-2">حدث خطأ</h2>
+            <p className="text-gray-600">{error}</p>
+          </div>
         </Card>
       </div>
     );
@@ -231,13 +214,6 @@ const AbsencePage = () => {
             <h1 className="text-3xl md:text-4xl font-bold text-slate-800">
               سجل الحضور والغياب
             </h1>
-            {showSocketIndicator && socketId && (
-              <SocketIndicator
-                socketConnected={socketConnected}
-                socketId={socketId}
-                socketLastUpdate={socketLastUpdate?.getTime() || null}
-              />
-            )}
           </div>
           <div className="w-24 h-1 bg-emerald-600 mx-auto mb-4"></div>
           <p className="text-gray-600">
@@ -251,17 +227,7 @@ const AbsencePage = () => {
           <StudentView monthlyStats={monthlyStats} />
         ) : (
           <div className="space-y-6">
-            {currentUser?.role === "teacher" && groupsAvailable.length === 0 ? (
-              <Card variant="elevated">
-                <EmptyState
-                  icon="👥"
-                  title="لا توجد حلقات"
-                  description="لم يتم تعيين أي حلقات لك بعد. يرجى التواصل مع الإدارة."
-                />
-              </Card>
-            ) : (
-              <>
-                <TeacherToolbar
+            <TeacherToolbar
                   date={date}
                   onDateChange={setDate}
                   groupFilter={groupFilter}
@@ -506,8 +472,6 @@ const AbsencePage = () => {
                     <li>استخدم البحث والفلترة حسب الحلقة لتسريع العمل.</li>
                   </ul>
                 </Card>
-              </>
-            )}
           </div>
         )}
       </div>
