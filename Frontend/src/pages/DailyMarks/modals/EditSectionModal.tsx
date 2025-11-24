@@ -1,6 +1,5 @@
 import { Modal, Button, Input, DatePicker } from '@/components/UI';
-import { Edit } from 'lucide-react';
-import { useCallback } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import type { EditSectionModalProps } from '../types/types';
 
 import { memo } from 'react';
@@ -16,35 +15,54 @@ const EditSectionModalComponent = ({
   onSubmit,
   onChange,
 }: EditSectionModalProps) => {
-  if (!isOpen || !editingSection) return null;
+  // استخدام local state لتجنب re-render المكون الأب
+  const [localSection, setLocalSection] = useState(editingSection);
+
+  // تحديث local state عند فتح المودل أو تغيير editingSection
+  useEffect(() => {
+    if (isOpen && editingSection) {
+      setLocalSection(editingSection);
+    }
+  }, [isOpen, editingSection]);
 
   const handleDateChange = useCallback((date: string) => {
-    const event = {
-      target: { name: 'date', value: date },
-    } as React.ChangeEvent<HTMLInputElement>;
-    onChange(event);
-  }, [onChange]);
+    setLocalSection(prev => prev ? { ...prev, date } : null);
+  }, []);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e);
-  }, [onChange]);
+    const { name, value } = e.target;
+    setLocalSection(prev => prev ? { ...prev, [name]: value } : null);
+  }, []);
+
+  const handleSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    if (!localSection) return;
+    
+    // تحديث الـ parent state قبل الإرسال
+    if (onChange && localSection) {
+      const fields: Array<'date' | 'reviewSection' | 'memorizationSection'> = ['date', 'reviewSection', 'memorizationSection'];
+      fields.forEach(field => {
+        const event = {
+          target: { name: field, value: localSection[field] },
+        } as React.ChangeEvent<HTMLInputElement>;
+        onChange(event);
+      });
+    }
+    
+    onSubmit(e);
+  }, [localSection, onChange, onSubmit]);
+
+  if (!isOpen || !editingSection || !localSection) return null;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="تعديل المقطع">
-      <div className="bg-gradient-to-r from-blue-500 to-indigo-600 p-6 -mt-6 -mx-6 mb-6">
-        <div className="flex items-center gap-3">
-          <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
-            <Edit className="h-6 w-6 text-white" />
-          </div>
-          <h3 className="text-xl font-bold text-white">تعديل المقطع</h3>
-        </div>
-      </div>
+      
 
-      <form onSubmit={onSubmit}>
+      <form onSubmit={handleSubmit}>
         <div className="mb-6">
           <DatePicker
             label="التاريخ"
-            value={editingSection.date}
+            value={localSection.date}
             onChange={handleDateChange}
             required
           />
@@ -57,7 +75,7 @@ const EditSectionModalComponent = ({
             name="reviewSection"
             label="مقطع المراجعة"
             placeholder="مثال: البقرة (1-10)"
-            value={editingSection.reviewSection}
+            value={localSection.reviewSection}
             onChange={handleInputChange}
             className="border-gray-200 focus:border-emerald-500 focus:ring-emerald-100"
           />
@@ -70,7 +88,7 @@ const EditSectionModalComponent = ({
             name="memorizationSection"
             label="مقطع الحفظ"
             placeholder="مثال: البقرة (11-15)"
-            value={editingSection.memorizationSection}
+            value={localSection.memorizationSection}
             onChange={handleInputChange}
             className="border-gray-200 focus:border-amber-500 focus:ring-amber-100"
           />

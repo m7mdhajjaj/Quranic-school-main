@@ -1,4 +1,4 @@
-import React, { useState, memo, useCallback } from 'react';
+import React, { useState, memo, useCallback, useMemo } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -19,7 +19,7 @@ const InputComponent: React.FC<InputProps> = ({
   rightIcon,
   fullWidth = true,
   required,
-  className,
+  className = '',
   showPasswordToggle = false,
   type,
   value,
@@ -33,14 +33,23 @@ const InputComponent: React.FC<InputProps> = ({
   }, []);
 
   // تحديد نوع الـ input بناءً على حالة إظهار كلمة المرور
-  const inputType = showPasswordToggle
-    ? showPassword
-      ? 'text'
-      : 'password'
-    : type;
+  const inputType = showPasswordToggle && showPassword ? 'text' : (showPasswordToggle ? 'password' : type);
 
   // التحقق من وجود قيمة لإظهار أيقونة العين
-  const hasValue = value !== undefined && value !== null && value !== '';
+  const hasValue = Boolean(value);
+
+  // Memoize className لتجنب إعادة حسابها في كل render
+  const inputClassName = useMemo(() => {
+    const baseClasses = 'w-full px-5 py-4 bg-white border-2 rounded-2xl text-right placeholder-gray-400 text-base shadow-sm';
+    const leftPadding = leftIcon ? 'pl-10' : '';
+    const rightPadding = (rightIcon || (showPasswordToggle && hasValue)) ? 'pl-14' : '';
+    const borderClasses = error
+      ? 'border-red-500 focus:border-red-500 focus:ring-red-200'
+      : 'border-gray-200 focus:border-emerald-500 focus:ring-emerald-100';
+    const focusClasses = 'focus:ring-2 focus:outline-none';
+    
+    return `${baseClasses} ${leftPadding} ${rightPadding} ${borderClasses} ${focusClasses} ${className}`.trim();
+  }, [leftIcon, rightIcon, showPasswordToggle, hasValue, error, className]);
 
   return (
     <div className={fullWidth ? 'w-full' : ''}>
@@ -58,13 +67,7 @@ const InputComponent: React.FC<InputProps> = ({
         <input
           type={inputType}
           value={value}
-          className={`w-full px-5 py-4 bg-white border-2 rounded-2xl text-right placeholder-gray-400 text-base shadow-sm ${
-            leftIcon ? 'pl-10' : ''
-          } ${rightIcon || (showPasswordToggle && hasValue) ? 'pl-14' : ''} ${
-            error
-              ? 'border-red-500 focus:border-red-500 focus:ring-red-200'
-              : 'border-gray-200 focus:border-emerald-500 focus:ring-emerald-100'
-          } focus:ring-2 focus:outline-none ${className || ''}`}
+          className={inputClassName}
           required={required}
           {...props}
         />
@@ -98,15 +101,4 @@ const InputComponent: React.FC<InputProps> = ({
   );
 };
 
-export const Input = memo(InputComponent, (prevProps, nextProps) => {
-  // Return true to skip re-render (props are equal)
-  // Return false to re-render (props have changed)
-  return (
-    prevProps.value === nextProps.value &&
-    prevProps.error === nextProps.error &&
-    prevProps.disabled === nextProps.disabled &&
-    prevProps.className === nextProps.className &&
-    prevProps.placeholder === nextProps.placeholder &&
-    prevProps.name === nextProps.name
-  );
-});
+export const Input = memo(InputComponent);
