@@ -124,12 +124,25 @@ const DailyMarksPage = () => {
   );
 
   // Fetch averages from backend
-  const { averages } = useStudentAverages(
+  // For students: use their own ID from currentUser, for teachers: use selectedStudentId
+  const studentIdForAverages = currentUser?.role === 'student' 
+    ? currentUser._id 
+    : selectedStudentId;
+  
+  console.log("🎯 Student ID for averages:", {
+    role: currentUser?.role,
+    studentIdForAverages,
     selectedStudentId,
+    currentUserId: currentUser?._id,
+    selectedGroup,
+  });
+    
+  const { averages } = useStudentAverages(
+    studentIdForAverages,
     selectedGroup,
     selectedMonth,
     selectedYear,
-    !!currentUser && !!selectedGroup && !!selectedStudentId
+    !!currentUser && !!selectedGroup && !!studentIdForAverages
   );
 
   // Filtered Students

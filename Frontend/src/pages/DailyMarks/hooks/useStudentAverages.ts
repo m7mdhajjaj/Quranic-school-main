@@ -23,7 +23,7 @@ export const useStudentAverages = (
   useEffect(() => {
     const fetchAverages = async () => {
       // Don't fetch if disabled or no student selected
-      if (!enabled || !studentId || !selectedGroup) {
+      if (!enabled || !studentId) {
         setAverages({
           reviewAverage: 0,
           memorizationAverage: 0,
@@ -43,6 +43,7 @@ export const useStudentAverages = (
           year: selectedYear,
           group: selectedGroup,
         });
+        console.log("🔍 Enabled:", enabled, "StudentId:", studentId, "Group:", selectedGroup);
 
         const response = await getStudentAverages(studentId, {
           month: selectedMonth,
