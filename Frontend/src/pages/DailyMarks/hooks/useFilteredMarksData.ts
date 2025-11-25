@@ -88,9 +88,14 @@ export const useFilteredMarksData = (
     fetchFilteredData();
   }, [fetchFilteredData]);
 
-  // Refetch function for manual refresh
-  const refetch = useCallback(() => {
-    fetchFilteredData();
+  // Refetch function for manual refresh (matches socket effects signature)
+  const refetch = useCallback(async (_studentId?: string) => {
+    await fetchFilteredData();
+  }, [fetchFilteredData]);
+
+  // Refetch sections (matches socket effects signature)
+  const refetchSections = useCallback(async () => {
+    await fetchFilteredData();
   }, [fetchFilteredData]);
 
   return {
@@ -101,5 +106,6 @@ export const useFilteredMarksData = (
     setSections,
     setMarks,
     refetch,
+    refetchSections,
   };
 };

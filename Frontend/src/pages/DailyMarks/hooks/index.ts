@@ -7,6 +7,8 @@
 // DATA MANAGEMENT HOOKS
 // ============================================================================
 export { useDailyMarksData } from './useDailyMarksData';
+export { useFilteredMarksData } from './useFilteredMarksData';
+export { useStudentAverages } from './useStudentAverages';
 export { useDailyMarksState } from './useDailyMarksState';
 export { useSectionsFilter } from './useSectionsFilter';
 

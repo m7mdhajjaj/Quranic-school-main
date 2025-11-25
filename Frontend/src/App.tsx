@@ -64,7 +64,7 @@ import Activities from "./pages/Activities";
 // ============================================================================
 // Page Components - Attendance & Management
 // ============================================================================
-const Absence = lazy(() => import("./pages/Absence/index"));
+const Absence = lazy(() => import("./pages/Attendance/index"));
 
 // ============================================================================
 // Page Components - Islamic Resources

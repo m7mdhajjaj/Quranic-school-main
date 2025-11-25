@@ -3,7 +3,7 @@
 // ============================================================================
 
 // React & Hooks
-import { lazy, Suspense, useEffect, useCallback } from 'react';
+import { lazy, Suspense } from 'react';
 
 // Socket Hooks
 import {
@@ -86,43 +86,34 @@ const DailyMarksPage = () => {
   // DATA & STATE HOOKS
   // ==========================================================================
 
-  // Student Selection
+  // Data Fetching & Management - Basic data (users, students, groups)
+  const { currentUser, students, teacherGroups, loading } = useDailyMarksData();
+
+  // Student Selection (with auto-select logic)
   const {
     selectedStudentId,
     selectedGroup,
     isPending,
     handleStudentSelect,
     setSelectedGroup,
-  } = useStudentSelection();
+  } = useStudentSelection(currentUser, teacherGroups, loading);
 
   // Component State (Modals, Forms, etc.)
   const state = useDailyMarksState();
 
-  // Sections Filtering (needs to be before data hooks)
-  const {
-    selectedMonth,
-    selectedYear,
-    setSelectedMonth,
-    setSelectedYear,
-    calculateAverages,
-  } = useSectionsFilter([], state.searchQuery);
-
-  // Data Fetching & Management - Basic data (users, students, groups)
-  const {
-    currentUser,
-    students,
-    teacherGroups,
-    loading,
-  } = useDailyMarksData(selectedStudentId, selectedGroup);
+  // Sections Filtering (month/year selection only)
+  const { selectedMonth, selectedYear, setSelectedMonth, setSelectedYear } =
+    useSectionsFilter();
 
   // Filtered Data Fetching - Uses new filtered API (enabled for all roles)
   const {
-    sections: filteredSectionsData,
-    marks: filteredMarksData,
-    loading: loadingFiltered,
+    sections,
+    marks,
+    loading: loadingMarks,
     setSections,
     setMarks,
-    refetch: refetchFilteredData,
+    refetch: refetchMarks,
+    refetchSections,
   } = useFilteredMarksData(
     selectedStudentId,
     selectedGroup,
@@ -133,7 +124,7 @@ const DailyMarksPage = () => {
   );
 
   // Fetch averages from backend
-  const { averages: backendAverages } = useStudentAverages(
+  const { averages } = useStudentAverages(
     selectedStudentId,
     selectedGroup,
     selectedMonth,
@@ -141,42 +132,8 @@ const DailyMarksPage = () => {
     !!currentUser && !!selectedGroup && !!selectedStudentId
   );
 
-  // Use filtered data for all roles (students, teachers, admins)
-  const sections = filteredSectionsData;
-  const marks = filteredMarksData;
-  const loadingMarks = loadingFiltered;
-
-  // Refetch functions that work with filtered API
-  const refetchMarks = useCallback(async () => {
-    await refetchFilteredData();
-  }, [refetchFilteredData]);
-
-  const refetchSections = useCallback(async () => {
-    await refetchFilteredData();
-  }, [refetchFilteredData]);
-
-  // For students, set their group automatically
-  useEffect(() => {
-    if (
-      currentUser?.role === 'student' &&
-      currentUser.group &&
-      !selectedGroup
-    ) {
-      console.log('🎓 Setting student group:', currentUser.group);
-      setSelectedGroup(currentUser.group);
-    }
-  }, [currentUser, selectedGroup, setSelectedGroup]);
-
   // Filtered Students
   const filteredStudents = useFilteredStudents({ students, selectedGroup });
-
-  // Auto-select first group after data loads
-  useEffect(() => {
-    if (teacherGroups.length > 0 && !selectedGroup && !loading) {
-      console.log('🎯 Auto-selecting first group:', teacherGroups[0]);
-      setSelectedGroup(teacherGroups[0]);
-    }
-  }, [teacherGroups, selectedGroup, loading, setSelectedGroup]);
 
   // ==========================================================================
   // BUSINESS LOGIC HOOKS
@@ -222,15 +179,8 @@ const DailyMarksPage = () => {
   const { getSelectedStudent, sectionsCount } = useComputedValues({
     students,
     selectedStudentId,
-    sections: sections,
-    marks,
-    currentUserId:
-      currentUser?.role === 'student' ? currentUser._id : undefined,
-    calculateAverages,
+    sections,
   });
-
-  // Use backend averages instead of frontend calculation
-  const averages = backendAverages;
 
   // ==========================================================================
   // SIDE EFFECTS

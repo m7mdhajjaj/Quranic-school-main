@@ -1,10 +1,8 @@
 // Types
 export * from './types/types';
 
-// Hooks
-export { useDailyMarksData } from './hooks/useDailyMarksData';
-export { useMarksByStudent } from './hooks/useMarksByStudent';
-export { useSectionsFilter } from './hooks/useSectionsFilter';
+// Hooks (export all from hooks/index.ts)
+export * from './hooks';
 
 // Components
 export { MonthYearFilter } from './components/MonthYearFilter';

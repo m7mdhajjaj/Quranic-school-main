@@ -1,25 +1,21 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import type { LoggedInUser, Student, Section, Mark, UseDailyMarksDataResult } from "../types/types";
+import type { LoggedInUser, Student } from "../types/types";
 import { getStudentsByTeacher } from "@/Api/studentApi";
 import { getGroupsByTeacherIdWithFilters } from "@/Api/groupApi";
-import { getAllSections } from "@/Api/sectionApi";
-import { getStudentMarks } from "@/Api/dailyMarksApi";
 
 /**
- * Custom hook for loading and managing daily marks data
- * Handles fetching user, students, sections, and marks based on role
+ * Custom hook for loading basic daily marks data
+ * Handles fetching user, students, and teacher groups
+ * Note: Sections and marks are now fetched via useFilteredMarksData hook
  */
-export const useDailyMarksData = (selectedStudentId: string | null, selectedGroup: string): UseDailyMarksDataResult => {
+export const useDailyMarksData = () => {
   const navigate = useNavigate();
   
   const [currentUser, setCurrentUser] = useState<LoggedInUser | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
   const [teacherGroups, setTeacherGroups] = useState<string[]>([]);
-  const [sections, setSections] = useState<Section[]>([]);
-  const [marks, setMarks] = useState<Mark[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [loadingMarks, setLoadingMarks] = useState<boolean>(false);
 
   // Fetch current user and initial data on component mount
   useEffect(() => {
@@ -37,26 +33,6 @@ export const useDailyMarksData = (selectedStudentId: string | null, selectedGrou
 
         const user = JSON.parse(userJson);
         setCurrentUser(user);
-
-        // Fetch sections based on user role
-        const sectionsData = await getAllSections();
-
-        // If user is a student, filter sections by their group
-        if (user.role === "student") {
-          const userGroup = user.group;
-          const filteredSections = Array.isArray(sectionsData)
-            ? sectionsData.filter((s: Section) => s.group === userGroup)
-            : [];
-          setSections(filteredSections);
-          console.log(
-            "Loaded sections for student's group:",
-            userGroup,
-            filteredSections
-          );
-        } else {
-          // For teachers/admins, sections will be filtered later by selected group
-          setSections(Array.isArray(sectionsData) ? sectionsData : []);
-        }
 
         // If user is a teacher, fetch students by teacher name and teacher's groups
         if (user.role === "teacher" || user.role === "admin") {
@@ -95,100 +71,10 @@ export const useDailyMarksData = (selectedStudentId: string | null, selectedGrou
     fetchData();
   }, [navigate]);
 
-  // Fetch sections for selected group (only for teachers/admins)
-  useEffect(() => {
-    const fetchSectionsForGroup = async () => {
-      if (!selectedGroup || !currentUser) return;
-
-      // Only fetch sections for teachers/admins, students already have their sections filtered
-      if (currentUser.role !== "teacher" && currentUser.role !== "admin")
-        return;
-
-      try {
-        const sectionsData = await getAllSections();
-
-        // Filter sections by group - only show sections for the selected group
-        const filteredSections = Array.isArray(sectionsData)
-          ? sectionsData.filter((s: Section) => s.group === selectedGroup)
-          : [];
-
-        setSections(filteredSections);
-        console.log(
-          "Loaded sections for group:",
-          selectedGroup,
-          filteredSections
-        );
-      } catch (err) {
-        console.error("Error fetching sections for group:", err);
-      }
-    };
-
-    fetchSectionsForGroup();
-  }, [selectedGroup, currentUser]);
-
-  // Function to refetch marks - memoized to prevent infinite loops
-  const refetchMarks = useCallback(async (studentId?: string) => {
-    if (!currentUser) return;
-
-    setLoadingMarks(true);
-    try {
-      if (currentUser.role === "student") {
-        // For students, fetch only their marks
-        const response = await getStudentMarks(currentUser._id);
-        setMarks(response.success && response.data ? response.data : []);
-      } else if (studentId) {
-        // For teachers with selected student
-        const response = await getStudentMarks(studentId);
-        setMarks(response.success && response.data ? response.data : []);
-      } else {
-        // For teachers initially, don't fetch any marks until a student is selected
-        setMarks([]);
-      }
-    } catch (err) {
-      console.error("Error fetching marks:", err);
-      setMarks([]); // Clear marks on error
-    } finally {
-      setLoadingMarks(false);
-    }
-  }, [currentUser]); // Only recreate when currentUser changes
-
-  // Function to refetch sections - memoized
-  const refetchSections = useCallback(async () => {
-    if (!currentUser) return;
-
-    try {
-      const sectionsData = await getAllSections();
-
-      if (currentUser.role === "student") {
-        // For students, filter by their group
-        const filteredSections = Array.isArray(sectionsData)
-          ? sectionsData.filter((s: Section) => s.group === currentUser.group)
-          : [];
-        setSections(filteredSections);
-      } else if (selectedGroup) {
-        // For teachers, filter by selected group
-        const filteredSections = Array.isArray(sectionsData)
-          ? sectionsData.filter((s: Section) => s.group === selectedGroup)
-          : [];
-        setSections(filteredSections);
-      }
-      console.log("✅ Sections refetched successfully");
-    } catch (err) {
-      console.error("❌ Error refetching sections:", err);
-    }
-  }, [currentUser, selectedGroup]);
-
   return {
     currentUser,
     students,
-    sections,
-    marks,
     teacherGroups,
     loading,
-    loadingMarks,
-    setMarks,
-    setSections,
-    refetchMarks,
-    refetchSections,
   };
 };
