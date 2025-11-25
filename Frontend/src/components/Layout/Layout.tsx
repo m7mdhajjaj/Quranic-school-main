@@ -37,7 +37,7 @@ interface LayoutProps {
 /**
  * Routes that should hide the footer
  */
-const ROUTES_WITHOUT_FOOTER = ['/login', '/chat', '/quran', '/quran-audio'];
+const ROUTES_WITHOUT_FOOTER = ['/login'];
 
 /**
  * Routes that should hide both header and footer

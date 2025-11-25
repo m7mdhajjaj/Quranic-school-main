@@ -1,9 +1,9 @@
 import { useState, useCallback, useTransition, lazy, Suspense } from "react";
-import { Alert, LoadingSpinner } from "@/components/UI";
-import { BookOpen, Sparkles } from "lucide-react";
-import SurahList from "./SurahList";
-import ReaderControls from "./ReaderControls";
-import Pagination from "./Pagination";
+import { Alert, LoadingSpinner, PageHeader } from "@/components/UI";
+import { BookOpen } from "lucide-react";
+import SurahList from "./Components/SurahList";
+import ReaderControls from "./Components/ReaderControls";
+import Pagination from "./Components/Pagination";
 import { useQuranInit } from "./hooks/useQuranInit";
 import { usePagination } from "./hooks/usePagination";
 import { useReadingSettingsSync } from "./hooks/useReadingSettingsSync";
@@ -11,7 +11,7 @@ import { getSurah, saveReadingBookmark } from "@/Api/quranAudioApi";
 import type { SurahData } from "./types/quran.types";
 
 // ✅ Lazy load heavy components
-const SurahReader = lazy(() => import("./SurahReader"));
+const SurahReader = lazy(() => import("./Components/SurahReader"));
 
 const QuranPage = () => {
   // ✅ تهيئة البيانات الأساسية
@@ -92,23 +92,12 @@ const QuranPage = () => {
     <div
       className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50"
       dir="rtl">
-      {/* ✨ Enhanced Sticky Header with gradient and shadow */}
-      <header className="sticky top-0 z-20 bg-gradient-to-r from-emerald-600 to-teal-600 shadow-lg py-6 mb-8">
-        <div className="container mx-auto text-center px-4">
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <BookOpen className="w-8 h-8 text-white animate-pulse" />
-            <h1 className="text-3xl md:text-5xl font-bold text-white drop-shadow-lg">
-              القرآن الكريم
-            </h1>
-            <Sparkles className="w-8 h-8 text-amber-300 animate-bounce" />
-          </div>
-          <p className="text-white/90 text-sm md:text-base font-medium">
-            اقرأ واستمع وتدبر آيات الله في واجهة مريحة وجميلة ✨
-          </p>
-        </div>
-      </header>
-
-      <div className="container mx-auto px-4 pb-10">
+      <div className="container mx-auto px-4 pt-8 pb-16 mb-8">
+        <PageHeader
+          title="القرآن الكريم"
+          subtitle="اقرأ واستمع وتدبر آيات الله في واجهة مريحة وجميلة ✨"
+          icon={<BookOpen className="w-12 h-12 sm:w-16 sm:h-16 text-white" />}
+        />
         {error && (
           <Alert variant="danger" className="mb-6 animate-shake">
             {error}
@@ -157,54 +146,7 @@ const QuranPage = () => {
         )}
       </div>
 
-      {/* ✨ Enhanced Animations - مُحسّنة للأداء */}
-      <style>{`
-        @keyframes fadeIn { 
-          from { opacity: 0; } 
-          to { opacity: 1; } 
-        }
-        @keyframes slideUp { 
-          from { transform: translate3d(0, 15px, 0); opacity: 0; } 
-          to { transform: translate3d(0, 0, 0); opacity: 1; } 
-        }
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          10%, 30%, 50%, 70%, 90% { transform: translateX(-3px); }
-          20%, 40%, 60%, 80% { transform: translateX(3px); }
-        }
-        .animate-fadeIn { 
-          animation: fadeIn 0.3s ease-out; 
-          will-change: opacity;
-        }
-        .animate-slideUp { 
-          animation: slideUp 0.4s ease-out; 
-          will-change: transform, opacity;
-        }
-        .animate-fadeSlide { 
-          animation: slideUp 0.3s ease-out, fadeIn 0.3s ease-out; 
-          will-change: transform, opacity;
-        }
-        .animate-shake { 
-          animation: shake 0.4s ease-in-out; 
-        }
-        
-        /* Scrollbar محسّن */
-        .scrollbar-thin::-webkit-scrollbar { 
-          width: 10px; 
-        }
-        .scrollbar-thin::-webkit-scrollbar-thumb { 
-          background: linear-gradient(180deg, #10b981, #14b8a6); 
-          border-radius: 10px;
-          transition: background 0.2s;
-        }
-        .scrollbar-thin::-webkit-scrollbar-thumb:hover { 
-          background: linear-gradient(180deg, #059669, #0d9488); 
-        }
-        .scrollbar-thin::-webkit-scrollbar-track { 
-          background-color: #f0fdf4; 
-          border-radius: 10px;
-        }
-      `}</style>
+     
     </div>
   );
 };

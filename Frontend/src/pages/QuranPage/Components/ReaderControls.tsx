@@ -1,16 +1,7 @@
-import { memo } from "react";
+import { memo, useCallback, startTransition } from "react";
 import { Button, Card, RangeSlider } from "@/components/UI";
 import { ArrowLeft, BookOpen } from "lucide-react";
-import type { SurahData } from "./types/quran.types";
-
-interface ReaderControlsProps {
-  selectedSurah: SurahData | null;
-  currentPage: number;
-  totalPages: number;
-  fontSize: number;
-  onFontSizeChange: (size: number) => void;
-  onBackToList: () => void;
-}
+import type { ReaderControlsProps } from "@/types/readerControls";
 
 const ReaderControls = memo(({
   selectedSurah,
@@ -20,6 +11,12 @@ const ReaderControls = memo(({
   onFontSizeChange,
   onBackToList,
 }: ReaderControlsProps) => {
+  const handleBackToList = useCallback(() => {
+    startTransition(() => {
+      onBackToList();
+    });
+  }, [onBackToList]);
+
   return (
     <Card 
       padding="lg" 
@@ -29,7 +26,7 @@ const ReaderControls = memo(({
       <div className="flex flex-col lg:flex-row justify-between items-center gap-6">
         {/* Back Button */}
         <Button
-          onClick={onBackToList}
+          onClick={handleBackToList}
           variant="primary"
           size="lg"
           leftIcon={<ArrowLeft size={20} />}

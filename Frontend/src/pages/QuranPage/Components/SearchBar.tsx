@@ -1,11 +1,6 @@
 import { Search } from 'lucide-react';
 import { Input } from "@/components/UI";
-
-interface SearchBarProps {
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-}
+import type { SearchBarProps } from "@/types/searchBar";
 
 const SearchBar = ({
   value,

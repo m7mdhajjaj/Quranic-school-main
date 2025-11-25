@@ -1,5 +1,14 @@
 import { normalizeArabic } from "./arabicNormalize";
 import type { Surah } from "../types/quran.types";
+import type { FilterOption } from "@/components/Filters";
+
+/**
+ * خيارات ترتيب السور
+ */
+export const SURAH_SORT_OPTIONS: FilterOption[] = [
+  { value: "asc", label: "من الأولى إلى الأخيرة" },
+  { value: "desc", label: "من الأخيرة إلى الأولى" },
+];
 
 /**
  * ✅ دالة البحث الذكية بدون تشكيل

@@ -362,38 +362,3 @@ export const saveReadingSettings = async (settings: {
     localStorage.setItem('quranReadingSettings', JSON.stringify(settings));
   }
 };
-
-// Helper function to filter Surahs by search term
-export const filterSurahs = (surahs: Surah[], searchTerm: string): Surah[] => {
-  if (!searchTerm) return surahs;
-  
-  const query = searchTerm.toLowerCase().trim();
-  
-  return surahs.filter(surah => 
-    surah.name.includes(query) ||
-    surah.englishName.toLowerCase().includes(query) ||
-    surah.number.toString() === query
-  );
-};
-
-// Helper function to paginate ayahs
-export const paginateAyahs = (ayahs: Ayah[], page: number, itemsPerPage: number): {
-  items: Ayah[];
-  totalPages: number;
-  currentPage: number;
-  hasNext: boolean;
-  hasPrevious: boolean;
-} => {
-  const startIndex = (page - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const items = ayahs.slice(startIndex, endIndex);
-  const totalPages = Math.ceil(ayahs.length / itemsPerPage);
-  
-  return {
-    items,
-    totalPages,
-    currentPage: page,
-    hasNext: page < totalPages,
-    hasPrevious: page > 1,
-  };
-};

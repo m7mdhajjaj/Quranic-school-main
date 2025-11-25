@@ -1,14 +1,9 @@
 import { memo, useMemo } from "react";
 import { Card } from "@/components/UI";
-import AyahCard from "../QuranAudio/components/AyahCard";
-import type { SurahData, Ayah } from "./types/quran.types";
-
-interface SurahReaderProps {
-  surah: SurahData;
-  ayahs: Ayah[];
-  fontSize: number;
-  currentPage: number;
-}
+import AyahCard from "../../QuranAudio/components/AyahCard";
+import { getFontSizeClass } from "../utils/fontSizeMapper";
+import { shouldShowBasmala } from "../utils/basmalaHelper";
+import type { SurahReaderProps } from "@/types/surahReader";
 
 const SurahReader = memo(({
   surah,
@@ -16,20 +11,15 @@ const SurahReader = memo(({
   fontSize,
   currentPage,
 }: SurahReaderProps) => {
-  // ✅ عرض البسملة في الصفحة الأولى فقط، عدا التوبة (9) والفاتحة (1)
   const showBasmala = useMemo(
-    () => surah.number !== 1 && surah.number !== 9 && currentPage === 1,
+    () => shouldShowBasmala(surah.number, currentPage),
     [surah.number, currentPage]
   );
 
-  const fontSizeClass = useMemo((): "sm" | "base" | "lg" | "xl" | "2xl" | "3xl" => {
-    if (fontSize <= 14) return "sm";
-    if (fontSize <= 16) return "base";
-    if (fontSize <= 18) return "lg";
-    if (fontSize <= 22) return "xl";
-    if (fontSize <= 26) return "2xl";
-    return "3xl";
-  }, [fontSize]);
+  const fontSizeClass = useMemo(
+    () => getFontSizeClass(fontSize),
+    [fontSize]
+  );
 
   return (
     <div className="space-y-8 animate-fadeIn">
