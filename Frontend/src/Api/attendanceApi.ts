@@ -143,3 +143,135 @@ export const getTeacherGroupsForMarks = async (
   });
   return response.data;
 };
+
+// ============================================================================
+// Advanced Statistics API
+// ============================================================================
+
+export interface AdvancedStatsRequest {
+  studentIds: string[];
+  date?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface StudentWithStats {
+  _id: string;
+  studentId: number;
+  name: string;
+  group: string;
+  isPresent: boolean;
+  totalAbsences: number;
+  totalPresences: number;
+  totalRecords: number;
+  overallAttendanceRate: number;
+}
+
+export interface AdvancedStatsResponse {
+  success: boolean;
+  data: {
+    totalStudents: number;
+    presentCount: number;
+    absentCount: number;
+    attendanceRate: number;
+    students: StudentWithStats[];
+    dateRange: {
+      specific: string | null;
+      start: string | null;
+      end: string | null;
+    };
+  };
+  message?: string;
+}
+
+// Get advanced attendance statistics
+export const getAdvancedAttendanceStats = async (
+  data: AdvancedStatsRequest
+): Promise<AdvancedStatsResponse> => {
+  const response = await api.post('/attendance/stats/advanced', data);
+  return response.data;
+};
+
+export interface FilteredStatsRequest {
+  teacherId: string;
+  date: string;
+  groupFilter?: string;
+  searchQuery?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface FilteredStatsResponse {
+  success: boolean;
+  data: {
+    totalStudents: number;
+    visibleStudents: number;
+    presentCount: number;
+    absentCount: number;
+    attendanceRate: number;
+    students: AttendanceStudent[];
+    pagination: {
+      page: number;
+      limit: number;
+      totalPages: number;
+      total: number;
+    };
+  };
+  message?: string;
+}
+
+// Get filtered attendance statistics with pagination
+export const getFilteredAttendanceStats = async (
+  data: FilteredStatsRequest
+): Promise<FilteredStatsResponse> => {
+  const response = await api.post('/attendance/stats/filtered', data);
+  return response.data;
+};
+
+export interface AttendanceReportRequest {
+  studentIds?: string[];
+  teacherId?: string;
+  groupId?: string;
+  startDate: string;
+  endDate: string;
+}
+
+export interface StudentReport {
+  _id: string;
+  studentId: number;
+  name: string;
+  group: string;
+  teacher: string;
+  totalDays: number;
+  presentDays: number;
+  absentDays: number;
+  attendanceRate: number;
+}
+
+export interface AttendanceReportResponse {
+  success: boolean;
+  data: {
+    dateRange: {
+      start: string;
+      end: string;
+      totalUniqueDays: number;
+    };
+    overall: {
+      totalStudents: number;
+      totalRecords: number;
+      presentDays: number;
+      absentDays: number;
+      overallAttendanceRate: number;
+    };
+    students: StudentReport[];
+  };
+  message?: string;
+}
+
+// Get comprehensive attendance report
+export const getAttendanceReport = async (
+  data: AttendanceReportRequest
+): Promise<AttendanceReportResponse> => {
+  const response = await api.post('/attendance/stats/report', data);
+  return response.data;
+};

@@ -22,6 +22,7 @@ export const useStudentFilters = ({
   // Auto-select first group if current filter is not available
   // استخدام ref لتجنب re-renders غير ضرورية
   const prevGroupsAvailable = useRef<string[]>([]);
+  const hasInitialized = useRef(false);
   
   useEffect(() => {
     // فقط إذا تغيرت المجموعات فعلياً
@@ -32,9 +33,15 @@ export const useStudentFilters = ({
     if (groupsChanged) {
       prevGroupsAvailable.current = groupsAvailable;
       
-      // اختيار أول حلقة تلقائياً
-      if (!groupsAvailable.includes(groupFilter) && groupsAvailable.length > 0) {
-        setGroupFilter(groupsAvailable[0]);
+      // اختيار أول حلقة تلقائياً في الحالات التالية:
+      // 1. أول مرة يتم تحميل الحلقات (hasInitialized = false)
+      // 2. الحلقة المختارة الحالية غير موجودة في القائمة الجديدة
+      if (groupsAvailable.length > 0) {
+        if (!hasInitialized.current || !groupsAvailable.includes(groupFilter)) {
+          console.log(`🔄 اختيار أول حلقة تلقائياً: ${groupsAvailable[0]}`);
+          setGroupFilter(groupsAvailable[0]);
+          hasInitialized.current = true;
+        }
       }
     }
   }, [groupsAvailable, groupFilter]);

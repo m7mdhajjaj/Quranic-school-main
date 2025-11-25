@@ -3,7 +3,16 @@ import type { UseAttendanceStatsProps, AttendanceStats } from '../types/absence.
 
 /**
  * Hook لحساب إحصائيات الحضور مع حماية ضد الـ flicker
- * يحسب الأرقام ويحتفظ بآخر قيم مستقرة
+ * 
+ * ملاحظة: الحسابات تتم في Frontend للسرعة والاستجابة الفورية.
+ * البيانات الأساسية (totalAbsences, absenceDates) تأتي من Backend محسوبة مسبقاً.
+ * 
+ * الإحصائيات المحسوبة هنا هي:
+ * - presentCount: عدد الحاضرين (من الطلاب المرئيين بعد الفلترة)
+ * - absentCount: عدد الغائبين (من الطلاب المرئيين بعد الفلترة)
+ * - attendanceRate: نسبة الحضور (للطلاب المرئيين)
+ * 
+ * للحصول على إحصائيات متقدمة من Backend، استخدم useAdvancedAttendanceStats
  */
 export const useAttendanceStats = ({
   allStudents,
@@ -18,7 +27,7 @@ export const useAttendanceStats = ({
     attendanceRate: 0,
   });
 
-  // حساب الإحصائيات الحالية
+  // حساب الإحصائيات الحالية في Frontend (للاستجابة الفورية)
   const currentStats = useMemo(() => {
     // إجمالي الطلاب = كل الطلاب (بدون فلترة)
     const totalStudents = allStudents.length;

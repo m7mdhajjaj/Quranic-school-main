@@ -11,6 +11,11 @@ const {
 const { deleteAttendance } = require("./deleteController");
 const { getTeacherGroupsForAttendance } = require("./getTeacherGroups");
 const { getTeacherGroupsForMarks } = require("./getTeacherGroupsForMarks");
+const {
+  getAdvancedAttendanceStats,
+  getFilteredAttendanceStats,
+  getAttendanceReport,
+} = require("./advancedStatsController");
 
 module.exports = {
   createAttendance,
@@ -21,4 +26,8 @@ module.exports = {
   updateGroupsMonthlyStats,
   getTeacherGroupsForAttendance,
   getTeacherGroupsForMarks,
+  // Advanced statistics
+  getAdvancedAttendanceStats,
+  getFilteredAttendanceStats,
+  getAttendanceReport,
 };

@@ -5,7 +5,7 @@ import { Select } from '@/components/UI/Select';
 import { Alert } from '@/components/UI/Alert';
 import { DatePicker } from '@/components/UI/DatePicker';
 import { Users, Check, X } from 'lucide-react';
-import StatCardSkeleton from '@/components/skeletons/StatCardSkeleton';
+import { StatCardSkeleton, FiltersSkeleton } from '@/components/skeletons';
 import type { TeacherToolbarProps } from '../types/absence.types';
 
 export const TeacherToolbar = ({
@@ -143,59 +143,68 @@ export const TeacherToolbar = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* الحلقة - استخدام Select من UI Library */}
-            <div>
-              <label className="flex items-center gap-2 text-base font-semibold text-gray-700 mb-3">
-                <Users className="h-5 w-5 text-emerald-600" />
-                الحلقة
-              </label>
-              <Select
-                value={groupFilter}
-                onChange={(e) => onGroupFilterChange(e.target.value)}
-                options={groupsAvailable.map((g) => {
-                  const studentCount = groupStudentCountMap.get(g) || 0;
-                  let label = '';
-                  
-                  if (g === '') {
-                    label = 'بدون حلقة';
-                  } else {
-                    // إضافة عدد الطلاب بجانب اسم الحلقة
-                    label = `${g} (${studentCount} طالب)`;
-                  }
-                  
-                  return {
-                    value: g,
-                    label,
-                  };
-                })}
-              />
-            </div>
-
-            {/* بحث */}
-            <div>
-              <label className="flex items-center gap-2 text-base font-semibold text-gray-700 mb-3">
-                <svg
-                  className="h-5 w-5 text-emerald-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            {isLoading ? (
+              <FiltersSkeleton count={2} />
+            ) : (
+              <>
+                {/* الحلقة - استخدام Select من UI Library */}
+                <div>
+                  <label className="flex items-center gap-2 text-base font-semibold text-gray-700 mb-3">
+                    <Users className="h-5 w-5 text-emerald-600" />
+                    الحلقة
+                  </label>
+                  <Select
+                    value={groupFilter}
+                    onChange={(e) => onGroupFilterChange(e.target.value)}
+                    options={groupsAvailable.length === 0 
+                      ? [{ value: '', label: 'جاري تحميل الحلقات...' }]
+                      : groupsAvailable.map((g) => {
+                          const studentCount = groupStudentCountMap.get(g) || 0;
+                          let label = '';
+                          
+                          if (g === '') {
+                            label = 'بدون حلقة';
+                          } else {
+                            // إضافة عدد الطلاب بجانب اسم الحلقة
+                            label = `${g} (${studentCount} طالب)`;
+                          }
+                          
+                          return {
+                            value: g,
+                            label,
+                          };
+                        })
+                    }
                   />
-                </svg>
-                بحث بالاسم
-              </label>
-              <Input
-                type="text"
-                placeholder="ابحث عن طالب..."
-                value={nameQuery}
-                onChange={(e) => onNameQueryChange(e.target.value)}
-              />
-            </div>
+                </div>
+
+                {/* بحث */}
+                <div>
+                  <label className="flex items-center gap-2 text-base font-semibold text-gray-700 mb-3">
+                    <svg
+                      className="h-5 w-5 text-emerald-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                    بحث بالاسم
+                  </label>
+                  <Input
+                    type="text"
+                    placeholder="ابحث عن طالب..."
+                    value={nameQuery}
+                    onChange={(e) => onNameQueryChange(e.target.value)}
+                  />
+                </div>
+              </>
+            )}
           </div>
         </div>
       </Card>
