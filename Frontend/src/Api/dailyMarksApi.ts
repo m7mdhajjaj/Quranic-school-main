@@ -426,6 +426,101 @@ export const getAllMarks = async (): Promise<ApiResponse<Mark[]>> => {
 };
 
 /**
+ * Get filtered marks with advanced filters
+ * @param filters - Filter options
+ * @param filters.month - Month (1-12)
+ * @param filters.year - Year (e.g., 2024)
+ * @param filters.search - Search in reviewSection or memorizationSection
+ * @param filters.group - Filter by group name
+ * @param filters.studentId - Filter by student ID
+ * @param filters.page - Page number (default: 1)
+ * @param filters.limit - Items per page (default: 100)
+ */
+export const getFilteredMarks = async (filters: {
+  month?: number;
+  year?: number;
+  search?: string;
+  group?: string;
+  studentId?: string;
+  page?: number;
+  limit?: number;
+}): Promise<ApiResponse<Mark[]> & { pagination?: any; filters?: any }> => {
+  try {
+    const params = new URLSearchParams();
+    
+    if (filters.month) params.append("month", filters.month.toString());
+    if (filters.year) params.append("year", filters.year.toString());
+    if (filters.search) params.append("search", filters.search);
+    if (filters.group) params.append("group", filters.group);
+    if (filters.studentId) params.append("studentId", filters.studentId);
+    if (filters.page) params.append("page", filters.page.toString());
+    if (filters.limit) params.append("limit", filters.limit.toString());
+
+    console.log("🔍 Fetching filtered marks:", filters);
+    const response = await api.get(`/daily-marks/filtered?${params.toString()}`);
+    
+    return {
+      success: true,
+      data: response.data.data || response.data || [],
+      pagination: response.data.pagination,
+      filters: response.data.filters,
+      message: response.data.message,
+    };
+  } catch (error) {
+    console.error("❌ Error fetching filtered marks:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
+    return {
+      success: false,
+      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب العلامات المفلترة",
+      error: String(error),
+    };
+  }
+};
+
+/**
+ * Get filtered sections (without marks)
+ * @param filters - Filter options
+ * @param filters.month - Month (1-12)
+ * @param filters.year - Year (e.g., 2024)
+ * @param filters.search - Search in reviewSection or memorizationSection
+ * @param filters.group - Filter by group name
+ */
+export const getFilteredSections = async (filters: {
+  month?: number;
+  year?: number;
+  search?: string;
+  group?: string;
+}): Promise<ApiResponse<Section[]> & { count?: number; filters?: any }> => {
+  try {
+    const params = new URLSearchParams();
+    
+    if (filters.month) params.append("month", filters.month.toString());
+    if (filters.year) params.append("year", filters.year.toString());
+    if (filters.search) params.append("search", filters.search);
+    if (filters.group) params.append("group", filters.group);
+
+    console.log("🔍 Fetching filtered sections:", filters);
+    const response = await api.get(`/daily-marks/filtered-sections?${params.toString()}`);
+    
+    return {
+      success: true,
+      data: response.data.data || response.data || [],
+      count: response.data.count,
+      filters: response.data.filters,
+      message: response.data.message,
+    };
+  } catch (error) {
+    console.error("❌ Error fetching filtered sections:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
+    return {
+      success: false,
+      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب المقاطع المفلترة",
+      error: String(error),
+    };
+  }
+};
+
+/**
  * Get marks for a specific student
  */
 export const getStudentMarks = async (
@@ -792,6 +887,8 @@ export default {
 
   // Marks
   getAllMarks,
+  getFilteredMarks,
+  getFilteredSections,
   getStudentMarks,
   getSectionMarks,
   getStudentMarkStats,

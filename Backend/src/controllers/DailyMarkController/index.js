@@ -4,6 +4,7 @@
 
 // Import DailyMark controllers
 const getMarks = require("./getMarks");
+const getFilteredMarks = require("./getFilteredMarks");
 const setMarks = require("./setMarks");
 const updateMark = require("./updateMark");
 const deleteMark = require("./deleteMark");
@@ -15,6 +16,7 @@ const sectionControllers = require("./SectionControllers");
 module.exports = {
   // DailyMark operations
   ...getMarks,
+  ...getFilteredMarks,
   ...setMarks,
   ...updateMark,
   ...deleteMark,

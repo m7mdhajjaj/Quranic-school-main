@@ -24,6 +24,14 @@ router.use("/sections", sectionRoutes);
 // GET ROUTES - جلب العلامات
 // ============================================================================
 
+// Get filtered marks with advanced filters (month, year, search, group)
+// GET /api/daily-marks/filtered?month=11&year=2024&search=الفاتحة&group=الحلقة الأولى&studentId=123
+router.get("/filtered", dailyMarkController.getFilteredMarks);
+
+// Get filtered sections (without marks)
+// GET /api/daily-marks/filtered-sections?month=11&year=2024&search=الفاتحة&group=الحلقة الأولى
+router.get("/filtered-sections", dailyMarkController.getFilteredSections);
+
 // Get all marks with pagination
 // GET /api/daily-marks?page=1&limit=200
 router.get("/", dailyMarkController.getMarks);
