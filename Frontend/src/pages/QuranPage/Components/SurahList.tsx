@@ -66,8 +66,8 @@ const SurahList = ({ surahs, onSelectSurah }: SurahListProps) => {
         </div>
       </FilterContainer>
 
-      {/* ✨ Enhanced Surah Grid with better scrolling */}
-      <div className="max-h-[65vh] overflow-y-auto px-2 scrollbar-thin rounded-2xl contain-layout">
+      {/* ✨ Enhanced Surah Grid - Movie Style */}
+      <div className="max-h-[70vh] overflow-y-auto px-2 py-4 scrollbar-thin scrollbar-thumb-emerald-500 scrollbar-track-gray-100 rounded-2xl">
         {filteredAndSorted.length === 0 ? (
           <EmptyState
             illustration="search"
@@ -75,7 +75,7 @@ const SurahList = ({ surahs, onSelectSurah }: SurahListProps) => {
             description="جرب البحث باسم آخر أو رقم السورة"
           />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 pb-4">
             {filteredAndSorted.map((surah) => (
               <SurahCard
                 key={surah.number}
