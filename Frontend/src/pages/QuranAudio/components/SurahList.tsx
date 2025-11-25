@@ -3,8 +3,9 @@ import SurahCard from "./SurahCard";
 import { SearchInput, FilterSelect, FilterContainer } from "@/components/Filters";
 import type { FilterOption } from "@/components/Filters";
 import { EmptyState } from "@/components/UI";
-import ResponsivePagination from "@/components/UI/ResponsivePagination";
+import { ChevronRight, ChevronLeft } from "lucide-react";
 import type { SurahListProps, SortOrder } from "../types/surahList";
+import type { Surah } from "@/Api/quranAudioApi";
 
 const SurahList: React.FC<SurahListProps> = ({
   surahs,
@@ -17,8 +18,8 @@ const SurahList: React.FC<SurahListProps> = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
   const [revelationType, setRevelationType] = useState<string>("all");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 12; // 12 سورة في كل صفحة
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const itemsPerView = 12; // 12 سورة في العرض (3 صفوف × 4 أعمدة)
 
   // Filter and sort surahs
   const filteredAndSorted = useMemo(() => {
@@ -46,32 +47,37 @@ const SurahList: React.FC<SurahListProps> = ({
     return sortOrder === "asc" ? filtered : [...filtered].reverse();
   }, [surahs, searchTerm, sortOrder, revelationType]);
 
-  // ✅ Optimized pagination - only compute when dependencies change
-  const paginationData = useMemo(() => {
-    const totalPages = Math.ceil(filteredAndSorted.length / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const currentSurahs = filteredAndSorted.slice(startIndex, endIndex);
-
+  // Carousel data
+  const carouselData = useMemo(() => {
+    const endIndex = Math.min(currentIndex + itemsPerView, filteredAndSorted.length);
+    const visibleSurahs = filteredAndSorted.slice(currentIndex, endIndex);
+    
     return {
-      currentSurahs,
-      totalPages,
-      hasNext: currentPage < totalPages,
-      hasPrevious: currentPage > 1,
-      startIndex,
-      endIndex: Math.min(endIndex, filteredAndSorted.length),
+      visibleSurahs,
+      canGoNext: currentIndex + itemsPerView < filteredAndSorted.length,
+      canGoPrev: currentIndex > 0,
+      currentPosition: currentIndex + 1,
+      totalCount: filteredAndSorted.length
     };
-  }, [filteredAndSorted, currentPage]);
+  }, [filteredAndSorted, currentIndex, itemsPerView]);
 
-  // Reset to page 1 when filters change
+  // Reset to start when filters change
   React.useEffect(() => {
-    setCurrentPage(1);
+    setCurrentIndex(0);
   }, [searchTerm, sortOrder, revelationType]);
 
-  const handlePageClick = useCallback((page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+  const handleNext = useCallback(() => {
+    setCurrentIndex(prev => {
+      const nextIndex = prev + itemsPerView;
+      // Make sure we don't go past the last page
+      const maxIndex = Math.max(0, filteredAndSorted.length - itemsPerView);
+      return Math.min(nextIndex, maxIndex);
+    });
+  }, [itemsPerView, filteredAndSorted.length]);
+
+  const handlePrev = useCallback(() => {
+    setCurrentIndex(prev => Math.max(0, prev - itemsPerView));
+  }, [itemsPerView]);
 
   const sortOptions = useMemo((): FilterOption[] => [
     { value: "asc", label: "من الأولى إلى الأخيرة" },
@@ -160,16 +166,16 @@ const SurahList: React.FC<SurahListProps> = ({
 
       {/* Surahs List */}
       <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-4 sm:p-6 border border-emerald-100">
-        {/* Header with pagination info */}
+        {/* Header with carousel navigation */}
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-gray-800">
             السور ({filteredAndSorted.length})
           </h3>
-          {paginationData.totalPages > 1 && (
-            <div className="text-sm text-gray-600">
-              صفحة {currentPage} من {paginationData.totalPages}
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">
+              {carouselData.currentPosition} - {Math.min(carouselData.currentPosition + itemsPerView - 1, carouselData.totalCount)} من {carouselData.totalCount}
+            </span>
+          </div>
         </div>
 
         {loading && surahs.length === 0 ? (
@@ -182,37 +188,68 @@ const SurahList: React.FC<SurahListProps> = ({
           />
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 mb-6">
-              {paginationData.currentSurahs.map((surah) => {
-                // ✅ Pre-compute booleans to avoid inline calculations
-                const isSelected = selectedSurah?.number === surah.number;
-                const isCurrentlyPlaying = isPlaying && isSelected;
-                
-                return (
-                  <SurahCard
-                    key={surah.number}
-                    surah={surah}
-                    isSelected={isSelected}
-                    isPlaying={isCurrentlyPlaying}
-                    onSelect={handleSurahSelect}
-                    onPlayPause={(e) => handlePlayPause(e, surah)}
-                  />
-                );
-              })}
+            <div className="relative px-12">
+              {/* Previous Button */}
+              {carouselData.canGoPrev && (
+                <button
+                  onClick={handlePrev}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-3 hover:bg-emerald-50 transition-all duration-200 hover:scale-110"
+                  aria-label="السابق">
+                  <ChevronRight className="w-6 h-6 text-emerald-600" />
+                </button>
+              )}
+
+              {/* Surahs Grid - 3 rows x 4 columns */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 mb-6 auto-rows-fr">
+                {carouselData.visibleSurahs.map((surah) => {
+                  const isSelected = selectedSurah?.number === surah.number;
+                  const isCurrentlyPlaying = isPlaying && isSelected;
+                  
+                  return (
+                    <SurahCard
+                      key={surah.number}
+                      surah={surah}
+                      isSelected={isSelected}
+                      isPlaying={isCurrentlyPlaying}
+                      onSelect={handleSurahSelect}
+                      onPlayPause={(e) => handlePlayPause(e, surah)}
+                    />
+                  );
+                })}
+              </div>
+
+              {/* Next Button */}
+              {carouselData.canGoNext && (
+                <button
+                  onClick={handleNext}
+                  className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-3 hover:bg-emerald-50 transition-all duration-200 hover:scale-110"
+                  aria-label="التالي">
+                  <ChevronLeft className="w-6 h-6 text-emerald-600" />
+                </button>
+              )}
             </div>
 
-            {/* Pagination Controls */}
-            {paginationData.totalPages > 1 && (
-              <div className="border-t border-emerald-200 pt-6">
-                <ResponsivePagination
-                  currentPage={currentPage}
-                  totalPages={paginationData.totalPages}
-                  totalItems={filteredAndSorted.length}
-                  itemsPerPage={itemsPerPage}
-                  onPageChange={handlePageClick}
-                  itemName="سورة"
-                  showQuickJump={true}
-                />
+            {/* Navigation Dots */}
+            {filteredAndSorted.length > itemsPerView && (
+              <div className="flex items-center justify-center gap-2 mt-6">
+                {Array.from({ length: Math.ceil(filteredAndSorted.length / itemsPerView) }).map((_, index) => {
+                  const startIndex = index * itemsPerView;
+                  const endIndex = Math.min(startIndex + itemsPerView, filteredAndSorted.length);
+                  // Check if currentIndex falls within this page range
+                  const isActive = currentIndex >= startIndex && currentIndex < endIndex;
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentIndex(startIndex)}
+                      className={`transition-all duration-200 ${
+                        isActive 
+                          ? 'w-8 h-2 bg-emerald-600' 
+                          : 'w-2 h-2 bg-gray-300 hover:bg-emerald-400'
+                      } rounded-full`}
+                      aria-label={`المجموعة ${index + 1}`}
+                    />
+                  );
+                })}
               </div>
             )}
           </>

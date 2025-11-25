@@ -8,7 +8,6 @@ import {
   saveFavoriteReciter,
   getFavoriteReciter,
   saveListeningProgress,
-  getSurahTiming,
   estimateAyahTiming,
   getCurrentAyahFromTime,
   type Surah,
@@ -197,30 +196,12 @@ export const useQuranAudio = () => {
     setHighlightWords(prev => !prev);
   }, []);
 
-  // Load timing data when surah and reciter are selected
+  // Load timing data when surah and reciter are selected - DISABLED (API not available)
   useEffect(() => {
     if (!selectedSurah || !reciter || ayahs.length === 0) return;
-
-    const loadTiming = async () => {
-      try {
-        const timing = await getSurahTiming(selectedSurah.number, reciter);
-        
-        if (timing && timing.ayahs.length > 0) {
-          // Use real timing data
-          setAyahTimings(timing.ayahs);
-          console.log('✅ Using real timing data');
-        } else {
-          // Fallback: wait for audio to load to estimate
-          setAyahTimings([]);
-          console.log('⚠️ Waiting for audio duration to estimate timing');
-        }
-      } catch (error) {
-        console.log('Could not load timing data:', error);
-        setAyahTimings([]);
-      }
-    };
-
-    loadTiming();
+    
+    // Clear any existing timing data to force estimation
+    setAyahTimings([]);
   }, [selectedSurah, reciter, ayahs.length]);
 
   // Estimate timing when audio loads (fallback)
