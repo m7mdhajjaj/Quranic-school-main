@@ -109,12 +109,6 @@ export const getPrimaryNavItems = (rolePermissions: RolePermissions): Navigation
         icon: UserCheck,
         color: "from-red-500 to-pink-500",
       },
-      {
-        to: "/test",
-        label: "اختبر نفسك",
-        icon: FileCheck2,
-        color: "from-indigo-500 to-purple-500",
-      },
     ];
   }
 

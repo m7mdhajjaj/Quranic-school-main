@@ -73,7 +73,6 @@ export const DEFAULT_QUICK_LINKS: QuickLink[] = [
   { name: 'الرئيسية', path: '/' },
   { name: 'الأخبار', path: '/news' },
   { name: 'الأهداف', path: '/goals' },
-  { name: 'الاختبارات', path: '/test' },
   { name: 'التقارير', path: '/reports' },
   { name: 'تواصل معنا', path: '/contact' },
 ];

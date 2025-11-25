@@ -2,9 +2,10 @@
 // TestView - واجهة الاختبار
 // ============================================================================
 
-import type { TestViewProps } from "./types/test";
-import { Timer, ProgressBar } from "./components";
-import { getTestEncouragementMessage } from "./utils/testHelpers";
+import type { TestViewProps } from "../../types/test";
+import { Timer, ProgressBar } from ".";
+import { getTestEncouragementMessage } from "../../utils/testHelpers";
+import PageHeader from "@/components/UI/PageHeader";
 
 export const TestView: React.FC<TestViewProps> = ({
   questions,
@@ -22,6 +23,12 @@ export const TestView: React.FC<TestViewProps> = ({
       className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4 md:p-8"
       dir="rtl">
       <div className="max-w-3xl mx-auto">
+        {/* العنوان */}
+        <PageHeader
+          title="اختبار قرآني"
+          subtitle={`السؤال ${currentQuestionIndex + 1} من ${questions.length}`}
+          icon={<div className="text-6xl">📝</div>}
+        />
         {/* شريط التقدم */}
         <ProgressBar
           current={currentQuestionIndex}

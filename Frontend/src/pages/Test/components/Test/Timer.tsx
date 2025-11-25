@@ -2,8 +2,8 @@
 // Timer Component - مؤقت السؤال
 // ============================================================================
 
-import type { TimerProps } from "../types/test";
-import { getTimerClasses, getTimerMessage } from "../utils/testHelpers";
+import type { TimerProps } from "../../types/test";
+import { getTimerClasses, getTimerMessage } from "../../utils/testHelpers";
 
 export const Timer: React.FC<TimerProps> = ({ timer, isActive }) => {
   if (!isActive) return null;

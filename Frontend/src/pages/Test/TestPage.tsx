@@ -4,21 +4,18 @@
 
 import { useEffect, useCallback } from "react";
 import { toast } from "react-toastify";
+import { useBlocker } from "react-router-dom";
 import { useTestData } from "./hooks/useTestData";
 import { useTestActions } from "./hooks/useTestActions";
 import { useTestTimer } from "./hooks/useTestTimer";
-import { SurahSelectionView } from "./SurahSelectionView";
-import { TestView } from "./TestView";
-import { ResultView } from "./ResultView";
-import type { TestResult } from "./types/test";
+import { SurahSelectionView, TestView, ResultView } from "./components";
+import type { TestResult } from './types/test';
 
 const TestPage = () => {
   const {
     surahs,
     questions,
     selectedSurahs,
-    loading,
-    surahsLoading,
     handleSurahSelection,
     clearSelectedSurahs,
     startTest: fetchQuestions,
@@ -88,12 +85,38 @@ const TestPage = () => {
     startTimer,
   ]);
 
+  // حماية من مغادرة الصفحة أثناء الاختبار
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (testStarted && !showResult) {
+        e.preventDefault();
+        e.returnValue = '⚠️ لديك اختبار قيد التنفيذ! ستفقد نتيجتك إذا غادرت الصفحة.';
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [testStarted, showResult]);
+
+  // منع الانتقال لصفحات أخرى أثناء الاختبار
+  useBlocker(
+    ({ currentLocation, nextLocation }) => {
+      if (testStarted && !showResult && currentLocation.pathname !== nextLocation.pathname) {
+        return !window.confirm(
+          '⚠️ لديك اختبار قيد التنفيذ!\n\nستفقد نتيجتك وإجاباتك إذا غادرت الصفحة.\n\nهل أنت متأكد من المغادرة؟'
+        );
+      }
+      return false;
+    }
+  );
+
   // بدء الاختبار
   const handleStartTest = async () => {
     const result = await fetchQuestions();
 
     if (!result.success || result.questions.length === 0) {
-      toast.error("❌ فشل في تحميل الأسئلة. يرجى المحاولة مرة أخرى.");
+      toast.error('❌ فشل في تحميل الأسئلة. يرجى المحاولة مرة أخرى.');
       return;
     }
 
@@ -113,28 +136,11 @@ const TestPage = () => {
     }, 2000);
   };
 
-  // إعادة تعيين كامل
+  // إعادة تعيين كامل والرجوع لاختيار السور
   const handleResetTest = () => {
     resetActions();
     resetData();
   };
-
-  // الذهاب للرئيسية
-  const handleGoHome = () => {
-    window.location.href = "/dashboard";
-  };
-
-  // عرض Loading
-  if (surahsLoading || loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-600 mb-4"></div>
-          <p className="text-lg text-gray-700 font-medium">جاري التحميل...</p>
-        </div>
-      </div>
-    );
-  }
 
   // عرض النتيجة
   if (showResult && questions.length > 0) {
@@ -152,7 +158,7 @@ const TestPage = () => {
       <ResultView
         result={result}
         onResetTest={handleResetTest}
-        onGoHome={handleGoHome}
+        onGoHome={handleResetTest}
       />
     );
   }
@@ -180,7 +186,6 @@ const TestPage = () => {
       onSurahSelect={handleSurahSelection}
       onStartTest={handleStartTest}
       onClearAll={clearSelectedSurahs}
-      loading={loading}
     />
   );
 };

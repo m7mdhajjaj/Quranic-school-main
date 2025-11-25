@@ -49,7 +49,7 @@ import Contact from "./pages/Contact/components/Contact";
 // ============================================================================
 const DailyMarks = lazy(() => import("./pages/DailyMarks/DailyMarksPage"));
 import Arrangement from "./pages/Arrangement";
-import Test from "./pages/Test/TestPage";
+const Test = lazy(() => import("./pages/Test/TestPage"));
 import ExamSchedule from "./pages/ExamSchedule";
 import Reports from "./pages/Reports";
 import Timetable from "./pages/Timetable/TimetablePage";
@@ -183,7 +183,7 @@ const TeacherRoutes: React.FC = () => {
           </React.Suspense>
         } />
         <Route path="/arrangement" element={<Arrangement />} />
-        <Route path="/test" element={<Test />} />
+        <Route path="/test" element={<NotFound />} />
         <Route path="/exam-schedule" element={<ExamSchedule />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/timetable" element={<Timetable />} />
@@ -205,12 +205,34 @@ const TeacherRoutes: React.FC = () => {
         <Route path="/activities" element={<Activities />} />
 
         {/* ====== Attendance & Management - Teacher Features ====== */}
-        <Route path="/absence" element={<Absence />} />
+        <Route path="/absence" element={
+          <React.Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
+                <p className="mt-4 text-gray-600 font-medium">جاري تحميل الحضور والغياب...</p>
+              </div>
+            </div>
+          }>
+            <Absence />
+          </React.Suspense>
+        } />
         <Route path="/my-students" element={<MyStudents />} />
         <Route path="/warnings" element={<Warnings />} />
 
         {/* ====== Points Game ====== */}
-        <Route path="/points-game" element={<PointsGame />} />
+        <Route path="/points-game" element={
+          <React.Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
+                <p className="mt-4 text-gray-600 font-medium">جاري تحميل لعبة النقاط...</p>
+              </div>
+            </div>
+          }>
+            <PointsGame />
+          </React.Suspense>
+        } />
 
         {/* ====== Islamic Resources ====== */}
         <Route path="/prayer-times" element={<PrayerTimesPage />} />
@@ -283,7 +305,18 @@ const StudentRoutes: React.FC = () => {
         <Route path="/exam-schedule" element={<ExamSchedule />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/timetable" element={<Timetable />} />
-        <Route path="/test" element={<Test />} />
+        <Route path="/test" element={
+          <React.Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
+                <p className="mt-4 text-gray-600 font-medium">جاري تحميل الاختبار...</p>
+              </div>
+            </div>
+          }>
+            <Test />
+          </React.Suspense>
+        } />
         {/* ====== Communication & Activities ====== */}
         <Route path="/news" element={
           <React.Suspense fallback={
@@ -301,11 +334,33 @@ const StudentRoutes: React.FC = () => {
         <Route path="/activities" element={<Activities />} />
 
         {/* ====== Attendance - View Only ====== */}
-        <Route path="/absence" element={<Absence />} />
+        <Route path="/absence" element={
+          <React.Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
+                <p className="mt-4 text-gray-600 font-medium">جاري تحميل الحضور والغياب...</p>
+              </div>
+            </div>
+          }>
+            <Absence />
+          </React.Suspense>
+        } />
         <Route path="/warnings" element={<Warnings />} />
 
         {/* ====== Points Game ====== */}
-        <Route path="/points-game" element={<PointsGame />} />
+        <Route path="/points-game" element={
+          <React.Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
+                <p className="mt-4 text-gray-600 font-medium">جاري تحميل لعبة النقاط...</p>
+              </div>
+            </div>
+          }>
+            <PointsGame />
+          </React.Suspense>
+        } />
 
         {/* ====== Islamic Resources ====== */}
         <Route path="/prayer-times" element={<PrayerTimesPage />} />

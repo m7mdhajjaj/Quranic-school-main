@@ -2,8 +2,8 @@
 // StatisticsCards Component - بطاقات الإحصائيات
 // ============================================================================
 
-import type { StatisticsCardsProps } from "../types/test";
-import { calculateTotalAyahs } from "../utils/testHelpers";
+import type { StatisticsCardsProps } from "../../types/test";
+import { calculateTotalAyahs } from "../../utils/testHelpers";
 
 export const StatisticsCards: React.FC<StatisticsCardsProps> = ({
   selectedSurahs,

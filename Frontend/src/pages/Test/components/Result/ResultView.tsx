@@ -2,21 +2,17 @@
 // ResultView - واجهة عرض النتيجة
 // ============================================================================
 
-import type { ResultViewProps } from "./types/test";
-import { Button } from "@/components/UI/Button";
+import type { ResultViewProps } from '../../types/test';
+import { Button } from '@/components/UI/Button';
 import {
   calculatePercentage,
-  getResultTitle,
-  getResultIcon,
   getMotivationalMessage,
-  getPerformanceGradient,
   getProgressColor,
   getPerformanceLevel,
-} from "./utils/testHelpers";
+} from '../../utils/testHelpers';
 
 export const ResultView: React.FC<ResultViewProps> = ({
   result,
-  onResetTest,
   onGoHome,
 }) => {
   const percentage = calculatePercentage(result.score, result.totalQuestions);
@@ -24,32 +20,18 @@ export const ResultView: React.FC<ResultViewProps> = ({
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-4 md:p-8"
-      dir="rtl">
-      <div className="max-w-3xl mx-auto">
+      className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-4 md:p-8 flex items-center justify-center"
+      dir="rtl"
+    >
+      <div className="max-w-3xl w-full">
         <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl p-6 md:p-10 text-center border border-emerald-100">
-          {/* أيقونة النجاح */}
-          <div className="mb-6">
-            <div
-              className={`inline-flex items-center justify-center w-24 h-24 rounded-full mx-auto mb-4 ${
-                "bg-gradient-to-br " + getPerformanceGradient(percentage)
-              } ${isPerfect ? "animate-bounce" : ""} shadow-lg`}>
-              <span className="text-5xl">{getResultIcon(percentage)}</span>
-            </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-indigo-600 mb-4">
-              {getResultTitle(percentage)}
-            </h1>
-            <p className="text-gray-600 text-lg">
-              انتهى الاختبار - إليك نتيجتك
-            </p>
-          </div>
-
           {/* دائرة التقدم */}
           <div className="mb-8 relative">
             <div className="relative inline-block">
               <svg
                 className="w-48 h-48 mx-auto transform -rotate-90"
-                viewBox="0 0 100 100">
+                viewBox="0 0 100 100"
+              >
                 <circle
                   cx="50"
                   cy="50"
@@ -74,13 +56,14 @@ export const ResultView: React.FC<ResultViewProps> = ({
                 <div
                   className={`text-5xl md:text-6xl font-bold ${
                     isPerfect
-                      ? "text-yellow-600"
+                      ? 'text-yellow-600'
                       : isGood
-                      ? "text-emerald-600"
-                      : isAverage
-                      ? "text-blue-600"
-                      : "text-gray-600"
-                  }`}>
+                        ? 'text-emerald-600'
+                        : isAverage
+                          ? 'text-blue-600'
+                          : 'text-gray-600'
+                  }`}
+                >
                   {percentage}%
                 </div>
               </div>
@@ -125,19 +108,14 @@ export const ResultView: React.FC<ResultViewProps> = ({
             </p>
           </div>
 
-          {/* أزرار الإجراءات */}
-          <div className="space-y-3">
-            <Button onClick={onResetTest} size="lg" className="w-full">
-              🔄 اختبار جديد
-            </Button>
-            <Button
-              onClick={onGoHome}
-              variant="secondary"
-              size="lg"
-              className="w-full">
-              🏠 العودة للرئيسية
-            </Button>
-          </div>
+          {/* زر العودة */}
+          <Button
+            onClick={onGoHome}
+            size="lg"
+            className="w-full"
+          >
+            ↩️ العودة لصفحة الاختبارات
+          </Button>
         </div>
       </div>
     </div>

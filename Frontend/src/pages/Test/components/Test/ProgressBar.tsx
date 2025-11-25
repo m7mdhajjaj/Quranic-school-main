@@ -2,8 +2,8 @@
 // ProgressBar Component - شريط التقدم
 // ============================================================================
 
-import type { ProgressBarProps } from "../types/test";
-import { calculateProgress } from "../utils/testHelpers";
+import type { ProgressBarProps } from "../../types/test";
+import { calculateProgress } from "../../utils/testHelpers";
 
 export const ProgressBar: React.FC<ProgressBarProps> = ({
   current,

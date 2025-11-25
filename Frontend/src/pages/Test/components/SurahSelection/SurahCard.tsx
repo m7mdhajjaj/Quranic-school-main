@@ -2,7 +2,7 @@
 // SurahCard Component - بطاقة السورة
 // ============================================================================
 
-import type { SurahCardProps } from "../types/test";
+import type { SurahCardProps } from "../../types/test";
 
 export const SurahCard: React.FC<SurahCardProps> = ({
   surah,

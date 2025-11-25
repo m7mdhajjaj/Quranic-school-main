@@ -2,10 +2,11 @@
 // SurahSelectionView - واجهة اختيار السور
 // ============================================================================
 
-import { useState } from "react";
-import type { SurahSelectionViewProps } from "./types/test";
-import { Button ,LoadingSpinner} from "@/components/UI/";
-import { SurahCard, StatisticsCards } from "./components";
+import { useState } from 'react';
+import type { SurahSelectionViewProps } from '../../types/test';
+import { Button } from '@/components/UI/';
+import { SurahCard, StatisticsCards } from '.';
+import PageHeader from '@/components/UI/PageHeader';
 
 export const SurahSelectionView: React.FC<SurahSelectionViewProps> = ({
   surahs,
@@ -13,36 +14,23 @@ export const SurahSelectionView: React.FC<SurahSelectionViewProps> = ({
   onSurahSelect,
   onStartTest,
   onClearAll,
-  loading,
 }) => {
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 18;
   const totalPages = Math.ceil(surahs.length / itemsPerPage);
 
-  if (loading) {
-    return <LoadingSpinner fullScreen text="جاري التحميل..." />;
-  }
-
   return (
     <div
       className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4 md:p-8"
-      dir="rtl">
+      dir="rtl"
+    >
       <div className="max-w-6xl mx-auto">
         {/* العنوان */}
-        <div className="text-center mb-8 md:mb-12">
-          <div className="inline-block mb-4">
-            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg">
-              🕌 مركز اختبارات القرآن الكريم
-            </div>
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-indigo-600 mb-4">
-            اختبار القرآن الكريم 📖
-          </h1>
-          <p className="text-gray-600 text-lg md:text-xl max-w-2xl mx-auto">
-            اختر السور التي تريد أن تختبر حفظك فيها - يمكنك اختيار سورة واحدة أو
-            عدة سور
-          </p>
-        </div>
+        <PageHeader
+          title="اختبار القرآن الكريم"
+          subtitle="اختر السور التي تريد أن تختبر حفظك فيها - يمكنك اختيار سورة واحدة أو عدة سور"
+          icon={<div className="text-6xl">📖</div>}
+        />
 
         {/* بطاقة السور */}
         <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl p-6 md:p-8 mb-8 border border-indigo-100">
@@ -84,7 +72,8 @@ export const SurahSelectionView: React.FC<SurahSelectionViewProps> = ({
                 onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
                 disabled={currentPage === 0}
                 variant="secondary"
-                size="sm">
+                size="sm"
+              >
                 ◄ السابق
               </Button>
 
@@ -98,7 +87,8 @@ export const SurahSelectionView: React.FC<SurahSelectionViewProps> = ({
                 }
                 disabled={currentPage >= totalPages - 1}
                 variant="secondary"
-                size="sm">
+                size="sm"
+              >
                 التالي ►
               </Button>
             </div>
@@ -124,8 +114,8 @@ export const SurahSelectionView: React.FC<SurahSelectionViewProps> = ({
           <div className="mt-4 text-center">
             <div className="inline-block bg-gradient-to-r from-gray-100 to-gray-200 px-3 sm:px-4 py-2 rounded-full border border-gray-300">
               <span className="text-gray-700 font-medium text-xs sm:text-sm">
-                عرض {currentPage * itemsPerPage + 1} -{" "}
-                {Math.min((currentPage + 1) * itemsPerPage, surahs.length)} من{" "}
+                عرض {currentPage * itemsPerPage + 1} -{' '}
+                {Math.min((currentPage + 1) * itemsPerPage, surahs.length)} من{' '}
                 {surahs.length} سورة
               </span>
             </div>
@@ -138,7 +128,8 @@ export const SurahSelectionView: React.FC<SurahSelectionViewProps> = ({
             onClick={onStartTest}
             disabled={selectedSurahs.length === 0}
             size="lg"
-            className="group relative overflow-hidden">
+            className="group relative overflow-hidden"
+          >
             <div className="relative z-10 flex items-center gap-2 sm:gap-3">
               <span className="text-2xl sm:text-3xl">🎯</span>
               <span>بدء الاختبار</span>
