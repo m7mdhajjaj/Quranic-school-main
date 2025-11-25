@@ -37,14 +37,6 @@ export const useStudentAverages = (
       setError(null);
 
       try {
-        console.log("📊 Fetching averages from backend:", {
-          studentId,
-          month: selectedMonth,
-          year: selectedYear,
-          group: selectedGroup,
-        });
-        console.log("🔍 Enabled:", enabled, "StudentId:", studentId, "Group:", selectedGroup);
-
         const response = await getStudentAverages(studentId, {
           month: selectedMonth,
           year: selectedYear,
@@ -58,13 +50,10 @@ export const useStudentAverages = (
             overallAverage: response.data.overallAverage,
             totalMarks: response.data.totalMarks,
           });
-          console.log("✅ Averages loaded:", response.data);
         } else {
-          console.warn("⚠️ Failed to load averages:", response.message);
           setError(response.message || "فشل تحميل المعدلات");
         }
       } catch (err) {
-        console.error("❌ Error fetching averages:", err);
         setError("حدث خطأ أثناء تحميل المعدلات");
       } finally {
         setLoading(false);

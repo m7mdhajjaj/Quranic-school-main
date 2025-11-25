@@ -1,4 +1,4 @@
-import type { Ayah } from "@/Api/quranAudioApi";
+import type { Ayah, Surah } from "@/Api/quranAudioApi";
 
 export interface AyahsListProps {
   ayahs: Ayah[];
@@ -6,4 +6,5 @@ export interface AyahsListProps {
   isPlaying?: boolean;
   currentAyahNumber?: number;
   highlightWords?: boolean;
+  selectedSurah?: Surah | null;
 }

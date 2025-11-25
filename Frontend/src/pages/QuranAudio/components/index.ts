@@ -5,3 +5,4 @@ export { default as AyahsList } from "./AyahsList";
 export { default as AyahCard } from "./AyahCard";
 export { default as PageHeader } from "./PageHeader";
 export { default as PlaybackSettings } from "./PlaybackSettings";
+export { default as QuranAudioPlayer } from "./QuranAudioPlayer";

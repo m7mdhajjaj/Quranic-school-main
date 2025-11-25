@@ -1,0 +1,20 @@
+.quran-audio-player {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.quran-word {
+  font-family: 'Traditional Arabic', 'Amiri', serif;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.quran-word:hover {
+  transform: scale(1.05);
+}
+
+.quran-word:active {
+  transform: scale(0.95);
+}
+
+/* Arabic font support */
+@import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap');

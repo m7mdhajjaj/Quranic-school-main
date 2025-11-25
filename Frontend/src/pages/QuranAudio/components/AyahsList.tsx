@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import AyahCard from "./AyahCard";
+import QuranAudioPlayer from "./QuranAudioPlayer";
 import ResponsivePagination from "@/components/UI/ResponsivePagination";
 import { Card, LoadingSpinner } from "@/components/UI";
 import { Book } from "lucide-react";
@@ -10,9 +11,12 @@ const AyahsList: React.FC<AyahsListProps> = ({
   loading, 
   isPlaying = false,
   currentAyahNumber,
-  highlightWords = true 
+  highlightWords = true,
+  selectedSurah 
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
+  const [showWordByWord, setShowWordByWord] = useState(false);
+  const [selectedAyahForTracking, setSelectedAyahForTracking] = useState<{surah: number, ayah: number} | null>(null);
   const itemsPerPage = 10;
 
   // Calculate pagination using useMemo
@@ -83,11 +87,28 @@ const AyahsList: React.FC<AyahsListProps> = ({
           </div>
         </div>
         
-        {/* Page info on mobile */}
-        <div className="sm:hidden bg-emerald-100 text-emerald-700 px-3 py-1 rounded-lg text-xs font-bold">
-          {paginationData.startIndex + 1}-{paginationData.endIndex}
-        </div>
+        {/* Word by Word Toggle Button */}
+        <button
+          onClick={() => setShowWordByWord(!showWordByWord)}
+          className={`px-4 py-2 rounded-lg font-bold transition-all ${
+            showWordByWord 
+              ? 'bg-emerald-500 text-white shadow-lg' 
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          {showWordByWord ? '🎯 تتبع كلمة بكلمة مفعّل' : '🎯 تفعيل التتبع الدقيق'}
+        </button>
       </div>
+      
+      {/* Word by Word Audio Player */}
+      {showWordByWord && selectedAyahForTracking && (
+        <div className="mb-6">
+          <QuranAudioPlayer 
+            surahNumber={selectedAyahForTracking.surah}
+            ayahNumber={selectedAyahForTracking.ayah}
+          />
+        </div>
+      )}
 
       {loading && ayahs.length === 0 ? (
         <LoadingSpinner 
@@ -100,13 +121,28 @@ const AyahsList: React.FC<AyahsListProps> = ({
           {/* Ayahs List */}
           <div className="space-y-3 sm:space-y-4 mb-6">
             {paginationData.currentAyahs.map((ayah) => (
-              <AyahCard 
-                key={ayah.number} 
-                ayah={ayah}
-                isPlaying={isPlaying}
-                isCurrentAyah={ayah.number === currentAyahNumber}
-                highlightWords={highlightWords}
-              />
+              <div key={ayah.number} className="relative group">
+                {showWordByWord && (
+                  <button
+                    onClick={() => {
+                      setSelectedAyahForTracking({ 
+                        surah: selectedSurah?.number || 1, 
+                        ayah: ayah.numberInSurah 
+                      });
+                    }}
+                    className="absolute -right-2 top-1/2 -translate-y-1/2 bg-emerald-500 text-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:scale-110"
+                    title="تتبع هذه الآية كلمة بكلمة"
+                  >
+                    🎯
+                  </button>
+                )}
+                <AyahCard 
+                  ayah={ayah}
+                  isPlaying={isPlaying}
+                  isCurrentAyah={ayah.number === currentAyahNumber}
+                  highlightWords={highlightWords}
+                />
+              </div>
             ))}
           </div>
 

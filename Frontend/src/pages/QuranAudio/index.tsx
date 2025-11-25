@@ -83,6 +83,7 @@ const QuranAudio: React.FC = () => {
             isPlaying={isPlaying}
             currentAyahNumber={currentAyahNumber}
             highlightWords={highlightWords}
+            selectedSurah={selectedSurah}
           />
         </Suspense>
       </div>

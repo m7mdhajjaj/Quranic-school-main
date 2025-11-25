@@ -33,4 +33,9 @@ router.post('/favorite-reciter', quranController.saveFavoriteReciter);
 router.get('/listening-progress/:surahNumber', quranController.getListeningProgress);
 router.post('/listening-progress', quranController.saveListeningProgress);
 
+// Audio Timing Routes (Word-by-word tracking)
+router.get('/verse-timing/:surahNumber/:ayahNumber', quranController.getVerseWithTimings);
+router.get('/reciters', quranController.getReciters);
+router.get('/audio-url/:surahNumber/:ayahNumber', quranController.getAudioUrl);
+
 module.exports = router;
