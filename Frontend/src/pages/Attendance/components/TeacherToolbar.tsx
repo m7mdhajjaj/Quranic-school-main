@@ -34,10 +34,7 @@ export const TeacherToolbar = ({
 
   // حساب إجمالي الطلاب حسب الحلقة المختارة
   const getGroupTotalStudents = () => {
-    if (groupFilter === 'all') {
-      // إذا كان "جميع الحلقات"، أرجع totalStudents (العدد الكلي)
-      return totalStudents;
-    } else if (groupFilter === '') {
+    if (groupFilter === '') {
       // إذا كان "بدون حلقة"، أرجع عدد الطلاب المعروضين
       return totalStudents;
     } else {
@@ -66,7 +63,7 @@ export const TeacherToolbar = ({
                 <div>
                   <p className="text-gray-600 text-sm mb-1">
                     إجمالي الطلاب
-                    {groupFilter !== 'all' && groupFilter !== '' && (
+                    {groupFilter !== '' && (
                       <span className="text-xs mr-1 text-blue-500">
                         ({groupFilter})
                       </span>
@@ -159,9 +156,7 @@ export const TeacherToolbar = ({
                   const studentCount = groupStudentCountMap.get(g) || 0;
                   let label = '';
                   
-                  if (g === 'all') {
-                    label = 'جميع الحلقات';
-                  } else if (g === '') {
+                  if (g === '') {
                     label = 'بدون حلقة';
                   } else {
                     // إضافة عدد الطلاب بجانب اسم الحلقة

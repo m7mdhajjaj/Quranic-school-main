@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import type { LoggedInUser, Student } from "../types/types";
 import { getStudentsByTeacher } from "@/Api/studentApi";
-import { getGroupsByTeacherIdWithFilters } from "@/Api/groupApi";
+import { getTeacherGroupsForMarks } from "@/Api/attendanceApi";
 
 /**
  * Custom hook for loading basic daily marks data
@@ -38,17 +38,17 @@ export const useDailyMarksData = () => {
         if (user.role === "teacher" || user.role === "admin") {
           const teacherName = `${user.firstName} ${user.lastName}`;
 
-          // Fetch ALL groups for this teacher (with or without students)
-          const groupsResponse = await getGroupsByTeacherIdWithFilters(
+          // 🆕 استخدام API العلامات اليومية من attendance endpoint
+          const groupsResponse = await getTeacherGroupsForMarks(
             user._id,
-            'all', // جلب كل الحلقات سواء فيها طلاب أو فارغة
-            false  // لا نحتاج معلومات الطلاب هنا
+            'all' // جلب كل الحلقات سواء فيها طلاب أو فارغة
+            // includeStudents=false تلقائياً (لا نحتاج تفاصيل الطلاب)
           );
 
           if (groupsResponse.success && groupsResponse.data?.groups) {
             const groups = groupsResponse.data.groups.map((g) => g.name);
             setTeacherGroups(groups);
-            console.log("📚 Teacher groups (all):", groups);
+            console.log("📝 [DailyMarks] Teacher groups (all):", groups);
             console.log("📊 Groups summary:", groupsResponse.data.summary);
           }
 

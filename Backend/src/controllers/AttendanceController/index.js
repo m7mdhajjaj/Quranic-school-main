@@ -9,6 +9,8 @@ const {
   updateGroupsMonthlyStats,
 } = require("./statsController");
 const { deleteAttendance } = require("./deleteController");
+const { getTeacherGroupsForAttendance } = require("./getTeacherGroups");
+const { getTeacherGroupsForMarks } = require("./getTeacherGroupsForMarks");
 
 module.exports = {
   createAttendance,
@@ -17,4 +19,6 @@ module.exports = {
   getStudentAttendanceStats,
   deleteAttendance,
   updateGroupsMonthlyStats,
+  getTeacherGroupsForAttendance,
+  getTeacherGroupsForMarks,
 };

@@ -77,3 +77,69 @@ export const bulkSaveAttendance = async (data: {
   const response = await api.post('/attendance', data);
   return response.data;
 };
+
+// Get teacher groups for attendance page with full data
+export interface AttendanceStudent {
+  _id: string;
+  studentId: number;
+  name: string;
+  group: string;
+  teacher: string;
+  isPresent: boolean;
+  totalAbsences: number;
+  absenceDates: string[]; // formatted as DD/MM/YYYY
+}
+
+export interface TeacherGroupsFullDataResponse {
+  success: boolean;
+  data: {
+    teacher: {
+      _id: string;
+      name: string;
+    };
+    groups: Array<{
+      _id: string;
+      name: string;
+      totalStudents: number;
+    }>;
+    students: AttendanceStudent[]; // includes attendance + absence stats
+    summary: {
+      totalGroups: number;
+      groupsWithStudents: number;
+      groupsWithoutStudents: number;
+      totalStudents: number;
+      presentToday: number;
+      absentToday: number;
+      attendanceRateToday: number;
+    };
+  };
+  message?: string;
+}
+
+export const getTeacherGroupsForAttendance = async (
+  teacherId: string,
+  date?: string,
+  filter: 'all' | 'withStudents' | 'withoutStudents' = 'all',
+  includeAbsenceStats: boolean = true
+): Promise<TeacherGroupsFullDataResponse> => {
+  const response = await api.get(`/attendance/teacher/${teacherId}/groups`, {
+    params: { 
+      filter, 
+      includeStudents: true,
+      date,
+      includeAbsenceStats
+    }
+  });
+  return response.data;
+};
+
+// Get teacher groups for daily marks page (without student details)
+export const getTeacherGroupsForMarks = async (
+  teacherId: string,
+  filter: 'all' | 'withStudents' | 'withoutStudents' = 'all'
+): Promise<TeacherGroupsFullDataResponse> => {
+  const response = await api.get(`/attendance/teacher/${teacherId}/groups-for-marks`, {
+    params: { filter, includeStudents: false } // no student details needed for marks page
+  });
+  return response.data;
+};

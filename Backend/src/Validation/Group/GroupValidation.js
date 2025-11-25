@@ -325,9 +325,69 @@ const validateRenameGroup = async (req, res, next) => {
   }
 };
 
+/**
+ * Validation middleware for getting teacher groups (for attendance)
+ */
+const validateGetTeacherGroups = async (req, res, next) => {
+  try {
+    console.log("🔍 بدء التحقق من طلب حلقات المعلم...");
+
+    const { teacherId } = req.params;
+    const { filter, includeStudents } = req.query;
+    const errors = [];
+
+    // Validate teacherId
+    const teacherValidation = validateTeacher(teacherId);
+    if (!teacherValidation.isValid) {
+      errors.push(teacherValidation.message);
+    }
+
+    // Validate filter param
+    if (filter) {
+      const validFilters = ['all', 'withStudents', 'withoutStudents'];
+      if (!validFilters.includes(filter)) {
+        errors.push(`قيمة الفلتر غير صالحة. القيم المسموحة: ${validFilters.join(', ')}`);
+      }
+    }
+
+    // Validate includeStudents param
+    if (includeStudents) {
+      if (!['true', 'false'].includes(includeStudents)) {
+        errors.push("قيمة includeStudents يجب أن تكون 'true' أو 'false'");
+      }
+    }
+
+    // Check authorization
+    if (req.user.role !== 'admin' && req.user._id.toString() !== teacherId) {
+      errors.push("غير مصرح لك بالوصول إلى هذه البيانات");
+    }
+
+    // Check for validation errors
+    if (errors.length > 0) {
+      console.log("❌ أخطاء في التحقق من طلب حلقات المعلم:", errors);
+      return res.status(errors.includes("غير مصرح لك بالوصول إلى هذه البيانات") ? 403 : 400).json({
+        success: false,
+        message: "خطأ في البيانات المرسلة",
+        errors: errors,
+      });
+    }
+
+    console.log("✅ تم التحقق من طلب حلقات المعلم بنجاح");
+    next();
+  } catch (error) {
+    console.error("❌ خطأ في التحقق من طلب حلقات المعلم:", error);
+    res.status(500).json({
+      success: false,
+      message: "خطأ في خادم التحقق من البيانات",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   validateGroupData,
   validateRenameGroup,
+  validateGetTeacherGroups,
   sanitizeGroupData,
   validateGroupName,
   validateDescription,

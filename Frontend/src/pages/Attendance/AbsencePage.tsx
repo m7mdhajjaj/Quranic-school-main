@@ -78,7 +78,7 @@ const AbsencePage = () => {
     refetchData();
   }, [socketLastUpdate]);  // فقط socketLastUpdate للتجنب من re-renders غير ضرورية
 
-  // Groups available - استخدام جميع حلقات المعلم (سواء فيها طلاب أو فارغة)
+  // Groups available - استخدام حلقات المعلم (بدون خيار "جميع الحلقات")
   const groupsAvailable = useMemo(() => {
     // إذا كان المعلم لديه حلقات محددة من API، استخدمها
     if (currentUser?.role === 'teacher' && teacherGroups.length > 0) {
@@ -87,8 +87,8 @@ const AbsencePage = () => {
       // تحقق من وجود طلاب بدون حلقة
       const hasStudentsWithoutGroup = students.some(s => !s.group);
       
-      // إضافة "all" في البداية
-      const result = ["all", ...groupNames];
+      // فقط الحلقات (بدون "all")
+      const result = [...groupNames];
       
       // إضافة "بدون حلقة" إذا وُجد طلاب بدون حلقة
       if (hasStudentsWithoutGroup) {
@@ -117,8 +117,8 @@ const AbsencePage = () => {
     
     const groups = Array.from(set).sort((a, b) => a.localeCompare(b, "ar"));
     
-    // إضافة "all" في البداية
-    const result = ["all", ...groups];
+    // فقط الحلقات (بدون "all")
+    const result = [...groups];
     
     // إضافة "بدون حلقة" في النهاية إذا وُجد طلاب بدون حلقة
     if (hasStudentsWithoutGroup) {

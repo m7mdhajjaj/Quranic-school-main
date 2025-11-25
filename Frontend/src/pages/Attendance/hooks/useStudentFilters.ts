@@ -15,11 +15,11 @@ export const useStudentFilters = ({
   groupsAvailable,
   itemsPerPage = 10,
 }: UseStudentFiltersProps) => {
-  const [groupFilter, setGroupFilter] = useState<string>("all");
+  const [groupFilter, setGroupFilter] = useState<string>("");
   const [nameQuery, setNameQuery] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Auto-select "all" if current filter is not available
+  // Auto-select first group if current filter is not available
   // استخدام ref لتجنب re-renders غير ضرورية
   const prevGroupsAvailable = useRef<string[]>([]);
   
@@ -32,8 +32,9 @@ export const useStudentFilters = ({
     if (groupsChanged) {
       prevGroupsAvailable.current = groupsAvailable;
       
-      if (!groupsAvailable.includes(groupFilter)) {
-        setGroupFilter("all");
+      // اختيار أول حلقة تلقائياً
+      if (!groupsAvailable.includes(groupFilter) && groupsAvailable.length > 0) {
+        setGroupFilter(groupsAvailable[0]);
       }
     }
   }, [groupsAvailable, groupFilter]);
@@ -42,10 +43,8 @@ export const useStudentFilters = ({
   const visibleStudents = useMemo(() => {
     let list = [...students];
     
-    // تطبيق فلتر الحلقة
-    if (groupFilter !== "all") {
-      list = list.filter((s) => (s.group ?? "") === groupFilter);
-    }
+    // تطبيق فلتر الحلقة (عرض طلاب الحلقة المختارة فقط)
+    list = list.filter((s) => (s.group ?? "") === groupFilter);
     
     // تطبيق البحث بالاسم
     if (nameQuery.trim()) {
