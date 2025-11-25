@@ -49,6 +49,60 @@
   }
 }
 
+/* Animation for highlighting Quran words during recitation */
+@keyframes highlight {
+  0%, 100% {
+    color: #1f2937;
+    transform: scale(1);
+    font-weight: 400;
+  }
+  50% {
+    color: #059669;
+    transform: scale(1.08);
+    font-weight: 600;
+    text-shadow: 0 0 12px rgba(5, 150, 105, 0.4);
+  }
+}
+
+/* Quran word highlighting with staggered animation - faster timing for better sync */
+[data-word-index] {
+  animation: highlight 1.8s ease-in-out infinite;
+  color: #1f2937;
+}
+
+/* Staggered delays for sequential word highlighting */
+[data-word-index="0"] { animation-delay: 0s; }
+[data-word-index="1"] { animation-delay: 0.12s; }
+[data-word-index="2"] { animation-delay: 0.24s; }
+[data-word-index="3"] { animation-delay: 0.36s; }
+[data-word-index="4"] { animation-delay: 0.48s; }
+[data-word-index="5"] { animation-delay: 0.6s; }
+[data-word-index="6"] { animation-delay: 0.72s; }
+[data-word-index="7"] { animation-delay: 0.84s; }
+[data-word-index="8"] { animation-delay: 0.96s; }
+[data-word-index="9"] { animation-delay: 1.08s; }
+[data-word-index="10"] { animation-delay: 1.2s; }
+[data-word-index="11"] { animation-delay: 1.32s; }
+[data-word-index="12"] { animation-delay: 1.44s; }
+[data-word-index="13"] { animation-delay: 1.56s; }
+[data-word-index="14"] { animation-delay: 1.68s; }
+[data-word-index="15"] { animation-delay: 1.8s; }
+[data-word-index="16"] { animation-delay: 1.92s; }
+[data-word-index="17"] { animation-delay: 2.04s; }
+[data-word-index="18"] { animation-delay: 2.16s; }
+[data-word-index="19"] { animation-delay: 2.28s; }
+[data-word-index="20"] { animation-delay: 2.4s; }
+[data-word-index="21"] { animation-delay: 2.52s; }
+[data-word-index="22"] { animation-delay: 2.64s; }
+[data-word-index="23"] { animation-delay: 2.76s; }
+[data-word-index="24"] { animation-delay: 2.88s; }
+[data-word-index="25"] { animation-delay: 3s; }
+[data-word-index="26"] { animation-delay: 3.12s; }
+[data-word-index="27"] { animation-delay: 3.24s; }
+[data-word-index="28"] { animation-delay: 3.36s; }
+[data-word-index="29"] { animation-delay: 3.48s; }
+[data-word-index="30"] { animation-delay: 3.6s; }
+
 @keyframes swing {
   0%, 100% { 
     transform: rotate(0deg); 

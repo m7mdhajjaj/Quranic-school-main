@@ -1,16 +1,8 @@
 import React, { memo, useCallback } from "react";
-import type { Surah } from "@/Api/quranAudioApi";
 import { Card, Badge } from "@/components/UI";
 import { Button } from "@/components/UI";
 import { Book, MapPin } from "lucide-react";
-
-interface SurahCardProps {
-  surah: Surah;
-  isSelected: boolean;
-  isPlaying: boolean;
-  onSelect: (surah: Surah) => void;
-  onPlayPause: (e: React.MouseEvent) => void;
-}
+import type { SurahCardProps } from "../types/surahCard";
 
 const SurahCard: React.FC<SurahCardProps> = memo(({
   surah,

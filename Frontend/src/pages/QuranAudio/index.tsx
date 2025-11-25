@@ -1,12 +1,11 @@
 import React, { useCallback, lazy, Suspense } from "react";
 import { useQuranAudio } from "./hooks/useQuranAudio";
-import { PageHeader } from "./components";
+import { PageHeader, PlaybackSettings } from "./components";
 import { LoadingSpinner } from "@/components/UI";
 
 // ✅ Lazy load heavy components to reduce initial bundle size
 const ReciterSelector = lazy(() => import("./components/ReciterSelector"));
 const SurahList = lazy(() => import("./components/SurahList"));
-const AudioControls = lazy(() => import("./components/AudioControls"));
 const AyahsList = lazy(() => import("./components/AyahsList"));
 
 const QuranAudio: React.FC = () => {
@@ -20,11 +19,14 @@ const QuranAudio: React.FC = () => {
     audioError,
     reciters,
     audioRef,
+    currentAyahNumber,
+    highlightWords,
     handleSurahSelect,
     handleReciterChange,
     playFullSurah,
     pauseAudio,
     handleAudioEnded,
+    toggleHighlightWords,
   } = useQuranAudio();
 
   // Optimize play/pause to avoid blocking
@@ -56,24 +58,6 @@ const QuranAudio: React.FC = () => {
           />
         </Suspense>
 
-        {/* Sticky Audio Controls - يظهر فقط عند اختيار سورة */}
-        {selectedSurah && (
-          <Suspense fallback={<LoadingSpinner size="md" />}>
-            <div className="sticky top-4 z-20 mb-6 animate-fadeIn">
-              <AudioControls
-                selectedSurah={selectedSurah}
-                isPlaying={isPlaying}
-                loading={loading}
-                audioError={audioError}
-                reciter={reciter}
-                reciters={reciters}
-                onPlay={playFullSurah}
-                onPause={pauseAudio}
-              />
-            </div>
-          </Suspense>
-        )}
-
         <Suspense fallback={<LoadingSpinner size="lg" text="جاري تحميل قائمة السور..." />}>
           <SurahList
             surahs={surahs}
@@ -85,8 +69,21 @@ const QuranAudio: React.FC = () => {
           />
         </Suspense>
 
+        {selectedSurah && ayahs.length > 0 && (
+          <PlaybackSettings
+            highlightWords={highlightWords}
+            onToggleHighlight={toggleHighlightWords}
+          />
+        )}
+
         <Suspense fallback={<LoadingSpinner size="md" text="جاري تحميل الآيات..." />}>
-          <AyahsList ayahs={ayahs} loading={loading} />
+          <AyahsList 
+            ayahs={ayahs} 
+            loading={loading}
+            isPlaying={isPlaying}
+            currentAyahNumber={currentAyahNumber}
+            highlightWords={highlightWords}
+          />
         </Suspense>
       </div>
     </div>

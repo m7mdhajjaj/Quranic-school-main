@@ -8,9 +8,13 @@ import {
   saveFavoriteReciter,
   getFavoriteReciter,
   saveListeningProgress,
+  getSurahTiming,
+  estimateAyahTiming,
+  getCurrentAyahFromTime,
   type Surah,
   type Ayah,
   type Reciter,
+  type AyahTiming,
 } from "@/Api/quranAudioApi";
 
 export const useQuranAudio = () => {
@@ -22,6 +26,9 @@ export const useQuranAudio = () => {
   const [reciter, setReciter] = useState("ar.alafasy");
   const [audioError, setAudioError] = useState<string | null>(null);
   const [reciters, setReciters] = useState<Reciter[]>([]);
+  const [currentAyahIndex, setCurrentAyahIndex] = useState(0);
+  const [highlightWords, setHighlightWords] = useState(true);
+  const [ayahTimings, setAyahTimings] = useState<AyahTiming[]>([]);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -157,6 +164,8 @@ export const useQuranAudio = () => {
       requestAnimationFrame(() => {
         setSelectedSurah(surah);
         setIsPlaying(false);
+        setCurrentAyahIndex(0);
+        setAyahTimings([]);
         if (audioRef.current) {
           audioRef.current.pause();
         }
@@ -170,6 +179,8 @@ export const useQuranAudio = () => {
     // Update state immediately for fast UI response
     setReciter(newReciter);
     setIsPlaying(false);
+    setCurrentAyahIndex(0);
+    setAyahTimings([]);
     setAudioError(null);
     if (audioRef.current) {
       audioRef.current.pause();
@@ -180,6 +191,84 @@ export const useQuranAudio = () => {
       console.log("Could not save favorite reciter:", error)
     );
   }, []);
+
+  // Toggle highlight words
+  const toggleHighlightWords = useCallback(() => {
+    setHighlightWords(prev => !prev);
+  }, []);
+
+  // Load timing data when surah and reciter are selected
+  useEffect(() => {
+    if (!selectedSurah || !reciter || ayahs.length === 0) return;
+
+    const loadTiming = async () => {
+      try {
+        const timing = await getSurahTiming(selectedSurah.number, reciter);
+        
+        if (timing && timing.ayahs.length > 0) {
+          // Use real timing data
+          setAyahTimings(timing.ayahs);
+          console.log('✅ Using real timing data');
+        } else {
+          // Fallback: wait for audio to load to estimate
+          setAyahTimings([]);
+          console.log('⚠️ Waiting for audio duration to estimate timing');
+        }
+      } catch (error) {
+        console.log('Could not load timing data:', error);
+        setAyahTimings([]);
+      }
+    };
+
+    loadTiming();
+  }, [selectedSurah, reciter, ayahs.length]);
+
+  // Estimate timing when audio loads (fallback)
+  useEffect(() => {
+    if (!audioRef.current || ayahTimings.length > 0) return;
+
+    const handleLoadedMetadata = () => {
+      const audio = audioRef.current;
+      if (!audio || !audio.duration || isNaN(audio.duration)) return;
+
+      const estimated = estimateAyahTiming(audio.duration, ayahs.length);
+      setAyahTimings(estimated);
+      console.log('📊 Using estimated timing based on audio duration');
+    };
+
+    const audio = audioRef.current;
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+
+    return () => {
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+    };
+  }, [ayahTimings.length, ayahs.length]);
+
+  // Update current ayah based on audio progress with precise timing
+  useEffect(() => {
+    if (!isPlaying || !audioRef.current || ayahTimings.length === 0) return;
+
+    const updateCurrentAyah = () => {
+      if (!audioRef.current) return;
+      
+      const currentTime = audioRef.current.currentTime;
+      const ayahNumber = getCurrentAyahFromTime(currentTime, ayahTimings);
+      
+      if (ayahNumber !== null) {
+        const newIndex = ayahs.findIndex(a => a.numberInSurah === ayahNumber);
+        if (newIndex !== -1 && newIndex !== currentAyahIndex) {
+          setCurrentAyahIndex(newIndex);
+        }
+      }
+    };
+
+    const audio = audioRef.current;
+    audio.addEventListener('timeupdate', updateCurrentAyah);
+
+    return () => {
+      audio.removeEventListener('timeupdate', updateCurrentAyah);
+    };
+  }, [isPlaying, ayahTimings, ayahs, currentAyahIndex]);
 
   // Initialize on mount
   useEffect(() => {
@@ -203,10 +292,13 @@ export const useQuranAudio = () => {
     audioError,
     reciters,
     audioRef,
+    currentAyahNumber: ayahs[currentAyahIndex]?.number,
+    highlightWords,
     handleSurahSelect,
     handleReciterChange,
     playFullSurah,
     pauseAudio,
     handleAudioEnded,
+    toggleHighlightWords,
   };
 };

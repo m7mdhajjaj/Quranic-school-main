@@ -24,6 +24,26 @@ export interface Ayah {
   sajda?: boolean;
 }
 
+export interface WordTiming {
+  word: string;
+  startTime: number;
+  endTime: number;
+}
+
+export interface AyahTiming {
+  ayahNumber: number;
+  startTime: number;
+  endTime: number;
+  words?: WordTiming[];
+}
+
+export interface SurahTiming {
+  surahNumber: number;
+  reciter: string;
+  totalDuration: number;
+  ayahs: AyahTiming[];
+}
+
 export interface SurahData {
   number: number;
   name: string;
@@ -361,4 +381,53 @@ export const saveReadingSettings = async (settings: {
     // Save to localStorage as fallback
     localStorage.setItem('quranReadingSettings', JSON.stringify(settings));
   }
+};
+
+// Get timing data for a surah (per-ayah timing)
+export const getSurahTiming = async (
+  surahNumber: number,
+  reciterCode: string
+): Promise<SurahTiming | null> => {
+  try {
+    // Try backend first
+    const response = await api.get(
+      `/quran/timing/${surahNumber}?reciter=${reciterCode}`
+    );
+    return response.data;
+  } catch (error) {
+    console.log('Backend timing not available, using estimation:', error);
+    return null;
+  }
+};
+
+// Calculate ayah timing based on audio duration and ayah count
+export const estimateAyahTiming = (
+  totalDuration: number,
+  ayahCount: number
+): AyahTiming[] => {
+  const ayahTimings: AyahTiming[] = [];
+  const avgDuration = totalDuration / ayahCount;
+
+  for (let i = 0; i < ayahCount; i++) {
+    ayahTimings.push({
+      ayahNumber: i + 1,
+      startTime: i * avgDuration,
+      endTime: (i + 1) * avgDuration,
+    });
+  }
+
+  return ayahTimings;
+};
+
+// Get current ayah based on time
+export const getCurrentAyahFromTime = (
+  currentTime: number,
+  ayahTimings: AyahTiming[]
+): number | null => {
+  for (const timing of ayahTimings) {
+    if (currentTime >= timing.startTime && currentTime < timing.endTime) {
+      return timing.ayahNumber;
+    }
+  }
+  return ayahTimings.length > 0 ? ayahTimings[ayahTimings.length - 1].ayahNumber : null;
 };

@@ -1,12 +1,6 @@
 import React, { useCallback } from "react";
-import type { Reciter } from "@/Api/quranAudioApi";
 import { Card } from "@/components/UI";
-
-interface ReciterSelectorProps {
-  reciters: Reciter[];
-  selectedReciter: string;
-  onReciterChange: (reciterCode: string) => void;
-}
+import type { ReciterSelectorProps } from "../types/reciterSelector";
 
 const ReciterSelector: React.FC<ReciterSelectorProps> = ({
   reciters,

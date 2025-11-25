@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Alert, LoadingSpinner, PageHeader } from "@/components/UI";
+import { Alert, PageHeader } from "@/components/UI";
 import { BookOpen } from "lucide-react";
 import QuranListView from "./Views/QuranListView";
 import QuranReaderView from "./Views/QuranReaderView";
@@ -9,7 +9,7 @@ import { useReadingSettingsSync } from "./hooks/useReadingSettingsSync";
 import { useQuranState } from "./hooks/useQuranState";
 
 const QuranPage = () => {
-  const { surahs, settings, loading: initLoading, error } = useQuranInit();
+  const { surahs, settings, error } = useQuranInit();
   const [fontSize, setFontSize] = useState(settings.fontSize);
 
   const paginationData = usePagination([], 10);
@@ -44,16 +44,6 @@ const QuranPage = () => {
       }
     });
   }, [readerPagination, startTransition]);
-
-  if (initLoading) {
-    return (
-      <LoadingSpinner 
-        size="lg" 
-        color="emerald" 
-        text="جاري تحميل القرآن الكريم..." 
-      />
-    );
-  }
 
   return (
     <div

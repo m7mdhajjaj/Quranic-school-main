@@ -1,16 +1,17 @@
-import React, { useState, useMemo, useCallback } from "react";
-import type { Ayah } from "@/Api/quranAudioApi";
+import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import AyahCard from "./AyahCard";
 import ResponsivePagination from "@/components/UI/ResponsivePagination";
 import { Card, LoadingSpinner } from "@/components/UI";
 import { Book } from "lucide-react";
+import type { AyahsListProps } from "../types/ayahsList";
 
-interface AyahsListProps {
-  ayahs: Ayah[];
-  loading: boolean;
-}
-
-const AyahsList: React.FC<AyahsListProps> = ({ ayahs, loading }) => {
+const AyahsList: React.FC<AyahsListProps> = ({ 
+  ayahs, 
+  loading, 
+  isPlaying = false,
+  currentAyahNumber,
+  highlightWords = true 
+}) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -35,6 +36,26 @@ const AyahsList: React.FC<AyahsListProps> = ({ ayahs, loading }) => {
   React.useEffect(() => {
     setCurrentPage(1);
   }, [ayahs]);
+
+  // Auto-scroll to current ayah when it changes
+  const prevAyahRef = useRef<number | undefined>();
+  useEffect(() => {
+    if (currentAyahNumber && isPlaying && prevAyahRef.current !== currentAyahNumber) {
+      prevAyahRef.current = currentAyahNumber;
+      
+      // Use requestAnimationFrame for smoother scroll
+      requestAnimationFrame(() => {
+        const ayahElement = document.getElementById(`ayah-${currentAyahNumber}`);
+        if (ayahElement) {
+          ayahElement.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center',
+            inline: 'nearest'
+          });
+        }
+      });
+    }
+  }, [currentAyahNumber, isPlaying]);
 
   const handlePageClick = useCallback((page: number) => {
     setCurrentPage(page);
@@ -79,7 +100,13 @@ const AyahsList: React.FC<AyahsListProps> = ({ ayahs, loading }) => {
           {/* Ayahs List */}
           <div className="space-y-3 sm:space-y-4 mb-6">
             {paginationData.currentAyahs.map((ayah) => (
-              <AyahCard key={ayah.number} ayah={ayah} />
+              <AyahCard 
+                key={ayah.number} 
+                ayah={ayah}
+                isPlaying={isPlaying}
+                isCurrentAyah={ayah.number === currentAyahNumber}
+                highlightWords={highlightWords}
+              />
             ))}
           </div>
 

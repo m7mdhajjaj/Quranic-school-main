@@ -1,21 +1,10 @@
 import React, { useState, useMemo, useCallback, memo } from "react";
-import type { Surah } from "@/Api/quranAudioApi";
 import SurahCard from "./SurahCard";
 import { SearchInput, FilterSelect, FilterContainer } from "@/components/Filters";
 import type { FilterOption } from "@/components/Filters";
 import { EmptyState } from "@/components/UI";
 import ResponsivePagination from "@/components/UI/ResponsivePagination";
-
-interface SurahListProps {
-  surahs: Surah[];
-  selectedSurah: Surah | null;
-  isPlaying: boolean;
-  loading: boolean;
-  onSurahSelect: (surah: Surah) => void;
-  onPlayPause: (surah: Surah) => void;
-}
-
-type SortOrder = "asc" | "desc";
+import type { SurahListProps, SortOrder } from "../types/surahList";
 
 const SurahList: React.FC<SurahListProps> = ({
   surahs,
@@ -27,6 +16,7 @@ const SurahList: React.FC<SurahListProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
+  const [revelationType, setRevelationType] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 12; // 12 سورة في كل صفحة
 
@@ -37,7 +27,7 @@ const SurahList: React.FC<SurahListProps> = ({
     // Apply search filter
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase().trim();
-      filtered = surahs.filter((surah) => {
+      filtered = filtered.filter((surah) => {
         const nameMatch = surah.name.toLowerCase().includes(searchLower);
         const englishMatch = surah.englishName.toLowerCase().includes(searchLower);
         const numberMatch = surah.number.toString().includes(searchLower);
@@ -45,9 +35,16 @@ const SurahList: React.FC<SurahListProps> = ({
       });
     }
 
+    // Apply revelation type filter
+    if (revelationType !== "all") {
+      filtered = filtered.filter((surah) => 
+        surah.revelationType === revelationType
+      );
+    }
+
     // Apply sorting
     return sortOrder === "asc" ? filtered : [...filtered].reverse();
-  }, [surahs, searchTerm, sortOrder]);
+  }, [surahs, searchTerm, sortOrder, revelationType]);
 
   // ✅ Optimized pagination - only compute when dependencies change
   const paginationData = useMemo(() => {
@@ -69,7 +66,7 @@ const SurahList: React.FC<SurahListProps> = ({
   // Reset to page 1 when filters change
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, sortOrder]);
+  }, [searchTerm, sortOrder, revelationType]);
 
   const handlePageClick = useCallback((page: number) => {
     setCurrentPage(page);
@@ -81,8 +78,18 @@ const SurahList: React.FC<SurahListProps> = ({
     { value: "desc", label: "من الأخيرة إلى الأولى" },
   ], []);
 
+  const revelationOptions = useMemo((): FilterOption[] => [
+    { value: "all", label: "جميع السور" },
+    { value: "Meccan", label: "السور المكية" },
+    { value: "Medinan", label: "السور المدنية" },
+  ], []);
+
   const handleSortChange = useCallback((value: string) => {
     setSortOrder(value as SortOrder);
+  }, []);
+
+  const handleRevelationTypeChange = useCallback((value: string) => {
+    setRevelationType(value);
   }, []);
 
   const handleSearchChange = useCallback((value: string) => {
@@ -92,6 +99,7 @@ const SurahList: React.FC<SurahListProps> = ({
   const handleClearFilters = useCallback(() => {
     setSearchTerm("");
     setSortOrder("asc");
+    setRevelationType("all");
   }, []);
 
   // ✅ Optimized play/pause - immediate response
@@ -107,36 +115,29 @@ const SurahList: React.FC<SurahListProps> = ({
 
   return (
     <div className="mb-6 sm:mb-8 animate-fadeIn">
-      {/* Search Bar - بروز عالي */}
-      <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-4 sm:p-6 mb-4 border-2 border-emerald-200">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg p-2.5">
-            <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd"/>
-            </svg>
-          </div>
-          <h3 className="text-lg sm:text-xl font-bold text-gray-800">ابحث عن السورة</h3>
-        </div>
-        <SearchInput
-          value={searchTerm}
-          onChange={handleSearchChange}
-          placeholder="اكتب اسم السورة أو رقمها... (مثال: الفاتحة، البقرة، 1)"
-          size="lg"
-        />
-      </div>
-
-      {/* Filter Container */}
+      {/* Filter Container - البحث والفلاتر */}
       <FilterContainer
-        title="خيارات الترتيب والعرض"
+        title="البحث والفلترة"
         resultsCount={filteredAndSorted.length}
         resultsLabel="سورة"
         onClear={handleClearFilters}
-        showClearButton={searchTerm !== "" || sortOrder !== "asc"}
+        showClearButton={searchTerm !== "" || sortOrder !== "asc" || revelationType !== "all"}
         variant="gradient"
       >
-        <div className="space-y-3 sm:space-y-4">
-          {/* ترتيب السور */}
+        <div className="space-y-4">
+          {/* البحث عن السورة - سطر منفصل */}
+          <div>
+            <SearchInput
+              value={searchTerm}
+              onChange={handleSearchChange}
+              placeholder="ابحث عن سورة بالاسم أو الرقم..."
+              size="lg"
+            />
+          </div>
+
+          {/* الفلاتر - سطر منفصل */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+            {/* ترتيب السور */}
             <FilterSelect
               label="ترتيب السور"
               value={sortOrder}
@@ -144,30 +145,15 @@ const SurahList: React.FC<SurahListProps> = ({
               onChange={handleSortChange}
               showAllOption={false}
             />
-          </div>
-          
-          {/* رسالة توضيحية محسّنة */}
-          <div className="bg-gradient-to-r from-blue-50 via-cyan-50 to-teal-50 border-2 border-blue-200 rounded-xl p-4 sm:p-5">
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-lg p-2 shadow-md">
-                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/>
-                </svg>
-              </div>
-              <div className="flex-1">
-                <h4 className="text-sm sm:text-base font-bold text-blue-900 mb-1">كيف تستخدم الصفحة؟</h4>
-                <ul className="text-xs sm:text-sm text-blue-800 space-y-1">
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
-                    <span>اضغط على السورة لعرض نص الآيات</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
-                    <span>اضغط على زر التشغيل لسماع السورة كاملة</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
+
+            {/* نوع السورة */}
+            <FilterSelect
+              label="نوع السورة"
+              value={revelationType}
+              options={revelationOptions}
+              onChange={handleRevelationTypeChange}
+              showAllOption={false}
+            />
           </div>
         </div>
       </FilterContainer>

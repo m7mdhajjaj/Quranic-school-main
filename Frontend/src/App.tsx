@@ -9,7 +9,7 @@
 // ============================================================================
 // External Dependencies
 // ============================================================================
-import { createBrowserRouter, RouterProvider, Routes, Route, useLocation, Outlet } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Routes, Route, useLocation } from "react-router-dom";
 import React, { useEffect } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -70,8 +70,8 @@ const Absence = lazy(() => import("./pages/Attendance/index"));
 // Page Components - Islamic Resources
 // ============================================================================
 import { PrayerTimesPage } from "./pages/PrayerTimes";
-import QuranPage from "./pages/QuranPage";
-import QuranAudio from "./pages/QuranAudio";
+const QuranPage = lazy(() => import("./pages/QuranPage"));
+const QuranAudio = lazy(() => import("./pages/QuranAudio"));
 import Azkar from "./pages/Azkar";
 
 // ============================================================================
@@ -236,8 +236,30 @@ const TeacherRoutes: React.FC = () => {
 
         {/* ====== Islamic Resources ====== */}
         <Route path="/prayer-times" element={<PrayerTimesPage />} />
-        <Route path="/quran" element={<QuranPage />} />
-        <Route path="/quran-audio" element={<QuranAudio />} />
+        <Route path="/quran" element={
+          <React.Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
+                <p className="mt-4 text-gray-600 font-medium">جاري تحميل القرآن الكريم...</p>
+              </div>
+            </div>
+          }>
+            <QuranPage />
+          </React.Suspense>
+        } />
+        <Route path="/quran-audio" element={
+          <React.Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
+                <p className="mt-4 text-gray-600 font-medium">جاري تحميل القرآن الصوتي...</p>
+              </div>
+            </div>
+          }>
+            <QuranAudio />
+          </React.Suspense>
+        } />
         <Route path="/azkar" element={<Azkar />} />
 
         {/* ====== User Settings ====== */}
@@ -364,8 +386,30 @@ const StudentRoutes: React.FC = () => {
 
         {/* ====== Islamic Resources ====== */}
         <Route path="/prayer-times" element={<PrayerTimesPage />} />
-        <Route path="/quran" element={<QuranPage />} />
-        <Route path="/quran-audio" element={<QuranAudio />} />
+        <Route path="/quran" element={
+          <React.Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
+                <p className="mt-4 text-gray-600 font-medium">جاري تحميل القرآن الكريم...</p>
+              </div>
+            </div>
+          }>
+            <QuranPage />
+          </React.Suspense>
+        } />
+        <Route path="/quran-audio" element={
+          <React.Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
+                <p className="mt-4 text-gray-600 font-medium">جاري تحميل القرآن الصوتي...</p>
+              </div>
+            </div>
+          }>
+            <QuranAudio />
+          </React.Suspense>
+        } />
         <Route path="/azkar" element={<Azkar />} />
 
         {/* ====== User Settings ====== */}
