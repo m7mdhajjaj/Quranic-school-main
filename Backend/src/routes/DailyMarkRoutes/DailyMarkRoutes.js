@@ -32,6 +32,10 @@ router.get("/filtered", dailyMarkController.getFilteredMarks);
 // GET /api/daily-marks/filtered-sections?month=11&year=2024&search=الفاتحة&group=الحلقة الأولى
 router.get("/filtered-sections", dailyMarkController.getFilteredSections);
 
+// Get student averages for filtered marks
+// GET /api/daily-marks/student/:studentId/averages?month=11&year=2024&group=الحلقة الأولى
+router.get("/student/:studentId/averages", dailyMarkController.getStudentAverages);
+
 // Get all marks with pagination
 // GET /api/daily-marks?page=1&limit=200
 router.get("/", dailyMarkController.getMarks);

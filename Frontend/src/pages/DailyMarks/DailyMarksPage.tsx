@@ -15,6 +15,7 @@ import {
 // Custom Hooks - Data Management
 import { useDailyMarksData } from './hooks/useDailyMarksData';
 import { useFilteredMarksData } from './hooks/useFilteredMarksData';
+import { useStudentAverages } from './hooks/useStudentAverages';
 import { useDailyMarksState } from './hooks/useDailyMarksState';
 import { useSectionsFilter } from './hooks/useSectionsFilter';
 
@@ -131,6 +132,15 @@ const DailyMarksPage = () => {
     !!currentUser && !!selectedGroup // Only fetch when user and group are ready
   );
 
+  // Fetch averages from backend
+  const { averages: backendAverages } = useStudentAverages(
+    selectedStudentId,
+    selectedGroup,
+    selectedMonth,
+    selectedYear,
+    !!currentUser && !!selectedGroup && !!selectedStudentId
+  );
+
   // Use filtered data for all roles (students, teachers, admins)
   const sections = filteredSectionsData;
   const marks = filteredMarksData;
@@ -209,7 +219,7 @@ const DailyMarksPage = () => {
   });
 
   // Computed Values & Helpers
-  const { getSelectedStudent, averages, sectionsCount } = useComputedValues({
+  const { getSelectedStudent, sectionsCount } = useComputedValues({
     students,
     selectedStudentId,
     sections: sections,
@@ -218,6 +228,9 @@ const DailyMarksPage = () => {
       currentUser?.role === 'student' ? currentUser._id : undefined,
     calculateAverages,
   });
+
+  // Use backend averages instead of frontend calculation
+  const averages = backendAverages;
 
   // ==========================================================================
   // SIDE EFFECTS

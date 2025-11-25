@@ -521,6 +521,59 @@ export const getFilteredSections = async (filters: {
 };
 
 /**
+ * Get student averages for filtered marks
+ * @param studentId - Student ID
+ * @param filters - Filter options
+ * @param filters.month - Month (1-12)
+ * @param filters.year - Year (e.g., 2024)
+ * @param filters.group - Filter by group name
+ */
+export const getStudentAverages = async (
+  studentId: string,
+  filters: {
+    month?: number;
+    year?: number;
+    group?: string;
+  }
+): Promise<ApiResponse<{
+  reviewAverage: number;
+  memorizationAverage: number;
+  overallAverage: number;
+  totalMarks: number;
+  studentId: string;
+  breakdown?: {
+    reviewMarksCount: number;
+    memorizationMarksCount: number;
+  };
+}> & { filters?: any }> => {
+  try {
+    const params = new URLSearchParams();
+    
+    if (filters.month) params.append("month", filters.month.toString());
+    if (filters.year) params.append("year", filters.year.toString());
+    if (filters.group) params.append("group", filters.group);
+
+    console.log("📊 Fetching student averages:", { studentId, ...filters });
+    const response = await api.get(`/daily-marks/student/${studentId}/averages?${params.toString()}`);
+    
+    return {
+      success: true,
+      data: response.data.data,
+      filters: response.data.filters,
+      message: response.data.message,
+    };
+  } catch (error) {
+    console.error("❌ Error fetching student averages:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
+    return {
+      success: false,
+      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب المعدلات",
+      error: String(error),
+    };
+  }
+};
+
+/**
  * Get marks for a specific student
  */
 export const getStudentMarks = async (
@@ -889,6 +942,7 @@ export default {
   getAllMarks,
   getFilteredMarks,
   getFilteredSections,
+  getStudentAverages,
   getStudentMarks,
   getSectionMarks,
   getStudentMarkStats,
