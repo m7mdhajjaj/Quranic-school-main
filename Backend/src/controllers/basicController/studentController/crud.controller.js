@@ -1,7 +1,7 @@
-const Student = require("../../schema/Student");
-const Group = require("../../schema/Group");
+const Student = require("../../../schema/Student");
+const Group = require("../../../schema/Group");
 const bcrypt = require("bcryptjs");
-const { notifyStudentStatsUpdate } = require("../../Notifications/handlers/dashboardNotifications");
+const { notifyStudentStatsUpdate } = require("../../../Notifications/handlers/dashboardNotifications");
 
 /**
  * جلب جميع الطلاب (محسّن للأداء)

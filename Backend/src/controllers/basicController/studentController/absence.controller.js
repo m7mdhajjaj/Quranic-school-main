@@ -1,5 +1,5 @@
-const Student = require("../../schema/Student");
-const Attendance = require("../../schema/Attendance");
+const Student = require("../../../schema/Student");
+const Attendance = require("../../../schema/Attendance");
 
 /**
  * جلب الطلاب مع إحصائيات الغياب (محسّن للأداء)

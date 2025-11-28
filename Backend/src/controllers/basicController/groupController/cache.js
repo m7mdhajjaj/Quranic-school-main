@@ -2,7 +2,7 @@
 // CACHE UTILITIES FOR GROUP OPERATIONS
 // ============================================
 
-const Student = require('../../schema/Student');
+const Student = require('../../../schema/Student');
 
 // Cache بسيط للنتائج (يمكن استبداله بـ Redis في الإنتاج)
 let studentCountsCache = {

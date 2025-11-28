@@ -2,8 +2,8 @@
 // READ GROUP OPERATIONS
 // ============================================
 
-const Group = require("../../schema/Group");
-const Student = require("../../schema/Student");
+const Group = require("../../../schema/Group");
+const Student = require("../../../schema/Student");
 const { getStudentCountsForAllGroups, getStudentCountsForTeacher } = require("./cache");
 const { getTeacherInfo } = require("./helpers");
 
@@ -208,7 +208,7 @@ exports.getGroupsByTeacherIdWithFilters = async (req, res) => {
     const startTime = Date.now();
 
     // 1. جلب المعلم
-    const Teacher = require("../../schema/Teacher");
+    const Teacher = require("../../../schema/Teacher");
     const teacher = await Teacher.findById(teacherId).select("firstName lastName");
 
     if (!teacher) {

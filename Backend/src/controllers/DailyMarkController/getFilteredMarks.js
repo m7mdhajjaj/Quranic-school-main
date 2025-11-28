@@ -4,7 +4,7 @@
 
 const Mark = require("../../schema/DailyMark");
 const Section = require("../../schema/Section");
-const { getTeacherGroups } = require("../teacherController/utils.controller");
+const { getTeacherGroups } = require("../basicController/teacherController/utils.controller");
 
 /**
  * Get filtered marks with month, year, search, and group filters

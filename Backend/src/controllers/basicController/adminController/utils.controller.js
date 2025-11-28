@@ -1,4 +1,4 @@
-const Admin = require("../../schema/Admin");
+const Admin = require("../../../schema/Admin");
 
 /**
  * حساب العمر من تاريخ الميلاد

@@ -1,6 +1,6 @@
-const Teacher = require("../../schema/Teacher");
-const Group = require("../../schema/Group");
-const Student = require("../../schema/Student");
+const Teacher = require("../../../schema/Teacher");
+const Group = require("../../../schema/Group");
+const Student = require("../../../schema/Student");
 const bcrypt = require("bcryptjs");
 const { calculateAge, generateTeacherId } = require("./utils.controller");
 

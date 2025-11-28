@@ -1,7 +1,7 @@
 // routes/adminRoutes/crud.routes.js
 const express = require("express");
 const router = express.Router();
-const controller = require("../../controllers/adminController");
+const controller = require("../../controllers/basicController/adminController");
 const { validateAdminData } = require("../../Validation/Admin/AdminValidation");
 const { protect } = require("../../middleware/authMiddleware");
 

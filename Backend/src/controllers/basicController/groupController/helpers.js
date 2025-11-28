@@ -2,8 +2,8 @@
 // HELPER FUNCTIONS FOR GROUP OPERATIONS
 // ============================================
 
-const Teacher = require("../../schema/Teacher");
-const Group = require("../../schema/Group");
+const Teacher = require("../../../schema/Teacher");
+const Group = require("../../../schema/Group");
 
 /**
  * دالة للبحث عن المعلم بالـ ID أو الاسم

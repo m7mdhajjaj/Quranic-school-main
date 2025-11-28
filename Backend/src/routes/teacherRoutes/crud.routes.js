@@ -1,7 +1,7 @@
 // routes/teacherRoutes/crud.routes.js
 const express = require("express");
 const router = express.Router();
-const controller = require("../../controllers/teacherController");
+const controller = require("../../controllers/basicController/teacherController");
 const { protect } = require("../../middleware/authMiddleware");
 const {
   validateTeacherData,

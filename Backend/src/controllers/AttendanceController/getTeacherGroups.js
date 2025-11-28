@@ -1,4 +1,4 @@
-const { getGroupsByTeacherIdWithFilters } = require('../groupController');
+const { getGroupsByTeacherIdWithFilters } = require('../basicController/groupController');
 const Attendance = require('../../schema/Attendance');
 
 /**

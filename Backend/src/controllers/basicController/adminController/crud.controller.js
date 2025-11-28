@@ -1,6 +1,6 @@
-const Admin = require("../../schema/Admin");
+const Admin = require("../../../schema/Admin");
 const bcrypt = require("bcryptjs");
-const { notifyDashboardUpdate } = require("../../Notifications/handlers/dashboardNotifications");
+const { notifyDashboardUpdate } = require("../../../Notifications/handlers/dashboardNotifications");
 const { calculateAge, generateAdminId } = require("./utils.controller");
 
 /**

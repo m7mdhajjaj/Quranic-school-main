@@ -3,7 +3,7 @@
 // ============================================================================
 
 const Student = require("../../schema/Student");
-const { getTeacherGroups } = require("../teacherController/utils.controller");
+const { getTeacherGroups } = require("../basicController/teacherController/utils.controller");
 
 /**
  * جلب الترتيب بناءً على معدلات الطلاب الشهرية

@@ -1,4 +1,4 @@
-const Teacher = require("../../schema/Teacher");
+const Teacher = require("../../../schema/Teacher");
 
 /**
  * جلب إحصائيات المعلمين

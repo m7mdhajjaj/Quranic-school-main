@@ -2,9 +2,9 @@
 // UPDATE GROUP OPERATIONS
 // ============================================
 
-const Group = require("../../schema/Group");
-const Teacher = require("../../schema/Teacher");
-const Student = require("../../schema/Student");
+const Group = require("../../../schema/Group");
+const Teacher = require("../../../schema/Teacher");
+const Student = require("../../../schema/Student");
 const { findTeacherByIdOrName } = require("./helpers");
 const { invalidateStudentCountsCache } = require("./cache");
 

@@ -262,7 +262,7 @@ exports.getFilteredAttendanceStats = async (req, res) => {
     const studentFilter = {};
 
     // Filter by teacher (use the API we already have)
-    const { getGroupsByTeacherIdWithFilters } = require("../groupController");
+    const { getGroupsByTeacherIdWithFilters } = require("../basicController/groupController");
 
     // Mock request to get teacher's students
     const mockReq = {

@@ -1,4 +1,4 @@
-const Student = require("../../schema/Student");
+const Student = require("../../../schema/Student");
 
 /**
  * جلب الطلاب حسب الحلقة

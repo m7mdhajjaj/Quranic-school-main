@@ -2,8 +2,8 @@
 // CREATE GROUP OPERATIONS
 // ============================================
 
-const Group = require("../../schema/Group");
-const Teacher = require("../../schema/Teacher");
+const Group = require("../../../schema/Group");
+const Teacher = require("../../../schema/Teacher");
 const { findTeacherByIdOrName } = require("./helpers");
 
 /**

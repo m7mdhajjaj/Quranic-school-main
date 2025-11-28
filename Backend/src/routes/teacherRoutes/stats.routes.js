@@ -1,7 +1,7 @@
 // routes/teacherRoutes/stats.routes.js
 const express = require("express");
 const router = express.Router();
-const controller = require("../../controllers/teacherController");
+const controller = require("../../controllers/basicController/teacherController");
 const Student = require("../../schema/Student");
 const Teacher = require("../../schema/Teacher");
 const { protect } = require("../../middleware/authMiddleware");

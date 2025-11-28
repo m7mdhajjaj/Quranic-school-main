@@ -1,4 +1,4 @@
-const { getGroupsByTeacherIdWithFilters } = require('../groupController');
+const { getGroupsByTeacherIdWithFilters } = require('../basicController/groupController');
 
 /**
  * Get all groups for a teacher (for daily marks page)
