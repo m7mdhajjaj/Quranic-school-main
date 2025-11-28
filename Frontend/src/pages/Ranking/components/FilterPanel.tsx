@@ -4,8 +4,8 @@
  * Uses shared Filter components
  */
 
-import type { FilterPanelProps } from "../types/arrangement";
-import { getMonthName } from "../utils/arrangementHelpers";
+import type { FilterPanelProps } from "../types/ranking";
+import { getMonthName } from "../utils/rankingHelpers";
 import { FilterSelect, } from "@/components/Filters";
 import type { FilterOption } from "@/components/Filters";
 
@@ -15,6 +15,7 @@ export const FilterPanel = ({
   selectedGroup,
   availableYears,
   user,
+  teacherGroups,
   onYearChange,
   onMonthChange,
   onGroupChange,
@@ -29,10 +30,11 @@ export const FilterPanel = ({
     label: getMonthName(i + 1),
   }));
 
+  // استخدام teacherGroups من Backend بدلاً من user.groups
   const groupOptions: FilterOption[] =
-    user?.groups?.map((group) => ({
-      value: group.name,
-      label: group.name,
+    teacherGroups?.map((groupName) => ({
+      value: groupName,
+      label: groupName,
     })) || [];
 
   return (
@@ -62,7 +64,7 @@ export const FilterPanel = ({
       </div>
 
       {/* Group selector for teachers with multiple groups */}
-      {user?.role === "teacher" && user.groups && user.groups.length > 1 && (
+      {user?.role === "teacher" && teacherGroups && teacherGroups.length > 1 && (
         <div className="w-48">
           <FilterSelect
             label="الحلقة"
@@ -76,14 +78,14 @@ export const FilterPanel = ({
       )}
 
       {/* Display group name for teachers with single group or students */}
-      {((user?.role === "teacher" && user.groups && user.groups.length === 1) ||
+      {((user?.role === "teacher" && teacherGroups && teacherGroups.length === 1) ||
         user?.role === "student") && (
         <div className="relative w-48">
           <label className="block text-sm font-medium text-gray-700 mb-2 text-center">
             الحلقة
           </label>
           <div className="px-4 py-3 bg-emerald-50 border-2 border-emerald-300 rounded-xl shadow-md font-bold text-emerald-800 text-center">
-            {user.role === "student" ? user.group : user.groups?.[0]?.name}
+            {user.role === "student" ? selectedGroup : teacherGroups?.[0]}
           </div>
         </div>
       )}

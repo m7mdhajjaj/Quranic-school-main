@@ -1,11 +1,11 @@
 /**
- * Arrangement Page - Central Exports
- * Makes it easier to import components from the Arrangement module
+ * Ranking Page - Central Exports
+ * Makes it easier to import components from the Ranking module
  */
 
 // Main Page
-export { default as ArrangementPage } from "./ArrangementPage";
-export { default } from "./ArrangementPage";
+export { default as RankingPage } from "./RankingPage";
+export { default } from "./RankingPage";
 
 // Types
 export type {
@@ -16,7 +16,7 @@ export type {
   PodiumProps,
   RankingTableProps,
   UseRankingDataReturn,
-} from "./types/arrangement";
+} from "./types/ranking";
 
 // Utils
 export {
@@ -24,7 +24,7 @@ export {
   getMonthName,
   generateAvailableYears,
   getCurrentPeriod,
-} from "./utils/arrangementHelpers";
+} from "./utils/rankingHelpers";
 
 // Hooks
 export { useRankingData } from "./hooks/useRankingData";

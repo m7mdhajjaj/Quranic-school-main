@@ -12,7 +12,7 @@ export { useTeachersSocket } from "./useTeachersSocket";
 export { useStudentsSocket } from "./useStudentsSocket";
 export { useGroupsSocket } from "./useGroupsSocket";
 export { useMyStudentsSocket } from "./useMyStudentsSocket";
-export { useArrangementSocket } from "./useArrangementSocket";
+export { useRankingSocket } from "./useRankingSocket";
 export { useDailyMarksSocket, useDailyMarksSocketEffects } from "./useDailyMarksSocket";
 export { useAbsenceSocket } from "./useAbsenceSocket";
 export { useActivitiesSocket } from "./useActivitiesSocket";

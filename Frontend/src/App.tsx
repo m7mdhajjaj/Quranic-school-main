@@ -48,7 +48,7 @@ import Contact from "./pages/Contact/components/Contact";
 // Page Components - Academic
 // ============================================================================
 const DailyMarks = lazy(() => import("./pages/DailyMarks/DailyMarksPage"));
-import Arrangement from "./pages/Arrangement";
+const Ranking = lazy(() => import("./pages/Ranking"));
 const Test = lazy(() => import("./pages/Test/TestPage"));
 import ExamSchedule from "./pages/ExamSchedule";
 import Reports from "./pages/Reports";
@@ -182,7 +182,7 @@ const TeacherRoutes: React.FC = () => {
             <DailyMarks />
           </React.Suspense>
         } />
-        <Route path="/arrangement" element={<Arrangement />} />
+        <Route path="/ranking" element={<Ranking />} />
         <Route path="/test" element={<NotFound />} />
         <Route path="/exam-schedule" element={<ExamSchedule />} />
         <Route path="/reports" element={<Reports />} />
@@ -323,7 +323,7 @@ const StudentRoutes: React.FC = () => {
             <DailyMarks />
           </React.Suspense>
         } />
-        <Route path="/arrangement" element={<Arrangement />} />
+        <Route path="/ranking" element={<Ranking />} />
         <Route path="/exam-schedule" element={<ExamSchedule />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/timetable" element={<Timetable />} />

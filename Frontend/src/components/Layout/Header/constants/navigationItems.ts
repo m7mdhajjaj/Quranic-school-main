@@ -187,7 +187,7 @@ export const getSecondaryNavItems = (rolePermissions: RolePermissions): Navigati
       color: "from-cyan-500 to-blue-500",
     },
     {
-      to: "/arrangement",
+      to: "/ranking",
       label: "الترتيب",
       icon: Medal,
       color: "from-yellow-500 to-orange-500",

@@ -51,7 +51,28 @@ const generateTeacherId = async () => {
   }
 };
 
+/**
+ * جلب حلقات المعلم
+ * @param {String} teacherId - معرف المعلم
+ * @returns {Array} - قائمة أسماء الحلقات
+ */
+const getTeacherGroups = async (teacherId) => {
+  try {
+    const teacher = await Teacher.findById(teacherId).select("groups");
+    
+    if (!teacher || !teacher.groups || teacher.groups.length === 0) {
+      return [];
+    }
+    
+    return teacher.groups.map(g => g.name);
+  } catch (error) {
+    console.error("Error fetching teacher groups:", error);
+    return [];
+  }
+};
+
 module.exports = {
   calculateAge,
   generateTeacherId,
+  getTeacherGroups,
 };

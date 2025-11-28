@@ -4,6 +4,7 @@
 
 const Mark = require("../../schema/DailyMark");
 const Section = require("../../schema/Section");
+const { getTeacherGroups } = require("../teacherController/utils.controller");
 
 /**
  * Get filtered marks with month, year, search, and group filters
@@ -41,11 +42,59 @@ exports.getFilteredMarks = async (req, res) => {
       limit,
     });
 
+    // Get user's group(s) based on role
+    let userGroup = group || null;
+    let teacherGroups = null;
+
+    if (req.user) {
+      if (req.user.role === "student") {
+        // Student: fetch current group from database
+        const Student = require("../../schema/Student");
+        const studentData = await Student.findById(req.user._id).select('group');
+        userGroup = studentData ? studentData.group : null;
+      } else if (req.user.role === "teacher") {
+        // Teacher: get assigned groups that have students
+        const allTeacherGroups = await getTeacherGroups(req.user._id);
+        
+        if (allTeacherGroups && allTeacherGroups.length > 0) {
+          // Get only groups that have students
+          const Student = require("../../schema/Student");
+          const groupsWithStudents = await Student.distinct('group', {
+            group: { $in: allTeacherGroups }
+          });
+          teacherGroups = groupsWithStudents;
+          
+          // If specific group requested, check if it has students
+          if (userGroup) {
+            if (!teacherGroups.includes(userGroup)) {
+              return res.status(403).json({
+                success: false,
+                message: "ليس لديك صلاحية للوصول إلى هذه الحلقة أو الحلقة لا تحتوي على طلاب",
+              });
+            }
+          } else if (teacherGroups.length > 0) {
+            // If no specific group requested, use first group with students
+            userGroup = teacherGroups[0];
+          }
+        }
+      }
+      // Admin can see all groups
+    }
+
     // Build section filter
     const sectionFilter = {};
 
     // Filter by group
-    if (group) {
+    if (req.user && req.user.role === "student") {
+      // Student: only their group
+      sectionFilter.group = userGroup;
+    } else if (req.user && req.user.role === "teacher") {
+      // Teacher: specific group if selected
+      if (userGroup) {
+        sectionFilter.group = userGroup;
+      }
+    } else if (group) {
+      // Admin: specific group if requested
       sectionFilter.group = group;
     }
 
@@ -170,9 +219,10 @@ exports.getFilteredMarks = async (req, res) => {
         month: month ? parseInt(month) : null,
         year: year ? parseInt(year) : null,
         search: search || null,
-        group: group || null,
+        group: userGroup || null,
         studentId: studentId || null,
       },
+      teacherGroups: teacherGroups || null,
       message: `تم تحميل ${marks.length} علامة بنجاح`,
     });
   } catch (error) {
@@ -201,11 +251,59 @@ exports.getFilteredSections = async (req, res) => {
 
     console.log("📋 Filters received:", { month, year, search, group });
 
+    // Get user's group(s) based on role
+    let userGroup = group || null;
+    let teacherGroups = null;
+
+    if (req.user) {
+      if (req.user.role === "student") {
+        // Student: fetch current group from database
+        const Student = require("../../schema/Student");
+        const studentData = await Student.findById(req.user._id).select('group');
+        userGroup = studentData ? studentData.group : null;
+      } else if (req.user.role === "teacher") {
+        // Teacher: get assigned groups that have students
+        const allTeacherGroups = await getTeacherGroups(req.user._id);
+        
+        if (allTeacherGroups && allTeacherGroups.length > 0) {
+          // Get only groups that have students
+          const Student = require("../../schema/Student");
+          const groupsWithStudents = await Student.distinct('group', {
+            group: { $in: allTeacherGroups }
+          });
+          teacherGroups = groupsWithStudents;
+          
+          // If specific group requested, check if it has students
+          if (userGroup) {
+            if (!teacherGroups.includes(userGroup)) {
+              return res.status(403).json({
+                success: false,
+                message: "ليس لديك صلاحية للوصول إلى هذه الحلقة أو الحلقة لا تحتوي على طلاب",
+              });
+            }
+          } else if (teacherGroups.length > 0) {
+            // If no specific group requested, use first group with students
+            userGroup = teacherGroups[0];
+          }
+        }
+      }
+      // Admin can see all groups
+    }
+
     // Build section filter
     const sectionFilter = {};
 
     // Filter by group
-    if (group) {
+    if (req.user && req.user.role === "student") {
+      // Student: only their group
+      sectionFilter.group = userGroup;
+    } else if (req.user && req.user.role === "teacher") {
+      // Teacher: specific group if selected
+      if (userGroup) {
+        sectionFilter.group = userGroup;
+      }
+    } else if (group) {
+      // Admin: specific group if requested
       sectionFilter.group = group;
     }
 
@@ -261,8 +359,9 @@ exports.getFilteredSections = async (req, res) => {
         month: month ? parseInt(month) : null,
         year: year ? parseInt(year) : null,
         search: search || null,
-        group: group || null,
+        group: userGroup || null,
       },
+      teacherGroups: teacherGroups || null,
       message: `تم تحميل ${sections.length} مقطع بنجاح`,
     });
   } catch (error) {
@@ -291,11 +390,44 @@ exports.getStudentAverages = async (req, res) => {
 
     console.log("📋 Request:", { studentId, month, year, group });
 
+    // Get user's group(s) based on role
+    let userGroup = group || null;
+
+    if (req.user) {
+      if (req.user.role === "student") {
+        // Student: fetch current group from database
+        const Student = require("../../schema/Student");
+        const studentData = await Student.findById(req.user._id).select('group');
+        userGroup = studentData ? studentData.group : null;
+      } else if (req.user.role === "teacher") {
+        // Teacher: get assigned groups that have students
+        const allTeacherGroups = await getTeacherGroups(req.user._id);
+        
+        if (allTeacherGroups && allTeacherGroups.length > 0) {
+          // Get only groups that have students
+          const Student = require("../../schema/Student");
+          const groupsWithStudents = await Student.distinct('group', {
+            group: { $in: allTeacherGroups }
+          });
+          
+          if (!userGroup) {
+            userGroup = groupsWithStudents[0];
+          } else if (!groupsWithStudents.includes(userGroup)) {
+            return res.status(403).json({
+              success: false,
+              message: "ليس لديك صلاحية للوصول إلى هذه الحلقة",
+            });
+          }
+        }
+      }
+      // Admin can see all groups
+    }
+
     // Build section filter
     const sectionFilter = {};
 
-    if (group) {
-      sectionFilter.group = group;
+    if (userGroup) {
+      sectionFilter.group = userGroup;
     }
 
     // Filter by month and year
@@ -420,7 +552,7 @@ exports.getStudentAverages = async (req, res) => {
       filters: {
         month: month ? parseInt(month) : null,
         year: year ? parseInt(year) : null,
-        group: group || null,
+        group: userGroup || null,
       },
       message: "تم حساب المعدلات بنجاح",
     });

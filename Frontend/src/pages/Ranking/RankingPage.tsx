@@ -1,18 +1,18 @@
 /**
- * Arrangement Page - Modular Version
+ * Ranking Page - Modular Version
  * Shows student ranking based on monthly averages
  */
 
 import { useEffect, useState, useMemo } from "react";
 import AOS from "aos";
 import "aos/dist/aos.css";
-import { useArrangementSocket } from "../../Socket";
+import { useRankingSocket } from "../../Socket";
 import { useRankingData } from "./hooks/useRankingData";
 import {
   generateAvailableYears,
   getCurrentPeriod,
-} from "./utils/arrangementHelpers";
-import type { User } from "./types/arrangement";
+} from "./utils/rankingHelpers";
+import type { User } from "./types/ranking";
 import { LoadingSpinner } from "@/components/UI/LoadingSpinner";
 import { Alert } from "@/components/UI/Alert";
 import { FilterPanel } from "./components/FilterPanel";
@@ -22,7 +22,7 @@ import { RankingTable } from "./components/RankingTable";
 import { EmptyState } from "./components/EmptyState";
 import { CriteriaCards } from "./components/CriteriaCards";
 
-const ArrangementPage = () => {
+const RankingPage = () => {
   // Memoized user authentication check
   const userAuth = useMemo(() => {
     const userJson = localStorage.getItem("user");
@@ -37,7 +37,7 @@ const ArrangementPage = () => {
     }
   }, []);
 
-  const { lastUpdate } = useArrangementSocket();
+  const { lastUpdate } = useRankingSocket();
 
   // Get current period
   const currentPeriod = getCurrentPeriod();
@@ -53,7 +53,7 @@ const ArrangementPage = () => {
   );
 
   // Fetch ranking data
-  const { students, loading, error, refetch } = useRankingData(
+  const { students, teacherGroups, loading, error, refetch } = useRankingData(
     selectedMonth,
     selectedYear,
     selectedGroup,
@@ -78,8 +78,10 @@ const ArrangementPage = () => {
     });
   }, []);
 
-  // Get top three students
-  const topThreeStudents = students.slice(0, 3);
+  // Get top three students who have marks (totalMarks > 0)
+  const studentsWithMarks = students.filter(student => student.totalMarks > 0);
+  const topThreeStudents = studentsWithMarks.slice(0, 3);
+  const showPodium = topThreeStudents.length === 3; // Only show if we have exactly 3 students with marks
 
   return (
     <div
@@ -92,7 +94,7 @@ const ArrangementPage = () => {
         <PageHeader
           selectedMonth={selectedMonth}
           selectedYear={selectedYear}
-          studentsCount={students.length}
+          studentsCount={studentsWithMarks.length}
         />
 
         {/* Filter Panel */}
@@ -102,6 +104,7 @@ const ArrangementPage = () => {
           selectedGroup={selectedGroup}
           availableYears={availableYears}
           user={userAuth.user}
+          teacherGroups={teacherGroups}
           onYearChange={setSelectedYear}
           onMonthChange={setSelectedMonth}
           onGroupChange={setSelectedGroup}
@@ -122,19 +125,26 @@ const ArrangementPage = () => {
         {/* Main content when data is loaded */}
         {!loading && !error && (
           <>
-            {/* Show empty state if no students */}
-            {students.length === 0 ? (
+            {/* Show empty state if no students or no students with marks */}
+            {students.length === 0 || studentsWithMarks.length === 0 ? (
               <EmptyState
                 selectedMonth={selectedMonth}
                 selectedYear={selectedYear}
               />
             ) : (
               <>
-                {/* Olympic-style podium for top 3 */}
-                <Podium topThreeStudents={topThreeStudents} />
+                {/* Info message when less than 3 students have marks */}
+                {!showPodium && studentsWithMarks.length > 0 && studentsWithMarks.length < 3 && (
+                  <Alert variant="info" className="mb-8">
+                    يوجد {studentsWithMarks.length} طالب فقط بعلامات في هذا الشهر. يتطلب عرض المنصة 3 طلاب على الأقل.
+                  </Alert>
+                )}
+
+                {/* Olympic-style podium for top 3 - Only show if we have 3 students with marks */}
+                {showPodium && <Podium topThreeStudents={topThreeStudents} />}
 
                 {/* All students table */}
-                <RankingTable students={students} />
+                <RankingTable students={studentsWithMarks} />
               </>
             )}
           </>
@@ -147,4 +157,4 @@ const ArrangementPage = () => {
   );
 };
 
-export default ArrangementPage;
+export default RankingPage;

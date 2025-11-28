@@ -5,7 +5,7 @@
  */
 
 import { EmptyState as SharedEmptyState } from "@/components/UI/EmptyState";
-import { getMonthName } from "../utils/arrangementHelpers";
+import { getMonthName } from "../utils/rankingHelpers";
 
 interface EmptyStateProps {
   selectedMonth: number;
@@ -20,10 +20,10 @@ export const EmptyState = ({
     <div data-aos="fade-up">
       <SharedEmptyState
         illustration="no-data"
-        title="لا يوجد طلاب بمعدلات"
-        description={`لم يتم تسجيل معدلات للطلاب في ${getMonthName(
+        title="لا توجد علامات للترتيب"
+        description={`لم يتم تسجيل أي علامات للطلاب في شهر ${getMonthName(
           selectedMonth
-        )} ${selectedYear}`}
+        )} ${selectedYear}. يرجى اختيار شهر آخر أو إضافة علامات للطلاب.`}
       />
     </div>
   );

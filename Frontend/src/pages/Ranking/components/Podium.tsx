@@ -3,8 +3,8 @@
  * Olympic-style podium for top 3 students
  */
 
-import type { PodiumProps } from "../types/arrangement";
-import { getFullName } from "../utils/arrangementHelpers";
+import type { PodiumProps } from "../types/ranking";
+import { getFullName } from "../utils/rankingHelpers";
 
 export const Podium = ({ topThreeStudents }: PodiumProps) => {
   if (topThreeStudents.length < 3) return null;

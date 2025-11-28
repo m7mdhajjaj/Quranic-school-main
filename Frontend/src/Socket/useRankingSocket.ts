@@ -3,11 +3,11 @@ import { socketManager } from './SocketManager';
 import { useAuth } from '../hooks/useAuth';
 
 /**
- * Hook مخصص لصفحة الترتيب (Arrangement) مع Socket.IO
+ * Hook مخصص لصفحة الترتيب (Ranking) مع Socket.IO
  * يوفر heartbeat تلقائي كل 30 ثانية من SocketManager
  * يستمع لأحداث العلامات والطلاب لتحديث الترتيب تلقائياً
  */
-export const useArrangementSocket = () => {
+export const useRankingSocket = () => {
   const { user } = useAuth();
   const [isConnected, setIsConnected] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
@@ -30,12 +30,12 @@ export const useArrangementSocket = () => {
 
     // الاشتراك في تحديثات الاتصال
     const unsubscribe = socketManager.onConnectionChange((connected) => {
-      console.log('📡 Arrangement socket connection:', connected);
+      console.log('📡 Ranking socket connection:', connected);
       setIsConnected(connected);
       setSocketId(socketManager.getSocketId() || null);
       
       if (connected && !hasJoinedRoom.current) {
-        joinArrangementRoom();
+        joinRankingRoom();
       }
     });
 
@@ -43,9 +43,9 @@ export const useArrangementSocket = () => {
     setSocketId(socketManager.getSocketId() || null);
 
     // الانضمام لغرف العلامات والطلاب (الترتيب يعتمد عليهما)
-    const joinArrangementRoom = () => {
+    const joinRankingRoom = () => {
       if (socketManager.isConnected() && !hasJoinedRoom.current) {
-        console.log('🏆 Joining arrangement related rooms...');
+        console.log('🏆 Joining ranking related rooms...');
         
         // الانضمام لغرفة العلامات (marks)
         socketManager.emit('joinMarks', {
@@ -66,11 +66,11 @@ export const useArrangementSocket = () => {
     };
 
     if (socketManager.isConnected()) {
-      joinArrangementRoom();
+      joinRankingRoom();
     }
 
     return () => {
-      console.log('🧹 Cleaning up Arrangement Socket...');
+      console.log('🧹 Cleaning up Ranking Socket...');
       
       // مغادرة الغرف
       if (hasJoinedRoom.current) {
@@ -91,32 +91,32 @@ export const useArrangementSocket = () => {
   useEffect(() => {
     if (!isConnected) return;
 
-    console.log('👂 Setting up Arrangement event listeners...');
+    console.log('👂 Setting up Ranking event listeners...');
 
     // أحداث العلامات
     const handleMarkCreated = (...args: unknown[]) => {
-      console.log('➕ Mark created (affecting arrangement):', args[0]);
+      console.log('➕ Mark created (affecting ranking):', args[0]);
       setLastUpdate(new Date());
     };
 
     const handleMarkUpdated = (...args: unknown[]) => {
-      console.log('✏️ Mark updated (affecting arrangement):', args[0]);
+      console.log('✏️ Mark updated (affecting ranking):', args[0]);
       setLastUpdate(new Date());
     };
 
     const handleMarkDeleted = (...args: unknown[]) => {
-      console.log('🗑️ Mark deleted (affecting arrangement):', args[0]);
+      console.log('🗑️ Mark deleted (affecting ranking):', args[0]);
       setLastUpdate(new Date());
     };
 
     // أحداث الطلاب (قد تؤثر على الترتيب)
     const handleStudentUpdated = (...args: unknown[]) => {
-      console.log('✏️ Student updated (may affect arrangement):', args[0]);
+      console.log('✏️ Student updated (may affect ranking):', args[0]);
       setLastUpdate(new Date());
     };
 
     const handleStudentDeleted = (...args: unknown[]) => {
-      console.log('🗑️ Student deleted (affecting arrangement):', args[0]);
+      console.log('🗑️ Student deleted (affecting ranking):', args[0]);
       setLastUpdate(new Date());
     };
 

@@ -3,6 +3,7 @@
 // ============================================================================
 
 const Student = require("../../schema/Student");
+const { getTeacherGroups } = require("../teacherController/utils.controller");
 
 /**
  * جلب الترتيب بناءً على معدلات الطلاب الشهرية
@@ -16,16 +17,38 @@ const getRankingByAverages = async (req, res) => {
     const currentMonth = month ? parseInt(month) : today.getMonth() + 1;
     const currentYear = year ? parseInt(year) : today.getFullYear();
 
-    // Get user's group
+    // Get user's group(s)
     let userGroup = group || null;
+    let teacherGroups = null;
+    
     if (req.user) {
       if (req.user.role === "student") {
-        userGroup = req.user.group;
+        // Student: fetch current group from database
+        const studentData = await Student.findById(req.user._id).select('group');
+        userGroup = studentData ? studentData.group : null;
       } else if (req.user.role === "teacher") {
-        const Teacher = require("../../schema/Teacher");
-        const teacher = await Teacher.findById(req.user._id).select("groups");
-        if (teacher && teacher.groups && teacher.groups.length > 0) {
-          userGroup = userGroup || teacher.groups[0].name;
+        // Teacher: get assigned groups that have students
+        const allTeacherGroups = await getTeacherGroups(req.user._id);
+        
+        if (allTeacherGroups && allTeacherGroups.length > 0) {
+          // Get only groups that have students
+          const groupsWithStudents = await Student.distinct('group', {
+            group: { $in: allTeacherGroups }
+          });
+          teacherGroups = groupsWithStudents;
+          
+          // If specific group requested, check if it has students
+          if (userGroup) {
+            if (!teacherGroups.includes(userGroup)) {
+              return res.status(403).json({
+                success: false,
+                message: "ليس لديك صلاحية للوصول إلى هذه الحلقة أو الحلقة لا تحتوي على طلاب",
+              });
+            }
+          } else if (teacherGroups.length > 0) {
+            // If no specific group requested, use first group with students
+            userGroup = teacherGroups[0];
+          }
         }
       }
       // Admin can see all groups or specific group
@@ -33,11 +56,22 @@ const getRankingByAverages = async (req, res) => {
 
     // Build query filter
     const filter = {};
-    if (userGroup && req.user && req.user.role !== "admin") {
+    if (req.user && req.user.role === "student") {
+      // Student: only their group
       filter.group = userGroup;
+    } else if (req.user && req.user.role === "teacher") {
+      // Teacher: specific group if selected, or first group
+      if (userGroup && teacherGroups && teacherGroups.includes(userGroup)) {
+        filter.group = userGroup;
+      } else if (teacherGroups && teacherGroups.length > 0) {
+        filter.group = teacherGroups[0];
+        userGroup = teacherGroups[0];
+      }
     } else if (userGroup) {
+      // Admin with specific group selected
       filter.group = userGroup;
     }
+    // If admin without group filter, show all students
 
     // Get all students from the group
     const students = await Student.find(filter).select(
@@ -80,6 +114,8 @@ const getRankingByAverages = async (req, res) => {
       year: currentYear,
       group: userGroup,
       totalStudents: studentsWithAverages.length,
+      // إرجاع حلقات المعلم إذا كان معلماً
+      teacherGroups: teacherGroups || null,
     });
   } catch (error) {
     console.error("Error fetching ranking by averages:", error);

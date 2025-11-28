@@ -5,10 +5,10 @@
  */
 
 import SharedPageHeader from "@/components/UI/PageHeader";
-import { getMonthName } from "../utils/arrangementHelpers";
+import { getMonthName } from "../utils/rankingHelpers";
 import { Trophy } from "lucide-react";
 
-interface ArrangementPageHeaderProps {
+interface RankingPageHeaderProps {
   selectedMonth: number;
   selectedYear: number;
   studentsCount: number;
@@ -18,7 +18,7 @@ export const PageHeader = ({
   selectedMonth,
   selectedYear,
   studentsCount,
-}: ArrangementPageHeaderProps) => {
+}: RankingPageHeaderProps) => {
   return (
     <div data-aos="fade-down">
       {/* استخدام المكون المشترك */}

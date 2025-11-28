@@ -1,5 +1,5 @@
 /**
- * Types for Arrangement/Ranking Page
+ * Types for Ranking Page
  */
 
 export interface StudentWithAverage {
@@ -36,6 +36,7 @@ export interface FilterPanelProps {
   selectedGroup: string;
   availableYears: number[];
   user: User | null;
+  teacherGroups: string[] | null; // حلقات المعلم من Backend
   onYearChange: (year: number) => void;
   onMonthChange: (month: number) => void;
   onGroupChange: (group: string) => void;
@@ -51,6 +52,7 @@ export interface RankingTableProps {
 
 export interface UseRankingDataReturn {
   students: StudentWithAverage[];
+  teacherGroups: string[] | null;
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;

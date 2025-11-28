@@ -143,8 +143,16 @@ exports.renameGroup = async (req, res) => {
       { group: newName }
     );
 
+    // تحديث اسم الحلقة في Teacher.groups array
+    const teacherUpdateResult = await Teacher.updateMany(
+      { "groups.name": oldName },
+      { $set: { "groups.$[elem].name": newName } },
+      { arrayFilters: [{ "elem.name": oldName }] }
+    );
+
     console.log(`✅ تم تحديث اسم المجموعة من "${oldName}" إلى "${newName}"`);
     console.log(`✅ تم تحديث ${updateResult.modifiedCount} طالب`);
+    console.log(`✅ تم تحديث ${teacherUpdateResult.modifiedCount} معلم`);
 
     // إبطال cache عدد الطلاب
     invalidateStudentCountsCache();

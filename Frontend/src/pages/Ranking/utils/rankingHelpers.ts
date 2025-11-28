@@ -1,8 +1,8 @@
 /**
- * Helper functions for Arrangement page
+ * Helper functions for Ranking page
  */
 
-import type { StudentWithAverage } from "../types/arrangement";
+import type { StudentWithAverage } from "../types/ranking";
 
 /**
  * Get student full name

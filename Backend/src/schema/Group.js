@@ -123,6 +123,68 @@ groupSchema.pre("save", async function (next) {
   next();
 });
 
+// Middleware for synchronizing group name changes across all collections
+// Pre-hook to store old name before update
+groupSchema.pre("findOneAndUpdate", async function (next) {
+  try {
+    // Get the document before update
+    const docToUpdate = await this.model.findOne(this.getQuery());
+    if (docToUpdate) {
+      this._oldGroupName = docToUpdate.name;
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Post-hook to sync name changes after update
+groupSchema.post("findOneAndUpdate", async function (doc) {
+  if (!doc) return;
+
+  // Get the update that was applied
+  const update = this.getUpdate();
+  const newName = update.$set?.name || update.name;
+  const oldName = this._oldGroupName;
+
+  // If name was changed, sync across all collections
+  if (newName && oldName && newName !== oldName) {
+    console.log(`🔄 Syncing group name change: "${oldName}" → "${newName}"`);
+
+    try {
+      const Student = require("./Student");
+      const Teacher = require("./Teacher");
+
+      // Update all students in this group
+      const studentUpdate = await Student.updateMany(
+        { group: oldName },
+        { $set: { group: newName } }
+      );
+      console.log(`✅ Updated ${studentUpdate.modifiedCount} students`);
+
+      // Update all teachers with this group in their groups array
+      const teacherUpdate = await Teacher.updateMany(
+        { "groups.name": oldName },
+        { $set: { "groups.$[elem].name": newName } },
+        { arrayFilters: [{ "elem.name": oldName }] }
+      );
+      console.log(`✅ Updated ${teacherUpdate.modifiedCount} teachers`);
+
+      // Emit socket event if available
+      if (global.io) {
+        global.io.emit("groupRenamed", {
+          oldName,
+          newName,
+          studentsUpdated: studentUpdate.modifiedCount,
+          teachersUpdated: teacherUpdate.modifiedCount,
+        });
+      }
+    } catch (error) {
+      console.error("❌ Error syncing group name change:", error);
+    }
+  }
+});
+
 const Group = mongoose.model("Group", groupSchema);
 
 module.exports = Group;

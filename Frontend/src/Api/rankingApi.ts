@@ -56,6 +56,7 @@ export interface RankingByAveragesResponse {
   year: number;
   group: string;
   totalStudents: number;
+  teacherGroups?: string[] | null; // حلقات المعلم من Backend
 }
 
 // Get all available periods
