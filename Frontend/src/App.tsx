@@ -72,7 +72,7 @@ const Absence = lazy(() => import("./pages/Attendance/index"));
 import { PrayerTimesPage } from "./pages/PrayerTimes";
 const QuranPage = lazy(() => import("./pages/QuranPage"));
 const QuranAudio = lazy(() => import("./pages/QuranAudio"));
-import Azkar from "./pages/Azkar";
+const Azkar = lazy(() => import("./pages/Azkar"));
 
 // ============================================================================
 // Page Components - Warnings & Discipline

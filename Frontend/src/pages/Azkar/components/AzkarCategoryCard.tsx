@@ -1,13 +1,5 @@
 import { ProgressBar, Card, Badge } from "@/components/UI";
-
-interface AzkarCategoryCardProps {
-  icon: string;
-  title: string;
-  completedCount: number;
-  totalCount: number;
-  isFullyCompleted: boolean;
-  onClick: () => void;
-}
+import type { AzkarCategoryCardProps } from "../Types/types";
 
 const AzkarCategoryCard = ({
   icon,

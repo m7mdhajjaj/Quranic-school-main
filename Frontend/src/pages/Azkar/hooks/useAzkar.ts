@@ -1,19 +1,6 @@
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
-
-export interface Dhikr {
-  id: number;
-  text: string;
-  count: number;
-  originalCount: number;
-}
-
-export interface AzkarCategory {
-  id: string;
-  title: string;
-  icon: string;
-  adhkar: Dhikr[];
-}
+import type { Dhikr, AzkarCategory } from "../Types/types";
 
 // البيانات الأصلية للأذكار
 const getInitialAdhkarData = (): AzkarCategory[] => [
@@ -380,6 +367,15 @@ const loadAdhkarData = (): AzkarCategory[] => {
 export const useAzkar = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [adhkarData, setAdhkarData] = useState<AzkarCategory[]>(loadAdhkarData);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // تحميل البيانات
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   // حفظ البيانات عند كل تحديث
   useEffect(() => {
@@ -480,5 +476,6 @@ export const useAzkar = () => {
     handleDhikrClick,
     resetCategory,
     getSelectedCategoryData,
+    isLoading,
   };
 };

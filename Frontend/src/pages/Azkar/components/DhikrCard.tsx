@@ -1,11 +1,5 @@
-import { Card,Button ,ProgressBar} from "@/components/UI";
-interface DhikrCardProps {
-  text: string;
-  count: number;
-  originalCount: number;
-  isCompleted: boolean;
-  onClick: () => void;
-}
+import { Card, Button, ProgressBar } from "@/components/UI";
+import type { DhikrCardProps } from "../Types/types";
 
 const DhikrCard = ({
   text,

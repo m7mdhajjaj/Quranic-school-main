@@ -207,3 +207,31 @@ export const showWarningMessage = (title: string, message: string) => {
     },
   });
 };
+
+// دالة لرسالة التأكيد
+export const showConfirmMessage = (
+  title: string,
+  text: string,
+  confirmButtonText: string = "نعم، تأكيد",
+  cancelButtonText: string = "إلغاء"
+) => {
+  return showCenteredSwal({
+    title: title,
+    text: text,
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#3b82f6",
+    cancelButtonColor: "#ef4444",
+    confirmButtonText: confirmButtonText,
+    cancelButtonText: cancelButtonText,
+    reverseButtons: true,
+    customClass: {
+      popup: "rtl:text-right !rounded-2xl",
+      title: "!text-xl !font-bold !text-gray-800",
+      confirmButton:
+        "!bg-gradient-to-r !from-blue-600 !to-blue-700 hover:!from-blue-700 hover:!to-blue-800 !text-white !font-bold !px-6 !py-3 !rounded-xl !shadow-lg hover:!shadow-xl !transition-all",
+      cancelButton:
+        "!bg-gradient-to-r !from-red-600 !to-red-700 hover:!from-red-700 hover:!to-red-800 !text-white !font-bold !px-6 !py-3 !rounded-xl !shadow-lg hover:!shadow-xl !transition-all",
+    },
+  });
+};

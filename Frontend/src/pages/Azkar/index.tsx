@@ -1,9 +1,12 @@
-import { useAzkar } from "./hooks/useAzkar";
-import AzkarHeader from "./components/AzkarHeader";
-import DhikrCard from "./components/DhikrCard";
-import AzkarCategoryCard from "./components/AzkarCategoryCard";
-import PageHeader from "./components/PageHeader";
-import InfoMessage from "./components/InfoMessage";
+import { useAzkar, useAzkarCategory, useAzkarCategories } from "./hooks";
+import {
+  AzkarHeader,
+  DhikrCard,
+  AzkarCategoryCard,
+  PageHeader,
+  InfoMessage,
+} from "./components";
+import { CardSkeleton } from "@/components/skeletons";
 
 const Azkar = () => {
   const {
@@ -13,42 +16,45 @@ const Azkar = () => {
     handleDhikrClick,
     resetCategory,
     getSelectedCategoryData,
+    isLoading,
   } = useAzkar();
 
   const selectedCategoryData = getSelectedCategoryData();
+  const { categoryWithStats } = useAzkarCategory(selectedCategoryData || null);
+  const { categoriesWithStats } = useAzkarCategories(adhkarData);
 
   // Category Detail View
-  if (selectedCategory && selectedCategoryData) {
-    const completedCount = selectedCategoryData.adhkar.filter(
-      (d: { count: number }) => d.count === 0
-    ).length;
-
+  if (selectedCategory && categoryWithStats) {
     return (
       <div
         className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 p-4 md:p-8"
         dir="rtl">
         <div className="max-w-4xl mx-auto">
           <AzkarHeader
-            title={selectedCategoryData.title}
-            icon={selectedCategoryData.icon}
-            completedCount={completedCount}
-            totalCount={selectedCategoryData.adhkar.length}
+            title={categoryWithStats.title}
+            icon={categoryWithStats.icon}
+            completedCount={categoryWithStats.completedCount}
+            totalCount={categoryWithStats.totalCount}
             onBack={() => setSelectedCategory(null)}
             onReset={() => resetCategory(selectedCategory)}
           />
 
           <div className="space-y-4">
-            {selectedCategoryData.adhkar.map((dhikr: { id: number; text: string; count: number; originalCount: number }, index: number) => (
-              <DhikrCard
-                key={dhikr.id}
-                text={dhikr.text}
-                count={dhikr.count}
-                originalCount={dhikr.originalCount}
-                isCompleted={dhikr.count === 0}
-                onClick={() => handleDhikrClick(selectedCategory, dhikr.id)}
-                index={index}
-              />
-            ))}
+            {isLoading
+              ? Array.from({ length: 5 }).map((_, index) => (
+                  <CardSkeleton key={index} hasImage={false} contentLines={3} />
+                ))
+              : categoryWithStats.adhkar.map((dhikr, index) => (
+                  <DhikrCard
+                    key={dhikr.id}
+                    text={dhikr.text}
+                    count={dhikr.count}
+                    originalCount={dhikr.originalCount}
+                    isCompleted={dhikr.count === 0}
+                    onClick={() => handleDhikrClick(selectedCategory, dhikr.id)}
+                    index={index}
+                  />
+                ))}
           </div>
         </div>
       </div>
@@ -65,24 +71,23 @@ const Azkar = () => {
         <InfoMessage />
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {adhkarData.map((category: { id: string; icon: string; title: string; adhkar: { count: number }[] }) => {
-            const completedCount = category.adhkar.filter(
-              (d: { count: number }) => d.count === 0
-            ).length;
-            const totalCount = category.adhkar.length;
-
-            return (
+          {isLoading ? (
+            Array.from({ length: 6 }).map((_, index) => (
+              <CardSkeleton key={index} hasImage={false} contentLines={2} />
+            ))
+          ) : (
+            categoriesWithStats.map((category) => (
               <AzkarCategoryCard
                 key={category.id}
                 icon={category.icon}
                 title={category.title}
-                completedCount={completedCount}
-                totalCount={totalCount}
-                isFullyCompleted={completedCount === totalCount}
+                completedCount={category.completedCount}
+                totalCount={category.totalCount}
+                isFullyCompleted={category.isFullyCompleted}
                 onClick={() => setSelectedCategory(category.id)}
               />
-            );
-          })}
+            ))
+          )}
         </div>
       </div>
     </div>
