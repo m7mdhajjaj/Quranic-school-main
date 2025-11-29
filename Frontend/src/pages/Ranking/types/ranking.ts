@@ -57,3 +57,14 @@ export interface UseRankingDataReturn {
   error: string | null;
   refetch: () => Promise<void>;
 }
+
+export interface EmptyStateProps {
+  selectedMonth: number;
+  selectedYear: number;
+}
+
+export interface PageHeaderProps {
+  selectedMonth: number;
+  selectedYear: number;
+  studentsCount: number;
+}

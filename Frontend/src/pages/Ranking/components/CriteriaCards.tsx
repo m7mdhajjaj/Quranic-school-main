@@ -9,17 +9,19 @@ import { Card } from "@/components/UI/Card";
 export const CriteriaCards = () => {
   return (
     <div
-      className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12"
+      className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 min-h-[200px]"
       data-aos="fade-up"
       data-aos-delay="500">
       {/* Memorization Card */}
-      <Card padding="lg" variant="default" hover>
-        <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mb-4 mx-auto">
+      <Card padding="lg" variant="default" hover className="min-h-[200px]">
+        <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mb-4 mx-auto flex-shrink-0">
           <svg
             className="w-8 h-8 text-emerald-600"
             fill="none"
             stroke="currentColor"
-            viewBox="0 0 24 24">
+            viewBox="0 0 24 24"
+            width="32"
+            height="32">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -28,20 +30,22 @@ export const CriteriaCards = () => {
             />
           </svg>
         </div>
-        <h3 className="text-lg font-bold text-center mb-2">الحفظ</h3>
-        <p className="text-gray-600 text-center">
+        <h3 className="text-lg font-bold text-center mb-2 h-7">الحفظ</h3>
+        <p className="text-gray-600 text-center text-sm leading-relaxed">
           يتم تقييم الطلاب بناءً على معدل الحفظ الشهري المسجل في النظام
         </p>
       </Card>
 
       {/* Review Card */}
-      <Card padding="lg" variant="default" hover>
-        <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mb-4 mx-auto">
+      <Card padding="lg" variant="default" hover className="min-h-[200px]">
+        <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mb-4 mx-auto flex-shrink-0">
           <svg
             className="w-8 h-8 text-emerald-600"
             fill="none"
             stroke="currentColor"
-            viewBox="0 0 24 24">
+            viewBox="0 0 24 24"
+            width="32"
+            height="32">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -50,20 +54,22 @@ export const CriteriaCards = () => {
             />
           </svg>
         </div>
-        <h3 className="text-lg font-bold text-center mb-2">المراجعة</h3>
-        <p className="text-gray-600 text-center">
+        <h3 className="text-lg font-bold text-center mb-2 h-7">المراجعة</h3>
+        <p className="text-gray-600 text-center text-sm leading-relaxed">
           يتم التقييم بناءً على معدل المراجعة الشهري وأداء الطالب في المراجعات
         </p>
       </Card>
 
       {/* Overall Average Card */}
-      <Card padding="lg" variant="default" hover>
-        <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mb-4 mx-auto">
+      <Card padding="lg" variant="default" hover className="min-h-[200px]">
+        <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mb-4 mx-auto flex-shrink-0">
           <svg
             className="w-8 h-8 text-emerald-600"
             fill="none"
             stroke="currentColor"
-            viewBox="0 0 24 24">
+            viewBox="0 0 24 24"
+            width="32"
+            height="32">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -72,8 +78,8 @@ export const CriteriaCards = () => {
             />
           </svg>
         </div>
-        <h3 className="text-lg font-bold text-center mb-2">المعدل الإجمالي</h3>
-        <p className="text-gray-600 text-center">
+        <h3 className="text-lg font-bold text-center mb-2 h-7">المعدل الإجمالي</h3>
+        <p className="text-gray-600 text-center text-sm leading-relaxed">
           المعدل النهائي يحسب من مجموع معدلات الحفظ والمراجعة
         </p>
       </Card>

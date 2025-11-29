@@ -7,18 +7,13 @@
 import SharedPageHeader from "@/components/UI/PageHeader";
 import { getMonthName } from "../utils/rankingHelpers";
 import { Trophy } from "lucide-react";
-
-interface RankingPageHeaderProps {
-  selectedMonth: number;
-  selectedYear: number;
-  studentsCount: number;
-}
+import type { PageHeaderProps } from "../types/ranking";
 
 export const PageHeader = ({
   selectedMonth,
   selectedYear,
   studentsCount,
-}: RankingPageHeaderProps) => {
+}: PageHeaderProps) => {
   return (
     <div data-aos="fade-down">
       {/* استخدام المكون المشترك */}

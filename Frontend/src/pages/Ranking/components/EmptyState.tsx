@@ -6,11 +6,7 @@
 
 import { EmptyState as SharedEmptyState } from "@/components/UI/EmptyState";
 import { getMonthName } from "../utils/rankingHelpers";
-
-interface EmptyStateProps {
-  selectedMonth: number;
-  selectedYear: number;
-}
+import type { EmptyStateProps } from "../types/ranking";
 
 export const EmptyState = ({
   selectedMonth,

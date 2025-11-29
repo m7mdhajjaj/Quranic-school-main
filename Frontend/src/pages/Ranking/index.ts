@@ -16,6 +16,8 @@ export type {
   PodiumProps,
   RankingTableProps,
   UseRankingDataReturn,
+  EmptyStateProps,
+  PageHeaderProps,
 } from "./types/ranking";
 
 // Utils

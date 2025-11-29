@@ -27,15 +27,17 @@ const getRankingByAverages = async (req, res) => {
         const studentData = await Student.findById(req.user._id).select('group');
         userGroup = studentData ? studentData.group : null;
       } else if (req.user.role === "teacher") {
-        // Teacher: get assigned groups that have students
+        // Teacher: get assigned groups that have students ONLY
         const allTeacherGroups = await getTeacherGroups(req.user._id);
         
         if (allTeacherGroups && allTeacherGroups.length > 0) {
-          // Get only groups that have students
+          // ✅ جلب الحلقات التي تحتوي على طلاب فقط (فلترة الحلقات الفارغة)
           const groupsWithStudents = await Student.distinct('group', {
             group: { $in: allTeacherGroups }
           });
-          teacherGroups = groupsWithStudents;
+          
+          // ✅ ترتيب الحلقات أبجدياً لعرض أفضل
+          teacherGroups = groupsWithStudents.sort((a, b) => a.localeCompare(b, 'ar'));
           
           // If specific group requested, check if it has students
           if (userGroup) {

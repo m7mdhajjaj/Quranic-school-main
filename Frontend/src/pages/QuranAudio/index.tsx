@@ -49,16 +49,18 @@ const QuranAudio: React.FC = () => {
           subtitle="استمع إلى القرآن الكريم بأصوات القراء المشهورين 🎧"
         />
 
-        {/* ✅ Lazy load components with Suspense for better performance */}
-        <Suspense fallback={<LoadingSpinner size="lg" />}>
+        {/* ✅ استخدام Suspense واحد لتحميل جميع المكونات الأساسية معاً لتقليل عدد اللودرات */}
+        <Suspense fallback={
+          <div className="flex items-center justify-center py-12">
+            <LoadingSpinner size="lg" text="جاري تحميل صفحة القرآن الكريم..." />
+          </div>
+        }>
           <ReciterSelector
             reciters={reciters}
             selectedReciter={reciter}
             onReciterChange={handleReciterChange}
           />
-        </Suspense>
 
-        <Suspense fallback={<LoadingSpinner size="lg" text="جاري تحميل قائمة السور..." />}>
           <SurahList
             surahs={surahs}
             selectedSurah={selectedSurah}
@@ -67,16 +69,14 @@ const QuranAudio: React.FC = () => {
             onSurahSelect={handleSurahSelect}
             onPlayPause={handlePlayPause}
           />
-        </Suspense>
 
-        {selectedSurah && ayahs.length > 0 && (
-          <PlaybackSettings
-            highlightWords={highlightWords}
-            onToggleHighlight={toggleHighlightWords}
-          />
-        )}
+          {selectedSurah && ayahs.length > 0 && (
+            <PlaybackSettings
+              highlightWords={highlightWords}
+              onToggleHighlight={toggleHighlightWords}
+            />
+          )}
 
-        <Suspense fallback={<LoadingSpinner size="md" text="جاري تحميل الآيات..." />}>
           <AyahsList 
             ayahs={ayahs} 
             loading={loading}
