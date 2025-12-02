@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/UI/EmptyState";
 import { Button } from "@/components/UI/Button";
 import { GroupCard, StudentCard, StatisticsPanel } from "./components";
 import { ArrowRight, BarChart3 } from "lucide-react";
+import CardSkeleton from "@/components/skeletons/CardSkeleton";
 
 export const TeacherView: React.FC<TeacherViewProps> = ({
   groups,
@@ -34,15 +35,11 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
     onBack?.();
   };
 
-  if (loading) {
-    return <LoadingSpinner fullScreen text="جاري التحميل..." />;
-  }
-
   // عرض الحلقات
   if (!selectedGroup) {
     return (
       <div
-        className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 p-4 md:p-8"
+        className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-4 md:p-8"
         dir="rtl">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
@@ -57,19 +54,9 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
             {/* زر الإحصائيات */}
             <Button
               onClick={onShowStatistics}
-              disabled={loadingStatistics}
               className="mx-auto flex items-center gap-2">
-              {loadingStatistics ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  <span>جاري التحميل...</span>
-                </>
-              ) : (
-                <>
-                  <BarChart3 className="w-5 h-5" />
-                  <span>📊 عرض الإحصائيات</span>
-                </>
-              )}
+              <BarChart3 className="w-5 h-5" />
+              <span>📊 عرض الإحصائيات</span>
             </Button>
           </div>
 
@@ -82,7 +69,13 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
           )}
 
           {/* Groups Grid */}
-          {groups.length > 0 ? (
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: groups.length || 3 }).map((_, i) => (
+                <CardSkeleton key={i} hasImage={false} contentLines={2} />
+              ))}
+            </div>
+          ) : groups.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {groups.map((group) => (
                 <GroupCard
@@ -107,7 +100,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   // عرض طلاب الحلقة المختارة
   return (
     <div
-      className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 p-4 md:p-8"
+      className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-4 md:p-8"
       dir="rtl">
       <div className="max-w-7xl mx-auto">
         {/* Header */}

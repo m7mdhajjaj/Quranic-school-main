@@ -3,7 +3,6 @@
 // ============================================================================
 
 import type { StudentViewProps } from "./types/warnings";
-import { LoadingSpinner } from "@/components/UI/LoadingSpinner";
 import { EmptyState } from "@/components/UI/EmptyState";
 import { Card } from "@/components/UI/Card";
 import {
@@ -18,13 +17,9 @@ export const StudentView: React.FC<StudentViewProps> = ({
   warnings,
   loading,
 }) => {
-  if (loading) {
-    return <LoadingSpinner fullScreen text="جاري التحميل..." />;
-  }
-
   return (
     <div
-      className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 p-4 md:p-8"
+      className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-4 md:p-8"
       dir="rtl">
       <div className="max-w-4xl mx-auto">
         {/* Header */}

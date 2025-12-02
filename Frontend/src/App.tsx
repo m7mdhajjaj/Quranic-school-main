@@ -77,7 +77,7 @@ const Azkar = lazy(() => import("./pages/Azkar"));
 // ============================================================================
 // Page Components - Warnings & Discipline
 // ============================================================================
-import Warnings from "./pages/Warnings/Warnings";
+const Warnings = lazy(() => import("./pages/Warnings/Warnings"));
 
 // ============================================================================
 // Page Components - Points Game
