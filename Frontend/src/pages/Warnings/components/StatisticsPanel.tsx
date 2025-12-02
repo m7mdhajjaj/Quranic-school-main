@@ -2,15 +2,15 @@
 // StatisticsPanel Component - لوحة الإحصائيات
 // ============================================================================
 
-import type { StatisticsPanelProps } from "../types/warnings";
-import { Card } from "@/components/UI/Card";
-import { StatCard } from "@/components/UI/StatCard";
+import type { StatisticsPanelProps } from '../types/warnings';
+import { Card } from '@/components/UI/Card';
+import { StatCard } from '@/components/UI/StatCard';
 import {
   getWarningLabel,
   getWarningIcon,
   formatArabicDate,
-} from "../utils/warningHelpers";
-import { BarChart3, Users, AlertTriangle, XCircle } from "lucide-react";
+} from '../utils/warningHelpers';
+import { BarChart3, Users, AlertTriangle, XCircle } from 'lucide-react';
 
 export const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
   statistics,
@@ -26,7 +26,8 @@ export const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
         <button
           onClick={onClose}
           className="text-gray-500 hover:text-gray-700 text-2xl hover:bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center transition-colors"
-          aria-label="إغلاق">
+          aria-label="إغلاق"
+        >
           ✕
         </button>
       </div>
@@ -116,7 +117,8 @@ export const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
             statistics.warningsByGroup.map((group, index) => (
               <div
                 key={index}
-                className="bg-white rounded-lg p-3 flex justify-between items-center shadow-sm">
+                className="bg-white rounded-lg p-3 flex justify-between items-center shadow-sm"
+              >
                 <span className="text-gray-700 font-medium">
                   📚 {group._id}
                 </span>
@@ -139,7 +141,8 @@ export const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
                 key={warning._id}
                 variant="default"
                 padding="sm"
-                className="bg-white">
+                className="bg-white"
+              >
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="font-medium text-gray-800">
@@ -149,7 +152,7 @@ export const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
                       {getWarningLabel(warning.type)} - {warning.reason}
                     </div>
                     <div className="text-xs text-gray-500 mt-1">
-                      {warning.groupId.name} •{" "}
+                      {warning.groupId.name} •{' '}
                       {formatArabicDate(warning.createdAt)}
                     </div>
                   </div>

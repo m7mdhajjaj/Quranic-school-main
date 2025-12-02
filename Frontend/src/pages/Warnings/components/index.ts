@@ -6,3 +6,4 @@ export { GroupCard } from "./GroupCard";
 export { StudentCard } from "./StudentCard";
 export { StatisticsPanel } from "./StatisticsPanel";
 export { WarningBadge } from "./WarningBadge";
+export { WarningsPageHeader } from "./WarningsPageHeader";

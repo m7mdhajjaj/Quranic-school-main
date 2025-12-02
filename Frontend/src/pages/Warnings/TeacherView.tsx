@@ -6,8 +6,8 @@ import type { TeacherViewProps, Group } from "./types/warnings";
 import { LoadingSpinner } from "@/components/UI/LoadingSpinner";
 import { EmptyState } from "@/components/UI/EmptyState";
 import { Button } from "@/components/UI/Button";
-import { GroupCard, StudentCard, StatisticsPanel } from "./components";
-import { ArrowRight, BarChart3 } from "lucide-react";
+import { GroupCard, StudentCard, StatisticsPanel, WarningsPageHeader } from "./components";
+import { ArrowRight } from "lucide-react";
 import CardSkeleton from "@/components/skeletons/CardSkeleton";
 
 export const TeacherView: React.FC<TeacherViewProps> = ({
@@ -43,22 +43,7 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
         dir="rtl">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
-              📋 إدارة الإنذارات
-            </h1>
-            <p className="text-gray-600 text-lg mb-6">
-              اختر الحلقة لعرض الطلاب وإدارة الإنذارات
-            </p>
-
-            {/* زر الإحصائيات */}
-            <Button
-              onClick={onShowStatistics}
-              className="mx-auto flex items-center gap-2">
-              <BarChart3 className="w-5 h-5" />
-              <span>📊 عرض الإحصائيات</span>
-            </Button>
-          </div>
+          <WarningsPageHeader onShowStatistics={onShowStatistics} />
 
           {/* عرض الإحصائيات */}
           {showStatistics && statistics && (
