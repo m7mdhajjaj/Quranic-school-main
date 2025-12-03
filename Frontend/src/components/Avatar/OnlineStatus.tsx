@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useUserStatus } from '@/hooks/useUserStatus';
 
 interface OnlineStatusProps {
@@ -11,6 +11,7 @@ interface OnlineStatusProps {
     isActive?: boolean;
     _id?: string;
   };
+  lazyLoad?: boolean; // تفعيل lazy loading
 }
 
 export const OnlineStatus: React.FC<OnlineStatusProps> = ({ 
@@ -19,18 +20,60 @@ export const OnlineStatus: React.FC<OnlineStatusProps> = ({
   className = '',
   position = 'absolute',
   showPing = true,
-  user
+  user,
+  lazyLoad = true // افتراضياً مفعّل
 }) => {
-  // الحصول على حالة المستخدم من Context
+  const elementRef = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(!lazyLoad); // إذا lazyLoad مفعّل، ابدأ بـ false
+  const [statusFetched, setStatusFetched] = useState(false);
+
+  // Intersection Observer للـ lazy loading
+  useEffect(() => {
+    if (!lazyLoad || isVisible) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !isVisible) {
+            setIsVisible(true);
+            observer.disconnect();
+          }
+        });
+      },
+      {
+        root: null,
+        rootMargin: '50px', // تحميل قبل الظهور بـ 50px
+        threshold: 0.1,
+      }
+    );
+
+    if (elementRef.current) {
+      observer.observe(elementRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [lazyLoad, isVisible]);
+
+  // الحصول على حالة المستخدم من Context - فقط عند الظهور
   const { getUserStatus } = useUserStatus();
-  const userStatus = user?._id ? getUserStatus(user._id) : null;
+  
+  // جلب الحالة فقط عند الظهور ومرة واحدة
+  useEffect(() => {
+    if (isVisible && user?._id && !statusFetched) {
+      setStatusFetched(true);
+    }
+  }, [isVisible, user?._id, statusFetched]);
+
+  const userStatus = statusFetched && user?._id ? getUserStatus(user._id) : null;
 
   // أولوية تحديد الحالة: 
-  // 1. من UserStatusContext (real-time)
-  // 2. من user.isActive (من Backend)
+  // 1. من user.isActive (من Backend) - أسرع، لا يحتاج Context
+  // 2. من UserStatusContext (real-time) - فقط بعد الظهور
   // 3. من externalIsOnline prop
   // 4. افتراضي false
-  const isOnline = userStatus?.isActive ?? user?.isActive ?? externalIsOnline ?? false;
+  const isOnline = user?.isActive !== undefined 
+    ? user.isActive 
+    : (userStatus?.isActive ?? externalIsOnline ?? false);
 
   const sizeClasses = {
     xs: 'w-2 h-2',
@@ -61,7 +104,8 @@ export const OnlineStatus: React.FC<OnlineStatusProps> = ({
   const innerGlowColor = isOnline ? 'bg-green-400' : 'bg-red-400';
 
   return (
-    <div 
+    <div
+      ref={elementRef}
       className={`
         ${sizeClasses[size]} 
         ${position === 'absolute' ? `absolute ${positionClasses[size]}` : 'relative'}
