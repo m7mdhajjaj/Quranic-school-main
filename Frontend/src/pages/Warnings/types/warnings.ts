@@ -72,7 +72,6 @@ export interface TeacherViewProps {
   onShowStatistics: () => void;
   statistics: TeacherStatistics | null;
   showStatistics: boolean;
-  loadingStatistics: boolean;
   onCloseStatistics: () => void;
   onGiveWarning?: (student: Student, type: WarningType) => void;
   onDeleteWarning?: (student: Student, type: string) => void;
@@ -81,7 +80,6 @@ export interface TeacherViewProps {
 
 export interface StudentViewProps {
   warnings: Warning[];
-  loading: boolean;
 }
 
 export interface GroupCardProps {

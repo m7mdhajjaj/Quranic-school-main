@@ -5,7 +5,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import api from "@/Api/api";
-import { getAllStudents } from "@/Api/studentApi";
+import * as warningApi from "@/Api/warningApi";
 import type { Group, Warning, Student } from "../types/warnings";
 import { showErrorToast } from "@/components/utils/toastUtils";
 
@@ -24,49 +24,29 @@ export const useWarningsData = () => {
       setLoading(true);
 
       if (isTeacher) {
-        // جلب جميع الطلاب
-        const studentsRes = await getAllStudents();
-        const allStudents =
-          studentsRes.success && Array.isArray(studentsRes.data)
-            ? studentsRes.data
-            : [];
-
-        // فلترة الطلاب حسب المعلم الحالي
-        const teacherName = `${user?.firstName} ${user?.lastName}`.trim();
-        const teacherStudents = allStudents.filter((student: any) => {
-          const studentTeacher = student.teacher?.trim() || "";
-          return studentTeacher.toLowerCase() === teacherName.toLowerCase();
-        });
-
-        // تجميع الطلاب حسب الحلقة
-        const groupsMap = new Map<string, any[]>();
-        teacherStudents.forEach((student: any) => {
-          const groupName = student.group || "بدون حلقة";
-          if (!groupsMap.has(groupName)) {
-            groupsMap.set(groupName, []);
-          }
-          groupsMap.get(groupName)?.push({
-            _id: student._id,
-            firstName: student.firstName,
-            lastName: student.lastName,
-            warningsCount: 0,
-          });
-        });
-
-        // تحويل الـ Map إلى مصفوفة
-        const groupsList = Array.from(groupsMap.entries()).map(
-          ([groupName, students]) => ({
-            _id: groupName,
-            name: groupName,
-            students: students,
-          })
+        // جلب حلقات المعلم مع الطلاب من Backend مباشرة
+        const response = await api.get(
+          `/groups/teacher-id/${user?._id}/filtered?filter=all&includeStudents=true`
         );
+        
+        const groupsData = response.data?.data?.groups || [];
+        
+        // تحويل البيانات للصيغة المطلوبة
+        const groupsList = groupsData.map((group: any) => ({
+          _id: group._id,
+          name: group.name,
+          students: (group.students || []).map((student: any) => ({
+            _id: student._id,
+            firstName: student.name?.split(' ')[0] || '',
+            lastName: student.name?.split(' ').slice(1).join(' ') || '',
+            warningsCount: 0,
+          })),
+        }));
 
         setGroups(groupsList);
       } else if (isStudent) {
         // جلب إنذارات الطالب
-        const response = await api.get(`/warnings/student/${user?._id}`);
-        const warningsData = response.data || [];
+        const warningsData = await warningApi.getStudentWarnings(user?._id!);
         setWarnings(Array.isArray(warningsData) ? warningsData : []);
       }
     } catch (error) {
@@ -77,44 +57,21 @@ export const useWarningsData = () => {
     }
   };
 
-  // جلب إنذارات طلاب الحلقة
+  // جلب إنذارات طلاب الحلقة باستخدام endpoint واحد من Backend
   const fetchGroupStudentsWarnings = async (group: Group): Promise<Group> => {
     try {
-      const studentsWithWarnings = await Promise.all(
-        group.students.map(async (student) => {
-          try {
-            const warningsRes = await api.get(
-              `/warnings/student/${student._id}`
-            );
-            const studentWarnings = Array.isArray(warningsRes.data)
-              ? warningsRes.data
-              : [];
+      const data = await warningApi.getGroupStudentsWithWarnings(group._id);
+      const studentsData = data?.students || [];
 
-            // استخراج أنواع الإنذارات الموجودة (ما عدا التنبيه)
-            const existingTypes = studentWarnings
-              .map((w: any) => w.type)
-              .filter((type: string) => type !== "warning");
-
-            return {
-              ...student,
-              warningsCount: studentWarnings.length,
-              existingWarningTypes: existingTypes,
-              allWarnings: studentWarnings,
-            };
-          } catch (err) {
-            console.error(
-              `Error fetching warnings for student ${student._id}:`,
-              err
-            );
-            return {
-              ...student,
-              warningsCount: 0,
-              existingWarningTypes: [],
-              allWarnings: [],
-            };
-          }
-        })
-      );
+      // تحويل البيانات للصيغة المطلوبة
+      const studentsWithWarnings = studentsData.map((studentData: any) => ({
+        _id: studentData._id,
+        firstName: studentData.firstName,
+        lastName: studentData.lastName,
+        warningsCount: studentData.warningsCount || 0,
+        existingWarningTypes: studentData.existingWarningTypes || [],
+        allWarnings: studentData.allWarnings || [],
+      }));
 
       return { ...group, students: studentsWithWarnings };
     } catch (error) {

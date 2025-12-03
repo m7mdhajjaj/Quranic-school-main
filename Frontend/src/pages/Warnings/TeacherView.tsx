@@ -3,7 +3,6 @@
 // ============================================================================
 
 import type { TeacherViewProps, Group } from "./types/warnings";
-import { LoadingSpinner } from "@/components/UI/LoadingSpinner";
 import { EmptyState } from "@/components/UI/EmptyState";
 import { Button } from "@/components/UI/Button";
 import { GroupCard, StudentCard, StatisticsPanel, WarningsPageHeader } from "./components";
@@ -19,7 +18,6 @@ export const TeacherView: React.FC<TeacherViewProps> = ({
   onShowStatistics,
   statistics,
   showStatistics,
-  loadingStatistics,
   onCloseStatistics,
   onGiveWarning,
   onDeleteWarning,

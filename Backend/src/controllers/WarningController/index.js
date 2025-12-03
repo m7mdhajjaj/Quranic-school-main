@@ -8,6 +8,8 @@ const getWarnings = require("./getWarnings");
 const deleteWarning = require("./deleteWarning");
 const warningStatistics = require("./warningStatistics");
 const studentStatus = require("./studentStatus");
+const getGroupStudentsWarnings = require("./getGroupStudentsWarnings");
+const deleteWarningByType = require("./deleteWarningByType");
 
 // Export all functions
 module.exports = {
@@ -16,9 +18,11 @@ module.exports = {
 
   // Get operations
   ...getWarnings,
+  ...getGroupStudentsWarnings,
 
   // Delete operations
   ...deleteWarning,
+  ...deleteWarningByType,
 
   // Statistics operations
   ...warningStatistics,

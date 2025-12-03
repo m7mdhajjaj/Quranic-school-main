@@ -15,7 +15,6 @@ import {
 
 export const StudentView: React.FC<StudentViewProps> = ({
   warnings,
-  loading,
 }) => {
   return (
     <div

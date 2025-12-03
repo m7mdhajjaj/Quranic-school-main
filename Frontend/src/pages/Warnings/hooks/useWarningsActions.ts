@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { useState } from "react";
-import api from "@/Api/api";
+import * as warningApi from "@/Api/warningApi";
 import type {
   Student,
   WarningType,
@@ -22,9 +22,9 @@ export const useWarningsActions = (refetchData: () => void) => {
   const fetchTeacherStatistics = async () => {
     try {
       setLoadingStatistics(true);
-      const response = await api.get("/warnings/statistics/teacher");
-      setStatistics(response.data);
-      return response.data;
+      const data = await warningApi.getTeacherStatistics();
+      setStatistics(data);
+      return data;
     } catch (error) {
       console.error("Error fetching statistics:", error);
       showErrorToast("حدث خطأ أثناء جلب الإحصائيات");
@@ -43,7 +43,7 @@ export const useWarningsActions = (refetchData: () => void) => {
     teacherId: string
   ) => {
     try {
-      await api.post("/warnings", {
+      await warningApi.createWarning({
         studentId: student._id,
         teacherId,
         groupName,
@@ -65,27 +65,11 @@ export const useWarningsActions = (refetchData: () => void) => {
     }
   };
 
-  // حذف إنذار
+  // حذف إنذار باستخدام endpoint مباشر
   const deleteWarning = async (student: Student, warningType: string) => {
     try {
-      // جلب إنذارات الطالب
-      const warningsRes = await api.get(`/warnings/student/${student._id}`);
-      const studentWarnings = Array.isArray(warningsRes.data)
-        ? warningsRes.data
-        : [];
-
-      // العثور على الإنذار
-      const warningToDelete = studentWarnings.find(
-        (w: any) => w.type === warningType
-      );
-
-      if (!warningToDelete) {
-        showErrorToast("لم يتم العثور على الإنذار");
-        return false;
-      }
-
-      // حذف الإنذار
-      await api.delete(`/warnings/${warningToDelete._id}`);
+      // حذف الإنذار مباشرة بدون استدعاء GET أولاً
+      await warningApi.deleteWarningByType(student._id, warningType);
 
       showSuccessToast(
         `تم حذف الإنذار بنجاح من ${student.firstName} ${student.lastName}`
@@ -104,7 +88,7 @@ export const useWarningsActions = (refetchData: () => void) => {
   // حذف تنبيه بالـ ID
   const deleteWarningById = async (warningId: string) => {
     try {
-      await api.delete(`/warnings/${warningId}`);
+      await warningApi.deleteWarningById(warningId);
       showSuccessToast("تم حذف التنبيه بنجاح");
       refetchData();
       return true;
