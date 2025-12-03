@@ -153,6 +153,16 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
   const finalAvatarUrl = getAvatarUrl(src, user?.avatar, fetchedAvatarUrl);
   const displaySrc = previewSrc || finalAvatarUrl;
 
+  // Debug: طباعة بيانات الصورة
+  if (user?.firstName === 'جهاد') {
+    console.log('🖼️ Avatar Debug for جهاد:', {
+      'user.avatar': user?.avatar,
+      'finalAvatarUrl': finalAvatarUrl,
+      'displaySrc': displaySrc,
+      'fetchedAvatarUrl': fetchedAvatarUrl,
+    });
+  }
+
   // معلومات المستخدم (اسم، أحرف أولى، جنس)
   const { initials, gender } = getUserInfo(externalUserName, user, externalGender);
 

@@ -1,17 +1,10 @@
 import Swal from "sweetalert2";
 import type { SweetAlertOptions } from "sweetalert2";
+import { audioManager } from "@/utils/AudioManager";
 
-// دالة لتشغيل الصوت
+// ✅ استخدام AudioManager الموحد بدلاً من دالة محلية
 const playSound = (soundFile: string) => {
-  try {
-    const audio = new Audio(`/src/assets/sounds/${soundFile}`);
-    audio.volume = 0.5; // ضبط مستوى الصوت (50%)
-    audio.play().catch((error) => {
-      console.warn('Could not play sound:', error);
-    });
-  } catch (error) {
-    console.warn('Error playing sound:', error);
-  }
+  audioManager.play(soundFile);
 };
 
 // دالة لإعداد SweetAlert بموضع ثابت في الوسط وخلفية خفيفة - باستخدام Tailwind فقط
@@ -36,31 +29,38 @@ export const showCenteredSwal = (options: SweetAlertOptions) => {
       ...options.customClass,
     },
     didOpen: () => {
-      const popup = Swal.getPopup();
-      if (popup) {
-        // فرض المركزية بقوة باستخدام important
-        popup.style.setProperty("position", "fixed", "important");
-        popup.style.setProperty("top", "50%", "important");
-        popup.style.setProperty("left", "50%", "important");
-        popup.style.setProperty("transform", "translate(-50%, -50%)", "important");
-        popup.style.setProperty("margin", "0", "important");
-        popup.style.setProperty("z-index", "10001", "important");
-      }
+      // استخدام requestAnimationFrame لتأجيل عمليات DOM غير الحرجة
+      requestAnimationFrame(() => {
+        const popup = Swal.getPopup();
+        if (popup) {
+          // فرض المركزية باستخدام cssText (أسرع من setProperty متعدد)
+          popup.style.cssText += `
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            margin: 0 !important;
+            z-index: 10001 !important;
+          `;
+        }
 
-      const container = document.querySelector(".swal2-container") as HTMLElement;
-      if (container) {
-        container.style.setProperty("position", "fixed", "important");
-        container.style.setProperty("inset", "0", "important");
-        container.style.setProperty("display", "flex", "important");
-        container.style.setProperty("align-items", "center", "important");
-        container.style.setProperty("justify-content", "center", "important");
-        container.style.setProperty("z-index", "10000", "important");
-      }
+        const container = document.querySelector(".swal2-container") as HTMLElement;
+        if (container) {
+          container.style.cssText += `
+            position: fixed !important;
+            inset: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            z-index: 10000 !important;
+          `;
+        }
 
-      const backdrop = document.querySelector(".swal2-backdrop") as HTMLElement;
-      if (backdrop) {
-        backdrop.style.backdropFilter = "blur(2px)";
-      }
+        const backdrop = document.querySelector(".swal2-backdrop") as HTMLElement;
+        if (backdrop) {
+          backdrop.style.backdropFilter = "blur(2px)";
+        }
+      });
 
       if (options.didOpen) {
         options.didOpen(Swal.getPopup()!);
@@ -124,7 +124,7 @@ export const showSuccessMessage = (
       </div>
     `,
     icon: "success",
-    timer: 4000,
+    timer: 2500, // تقليل المدة لتحسين الأداء
     timerProgressBar: true,
     showConfirmButton: false,
     allowOutsideClick: false,
@@ -163,7 +163,7 @@ export const showErrorMessage = (title: string, message: string) => {
       </div>
     `,
     icon: "error",
-    timer: 5000,
+    timer: 3000, // تقليل المدة لتحسين الأداء
     timerProgressBar: true,
     showConfirmButton: true,
     confirmButtonText: "✓ حسناً",
@@ -208,7 +208,7 @@ export const showWarningMessage = (title: string, message: string) => {
   });
 };
 
-// دالة لرسالة التأكيد
+// دالة لرسالة التأكيد - تدعم HTML
 export const showConfirmMessage = (
   title: string,
   text: string,
@@ -217,7 +217,7 @@ export const showConfirmMessage = (
 ) => {
   return showCenteredSwal({
     title: title,
-    text: text,
+    html: text, // استخدام html بدلاً من text لدعم التنسيق
     icon: "warning",
     showCancelButton: true,
     confirmButtonColor: "#3b82f6",
@@ -228,6 +228,7 @@ export const showConfirmMessage = (
     customClass: {
       popup: "rtl:text-right !rounded-2xl",
       title: "!text-xl !font-bold !text-gray-800",
+      htmlContainer: "!text-right", // RTL للمحتوى
       confirmButton:
         "!bg-gradient-to-r !from-blue-600 !to-blue-700 hover:!from-blue-700 hover:!to-blue-800 !text-white !font-bold !px-6 !py-3 !rounded-xl !shadow-lg hover:!shadow-xl !transition-all",
       cancelButton:

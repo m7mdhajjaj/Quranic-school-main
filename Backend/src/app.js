@@ -43,6 +43,43 @@ app.use(
   })
 );
 
+// ✅ Security Headers Middleware
+app.use((req, res, next) => {
+  // Prevent XSS attacks
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  
+  // Prevent clickjacking
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  
+  // Control referrer information
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  
+  // Enable browser XSS protection
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  
+  // Content Security Policy
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com; " +
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+    "font-src 'self' https://fonts.gstatic.com data:; " +
+    "img-src 'self' data: https: blob:; " +
+    "connect-src 'self' ws: wss: http://localhost:* https://cloudinary.com https://res.cloudinary.com; " +
+    "media-src 'self' blob: data:;"
+  );
+  
+  // Prevent DNS prefetching
+  res.setHeader('X-DNS-Prefetch-Control', 'off');
+  
+  // Only HTTPS (in production)
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  }
+  
+  next();
+});
+
 // Centralized request logging middleware
 app.use((req, res, next) => {
   const start = Date.now();

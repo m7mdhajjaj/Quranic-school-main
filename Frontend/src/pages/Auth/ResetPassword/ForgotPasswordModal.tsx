@@ -136,7 +136,9 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
     setIsLoading(true);
 
     try {
+      console.log('📤 Sending forgot password data:', forgotPasswordData);
       const response = await forgotPassword(forgotPasswordData);
+      console.log('📥 Received response:', response);
 
       if (response.success) {
         setIsLoading(false);
@@ -153,14 +155,26 @@ const ForgotPasswordModal = ({ isOpen, onClose }: ForgotPasswordModalProps) => {
         );
       }
     } catch (error: unknown) {
-      console.error('Forgot password error:', error);
+      console.error('❌ Forgot password error:', error);
       setIsLoading(false);
       if (axios.isAxiosError(error)) {
+        console.error('❌ Axios error details:', {
+          status: error.response?.status,
+          data: error.response?.data,
+          message: error.message
+        });
         const message = error.response?.data?.message || error.message;
-        await showErrorMessage(
-          'فشل التحقق',
-          message || 'فشل في التحقق من البيانات. رجاءً تأكد من صحة المعلومات.'
-        );
+        const errors = error.response?.data?.errors;
+        
+        // عرض الأخطاء من Backend
+        if (errors && Array.isArray(errors) && errors.length > 0) {
+          await showErrorMessage('فشل التحقق', errors.join('\n'));
+        } else {
+          await showErrorMessage(
+            'فشل التحقق',
+            message || 'فشل في التحقق من البيانات. رجاءً تأكد من صحة المعلومات.'
+          );
+        }
       } else if (error instanceof Error) {
         await showErrorMessage('خطأ', error.message);
       } else {

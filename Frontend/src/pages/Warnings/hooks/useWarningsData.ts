@@ -2,7 +2,7 @@
 // useWarningsData Hook - جلب بيانات الإنذارات
 // ============================================================================
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import api from '@/Api/api';
 import * as warningApi from '@/Api/warningApi';
@@ -60,8 +60,8 @@ export const useWarningsData = (): UseWarningsDataReturn => {
     }
   };
 
-  // جلب إنذارات طلاب الحلقة باستخدام endpoint واحد من Backend
-  const fetchGroupStudentsWarnings = async (group: Group): Promise<Group> => {
+  // ✅ جلب إنذارات طلاب الحلقة - محسّن بـ useCallback
+  const fetchGroupStudentsWarnings = useCallback(async (group: Group): Promise<Group> => {
     try {
       const data = await warningApi.getGroupStudentsWithWarnings(group._id);
       const studentsData = data?.students || [];
@@ -71,6 +71,8 @@ export const useWarningsData = (): UseWarningsDataReturn => {
         _id: studentData._id,
         firstName: studentData.firstName,
         lastName: studentData.lastName,
+        isActive: studentData.isActive, // حالة الطالب
+        avatar: studentData.avatar, // صورة الطالب من Cloudinary
         warningsCount: studentData.warningsCount || 0,
         warningsOnlyCount: studentData.warningsOnlyCount || 0, // عدد التنبيهات
         existingWarningTypes: studentData.existingWarningTypes || [],
@@ -82,7 +84,7 @@ export const useWarningsData = (): UseWarningsDataReturn => {
       console.error('Error fetching students warnings:', error);
       return group;
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();

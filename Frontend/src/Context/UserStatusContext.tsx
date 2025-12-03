@@ -109,45 +109,76 @@ export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       
       // Only update if we have users and not too many (prevent performance issues)
       if (userIds.length > 0 && userIds.length <= 50 && token) {
-        // Use requestIdleCallback to avoid blocking the main thread
+        // استخدام requestIdleCallback مع batching محسّن
         if ('requestIdleCallback' in window) {
           requestIdleCallback(() => {
-            userIds.forEach(userId => {
-              if (userId) {
-                fetchUserStatus(userId);
+            // معالجة المستخدمين في دفعات صغيرة (5 في المرة الواحدة)
+            const batchSize = 5;
+            let currentIndex = 0;
+            
+            const processBatch = () => {
+              const batch = userIds.slice(currentIndex, currentIndex + batchSize);
+              batch.forEach(userId => {
+                if (userId) {
+                  fetchUserStatus(userId);
+                }
+              });
+              
+              currentIndex += batchSize;
+              
+              // إذا بقي مستخدمين، معالجة الدفعة التالية
+              if (currentIndex < userIds.length) {
+                requestIdleCallback(processBatch);
               }
-            });
-          });
+            };
+            
+            processBatch();
+          }, { timeout: 2000 }); // timeout للتأكد من التنفيذ
         } else {
-          // Fallback for browsers without requestIdleCallback
-          setTimeout(() => {
-            userIds.forEach(userId => {
-              if (userId) {
+          // Fallback محسّن مع batching
+          const batchSize = 5;
+          userIds.forEach((userId, index) => {
+            if (userId) {
+              // تأخير كل دفعة قليلاً لتقليل الضغط
+              setTimeout(() => {
                 fetchUserStatus(userId);
-              }
-            });
-          }, 0);
+              }, Math.floor(index / batchSize) * 100);
+            }
+          });
         }
       }
-    }, 60000); // Changed to 60 seconds to reduce frequency
+    }, 60000); // 60 ثانية
 
     return () => clearInterval(interval);
   }, [userStatuses, token, fetchUserStatus]);
 
-  // دالة للحصول على حالة مستخدم معين
+  // دالة للحصول على حالة مستخدم معين - محسّنة لتجنب setState في render
   const getUserStatus = useCallback((userId?: string): UserStatusState => {
     const targetUserId = userId || user?._id;
     if (!targetUserId) return defaultStatus;
 
     const status = userStatuses[targetUserId];
     
-    // إذا لم تكن الحالة محملة بعد، اجلبها
+    // إذا لم تكن الحالة محملة، جدولة الـ fetch في المرة القادمة
     if (!status && token) {
-      setUserStatuses(prev => ({
-        ...prev,
-        [targetUserId]: { ...defaultStatus, isLoading: true },
-      }));
-      fetchUserStatus(targetUserId);
+      // استخدام queueMicrotask بدلاً من setState مباشرة
+      queueMicrotask(() => {
+        setUserStatuses(prev => {
+          // تحقق مزدوج: لو تم التحديث بالفعل، لا تفعل شيء
+          if (prev[targetUserId]) return prev;
+          
+          return {
+            ...prev,
+            [targetUserId]: { ...defaultStatus, isLoading: true },
+          };
+        });
+        
+        // جدولة الـ fetch بعد الـ render
+        requestAnimationFrame(() => {
+          fetchUserStatus(targetUserId);
+        });
+      });
+      
       return { ...defaultStatus, isLoading: true };
     }
 

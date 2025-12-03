@@ -22,7 +22,7 @@ exports.getGroupWithStudentsWarnings = async (req, res) => {
 
     // جلب طلاب الحلقة
     const students = await Student.find({ group: group.name })
-      .select("_id firstName lastName")
+      .select("_id firstName lastName isActive avatar")
       .lean();
 
     if (students.length === 0) {

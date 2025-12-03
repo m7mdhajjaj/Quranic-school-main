@@ -2,18 +2,15 @@
 // useWarningsActions Hook - إدارة عمليات الإنذارات
 // ============================================================================
 
-import { useState } from "react";
-import * as warningApi from "@/Api/warningApi";
+import { useState, useCallback } from 'react';
+import * as warningApi from '@/Api/warningApi';
+import { validateCreateWarning } from '@/Validation/warningValidation';
 import type {
   Student,
   WarningType,
   TeacherStatistics,
   UseWarningsActionsReturn,
-} from "../types/warnings";
-import {
-  showSuccessToast,
-  showErrorToast,
-} from "@/components/utils/toastUtils";
+} from '../types/warnings';
 
 export const useWarningsActions = (
   refetchData: () => void
@@ -21,30 +18,43 @@ export const useWarningsActions = (
   const [loadingStatistics, setLoadingStatistics] = useState(false);
   const [statistics, setStatistics] = useState<TeacherStatistics | null>(null);
 
-  // جلب إحصائيات المعلم
-  const fetchTeacherStatistics = async () => {
+  // ✅ جلب إحصائيات المعلم - محسّن بـ useCallback
+  const fetchTeacherStatistics = useCallback(async () => {
     try {
       setLoadingStatistics(true);
       const data = await warningApi.getTeacherStatistics();
       setStatistics(data);
       return data;
     } catch (error) {
-      console.error("Error fetching statistics:", error);
-      showErrorToast("حدث خطأ أثناء جلب الإحصائيات");
+      console.error('Error fetching statistics:', error);
+      // تم إزالة Toast - سيتم عرض الأخطاء في SweetAlert فقط
       return null;
     } finally {
       setLoadingStatistics(false);
     }
-  };
+  }, []);
 
-  // إعطاء إنذار
-  const giveWarning = async (
+  // ✅ إعطاء إنذار - محسّن بـ useCallback
+  const giveWarning = useCallback(async (
     student: Student,
     type: WarningType,
     reason: string,
     groupName: string,
     teacherId: string
   ) => {
+    // ✅ التحقق من صحة البيانات قبل الإرسال
+    const validationResult = validateCreateWarning({
+      studentId: student._id,
+      teacherId,
+      groupName,
+      type,
+      reason,
+    });
+
+    if (!validationResult.isValid) {
+      throw new Error(validationResult.errors.join('<br>'));
+    }
+
     try {
       await warningApi.createWarning({
         studentId: student._id,
@@ -54,55 +64,63 @@ export const useWarningsActions = (
         reason,
       });
 
-      showSuccessToast(
-        `تم إعطاء الإنذار بنجاح للطالب ${student.firstName} ${student.lastName}`
-      );
+      // تم إزالة Toast - سيتم عرض النجاح في SweetAlert
       refetchData();
       return true;
     } catch (error: any) {
-      console.error("Error giving warning:", error);
-      const errorMessage =
-        error?.response?.data?.message || "حدث خطأ أثناء إعطاء الإنذار";
-      showErrorToast(errorMessage);
-      return false;
+      console.error('❌ Error giving warning:', error);
+      
+      // معالجة أخطاء محددة وإرجاع رسالة الخطأ
+      if (error?.response?.status === 400) {
+        console.error('📋 Validation error details:', error?.response?.data);
+        const errorData = error?.response?.data;
+        
+        // استخراج رسالة الخطأ
+        let errorMessage = errorData?.message || 'بيانات غير صحيحة';
+        
+        // إذا كان هناك أخطاء تفصيلية
+        if (errorData?.errors && Array.isArray(errorData.errors) && errorData.errors.length > 0) {
+          errorMessage = errorData.errors.map((err: any) => err.message || err).join('<br>');
+        }
+        
+        throw new Error(errorMessage);
+      }
+      
+      // أخطاء أخرى
+      const errorMessage = error?.response?.data?.message || 'حدث خطأ أثناء إعطاء الإنذار';
+      throw new Error(errorMessage);
     }
-  };
+  }, [refetchData]);
 
-  // حذف إنذار باستخدام endpoint مباشر
-  const deleteWarning = async (student: Student, warningType: string) => {
+  // ✅ حذف إنذار باستخدام endpoint مباشر - محسّن بـ useCallback
+  const deleteWarning = useCallback(async (student: Student, warningType: string) => {
     try {
       // حذف الإنذار مباشرة بدون استدعاء GET أولاً
       await warningApi.deleteWarningByType(student._id, warningType);
 
-      showSuccessToast(
-        `تم حذف الإنذار بنجاح من ${student.firstName} ${student.lastName}`
-      );
+      // تم إزالة Toast - سيتم عرض النجاح في SweetAlert
       refetchData();
       return true;
     } catch (error: any) {
-      console.error("Error deleting warning:", error);
-      const errorMessage =
-        error?.response?.data?.message || "حدث خطأ أثناء حذف الإنذار";
-      showErrorToast(errorMessage);
+      console.error('Error deleting warning:', error);
+      // إرجاع false فقط - الخطأ سيُعرض من modal
       return false;
     }
-  };
+  }, [refetchData]);
 
-  // حذف تنبيه بالـ ID
-  const deleteWarningById = async (warningId: string) => {
+  // ✅ حذف تنبيه بالـ ID - محسّن بـ useCallback
+  const deleteWarningById = useCallback(async (warningId: string) => {
     try {
       await warningApi.deleteWarningById(warningId);
-      showSuccessToast("تم حذف التنبيه بنجاح");
+      // تم إزالة Toast - سيتم عرض النجاح في SweetAlert
       refetchData();
       return true;
     } catch (error: any) {
-      console.error("Error deleting warning:", error);
-      const errorMessage =
-        error?.response?.data?.message || "حدث خطأ أثناء حذف التنبيه";
-      showErrorToast(errorMessage);
+      console.error('Error deleting warning:', error);
+      // إرجاع false فقط - الخطأ سيُعرض من modal
       return false;
     }
-  };
+  }, [refetchData]);
 
   return {
     statistics,

@@ -2,20 +2,21 @@
 // GroupCard Component - بطاقة الحلقة
 // ============================================================================
 
+import React from 'react';
 import type { GroupCardProps } from "../../types/warnings";
 import { Card } from "@/components/UI";
 
-export const GroupCard: React.FC<GroupCardProps> = ({ group, onClick }) => {
+export const GroupCard: React.FC<GroupCardProps> = React.memo(({ group, onClick }) => {
   return (
     <Card
       onClick={onClick}
-      className="group cursor-pointer hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-2 bg-gradient-to-br from-white to-blue-50/50 border-2 border-transparent hover:border-blue-200 relative overflow-hidden"
+      className="group cursor-pointer bg-gradient-to-br from-white to-blue-50/50 border-2 border-transparent hover:border-blue-200 shadow-xl hover:shadow-2xl transition-shadow duration-300 relative overflow-hidden will-change-[box-shadow]"
       padding="lg">
       {/* Background Animation */}
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
       
       <div className="text-center relative z-10">
-        <div className="text-6xl mb-4 transform group-hover:scale-110 transition-transform duration-300">
+        <div className="text-6xl mb-4">
           📚
         </div>
         <h3 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-2 group-hover:from-blue-600 group-hover:to-purple-600 transition-all duration-300">
@@ -30,4 +31,10 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group, onClick }) => {
       </div>
     </Card>
   );
-};
+}, (prevProps, nextProps) => {
+  // ✅ مقارنة مخصصة
+  return (
+    prevProps.group._id === nextProps.group._id &&
+    prevProps.group.students?.length === nextProps.group.students?.length
+  );
+});

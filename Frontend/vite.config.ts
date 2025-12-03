@@ -40,6 +40,13 @@ export default defineConfig({
             if (id.includes('lucide-react')) {
               return 'lucide-icons';
             }
+            // ✅ فصل react-icons حسب النوع لتقليل الحجم
+            if (id.includes('react-icons/fa')) {
+              return 'icons-fa';
+            }
+            if (id.includes('react-icons/io5')) {
+              return 'icons-io5';
+            }
             if (id.includes('react-icons')) {
               return 'react-icons';
             }
@@ -70,24 +77,36 @@ export default defineConfig({
         },
       },
     },
-    // ضغط أفضل باستخدام terser بدلاً من esbuild
+    // ✅ ضغط أفضل باستخدام terser بدلاً من esbuild
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: true, // إزالة console.log في الإنتاج
+        drop_console: process.env.NODE_ENV === 'production', // إزالة console.log في الإنتاج فقط
         drop_debugger: true,
         pure_funcs: ['console.log', 'console.info', 'console.debug'], // إزالة وظائف معينة
+        passes: 2, // تمريرتين لضغط أفضل
+        unsafe_arrows: true, // تحويل arrow functions
+        unsafe_methods: true, // تحسين الطرق
+        unsafe_proto: true, // تحسين prototype
       },
       mangle: {
         safari10: true, // دعم Safari 10
+        toplevel: true, // mangle top-level names
+      },
+      format: {
+        comments: false, // إزالة جميع التعليقات
       },
     },
     // تحسين الـ sourcemaps
     sourcemap: false,
     // تقسيم CSS إلى ملفات منفصلة
     cssCodeSplit: true,
-    // تحسين حجم الأصول
-    assetsInlineLimit: 4096, // 4kb - تضمين الملفات الصغيرة كـ base64
+    // ✅ تحسين حجم الأصول - زيادة الحد لتقليل HTTP requests
+    assetsInlineLimit: 8192, // 8kb بدلاً من 4kb
+    // ✅ تفعيل reportCompressedSize لمراقبة الحجم
+    reportCompressedSize: true,
+    // ✅ تقليل حجم chunks
+    chunkSizeWarningLimit: 500,
   },
   
   // تحسين الخادم المحلي
