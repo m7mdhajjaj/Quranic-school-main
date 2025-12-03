@@ -16,6 +16,7 @@ export default {
         '100': '0.1s',
         '200': '0.2s',
         '300': '0.3s',
+        '400': '0.4s',
         '500': '0.5s',
         '700': '0.7s',
         '1000': '1s',
@@ -38,6 +39,13 @@ export default {
         'bar': 'bar 1s ease-in-out infinite',
         'fadeIn': 'fadeIn 0.5s ease-out',
         'slideUp': 'slideUp 0.4s ease-out',
+        
+        // Warnings Page animations
+        'fade-in': 'fade-in 0.3s ease-in-out',
+        'fade-in-down': 'fade-in-down 0.4s ease-out',
+        'fade-in-up': 'fade-in-up 0.4s ease-out',
+        'scale': 'scale 0.3s ease-out',
+        'gradient': 'gradient 15s ease infinite',
       },
       keyframes: {
         // Original keyframes
@@ -90,6 +98,29 @@ export default {
         'slideUp': {
           'from': { opacity: '0', transform: 'translateY(20px)' },
           'to': { opacity: '1', transform: 'translateY(0)' }
+        },
+        
+        // Warnings Page keyframes
+        'fade-in': {
+          'from': { opacity: '0' },
+          'to': { opacity: '1' }
+        },
+        'fade-in-down': {
+          'from': { opacity: '0', transform: 'translateY(-20px)' },
+          'to': { opacity: '1', transform: 'translateY(0)' }
+        },
+        'fade-in-up': {
+          'from': { opacity: '0', transform: 'translateY(20px)' },
+          'to': { opacity: '1', transform: 'translateY(0)' }
+        },
+        'scale': {
+          'from': { transform: 'scale(0.95)', opacity: '0' },
+          'to': { transform: 'scale(1)', opacity: '1' }
+        },
+        'gradient': {
+          '0%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+          '100%': { backgroundPosition: '0% 50%' }
         }
       }
     },
@@ -127,6 +158,18 @@ export default {
           '-webkit-box-orient': 'vertical',
           '-webkit-line-clamp': '3',
         },
+        // Scrollbar hide utility
+        '.scrollbar-hide': {
+          '-ms-overflow-style': 'none',
+          'scrollbar-width': 'none',
+          '&::-webkit-scrollbar': {
+            'display': 'none'
+          }
+        },
+        // Background size for gradient animation
+        '.bg-size-200': {
+          'background-size': '200% 200%'
+        }
       });
     }
   ],

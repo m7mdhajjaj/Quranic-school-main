@@ -1,5 +1,5 @@
 // ============================================================================
-// useWarningsModals Hook - إدارة نوافذ SweetAlert للإنذارات
+// useWarningsModals Hook - إدارة نوافذ للإنذارات
 // ============================================================================
 
 import { useCallback } from "react";
@@ -10,7 +10,8 @@ import {
   getWarningLabel,
   getWarningDescription,
 } from "../types/Constans";
-import { showConfirmMessage, showSuccessMessage, showErrorMessage, showCenteredSwal } from "@/components/utils/sweetalertUtils";
+import { showConfirmMessage, showCenteredSwal } from "@/components/utils/sweetalertUtils";
+import { showSuccessToast, showErrorToast } from "@/components/utils/toastUtils";
 
 interface UseWarningsModalsProps {
   giveWarning: (
@@ -99,19 +100,16 @@ export const useWarningsModals = ({
           teacherId
         );
 
-        // عرض رسالة النجاح
-        await showSuccessMessage(
-          "✅ تم بنجاح!",
-          `تم إعطاء <strong class="text-red-600">${getWarningLabel(type)}</strong> بنجاح`,
-          `${student.firstName} ${student.lastName}`
+        // عرض رسالة النجاح باستخدام Toastify
+        showSuccessToast(
+          `✅ تم إعطاء ${getWarningLabel(type)} بنجاح للطالب ${student.firstName} ${student.lastName}`
         );
 
         onSuccess?.();
       } catch (error: any) {
-        // عرض رسالة الخطأ للمستخدم
-        await showErrorMessage(
-          "❌ فشلت العملية",
-          error.message || "حدث خطأ أثناء إعطاء الإنذار"
+        // عرض رسالة الخطأ باستخدام Toastify
+        showErrorToast(
+          error.message || "❌ حدث خطأ أثناء إعطاء الإنذار"
         );
       }
     }
@@ -142,10 +140,8 @@ export const useWarningsModals = ({
       const success = await deleteWarning(student, warningType);
 
       if (success) {
-        await showSuccessMessage(
-          "✅ تم الحذف!",
-          `تم حذف <strong class="text-red-600">${getWarningLabel(warningType)}</strong> بنجاح`,
-          `${student.firstName} ${student.lastName}`
+        showSuccessToast(
+          `✅ تم حذف ${getWarningLabel(warningType)} بنجاح للطالب ${student.firstName} ${student.lastName}`
         );
 
         onSuccess?.();
@@ -161,7 +157,7 @@ export const useWarningsModals = ({
     const warning = student.allWarnings?.find((w) => w._id === warningId);
 
     if (!warning) {
-      showErrorMessage("خطأ", "لم يتم العثور على التنبيه");
+      showErrorToast("❌ لم يتم العثور على التنبيه");
       return;
     }
 
@@ -186,10 +182,8 @@ export const useWarningsModals = ({
       const success = await deleteWarningById(warningId);
 
       if (success) {
-        await showSuccessMessage(
-          "✅ تم الحذف!",
-          "تم حذف التنبيه بنجاح",
-          `${student.firstName} ${student.lastName}`
+        showSuccessToast(
+          `✅ تم حذف التنبيه بنجاح للطالب ${student.firstName} ${student.lastName}`
         );
 
         onSuccess?.();

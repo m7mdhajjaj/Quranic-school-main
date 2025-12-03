@@ -2,6 +2,7 @@
 // useGroupStatistics Hook - حساب إحصائيات الحلقة
 // ============================================================================
 
+import { useCallback } from 'react';
 import type { Group } from '../types/warnings';
 
 export interface GroupStatistics {
@@ -20,54 +21,90 @@ export interface GroupStatistics {
     name: string;
     warningsCount: number;
   }>;
+  studentsDetails?: Array<{
+    _id: string;
+    name: string;
+    warningsCount: number;
+    warningsOnlyCount: number;
+    existingWarningTypes: string[];
+  }>;
 }
 
+// ✅ Constants extracted outside for performance
+const INITIAL_WARNINGS_BY_TYPE = {
+  warning: 0,
+  first: 0,
+  second: 0,
+  third: 0,
+  expulsion: 0,
+} as const;
+
+const TOP_STUDENTS_LIMIT = 5;
+
 export const useGroupStatistics = () => {
-  const calculateGroupStatistics = (group: Group): GroupStatistics => {
+  // ✅ Optimized with useCallback for stable reference
+  const calculateGroupStatistics = useCallback((group: Group): GroupStatistics => {
     const students = group.students || [];
-    const studentsWithWarnings = students.filter(
-      (s) => (s.warningsCount || 0) > 0
-    );
-
-    const warningsByType = {
-      warning: 0,
-      first: 0,
-      second: 0,
-      third: 0,
-      expulsion: 0,
-    };
-
+    
+    // ✅ Initialize with spread to avoid mutation
+    const warningsByType = { ...INITIAL_WARNINGS_BY_TYPE };
     let totalWarnings = 0;
+    let studentsWithWarningsCount = 0;
 
-    students.forEach((student) => {
-      totalWarnings += student.warningsCount || 0;
-      student.existingWarningTypes?.forEach((type) => {
+    // ✅ Single loop optimization - process all data in one pass
+    const studentsDetails = students.map((student) => {
+      const warningsCount = student.warningsCount || 0;
+      const warningsOnlyCount = student.warningsOnlyCount || 0;
+      const existingWarningTypes = student.existingWarningTypes || [];
+      
+      // Count total warnings
+      totalWarnings += warningsCount;
+      
+      // Count students with warnings
+      if (warningsCount > 0) {
+        studentsWithWarningsCount++;
+      }
+      
+      // Count warnings by type
+      existingWarningTypes.forEach((type) => {
         if (type in warningsByType) {
           warningsByType[type as keyof typeof warningsByType]++;
         }
       });
-      // حساب التنبيهات
-      warningsByType.warning += student.warningsOnlyCount || 0;
+      
+      // Add warning-only count
+      warningsByType.warning += warningsOnlyCount;
+      
+      // Return student details for table
+      return {
+        _id: student._id,
+        name: `${student.firstName} ${student.lastName}`,
+        warningsCount,
+        warningsOnlyCount,
+        existingWarningTypes,
+      };
     });
 
-    const topStudents = students
-      .filter((s) => (s.warningsCount || 0) > 0)
-      .sort((a, b) => (b.warningsCount || 0) - (a.warningsCount || 0))
-      .slice(0, 5)
+    // ✅ Calculate top students from already processed data
+    const topStudents = studentsDetails
+      .filter((s) => s.warningsCount > 0)
+      .sort((a, b) => b.warningsCount - a.warningsCount)
+      .slice(0, TOP_STUDENTS_LIMIT)
       .map((s) => ({
-        name: `${s.firstName} ${s.lastName}`,
-        warningsCount: s.warningsCount || 0,
+        name: s.name,
+        warningsCount: s.warningsCount,
       }));
 
     return {
       groupName: group.name,
       totalStudents: students.length,
-      studentsWithWarnings: studentsWithWarnings.length,
+      studentsWithWarnings: studentsWithWarningsCount,
       totalWarnings,
       warningsByType,
       topStudents,
+      studentsDetails,
     };
-  };
+  }, []);
 
   return { calculateGroupStatistics };
 };

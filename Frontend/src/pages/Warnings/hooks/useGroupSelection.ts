@@ -13,12 +13,21 @@ export const useGroupSelection = ({
   fetchGroupStudentsWarnings,
 }: UseGroupSelectionProps) => {
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
+  const [loadingStudents, setLoadingStudents] = useState(false);
 
   // ✅ التعامل مع اختيار الحلقة - محسّن بـ useCallback
   const handleGroupSelect = useCallback(async (group: Group) => {
-    const updatedGroup = await fetchGroupStudentsWarnings(group);
-    if (updatedGroup) {
-      setSelectedGroup(updatedGroup);
+    try {
+      setLoadingStudents(true);
+      setSelectedGroup(group);
+      
+      // ✅ جلب البيانات مع الإنذارات
+      const updatedGroup = await fetchGroupStudentsWarnings(group);
+      if (updatedGroup) {
+        setSelectedGroup(updatedGroup);
+      }
+    } finally {
+      setLoadingStudents(false);
     }
   }, [fetchGroupStudentsWarnings]);
 
@@ -29,6 +38,7 @@ export const useGroupSelection = ({
 
   return {
     selectedGroup,
+    loadingStudents,
     handleGroupSelect,
     handleBack,
   };

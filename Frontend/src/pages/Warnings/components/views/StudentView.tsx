@@ -2,6 +2,7 @@
 // StudentView - عرض الطالب للإنذارات
 // ============================================================================
 
+import React, { useMemo } from 'react';
 import type { StudentViewProps } from '../../types/warnings';
 import { EmptyState } from '@/components/UI/EmptyState';
 import { Card } from '@/components/UI/Card';
@@ -12,12 +13,22 @@ import {
   getWarningDescription,
   formatArabicDate,
 } from '../../types/Constans';
-import '../../styles/animations.css';
 
-export const StudentView: React.FC<StudentViewProps> = ({ warnings }) => {
+// ✅ Constants extracted outside component for performance
+const ANIMATION_DELAYS = [
+  '',
+  'animate-delay-100',
+  'animate-delay-200',
+  'animate-delay-300',
+  'animate-delay-400',
+] as const;
+
+export const StudentView: React.FC<StudentViewProps> = React.memo(({ warnings }) => {
+  // ✅ Memoize has warnings check
+  const hasWarnings = useMemo(() => warnings.length > 0, [warnings.length]);
   return (
     <div
-      className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4 md:p-8 animate-gradient"
+      className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4 md:p-8 bg-size-200 animate-gradient"
       dir="rtl"
     >
       <div className="max-w-4xl mx-auto space-y-6">
@@ -35,17 +46,10 @@ export const StudentView: React.FC<StudentViewProps> = ({ warnings }) => {
         </div>
 
         {/* Warnings List */}
-        {warnings.length > 0 ? (
+        {hasWarnings ? (
           <div className="space-y-4">
             {warnings.map((warning, index) => {
-              const delays = [
-                '',
-                'animate-delay-100',
-                'animate-delay-200',
-                'animate-delay-300',
-                'animate-delay-400',
-              ];
-              const delayClass = delays[index % delays.length];
+              const delayClass = ANIMATION_DELAYS[index % ANIMATION_DELAYS.length];
               return (
                 <div
                   key={warning._id}
@@ -112,4 +116,7 @@ export const StudentView: React.FC<StudentViewProps> = ({ warnings }) => {
       </div>
     </div>
   );
-};
+}, (prevProps, nextProps) => {
+  // ✅ Custom comparison for performance
+  return prevProps.warnings.length === nextProps.warnings.length;
+});

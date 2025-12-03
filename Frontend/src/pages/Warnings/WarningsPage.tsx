@@ -2,7 +2,7 @@
 // WarningsPage - الصفحة الرئيسية للإنذارات
 // ============================================================================
 
-import React from "react";
+import React, { useCallback, useEffect } from "react";
 import { useWarningsSocket } from "@/Socket/useWarningsSocket";
 import { useWarningsData } from "./hooks/useWarningsData";
 import { useWarningsActions } from "./hooks/useWarningsActions";
@@ -11,7 +11,7 @@ import { useWarningsModals } from "./hooks/useWarningsModals";
 import { TeacherView } from "./components/views/TeacherView";
 import { StudentView } from "./components/views/StudentView";
 
-const WarningsPage = () => {
+const WarningsPage: React.FC = () => {
   const {
     user,
     groups,
@@ -32,9 +32,16 @@ const WarningsPage = () => {
     deleteWarningById,
   } = useWarningsActions(refetchData);
 
-  const { selectedGroup, handleGroupSelect, handleBack } = useGroupSelection({
+  const { selectedGroup, loadingStudents, handleGroupSelect, handleBack } = useGroupSelection({
     fetchGroupStudentsWarnings,
   });
+
+  // ✅ Memoize onSuccess callback
+  const handleModalSuccess = useCallback(() => {
+    if (selectedGroup) {
+      handleGroupSelect(selectedGroup);
+    }
+  }, [selectedGroup, handleGroupSelect]);
 
   const { showGiveWarningModal, showDeleteWarningModal, showDeleteWarningByIdModal } =
     useWarningsModals({
@@ -43,70 +50,68 @@ const WarningsPage = () => {
       deleteWarningById,
       selectedGroupName: selectedGroup?.name || "",
       teacherId: user?._id || "",
-      onSuccess: () => {
-        if (selectedGroup) {
-          handleGroupSelect(selectedGroup);
-        }
-      },
+      onSuccess: handleModalSuccess,
     });
 
-  // جلب الإحصائيات تلقائياً عند التحميل
-  React.useEffect(() => {
+  // ✅ جلب الإحصائيات تلقائياً عند التحميل - استخدام useEffect مباشرة
+  useEffect(() => {
     if (isTeacher && !loading) {
       fetchTeacherStatistics();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isTeacher, loading]);
+  }, [isTeacher, loading, fetchTeacherStatistics]);
+
+  // ✅ Memoize socket callbacks for performance
+  const handleNewWarning = useCallback((newWarning: any) => {
+    console.log("✅ New warning received:", newWarning);
+    if (isStudent && newWarning.studentId._id === user?._id) {
+      setWarnings((prev) => [newWarning, ...prev]);
+    } else if (
+      isTeacher &&
+      selectedGroup &&
+      newWarning.groupId._id === selectedGroup._id
+    ) {
+      handleGroupSelect(selectedGroup);
+    }
+  }, [isStudent, isTeacher, user?._id, selectedGroup, setWarnings, handleGroupSelect]);
+
+  const handleWarningDeleted = useCallback((deletedWarningId: string) => {
+    console.log("🗑️ Warning deleted:", deletedWarningId);
+    setWarnings((prev) => prev.filter((w) => w._id !== deletedWarningId));
+    if (isTeacher) {
+      fetchTeacherStatistics();
+    }
+  }, [isTeacher, setWarnings, fetchTeacherStatistics]);
+
+  const handleStatisticsUpdated = useCallback((updatedStatistics: any) => {
+    console.log("📊 Statistics updated:", updatedStatistics);
+    fetchTeacherStatistics();
+  }, [fetchTeacherStatistics]);
+
+  const handleStudentStatusUpdated = useCallback((data: any) => {
+    console.log("👨‍🎓 Student status updated:", data);
+    if (isTeacher && selectedGroup) {
+      handleGroupSelect(selectedGroup);
+    }
+  }, [isTeacher, selectedGroup, handleGroupSelect]);
 
   // Socket للتحديثات الفورية - مباشرة من مجلد Socket
   useWarningsSocket(
-    // عند إنشاء إنذار جديد
-    (newWarning) => {
-      console.log("New warning received:", newWarning);
-      if (isStudent && newWarning.studentId._id === user?._id) {
-        setWarnings((prev) => [newWarning, ...prev]);
-      } else if (
-        isTeacher &&
-        selectedGroup &&
-        newWarning.groupId._id === selectedGroup._id
-      ) {
-        handleGroupSelect(selectedGroup);
-      }
-    },
-    // عند حذف إنذار
-    (deletedWarningId) => {
-      console.log("Warning deleted:", deletedWarningId);
-      setWarnings((prev) => prev.filter((w) => w._id !== deletedWarningId));
-      // إعادة تحميل الإحصائيات بعد الحذف
-      if (isTeacher) {
-        fetchTeacherStatistics();
-      }
-    },
-    // عند تحديث الإحصائيات
-    (updatedStatistics) => {
-      console.log("Statistics updated:", updatedStatistics);
-      fetchTeacherStatistics();
-    },
-    // عند تحديث حالة طالب
-    (data) => {
-      console.log("Student status updated:", data);
-      // إعادة تحميل الطلاب إذا كان المعلم يشاهد حلقة
-      if (isTeacher && selectedGroup) {
-        handleGroupSelect(selectedGroup);
-      }
-    }
+    handleNewWarning,
+    handleWarningDeleted,
+    handleStatisticsUpdated,
+    handleStudentStatusUpdated
   );
 
-  // عرض واجهة المعلم
+  // ✅ عرض واجهة المعلم
   if (isTeacher) {
     return (
       <TeacherView
         groups={groups}
         loading={loading}
+        loadingStudents={loadingStudents}
         selectedGroup={selectedGroup}
         onGroupSelect={handleGroupSelect}
         onBack={handleBack}
-        statistics={statistics}
         onGiveWarning={showGiveWarningModal}
         onDeleteWarning={showDeleteWarningModal}
         onDeleteWarningById={showDeleteWarningByIdModal}
@@ -114,7 +119,7 @@ const WarningsPage = () => {
     );
   }
 
-  // عرض واجهة الطالب
+  // ✅ عرض واجهة الطالب
   if (isStudent) {
     return <StudentView warnings={warnings} />;
   }

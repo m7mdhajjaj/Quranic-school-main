@@ -67,6 +67,53 @@ exports.createWarning = async (req, res) => {
       }
     }
 
+    // التحقق من تسلسل الإنذارات - يجب أن يكون هناك ترتيب
+    if (type !== "warning") {
+      const studentWarnings = await Warning.find({ studentId });
+      const warningTypes = {
+        first: 1,
+        second: 2,
+        third: 3,
+        expulsion: 4
+      };
+
+      const currentLevel = warningTypes[type];
+      
+      // إذا كان إنذار ثاني أو أعلى، تحقق من وجود الإنذار السابق
+      if (type === "second") {
+        const hasFirst = studentWarnings.some(w => w.type === "first");
+        if (!hasFirst) {
+          return res.status(400).json({
+            message: "لا يمكن إعطاء إنذار ثاني قبل إعطاء الإنذار الأول",
+            requiredWarning: "الإنذار الأول"
+          });
+        }
+      }
+      
+      if (type === "third") {
+        const hasFirst = studentWarnings.some(w => w.type === "first");
+        const hasSecond = studentWarnings.some(w => w.type === "second");
+        if (!hasFirst || !hasSecond) {
+          return res.status(400).json({
+            message: "لا يمكن إعطاء إنذار ثالث قبل إعطاء الإنذار الأول والثاني",
+            requiredWarnings: ["الإنذار الأول", "الإنذار الثاني"]
+          });
+        }
+      }
+      
+      if (type === "expulsion") {
+        const hasFirst = studentWarnings.some(w => w.type === "first");
+        const hasSecond = studentWarnings.some(w => w.type === "second");
+        const hasThird = studentWarnings.some(w => w.type === "third");
+        if (!hasFirst || !hasSecond || !hasThird) {
+          return res.status(400).json({
+            message: "لا يمكن فصل الطالب قبل إعطائه الإنذارات الثلاثة",
+            requiredWarnings: ["الإنذار الأول", "الإنذار الثاني", "الإنذار الثالث"]
+          });
+        }
+      }
+    }
+
     // إنشاء الإنذار
     const warning = new Warning({
       studentId,

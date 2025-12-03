@@ -2,10 +2,17 @@
 // GroupStatisticsModal - نافذة إحصائيات الحلقة
 // ============================================================================
 
-import React from "react";
-import { Card } from "@/components/UI/Card";
-import { X, Users, AlertTriangle, TrendingUp } from "lucide-react";
-import { getWarningLabel, getWarningIcon } from "../../types/Constans";
+import React, { useMemo } from 'react';
+import { X, Users, AlertTriangle, TrendingUp } from 'lucide-react';
+import { getWarningLabel, getWarningIcon } from '../../types/Constans';
+
+interface StudentDetail {
+  _id: string;
+  name: string;
+  warningsCount: number;
+  warningsOnlyCount: number;
+  existingWarningTypes: string[];
+}
 
 interface GroupStatistics {
   groupName: string;
@@ -23,6 +30,7 @@ interface GroupStatistics {
     name: string;
     warningsCount: number;
   }[];
+  studentsDetails?: StudentDetail[];
 }
 
 interface GroupStatisticsModalProps {
@@ -31,161 +39,322 @@ interface GroupStatisticsModalProps {
   statistics: GroupStatistics | null;
 }
 
-export const GroupStatisticsModal: React.FC<GroupStatisticsModalProps> = ({
+// ✅ Constants extracted outside for performance
+const MEDAL_COLORS = [
+  'from-amber-400 to-yellow-500',
+  'from-gray-300 to-gray-400',
+  'from-orange-400 to-amber-600',
+] as const;
+
+const WARNING_TYPE_KEYS = ['warning', 'first', 'second', 'third', 'expulsion'] as const;
+
+export const GroupStatisticsModal: React.FC<GroupStatisticsModalProps> = React.memo(({
   isOpen,
   onClose,
   statistics,
 }) => {
+  // ✅ Memoize check for top students
+  const hasTopStudents = useMemo(() => 
+    statistics?.topStudents && statistics.topStudents.length > 0,
+    [statistics?.topStudents]
+  );
+
+  // ✅ Memoize check for students details
+  const hasStudentsDetails = useMemo(() => 
+    statistics?.studentsDetails && statistics.studentsDetails.length > 0,
+    [statistics?.studentsDetails]
+  );
+
   if (!isOpen || !statistics) return null;
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in"
-      onClick={onClose}>
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-fade-in"
+      onClick={onClose}
+    >
       <div
-        className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-auto animate-fade-in-up"
+        className="bg-white rounded-[2rem] shadow-2xl border-4 border-emerald-500/20 max-w-[95vw] w-full max-h-[90vh] overflow-auto scrollbar-hide animate-fade-in-up"
         onClick={(e) => e.stopPropagation()}
-        dir="rtl">
+        dir="rtl"
+      >
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-t-3xl flex items-center justify-between">
+        <div className="sticky top-0 bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-6 rounded-t-[2rem] flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
               <TrendingUp className="w-6 h-6" />
             </div>
             <div>
               <h2 className="text-2xl font-bold">إحصائيات الحلقة</h2>
-              <p className="text-blue-100 text-sm">{statistics.groupName}</p>
+              <p className="text-emerald-100 text-sm">{statistics.groupName}</p>
             </div>
           </div>
           <button
             onClick={onClose}
             title="إغلاق"
             aria-label="إغلاق النافذة"
-            className="p-2 hover:bg-white/20 rounded-xl transition-colors duration-200">
+            className="p-2 hover:bg-white/20 rounded-xl transition-colors duration-200"
+          >
             <X className="w-6 h-6" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
-          {/* الإحصائيات الرئيسية */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200" padding="md">
-              <div className="text-center">
-                <Users className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                <p className="text-3xl font-bold text-blue-600">
-                  {statistics.totalStudents}
-                </p>
-                <p className="text-sm text-gray-600">إجمالي الطلاب</p>
-              </div>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200" padding="md">
-              <div className="text-center">
-                <AlertTriangle className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-                <p className="text-3xl font-bold text-purple-600">
-                  {statistics.studentsWithWarnings}
-                </p>
-                <p className="text-sm text-gray-600">طلاب لديهم إنذارات</p>
-              </div>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200" padding="md">
-              <div className="text-center">
-                <span className="text-4xl mx-auto mb-2 block">⚠️</span>
-                <p className="text-3xl font-bold text-amber-600">
-                  {statistics.totalWarnings}
-                </p>
-                <p className="text-sm text-gray-600">إجمالي الإنذارات</p>
-              </div>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200" padding="md">
-              <div className="text-center">
-                <span className="text-4xl mx-auto mb-2 block">✅</span>
-                <p className="text-3xl font-bold text-green-600">
-                  {statistics.totalStudents - statistics.studentsWithWarnings}
-                </p>
-                <p className="text-sm text-gray-600">طلاب بدون إنذارات</p>
-              </div>
-            </Card>
-          </div>
-
-          {/* الإنذارات حسب النوع */}
-          <Card className="bg-gradient-to-br from-gray-50 to-gray-100" padding="lg">
-            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-              <span>📊</span>
-              توزيع الإنذارات حسب النوع
-            </h3>
-            <div className="space-y-3">
-              {Object.entries(statistics.warningsByType).map(([type, count]) => (
-                <div
-                  key={type}
-                  className="flex items-center justify-between p-3 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{getWarningIcon(type)}</span>
-                    <span className="font-medium text-gray-700">
-                      {getWarningLabel(type)}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="bg-blue-100 px-4 py-1 rounded-full">
-                      <span className="font-bold text-blue-600">{count}</span>
-                    </div>
-                    {count > 0 && (
+        <div className="p-6 space-y-6 bg-emerald-50">
+          {/* أكثر الطلاب تنبيهات */}
+          {hasTopStudents && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+              <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <div className="p-2 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-lg">
+                  <AlertTriangle className="w-4 h-4 text-white" />
+                </div>
+                الطلاب الأكثر تنبيهات
+              </h3>
+              <div className="space-y-3">
+                {statistics.topStudents.map((student, index) => {
+                  const medalColor = MEDAL_COLORS[index] || 'from-gray-400 to-gray-500';
+                  return (
+                    <div
+                      key={`${student.name}-${index}`}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-8 h-8 rounded-full bg-gradient-to-br ${medalColor} flex items-center justify-center text-white font-bold text-sm shadow-md`}
+                        >
+                          {index + 1}
+                        </div>
+                        <span className="font-medium text-gray-800">
+                          {student.name}
+                        </span>
+                      </div>
                       <div className="flex items-center gap-2">
-                        <div className="text-xs text-gray-500">
-                          {Math.round((count / statistics.totalWarnings) * 100)}%
+                        <span className="text-sm font-bold text-teal-600">
+                          {student.warningsCount}
+                        </span>
+                        <span className="text-xs text-gray-500">تنبيه</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* توزيع التنبيهات */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg">
+                <TrendingUp className="w-4 h-4 text-white" />
+              </div>
+              توزيع التنبيهات حسب النوع
+            </h3>
+            <div className="space-y-4">
+              {WARNING_TYPE_KEYS.map((type) => {
+                  const count = statistics.warningsByType[type];
+                  const percentage =
+                    statistics.totalWarnings > 0
+                      ? (count / statistics.totalWarnings) * 100
+                      : 0;
+                  const colors = {
+                    warning: {
+                      bg: 'bg-amber-500',
+                      light: 'bg-amber-100',
+                      text: 'text-amber-700',
+                    },
+                    first: {
+                      bg: 'bg-yellow-500',
+                      light: 'bg-yellow-100',
+                      text: 'text-yellow-700',
+                    },
+                    second: {
+                      bg: 'bg-orange-500',
+                      light: 'bg-orange-100',
+                      text: 'text-orange-700',
+                    },
+                    third: {
+                      bg: 'bg-rose-500',
+                      light: 'bg-rose-100',
+                      text: 'text-rose-700',
+                    },
+                    expulsion: {
+                      bg: 'bg-red-600',
+                      light: 'bg-red-100',
+                      text: 'text-red-700',
+                    },
+                  };
+                  const color = colors[type];
+
+                  return (
+                    <div key={type} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl">
+                            {getWarningIcon(type)}
+                          </span>
+                          <span className="text-sm font-medium text-gray-700">
+                            {getWarningLabel(type)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-sm font-bold ${color.text}`}>
+                            {count}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            ({Math.round(percentage)}%)
+                          </span>
                         </div>
                       </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* أكثر الطلاب إنذارات */}
-          {statistics.topStudents.length > 0 && (
-            <Card className="bg-gradient-to-br from-red-50 to-orange-100" padding="lg">
-              <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <span>🎯</span>
-                الطلاب الأكثر إنذارات
-              </h3>
-              <div className="space-y-2">
-                {statistics.topStudents.map((student, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3 bg-white rounded-xl shadow-sm">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
-                        {index + 1}
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full ${color.bg} rounded-full transition-all duration-500`}
+                          style={{ width: `${percentage}%` }}
+                        />
                       </div>
-                      <span className="font-medium text-gray-700">
-                        {student.name}
-                      </span>
                     </div>
-                    <div className="bg-red-100 px-4 py-1 rounded-full">
-                      <span className="font-bold text-red-600">
-                        {student.warningsCount} إنذار
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          )}
-        </div>
+                  );
+                }
+              )}
+            </div>
+          </div>
 
-        {/* Footer */}
-        <div className="sticky bottom-0 bg-gray-50 p-4 rounded-b-3xl border-t border-gray-200">
-          <button
-            onClick={onClose}
-            className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-bold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl">
-            إغلاق
-          </button>
+          {/* تفاصيل الطلاب - جدول إحصائي */}
+          {hasStudentsDetails && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-4">
+                  <h3 className="text-lg font-bold flex items-center gap-2">
+                    <Users className="w-5 h-5" />
+                    تفاصيل الطلاب والإنذارات
+                  </h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-emerald-50">
+                      <tr>
+                        <th className="text-right p-4 text-sm font-bold text-gray-700 border-b border-gray-200">
+                          #
+                        </th>
+                        <th className="text-right p-4 text-sm font-bold text-gray-700 border-b border-gray-200">
+                          اسم الطالب
+                        </th>
+                        <th className="text-center p-4 text-sm font-bold text-gray-700 border-b border-gray-200">
+                          تنبيهات
+                        </th>
+                        <th className="text-center p-4 text-sm font-bold text-gray-700 border-b border-gray-200">
+                          إنذار أول
+                        </th>
+                        <th className="text-center p-4 text-sm font-bold text-gray-700 border-b border-gray-200">
+                          إنذار ثاني
+                        </th>
+                        <th className="text-center p-4 text-sm font-bold text-gray-700 border-b border-gray-200">
+                          إنذار ثالث
+                        </th>
+                        <th className="text-center p-4 text-sm font-bold text-gray-700 border-b border-gray-200">
+                          فصل
+                        </th>
+                        <th className="text-center p-4 text-sm font-bold text-gray-700 border-b border-gray-200">
+                          المجموع
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {statistics.studentsDetails!.map((student, index) => (
+                        <tr
+                          key={student._id}
+                          className="hover:bg-emerald-50/50 transition-colors"
+                        >
+                          <td className="p-4 text-sm text-gray-600 border-b border-gray-100">
+                            {index + 1}
+                          </td>
+                          <td className="p-4 text-sm font-medium text-gray-800 border-b border-gray-100">
+                            {student.name}
+                          </td>
+                          <td className="p-4 text-center border-b border-gray-100">
+                            <span
+                              className={`inline-flex items-center justify-center w-8 h-8 rounded-lg font-bold text-sm ${
+                                student.warningsOnlyCount > 0
+                                  ? 'bg-amber-100 text-amber-700'
+                                  : 'bg-gray-100 text-gray-400'
+                              }`}
+                            >
+                              {student.warningsOnlyCount || 0}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center border-b border-gray-100">
+                            <span
+                              className={`inline-flex items-center justify-center w-8 h-8 rounded-lg font-bold text-sm ${
+                                student.existingWarningTypes?.includes('first')
+                                  ? 'bg-yellow-100 text-yellow-700'
+                                  : 'bg-gray-100 text-gray-400'
+                              }`}
+                            >
+                              {student.existingWarningTypes?.includes('first')
+                                ? '✓'
+                                : '-'}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center border-b border-gray-100">
+                            <span
+                              className={`inline-flex items-center justify-center w-8 h-8 rounded-lg font-bold text-sm ${
+                                student.existingWarningTypes?.includes('second')
+                                  ? 'bg-orange-100 text-orange-700'
+                                  : 'bg-gray-100 text-gray-400'
+                              }`}
+                            >
+                              {student.existingWarningTypes?.includes('second')
+                                ? '✓'
+                                : '-'}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center border-b border-gray-100">
+                            <span
+                              className={`inline-flex items-center justify-center w-8 h-8 rounded-lg font-bold text-sm ${
+                                student.existingWarningTypes?.includes('third')
+                                  ? 'bg-rose-100 text-rose-700'
+                                  : 'bg-gray-100 text-gray-400'
+                              }`}
+                            >
+                              {student.existingWarningTypes?.includes('third')
+                                ? '✓'
+                                : '-'}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center border-b border-gray-100">
+                            <span
+                              className={`inline-flex items-center justify-center w-8 h-8 rounded-lg font-bold text-sm ${
+                                student.existingWarningTypes?.includes(
+                                  'expulsion'
+                                )
+                                  ? 'bg-red-100 text-red-700'
+                                  : 'bg-gray-100 text-gray-400'
+                              }`}
+                            >
+                              {student.existingWarningTypes?.includes(
+                                'expulsion'
+                              )
+                                ? '✓'
+                                : '-'}
+                            </span>
+                          </td>
+                          <td className="p-4 text-center border-b border-gray-100">
+                            <span className="inline-flex items-center justify-center w-10 h-8 rounded-lg font-bold text-sm bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-sm">
+                              {student.warningsCount || 0}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
         </div>
       </div>
     </div>
   );
-};
+}, (prevProps, nextProps) => {
+  // ✅ Custom comparison for performance
+  if (prevProps.isOpen !== nextProps.isOpen) return false;
+  if (prevProps.statistics?.groupName !== nextProps.statistics?.groupName) return false;
+  if (prevProps.statistics?.totalWarnings !== nextProps.statistics?.totalWarnings) return false;
+  return true;
+});
