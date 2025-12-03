@@ -74,7 +74,7 @@ const MarksBarChart = ({
         },
         callbacks: {
           label: function (context) {
-            return `المعدل: ${context.parsed.y.toFixed(1)} من 100`;
+            return `المعدل: ${context.parsed.y !== null && context.parsed.y !== undefined ? context.parsed.y.toFixed(1) : "N/A"} من 100`;
           },
         },
       },

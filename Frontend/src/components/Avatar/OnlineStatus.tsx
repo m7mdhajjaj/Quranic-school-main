@@ -1,4 +1,5 @@
 import React from 'react';
+import { useUserStatus } from '@/hooks/useUserStatus';
 
 interface OnlineStatusProps {
   isOnline?: boolean;
@@ -20,8 +21,16 @@ export const OnlineStatus: React.FC<OnlineStatusProps> = ({
   showPing = true,
   user
 }) => {
-  // أولوية تحديد الحالة: user.isActive > externalIsOnline > افتراضي true
-  const isOnline = user?.isActive !== undefined ? user.isActive : (externalIsOnline ?? true);
+  // الحصول على حالة المستخدم من Context
+  const { getUserStatus } = useUserStatus();
+  const userStatus = user?._id ? getUserStatus(user._id) : null;
+
+  // أولوية تحديد الحالة: 
+  // 1. من UserStatusContext (real-time)
+  // 2. من user.isActive (من Backend)
+  // 3. من externalIsOnline prop
+  // 4. افتراضي false
+  const isOnline = userStatus?.isActive ?? user?.isActive ?? externalIsOnline ?? false;
 
   const sizeClasses = {
     xs: 'w-2 h-2',
@@ -47,9 +56,9 @@ export const OnlineStatus: React.FC<OnlineStatusProps> = ({
 
   const statusColor = isOnline 
     ? 'bg-green-500 shadow-green-500/50' 
-    : 'bg-gray-400 shadow-gray-400/50';
+    : 'bg-red-500 shadow-red-500/50';
 
-  const innerGlowColor = isOnline ? 'bg-green-400' : 'bg-gray-300';
+  const innerGlowColor = isOnline ? 'bg-green-400' : 'bg-red-400';
 
   return (
     <div 

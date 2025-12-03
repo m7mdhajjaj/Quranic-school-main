@@ -55,6 +55,22 @@ exports.deleteWarning = async (req, res) => {
     if (io) {
       io.to("warnings").emit("warningDeleted", { warningId });
       console.log(`🗑️ Warning deleted event emitted to warnings room`);
+      
+      // إرسال تحديث الإحصائيات
+      io.to("warnings").emit("statisticsUpdated", {
+        trigger: "warningDeleted",
+        timestamp: new Date().toISOString()
+      });
+      
+      // إذا تمت إعادة طالب مفصول، أرسل تحديث حالة الطالب
+      if (warning.type === "expulsion") {
+        io.to("warnings").emit("studentStatusUpdated", {
+          studentId: warning.studentId.toString(),
+          status: "restored",
+          timestamp: new Date().toISOString()
+        });
+        console.log(`👤 Student status update emitted`);
+      }
     }
 
     res.json({

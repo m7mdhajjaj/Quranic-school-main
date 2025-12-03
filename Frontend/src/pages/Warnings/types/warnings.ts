@@ -35,7 +35,13 @@ export interface Student {
   _id: string;
   firstName: string;
   lastName: string;
-  warningsCount?: number;
+  isActive?: boolean; // حالة الطالب (أونلاين/أوفلاين)
+  avatar?: {
+    url?: string;
+    publicId?: string;
+  };
+  warningsCount?: number; // إجمالي كل الإنذارات
+  warningsOnlyCount?: number; // عدد التنبيهات فقط
   existingWarningTypes?: string[];
   allWarnings?: Warning[];
 }
@@ -69,10 +75,7 @@ export interface TeacherViewProps {
   selectedGroup?: Group | null;
   onGroupSelect: (group: Group) => void;
   onBack?: () => void;
-  onShowStatistics: () => void;
   statistics: TeacherStatistics | null;
-  showStatistics: boolean;
-  onCloseStatistics: () => void;
   onGiveWarning?: (student: Student, type: WarningType) => void;
   onDeleteWarning?: (student: Student, type: string) => void;
   onDeleteWarningById?: (warningId: string, student: Student) => void;
@@ -103,7 +106,6 @@ export interface WarningBadgeProps {
 
 export interface StatisticsPanelProps {
   statistics: TeacherStatistics;
-  onClose: () => void;
 }
 
 export interface GiveWarningModalProps {
@@ -121,4 +123,35 @@ export interface DeleteWarningModalProps {
   warningType: string;
   warningId?: string;
   onConfirm: () => void;
+}
+
+// ============================================================================
+// Hook Return Types
+// ============================================================================
+
+export interface UseWarningsDataReturn {
+  user: any;
+  groups: Group[];
+  warnings: Warning[];
+  loading: boolean;
+  isTeacher: boolean;
+  isStudent: boolean;
+  refetchData: () => void;
+  fetchGroupStudentsWarnings: (group: Group) => Promise<Group>;
+  setWarnings: React.Dispatch<React.SetStateAction<Warning[]>>;
+}
+
+export interface UseWarningsActionsReturn {
+  statistics: TeacherStatistics | null;
+  loadingStatistics: boolean;
+  fetchTeacherStatistics: () => Promise<TeacherStatistics | null>;
+  giveWarning: (
+    student: Student,
+    type: WarningType,
+    reason: string,
+    groupName: string,
+    teacherId: string
+  ) => Promise<boolean>;
+  deleteWarning: (student: Student, warningType: string) => Promise<boolean>;
+  deleteWarningById: (warningId: string) => Promise<boolean>;
 }

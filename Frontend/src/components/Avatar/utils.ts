@@ -9,14 +9,17 @@ export type NormalizedGender = 'ذكر' | 'أنثى' | 'male';
 /**
  * تطبيع قيمة الجنس لدعم القيم العربية والإنجليزية
  */
-export const normalizeGender = (gender?: string | GenderType): NormalizedGender => {
+export const normalizeGender = (
+  gender?: string | GenderType
+): NormalizedGender => {
   if (!gender) return 'male';
-  
+
   const normalized = gender.toLowerCase().trim();
-  
+
   if (normalized === 'male' || normalized === 'ذكر') return 'ذكر';
-  if (normalized === 'female' || normalized === 'أنثى' || normalized === 'انثى') return 'أنثى';
-  
+  if (normalized === 'female' || normalized === 'أنثى' || normalized === 'انثى')
+    return 'أنثى';
+
   return 'male';
 };
 
@@ -68,7 +71,7 @@ export const getUserInfo = (
   const initials = getUserInitials(userName);
   const userGender = user?.gender || externalGender;
   const gender = normalizeGender(userGender);
-  
+
   return { userName, initials, gender };
 };
 

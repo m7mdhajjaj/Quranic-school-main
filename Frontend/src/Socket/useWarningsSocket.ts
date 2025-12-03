@@ -3,11 +3,13 @@ import { socketManager } from "./SocketManager";
 
 /**
  * Hook لإدارة Socket.IO للإنذارات (Warnings)
- * يتيح الاستماع للتحديثات الفورية عند إعطاء إنذار جديد
+ * يتيح الاستماع للتحديثات الفورية لجميع التغييرات في نظام الإنذارات
  */
 export const useWarningsSocket = (
   onWarningCreated?: (warning: any) => void,
-  onWarningDeleted?: (warningId: string) => void
+  onWarningDeleted?: (warningId: string) => void,
+  onStatisticsUpdated?: (statistics: any) => void,
+  onStudentStatusUpdated?: (data: { studentId: string; status: any }) => void
 ) => {
   useEffect(() => {
     const socket = socketManager.getSocket();
@@ -36,18 +38,38 @@ export const useWarningsSocket = (
       }
     };
 
+    // الاستماع لتحديث الإحصائيات
+    const handleStatisticsUpdated = (statistics: any) => {
+      console.log("📊 Statistics updated:", statistics);
+      if (onStatisticsUpdated) {
+        onStatisticsUpdated(statistics);
+      }
+    };
+
+    // الاستماع لتحديث حالة الطالب
+    const handleStudentStatusUpdated = (data: { studentId: string; status: any }) => {
+      console.log("👤 Student status updated:", data);
+      if (onStudentStatusUpdated) {
+        onStudentStatusUpdated(data);
+      }
+    };
+
     // تسجيل المستمعين
     socket.on("warningCreated", handleWarningCreated);
     socket.on("warningDeleted", handleWarningDeleted);
+    socket.on("statisticsUpdated", handleStatisticsUpdated);
+    socket.on("studentStatusUpdated", handleStudentStatusUpdated);
 
     // تنظيف عند إزالة المكون
     return () => {
       socket.emit("leaveWarnings", { timestamp: new Date().toISOString() });
       socket.off("warningCreated", handleWarningCreated);
       socket.off("warningDeleted", handleWarningDeleted);
+      socket.off("statisticsUpdated", handleStatisticsUpdated);
+      socket.off("studentStatusUpdated", handleStudentStatusUpdated);
       console.log("🔌 Left warnings room");
     };
-  }, [onWarningCreated, onWarningDeleted]);
+  }, [onWarningCreated, onWarningDeleted, onStatisticsUpdated, onStudentStatusUpdated]);
 
   return socketManager.getSocket();
 };

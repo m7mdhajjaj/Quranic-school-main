@@ -2,8 +2,18 @@
 // Components Index - تصدير جميع المكونات
 // ============================================================================
 
-export { GroupCard } from "./GroupCard";
-export { StudentCard } from "./StudentCard";
-export { StatisticsPanel } from "./StatisticsPanel";
-export { WarningBadge } from "./WarningBadge";
-export { WarningsPageHeader } from "./WarningsPageHeader";
+// Statistics Components
+export { StatisticsPanel } from "./statistics/StatisticsPanel";
+export { GroupStatisticsModal } from "./statistics/GroupStatisticsModal";
+
+// Card Components
+export { GroupCard } from "./cards/GroupCard";
+export { StudentCard } from "./cards/StudentCard";
+
+// View Components
+export { TeacherView } from "./views/TeacherView";
+export { StudentView } from "./views/StudentView";
+
+// Shared Components
+export { WarningBadge } from "./shared/WarningBadge";
+export { WarningsPageHeader } from "./shared/WarningsPageHeader";

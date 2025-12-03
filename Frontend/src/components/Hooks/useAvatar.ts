@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchAvatarBlobUrl, getUserEndpoint } from "@/Api/profileApi";
+import { fetchAvatarBlobUrl, getUserEndpoint } from '@/Api/profileApi';
 
 export interface UseAvatarOptions {
   userId?: string;

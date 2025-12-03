@@ -104,6 +104,13 @@ exports.createWarning = async (req, res) => {
     if (io) {
       io.to("warnings").emit("warningCreated", populatedWarning);
       console.log(`⚠️ Warning created event emitted to warnings room`);
+      
+      // إرسال تحديث الإحصائيات أيضاً
+      io.to("warnings").emit("statisticsUpdated", {
+        trigger: "warningCreated",
+        timestamp: new Date().toISOString()
+      });
+      console.log(`📊 Statistics update triggered`);
     }
 
     res.status(201).json(populatedWarning);

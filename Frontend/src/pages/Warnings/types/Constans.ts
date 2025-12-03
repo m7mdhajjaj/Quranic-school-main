@@ -2,7 +2,7 @@
 // Warning Utils - دوال مساعدة للإنذارات
 // ============================================================================
 
-import type { WarningType } from "../types/warnings";
+import type { WarningType } from "./warnings";
 
 /**
  * الحصول على عنوان الإنذار

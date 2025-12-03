@@ -2,8 +2,8 @@
 // WarningBadge Component - شارة الإنذار
 // ============================================================================
 
-import type { WarningBadgeProps } from "../types/warnings";
-import { getWarningLabel, getWarningIcon } from "../utils/warningHelpers";
+import type { WarningBadgeProps } from "../../types/warnings";
+import { getWarningLabel, getWarningIcon } from "../../types/Constans";
 import { Badge } from "@/components/UI/Badge";
 
 export const WarningBadge: React.FC<WarningBadgeProps> = ({

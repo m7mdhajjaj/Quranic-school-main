@@ -8,13 +8,16 @@ import type {
   Student,
   WarningType,
   TeacherStatistics,
+  UseWarningsActionsReturn,
 } from "../types/warnings";
 import {
   showSuccessToast,
   showErrorToast,
 } from "@/components/utils/toastUtils";
 
-export const useWarningsActions = (refetchData: () => void) => {
+export const useWarningsActions = (
+  refetchData: () => void
+): UseWarningsActionsReturn => {
   const [loadingStatistics, setLoadingStatistics] = useState(false);
   const [statistics, setStatistics] = useState<TeacherStatistics | null>(null);
 

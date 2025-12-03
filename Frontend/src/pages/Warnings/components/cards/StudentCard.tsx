@@ -2,11 +2,11 @@
 // StudentCard Component - بطاقة الطالب
 // ============================================================================
 
-import type { StudentCardProps, WarningType } from '../types/warnings';
+import type { StudentCardProps, WarningType } from '../../types/warnings';
 import { Card } from '@/components/UI/Card';
 import Avatar from '@/components/Avatar/Avatar';
 import { Button } from '@/components/UI/Button';
-import { WarningBadge } from './WarningBadge';
+import { WarningBadge } from '../shared/WarningBadge';
 
 export const StudentCard: React.FC<StudentCardProps> = ({
   student,
@@ -28,9 +28,8 @@ export const StudentCard: React.FC<StudentCardProps> = ({
     return student.existingWarningTypes?.includes(type);
   };
 
-  // الحصول على عدد التنبيهات
-  const warningsCount =
-    student.allWarnings?.filter((w) => w.type === 'warning').length || 0;
+  // الحصول على عدد التنبيهات من Backend مباشرة
+  const warningsCount = student.warningsOnlyCount || 0;
 
   // أسماء الأزرار
   const buttonLabels: Record<WarningType, string> = {
@@ -42,14 +41,22 @@ export const StudentCard: React.FC<StudentCardProps> = ({
   };
 
   return (
-    <Card className="hover:shadow-2xl transition-all duration-300" padding="lg">
-      <div className="flex items-center justify-between flex-wrap gap-4">
+    <Card className="group hover:shadow-2xl transition-all duration-300 bg-gradient-to-br from-white to-gray-50/50 border border-gray-100 hover:border-blue-200 relative overflow-hidden" padding="lg">
+      {/* Background Animation */}
+      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/3 to-purple-500/3 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+      
+      <div className="flex items-center justify-between flex-wrap gap-4 relative z-10">
         {/* معلومات الطالب */}
         <div className="flex items-center gap-4 flex-1 min-w-[200px]">
-          <Avatar user={student} size="lg" />
+          <Avatar 
+            user={student} 
+            size="lg" 
+            showStatus={true}
+            statusSize="lg"
+          />
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2 flex-wrap">
-              <h3 className="text-xl font-bold text-gray-800">
+              <h3 className="text-xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent group-hover:from-blue-600 group-hover:to-purple-600 transition-all duration-300">
                 {student.firstName} {student.lastName}
               </h3>
 

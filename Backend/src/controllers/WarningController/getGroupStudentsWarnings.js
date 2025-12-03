@@ -58,11 +58,17 @@ exports.getGroupWithStudentsWarnings = async (req, res) => {
         .map((w) => w.type)
         .filter((type) => type !== "warning");
 
+      // حساب عدد التنبيهات فقط
+      const warningsOnlyCount = studentWarnings.filter((w) => w.type === "warning").length;
+
       return {
         _id: student._id,
         firstName: student.firstName,
         lastName: student.lastName,
-        warningsCount: studentWarnings.length,
+        isActive: student.isActive || false, // حالة الطالب (أونلاين/أوفلاين)
+        avatar: student.avatar, // صورة الطالب
+        warningsCount: studentWarnings.length, // إجمالي كل الإنذارات
+        warningsOnlyCount, // عدد التنبيهات فقط
         existingWarningTypes: existingTypes,
         allWarnings: studentWarnings,
       };

@@ -2,74 +2,81 @@
 // StatisticsPanel Component - لوحة الإحصائيات
 // ============================================================================
 
-import type { StatisticsPanelProps } from '../types/warnings';
+import type { StatisticsPanelProps } from '../../types/warnings';
 import { Card } from '@/components/UI/Card';
 import { StatCard } from '@/components/UI/StatCard';
 import {
   getWarningLabel,
   getWarningIcon,
   formatArabicDate,
-} from '../utils/warningHelpers';
+} from '../../types/Constans';
 import { BarChart3, Users, AlertTriangle, XCircle } from 'lucide-react';
+import '../../styles/animations.css';
 
 export const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
   statistics,
-  onClose,
 }) => {
   return (
-    <Card className="mb-8 border-2 border-blue-200 shadow-2xl" padding="lg">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-          <BarChart3 className="w-6 h-6 text-blue-600" />
-          📊 إحصائيات الإنذارات
-        </h2>
-        <button
-          onClick={onClose}
-          className="text-gray-500 hover:text-gray-700 text-2xl hover:bg-gray-100 rounded-full w-8 h-8 flex items-center justify-center transition-colors"
-          aria-label="إغلاق"
-        >
-          ✕
-        </button>
-      </div>
+    <Card className="mb-8 bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 border-2 border-blue-200/50 shadow-2xl backdrop-blur-sm relative overflow-hidden" padding="lg">
+      {/* Animated Background */}
+      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 animate-pulse"></div>
+      
+      <div className="relative z-10">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl shadow-lg">
+              <BarChart3 className="w-6 h-6 text-white" />
+            </div>
+            📊 إحصائيات الإنذارات
+          </h2>
+        </div>
 
-      {/* الإحصائيات الرئيسية */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatCard
-          title="إجمالي الإنذارات"
-          value={statistics.totalWarnings}
-          icon={<AlertTriangle className="w-6 h-6" />}
-          color="blue"
-        />
+        {/* الإحصائيات الرئيسية */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div className="animate-fade-in-up animate-delay-100">
+            <StatCard
+              title="إجمالي الإنذارات"
+              value={statistics.totalWarnings}
+              icon={<AlertTriangle className="w-6 h-6" />}
+              color="blue"
+            />
+          </div>
 
-        <StatCard
-          title="طلاب لديهم إنذارات"
-          value={statistics.studentsWithWarnings}
-          icon={<Users className="w-6 h-6" />}
-          color="purple"
-        />
+          <div className="animate-fade-in-up animate-delay-200">
+            <StatCard
+              title="طلاب لديهم إنذارات"
+              value={statistics.studentsWithWarnings}
+              icon={<Users className="w-6 h-6" />}
+              color="purple"
+            />
+          </div>
 
-        <StatCard
-          title="تنبيهات"
-          value={statistics.warningsCount.warning}
-          icon={<span className="text-2xl">⚠️</span>}
-          color="amber"
-        />
+          <div className="animate-fade-in-up animate-delay-300">
+            <StatCard
+              title="تنبيهات"
+              value={statistics.warningsCount.warning}
+              icon={<span className="text-2xl">⚠️</span>}
+              color="amber"
+            />
+          </div>
 
-        <StatCard
-          title="طلاب مفصولين"
-          value={statistics.expelledStudents}
-          icon={<XCircle className="w-6 h-6" />}
-          color="red"
-        />
-      </div>
+          <div className="animate-fade-in-up animate-delay-400">
+            <StatCard
+              title="طلاب مفصولين"
+              value={statistics.expelledStudents}
+              icon={<XCircle className="w-6 h-6" />}
+              color="red"
+            />
+          </div>
+        </div>
 
-      {/* توزيع الإنذارات */}
-      <div className="grid md:grid-cols-2 gap-6 mb-6">
-        {/* الإنذارات حسب النوع */}
-        <Card variant="elevated" padding="md" className="bg-gray-50">
-          <h3 className="text-lg font-bold text-gray-800 mb-3">
-            الإنذارات حسب النوع
-          </h3>
+        {/* توزيع الإنذارات */}
+        <div className="grid md:grid-cols-2 gap-6 mb-6">
+          {/* الإنذارات حسب النوع */}
+          <Card variant="elevated" padding="md" className="bg-gradient-to-br from-white to-blue-50/50 border border-blue-100 hover:shadow-xl transition-shadow duration-300">
+            <h3 className="text-lg font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-3">
+              الإنذارات حسب النوع
+            </h3>
           <div className="space-y-2">
             {Object.entries(statistics.warningsCount).map(([type, count]) => (
               <div key={type} className="flex justify-between items-center">
@@ -83,11 +90,11 @@ export const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
           </div>
         </Card>
 
-        {/* أكثر الأسباب تكراراً */}
-        <Card variant="elevated" padding="md" className="bg-gray-50">
-          <h3 className="text-lg font-bold text-gray-800 mb-3">
-            أكثر الأسباب تكراراً
-          </h3>
+          {/* أكثر الأسباب تكراراً */}
+          <Card variant="elevated" padding="md" className="bg-gradient-to-br from-white to-purple-50/50 border border-purple-100 hover:shadow-xl transition-shadow duration-300">
+            <h3 className="text-lg font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent mb-3">
+              أكثر الأسباب تكراراً
+            </h3>
           <div className="space-y-2">
             {statistics.topReasons.length > 0 ? (
               statistics.topReasons.map((reason, index) => (
@@ -167,6 +174,7 @@ export const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
           )}
         </div>
       </Card>
+      </div>
     </Card>
   );
 };
