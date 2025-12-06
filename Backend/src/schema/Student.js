@@ -76,7 +76,8 @@ const studentSchema = new mongoose.Schema(
     },
     group: {
       type: String,
-      required: [true, "اسم الحلقة مطلوب"],
+      required: false, // السماح بـ null للطلاب المفصولين مؤقتاً
+      default: null,
     },
 
     email: {

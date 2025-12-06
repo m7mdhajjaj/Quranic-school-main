@@ -16,15 +16,31 @@ const getUserStatus = async (req, res) => {
   try {
     const userId = req.params.id;
 
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "معرف المستخدم مطلوب",
+      });
+    }
+
+    // Validate ObjectId format
+    const mongoose = require('mongoose');
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: "معرف المستخدم غير صالح",
+      });
+    }
+
     // Try to find in students first, then teachers, then admins
-    let user = await Student.findById(userId).select("isActive lastSeen");
+    let user = await Student.findById(userId).select("isActive lastSeen").lean();
 
     if (!user) {
-      user = await Teacher.findById(userId).select("isActive lastSeen");
+      user = await Teacher.findById(userId).select("isActive lastSeen").lean();
     }
 
     if (!user) {
-      user = await Admin.findById(userId).select("isActive lastSeen");
+      user = await Admin.findById(userId).select("isActive lastSeen").lean();
     }
 
     if (!user) {
@@ -36,14 +52,17 @@ const getUserStatus = async (req, res) => {
 
     res.json({
       success: true,
-      isActive: user.isActive || false,
+      isActive: user.isActive !== undefined ? user.isActive : true,
       lastSeen: user.lastSeen || null,
     });
   } catch (error) {
     console.error("Error fetching user status:", error);
+    console.error("Error details:", error.message);
+    console.error("Stack:", error.stack);
     res.status(500).json({
       success: false,
       message: "خطأ في جلب حالة المستخدم",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };

@@ -3,8 +3,15 @@
 // ============================================================================
 
 const Warning = require("../../schema/Warning");
-const Student = require("../../schema/Student");
-const Group = require("../../schema/Group");
+const {
+  validateBasicInput,
+  findGroup,
+  verifyStudentAndTeacher,
+  getStudentOriginalGroup,
+  checkDuplicateWarning,
+  validateWarningSequence,
+  suspendStudentFromGroup,
+} = require("./helpers");
 
 /**
  * إنشاء إنذار جديد (للمعلم فقط)
@@ -12,132 +19,89 @@ const Group = require("../../schema/Group");
  */
 exports.createWarning = async (req, res) => {
   try {
+    console.log("📝 Creating warning - Full request body:", req.body);
+    console.log("📝 Creating warning with data:", {
+      studentId: req.body.studentId,
+      teacherId: req.body.teacherId,
+      groupId: req.body.groupId,
+      groupName: req.body.groupName,
+      type: req.body.type,
+      reason: req.body.reason ? req.body.reason.substring(0, 50) + "..." : "N/A"
+    });
+
     const { studentId, teacherId, groupId, groupName, type, reason } = req.body;
 
-    // البحث عن الحلقة إما بالـ ID أو بالاسم
-    let group;
-    if (groupId) {
-      group = await Group.findById(groupId);
-    } else if (groupName) {
-      group = await Group.findOne({ name: groupName });
+    // التحقق من المدخلات الأساسية
+    const inputError = validateBasicInput(studentId, teacherId, type, reason);
+    if (inputError) {
+      console.error("❌ Missing required fields");
+      return res.status(400).json(inputError);
     }
 
-    if (!group) {
-      return res.status(404).json({ message: "الحلقة غير موجودة" });
+    // البحث عن الحلقة
+    const groupResult = await findGroup(groupId, groupName);
+    if (groupResult.error) {
+      return res.status(groupResult.error.includes("قاعدة البيانات") ? 500 : 404).json({ 
+        message: groupResult.error,
+        searchedBy: groupResult.searchedBy,
+        searchedValue: groupResult.searchedValue
+      });
     }
+    const { group } = groupResult;
 
-    // التحقق من أن الطالب موجود
-    const student = await Student.findById(studentId);
-    if (!student) {
-      return res.status(404).json({ message: "الطالب غير موجود" });
+    // التحقق من وجود الطالب والمعلم
+    const verifyResult = await verifyStudentAndTeacher(studentId, teacherId);
+    if (verifyResult.error) {
+      return res.status(404).json({ message: verifyResult.error });
     }
+    const { student, teacher } = verifyResult;
 
-    // التحقق من أن الطالب في هذه الحلقة (مقارنة بالاسم)
-    if (student.group !== group.name) {
+    // الحصول على الحلقة الأصلية للطالب
+    const studentOriginalGroup = await getStudentOriginalGroup(student, studentId);
+
+    // التحقق من أن الطالب تابع لهذه الحلقة
+    if (studentOriginalGroup !== group.name) {
       return res.status(400).json({
         message: "الطالب غير مسجل في هذه الحلقة",
-        studentGroup: student.group,
+        studentGroup: studentOriginalGroup || "لا يوجد",
         expectedGroup: group.name,
       });
     }
 
-    // التحقق من عدم وجود إنذار سابق من نفس النوع (ما عدا التنبيه)
-    if (type !== "warning") {
-      const existingWarning = await Warning.findOne({
-        studentId,
-        type,
-      });
-
-      if (existingWarning) {
-        const warningTypeNames = {
-          first: "الإنذار الأول",
-          second: "الإنذار الثاني",
-          third: "الإنذار الثالث",
-          expulsion: "الفصل النهائي",
-        };
-
-        return res.status(400).json({
-          message: `الطالب حاصل على ${warningTypeNames[type]} مسبقاً. لا يمكن إعطاء نفس الإنذار مرتين.`,
-          existingWarning: {
-            type: existingWarning.type,
-            date: existingWarning.createdAt,
-            reason: existingWarning.reason,
-          },
-        });
-      }
+    // التحقق من عدم وجود إنذار سابق من نفس النوع
+    const duplicateError = await checkDuplicateWarning(studentId, type);
+    if (duplicateError) {
+      return res.status(400).json(duplicateError);
     }
 
-    // التحقق من تسلسل الإنذارات - يجب أن يكون هناك ترتيب
-    if (type !== "warning") {
-      const studentWarnings = await Warning.find({ studentId });
-      const warningTypes = {
-        first: 1,
-        second: 2,
-        third: 3,
-        expulsion: 4
-      };
-
-      const currentLevel = warningTypes[type];
-      
-      // إذا كان إنذار ثاني أو أعلى، تحقق من وجود الإنذار السابق
-      if (type === "second") {
-        const hasFirst = studentWarnings.some(w => w.type === "first");
-        if (!hasFirst) {
-          return res.status(400).json({
-            message: "لا يمكن إعطاء إنذار ثاني قبل إعطاء الإنذار الأول",
-            requiredWarning: "الإنذار الأول"
-          });
-        }
-      }
-      
-      if (type === "third") {
-        const hasFirst = studentWarnings.some(w => w.type === "first");
-        const hasSecond = studentWarnings.some(w => w.type === "second");
-        if (!hasFirst || !hasSecond) {
-          return res.status(400).json({
-            message: "لا يمكن إعطاء إنذار ثالث قبل إعطاء الإنذار الأول والثاني",
-            requiredWarnings: ["الإنذار الأول", "الإنذار الثاني"]
-          });
-        }
-      }
-      
-      if (type === "expulsion") {
-        const hasFirst = studentWarnings.some(w => w.type === "first");
-        const hasSecond = studentWarnings.some(w => w.type === "second");
-        const hasThird = studentWarnings.some(w => w.type === "third");
-        if (!hasFirst || !hasSecond || !hasThird) {
-          return res.status(400).json({
-            message: "لا يمكن فصل الطالب قبل إعطائه الإنذارات الثلاثة",
-            requiredWarnings: ["الإنذار الأول", "الإنذار الثاني", "الإنذار الثالث"]
-          });
-        }
-      }
+    // التحقق من تسلسل الإنذارات
+    const sequenceError = await validateWarningSequence(studentId, type);
+    if (sequenceError) {
+      return res.status(400).json(sequenceError);
     }
 
     // إنشاء الإنذار
+    console.log(`📝 Creating warning document...`);
     const warning = new Warning({
       studentId,
       teacherId,
       groupId: group._id, // استخدم الـ ID الحقيقي للحلقة
+      originalGroup: studentOriginalGroup, // حفظ الحلقة الأصلية (سواء كان الطالب في حلقة أو مفصول)
       type,
       reason,
     });
 
-    await warning.save();
+    try {
+      await warning.save();
+      console.log(`✅ Warning saved successfully: ${warning._id}`);
+    } catch (saveError) {
+      console.error("❌ Error saving warning:", saveError);
+      throw saveError; // Re-throw to be caught by outer catch
+    }
 
-    // إذا كان فصل نهائي، قم بإزالة الطالب من الحلقة
-    if (type === "expulsion") {
-      student.group = null;
-      student.isActive = false;
-      await student.save();
-
-      // إزالة الطالب من قائمة طلاب الحلقة إذا كانت موجودة
-      if (group.students && Array.isArray(group.students)) {
-        group.students = group.students.filter(
-          (id) => id.toString() !== studentId
-        );
-        await group.save();
-      }
+    // إذا كان فصل (مؤقت أو دائم)، قم بإزالة الطالب من الحلقة
+    if (["first", "second", "third", "expulsion"].includes(type)) {
+      await suspendStudentFromGroup(student, group, type, studentOriginalGroup);
     }
 
     // إرجاع الإنذار مع البيانات المرتبطة
@@ -146,23 +110,25 @@ exports.createWarning = async (req, res) => {
       .populate("teacherId", "firstName lastName")
       .populate("groupId", "name");
 
-    // إرسال تحديث Socket للمستخدمين المتصلين
-    const io = req.app.get("io");
-    if (io) {
-      io.to("warnings").emit("warningCreated", populatedWarning);
-      console.log(`⚠️ Warning created event emitted to warnings room`);
-      
-      // إرسال تحديث الإحصائيات أيضاً
-      io.to("warnings").emit("statisticsUpdated", {
-        trigger: "warningCreated",
-        timestamp: new Date().toISOString()
-      });
-      console.log(`📊 Statistics update triggered`);
+    // 🔔 إرسال إشعار Socket.IO لتحديث الواجهة فوراً
+    if (global.io) {
+      global.io.emit('warningCreated', populatedWarning);
+      global.io.emit('warningStatisticsUpdated', { timestamp: new Date() });
+      console.log('📡 Socket.IO: Warning created event emitted');
     }
 
     res.status(201).json(populatedWarning);
   } catch (error) {
-    console.error("Error creating warning:", error);
-    res.status(500).json({ message: "حدث خطأ أثناء إنشاء الإنذار" });
+    console.error("❌ Error creating warning:", error);
+    console.error("Error stack:", error.stack);
+    console.error("Request body:", req.body);
+    
+    res.status(500).json({ 
+      message: "حدث خطأ أثناء إنشاء الإنذار",
+      error: process.env.NODE_ENV === 'development' ? {
+        message: error.message,
+        stack: error.stack
+      } : undefined
+    });
   }
 };

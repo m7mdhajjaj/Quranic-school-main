@@ -9,6 +9,7 @@ const {
   notifyAbsence,
   notifyAbsenceRemoved,
   notifySystemMessage,
+  notifyWarning,
 } = require("./helpers/specificNotifications");
 
 /**
@@ -91,6 +92,17 @@ class NotificationService {
 
   async notifyAbsenceRemoved(studentId, date, teacherName) {
     return notifyAbsenceRemoved(this.createNotification.bind(this), studentId, date, teacherName);
+  }
+
+  async notifyWarning(studentId, warningType, reason, teacherName, penalties = {}) {
+    return notifyWarning(
+      this.createNotification.bind(this),
+      studentId,
+      warningType,
+      reason,
+      teacherName,
+      penalties
+    );
   }
 
   async notifySystemMessage(recipientId, recipientModel, title, message, priority = "medium", data = {}) {

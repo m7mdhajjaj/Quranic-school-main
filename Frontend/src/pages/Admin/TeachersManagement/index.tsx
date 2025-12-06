@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FaUserTie } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
 import { useTeachersSocket } from "../../../Socket";
+import { socketManager } from "@/Socket/SocketManager";
 
 import EnhancedTeacherForm from "../../../Forms/AddTeacherForm";
 import ResponsivePagination from "@/components/UI/ResponsivePagination";
@@ -107,6 +108,44 @@ const TeachersManagement: React.FC = () => {
       fetchTeachers();
     }
   }, [socketLastUpdate, hasPermission, fetchTeachers]);
+
+  // Real-time user status updates
+  useEffect(() => {
+    if (!hasPermission) return;
+
+    const handleUserStatusChange = (data: {
+      userId: string;
+      isActive: boolean;
+      lastSeen?: string;
+    }) => {
+      console.log("👤 User status changed:", data);
+      
+      // تحديث حالة المعلم في القائمة
+      setTeachers((prevTeachers) =>
+        prevTeachers.map((teacher) =>
+          teacher._id === data.userId
+            ? {
+                ...teacher,
+                isActive: data.isActive,
+                lastSeen: data.lastSeen ? new Date(data.lastSeen) : teacher.lastSeen,
+              }
+            : teacher
+        )
+      );
+    };
+
+    const socket = socketManager.getSocket();
+    if (socket) {
+      socket.on("userStatusChange", handleUserStatusChange);
+    }
+
+    return () => {
+      const socket = socketManager.getSocket();
+      if (socket) {
+        socket.off("userStatusChange", handleUserStatusChange);
+      }
+    };
+  }, [hasPermission, setTeachers]);
 
   // Auto refresh when not connected
   useEffect(() => {

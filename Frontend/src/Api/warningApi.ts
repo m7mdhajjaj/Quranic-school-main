@@ -70,3 +70,35 @@ export const deleteWarningByType = async (
   );
   return response.data;
 };
+
+/**
+ * جلب قائمة الطلاب المفصولين (مؤقت أو دائم)
+ * @route GET /api/warnings/suspended-students
+ */
+export const getSuspendedStudents = async (params?: {
+  groupId?: string;
+  type?: "temporary" | "permanent" | "all";
+}) => {
+  const response = await api.get("/warnings/suspended-students", { params });
+  return response.data;
+};
+
+/**
+ * جلب حالة الفصل لطالب معين
+ * @route GET /api/warnings/student-suspension/:studentId
+ */
+export const getStudentSuspensionStatus = async (studentId: string) => {
+  const response = await api.get(`/warnings/student-suspension/${studentId}`);
+  return response.data;
+};
+
+/**
+ * جلب قائمة الطلاب المفصولين من حلقات المعلم (للمعلم فقط)
+ * @route GET /api/warnings/teacher/suspended-students
+ */
+export const getTeacherSuspendedStudents = async (teacherId: string) => {
+  const response = await api.get("/warnings/teacher/suspended-students", {
+    params: { teacherId },
+  });
+  return response.data;
+};

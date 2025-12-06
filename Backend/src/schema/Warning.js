@@ -17,6 +17,11 @@ const warningSchema = new mongoose.Schema(
       ref: "Group",
       required: true,
     },
+    // الحلقة الأصلية للطالب (قبل الفصل)
+    originalGroup: {
+      type: String, // اسم الحلقة
+      required: false,
+    },
     type: {
       type: String,
       enum: ["warning", "first", "second", "third", "expulsion"],
@@ -25,6 +30,12 @@ const warningSchema = new mongoose.Schema(
     reason: {
       type: String,
       required: true,
+    },
+    // نوع الفصل - مؤقت أو دائم
+    suspensionType: {
+      type: String,
+      enum: ["temporary", "permanent", "none"],
+      default: "none", // "none" للتنبيهات فقط
     },
     // تفاصيل العقوبة حسب نوع الإنذار
     penalties: {
@@ -57,6 +68,18 @@ const warningSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    // تم إلغاء الفصل مبكراً؟
+    cancelledEarly: {
+      type: Boolean,
+      default: false,
+    },
+    cancelledAt: {
+      type: Date,
+    },
+    cancelledBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Admin",
+    },
   },
   {
     timestamps: true,
@@ -70,6 +93,7 @@ warningSchema.pre("save", function (next) {
   switch (this.type) {
     case "warning":
       // تنبيه فقط - لا عقوبات
+      this.suspensionType = "none";
       this.penalties = {
         suspensionDays: 0,
         activitiesBanMonths: 0,
@@ -79,7 +103,21 @@ warningSchema.pre("save", function (next) {
       break;
 
     case "first":
-      // الإنذار الأول: فصل ليوم واحد
+      // الإنذار الأول: فصل مؤقت لـ 3 ساعات
+      this.suspensionType = "temporary";
+      this.penalties = {
+        suspensionDays: 0.125, // 3 ساعات = 3/24 يوم
+        activitiesBanMonths: 0,
+        permanentActivitiesBan: false,
+        permanentExpulsion: false,
+      };
+      this.startDate = startDate;
+      this.endDate = new Date(startDate.getTime() + 3 * 60 * 60 * 1000); // 3 ساعات
+      break;
+
+    case "second":
+      // الإنذار الثاني: فصل مؤقت ليوم واحد
+      this.suspensionType = "temporary";
       this.penalties = {
         suspensionDays: 1,
         activitiesBanMonths: 0,
@@ -87,35 +125,25 @@ warningSchema.pre("save", function (next) {
         permanentExpulsion: false,
       };
       this.startDate = startDate;
-      this.endDate = new Date(startDate.getTime() + 24 * 60 * 60 * 1000); // يوم واحد
+      this.endDate = new Date(startDate.getTime() + 1 * 24 * 60 * 60 * 1000); // يوم واحد
       break;
 
-    case "second":
-      // الإنذار الثاني: فصل لأسبوع + حرمان من الأنشطة لشهر
+    case "third":
+      // الإنذار الثالث: فصل مؤقت لأسبوعين (14 يوم)
+      this.suspensionType = "temporary";
       this.penalties = {
-        suspensionDays: 7,
-        activitiesBanMonths: 1,
+        suspensionDays: 14,
+        activitiesBanMonths: 0,
         permanentActivitiesBan: false,
         permanentExpulsion: false,
       };
       this.startDate = startDate;
-      this.endDate = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000); // أسبوع
-      break;
-
-    case "third":
-      // الإنذار الثالث: فصل لأسبوع + حرمان نهائي من الأنشطة
-      this.penalties = {
-        suspensionDays: 7,
-        activitiesBanMonths: 0,
-        permanentActivitiesBan: true,
-        permanentExpulsion: false,
-      };
-      this.startDate = startDate;
-      this.endDate = new Date(startDate.getTime() + 7 * 24 * 60 * 60 * 1000); // أسبوع
+      this.endDate = new Date(startDate.getTime() + 14 * 24 * 60 * 60 * 1000); // أسبوعين
       break;
 
     case "expulsion":
-      // فصل نهائي
+      // الإنذار الرابع: فصل دائم
+      this.suspensionType = "permanent";
       this.penalties = {
         suspensionDays: 0,
         activitiesBanMonths: 0,
@@ -123,7 +151,8 @@ warningSchema.pre("save", function (next) {
         permanentExpulsion: true,
       };
       this.startDate = startDate;
-      this.endDate = null; // فصل دائم
+      this.endDate = null; // فصل دائم - لا يوجد تاريخ انتهاء
+      this.isActive = true; // دائماً نشط
       break;
   }
 

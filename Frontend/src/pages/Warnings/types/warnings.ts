@@ -72,10 +72,12 @@ export interface TeacherStatistics {
 export interface TeacherViewProps {
   groups: Group[];
   loading: boolean;
+  loadingStudents?: boolean;
   selectedGroup?: Group | null;
   onGroupSelect: (group: Group) => void;
   onBack?: () => void;
   statistics: TeacherStatistics | null;
+  loadingStatistics?: boolean;
   onGiveWarning?: (student: Student, type: WarningType) => void;
   onDeleteWarning?: (student: Student, type: string) => void;
   onDeleteWarningById?: (warningId: string, student: Student) => void;

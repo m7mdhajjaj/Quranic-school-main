@@ -38,9 +38,9 @@ export const getWarningLabel = (type: string): string => {
 export const getWarningDescription = (type: WarningType): string => {
   const descriptions: Record<WarningType, string> = {
     warning: "⚠️ تنبيه فقط - تحذير من الإنذار في المرة القادمة",
-    first: "🚫 يُفصل من الحلقة ليوم واحد",
-    second: "🚫 يُفصل من الحلقة لمدة أسبوع + يُحرم من الأنشطة لمدة شهر",
-    third: "🚫 يُفصل من الحلقة لمدة أسبوع + يُحرم من الأنشطة بشكل نهائي",
+    first: "🚫 يُفصل من الحلقة لمدة 3 ساعات",
+    second: "🚫 يُفصل من الحلقة لمدة يوم واحد",
+    third: "🚫 يُفصل من الحلقة لمدة أسبوعين",
     expulsion: "❌ يُفصل من الحلقة ولا يعود نهائياً",
   };
   return descriptions[type];

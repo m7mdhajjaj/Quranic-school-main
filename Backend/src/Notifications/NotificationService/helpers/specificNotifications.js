@@ -216,10 +216,121 @@ async function notifySystemMessage(createNotificationFn, recipientId, recipientM
   }
 }
 
+/**
+ * Notify about warning given to student
+ */
+async function notifyWarning(createNotificationFn, studentId, warningType, reason, teacherName, penalties = {}) {
+  try {
+    const student = await Student.findById(studentId);
+    if (!student) throw new Error("Student not found");
+    
+    const studentName = student.firstName && student.lastName 
+      ? `${student.firstName} ${student.lastName}` 
+      : student.name || 'الطالب';
+    
+    // Determine warning title and message based on type
+    let warningEmoji = "⚠️";
+    let warningTitle = "";
+    let warningMessage = "";
+    let priority = "high";
+    
+    switch (warningType) {
+      case "warning":
+        warningEmoji = "⚠️";
+        warningTitle = "تنبيه";
+        warningMessage = `تم إعطاؤك تنبيهاً من الأستاذ ${teacherName}. السبب: ${reason}`;
+        priority = "medium";
+        break;
+        
+      case "first":
+        warningEmoji = "🚨";
+        warningTitle = "إنذار أول";
+        warningMessage = `تم إعطاؤك الإنذار الأول من الأستاذ ${teacherName}. السبب: ${reason}. تم فصلك مؤقتاً لمدة ${penalties.suspensionDays || 3} أيام.`;
+        priority = "high";
+        break;
+        
+      case "second":
+        warningEmoji = "🔴";
+        warningTitle = "إنذار ثاني";
+        warningMessage = `تم إعطاؤك الإنذار الثاني من الأستاذ ${teacherName}. السبب: ${reason}. تم فصلك مؤقتاً لمدة ${penalties.suspensionDays || 7} أيام.`;
+        priority = "high";
+        break;
+        
+      case "third":
+        warningEmoji = "⛔";
+        warningTitle = "إنذار ثالث";
+        warningMessage = `تم إعطاؤك الإنذار الثالث من الأستاذ ${teacherName}. السبب: ${reason}. تم فصلك مؤقتاً لمدة ${penalties.suspensionDays || 30} يوماً.`;
+        priority = "high";
+        break;
+        
+      case "expulsion":
+        warningEmoji = "❌";
+        warningTitle = "فصل نهائي";
+        warningMessage = `تم فصلك نهائياً من المدرسة القرآنية بواسطة الأستاذ ${teacherName}. السبب: ${reason}. يرجى التواصل مع الإدارة.`;
+        priority = "high";
+        break;
+    }
+    
+    console.log(`⚠️ Sending warning notification to student: ${studentName} (ID: ${studentId}), Type: ${warningType}`);
+    
+    // Send via FCM
+    if (FCMService && FCMService.initialized) {
+      try {
+        const deviceTokens = await DeviceToken.find({ 
+          user: studentId,
+          userModel: 'Student'
+        }).lean();
+        
+        if (deviceTokens.length > 0) {
+          const tokens = deviceTokens.map(d => d.token).filter(Boolean);
+          const payload = {
+            notification: {
+              title: `${warningEmoji} ${warningTitle}`,
+              body: warningMessage,
+            },
+            data: {
+              type: "warning",
+              warningType,
+              reason,
+              teacherName,
+              studentName,
+              suspensionDays: (penalties.suspensionDays || 0).toString(),
+            },
+          };
+          await FCMService.sendToTokens(tokens, payload);
+          console.log(`📱 Warning notification sent via FCM to ${tokens.length} devices`);
+        }
+      } catch (fcmErr) {
+        console.error("❌ Error sending warning FCM:", fcmErr);
+      }
+    }
+    
+    return await createNotificationFn({
+      recipient: studentId,
+      recipientModel: "Student",
+      type: "warning",
+      title: `${warningEmoji} ${warningTitle}`,
+      message: warningMessage,
+      priority: priority,
+      data: { 
+        warningType, 
+        reason, 
+        teacherName,
+        studentName,
+        penalties
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error creating warning notification:", error);
+    throw error;
+  }
+}
+
 module.exports = {
   notifyNewGrade,
   notifyNewMessage,
   notifyAbsence,
   notifyAbsenceRemoved,
   notifySystemMessage,
+  notifyWarning,
 };

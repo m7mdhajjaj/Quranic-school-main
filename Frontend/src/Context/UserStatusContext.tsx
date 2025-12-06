@@ -101,56 +101,9 @@ export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     };
   }, [token, user?._id, fetchUserStatus]);
 
-  // تحديث دوري كل دقيقة للمستخدمين المحملين (محسّن للأداء)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // Batch the status checks and limit to reasonable number
-      const userIds = Object.keys(userStatuses);
-      
-      // Only update if we have users and not too many (prevent performance issues)
-      if (userIds.length > 0 && userIds.length <= 50 && token) {
-        // استخدام requestIdleCallback مع batching محسّن
-        if ('requestIdleCallback' in window) {
-          requestIdleCallback(() => {
-            // معالجة المستخدمين في دفعات صغيرة (5 في المرة الواحدة)
-            const batchSize = 5;
-            let currentIndex = 0;
-            
-            const processBatch = () => {
-              const batch = userIds.slice(currentIndex, currentIndex + batchSize);
-              batch.forEach(userId => {
-                if (userId) {
-                  fetchUserStatus(userId);
-                }
-              });
-              
-              currentIndex += batchSize;
-              
-              // إذا بقي مستخدمين، معالجة الدفعة التالية
-              if (currentIndex < userIds.length) {
-                requestIdleCallback(processBatch);
-              }
-            };
-            
-            processBatch();
-          }, { timeout: 2000 }); // timeout للتأكد من التنفيذ
-        } else {
-          // Fallback محسّن مع batching
-          const batchSize = 5;
-          userIds.forEach((userId, index) => {
-            if (userId) {
-              // تأخير كل دفعة قليلاً لتقليل الضغط
-              setTimeout(() => {
-                fetchUserStatus(userId);
-              }, Math.floor(index / batchSize) * 100);
-            }
-          });
-        }
-      }
-    }, 60000); // 60 ثانية
-
-    return () => clearInterval(interval);
-  }, [userStatuses, token, fetchUserStatus]);
+  // ❌ تم إزالة التحديث الدوري - نعتمد على socket للتحديثات الفورية
+  // التحديث التلقائي غير ضروري لأن socket يرسل userStatusChange event
+  // فقط نجلب الحالة عند الحاجة الأولى من خلال getUserStatus
 
   // دالة للحصول على حالة مستخدم معين - محسّنة لتجنب setState في render
   const getUserStatus = useCallback((userId?: string): UserStatusState => {

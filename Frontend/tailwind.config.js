@@ -6,6 +6,10 @@ export default {
   ],
   theme: {
     extend: {
+      scrollbar: ['rounded'],
+      scrollbarWidth: {
+        thin: 'thin',
+      },
       screens: {
         'xs': '475px', // Extra small screens
       },

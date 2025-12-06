@@ -10,6 +10,8 @@ const { body, param, validationResult } = require("express-validator");
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.log("❌ Validation Errors:", errors.array());
+    console.log("📥 Request Body:", req.body);
     return res.status(400).json({
       success: false,
       message: "خطأ في البيانات المدخلة",
@@ -19,6 +21,7 @@ const handleValidationErrors = (req, res, next) => {
       })),
     });
   }
+  console.log("✅ Validation passed for:", req.body);
   next();
 };
 
@@ -40,26 +43,28 @@ const validateCreateWarning = [
     .isMongoId()
     .withMessage("معرف المعلم غير صحيح"),
 
-  body("groupName")
+  // groupId أو groupName - واحد منهم مطلوب
+  body("groupId")
+    .optional()
     .trim()
-    .notEmpty()
-    .withMessage("اسم الحلقة مطلوب")
+    .isMongoId()
+    .withMessage("معرف الحلقة غير صحيح"),
+
+  body("groupName")
+    .optional()
+    .trim()
     .isString()
     .withMessage("اسم الحلقة يجب أن يكون نص"),
 
   body("type")
-    .trim()
     .notEmpty()
     .withMessage("نوع الإنذار مطلوب")
     .isIn(["warning", "first", "second", "third", "expulsion"])
     .withMessage("نوع الإنذار غير صحيح"),
 
   body("reason")
-    .trim()
     .notEmpty()
     .withMessage("سبب الإنذار مطلوب")
-    .isString()
-    .withMessage("سبب الإنذار يجب أن يكون نص")
     .isLength({ min: 3, max: 500 })
     .withMessage("سبب الإنذار يجب أن يكون بين 3 و 500 حرف"),
 

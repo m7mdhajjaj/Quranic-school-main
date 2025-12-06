@@ -626,3 +626,30 @@ input[type='password']::-webkit-credentials-auto-fill-button {
   margin: 0 !important;
   z-index: 10001 !important;
 }
+
+/* ============================================================================
+   Custom Scrollbar Styles
+   ============================================================================ */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #f87171 #fee2e2;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #fee2e2;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #f87171;
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #ef4444;
+}

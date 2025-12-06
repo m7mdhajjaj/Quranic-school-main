@@ -64,8 +64,9 @@ export const useWarningsActions = (
         reason,
       });
 
-      // تم إزالة Toast - سيتم عرض النجاح في SweetAlert
-      refetchData();
+      // Socket سيقوم بالتحديث تلقائياً - لا داعي لاستدعاءات API إضافية
+      // تم إزالة refetchData() و fetchTeacherStatistics() لتحسين الأداء
+      
       return true;
     } catch (error: any) {
       console.error('❌ Error giving warning:', error);
@@ -90,7 +91,7 @@ export const useWarningsActions = (
       const errorMessage = error?.response?.data?.message || 'حدث خطأ أثناء إعطاء الإنذار';
       throw new Error(errorMessage);
     }
-  }, [refetchData]);
+  }, [refetchData, fetchTeacherStatistics]);
 
   // ✅ حذف إنذار باستخدام endpoint مباشر - محسّن بـ useCallback
   const deleteWarning = useCallback(async (student: Student, warningType: string) => {
@@ -98,29 +99,30 @@ export const useWarningsActions = (
       // حذف الإنذار مباشرة بدون استدعاء GET أولاً
       await warningApi.deleteWarningByType(student._id, warningType);
 
-      // تم إزالة Toast - سيتم عرض النجاح في SweetAlert
-      refetchData();
+      // Socket سيقوم بالتحديث تلقائياً - لا داعي لاستدعاءات API إضافية
+      // تم إزالة refetchData() و fetchTeacherStatistics() لتحسين الأداء
       return true;
     } catch (error: any) {
       console.error('Error deleting warning:', error);
       // إرجاع false فقط - الخطأ سيُعرض من modal
       return false;
     }
-  }, [refetchData]);
+  }, []);
 
   // ✅ حذف تنبيه بالـ ID - محسّن بـ useCallback
   const deleteWarningById = useCallback(async (warningId: string) => {
     try {
       await warningApi.deleteWarningById(warningId);
-      // تم إزالة Toast - سيتم عرض النجاح في SweetAlert
-      refetchData();
+      
+      // Socket سيقوم بالتحديث تلقائياً - لا داعي لاستدعاء refetchData()
+      // تم إزالة refetchData() لتحسين الأداء
       return true;
     } catch (error: any) {
       console.error('Error deleting warning:', error);
       // إرجاع false فقط - الخطأ سيُعرض من modal
       return false;
     }
-  }, [refetchData]);
+  }, []);
 
   return {
     statistics,

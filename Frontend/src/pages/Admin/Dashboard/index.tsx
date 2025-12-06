@@ -23,9 +23,13 @@ import type { ChartData } from "./types";
 import AddStudentForm from "../../../Forms/AddStudentForm";
 import AddTeacherForm from "../../../Forms/AddTeacherForm";
 import AddGroupForm from "../../../Forms/AddGroupForm";
+import { useDashboardSocket } from "@/Socket";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+
+  // Socket للتحديثات الفورية
+  const { lastUpdate: socketLastUpdate } = useDashboardSocket();
 
   // استخدام hook لجلب البيانات
   const { stats, isLoading, error, fetchStats, chartsData } =
@@ -64,6 +68,14 @@ const AdminDashboard = () => {
         data: [0, 0],
         colors: ["from-blue-500 to-blue-600", "from-pink-500 to-pink-600"],
       };
+
+  // Socket: Refresh data when socket updates
+  useEffect(() => {
+    if (socketLastUpdate) {
+      console.log("🔄 Socket update detected, refreshing dashboard...");
+      fetchStats();
+    }
+  }, [socketLastUpdate, fetchStats]);
 
   // Debug: عرض البيانات في console
   useEffect(() => {

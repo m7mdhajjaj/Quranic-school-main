@@ -2,8 +2,9 @@
 // WarningsPage - الصفحة الرئيسية للإنذارات
 // ============================================================================
 
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useWarningsSocket } from "@/Socket/useWarningsSocket";
+import { socketManager } from "@/Socket/SocketManager";
 import { useWarningsData } from "./hooks/useWarningsData";
 import { useWarningsActions } from "./hooks/useWarningsActions";
 import { useGroupSelection } from "./hooks/useGroupSelection";
@@ -12,6 +13,7 @@ import { TeacherView } from "./components/views/TeacherView";
 import { StudentView } from "./components/views/StudentView";
 
 const WarningsPage: React.FC = () => {
+
   const {
     user,
     groups,
@@ -26,6 +28,7 @@ const WarningsPage: React.FC = () => {
 
   const {
     statistics,
+    loadingStatistics,
     fetchTeacherStatistics,
     giveWarning,
     deleteWarning,
@@ -36,8 +39,14 @@ const WarningsPage: React.FC = () => {
     fetchGroupStudentsWarnings,
   });
 
-  // ✅ Memoize onSuccess callback
+  // ✅ Memoize onSuccess callback - Optimized
   const handleModalSuccess = useCallback(() => {
+    // Socket.IO سيقوم بالتحديث التلقائي لكل شيء:
+    // - warningCreated → يحدث قائمة الطلاب المفصولين
+    // - warningDeleted → يحدث قائمة الطلاب المفصولين
+    // - statisticsUpdated → يحدث الإحصائيات
+    
+    // تحديث قائمة طلاب الحلقة فقط (باقي التحديثات عبر Socket)
     if (selectedGroup) {
       handleGroupSelect(selectedGroup);
     }
@@ -60,9 +69,8 @@ const WarningsPage: React.FC = () => {
     }
   }, [isTeacher, loading, fetchTeacherStatistics]);
 
-  // ✅ Memoize socket callbacks for performance
+  // ✅ Optimized socket callbacks - Reduced API calls and console logs
   const handleNewWarning = useCallback((newWarning: any) => {
-    console.log("✅ New warning received:", newWarning);
     if (isStudent && newWarning.studentId._id === user?._id) {
       setWarnings((prev) => [newWarning, ...prev]);
     } else if (
@@ -75,47 +83,110 @@ const WarningsPage: React.FC = () => {
   }, [isStudent, isTeacher, user?._id, selectedGroup, setWarnings, handleGroupSelect]);
 
   const handleWarningDeleted = useCallback((deletedWarningId: string) => {
-    console.log("🗑️ Warning deleted:", deletedWarningId);
     setWarnings((prev) => prev.filter((w) => w._id !== deletedWarningId));
-    if (isTeacher) {
-      fetchTeacherStatistics();
-    }
-  }, [isTeacher, setWarnings, fetchTeacherStatistics]);
+    // Socket statisticsUpdated event will handle the rest
+  }, [setWarnings]);
 
   const handleStatisticsUpdated = useCallback((updatedStatistics: any) => {
-    console.log("📊 Statistics updated:", updatedStatistics);
+    // Single call to update statistics
     fetchTeacherStatistics();
   }, [fetchTeacherStatistics]);
 
   const handleStudentStatusUpdated = useCallback((data: any) => {
-    console.log("👨‍🎓 Student status updated:", data);
-    if (isTeacher && selectedGroup) {
+    // No action needed - updates handled by other events
+  }, []);
+
+  // معالجة انتهاء الفصل المؤقت
+  const handleSuspensionExpired = useCallback((data: any) => {
+    console.log("⏰ Suspension expired notification:", data);
+    
+    // إعادة تحميل الإحصائيات
+    if (isTeacher) {
+      fetchTeacherStatistics();
+    }
+    
+    // إعادة تحميل الحلقة المحددة
+    if (selectedGroup) {
       handleGroupSelect(selectedGroup);
     }
-  }, [isTeacher, selectedGroup, handleGroupSelect]);
+
+    // إظهار إشعار
+    import('@/components/utils/toastUtils').then(({ showSuccessToast }) => {
+      showSuccessToast(data.message || 'تم إعادة طالب إلى حلقته');
+    });
+  }, [isTeacher, selectedGroup, fetchTeacherStatistics, handleGroupSelect]);
+
+  // معالجة استعادة الطالب
+  const handleSuspensionRestored = useCallback((data: any) => {
+    console.log("✅ Suspension restored notification:", data);
+    
+    // إظهار إشعار للطالب
+    import('@/components/utils/toastUtils').then(({ showSuccessToast }) => {
+      showSuccessToast(data.message || 'تمت إعادتك إلى حلقتك');
+    });
+    
+    // إعادة تحميل بيانات الطالب
+    if (isStudent) {
+      refetchData();
+    }
+  }, [isStudent, refetchData]);
 
   // Socket للتحديثات الفورية - مباشرة من مجلد Socket
   useWarningsSocket(
     handleNewWarning,
     handleWarningDeleted,
     handleStatisticsUpdated,
-    handleStudentStatusUpdated
+    handleStudentStatusUpdated,
+    handleSuspensionExpired,
+    handleSuspensionRestored
   );
+
+  // Real-time user status updates (للطلاب في الحلقة)
+  useEffect(() => {
+    if (!isTeacher) return;
+
+    const handleUserStatusChange = (data: {
+      userId: string;
+      isActive: boolean;
+      lastSeen?: string;
+    }) => {
+      console.log("👤 User status changed in warnings:", data);
+      
+      // إذا كانت الحلقة محددة، تحديث حالة الطالب
+      if (selectedGroup) {
+        handleGroupSelect(selectedGroup);
+      }
+    };
+
+    const socket = socketManager.getSocket();
+    if (socket) {
+      socket.on("userStatusChange", handleUserStatusChange);
+    }
+
+    return () => {
+      const socket = socketManager.getSocket();
+      if (socket) {
+        socket.off("userStatusChange", handleUserStatusChange);
+      }
+    };
+  }, [isTeacher, selectedGroup, handleGroupSelect]);
 
   // ✅ عرض واجهة المعلم
   if (isTeacher) {
     return (
       <TeacherView
-        groups={groups}
-        loading={loading}
-        loadingStudents={loadingStudents}
-        selectedGroup={selectedGroup}
-        onGroupSelect={handleGroupSelect}
-        onBack={handleBack}
-        onGiveWarning={showGiveWarningModal}
-        onDeleteWarning={showDeleteWarningModal}
-        onDeleteWarningById={showDeleteWarningByIdModal}
-      />
+          groups={groups}
+          loading={loading}
+          loadingStudents={loadingStudents}
+          selectedGroup={selectedGroup}
+          statistics={statistics}
+          loadingStatistics={loadingStatistics}
+          onGroupSelect={handleGroupSelect}
+          onBack={handleBack}
+          onGiveWarning={showGiveWarningModal}
+          onDeleteWarning={showDeleteWarningModal}
+          onDeleteWarningById={showDeleteWarningByIdModal}
+        />
     );
   }
 

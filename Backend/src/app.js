@@ -11,6 +11,7 @@ const Chat = require('./schema/Chat');
 const Student = require('./schema/Student');
 const NotificationService = require('./Notifications/NotificationService');
 const MonthlyChampionService = require('./services/ChampionService');
+const SuspensionService = require('./services/SuspensionService');
 // Initialize FCM service (reads env FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_SERVICE_ACCOUNT_PATH)
 const FCMService = require('./Notifications/config/FCMService');
 
@@ -223,6 +224,11 @@ global.fcmService = FCMService;
 MonthlyChampionService.start();
 console.log('🏆 خدمة تتويج الأبطال الشهرية تم تفعيلها');
 
+// تشغيل Cron Job لإدارة الفصل المؤقت
+SuspensionService.setIO(io); // ربط Socket.IO بخدمة الفصل
+SuspensionService.start();
+console.log('⚠️ خدمة إدارة الفصل المؤقت تم تفعيلها');
+
 // Socket.IO error handling
 io.engine.on('connection_error', (err) => {
   console.log('Socket.IO connection error:', err.message);
@@ -264,7 +270,13 @@ io.on('connection', (socket) => {
     // ✅ انضمام المستخدم لغرفة خاصة به لاستقبال الإشعارات
     socket.join(userId);
     socket.join('notifications'); // انضمام للغرفة العامة أيضاً
-    console.log(`🔔 User ${userId} (${firstName}) joined notification rooms [${userId}, notifications]`);
+    
+    // ✅ انضمام للغرف حسب الدور للتحديثات الفورية
+    if (role === 'admin') {
+      socket.join('admin-room'); // Admins يستقبلون كل التحديثات
+    }
+    
+    console.log(`🔔 User ${userId} (${firstName}) joined rooms [${userId}, notifications${role === 'admin' ? ', admin-room' : ''}]`);
 
     // Set isActive to true in database with better error handling
     try {
@@ -296,13 +308,21 @@ io.on('connection', (socket) => {
           `✅ User ${firstName} (${userId}) logged in successfully as ${role}`
         );
 
-        // إرسال إشعار لجميع العملاء بتغيير حالة المستخدم إلى متصل
-        io.emit('userStatusChange', {
+        // ✅ إرسال تحديث الحالة بذكاء حسب الدور
+        const statusUpdate = {
           userId: userId,
           isActive: true,
-          lastSeen:
-            updateResult?.lastSeen?.toISOString() || new Date().toISOString(),
-        });
+          lastSeen: updateResult?.lastSeen?.toISOString() || new Date().toISOString(),
+        };
+
+        // إرسال للـ Admins فقط (لتقليل العبء)
+        io.to('admin-room').emit('userStatusChange', statusUpdate);
+        
+        // إرسال للمستخدم نفسه
+        io.to(userId).emit('userStatusChange', statusUpdate);
+        
+        // TODO: إذا كان طالب، إرسال لمعلمي حلقته فقط
+        // سيتم تحسينه لاحقاً بإضافة group rooms
       } else {
         console.warn(`⚠️  User ${userId} not found in ${role} collection`);
       }
@@ -507,15 +527,33 @@ io.on('connection', (socket) => {
 
     // Set isActive to false in database
     try {
+      let updateResult;
       if (userData.role === 'student') {
-        await Student.findByIdAndUpdate(userData.userId, { isActive: false });
+        updateResult = await Student.findByIdAndUpdate(
+          userData.userId,
+          { isActive: false, lastSeen: new Date() },
+          { new: true }
+        );
       } else if (userData.role === 'admin') {
-        await require('./schema/Admin').findByIdAndUpdate(userData.userId, {
-          isActive: false,
-        });
+        updateResult = await require('./schema/Admin').findByIdAndUpdate(
+          userData.userId,
+          { isActive: false, lastSeen: new Date() },
+          { new: true }
+        );
       } else {
-        await require('./schema/Teacher').findByIdAndUpdate(userData.userId, {
+        updateResult = await require('./schema/Teacher').findByIdAndUpdate(
+          userData.userId,
+          { isActive: false, lastSeen: new Date() },
+          { new: true }
+        );
+      }
+
+      // ✅ إرسال تحديث الحالة للـ Admins فقط
+      if (updateResult) {
+        io.to('admin-room').emit('userStatusChange', {
+          userId: userData.userId,
           isActive: false,
+          lastSeen: updateResult.lastSeen?.toISOString() || new Date().toISOString(),
         });
       }
     } catch (error) {
@@ -916,13 +954,14 @@ io.on('connection', (socket) => {
 
           console.log(`✅ User ${firstName} (${userId}) marked as inactive`);
 
-          // إرسال إشعار لجميع العملاء بتغيير حالة المستخدم
-          io.emit('userStatusChange', {
+          // ✅ إرسال تحديث الحالة بذكاء (للـ Admins فقط)
+          const statusUpdate = {
             userId: userId,
             isActive: false,
-            lastSeen:
-              updateResult?.lastSeen?.toISOString() || new Date().toISOString(),
-          });
+            lastSeen: updateResult?.lastSeen?.toISOString() || new Date().toISOString(),
+          };
+          
+          io.to('admin-room').emit('userStatusChange', statusUpdate);
         } catch (error) {
           console.error(
             `❌ Error setting isActive=false for user ${userId}:`,

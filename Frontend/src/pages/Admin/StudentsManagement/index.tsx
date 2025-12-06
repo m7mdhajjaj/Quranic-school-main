@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FaUserGraduate } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
 import { useStudentsSocket } from "../../../Socket";
+import { socketManager } from "@/Socket/SocketManager";
 
 import AddStudentFormWithYup from "../../../Forms/AddStudentForm";
 import ResponsivePagination from "@/components/UI/ResponsivePagination";
@@ -102,6 +103,44 @@ const StudentsManagement: React.FC = () => {
       fetchStudents();
     }
   }, [socketLastUpdate, hasPermission, fetchStudents]);
+
+  // Real-time user status updates
+  useEffect(() => {
+    if (!hasPermission) return;
+
+    const handleUserStatusChange = (data: {
+      userId: string;
+      isActive: boolean;
+      lastSeen?: string;
+    }) => {
+      console.log("👤 User status changed:", data);
+      
+      // تحديث حالة الطالب في القائمة
+      setStudents((prevStudents) =>
+        prevStudents.map((student) =>
+          student._id === data.userId
+            ? {
+                ...student,
+                isActive: data.isActive,
+                lastSeen: data.lastSeen ? new Date(data.lastSeen) : student.lastSeen,
+              }
+            : student
+        )
+      );
+    };
+
+    const socket = socketManager.getSocket();
+    if (socket) {
+      socket.on("userStatusChange", handleUserStatusChange);
+    }
+
+    return () => {
+      const socket = socketManager.getSocket();
+      if (socket) {
+        socket.off("userStatusChange", handleUserStatusChange);
+      }
+    };
+  }, [hasPermission, setStudents]);
 
   // Auto refresh when not connected
   useEffect(() => {
