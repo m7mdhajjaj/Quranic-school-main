@@ -2,7 +2,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { ChangePasswordModal } from '@/pages/Auth/ChangePass';
-import { showLogoutConfirmation } from '@/components/utils/logoutUtils';
+import { showLogoutConfirmation } from '@/pages/Auth/LogOut/logoutUtils';
 import { NotificationHeader } from '@/components/Notifications';
 
 // Import custom hooks

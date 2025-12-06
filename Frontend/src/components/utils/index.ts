@@ -1,3 +1,3 @@
 export * from './toastUtils';
 export * from './sweetalertUtils';
-export * from './logoutUtils';
+export * from '../../pages/Auth/LogOut/logoutUtils';

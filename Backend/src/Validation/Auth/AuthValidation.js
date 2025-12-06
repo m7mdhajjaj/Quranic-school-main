@@ -544,11 +544,12 @@ const hashPassword = async (password) => {
 };
 
 /**
- * Validation middleware for login
+ * Validation middleware for unified login
+ * لا يحتاج userType - الباك إند يحدد نوع المستخدم تلقائياً
  */
 const validateLogin = async (req, res, next) => {
   try {
-    console.log("🔍 بدء التحقق من بيانات تسجيل الدخول...");
+    console.log("🔍 بدء التحقق من بيانات تسجيل الدخول الموحد...");
     console.log("📝 البيانات المستلمة:", req.body);
 
     const sanitizedData = sanitizeAuthData(req.body);
@@ -581,10 +582,8 @@ const validateLogin = async (req, res, next) => {
       });
     }
 
-    req.validatedData = {
-      ...validation.data,
-      userType: sanitizedData.userType,
-    };
+    // لا نرسل userType - الباك إند سيحدده تلقائياً
+    req.validatedData = validation.data;
     console.log("✅ تم التحقق من بيانات تسجيل الدخول بنجاح");
     next();
   } catch (error) {

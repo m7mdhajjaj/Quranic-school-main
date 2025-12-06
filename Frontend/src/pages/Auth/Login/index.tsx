@@ -3,7 +3,7 @@ import { LoginForm } from "./LoginForm";
 import { WelcomeSection } from "./WelcomeSection";
 import { AuthBackground } from "@/components/Auth";
 import { LoginCard } from "./LoginCard";
-import { useLoginLogic } from "./useLoginLogic";
+import { useLoginLogic } from "./hooks";
 
 const Login = () => {
   const {

@@ -56,9 +56,9 @@ export const PasswordRequirements: React.FC<PasswordRequirementsProps> = ({
 
   return (
     <div
-      className={`p-4 bg-emerald-50/80 backdrop-blur-sm rounded-lg border border-emerald-200/50 ${className}`}
+      className={`p-3 sm:p-4 bg-emerald-50/80 backdrop-blur-sm rounded-lg border border-emerald-200/50 ${className}`}
     >
-      <p className="text-sm font-semibold text-emerald-900 mb-1">
+      <p className="text-xs sm:text-sm font-semibold text-emerald-900 mb-1">
         متطلبات كلمة المرور الجديدة:
       </p>
       
@@ -67,7 +67,7 @@ export const PasswordRequirements: React.FC<PasswordRequirementsProps> = ({
         items={requirements}
         variant="checklist"
         spacing="tight"
-        className="pt-2"
+        className="pt-2 text-xs sm:text-sm"
       />
     </div>
   );

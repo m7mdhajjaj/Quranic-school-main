@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { loginStudent, loginTeacher, loginAdmin } from "@/Api/authApi";
 import { useLogo } from "@/components/Hooks/useLogo";
 import type { User } from "@/Context/AuthContext";
-import type { LoginFormData } from '../types';
+import type { LoginFormData } from '../../types';
 
 export const useLoginLogic = () => {
   const navigate = useNavigate();

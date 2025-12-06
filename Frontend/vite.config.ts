@@ -24,8 +24,6 @@ export default defineConfig({
   
   // تحسينات الأداء
   build: {
-    // تقليل حجم الحزم
-    chunkSizeWarningLimit: 500, // تقليل الحد الأقصى لحجم الـ chunk
     rollupOptions: {
       output: {
         manualChunks: (id) => {

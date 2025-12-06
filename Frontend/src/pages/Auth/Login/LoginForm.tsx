@@ -34,7 +34,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
       )}
 
       {/* Login Form */}
-      <form className="space-y-6" onSubmit={onSubmit}>
+      <form className="space-y-4" onSubmit={onSubmit}>
         <Input
           label="رقم المستخدم"
           id="userId"
@@ -117,9 +117,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             >
               <button
                 type="button"
-                className="p-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 hover:border-emerald-400 transition-all duration-300"
+                className="p-1 rounded-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 hover:border-emerald-400 transition-all duration-300"
                 aria-label="معلومات الجلسة">
-                <Info className="w-4 h-4 text-emerald-600" />
+                <Info className="w-3.5 h-3.5 text-emerald-600" />
               </button>
             </Tooltip>
           </div>
@@ -127,7 +127,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           <button
             type="button"
             onClick={onForgotPassword}
-            className="text-sm text-emerald-600 hover:text-emerald-700 font-semibold transition-colors duration-200">
+            className="text-xs sm:text-sm text-emerald-600 hover:text-emerald-700 font-semibold transition-colors duration-200">
             نسيت كلمة المرور؟
           </button>
         </div>
@@ -136,12 +136,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({
         <Button
           type="submit"
           variant="primary"
-          size="lg"
+          size="md"
           fullWidth
           loading={isLoading}
           gradient={true}
-          leftIcon={!isLoading && <LogIn className="w-5 h-5" />}
-          className="shadow-xl hover:shadow-2xl hover:shadow-emerald-500/30 focus:ring-4 focus:ring-emerald-400/30"
+          leftIcon={!isLoading && <LogIn className="w-4 h-4" />}
+          className="shadow-lg hover:shadow-xl hover:shadow-emerald-500/30 focus:ring-2 focus:ring-emerald-400/30"
         >
           {isLoading ? "جارٍ تسجيل الدخول..." : "تسجيل الدخول"}
         </Button>

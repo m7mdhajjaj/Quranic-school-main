@@ -7,69 +7,105 @@ const bcrypt = require("bcryptjs");
 const JWT_SECRET = process.env.JWT_SECRET;
 
 /**
- * تسجيل الدخول الرئيسي - يدعم الطلاب والمعلمين والإداريين
+ * تسجيل الدخول الموحد - يحدد نوع المستخدم تلقائياً من الباك إند
+ * يبحث في جميع الأنواع (طالب، معلم، إداري) ويحدد الصحيح
  */
 exports.login = async (req, res) => {
   try {
-    console.log("=== Login called ===");
+    console.log("=== Unified Login called ===");
     console.log("Request body:", req.body);
     console.log("Validated data:", req.validatedData);
 
     // استخدام البيانات من req.validatedData إذا كانت موجودة، وإلا من req.body
     const identifier =
       req.validatedData?.identifier ||
+      req.body.identifier ||
       req.body.studentId ||
       req.body.teacherId ||
       req.body.adminId;
     const password =
       req.validatedData?.password || req.body.idNumber || req.body.password;
-    const userType = req.validatedData?.userType || req.body.userType;
     const rememberMe =
       req.body.rememberMe === true || req.body.rememberMe === "true";
 
     console.log("Parsed values:", {
       identifier,
       password: password ? "***" : "none",
-      userType,
     });
 
-    // إذا في userType، استخدمه مباشرة
-    if (userType === "teacher") {
-      console.log("🎓 Attempting teacher login (explicit userType)");
-      return await loginTeacher(req, res, identifier, password, rememberMe);
-    }
-
-    if (userType === "admin") {
-      console.log("👔 Attempting admin login (explicit userType)");
-      return await loginAdmin(req, res, identifier, password, rememberMe);
-    }
-
-    // إذا ما في userType محدد، حاول الطالب أولاً (default behavior)
-    console.log("🎒 No userType specified, attempting student login first");
-
-    // التحقق من إدخال رقم الطالب ورقم الهوية
+    // التحقق من إدخال المعرف وكلمة المرور
     if (!identifier || !password) {
       return res.status(400).json({
         success: false,
-        message: "الرجاء إدخال رقم الطالب وكلمة المرور",
+        message: "الرجاء إدخال المعرف وكلمة المرور",
       });
     }
 
-    // البحث عن الطالب باستخدام رقم الطالب
-    console.log("🔍 البحث عن طالب برقم:", identifier);
-    const studentIdNumber = parseInt(identifier);
-    const student = await Student.findOne({ studentId: studentIdNumber });
-
-    if (!student) {
-      console.log("❌ لم يتم العثور على طالب برقم:", identifier);
-      return res.status(401).json({
-        success: false,
-        message: "رقم الطالب غير صحيح أو غير موجود",
-      });
-    }
-
-    console.log("✅ تم العثور على الطالب:", student.firstName, student.lastName);
+    // البحث التلقائي في جميع الأنواع
+    console.log("🔍 البحث التلقائي عن المستخدم في جميع الأنواع...");
     
+    // 1. محاولة البحث كطالب (studentId)
+    const studentIdNumber = parseInt(identifier);
+    if (!isNaN(studentIdNumber)) {
+      console.log("🎒 محاولة البحث كطالب برقم:", studentIdNumber);
+      const student = await Student.findOne({ studentId: studentIdNumber });
+      
+      if (student) {
+        console.log("✅ تم العثور على طالب:", student.firstName, student.lastName);
+        return await authenticateStudent(student, password, rememberMe, res);
+      }
+    }
+
+    // 2. محاولة البحث كمعلم (teacherId)
+    console.log("🎓 محاولة البحث كمعلم برقم:", identifier);
+    const teacher = await Teacher.findOne({ teacherId: identifier });
+    
+    if (teacher) {
+      console.log("✅ تم العثور على معلم:", teacher.firstName, teacher.lastName);
+      return await authenticateTeacher(teacher, password, rememberMe, res);
+    }
+
+    // 3. محاولة البحث كإداري (adminId)
+    console.log("👔 محاولة البحث كإداري برقم:", identifier);
+    const admin = await Admin.findOne({ adminId: identifier });
+    
+    if (admin) {
+      console.log("✅ تم العثور على إداري:", admin.firstName, admin.lastName);
+      return await authenticateAdmin(admin, password, rememberMe, res);
+    }
+
+    // لم يتم العثور على المستخدم في أي نوع
+    console.log("❌ لم يتم العثور على المستخدم");
+    return res.status(401).json({
+      success: false,
+      message: "المعرف غير صحيح أو غير موجود",
+    });
+  } catch (error) {
+    console.error("=== Login Error Details ===");
+    console.error("Error name:", error.name);
+    console.error("Error message:", error.message);
+    console.error("Error stack:", error.stack);
+
+    res.status(500).json({
+      success: false,
+      message: "حدث خطأ أثناء تسجيل الدخول",
+      error:
+        process.env.NODE_ENV === "production"
+          ? undefined
+          : {
+              name: error.name,
+              message: error.message,
+              details: error.toString(),
+            },
+    });
+  }
+};
+
+/**
+ * مصادقة الطالب بعد التحقق من وجوده
+ */
+const authenticateStudent = async (student, password, rememberMe, res) => {
+  try {
     let isPasswordValid = false;
 
     // التحقق مما إذا كانت كلمة المرور مشفرة أم لا
@@ -98,22 +134,22 @@ exports.login = async (req, res) => {
     }
 
     if (!isPasswordValid) {
-      console.log("❌ فشل التحقق من كلمة المرور");
+      console.log("❌ فشل التحقق من كلمة المرور للطالب");
       return res.status(401).json({
         success: false,
-        message: `رقم الهوية (كلمة المرور) غير صحيح. رقم الهوية الصحيح هو: ${student.idNumber}`,
+        message: "كلمة المرور غير صحيحة",
       });
     }
 
-    console.log("✅✅✅ تم التحقق من كلمة المرور بنجاح!");
+    console.log("✅ تم التحقق من كلمة المرور بنجاح!");
 
-    // Set isActive to true and update lastSeen on login
+    // تحديث حالة النشاط
     await Student.findByIdAndUpdate(student._id, {
       isActive: true,
       lastSeen: new Date(),
     });
 
-    // تحديد مدة الجلسة بناءً على "تذكرني"
+    // تحديد مدة الجلسة
     const tokenExpiry = rememberMe ? "7d" : "30m";
 
     // إنشاء رمز JWT
@@ -129,8 +165,8 @@ exports.login = async (req, res) => {
       { expiresIn: tokenExpiry }
     );
 
-    // إرسال البيانات المصادق عليها
-    res.status(200).json({
+    // إرسال الاستجابة
+    return res.status(200).json({
       success: true,
       token,
       user: {
@@ -148,28 +184,123 @@ exports.login = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("=== Login Error Details ===");
-    console.error("Error name:", error.name);
-    console.error("Error message:", error.message);
-    console.error("Error stack:", error.stack);
-
-    res.status(500).json({
-      success: false,
-      message: "حدث خطأ أثناء تسجيل الدخول",
-      error:
-        process.env.NODE_ENV === "production"
-          ? undefined
-          : {
-              name: error.name,
-              message: error.message,
-              details: error.toString(),
-            },
-    });
+    console.error("خطأ في مصادقة الطالب:", error);
+    throw error;
   }
 };
 
 /**
- * تسجيل دخول المعلم
+ * مصادقة المعلم بعد التحقق من وجوده
+ */
+const authenticateTeacher = async (teacher, password, rememberMe, res) => {
+  try {
+    const isMatch = await bcrypt.compare(password, teacher.password);
+
+    if (!isMatch) {
+      console.log("❌ فشل التحقق من كلمة المرور للمعلم");
+      return res.status(401).json({
+        success: false,
+        message: "كلمة المرور غير صحيحة",
+      });
+    }
+
+    await Teacher.findByIdAndUpdate(teacher._id, {
+      isActive: true,
+      lastSeen: new Date(),
+    });
+
+    const tokenExpiry = rememberMe ? "7d" : "30m";
+
+    const token = jwt.sign(
+      {
+        id: teacher._id,
+        teacherId: teacher.teacherId,
+        name: `${teacher.firstName} ${teacher.lastName}`,
+        groups: teacher.groups,
+        role: teacher.role,
+      },
+      JWT_SECRET,
+      { expiresIn: tokenExpiry }
+    );
+
+    return res.status(200).json({
+      success: true,
+      token,
+      user: {
+        _id: teacher._id,
+        teacherId: teacher.teacherId,
+        firstName: teacher.firstName,
+        lastName: teacher.lastName,
+        email: teacher.email,
+        gender: teacher.gender,
+        avatar: teacher.avatar,
+        groups: teacher.groups,
+        role: teacher.role,
+        isActive: true,
+      },
+    });
+  } catch (error) {
+    console.error("خطأ في مصادقة المعلم:", error);
+    throw error;
+  }
+};
+
+/**
+ * مصادقة الإداري بعد التحقق من وجوده
+ */
+const authenticateAdmin = async (admin, password, rememberMe, res) => {
+  try {
+    const isMatch = await bcrypt.compare(password, admin.password);
+
+    if (!isMatch) {
+      console.log("❌ فشل التحقق من كلمة المرور للإداري");
+      return res.status(401).json({
+        success: false,
+        message: "كلمة المرور غير صحيحة",
+      });
+    }
+
+    await Admin.findByIdAndUpdate(admin._id, {
+      isActive: true,
+      lastSeen: new Date(),
+    });
+
+    const tokenExpiry = rememberMe ? "7d" : "30m";
+
+    const token = jwt.sign(
+      {
+        id: admin._id,
+        adminId: admin.adminId,
+        name: `${admin.firstName} ${admin.lastName}`,
+        role: "admin",
+      },
+      JWT_SECRET,
+      { expiresIn: tokenExpiry }
+    );
+
+    return res.status(200).json({
+      success: true,
+      token,
+      user: {
+        _id: admin._id,
+        adminId: admin.adminId,
+        firstName: admin.firstName,
+        lastName: admin.lastName,
+        email: admin.email,
+        gender: admin.gender,
+        avatar: admin.avatar,
+        role: "admin",
+        isActive: true,
+      },
+    });
+  } catch (error) {
+    console.error("خطأ في مصادقة الإداري:", error);
+    throw error;
+  }
+};
+
+/**
+ * تسجيل دخول المعلم (Deprecated - للتوافق مع الكود القديم)
  */
 const loginTeacher = async (
   req,

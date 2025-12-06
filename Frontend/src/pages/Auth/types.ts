@@ -252,4 +252,55 @@ export type PasswordVisibility = {
   confirm: boolean;
 };
 
+// ============================================================================
+// DATE PICKER TYPES - أنواع منتقي التاريخ
+// ============================================================================
+
+export interface DatePickerProps {
+  label: string;
+  name: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  error?: string;
+  placeholder?: string;
+  required?: boolean;
+  minDate?: string;
+  maxDate?: string;
+  className?: string;
+}
+
+// ============================================================================
+// PASSWORD STRENGTH TYPES - أنواع قوة كلمة المرور
+// ============================================================================
+
+export interface PasswordStrengthResult {
+  score: number;
+  label: string;
+  color: string;
+}
+
+// ============================================================================
+// HOOK RETURN TYPES - أنواع إرجاع الـ hooks
+// ============================================================================
+
+export interface UseForgotPasswordReturn {
+  forgotPasswordData: ForgotPasswordFormData;
+  error: string;
+  fieldErrors: FieldErrors;
+  isLoading: boolean;
+  handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleSubmit: (onSuccess: () => void) => Promise<void>;
+  reset: () => void;
+}
+
+export interface UseResetPasswordReturn {
+  newPasswordData: NewPasswordData;
+  error: string;
+  fieldErrors: FieldErrors;
+  isLoading: boolean;
+  handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleSubmit: (onSuccess: () => void) => Promise<void>;
+  reset: () => void;
+}
+
 // جميع الـ types تم تصديرها بالأعلى بشكل مباشر
