@@ -6,7 +6,6 @@ import {
   showErrorToast,
 } from "@/components/utils/toastUtils";
 import { createActivity, updateActivity } from "@/Api/activityApi";
-import { useActivitiesSocket } from '../../Socket';
 import {
   validateActivityForm,
   validateImageFile,
@@ -30,9 +29,6 @@ import { EmptyState } from "@/components/UI/EmptyState";
 import { Alert } from "@/components/UI/Alert";
 
 const ActivitiesPage = () => {
-  // Socket Connection Hook
-  const { lastUpdate: socketLastUpdate } = useActivitiesSocket();
-
   // Data Hook
   const {
     activities,
@@ -61,12 +57,6 @@ const ActivitiesPage = () => {
     image: '',
     category: 'رحلة',
   });
-
-  // Refetch on socket update
-  useEffect(() => {
-    if (!socketLastUpdate) return;
-    refetchActivities();
-  }, [socketLastUpdate, refetchActivities]);
 
   // Initialize AOS
   useEffect(() => {

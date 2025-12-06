@@ -7,7 +7,7 @@ import {
   createSession,
   updateSession,
   deleteSession,
-} from "@/Api/sessionApi";
+} from "@/Api/TimeTable.Api";
 import type { Session, SessionFormData } from "../types/timetable.types";
 import Swal from "sweetalert2";
 
@@ -22,6 +22,7 @@ export const useTimetableActions = ({
   const addSession = useCallback(
     async (formData: SessionFormData) => {
       try {
+        // ✅ Backend سيتحقق من validation
         const added = await createSession(formData);
         setSessions((prev) => [...prev, added]);
 
@@ -38,6 +39,20 @@ export const useTimetableActions = ({
         return true;
       } catch (error: any) {
         console.error("❌ خطأ في حفظ الموعد:", error);
+        
+        // Handle conflict errors
+        if (error?.isConflict) {
+          await Swal.fire({
+            icon: "error",
+            title: "تعارض في المواعيد!",
+            html: error.message,
+            confirmButtonText: "حسناً",
+            confirmButtonColor: "#10b981",
+            iconColor: "#ef4444",
+          });
+          return false;
+        }
+
         const errorMsg =
           error?.response?.data?.message ||
           error?.message ||
@@ -61,6 +76,7 @@ export const useTimetableActions = ({
   const editSession = useCallback(
     async (sessionId: string, formData: SessionFormData) => {
       try {
+        // ✅ Backend سيتحقق من validation
         const updated = await updateSession(sessionId, formData);
         setSessions((prev) =>
           prev.map((s) => (s._id === sessionId ? updated : s))
@@ -79,6 +95,20 @@ export const useTimetableActions = ({
         return true;
       } catch (error: any) {
         console.error("❌ خطأ في تحديث الموعد:", error);
+        
+        // Handle conflict errors
+        if (error?.isConflict) {
+          await Swal.fire({
+            icon: "error",
+            title: "تعارض في المواعيد!",
+            html: error.message,
+            confirmButtonText: "حسناً",
+            confirmButtonColor: "#10b981",
+            iconColor: "#ef4444",
+          });
+          return false;
+        }
+
         const errorMsg =
           error?.response?.data?.message ||
           error?.message ||

@@ -2,7 +2,7 @@
 // SessionModal - نافذة إضافة/تعديل موعد الحلقة
 // ============================================================================
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState } from "react";
 import { Modal } from "@/components/UI/Modal";
 import { Button } from "@/components/UI/Button";
 import { Select } from "@/components/UI/Select";
@@ -12,9 +12,9 @@ import type {
   SessionFormData,
   UserRole,
 } from "../types/timetable.types";
-import { WEEK_DAYS, generateHours } from "../utils/timetableHelpers";
-import { Calendar, Clock, Users } from "lucide-react";
-import Swal from "sweetalert2";
+import { WEEK_DAYS } from "../utils/timetableHelpers";
+import { Calendar, Clock, Users, UserCircle } from "lucide-react";
+import { useSessionForm, useTeachers, useSessionValidation } from "../hooks";
 
 interface SessionModalProps {
   isOpen: boolean;
@@ -33,64 +33,29 @@ export const SessionModal: React.FC<SessionModalProps> = ({
   editingSession,
   role,
   teacherGroups = [],
-  sessions,
 }) => {
-  const hours = useMemo(() => generateHours(), []);
-
-  const [formData, setFormData] = useState<SessionFormData>({
-    day: WEEK_DAYS[0],
-    startHour: hours[0],
-    endHour: hours[1],
-    note: "",
+  // ✅ استخدام الـ hooks المنفصلة لتنظيم أفضل
+  const { formData, setFormData, selectedGroup, setSelectedGroup, hours, handleStartHourChange } = useSessionForm({
+    editingSession,
+    role,
+    teacherGroups,
   });
 
-  const [selectedGroup, setSelectedGroup] = useState<string>("");
+  const { teachers, loadingTeachers } = useTeachers({
+    isOpen,
+    enabled: role === "admin",
+  });
+
+  const { validateSession } = useSessionValidation();
+  
   const [loading, setLoading] = useState(false);
-
-  // تحديث النموذج عند التعديل
-  useEffect(() => {
-    if (editingSession) {
-      setFormData({
-        day: editingSession.day,
-        startHour: editingSession.startHour,
-        endHour: editingSession.endHour,
-        note: editingSession.note,
-      });
-      if (role === "teacher") {
-        setSelectedGroup(editingSession.note);
-      }
-    } else {
-      setFormData({
-        day: WEEK_DAYS[0],
-        startHour: hours[0],
-        endHour: hours[1],
-        note: "",
-      });
-      if (role === "teacher" && teacherGroups.length > 0) {
-        setSelectedGroup(teacherGroups[0]);
-      }
-    }
-  }, [editingSession, role, teacherGroups, hours]);
-
-  const hourIndex = (h: string) => hours.indexOf(h);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const si = hourIndex(formData.startHour);
-    const ei = hourIndex(formData.endHour);
-
-    // التحقق من الأوقات
-    if (si === -1 || ei === -1 || ei <= si) {
-      await Swal.fire({
-        icon: "warning",
-        title: "تنبيه",
-        text: "يجب أن تكون ساعة الانتهاء بعد ساعة الابتداء.",
-        confirmButtonText: "حسناً",
-        confirmButtonColor: "#10b981",
-      });
-      return;
-    }
+    // التحقق من صحة البيانات
+    const isValid = await validateSession(formData);
+    if (!isValid) return;
 
     // إعداد البيانات للإرسال
     const sessionNote = role === "teacher" ? selectedGroup : formData.note;
@@ -99,51 +64,8 @@ export const SessionModal: React.FC<SessionModalProps> = ({
       note: sessionNote,
     };
 
-    // فحص التعارض
-    const hasConflict = sessions.some((session) => {
-      // تجاهل الموعد الحالي عند التعديل
-      if (editingSession && session._id === editingSession._id) {
-        return false;
-      }
-
-      // تحقق فقط من مواعيد نفس اليوم
-      if (session.day !== formData.day) {
-        return false;
-      }
-
-      // للمعلم: تحقق من كل مواعيده (كل الحلقات)
-      // للإداري: تحقق فقط إذا كان نفس اسم الحلقة
-      if (role === "admin" && session.note !== sessionNote) {
-        return false;
-      }
-
-      const existingSi = hourIndex(session.startHour);
-      const existingEi = hourIndex(session.endHour);
-
-      // تحقق من التعارض
-      const overlaps = si < existingEi && ei > existingSi;
-      return overlaps;
-    });
-
-    if (hasConflict) {
-      const conflictTitle =
-        role === "teacher" ? "تعارض في مواعيد الحلقات!" : "تعارض في الموعد!";
-
-      const conflictMsg =
-        role === "teacher"
-          ? `يوجد موعد آخر لإحدى حلقاتك في نفس الوقت يوم ${formData.day} من ${formData.startHour} إلى ${formData.endHour}.<br><br>يرجى اختيار وقت آخر.`
-          : `يوجد موعد آخر لنفس الحلقة <strong>(${sessionNote})</strong> في نفس الوقت يوم ${formData.day}.<br><br>يرجى اختيار وقت آخر.`;
-
-      await Swal.fire({
-        icon: "error",
-        title: conflictTitle,
-        html: conflictMsg,
-        confirmButtonText: "حسناً",
-        confirmButtonColor: "#10b981",
-        iconColor: "#ef4444",
-      });
-      return;
-    }
+    // ✅ Backend سيفحص التعارض ويرجع error 409 إذا كان في تعارض
+    // useTimetableActions سيتعامل مع الـ conflict error
 
     setLoading(true);
     const success = await onSubmit(dataToSend, editingSession?._id);
@@ -177,9 +99,7 @@ export const SessionModal: React.FC<SessionModalProps> = ({
             label="ساعة الابتداء"
             icon={<Clock className="w-5 h-5" />}
             value={formData.startHour}
-            onChange={(e) =>
-              setFormData({ ...formData, startHour: e.target.value })
-            }
+            onChange={(e) => handleStartHourChange(e.target.value)}
             options={hours.map((h) => ({ value: h, label: h }))}
             required
           />
@@ -215,6 +135,46 @@ export const SessionModal: React.FC<SessionModalProps> = ({
             value={formData.note}
             onChange={(e) => setFormData({ ...formData, note: e.target.value })}
             placeholder="مثلاً حلقة تثبيت لنجاح..."
+            required
+          />
+        )}
+
+        {/* اختيار المعلم - للإداري فقط */}
+        {role === "admin" && (
+          <Select
+            label="المعلم المسؤول"
+            icon={<UserCircle className="w-5 h-5" />}
+            value={formData.teacherId}
+            onChange={(e) => setFormData({ ...formData, teacherId: e.target.value })}
+            options={[
+              { value: "", label: loadingTeachers ? "جاري التحميل..." : "اختر المعلم" },
+              ...teachers.map((teacher) => ({
+                value: teacher._id,
+                label: `${teacher.firstName} ${teacher.lastName}`,
+              })),
+            ]}
+            required
+            disabled={loadingTeachers}
+          />
+        )}
+
+        {/* نوع الحصة (إجباري) */}
+        {(role === "teacher" || role === "admin") && (
+          <Select
+            label="نوع الحصة"
+            value={formData.sessionType || ""}
+            onChange={(e) => 
+              setFormData({ 
+                ...formData, 
+                sessionType: e.target.value as "hifz" | "murajaah" | "both"
+              })
+            }
+            options={[
+              { value: "", label: "اختر نوع الحصة" },
+              { value: "hifz", label: "📖 حفظ" },
+              { value: "murajaah", label: "🔄 مراجعة" },
+              { value: "both", label: "📚 حفظ ومراجعة" },
+            ]}
             required
           />
         )}

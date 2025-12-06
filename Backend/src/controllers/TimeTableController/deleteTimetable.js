@@ -2,7 +2,7 @@
 // DELETE TIMETABLE OPERATIONS
 // ============================================
 
-const Session = require("../../schema/Session");
+const TimeTable = require("../../schema/TimeTable");
 const { removeTimetableFromGroup, emitSocketEvent } = require("./helpers");
 
 /**
@@ -11,10 +11,11 @@ const { removeTimetableFromGroup, emitSocketEvent } = require("./helpers");
 exports.deleteTimetable = async (req, res) => {
   try {
     const { id } = req.params;
-    const timetable = await Session.findById(id);
+    const timetable = await TimeTable.findById(id);
 
     if (!timetable) {
       return res.status(404).json({
+        success: false,
         error: "Not found",
         message: "لم يتم العثور على الموعد",
       });
@@ -26,11 +27,11 @@ exports.deleteTimetable = async (req, res) => {
     }
 
     // حذف الموعد من قاعدة البيانات
-    await Session.findByIdAndDelete(id);
+    await TimeTable.findByIdAndDelete(id);
 
     // إرسال حدث Socket
     const io = req.app.get("io");
-    emitSocketEvent(io, "sessionDeleted", { sessionId: id });
+    emitSocketEvent(io, "timetableDeleted", { timetableId: id });
 
     res.json({ 
       success: true, 
@@ -39,6 +40,7 @@ exports.deleteTimetable = async (req, res) => {
   } catch (err) {
     console.error("Error deleting timetable:", err);
     res.status(400).json({
+      success: false,
       error: "Invalid data",
       message: err.message || "حدث خطأ أثناء حذف الموعد",
     });

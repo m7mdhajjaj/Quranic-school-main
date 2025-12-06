@@ -67,43 +67,53 @@ class SocketManager {
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.log('❌ Socket disconnected:', reason);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('❌ Socket disconnected:', reason);
+      }
       this.isConnecting = false;
       this.notifyConnectionStatus(false);
       
       if (reason === 'io server disconnect') {
-        // الخادم قطع الاتصال، إعادة الاتصال يدوياً
         this.socket?.connect();
       }
     });
 
     this.socket.on('connect_error', (error) => {
-      console.error('❌ Socket connection error:', error.message);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('❌ Socket connection error:', error.message);
+      }
       this.reconnectAttempts++;
       this.isConnecting = false;
       
       if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-        console.error('🔴 Max reconnection attempts reached');
         this.stopHeartbeat();
       }
     });
 
     this.socket.on('reconnect', (attemptNumber) => {
-      console.log(`✅ Socket reconnected after ${attemptNumber} attempts`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`✅ Socket reconnected after ${attemptNumber} attempts`);
+      }
       this.reconnectAttempts = 0;
       this.startHeartbeat();
     });
 
     this.socket.on('reconnect_attempt', (attemptNumber) => {
-      console.log(`🔄 Reconnection attempt #${attemptNumber}`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`🔄 Reconnection attempt #${attemptNumber}`);
+      }
     });
 
     this.socket.on('reconnect_error', (error) => {
-      console.error('❌ Reconnection error:', error.message);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('❌ Reconnection error:', error.message);
+      }
     });
 
     this.socket.on('reconnect_failed', () => {
-      console.error('🔴 Socket reconnection failed');
+      if (process.env.NODE_ENV === 'development') {
+        console.error('🔴 Socket reconnection failed');
+      }
       this.stopHeartbeat();
     });
 
@@ -120,7 +130,7 @@ class SocketManager {
    * بدء إرسال Heartbeat كل 30 ثانية
    */
   private startHeartbeat(): void {
-    this.stopHeartbeat(); // إيقاف أي heartbeat سابق
+    this.stopHeartbeat();
 
     this.heartbeatInterval = setInterval(() => {
       if (this.socket?.connected) {
@@ -131,7 +141,9 @@ class SocketManager {
       }
     }, this.heartbeatIntervalTime);
 
-    console.log(`💓 Heartbeat started (every ${this.heartbeatIntervalTime / 1000}s)`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`💓 Heartbeat started (every ${this.heartbeatIntervalTime / 1000}s)`);
+    }
   }
 
   /**
@@ -141,7 +153,6 @@ class SocketManager {
     if (this.heartbeatInterval) {
       clearInterval(this.heartbeatInterval);
       this.heartbeatInterval = null;
-      console.log('💔 Heartbeat stopped');
     }
   }
 
@@ -213,7 +224,7 @@ class SocketManager {
   emit(eventName: string, data?: unknown): void {
     if (this.socket?.connected) {
       this.socket.emit(eventName, data);
-    } else {
+    } else if (process.env.NODE_ENV === 'development') {
       console.warn(`⚠️ Cannot emit '${eventName}': Socket not connected`);
     }
   }

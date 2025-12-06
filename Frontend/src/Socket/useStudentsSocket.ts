@@ -27,19 +27,11 @@ export const useStudentsSocket = () => {
    * الاتصال وإعداد الغرفة
    */
   useEffect(() => {
-    if (!user) {
-      console.log('⚠️ No user, skipping students socket connection');
-      return;
-    }
+    if (!user) return;
 
-    console.log('🔌 Initializing Students Socket...');
-    
-    // الاتصال (SocketManager يدير Heartbeat تلقائياً)
     socketManager.connect(user._id, user.role);
 
-    // الاشتراك في تحديثات الاتصال
     const unsubscribe = socketManager.onConnectionChange((connected) => {
-      console.log('📡 Students socket connection:', connected);
       setIsConnected(connected);
       
       if (connected && !hasJoinedRoom.current) {
@@ -49,10 +41,8 @@ export const useStudentsSocket = () => {
 
     setIsConnected(socketManager.isConnected());
 
-    // الانضمام للغرفة
     const joinStudentsRoom = () => {
       if (socketManager.isConnected() && !hasJoinedRoom.current) {
-        console.log('👨‍🎓 Joining students room...');
         socketManager.emit('joinStudents', {
           userId: user._id,
           userRole: user.role,
@@ -66,9 +56,7 @@ export const useStudentsSocket = () => {
       joinStudentsRoom();
     }
 
-    // التنظيف
     return () => {
-      console.log('🧹 Cleaning up Students Socket...');
       unsubscribe();
       
       if (hasJoinedRoom.current) {
@@ -87,16 +75,7 @@ export const useStudentsSocket = () => {
   useEffect(() => {
     if (!isConnected) return;
 
-    console.log('👂 Setting up students event listeners...');
-
-    // معالج إنشاء طالب
-    const handleStudentCreated = (...args: unknown[]) => {
-      const student = args[0] as Student;
-      console.log('➕ Student created:', student);
-      setLastUpdate(new Date());
-    };
-
-    // معالج تحديث طالب
+    const handleStudentCreated = () => setLastUpdate(new Date());
     const handleStudentUpdated = (...args: unknown[]) => {
       const student = args[0] as Student;
       console.log('✏️ Student updated:', student);
@@ -104,27 +83,17 @@ export const useStudentsSocket = () => {
     };
 
     // معالج حذف طالب
-    const handleStudentDeleted = (...args: unknown[]) => {
-      const data = args[0] as { studentId: string };
-      console.log('🗑️ Student deleted:', data);
-      setLastUpdate(new Date());
+    const handleStudentDeleted = () => setLastUpdate(new Date());
+    const handleError = (error: { message: string }) => {
+      console.error('❌ Students error:', error.message);
     };
 
-    // معالج الأخطاء
-    const handleError = (...args: unknown[]) => {
-      const error = args[0] as { message: string };
-      console.error('❌ Students socket error:', error);
-    };
-
-    // تسجيل المستمعين
     socketManager.on('studentCreated', handleStudentCreated);
     socketManager.on('studentUpdated', handleStudentUpdated);
     socketManager.on('studentDeleted', handleStudentDeleted);
     socketManager.on('error', handleError);
 
-    // التنظيف
     return () => {
-      console.log('🧹 Removing students event listeners...');
       socketManager.off('studentCreated', handleStudentCreated);
       socketManager.off('studentUpdated', handleStudentUpdated);
       socketManager.off('studentDeleted', handleStudentDeleted);
@@ -136,12 +105,8 @@ export const useStudentsSocket = () => {
    * طلب قائمة الطلاب
    */
   const requestStudentsList = useCallback(() => {
-    if (!isConnected) {
-      console.warn('⚠️ Cannot request students list: Socket not connected');
-      return;
-    }
+    if (!isConnected) return;
 
-    console.log('📋 Requesting students list...');
     socketManager.emit('requestStudentsList', {
       timestamp: Date.now(),
     });

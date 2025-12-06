@@ -31,7 +31,6 @@ import {
   validateField,
   type FieldErrors,
 } from "../../Validation/profileValidation";
-import { useProfileSocket } from "../../Socket";
 import { Card } from "@/components/UI/Card";
 import { EmptyState } from "@/components/UI/EmptyState";
 import { LoadingSpinner } from "@/components/UI/LoadingSpinner";
@@ -51,9 +50,6 @@ import type { UserProfile, Endpoint, FetchState } from "./types/profile.types";
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const { user: authUser, updateUser: updateAuthUser } = useAuth();
-
-  // 🔌 Socket Connection
-  const { lastUpdate: socketLastUpdate } = useProfileSocket();
 
   const [user, setUser] = useState<UserProfile | null>(null);
   const [endpoint, setEndpoint] = useState<Endpoint>("students");
@@ -130,14 +126,6 @@ const ProfilePage: React.FC = () => {
         URL.revokeObjectURL(avatarUrl);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // 🔄 Auto-refresh when socket receives updates
-  useEffect(() => {
-    if (socketLastUpdate) {
-      console.log("🔄 Profile Socket update received, refreshing profile...");
-      loadUser();
-    }
-  }, [socketLastUpdate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const beginEdit = () => {
     setEdited(user);

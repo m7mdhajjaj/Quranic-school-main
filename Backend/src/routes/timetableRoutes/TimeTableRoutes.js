@@ -1,18 +1,29 @@
 const express = require("express");
 const router = express.Router();
-const sessionController = require("../../controllers/TimeTableController");
+const timetableController = require("../../controllers/TimeTableController");
 const { validateTimetableData } = require("../../Validation/Timetable/TimetableValidation");
+const { protect } = require("../../middleware/authMiddleware");
 
-// Get all timetables
-router.get("/", sessionController.getSessions);
+// ============================================
+// TIMETABLE ROUTES
+// ============================================
 
-// Create new timetable
-router.post("/", validateTimetableData, sessionController.addSession);
+// Get all timetables - مع المصادقة لفلترة البيانات حسب المستخدم
+router.get("/", protect, timetableController.getAllTimetables);
 
-// Update timetable
-router.put("/:id", validateTimetableData, sessionController.updateSession);
+// Create new timetable - يحتاج مصادقة لفحص تعارب حلقات المعلم
+router.post("/", protect, validateTimetableData, timetableController.createTimetable);
 
-// Delete timetable
-router.delete("/:id", sessionController.deleteSession);
+// Update timetable - يحتاج مصادقة لفحص تعارب حلقات المعلم
+router.put("/:id", protect, validateTimetableData, timetableController.updateTimetable);
+
+// Delete timetable - يحتاج مصادقة
+router.delete("/:id", protect, timetableController.deleteTimetable);
+
+// Backward compatibility aliases
+router.get("/sessions", protect, timetableController.getSessions);
+router.post("/sessions", protect, validateTimetableData, timetableController.addSession);
+router.put("/sessions/:id", protect, validateTimetableData, timetableController.updateSession);
+router.delete("/sessions/:id", protect, timetableController.deleteSession);
 
 module.exports = router;

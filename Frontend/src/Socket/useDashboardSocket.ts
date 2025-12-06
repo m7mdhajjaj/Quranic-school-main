@@ -98,12 +98,13 @@ export const useDashboardSocket = () => {
   useEffect(() => {
     if (!isConnected) return;
 
-    console.log('👂 Setting up dashboard event listeners...');
+    if (import.meta.env.DEV) {
+      console.log('👂 Setting up dashboard event listeners...');
+    }
 
     // معالج تحديث Dashboard
     const handleDashboardUpdate = (...args: unknown[]) => {
       const data = args[0] as DashboardUpdateEvent;
-      console.log('📊 Dashboard update received:', data);
       setDashboardData(data.data as DashboardStats);
       setLastUpdate(new Date());
     };
@@ -111,7 +112,6 @@ export const useDashboardSocket = () => {
     // معالج إحصائيات Dashboard
     const handleStatsUpdate = (...args: unknown[]) => {
       const stats = args[0] as DashboardStats;
-      console.log('📈 Dashboard stats updated:', stats);
       setDashboardData(stats);
       setLastUpdate(new Date());
     };
@@ -119,7 +119,7 @@ export const useDashboardSocket = () => {
     // معالج الأخطاء
     const handleError = (...args: unknown[]) => {
       const error = args[0] as { message: string; code?: string };
-      console.error('❌ Dashboard socket error:', error);
+      console.error('❌ Dashboard error:', error);
     };
 
     // تسجيل المستمعين
@@ -129,7 +129,6 @@ export const useDashboardSocket = () => {
 
     // التنظيف
     return () => {
-      console.log('🧹 Removing dashboard event listeners...');
       socketManager.off('dashboardUpdate', handleDashboardUpdate);
       socketManager.off('statsUpdate', handleStatsUpdate);
       socketManager.off('error', handleError);
@@ -141,11 +140,12 @@ export const useDashboardSocket = () => {
    */
   const requestUpdate = useCallback(() => {
     if (!isConnected) {
-      console.warn('⚠️ Cannot request update: Socket not connected');
+      if (import.meta.env.DEV) {
+        console.warn('⚠️ Cannot request update: Socket not connected');
+      }
       return;
     }
 
-    console.log('📊 Requesting dashboard update...');
     socketManager.emit('requestDashboardUpdate', {
       timestamp: Date.now(),
     });

@@ -11,7 +11,7 @@ const isRequired = (value) => {
 };
 
 /**
- * Validate day name (Arabic or English)
+ * Validate day name (Arabic only - matching schema enum)
  */
 const validateDay = (day) => {
   if (!isRequired(day)) {
@@ -20,22 +20,16 @@ const validateDay = (day) => {
 
   const dayStr = day.toString().trim();
   
-  // Valid Arabic days
+  // Valid Arabic days - must match schema enum
   const validArabicDays = [
     'السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 
     'الأربعاء', 'الخميس', 'الجمعة'
   ];
-  
-  // Valid English days
-  const validEnglishDays = [
-    'Saturday', 'Sunday', 'Monday', 'Tuesday', 
-    'Wednesday', 'Thursday', 'Friday'
-  ];
 
-  if (!validArabicDays.includes(dayStr) && !validEnglishDays.includes(dayStr)) {
+  if (!validArabicDays.includes(dayStr)) {
     return { 
       isValid: false, 
-      message: 'اليوم غير صحيح. يجب أن يكون أحد أيام الأسبوع' 
+      message: 'اليوم غير صحيح. يجب أن يكون أحد أيام الأسبوع (السبت، الأحد، الاثنين، الثلاثاء، الأربعاء، الخميس، الجمعة)' 
     };
   }
 
@@ -43,7 +37,7 @@ const validateDay = (day) => {
 };
 
 /**
- * Validate start hour (time format HH:MM or H:MM)
+ * Validate start hour (time format with AM/PM and working hours check)
  */
 const validateStartHour = (startHour) => {
   if (!isRequired(startHour)) {
@@ -52,19 +46,41 @@ const validateStartHour = (startHour) => {
 
   const timeStr = startHour.toString().trim();
   
-  // Validate time format (HH:MM or H:MM)
-  if (!/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(timeStr)) {
+  // Validate time format (HH:MM AM/PM or H:MM AM/PM)
+  if (!/^([0-1]?[0-9]):[0-5][0-9]\s?(AM|PM|am|pm)$/i.test(timeStr)) {
     return { 
       isValid: false, 
-      message: 'ساعة البداية غير صحيحة (يجب أن تكون بصيغة HH:MM مثل 09:00)' 
+      message: 'ساعة البداية غير صحيحة (يجب أن تكون بصيغة HH:MM AM/PM مثل 12:00 PM)' 
     };
+  }
+
+  // Check working hours (12:00 PM to 9:00 AM)
+  const match = timeStr.match(/^([0-1]?[0-9]):[0-5][0-9]\s?(AM|PM|am|pm)$/i);
+  if (match) {
+    const hour = parseInt(match[1]);
+    const isPM = match[2].toLowerCase() === 'pm';
+    const isAM = match[2].toLowerCase() === 'am';
+    
+    let isValidHour = false;
+    if (isPM) {
+      isValidHour = hour === 12 || (hour >= 1 && hour < 12); // 12PM-11:59PM
+    } else if (isAM) {
+      isValidHour = (hour >= 1 && hour <= 9) || hour === 12; // 12AM-9AM
+    }
+    
+    if (!isValidHour) {
+      return {
+        isValid: false,
+        message: 'أوقات العمل من 12:00 PM إلى 9:00 AM فقط'
+      };
+    }
   }
 
   return { isValid: true, value: timeStr };
 };
 
 /**
- * Validate end hour (time format HH:MM or H:MM)
+ * Validate end hour (time format with AM/PM and working hours check)
  */
 const validateEndHour = (endHour) => {
   if (!isRequired(endHour)) {
@@ -73,12 +89,34 @@ const validateEndHour = (endHour) => {
 
   const timeStr = endHour.toString().trim();
   
-  // Validate time format (HH:MM or H:MM)
-  if (!/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(timeStr)) {
+  // Validate time format (HH:MM AM/PM or H:MM AM/PM)
+  if (!/^([0-1]?[0-9]):[0-5][0-9]\s?(AM|PM|am|pm)$/i.test(timeStr)) {
     return { 
       isValid: false, 
-      message: 'ساعة النهاية غير صحيحة (يجب أن تكون بصيغة HH:MM مثل 11:00)' 
+      message: 'ساعة النهاية غير صحيحة (يجب أن تكون بصيغة HH:MM AM/PM مثل 11:00 PM)' 
     };
+  }
+
+  // Check working hours (12:00 PM to 9:00 AM)
+  const match = timeStr.match(/^([0-1]?[0-9]):[0-5][0-9]\s?(AM|PM|am|pm)$/i);
+  if (match) {
+    const hour = parseInt(match[1]);
+    const isPM = match[2].toLowerCase() === 'pm';
+    const isAM = match[2].toLowerCase() === 'am';
+    
+    let isValidHour = false;
+    if (isPM) {
+      isValidHour = hour === 12 || (hour >= 1 && hour < 12); // 12PM-11:59PM
+    } else if (isAM) {
+      isValidHour = (hour >= 1 && hour <= 9) || hour === 12; // 12AM-9AM
+    }
+    
+    if (!isValidHour) {
+      return {
+        isValid: false,
+        message: 'أوقات العمل من 12:00 PM إلى 9:00 AM فقط'
+      };
+    }
   }
 
   return { isValid: true, value: timeStr };
@@ -102,6 +140,48 @@ const validateNote = (note) => {
   }
 
   return { isValid: true, value: noteStr };
+};
+
+/**
+ * Validate teacherId (required field)
+ */
+const validateTeacherId = (teacherId) => {
+  if (!isRequired(teacherId)) {
+    return { isValid: false, message: 'معرف المعلم مطلوب' };
+  }
+
+  const teacherIdStr = teacherId.toString().trim();
+  
+  // Validate MongoDB ObjectId format (24 hex characters)
+  if (!/^[a-fA-F0-9]{24}$/.test(teacherIdStr)) {
+    return { 
+      isValid: false, 
+      message: 'معرف المعلم غير صحيح' 
+    };
+  }
+
+  return { isValid: true, value: teacherIdStr };
+};
+
+/**
+ * Validate sessionType (optional field)
+ */
+const validateSessionType = (sessionType) => {
+  if (!sessionType || sessionType.trim() === '') {
+    return { isValid: true, value: undefined }; // Optional field
+  }
+
+  const validTypes = ['hifz', 'murajaah', 'both'];
+  const typeStr = sessionType.toString().trim().toLowerCase();
+  
+  if (!validTypes.includes(typeStr)) {
+    return { 
+      isValid: false, 
+      message: 'نوع الحصة يجب أن يكون: hifz (حفظ) أو murajaah (مراجعة) أو both (الاثنين)' 
+    };
+  }
+
+  return { isValid: true, value: typeStr };
 };
 
 /**
@@ -198,6 +278,30 @@ const validateTimetableData = async (req, res, next) => {
       }
     }
     
+    // Validate optional sessionType field
+    if (data.sessionType !== undefined) {
+      const sessionTypeValidation = validateSessionType(data.sessionType);
+      if (!sessionTypeValidation.isValid) {
+        errors.push(sessionTypeValidation.message);
+      } else {
+        validatedData.sessionType = sessionTypeValidation.value;
+      }
+    }
+    
+    // Validate required teacherId field for creation
+    if (!isUpdate || data.teacherId !== undefined) {
+      if (!isUpdate && !data.teacherId) {
+        errors.push('معرف المعلم مطلوب');
+      } else if (data.teacherId) {
+        const teacherIdValidation = validateTeacherId(data.teacherId);
+        if (!teacherIdValidation.isValid) {
+          errors.push(teacherIdValidation.message);
+        } else {
+          validatedData.teacherId = teacherIdValidation.value;
+        }
+      }
+    }
+    
     // Validate time logic (start should be before end)
     if (validatedData.startHour && validatedData.endHour) {
       const timeLogicValidation = validateTimeLogic(
@@ -223,6 +327,7 @@ const validateTimetableData = async (req, res, next) => {
     req.validatedData = validatedData;
     
     console.log('✅ تم التحقق من بيانات الجدول الزمني بنجاح');
+    console.log('ℹ️ ملاحظة: فحص التعارب الزمني يتم في الـ controller');
     next();
     
   } catch (error) {
@@ -242,5 +347,7 @@ module.exports = {
   validateStartHour,
   validateEndHour,
   validateNote,
+  validateTeacherId,
+  validateSessionType,
   validateTimeLogic
 };

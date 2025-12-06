@@ -145,7 +145,9 @@ export const useNotificationsSocket = (): UseNotificationsSocketReturn => {
 
   // Handler for new notification
   const handleNewNotification = useCallback((data: unknown) => {
-    console.log('📬 [NotificationsSocket] New notification received:', data);
+    if (import.meta.env.DEV) {
+      console.log('📬 [NotificationsSocket] New notification received');
+    }
 
     try {
       const notificationData = data as Record<string, unknown>;
@@ -159,38 +161,25 @@ export const useNotificationsSocket = (): UseNotificationsSocketReturn => {
         sentAt: String(notificationData.sentAt || notificationData.createdAt || new Date().toISOString()),
         isRead: false,
         priority: String(notificationData.priority || 'medium'),
-        isNew: true, // مهم: تعليم الإشعار كجديد من Socket
+        isNew: true,
         data: notificationData.data as NotificationData,
       };
 
-      // Update last notification
+      // Batch state updates
       setLastNotification(notification);
-
-      // Update stats
       setNotificationStats((prev) => ({
         unreadCount: prev.unreadCount + 1,
         newCount: prev.newCount + 1,
         totalCount: prev.totalCount + 1,
       }));
-
-      // Trigger refresh
       setRefreshTrigger((prev) => prev + 1);
-
-      console.log('✅ [NotificationsSocket] Notification processed successfully:', {
-        id: notification._id,
-        type: notification.type,
-        title: notification.title,
-        isNew: notification.isNew
-      });
     } catch (error) {
-      console.error('❌ [NotificationsSocket] Error processing notification:', error);
+      console.error('❌ [NotificationsSocket] Error:', error);
     }
   }, []);
 
   // Handler for notification stats update
   const handleStatsUpdate = useCallback((data: unknown) => {
-    console.log('📊 [NotificationsSocket] Stats update received:', data);
-
     try {
       const statsData = data as Record<string, unknown>;
       setNotificationStats({
@@ -199,21 +188,18 @@ export const useNotificationsSocket = (): UseNotificationsSocketReturn => {
         totalCount: Number(statsData.totalCount) || 0,
       });
     } catch (error) {
-      console.error('❌ [NotificationsSocket] Error processing stats:', error);
+      console.error('❌ [NotificationsSocket] Stats error:', error);
     }
   }, []);
 
   // Handler for notification marked as read
   const handleNotificationRead = useCallback((data: unknown) => {
-    console.log('✓ [NotificationsSocket] Notification marked as read:', data);
-
     try {
       const readData = data as Record<string, unknown>;
       if (String(readData.notificationId) === lastNotification?._id) {
         setLastNotification((prev) => prev ? { ...prev, isRead: true } : null);
       }
 
-      // Update stats
       setNotificationStats((prev) => ({
         ...prev,
         unreadCount: Math.max(0, prev.unreadCount - 1),
