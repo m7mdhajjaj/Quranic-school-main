@@ -9,7 +9,8 @@ import {
   deleteSession,
 } from "@/Api/TimeTable.Api";
 import type { Session, SessionFormData } from "../types/timetable.types";
-import Swal from "sweetalert2";
+import { showConfirmDialog, showErrorMessage } from "@/components/utils";
+import { showSuccessToast, showErrorToast } from "@/components/utils/toastUtils";
 
 interface UseTimetableActionsProps {
   setSessions: React.Dispatch<React.SetStateAction<Session[]>>;
@@ -26,15 +27,9 @@ export const useTimetableActions = ({
         const added = await createSession(formData);
         setSessions((prev) => [...prev, added]);
 
-        await Swal.fire({
-          icon: "success",
-          title: "تمت الإضافة بنجاح!",
-          text: `تم إضافة موعد ${formData.note} يوم ${formData.day}`,
-          timer: 2000,
-          showConfirmButton: false,
-          toast: true,
-          position: "top-end",
-        });
+        showSuccessToast(
+          `تم إضافة موعد ${formData.note} يوم ${formData.day} بنجاح ✓`
+        );
 
         return true;
       } catch (error: any) {
@@ -42,14 +37,7 @@ export const useTimetableActions = ({
         
         // Handle conflict errors
         if (error?.isConflict) {
-          await Swal.fire({
-            icon: "error",
-            title: "تعارض في المواعيد!",
-            html: error.message,
-            confirmButtonText: "حسناً",
-            confirmButtonColor: "#10b981",
-            iconColor: "#ef4444",
-          });
+          await showErrorMessage("تعارض في المواعيد!", error.message);
           return false;
         }
 
@@ -58,13 +46,7 @@ export const useTimetableActions = ({
           error?.message ||
           "حدث خطأ أثناء حفظ الحلقة";
 
-        await Swal.fire({
-          icon: "error",
-          title: "حدث خطأ!",
-          text: errorMsg,
-          confirmButtonText: "حسناً",
-          confirmButtonColor: "#10b981",
-        });
+        showErrorToast(errorMsg);
 
         return false;
       }
@@ -82,15 +64,7 @@ export const useTimetableActions = ({
           prev.map((s) => (s._id === sessionId ? updated : s))
         );
 
-        await Swal.fire({
-          icon: "success",
-          title: "نجح التحديث!",
-          text: "تم تحديث موعد الحلقة بنجاح",
-          timer: 2000,
-          showConfirmButton: false,
-          toast: true,
-          position: "top-end",
-        });
+        showSuccessToast("تم تحديث موعد الحلقة بنجاح ✓");
 
         return true;
       } catch (error: any) {
@@ -98,14 +72,7 @@ export const useTimetableActions = ({
         
         // Handle conflict errors
         if (error?.isConflict) {
-          await Swal.fire({
-            icon: "error",
-            title: "تعارض في المواعيد!",
-            html: error.message,
-            confirmButtonText: "حسناً",
-            confirmButtonColor: "#10b981",
-            iconColor: "#ef4444",
-          });
+          await showErrorMessage("تعارض في المواعيد!", error.message);
           return false;
         }
 
@@ -114,13 +81,7 @@ export const useTimetableActions = ({
           error?.message ||
           "حدث خطأ أثناء تحديث الحلقة";
 
-        await Swal.fire({
-          icon: "error",
-          title: "حدث خطأ!",
-          text: errorMsg,
-          confirmButtonText: "حسناً",
-          confirmButtonColor: "#10b981",
-        });
+        showErrorToast(errorMsg);
 
         return false;
       }
@@ -131,21 +92,16 @@ export const useTimetableActions = ({
   // حذف موعد
   const removeSession = useCallback(
     async (session: Session) => {
-      const result = await Swal.fire({
-        title: "تأكيد الحذف",
-        html: `هل أنت متأكد من حذف موعد <strong>${
+      const result = await showConfirmDialog(
+        "تأكيد الحذف",
+        `هل أنت متأكد من حذف موعد <strong>${
           session.note || "الحلقة"
         }</strong>؟<br>يوم ${session.day} من ${session.startHour} إلى ${
           session.endHour
         }`,
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#ef4444",
-        cancelButtonColor: "#6b7280",
-        confirmButtonText: "نعم، احذف",
-        cancelButtonText: "إلغاء",
-        reverseButtons: true,
-      });
+        "نعم، احذف",
+        "إلغاء"
+      );
 
       if (!result.isConfirmed) return false;
 
@@ -154,26 +110,12 @@ export const useTimetableActions = ({
           await deleteSession(session._id);
           setSessions((prev) => prev.filter((s) => s._id !== session._id));
 
-          await Swal.fire({
-            icon: "success",
-            title: "تم الحذف!",
-            text: "تم حذف الموعد بنجاح",
-            timer: 2000,
-            showConfirmButton: false,
-            toast: true,
-            position: "top-end",
-          });
+          showSuccessToast("تم حذف الموعد بنجاح ✓");
 
           return true;
         } catch (error) {
           console.error("Error deleting session:", error);
-          await Swal.fire({
-            icon: "error",
-            title: "حدث خطأ!",
-            text: "حدث خطأ أثناء حذف الحلقة",
-            confirmButtonText: "حسناً",
-            confirmButtonColor: "#10b981",
-          });
+          showErrorToast("حدث خطأ أثناء حذف الحلقة");
           return false;
         }
       }

@@ -8,11 +8,16 @@ import {
   updateExam,
   deleteExam,
   type Exam,
-} from "@/Api/examApi";
+} from "@/Api/exam.api";
 import { showSuccessToast, showErrorToast } from "@/components/utils/toastUtils";
 import { showSuccessMessage, showErrorMessage } from "@/components/utils/sweetalertUtils";
-import { isTimeWithinAllowedRange } from '../utils';
 import Swal from 'sweetalert2';
+
+// Helper function to check if time is within allowed range (09:00 - 19:00)
+const isTimeWithinAllowedRange = (time: string): boolean => {
+  const [hours] = time.split(':').map(Number);
+  return hours >= 9 && hours < 19;
+};
 
 interface UseExamActionsProps {
   onExamsChange: () => void;

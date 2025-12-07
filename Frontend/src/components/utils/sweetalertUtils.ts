@@ -236,3 +236,32 @@ export const showConfirmMessage = (
     },
   });
 };
+
+// دالة لرسالة تأكيد الحذف
+export const showConfirmDialog = (
+  title: string,
+  message: string,
+  confirmButtonText: string = "نعم، احذف",
+  cancelButtonText: string = "إلغاء"
+) => {
+  return showCenteredSwal({
+    title: title,
+    html: message,
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#ef4444",
+    cancelButtonColor: "#6b7280",
+    confirmButtonText: confirmButtonText,
+    cancelButtonText: cancelButtonText,
+    reverseButtons: true,
+    customClass: {
+      popup: "rtl:text-right !rounded-2xl",
+      title: "!text-xl !font-bold !text-gray-800",
+      htmlContainer: "!text-right",
+      confirmButton:
+        "!bg-gradient-to-r !from-red-600 !to-red-700 hover:!from-red-700 hover:!to-red-800 !text-white !font-bold !px-6 !py-3 !rounded-xl !shadow-lg hover:!shadow-xl !transition-all",
+      cancelButton:
+        "!bg-gradient-to-r !from-gray-600 !to-gray-700 hover:!from-gray-700 hover:!to-gray-800 !text-white !font-bold !px-6 !py-3 !rounded-xl !shadow-lg hover:!shadow-xl !transition-all",
+    },
+  });
+};

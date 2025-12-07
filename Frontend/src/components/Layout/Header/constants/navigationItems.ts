@@ -61,6 +61,12 @@ export const getPrimaryNavItems = (rolePermissions: RolePermissions): Navigation
         color: "from-teal-600 to-cyan-600",
       },
       {
+        to: "/timetable",
+        label: "مواعيد الحلقات",
+        icon: Clock,
+        color: "from-indigo-600 to-purple-600",
+      },
+      {
         to: "/chat",
         label: "المحادثة",
         icon: MessageSquare,

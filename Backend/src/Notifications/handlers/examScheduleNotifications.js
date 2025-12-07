@@ -1,5 +1,5 @@
 // ============================================================================
-// examNotifications.js - Exam Notification Handlers
+// examScheduleNotifications.js - Exam Schedule Notification Handlers
 // ============================================================================
 
 const Student = require("../../schema/Student");

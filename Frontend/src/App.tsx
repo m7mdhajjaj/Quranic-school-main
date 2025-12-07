@@ -121,6 +121,9 @@ const AdminRoutes: React.FC = () => {
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/" element={<AdminDashboard />} />
 
+        {/* ====== Admin - Academic Pages ====== */}
+        <Route path="/timetable" element={<Timetable />} />
+
         {/* ====== Admin - User Settings ====== */}
         <Route path="/profile" element={<Profile />} />
 

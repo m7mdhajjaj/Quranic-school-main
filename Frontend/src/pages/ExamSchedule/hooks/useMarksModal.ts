@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { getAllStudents } from "@/Api/studentApi";
-import { getExamMarks, type Exam, type MarkRow, type StudentDoc } from "@/Api/examApi";
+import { getExamMarks, type Exam, type ExamMark, type StudentDoc } from "@/Api/exam.api";
 
 export function useMarksModal() {
   const [showMarkModal, setShowMarkModal] = useState(false);
@@ -11,7 +11,7 @@ export function useMarksModal() {
 
   const abortRef = useRef<AbortController | null>(null);
 
-  const fillMarksFromApi = (rows: MarkRow[]) => {
+  const fillMarksFromApi = (rows: ExamMark[]) => {
     const obj: Record<string, { mark: string; detail: string }> = {};
     rows.forEach((r) => {
       const student = r.student as StudentDoc;
@@ -46,7 +46,7 @@ export function useMarksModal() {
 
         // 2) العلامات الحالية
         try {
-          const mData: MarkRow[] = await getExamMarks(examId);
+          const mData: ExamMark[] = await getExamMarks(examId);
           if (!ac.signal.aborted && Array.isArray(mData)) fillMarksFromApi(mData);
         } catch {
           // لا يوجد علامات بعد

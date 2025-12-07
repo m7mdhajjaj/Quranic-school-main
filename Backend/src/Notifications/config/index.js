@@ -6,7 +6,7 @@
  * Central export file for all notification-related services and handlers
  * 
  * Usage:
- * const { NotificationService, FCMService, examNotifications } = require('./Notifications/config');
+ * const { NotificationService, FCMService, examScheduleNotifications } = require('./Notifications/config');
  */
 
 // Main Services
@@ -15,7 +15,7 @@ const FCMService = require("./FCMService");
 
 // Notification Handlers
 const sectionNotifications = require("../sectionNotifications");
-const examNotifications = require("../examNotifications");
+const examScheduleNotifications = require("../handlers/examScheduleNotifications");
 const dailyMarkNotifications = require("../dailyMarkNotifications");
 const newsNotifications = require("../newsNotifications");
 
@@ -31,9 +31,9 @@ module.exports = {
   notifyStudentAboutSection: sectionNotifications.notifyStudentAboutSection,
   
   // Exam Notifications
-  notifyExamCreated: examNotifications.notifyExamCreated,
-  notifyExamDeleted: examNotifications.notifyExamDeleted,
-  notifyExamUpdated: examNotifications.notifyExamUpdated,
+  notifyExamCreated: examScheduleNotifications.notifyExamCreated,
+  notifyExamDeleted: examScheduleNotifications.notifyExamDeleted,
+  notifyExamUpdated: examScheduleNotifications.notifyExamUpdated,
   
   // Daily Mark Notifications
   notifyMarkAdded: dailyMarkNotifications.notifyMarkAdded,

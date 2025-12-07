@@ -2,9 +2,9 @@
 // updateExam.js - Update Existing Exam
 // ============================================================================
 
-const Exam = require("../../schema/Exam");
+const ExamSchedule = require("../../schema/ExamSchedule");
 const { isTimeWithinAllowedRange, buildDuplicateQuery } = require("./examHelpers");
-const { notifyExamUpdated } = require("../../Notifications/handlers/examNotifications");
+const { notifyExamUpdated } = require("../../Notifications/handlers/examScheduleNotifications");
 
 /**
  * Update exam
@@ -29,11 +29,11 @@ const updateExam = async (req, res) => {
 
     // Prevent duplicate (same date & same group) - only if date or group changed
     if (date || group !== undefined) {
-      const checkDate = date || (await Exam.findById(examId))?.date;
-      const checkGroup = group !== undefined ? group : (await Exam.findById(examId))?.group;
+      const checkDate = date || (await ExamSchedule.findById(examId))?.date;
+      const checkGroup = group !== undefined ? group : (await ExamSchedule.findById(examId))?.group;
       
       const dupQuery = buildDuplicateQuery(checkDate, checkGroup);
-      const exists = await Exam.findOne({
+      const exists = await ExamSchedule.findOne({
         ...dupQuery,
         _id: { $ne: examId },
       });
@@ -66,7 +66,7 @@ const updateExam = async (req, res) => {
     if (isActive !== undefined) updateData.isActive = isActive;
     if (isPublished !== undefined) updateData.isPublished = isPublished;
 
-    const updated = await Exam.findByIdAndUpdate(
+    const updated = await ExamSchedule.findByIdAndUpdate(
       examId,
       updateData,
       { new: true, runValidators: true }

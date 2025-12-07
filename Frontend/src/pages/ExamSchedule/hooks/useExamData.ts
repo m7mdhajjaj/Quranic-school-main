@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useExamScheduleSocket } from "@/Socket";
-import { getAllExams, getExamAverage, type Exam, type ExamAverage } from "@/Api/examApi";
-import { getTeacherPossibleNames, isTeacherMatch } from '../utils';
+import { useEffect, useMemo, useState, useCallback } from 'react';
+import { getMyExams, getExamAverage, type Exam, type ExamAverage } from "@/Api/exam.api";
 
-export function useExamData(role: 'student' | 'teacher' | 'admin') {
-  const { isConnected, lastUpdate: socketLastUpdate, socketId } = useExamScheduleSocket();
+interface UseExamDataOptions {
+  search?: string;
+  date?: string;
+  type?: string;
+}
+
+export function useExamData(_role: 'student' | 'teacher' | 'admin', options: UseExamDataOptions = {}) {
 
   const [exams, setExams] = useState<Exam[]>([]);
   const [loadingExams, setLoadingExams] = useState(true);
@@ -52,60 +55,12 @@ export function useExamData(role: 'student' | 'teacher' | 'admin') {
     []
   );
 
-  const filterExamsByRole = async (list: Exam[]): Promise<Exam[]> => {
-    let out = list;
-
-    if (role === 'student') {
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        const currentUser = JSON.parse(userStr);
-        const studentGroup = currentUser.group as string | undefined;
-        if (studentGroup) {
-          out = out.filter((exam) => !exam.group || exam.group === studentGroup);
-        } else {
-          out = out.filter((exam) => !exam.group);
-        }
-      }
-      return out;
-    }
-
-    if (role === 'teacher') {
-      try {
-        const userStr = localStorage.getItem('user');
-        if (userStr) {
-          const currentUser = JSON.parse(userStr);
-          const { getAllGroups } = await import("@/Api/groupApi");
-          const groupsRes = await getAllGroups();
-          if (groupsRes.success && Array.isArray(groupsRes.data)) {
-            const possibleNames = getTeacherPossibleNames(currentUser);
-            const teacherGroupsData = groupsRes.data.filter((group: { teacher?: string }) => {
-              if (!group.teacher) return false;
-              return isTeacherMatch(group.teacher, possibleNames);
-            }) as Array<{ name: string }>;
-            const teacherGroupNames = teacherGroupsData.map((g) => g.name);
-            if (teacherGroupNames.length > 0) {
-              out = out.filter((exam) => !exam.group || teacherGroupNames.includes(exam.group));
-            } else {
-              out = out.filter((exam) => !exam.group);
-            }
-          } else {
-            out = out.filter((exam) => !exam.group);
-          }
-        }
-      } catch (err) {
-        console.error('خطأ في فلترة امتحانات المعلم:', err);
-      }
-      return out;
-    }
-
-    return out; // admin sees all
-  };
-
-  const loadExams = async () => {
+  const loadExams = useCallback(async () => {
     setLoadingExams(true);
     try {
-      let list = await getAllExams();
-      list = await filterExamsByRole(list);
+      // Backend handles all role-based filtering
+      const list = await getMyExams(options.search, options.date, options.type);
+      
       setExams(list);
       await refreshAllAverages(list);
     } catch (error) {
@@ -115,21 +70,13 @@ export function useExamData(role: 'student' | 'teacher' | 'admin') {
     } finally {
       setLoadingExams(false);
     }
-  };
+  }, [options.search, options.date, options.type]);
 
   useEffect(() => {
     loadExams();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [role]);
-
-  useEffect(() => {
-    if (socketLastUpdate) {
-      loadExams();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [socketLastUpdate]);
+  }, [loadExams]);
 
   const reloadExams = () => loadExams();
 
-  return { exams, loadingExams, examAverages, refreshAverageForExam, reloadExams, isConnected, socketLastUpdate, socketId } as const;
+  return { exams, loadingExams, examAverages, refreshAverageForExam, reloadExams } as const;
 }

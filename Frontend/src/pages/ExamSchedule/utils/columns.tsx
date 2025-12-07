@@ -1,8 +1,45 @@
 import React from 'react';
-import type { Exam } from "@/Api/examApi";
+import type { Exam } from "@/Api/exam.api";
 import type { Column } from "@/components/UI/Table";
-import { AvgBadge, StudentMarkDisplay } from '../components';
-import { formatDateArabic, formatTime12Arabic, safeExamId } from '../utils';
+
+// Helper components
+const AvgBadge: React.FC<{ value?: number | null }> = ({ value }) => {
+  if (value == null) {
+    return <span className="text-gray-400 text-xs">-</span>;
+  }
+  const color = value >= 85 ? 'green' : value >= 70 ? 'blue' : value >= 50 ? 'yellow' : 'red';
+  return (
+    <span className={`inline-flex items-center px-3 py-1 bg-${color}-100 text-${color}-700 rounded-full text-sm font-semibold`}>
+      {value.toFixed(1)}%
+    </span>
+  );
+};
+
+const StudentMarkDisplay: React.FC<{ mark?: string; isDesktop?: boolean }> = ({ mark, isDesktop }) => {
+  if (!mark) {
+    return <span className="text-gray-400 text-xs">لم يتم الإدخال بعد</span>;
+  }
+  return (
+    <span className="inline-flex items-center px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">
+      {mark}
+    </span>
+  );
+};
+
+// Helper functions
+const formatDateArabic = (dateStr: string) => {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
+};
+
+const formatTime12Arabic = (timeStr: string) => {
+  if (!timeStr) return '-';
+  const [hours, minutes] = timeStr.split(':');
+  const hour = parseInt(hours);
+  const period = hour >= 12 ? 'م' : 'ص';
+  const hour12 = hour % 12 || 12;
+  return `${hour12}:${minutes} ${period}`;
+};
 
 export function createExamColumns(params: {
   role: 'student' | 'teacher' | 'admin';
@@ -17,7 +54,26 @@ export function createExamColumns(params: {
       header: 'اسم الامتحان',
       width: '200px',
   render: (exam: Exam) => (
-        <span className="font-semibold text-emerald-900 text-xs md:text-sm break-words">{exam.name}</span>
+        <div className="flex flex-col gap-1">
+          <span className="font-semibold text-emerald-900 text-xs md:text-sm break-words">{exam.name}</span>
+          {exam.subject && (
+            <span className="text-xs text-gray-500">📚 {exam.subject}</span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'type',
+      header: 'النوع',
+      width: '100px',
+  render: (exam: Exam) => (
+        exam.type ? (
+          <span className="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium whitespace-nowrap">
+            {exam.type}
+          </span>
+        ) : (
+          <span className="text-gray-400 text-xs">-</span>
+        )
       ),
     },
     {
@@ -61,11 +117,44 @@ export function createExamColumns(params: {
       ),
     },
     {
+      key: 'duration',
+      header: 'المدة',
+      width: '100px',
+  render: (exam: Exam) => (
+        exam.duration ? (
+          <span className="text-xs text-gray-600">
+            ⏱️ {exam.duration} دقيقة
+          </span>
+        ) : (
+          <span className="text-gray-400 text-xs">-</span>
+        )
+      ),
+    },
+    {
+      key: 'marks',
+      header: 'الدرجات',
+      width: '120px',
+  render: (exam: Exam) => (
+        (exam.totalMarks || exam.passingMarks) ? (
+          <div className="flex flex-col text-xs">
+            {exam.totalMarks && (
+              <span className="text-gray-600">الكلي: {exam.totalMarks}</span>
+            )}
+            {exam.passingMarks !== undefined && (
+              <span className="text-emerald-600">النجاح: {exam.passingMarks}</span>
+            )}
+          </div>
+        ) : (
+          <span className="text-gray-400 text-xs">-</span>
+        )
+      ),
+    },
+    {
       key: 'result',
       header: role === 'teacher' || role === 'admin' ? 'متوسط العلامات' : 'النتيجة',
       width: role === 'student' ? '180px' : '140px',
   render: (exam: Exam) => {
-  const examId = safeExamId(exam) || '';
+        const examId = String(exam._id ?? exam.id);
         return role === 'teacher' || role === 'admin' ? (
           <AvgBadge value={examAverages[examId]} />
         ) : (

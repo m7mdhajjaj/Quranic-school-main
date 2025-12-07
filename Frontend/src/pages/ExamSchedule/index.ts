@@ -1,12 +1,5 @@
 // ============================================================================
-// ExamSchedule Module - Exports
+// ExamSchedule Index - Export main component
 // ============================================================================
 
-// Export all utilities
-export * from './utils';
-
-// Export all components
-export * from './components';
-
-// Export main page
 export { default } from './ExamSchedule';

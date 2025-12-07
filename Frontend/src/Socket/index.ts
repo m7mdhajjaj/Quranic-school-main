@@ -13,7 +13,6 @@ export { useStudentsSocket } from "./useStudentsSocket";
 export { useGroupsSocket } from "./useGroupsSocket";
 export { useMyStudentsSocket } from "./useMyStudentsSocket";
 export { useRankingSocket } from "./useRankingSocket";
-export { useExamScheduleSocket } from "./useExamScheduleSocket";
 export { useNotificationsSocket } from "./useNotificationsSocket"; // ✅ نظام الإشعارات
 
 // يمكن إضافة المزيد من الـ Hooks هنا في المستقبل

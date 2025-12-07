@@ -2,9 +2,9 @@
 // deleteExam.js - Delete Exam and Related Marks
 // ============================================================================
 
-const Exam = require("../../schema/Exam");
+const ExamSchedule = require("../../schema/ExamSchedule");
 const ExamMark = require("../../schema/ExamMark");
-const { notifyExamDeleted } = require("../../Notifications/handlers/examNotifications");
+const { notifyExamDeleted } = require("../../Notifications/handlers/examScheduleNotifications");
 
 /**
  * Delete exam and related marks
@@ -14,7 +14,7 @@ const deleteExam = async (req, res) => {
   try {
     const examId = req.params.examId;
     
-    const exam = await Exam.findById(examId);
+    const exam = await ExamSchedule.findById(examId);
     
     if (!exam) {
       return res.status(404).json({ error: "Exam not found" });
@@ -27,7 +27,7 @@ const deleteExam = async (req, res) => {
     await notifyExamDeleted(exam, io);
     
     // Remove exam
-    await Exam.findByIdAndDelete(examId);
+    await ExamSchedule.findByIdAndDelete(examId);
     
     // Remove all marks for this exam
     await ExamMark.deleteMany({ exam: examId });

@@ -3,7 +3,9 @@
 // ============================================================================
 
 import React from "react";
-import { cn } from "../utils";
+
+// Helper function to merge class names
+const cn = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
 
 interface TransparentModalProps {
   open: boolean;
@@ -33,7 +35,7 @@ export const TransparentModal: React.FC<TransparentModalProps> = ({
   if (!open) return null;
   return (
     <div
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999]"
       role="dialog"
       aria-label={ariaLabel ?? "Modal"}
       aria-modal
@@ -43,14 +45,14 @@ export const TransparentModal: React.FC<TransparentModalProps> = ({
       }}>
       <div
         className={cn(
-          "bg-white rounded-2xl shadow-2xl w-full overflow-hidden animate-fadeIn",
+          "bg-white rounded-2xl shadow-2xl w-full max-h-[90vh] overflow-hidden animate-fadeIn flex flex-col",
           maxWidth,
           cardClassName
         )}>
         {title && (
           <div
             className={cn(
-              "p-6",
+              "p-6 flex-shrink-0",
               `bg-gradient-to-r from-${gradientFrom} to-${gradientTo}`
             )}>
             <div className="flex justify-between items-center">
@@ -84,7 +86,7 @@ export const TransparentModal: React.FC<TransparentModalProps> = ({
             </div>
           </div>
         )}
-        <div className="p-6">{children}</div>
+        <div className="p-6 overflow-y-auto flex-1">{children}</div>
       </div>
     </div>
   );

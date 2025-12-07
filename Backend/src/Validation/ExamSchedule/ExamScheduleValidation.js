@@ -1,8 +1,8 @@
-// Validation/ExamValidation.js
+// Validation/ExamScheduleValidation.js
 
 /**
- * Exam data validation middleware with comprehensive rules
- * Validates and sanitizes exam data to ensure data integrity
+ * ExamSchedule data validation middleware with comprehensive rules
+ * Validates and sanitizes exam schedule data to ensure data integrity
  */
 
 /**
@@ -239,9 +239,9 @@ const sanitizeExamData = (data) => {
 };
 
 /**
- * Main validation middleware for exam data
+ * Main validation middleware for exam schedule data
  */
-const validateExamData = async (req, res, next) => {
+const validateExamScheduleData = async (req, res, next) => {
   try {
     console.log('🔍 بدء التحقق من بيانات الامتحان...');
     
@@ -312,15 +312,6 @@ const validateExamData = async (req, res, next) => {
     }
     
     // Validate optional fields
-    if (data.description !== undefined) {
-      const descValidation = validateDescription(data.description);
-      if (!descValidation.isValid) {
-        errors.push(descValidation.message);
-      } else {
-        validatedData.description = descValidation.value;
-      }
-    }
-    
     if (data.type !== undefined) {
       const typeValidation = validateExamType(data.type);
       if (!typeValidation.isValid) {
@@ -396,7 +387,7 @@ const validateExamData = async (req, res, next) => {
 };
 
 module.exports = {
-  validateExamData,
+  validateExamScheduleData,
   sanitizeExamData,
   validateExamTitle,
   validateDescription,

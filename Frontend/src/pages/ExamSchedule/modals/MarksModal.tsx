@@ -3,9 +3,23 @@
 // ============================================================================
 
 import React from 'react';
-import { TransparentModal, PillButton } from '../components';
-import { formatDateArabic, formatTime12Arabic, safeExamId } from '../utils';
-import type { Exam, StudentDoc } from "@/Api/examApi";
+import { TransparentModal } from '../components/TransparentModal';
+import type { Exam, StudentDoc } from "@/Api/exam.api";
+
+// Helper functions
+const formatDateArabic = (dateStr: string) => {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
+};
+
+const formatTime12Arabic = (timeStr: string) => {
+  if (!timeStr) return '-';
+  const [hours, minutes] = timeStr.split(':');
+  const hour = parseInt(hours);
+  const period = hour >= 12 ? 'م' : 'ص';
+  const hour12 = hour % 12 || 12;
+  return `${hour12}:${minutes} ${period}`;
+};
 
 interface MarksModalProps {
   open: boolean;
@@ -133,29 +147,27 @@ export const MarksModal: React.FC<MarksModalProps> = ({
                     {/* Action Buttons */}
                     {marks[sid]?.mark && (
                       <div className="flex gap-2 pt-2">
-                        <PillButton
-                          variant="primary"
+                        <button
                           type="button"
-                          className="text-xs flex-1 !bg-gradient-to-r !from-emerald-500 !to-teal-600 hover:!from-emerald-600 hover:!to-teal-700"
+                          className="text-xs flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg px-3 py-2 transition-colors"
                           onClick={async () => {
                             await onSaveSingleMark(sid, fullName);
                           }}
                         >
                           💾 حفظ
-                        </PillButton>
+                        </button>
 
-                        <PillButton
-                          variant="danger"
+                        <button
                           type="button"
-                          className="text-xs flex-1"
+                          className="text-xs flex-1 bg-red-600 hover:bg-red-700 text-white rounded-lg px-3 py-2 transition-colors"
                           onClick={() => {
-                            const examId = selectedExam ? safeExamId(selectedExam) : null;
+                            const examId = selectedExam ? String(selectedExam._id ?? selectedExam.id) : null;
                             if (!examId) return;
                             onDeleteMark(examId, sid);
                           }}
                         >
                           🗑️ حذف
-                        </PillButton>
+                        </button>
                       </div>
                     )}
                   </div>
@@ -165,17 +177,16 @@ export const MarksModal: React.FC<MarksModalProps> = ({
           </div>
 
           <div className="flex justify-between items-center pt-6 border-t-2 border-emerald-100">
-            <PillButton type="submit" className="text-lg px-8 py-3 !bg-gradient-to-r !from-emerald-600 !to-teal-700 hover:!from-emerald-700 hover:!to-teal-800 !shadow-lg hover:!shadow-xl !transform hover:!scale-[1.02]">
+            <button type="submit" className="text-lg px-8 py-3 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 shadow-lg hover:shadow-xl transform hover:scale-[1.02] text-white rounded-lg transition-all">
               💾 حفظ جميع العلامات
-            </PillButton>
-            <PillButton
+            </button>
+            <button
               type="button"
-              variant="neutral"
-              className="text-lg px-8 py-3"
+              className="text-lg px-8 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors"
               onClick={onCancel}
             >
               ✖️ إلغاء
-            </PillButton>
+            </button>
           </div>
         </form>
       )}

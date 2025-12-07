@@ -338,11 +338,15 @@ const validateExamMarkData = async (req, res, next) => {
           validatedData.mark = markValidation.value;
           validatedData.maxMark = maxMark;
           
-          // Calculate percentage and grade
-          if (validatedData.mark !== null) {
+          // Allow teacher to set custom percentage, otherwise calculate it
+          if (data.percentage !== undefined && data.percentage !== null) {
+            validatedData.percentage = parseFloat(data.percentage);
+          } else if (validatedData.mark !== null) {
             validatedData.percentage = Math.round((validatedData.mark / maxMark) * 100 * 100) / 100;
-            
-            // Determine grade based on percentage
+          }
+          
+          // Determine grade based on percentage
+          if (validatedData.percentage !== undefined && validatedData.percentage !== null) {
             if (validatedData.percentage >= 90) validatedData.grade = 'ممتاز';
             else if (validatedData.percentage >= 80) validatedData.grade = 'جيد جداً';
             else if (validatedData.percentage >= 70) validatedData.grade = 'جيد';
@@ -350,6 +354,11 @@ const validateExamMarkData = async (req, res, next) => {
             else validatedData.grade = 'راسب';
           }
         }
+      }
+      
+      // Allow detail field
+      if (data.detail !== undefined) {
+        validatedData.detail = data.detail;
       }
       
       if (data.status !== undefined) {

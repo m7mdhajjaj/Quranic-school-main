@@ -2,9 +2,9 @@
 // addExam.js - Add New Exam
 // ============================================================================
 
-const Exam = require("../../schema/Exam");
+const ExamSchedule = require("../../schema/ExamSchedule");
 const { isTimeWithinAllowedRange, buildDuplicateQuery } = require("./examHelpers");
-const { notifyExamCreated } = require("../../Notifications/handlers/examNotifications");
+const { notifyExamCreated } = require("../../Notifications/handlers/examScheduleNotifications");
 
 /**
  * Add new exam
@@ -39,7 +39,7 @@ const addExam = async (req, res) => {
 
     // Prevent duplicate (same date & same group)
     const dupQuery = buildDuplicateQuery(date, group);
-    const exists = await Exam.findOne(dupQuery);
+    const exists = await ExamSchedule.findOne(dupQuery);
     if (exists) {
       return res.status(400).json({ 
         success: false,
@@ -51,7 +51,7 @@ const addExam = async (req, res) => {
     }
 
     // Create exam with all validated fields
-    const exam = new Exam({ 
+    const exam = new ExamSchedule({ 
       name: examTitle, // Use either title or name
       title: examTitle,
       date, 

@@ -3,7 +3,7 @@
 // ============================================================================
 
 /**
- * Check if time is within allowed range (09:00 - 19:00)
+ * Check if time is within allowed range (12:00 - 21:00)
  */
 const isTimeWithinAllowedRange = (timeStr) => {
   if (!timeStr || typeof timeStr !== 'string') return false;
@@ -13,8 +13,8 @@ const isTimeWithinAllowedRange = (timeStr) => {
   const m = Number(parts[1]);
   if (Number.isNaN(h) || Number.isNaN(m)) return false;
   const total = h * 60 + m;
-  const MIN = 9 * 60; // 09:00
-  const MAX = 19 * 60; // 19:00
+  const MIN = 12 * 60; // 12:00
+  const MAX = 21 * 60; // 21:00
   return total >= MIN && total <= MAX;
 };
 

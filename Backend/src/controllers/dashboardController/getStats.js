@@ -1,6 +1,6 @@
 const Student = require("../../schema/Student");
 const Teacher = require("../../schema/Teacher");
-const Exam = require("../../schema/Exam");
+const ExamSchedule = require("../../schema/ExamSchedule");
 const Group = require("../../schema/Group");
 const Activity = require("../../schema/Activity");
 const News = require("../../schema/News");
@@ -38,7 +38,7 @@ const getDashboardStats = async (req, res) => {
       Teacher.countDocuments(),
 
       // Count total exams
-      Exam.countDocuments(),
+      ExamSchedule.countDocuments(),
 
       // Count total groups
       Group.countDocuments(),
@@ -92,7 +92,7 @@ const getDashboardStats = async (req, res) => {
       ]),
 
       // Count upcoming exams (next 30 days)
-      Exam.countDocuments({
+      ExamSchedule.countDocuments({
         date: {
           $gte: new Date(),
           $lte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
