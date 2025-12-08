@@ -9,9 +9,11 @@ interface ExamToolbarProps {
   setDateFilter: (v: string) => void;
   typeFilter: string;
   setTypeFilter: (v: string) => void;
+  marksFilter: string;
+  setMarksFilter: (v: string) => void;
   loadingExams: boolean;
   role: 'student' | 'teacher' | 'admin';
-  teacherGroups: string[];
+  teacherGroups?: string[]; // Optional since we removed the check
   onAddExamClick: () => void;
 }
 
@@ -22,22 +24,25 @@ export const ExamToolbar: React.FC<ExamToolbarProps> = ({
   setDateFilter,
   typeFilter,
   setTypeFilter,
-  loadingExams,
+  marksFilter,
+  setMarksFilter,
   role,
-  teacherGroups,
   onAddExamClick,
 }) => {
   const [showFilters, setShowFilters] = useState(false);
-  
-  // تحديد الألوان حسب الدور
+
+  // تحديد الألوان حسب الدور - جميع المستخدمين يستخدمون اللون الأخضر
   const colors = {
     student: {
-      bg: 'from-blue-500 to-indigo-600',
-      hover: 'hover:from-blue-600 hover:to-indigo-700',
-      border: 'border-blue-100',
-      focus: 'focus:border-blue-400 focus:ring-blue-50',
-      text: 'text-blue-400 group-focus-within:text-blue-600',
-      filterBg: 'from-blue-50/50 to-indigo-50/50',
+      bg: 'from-emerald-500 to-teal-600',
+      hover: 'hover:from-emerald-600 hover:to-teal-700',
+      border: 'border-emerald-100',
+      focus: 'focus:border-emerald-400 focus:ring-emerald-50',
+      text: 'text-emerald-400 group-focus-within:text-emerald-600',
+      filterBg: 'from-emerald-50/50 to-teal-50/50',
+      filterActive: 'bg-emerald-50 border-emerald-400 text-emerald-700',
+      filterHover: 'hover:border-emerald-300',
+      filterDot: 'bg-emerald-500',
     },
     teacher: {
       bg: 'from-emerald-500 to-teal-600',
@@ -46,24 +51,31 @@ export const ExamToolbar: React.FC<ExamToolbarProps> = ({
       focus: 'focus:border-emerald-400 focus:ring-emerald-50',
       text: 'text-emerald-400 group-focus-within:text-emerald-600',
       filterBg: 'from-emerald-50/50 to-teal-50/50',
+      filterActive: 'bg-emerald-50 border-emerald-400 text-emerald-700',
+      filterHover: 'hover:border-emerald-300',
+      filterDot: 'bg-emerald-500',
     },
     admin: {
-      bg: 'from-purple-500 to-violet-600',
-      hover: 'hover:from-purple-600 hover:to-violet-700',
-      border: 'border-purple-100',
-      focus: 'focus:border-purple-400 focus:ring-purple-50',
-      text: 'text-purple-400 group-focus-within:text-purple-600',
-      filterBg: 'from-purple-50/50 to-violet-50/50',
+      bg: 'from-emerald-500 to-teal-600',
+      hover: 'hover:from-emerald-600 hover:to-teal-700',
+      border: 'border-emerald-100',
+      focus: 'focus:border-emerald-400 focus:ring-emerald-50',
+      text: 'text-emerald-400 group-focus-within:text-emerald-600',
+      filterBg: 'from-emerald-50/50 to-teal-50/50',
+      filterActive: 'bg-emerald-50 border-emerald-400 text-emerald-700',
+      filterHover: 'hover:border-emerald-300',
+      filterDot: 'bg-emerald-500',
     },
   };
 
   const colorScheme = colors[role];
-  const hasActiveFilters = query || dateFilter || typeFilter;
+  const hasActiveFilters = query || dateFilter || typeFilter || marksFilter;
 
   const clearAllFilters = () => {
     setQuery('');
     setDateFilter('');
     setTypeFilter('');
+    setMarksFilter('');
   };
 
   return (
@@ -97,41 +109,28 @@ export const ExamToolbar: React.FC<ExamToolbarProps> = ({
             {/* زر الفلاتر */}
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-3 rounded-xl border-2 transition-all font-medium text-sm ${
-                hasActiveFilters
-                  ? `bg-${role === 'student' ? 'blue' : role === 'teacher' ? 'emerald' : 'purple'}-50 border-${role === 'student' ? 'blue' : role === 'teacher' ? 'emerald' : 'purple'}-400 text-${role === 'student' ? 'blue' : role === 'teacher' ? 'emerald' : 'purple'}-700`
-                  : `bg-white ${colorScheme.border} text-gray-700 hover:border-${role === 'student' ? 'blue' : role === 'teacher' ? 'emerald' : 'purple'}-300`
-              }`}
+              className={`flex items-center gap-2 px-4 py-3 rounded-xl border-2 transition-all font-medium text-sm ${hasActiveFilters
+                ? colorScheme.filterActive
+                : `bg-white ${colorScheme.border} text-gray-700 ${colorScheme.filterHover}`
+                }`}
               title="فتح الفلاتر"
             >
               <SlidersHorizontal className="w-4 h-4" />
               <span className="hidden sm:inline">فلاتر</span>
               {hasActiveFilters && (
-                <span className={`w-2 h-2 bg-${role === 'student' ? 'blue' : role === 'teacher' ? 'emerald' : 'purple'}-500 rounded-full animate-pulse`} />
+                <span className={`w-2 h-2 ${colorScheme.filterDot} rounded-full animate-pulse`} />
               )}
             </button>
 
             {/* زر إضافة امتحان */}
             {(role === 'teacher' || role === 'admin') && (
-              <>
-                {loadingExams ? (
-                  <div className={`h-12 w-32 rounded-xl bg-gradient-to-r ${colorScheme.bg} opacity-50 animate-pulse`} />
-                ) : role === 'teacher' && teacherGroups.length === 0 ? (
-                  <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-50 border-2 border-amber-200 text-amber-700 text-sm">
-                    <span>⚠️</span>
-                    <span className="hidden md:inline">لا توجد حلقات</span>
-                  </div>
-                ) : (
-                  <button
-                    onClick={onAddExamClick}
-                    disabled={role === 'teacher' && teacherGroups.length === 0}
-                    className={`flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r ${colorScheme.bg} text-white font-medium ${colorScheme.hover} active:scale-95 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed text-sm`}
-                  >
-                    <Plus className="w-5 h-5" />
-                    <span className="hidden sm:inline">إضافة امتحان</span>
-                  </button>
-                )}
-              </>
+              <button
+                onClick={onAddExamClick}
+                className={`flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r ${colorScheme.bg} text-white font-medium ${colorScheme.hover} active:scale-95 transition-all shadow-lg hover:shadow-xl text-sm`}
+              >
+                <Plus className="w-5 h-5" />
+                <span className="hidden sm:inline">إضافة امتحان</span>
+              </button>
             )}
           </div>
         </div>
@@ -139,36 +138,52 @@ export const ExamToolbar: React.FC<ExamToolbarProps> = ({
 
       {/* لوحة الفلاتر المتقدمة */}
       {showFilters && (
-        <div className={`border-t ${colorScheme.border} bg-gradient-to-br ${colorScheme.filterBg} p-4 md:p-5 animate-slideDown`}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className={`border-t-2 ${colorScheme.border} bg-gradient-to-br ${colorScheme.filterBg} p-4 md:p-5 animate-slideDown`}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* فلتر التاريخ */}
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">
+            <div className="space-y-2">
+              <label className="block text-sm font-bold text-gray-700">
                 تاريخ الامتحان
               </label>
               <DatePicker
                 value={dateFilter}
                 onChange={setDateFilter}
+                className="h-[50px] text-base"
               />
             </div>
 
             {/* فلتر نوع الامتحان */}
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">
+            <div className="space-y-2">
+              <label className="block text-sm font-bold text-gray-700">
                 نوع الامتحان
               </label>
               <select
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value)}
-                className={`w-full px-4 py-3 border-2 ${colorScheme.border} rounded-xl ${colorScheme.focus} outline-none transition-all text-sm bg-white focus:ring-4`}
+                className={`w-full h-[50px] px-4 py-3 border-2 ${colorScheme.border} rounded-xl ${colorScheme.focus} outline-none transition-all text-base bg-white focus:ring-4`}
                 title="فلتر نوع الامتحان"
               >
                 <option value="">جميع الأنواع</option>
                 <option value="شفهي">شفهي</option>
                 <option value="كتابي">كتابي</option>
-                <option value="عملي">عملي</option>
-                <option value="مشروع">مشروع</option>
                 <option value="تقييم شامل">تقييم شامل</option>
+              </select>
+            </div>
+
+            {/* فلتر حالة العلامات */}
+            <div className="space-y-2">
+              <label className="block text-sm font-bold text-gray-700">
+                حالة العلامات
+              </label>
+              <select
+                value={marksFilter}
+                onChange={(e) => setMarksFilter(e.target.value)}
+                className={`w-full h-[50px] px-4 py-3 border-2 ${colorScheme.border} rounded-xl ${colorScheme.focus} outline-none transition-all text-base bg-white focus:ring-4`}
+                title="فلتر حالة العلامات"
+              >
+                <option value="">الكل</option>
+                <option value="graded">مرصود</option>
+                <option value="not-graded">غير مرصود</option>
               </select>
             </div>
           </div>

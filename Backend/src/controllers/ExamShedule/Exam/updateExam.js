@@ -2,9 +2,9 @@
 // updateExam.js - Update Existing Exam
 // ============================================================================
 
-const ExamSchedule = require("../../schema/ExamSchedule");
-const { isTimeWithinAllowedRange, buildDuplicateQuery } = require("./examHelpers");
-const { notifyExamUpdated } = require("../../Notifications/handlers/examScheduleNotifications");
+const ExamSchedule = require("../../../schema/ExamSchedule");
+const { isTimeWithinAllowedRange, buildDuplicateQuery, checkTeacherTimeConflict, checkGroupDailyLimit, validateDuration } = require("./examHelpers");
+const { notifyExamUpdated } = require("../../../Notifications/handlers/examScheduleNotifications");
 
 /**
  * Update exam
@@ -18,33 +18,67 @@ const updateExam = async (req, res) => {
     const examData = req.validatedData || req.body;
     const { title, date, time, group, subject, type, duration, totalMarks, passingMarks, description, isActive, isPublished } = examData;
 
-    // Time window check (09:00 - 19:00) - only if time is provided
+    // Time window check (12:00 - 21:00) - only if time is provided
     if (time && !isTimeWithinAllowedRange(time)) {
       return res.status(400).json({ 
         success: false,
         message: "وقت الامتحان غير صحيح",
-        errors: ["وقت الامتحان يجب أن يكون بين 09:00 صباحاً و 07:00 مساءً"]
+        errors: ["الوقت المسموح من 12:00 ظهراً إلى 9:00 مساءً فقط"]
       });
     }
 
-    // Prevent duplicate (same date & same group) - only if date or group changed
+    // Duration validation (max 2 hours)
+    if (duration) {
+      const durationValidation = validateDuration(duration);
+      if (!durationValidation.isValid) {
+        return res.status(400).json({
+          success: false,
+          message: "مدة الامتحان غير صحيحة",
+          errors: [durationValidation.message]
+        });
+      }
+    }
+
+    // Check group daily limit: One exam per group per day - only if date or group changed
     if (date || group !== undefined) {
       const checkDate = date || (await ExamSchedule.findById(examId))?.date;
       const checkGroup = group !== undefined ? group : (await ExamSchedule.findById(examId))?.group;
       
-      const dupQuery = buildDuplicateQuery(checkDate, checkGroup);
-      const exists = await ExamSchedule.findOne({
-        ...dupQuery,
-        _id: { $ne: examId },
-      });
-      if (exists) {
-        return res.status(400).json({ 
-          success: false,
-          message: "امتحان موجود بالفعل",
-          errors: [checkGroup 
-            ? "يوجد بالفعل امتحان لهذه الحلقة في هذا اليوم" 
-            : "يوجد بالفعل امتحان عام في هذا اليوم"]
-        });
+      if (checkGroup) {
+        const groupLimit = await checkGroupDailyLimit(checkDate, checkGroup, examId);
+        if (groupLimit) {
+          return res.status(400).json({
+            success: false,
+            message: "تجاوز الحد اليومي للحلقة",
+            errors: [groupLimit.message]
+          });
+        }
+      }
+    }
+
+    // Check for teacher time conflict (only for teachers and if time/date changed)
+    if (req.user && req.user.role === 'teacher' && (time || date || duration)) {
+      const currentExam = await ExamSchedule.findById(examId);
+      const checkDate = date || currentExam?.date;
+      const checkTime = time || currentExam?.time;
+      const checkDuration = duration || currentExam?.duration || 60;
+      
+      if (checkTime) {
+        const timeConflict = await checkTeacherTimeConflict(
+          req.user._id,
+          checkDate,
+          checkTime,
+          checkDuration,
+          examId
+        );
+        
+        if (timeConflict) {
+          return res.status(400).json({
+            success: false,
+            message: "تعارض في الوقت",
+            errors: [timeConflict.message]
+          });
+        }
       }
     }
 

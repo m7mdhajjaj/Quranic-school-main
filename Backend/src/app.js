@@ -147,8 +147,9 @@ app.use(
   '/api/notifications',
   require('./routes/NotificationRoutes/notificationRoutes')
 );
-app.use('/api/exams', require('./routes/ExamRoutes/examRoutes'));
-app.use('/api/exam-marks', require('./routes/ExamMarkRoutes/examMarkRoutes'));
+// Exam marks routes must come BEFORE exam-schedule routes (more specific first)
+app.use('/api/exam-schedule/marks', require('./routes/ExamScheduleRoutes/ExamMarkRoutes/examMarkRoutes'));
+app.use('/api/exam-schedule', require('./routes/ExamScheduleRoutes/examRoutes'));
 app.use('/api/sessions', require('./routes/timetableRoutes/TimeTableRoutes'));
 app.use('/api/groups', require('./routes/groupRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));

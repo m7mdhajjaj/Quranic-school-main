@@ -2,7 +2,7 @@
 // examAverage.js - Exam Average Calculation
 // ============================================================================
 
-const ExamSchedule = require("../../schema/ExamSchedule");
+const ExamSchedule = require("../../../schema/ExamSchedule");
 
 /**
  * Helper function to calculate and update exam average

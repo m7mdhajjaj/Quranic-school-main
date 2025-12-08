@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
-import { getMyExams, getExamAverage, type Exam, type ExamAverage } from "@/Api/exam.api";
+import { getMyExams, getExamAverage, type Exam, type ExamAverage } from "@/Api/ExamShedule";
 
 interface UseExamDataOptions {
   search?: string;
   date?: string;
   type?: string;
+  marksStatus?: string;
 }
 
 export function useExamData(_role: 'student' | 'teacher' | 'admin', options: UseExamDataOptions = {}) {
@@ -59,7 +60,7 @@ export function useExamData(_role: 'student' | 'teacher' | 'admin', options: Use
     setLoadingExams(true);
     try {
       // Backend handles all role-based filtering
-      const list = await getMyExams(options.search, options.date, options.type);
+      const list = await getMyExams(options.search, options.date, options.type, options.marksStatus);
       
       setExams(list);
       await refreshAllAverages(list);
@@ -70,11 +71,11 @@ export function useExamData(_role: 'student' | 'teacher' | 'admin', options: Use
     } finally {
       setLoadingExams(false);
     }
-  }, [options.search, options.date, options.type]);
+  }, [options.search, options.date, options.type, options.marksStatus]);
 
   useEffect(() => {
     loadExams();
-  }, [loadExams]);
+  }, [loadExams, options.search, options.date, options.type, options.marksStatus]);
 
   const reloadExams = () => loadExams();
 

@@ -2,8 +2,10 @@
 // Components Index - Export all components
 // ============================================================================
 
-export { TransparentModal } from './TransparentModal';
+export { TransparentModal } from '../modals/TransparentModal';
 export { ExamToolbar } from './ExamToolbar';
 export { ExamActions } from './ExamActions';
-export { TeacherView } from './TeacherView';
-export { StudentView } from './StudentView';
+export { TeacherView } from './Views/TeacherView';
+export { StudentView } from './Views/StudentView';
+export { GroupedExamTable } from './GroupedExamTable';
+export { default as MarksManagement } from './MarksManagement';

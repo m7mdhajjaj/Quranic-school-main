@@ -2,9 +2,9 @@
 // addExam.js - Add New Exam
 // ============================================================================
 
-const ExamSchedule = require("../../schema/ExamSchedule");
-const { isTimeWithinAllowedRange, buildDuplicateQuery } = require("./examHelpers");
-const { notifyExamCreated } = require("../../Notifications/handlers/examScheduleNotifications");
+const ExamSchedule = require("../../../schema/ExamSchedule");
+const { isTimeWithinAllowedRange, buildDuplicateQuery, checkTeacherTimeConflict, checkGroupDailyLimit, validateDuration } = require("./examHelpers");
+const { notifyExamCreated } = require("../../../Notifications/handlers/examScheduleNotifications");
 
 /**
  * Add new exam
@@ -28,26 +28,55 @@ const addExam = async (req, res) => {
       });
     }
 
-    // Time window check (09:00 - 19:00) - only if time is provided
+    // Time window check (12:00 - 21:00) - only if time is provided
     if (time && !isTimeWithinAllowedRange(time)) {
       return res.status(400).json({ 
         success: false,
         message: "وقت الامتحان غير صحيح",
-        errors: ["وقت الامتحان يجب أن يكون بين 09:00 صباحاً و 07:00 مساءً"]
+        errors: ["الوقت المسموح من 12:00 ظهراً إلى 9:00 مساءً فقط"]
       });
     }
 
-    // Prevent duplicate (same date & same group)
-    const dupQuery = buildDuplicateQuery(date, group);
-    const exists = await ExamSchedule.findOne(dupQuery);
-    if (exists) {
-      return res.status(400).json({ 
-        success: false,
-        message: "امتحان موجود بالفعل",
-        errors: [group 
-          ? "لا يمكن إضافة امتحان لنفس الحلقة في نفس اليوم" 
-          : "لا يمكن إضافة امتحان عام لنفس اليوم"]
-      });
+    // Duration validation (max 2 hours)
+    if (duration) {
+      const durationValidation = validateDuration(duration);
+      if (!durationValidation.isValid) {
+        return res.status(400).json({
+          success: false,
+          message: "مدة الامتحان غير صحيحة",
+          errors: [durationValidation.message]
+        });
+      }
+    }
+
+    // Check group daily limit: One exam per group per day
+    if (group) {
+      const groupLimit = await checkGroupDailyLimit(date, group);
+      if (groupLimit) {
+        return res.status(400).json({
+          success: false,
+          message: "تجاوز الحد اليومي للحلقة",
+          errors: [groupLimit.message]
+        });
+      }
+    }
+
+    // Check for teacher time conflict (only for teachers)
+    if (req.user && req.user.role === 'teacher' && time) {
+      const timeConflict = await checkTeacherTimeConflict(
+        req.user._id,
+        date,
+        time,
+        duration || 60
+      );
+      
+      if (timeConflict) {
+        return res.status(400).json({
+          success: false,
+          message: "تعارض في الوقت",
+          errors: [timeConflict.message]
+        });
+      }
     }
 
     // Create exam with all validated fields

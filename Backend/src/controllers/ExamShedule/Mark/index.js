@@ -6,8 +6,8 @@
 const { getStudentMarks, getExamMarks } = require("./getMarks");
 const { setExamMarks } = require("./setMarks");
 const { updateStudentMark } = require("./updateMark");
-const { deleteStudentMark } = require("./deleteMark");
-const { getExamAverage } = require("../examAverage");
+const { deleteStudentMark, bulkDeleteMarks } = require("./deleteMark");
+const { getExamAverage } = require("../Exam/examAverage");
 
 module.exports = {
   getStudentMarks,
@@ -15,5 +15,6 @@ module.exports = {
   setExamMarks,
   updateStudentMark,
   deleteStudentMark,
+  bulkDeleteMarks,
   getExamAverage,
 };

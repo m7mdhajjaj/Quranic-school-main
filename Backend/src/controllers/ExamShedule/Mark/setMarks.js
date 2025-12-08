@@ -4,7 +4,7 @@
 
 const ExamSchedule = require("../../../schema/ExamSchedule");
 // const { notifyMarksAdded } = require("./examMarkNotifications"); // TODO: Create notification handler
-const { updateExamAverage } = require("../examAverage");
+const { updateExamAverage } = require("../Exam/examAverage");
 
 /**
  * Add or update marks for many students in one exam

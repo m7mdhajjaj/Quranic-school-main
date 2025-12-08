@@ -1,3 +1,4 @@
+// schema/Group.js
 const mongoose = require("mongoose");
 
 const groupSchema = new mongoose.Schema(
@@ -8,15 +9,20 @@ const groupSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
+
+    // ✅ Proper relation to Teacher (populate-friendly)
     teacher: {
-      type: mongoose.Schema.Types.Mixed, // يدعم ObjectId أو String
-      required: false, // اختياري لدعم البيانات القديمة
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Teacher",
+      required: false, // keep false to support existing groups without teacher for now
     },
+
+    // Optional: temporary for legacy data (can remove later after migration)
     teacherName: {
       type: String,
       trim: true,
-      // حقل مؤقت لدعم البيانات القديمة
     },
+
     description: {
       type: String,
       trim: true,
@@ -37,7 +43,7 @@ const groupSchema = new mongoose.Schema(
       maxlength: [100, "الجدول الزمني يجب ألا يتجاوز 100 حرف"],
     },
 
-    // مواعيد الحلقة (مرتبطة بـ Sessions)
+    // Timetable (linked to Session model)
     timetable: [
       {
         day: {
@@ -64,10 +70,10 @@ const groupSchema = new mongoose.Schema(
       default: true,
     },
 
-    // إحصائيات الحضور للشهر الحالي
+    // Attendance stats for current month
     currentMonthStats: {
       month: {
-        type: String, // بصيغة "YYYY-MM" مثل "2025-10"
+        type: String, // "YYYY-MM"
       },
       absenceRate: {
         type: Number,
@@ -98,36 +104,48 @@ const groupSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// إضافة فهرس مركب للتأكد من أن كل حلقة لها معلم واحد فقط
-// هذا الفهرس يضمن عدم تكرار (اسم الحلقة + المعلم)
+// Ensure (group name + teacher) combination is unique
 groupSchema.index({ name: 1, teacher: 1 }, { unique: true });
 
-// middleware للتحقق من أن الحلقة لها معلم واحد فقط قبل الحفظ
+/**
+ * Pre-save middleware:
+ * Ensure that a group name is not attached to multiple different teachers.
+ */
 groupSchema.pre("save", async function (next) {
-  if (this.isNew || this.isModified("name") || this.isModified("teacher")) {
-    // التحقق من وجود حلقة بنفس الاسم مع معلم مختلف
-    const existingGroup = await this.constructor.findOne({
-      name: this.name,
-      teacher: { $ne: this.teacher, $exists: true, $ne: null, $ne: "" },
-      _id: { $ne: this._id },
-    });
+  try {
+    if (this.isNew || this.isModified("name") || this.isModified("teacher")) {
+      const existingGroup = await this.constructor.findOne({
+        name: this.name,
+        teacher: {
+          $ne: this.teacher,
+          $exists: true,
+          $ne: null,
+          $ne: "",
+        },
+        _id: { $ne: this._id },
+      });
 
-    if (existingGroup) {
-      const error = new Error(
-        `الحلقة "${this.name}" مرتبطة بالفعل بمعلم آخر. لا يمكن للحلقة الواحدة أن يكون لها أكثر من معلم.`
-      );
-      error.code = "DUPLICATE_GROUP_TEACHER";
-      return next(error);
+      if (existingGroup) {
+        const error = new Error(
+          `الحلقة "${this.name}" مرتبطة بالفعل بمعلم آخر. لا يمكن للحلقة الواحدة أن يكون لها أكثر من معلم.`
+        );
+        error.code = "DUPLICATE_GROUP_TEACHER";
+        return next(error);
+      }
     }
+
+    next();
+  } catch (err) {
+    next(err);
   }
-  next();
 });
 
-// Middleware for synchronizing group name changes across all collections
-// Pre-hook to store old name before update
+/**
+ * Pre findOneAndUpdate:
+ * Store old group name before updating, so we can sync across collections.
+ */
 groupSchema.pre("findOneAndUpdate", async function (next) {
   try {
-    // Get the document before update
     const docToUpdate = await this.model.findOne(this.getQuery());
     if (docToUpdate) {
       this._oldGroupName = docToUpdate.name;
@@ -138,16 +156,22 @@ groupSchema.pre("findOneAndUpdate", async function (next) {
   }
 });
 
-// Post-hook to sync name changes after update
+/**
+ * Post findOneAndUpdate:
+ * If group name changed, sync new name into:
+ *  - Student.group (string name)
+ *  - Teacher.groups[].name
+ *
+ * NOTE: This assumes Student.group & Teacher.groups.name still store names.
+ * If you later migrate them to ObjectId only, you can simplify or remove this.
+ */
 groupSchema.post("findOneAndUpdate", async function (doc) {
   if (!doc) return;
 
-  // Get the update that was applied
   const update = this.getUpdate();
   const newName = update.$set?.name || update.name;
   const oldName = this._oldGroupName;
 
-  // If name was changed, sync across all collections
   if (newName && oldName && newName !== oldName) {
     console.log(`🔄 Syncing group name change: "${oldName}" → "${newName}"`);
 
@@ -155,10 +179,10 @@ groupSchema.post("findOneAndUpdate", async function (doc) {
       const Student = require("./Student");
       const Teacher = require("./Teacher");
 
-      // Update all students in this group
+      // Update all students in this group (by name)
       const studentUpdate = await Student.updateMany(
-        { group: oldName },
-        { $set: { group: newName } }
+        { groupName: oldName }, // if you keep a string field for legacy
+        { $set: { groupName: newName } }
       );
       console.log(`✅ Updated ${studentUpdate.modifiedCount} students`);
 
@@ -170,7 +194,6 @@ groupSchema.post("findOneAndUpdate", async function (doc) {
       );
       console.log(`✅ Updated ${teacherUpdate.modifiedCount} teachers`);
 
-      // Emit socket event if available
       if (global.io) {
         global.io.emit("groupRenamed", {
           oldName,
@@ -185,6 +208,4 @@ groupSchema.post("findOneAndUpdate", async function (doc) {
   }
 });
 
-const Group = mongoose.model("Group", groupSchema);
-
-module.exports = Group;
+module.exports = mongoose.model("Group", groupSchema);

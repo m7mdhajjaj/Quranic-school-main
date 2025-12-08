@@ -8,15 +8,19 @@ import {
   updateExam,
   deleteExam,
   type Exam,
-} from "@/Api/exam.api";
-import { showSuccessToast, showErrorToast } from "@/components/utils/toastUtils";
+} from "@/Api/ExamShedule";
 import { showSuccessMessage, showErrorMessage } from "@/components/utils/sweetalertUtils";
 import Swal from 'sweetalert2';
 
-// Helper function to check if time is within allowed range (09:00 - 19:00)
+// Helper function: Check if time is within allowed range (12:00 - 21:00)
 const isTimeWithinAllowedRange = (time: string): boolean => {
-  const [hours] = time.split(':').map(Number);
-  return hours >= 9 && hours < 19;
+  if (!time) return false;
+  const [hours, minutes] = time.split(':').map(Number);
+  if (isNaN(hours) || isNaN(minutes)) return false;
+  const totalMinutes = hours * 60 + minutes;
+  const MIN = 12 * 60; // 12:00
+  const MAX = 21 * 60; // 21:00
+  return totalMinutes >= MIN && totalMinutes <= MAX;
 };
 
 interface UseExamActionsProps {
@@ -28,19 +32,19 @@ export const useExamActions = ({ onExamsChange }: UseExamActionsProps) => {
 
   // Add new exam
   const handleAddExam = async (
-    examData: { name: string; date: string; time: string },
+    examData: any,
     selectedGroup: string,
     role: string
   ) => {
-    const { name, date, time } = examData;
+    const { name, date, time, subject, type, duration, totalMarks, passingMarks } = examData;
 
-    if (!name.trim() || !date || !time) {
+    if (!name?.trim() || !date || !time) {
       showErrorMessage('خطأ', 'يرجى ملء جميع الحقول المطلوبة');
       return false;
     }
 
     if (!isTimeWithinAllowedRange(time)) {
-      showErrorMessage('خطأ', 'الوقت المسموح من 09:00 صباحاً إلى 07:00 مساءً');
+      showErrorMessage('خطأ', 'الوقت المسموح من 12:00 ظهراً إلى 9:00 مساءً');
       return false;
     }
 
@@ -51,10 +55,15 @@ export const useExamActions = ({ onExamsChange }: UseExamActionsProps) => {
 
     setIsSubmitting(true);
     try {
-      const payload: Omit<Exam, '_id'> = {
+      const payload: any = {
         name,
         date,
         time,
+        subject,
+        type,
+        duration,
+        totalMarks,
+        passingMarks,
         ...(role === 'teacher' && selectedGroup && selectedGroup.trim() ? { group: selectedGroup } : {}),
       };
 
@@ -64,10 +73,27 @@ export const useExamActions = ({ onExamsChange }: UseExamActionsProps) => {
       return true;
     } catch (error: unknown) {
       console.error('Error adding exam:', error);
-      const errorMessage = error && typeof error === 'object' && 'response' in error
-        ? (error as { response?: { data?: { error?: string } } }).response?.data?.error || 'حدث خطأ أثناء إضافة الامتحان'
-        : 'حدث خطأ أثناء إضافة الامتحان';
-      showErrorMessage('خطأ', errorMessage);
+      
+      // استخراج رسالة الخطأ من Backend
+      let errorMessage = 'حدث خطأ أثناء إضافة الامتحان';
+      let errorDetails: string[] = [];
+      
+      if (error && typeof error === 'object' && 'response' in error) {
+        const response = (error as { response?: { data?: { message?: string; errors?: string[]; error?: string } } }).response;
+        if (response?.data) {
+          errorMessage = response.data.message || response.data.error || errorMessage;
+          errorDetails = response.data.errors || [];
+        }
+      }
+      
+      // عرض الرسالة مع التفاصيل
+      if (errorDetails.length > 0) {
+        const detailsHtml = errorDetails.map(err => `<li class="text-right">${err}</li>`).join('');
+        showErrorMessage('خطأ', `<div class="text-right"><p class="mb-2">${errorMessage}</p><ul class="list-disc list-inside">${detailsHtml}</ul></div>`);
+      } else {
+        showErrorMessage('خطأ', errorMessage);
+      }
+      
       return false;
     } finally {
       setIsSubmitting(false);
@@ -75,18 +101,18 @@ export const useExamActions = ({ onExamsChange }: UseExamActionsProps) => {
   };
 
   // Edit existing exam
-  const handleEditExam = async (exam: Exam | null) => {
+  const handleEditExam = async (exam: any) => {
     if (!exam) return false;
 
-    const { name, date, time } = exam;
+    const { name, date, time, subject, type, duration, totalMarks, passingMarks } = exam;
 
     if (!name?.trim() || !date || !time) {
-      showErrorToast('⚠️ يرجى ملء جميع الحقول المطلوبة');
+      showErrorMessage('خطأ', 'يرجى ملء جميع الحقول المطلوبة');
       return false;
     }
 
     if (!isTimeWithinAllowedRange(time)) {
-      showErrorToast('⏰ الوقت المسموح من 09:00 صباحاً إلى 07:00 مساءً');
+      showErrorMessage('وقت غير صحيح', 'الوقت المسموح من 12:00 ظهراً إلى 9:00 مساءً');
       return false;
     }
 
@@ -94,22 +120,49 @@ export const useExamActions = ({ onExamsChange }: UseExamActionsProps) => {
     try {
       const examId = String(exam._id ?? exam.id ?? '');
       if (!examId) {
-        showErrorToast('⚠️ معرف الامتحان غير صالح');
+        showErrorMessage('خطأ', 'معرف الامتحان غير صالح');
         return false;
       }
 
-      const payload = { name, date, time, group: exam.group };
+      const payload: any = { 
+        name, 
+        date, 
+        time, 
+        subject,
+        type,
+        duration,
+        totalMarks,
+        passingMarks,
+        group: exam.group 
+      };
       await updateExam(examId, payload);
       
-      showSuccessToast('✅ تم تعديل الامتحان بنجاح');
+      showSuccessMessage('نجاح', 'تم تعديل الامتحان بنجاح');
       onExamsChange();
       return true;
     } catch (error: unknown) {
       console.error('Error editing exam:', error);
-      const errorMessage = error && typeof error === 'object' && 'response' in error
-        ? (error as { response?: { data?: { error?: string } } }).response?.data?.error || 'حدث خطأ أثناء تعديل الامتحان'
-        : 'حدث خطأ أثناء تعديل الامتحان';
-      showErrorToast(`❌ ${errorMessage}`);
+      
+      // استخراج رسالة الخطأ من Backend
+      let errorMessage = 'حدث خطأ أثناء تعديل الامتحان';
+      let errorDetails: string[] = [];
+      
+      if (error && typeof error === 'object' && 'response' in error) {
+        const response = (error as { response?: { data?: { message?: string; errors?: string[]; error?: string } } }).response;
+        if (response?.data) {
+          errorMessage = response.data.message || response.data.error || errorMessage;
+          errorDetails = response.data.errors || [];
+        }
+      }
+      
+      // عرض الرسالة مع التفاصيل
+      if (errorDetails.length > 0) {
+        const detailsHtml = errorDetails.map(err => `<li class="text-right">${err}</li>`).join('');
+        showErrorMessage('خطأ في التعديل', `<div class="text-right"><p class="mb-2">${errorMessage}</p><ul class="list-disc list-inside">${detailsHtml}</ul></div>`);
+      } else {
+        showErrorMessage('خطأ في التعديل', errorMessage);
+      }
+      
       return false;
     } finally {
       setIsSubmitting(false);
@@ -120,7 +173,7 @@ export const useExamActions = ({ onExamsChange }: UseExamActionsProps) => {
   const handleDeleteExam = async (examIdRaw: string | number) => {
     const examId = String(examIdRaw);
     if (!examId) {
-      showErrorToast('⚠️ معرف الامتحان غير صالح');
+      showErrorMessage('خطأ', 'معرف الامتحان غير صالح');
       return false;
     }
 
@@ -141,15 +194,28 @@ export const useExamActions = ({ onExamsChange }: UseExamActionsProps) => {
     setIsSubmitting(true);
     try {
       await deleteExam(examId);
-      showSuccessToast('🗑️ تم حذف الامتحان بنجاح');
+      showSuccessMessage('نجاح', 'تم حذف الامتحان بنجاح');
       onExamsChange();
       return true;
     } catch (error: unknown) {
       console.error('Error deleting exam:', error);
-      const errorMessage = error && typeof error === 'object' && 'response' in error
-        ? (error as { response?: { data?: { error?: string } } }).response?.data?.error || 'حدث خطأ أثناء حذف الامتحان'
-        : 'حدث خطأ أثناء حذف الامتحان';
-      showErrorToast(`❌ ${errorMessage}`);
+      let errorMessage = 'حدث خطأ أثناء حذف الامتحان';
+      let errorDetails: string[] = [];
+      
+      if (error && typeof error === 'object' && 'response' in error) {
+        const response = (error as { response?: { data?: { message?: string; errors?: string[]; error?: string } } }).response;
+        if (response?.data) {
+          errorMessage = response.data.message || response.data.error || errorMessage;
+          errorDetails = response.data.errors || [];
+        }
+      }
+      
+      if (errorDetails.length > 0) {
+        const detailsHtml = errorDetails.map(err => `<li class="text-right">${err}</li>`).join('');
+        showErrorMessage('خطأ في الحذف', `<div class="text-right"><p class="mb-2">${errorMessage}</p><ul class="list-disc list-inside">${detailsHtml}</ul></div>`);
+      } else {
+        showErrorMessage('خطأ في الحذف', errorMessage);
+      }
       return false;
     } finally {
       setIsSubmitting(false);

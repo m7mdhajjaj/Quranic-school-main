@@ -35,9 +35,9 @@ const examScheduleSchema = new mongoose.Schema({
   // Exam Details
   subject: { type: String }, // المادة
   type: { type: String, default: "شفهي" }, // نوع الامتحان: شفهي، كتابي، عملي، مشروع
-  duration: { type: Number }, // المدة بالدقائق
-  totalMarks: { type: Number, default: 100 }, // مجموع الدرجات
-  passingMarks: { type: Number }, // درجة النجاح
+  duration: { type: Number, default: 60 }, // المدة بالدقائق
+  totalMarks: { type: Number, default: 20 }, // مجموع الدرجات
+  passingMarks: { type: Number, default: 10 }, // درجة النجاح
   
   // Assignment
   group: { type: String }, // اسم الحلقة التي ينتمي لها الامتحان
@@ -50,7 +50,6 @@ const examScheduleSchema = new mongoose.Schema({
   result: { type: String },
   examAverage: { type: Number, default: null }, // متوسط علامات الامتحان
   isPublished: { type: Boolean, default: false }, // هل تم نشر النتائج
-  isActive: { type: Boolean, default: true }, // حالة الامتحان
 
 }, {
   timestamps: true // createdAt, updatedAt

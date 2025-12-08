@@ -22,8 +22,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   required = false,
   disabled = false,
   className = '',
-  minYear = 2020,
-  maxYear = new Date().getFullYear() + 10,
+  minYear = new Date().getFullYear() - 5, // 5 سنوات للخلف
+  maxYear = new Date().getFullYear() + 1, // سنة واحدة للأمام (تزيد تلقائياً كل سنة)
 }) => {
   // Parse the date value
   const parseDate = (dateString: string) => {
@@ -94,7 +94,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         </label>
       )}
       
-      <div className="grid grid-cols-3 gap-3 min-h-[44px]">
+      <div className="grid grid-cols-3 gap-3">
         {/* Day */}
         <Select
           value={day}
@@ -103,6 +103,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           placeholder="اليوم"
           disabled={disabled}
           required={required}
+          className={className}
         />
 
         {/* Month */}
@@ -113,6 +114,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           placeholder="الشهر"
           disabled={disabled}
           required={required}
+          className={className}
         />
 
         {/* Year */}
@@ -123,6 +125,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           placeholder="السنة"
           disabled={disabled}
           required={required}
+          className={className}
         />
       </div>
 

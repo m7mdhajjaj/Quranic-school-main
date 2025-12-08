@@ -111,14 +111,9 @@ export const Table = <T,>({
     .filter(Boolean)
     .join(" ");
 
-  // Container classes
+  // Container classes - removed border since parent handles it
   const containerClasses = [
-    "rounded-2xl",
-    "border-2",
-    "border-emerald-200",
-    "bg-gradient-to-br from-white via-emerald-50/20 to-white",
-    "shadow-[0_8px_30px_rgb(16,185,129,0.12)]",
-    "backdrop-blur-sm",
+    "overflow-hidden",
     className,
   ]
     .filter(Boolean)

@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Exam } from "@/Api/exam.api";
+import type { Exam } from "@/Api/ExamShedule";
 import type { Column } from "@/components/UI/Table";
 
 // Helper components
@@ -15,7 +15,7 @@ const AvgBadge: React.FC<{ value?: number | null }> = ({ value }) => {
   );
 };
 
-const StudentMarkDisplay: React.FC<{ mark?: string; isDesktop?: boolean }> = ({ mark, isDesktop }) => {
+const StudentMarkDisplay: React.FC<{ mark?: string; isDesktop?: boolean }> = ({ mark }) => {
   if (!mark) {
     return <span className="text-gray-400 text-xs">لم يتم الإدخال بعد</span>;
   }
@@ -27,16 +27,26 @@ const StudentMarkDisplay: React.FC<{ mark?: string; isDesktop?: boolean }> = ({ 
 };
 
 // Helper functions
-const formatDateArabic = (dateStr: string) => {
-  const date = new Date(dateStr);
+export const formatDateArabic = (dateStr: string | Date) => {
+  const date = typeof dateStr === 'string' ? new Date(dateStr) : dateStr;
   return date.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
 };
 
-const formatTime12Arabic = (timeStr: string) => {
+export const formatTime12Arabic = (timeStr: string) => {
   if (!timeStr) return '-';
   const [hours, minutes] = timeStr.split(':');
   const hour = parseInt(hours);
-  const period = hour >= 12 ? 'م' : 'ص';
+  
+  // تحديد الفترة (ظهراً/مساءً/صباحاً)
+  let period = '';
+  if (hour === 12) {
+    period = 'ظهراً';
+  } else if (hour > 12) {
+    period = 'مساءً';
+  } else {
+    period = 'صباحاً';
+  }
+  
   const hour12 = hour % 12 || 12;
   return `${hour12}:${minutes} ${period}`;
 };
@@ -52,10 +62,11 @@ export function createExamColumns(params: {
     {
       key: 'name',
       header: 'اسم الامتحان',
-      width: '200px',
-  render: (exam: Exam) => (
+      width: '20%',
+      align: 'right',
+      render: (exam: Exam) => (
         <div className="flex flex-col gap-1">
-          <span className="font-semibold text-emerald-900 text-xs md:text-sm break-words">{exam.name}</span>
+          <span className="font-semibold text-emerald-900 text-sm break-words">{exam.name}</span>
           {exam.subject && (
             <span className="text-xs text-gray-500">📚 {exam.subject}</span>
           )}
@@ -65,8 +76,9 @@ export function createExamColumns(params: {
     {
       key: 'type',
       header: 'النوع',
-      width: '100px',
-  render: (exam: Exam) => (
+      width: '10%',
+      align: 'center',
+      render: (exam: Exam) => (
         exam.type ? (
           <span className="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium whitespace-nowrap">
             {exam.type}
@@ -79,12 +91,13 @@ export function createExamColumns(params: {
     {
       key: 'group',
       header: 'الحلقة',
-      width: '140px',
-  render: (exam: Exam) =>
+      width: '12%',
+      align: 'center',
+      render: (exam: Exam) =>
         exam.group ? (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 md:px-3 md:py-1 bg-blue-100 text-blue-700 rounded-full text-xs md:text-sm font-medium whitespace-nowrap">
-            <span className="hidden sm:inline">📚</span>
-            <span className="break-words">{exam.group}</span>
+          <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium whitespace-nowrap">
+            <span>📚</span>
+            <span>{exam.group}</span>
           </span>
         ) : (
           <span className="text-gray-400 text-xs">-</span>
@@ -93,11 +106,12 @@ export function createExamColumns(params: {
     {
       key: 'date',
       header: 'التاريخ',
-      width: '140px',
-  render: (exam: Exam) => (
-        <div className="flex items-center justify-center gap-1 md:gap-2">
-          <span className="text-emerald-700 font-medium text-xs md:text-sm whitespace-nowrap">{formatDateArabic(exam.date)}</span>
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 md:h-4 md:w-4 text-emerald-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      width: '12%',
+      align: 'center',
+      render: (exam: Exam) => (
+        <div className="flex items-center justify-center gap-2">
+          <span className="text-emerald-700 font-medium text-sm whitespace-nowrap">{formatDateArabic(exam.date)}</span>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-emerald-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
         </div>
@@ -106,11 +120,12 @@ export function createExamColumns(params: {
     {
       key: 'time',
       header: 'الوقت',
-      width: '120px',
-  render: (exam: Exam) => (
-        <div className="flex items-center justify-center gap-1 md:gap-2">
-          <span className="text-emerald-700 font-medium text-xs md:text-sm whitespace-nowrap">{formatTime12Arabic(exam.time)}</span>
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 md:h-4 md:w-4 text-emerald-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      width: '10%',
+      align: 'center',
+      render: (exam: Exam) => (
+        <div className="flex items-center justify-center gap-2">
+          <span className="text-emerald-700 font-medium text-sm whitespace-nowrap">{formatTime12Arabic(exam.time)}</span>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-emerald-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
@@ -119,10 +134,11 @@ export function createExamColumns(params: {
     {
       key: 'duration',
       header: 'المدة',
-      width: '100px',
-  render: (exam: Exam) => (
+      width: '8%',
+      align: 'center',
+      render: (exam: Exam) => (
         exam.duration ? (
-          <span className="text-xs text-gray-600">
+          <span className="text-sm text-gray-600">
             ⏱️ {exam.duration} دقيقة
           </span>
         ) : (
@@ -133,8 +149,9 @@ export function createExamColumns(params: {
     {
       key: 'marks',
       header: 'الدرجات',
-      width: '120px',
-  render: (exam: Exam) => (
+      width: '10%',
+      align: 'center',
+      render: (exam: Exam) => (
         (exam.totalMarks || exam.passingMarks) ? (
           <div className="flex flex-col text-xs">
             {exam.totalMarks && (
@@ -152,8 +169,9 @@ export function createExamColumns(params: {
     {
       key: 'result',
       header: role === 'teacher' || role === 'admin' ? 'متوسط العلامات' : 'النتيجة',
-      width: role === 'student' ? '180px' : '140px',
-  render: (exam: Exam) => {
+      width: role === 'student' ? '12%' : '10%',
+      align: 'center',
+      render: (exam: Exam) => {
         const examId = String(exam._id ?? exam.id);
         return role === 'teacher' || role === 'admin' ? (
           <AvgBadge value={examAverages[examId]} />
@@ -165,10 +183,11 @@ export function createExamColumns(params: {
   ];
 
   if (ActionsComponent) {
-  cols.push({ 
+    cols.push({ 
       key: 'actions', 
       header: 'إجراءات',
-      width: '200px',
+      width: '18%',
+      align: 'center',
       render: (exam: Exam) => <ActionsComponent exam={exam} /> 
     });
   }

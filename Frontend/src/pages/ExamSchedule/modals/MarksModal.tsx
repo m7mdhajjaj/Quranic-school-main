@@ -3,8 +3,9 @@
 // ============================================================================
 
 import React from 'react';
-import { TransparentModal } from '../components/TransparentModal';
-import type { Exam, StudentDoc } from "@/Api/exam.api";
+import { TransparentModal } from './TransparentModal';
+import { LoadingSpinner } from '@/components/UI';
+import type { Exam, StudentDoc } from "@/Api/ExamShedule";
 
 // Helper functions
 const formatDateArabic = (dateStr: string) => {
@@ -16,7 +17,17 @@ const formatTime12Arabic = (timeStr: string) => {
   if (!timeStr) return '-';
   const [hours, minutes] = timeStr.split(':');
   const hour = parseInt(hours);
-  const period = hour >= 12 ? 'م' : 'ص';
+  
+  // تحديد الفترة (ظهراً/مساءً/صباحاً)
+  let period = '';
+  if (hour === 12) {
+    period = 'ظهراً';
+  } else if (hour > 12) {
+    period = 'مساءً';
+  } else {
+    period = 'صباحاً';
+  }
+  
   const hour12 = hour % 12 || 12;
   return `${hour12}:${minutes} ${period}`;
 };
@@ -84,10 +95,7 @@ export const MarksModal: React.FC<MarksModalProps> = ({
       </div>
 
       {loading ? (
-        <div className="text-center py-8 text-emerald-600">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto mb-4"></div>
-          جاري تحميل الطلاب...
-        </div>
+        <LoadingSpinner size="md" text="جاري تحميل الطلاب..." />
       ) : students.length === 0 ? (
         <div className="text-center py-8 text-emerald-600">
           <div className="text-xl mb-2">📋</div>

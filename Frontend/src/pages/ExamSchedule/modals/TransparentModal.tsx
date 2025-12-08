@@ -2,7 +2,7 @@
 // TransparentModal Component
 // ============================================================================
 
-import React from "react";
+import React, { useEffect } from "react";
 
 // Helper function to merge class names
 const cn = (...classes: (string | undefined | false)[]) => classes.filter(Boolean).join(' ');
@@ -32,6 +32,29 @@ export const TransparentModal: React.FC<TransparentModalProps> = ({
   gradientFrom = "emerald-500",
   gradientTo = "teal-600",
 }) => {
+  // منع scroll الصفحة الأساسية عند فتح المودال
+  useEffect(() => {
+    if (open) {
+      // حفظ الموقع الحالي للـ scroll
+      const scrollY = window.scrollY;
+      
+      // منع scroll على body
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      
+      return () => {
+        // إرجاع scroll عند إغلاق المودال
+        document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [open]);
+
   if (!open) return null;
   return (
     <div

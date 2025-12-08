@@ -1,6 +1,6 @@
 // ============================================================================
-// Modals Index - Export all modals
+// Validation Index - Export all validation functions
 // ============================================================================
 
-export { ExamFormModal } from './ExamFormModal';
-export { MarksModal } from './MarksModal';
+export * from './examValidation';
+export * from './markValidation';

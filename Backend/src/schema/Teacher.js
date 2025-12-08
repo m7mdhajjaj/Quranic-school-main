@@ -1,24 +1,27 @@
 // schema/Teacher.js
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-// تعريف sub-schema للحلقات
-const groupSubSchema = new mongoose.Schema({
-  id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Group',
-    required: [true, 'معرف الحلقة مطلوب']
+// Sub-schema for groups that a teacher has
+const groupSubSchema = new mongoose.Schema(
+  {
+    id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Group",
+      required: [true, "معرف الحلقة مطلوب"],
+    },
+    name: {
+      type: String,
+      required: [true, "اسم الحلقة مطلوب"],
+      trim: true,
+    },
+    number: {
+      type: Number,
+      required: [true, "رقم الحلقة مطلوب"],
+      min: [1, "رقم الحلقة يجب أن يكون أكبر من 0"],
+    },
   },
-  name: {
-    type: String,
-    required: [true, 'اسم الحلقة مطلوب'],
-    trim: true
-  },
-  number: {
-    type: Number,
-    required: [true, 'رقم الحلقة مطلوب'],
-    min: [1, 'رقم الحلقة يجب أن يكون أكبر من 0']
-  }
-}, { _id: false }); // منع إنشاء _id تلقائي للعناصر الفرعية
+  { _id: false } // don’t create _id for each sub-document
+);
 
 const teacherSchema = new mongoose.Schema(
   {
@@ -27,120 +30,144 @@ const teacherSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+
     password: {
       type: String,
-      required: [true, 'كلمة المرور مطلوبة'],
+      required: [true, "كلمة المرور مطلوبة"],
     },
 
-    // الاسماء
-    firstName: { type: String, required: [true, 'الاسم الأول مطلوب'] },
-    lastName: { type: String, required: [true, 'اسم العائلة مطلوب'] },
-    fatherName: { type: String },
-    grandFatherName: { type: String },
-    motherName: { type: String },
-
-    // هوية/تواصل
-    idNumber: { 
+    // Names
+    firstName: {
       type: String,
-      required: [true, 'رقم الهوية مطلوب'],
+      required: [true, "الاسم الأول مطلوب"],
+    },
+    lastName: {
+      type: String,
+      required: [true, "اسم العائلة مطلوب"],
+    },
+    fatherName: {
+      type: String,
+    },
+    grandFatherName: {
+      type: String,
+    },
+    motherName: {
+      type: String,
+    },
+
+    // Identity / Contact
+    idNumber: {
+      type: String,
+      required: [true, "رقم الهوية مطلوب"],
       unique: true,
       trim: true,
       validate: [
         {
-          validator: function(value) {
-            // التحقق من أن القيمة تحتوي على أرقام فقط
+          validator(value) {
             return /^\d+$/.test(value);
           },
-          message: 'رقم الهوية يجب أن يحتوي على أرقام فقط'
+          message: "رقم الهوية يجب أن يحتوي على أرقام فقط",
         },
         {
-          validator: function(value) {
-            // التحقق من أن الطول 9 أرقام بالضبط
+          validator(value) {
             return value && value.length === 9;
           },
-          message: 'رقم الهوية يجب أن يتكون من 9 أرقام بالضبط'
-        }
+          message: "رقم الهوية يجب أن يتكون من 9 أرقام بالضبط",
+        },
       ],
-      match: [/^\d{9}$/, 'رقم الهوية يجب أن يتكون من 9 أرقام فقط']
+      match: [/^\d{9}$/, "رقم الهوية يجب أن يتكون من 9 أرقام فقط"],
     },
+
     phoneNumber: {
       type: String,
-      required: [true, 'رقم الهاتف مطلوب'],
-      match: [/^05\d{8}$/, 'الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام'],
+      required: [true, "رقم الهاتف مطلوب"],
+      match: [/^05\d{8}$/, "الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام"],
       unique: true,
     },
 
-    // 👇 kept as String, but with regex check to ensure format (YYYY-MM-DD for example)
+    // You had it as string with regex, I keep same behavior
     birthDate: {
       type: String,
-      required: [true, 'تاريخ الميلاد مطلوب'],
-      match: [/^\d{4}-\d{2}-\d{2}$/, 'صيغة التاريخ يجب أن تكون YYYY-MM-DD'],
+      required: [true, "تاريخ الميلاد مطلوب"],
+      match: [/^\d{4}-\d{2}-\d{2}$/, "صيغة التاريخ يجب أن تكون YYYY-MM-DD"],
     },
 
     email: {
       type: String,
-      required: [true, 'البريد الإلكتروني مطلوب'],
+      required: [true, "البريد الإلكتروني مطلوب"],
       unique: true,
       match: [
         /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-        'صيغة البريد الإلكتروني غير صحيحة',
+        "صيغة البريد الإلكتروني غير صحيحة",
       ],
     },
 
-    // معلومات شخصية
+    age: {
+      type: Number,
+      min: [0, "العمر يجب أن يكون رقماً موجباً"],
+    },
 
-    age: { type: Number, min: [0, 'العمر يجب أن يكون رقماً موجباً'] },
     gender: {
       type: String,
       enum: {
-        values: ['ذكر', 'انثى', 'أنثى', 'male', 'female', 'Male', 'Female'],
+        values: ["ذكر", "انثى", "أنثى", "male", "female", "Male", "Female"],
         message:
-          'الجنس يجب أن يكون ذكر أو أنثى (Arabic) or male/female (English)',
+          "الجنس يجب أن يكون ذكر أو أنثى (Arabic) or male/female (English)",
       },
-      required: false,
-      // تطبيق تسوية تلقائية للقيم
-      set: function (value) {
+      set(value) {
         if (!value) return value;
         const normalized = value.toString().toLowerCase().trim();
-        if (normalized === 'male' || normalized === 'ذكر') return 'ذكر';
-        if (
-          normalized === 'female' ||
-          normalized === 'أنثى' ||
-          normalized === 'انثى'
-        )
-          return 'أنثى';
+        if (normalized === "male" || normalized === "ذكر") return "ذكر";
+        if (["female", "أنثى", "انثى"].includes(normalized)) return "أنثى";
         return value;
       },
     },
 
-    residence: { type: String, required: [true, "مكان السكن مطلوب"] },
+    residence: {
+      type: String,
+      required: [true, "مكان السكن مطلوب"],
+    },
 
-    // الحلقات التي يدرسها المعلم
+    // Groups this teacher is responsible for
     groups: {
       type: [groupSubSchema],
       default: [],
       validate: [
         {
-          validator: arr => Array.isArray(arr) && arr.every(g => g && g.name && g.number && g.id),
-          message: 'كل حلقة يجب أن تحتوي على اسم ورقم ومعرف صالح.',
-        }
-      ]
+          validator(arr) {
+            return (
+              Array.isArray(arr) &&
+              arr.every((g) => g && g.name && g.number && g.id)
+            );
+          },
+          message: "كل حلقة يجب أن تحتوي على اسم ورقم ومعرف صالح.",
+        },
+      ],
     },
 
-    // خبرة/دور
-    role: { type: String, enum: ['teacher'], default: 'teacher' },
+    role: {
+      type: String,
+      enum: ["teacher"],
+      default: "teacher",
+    },
 
-    // الصورة
     avatar: {
       url: { type: String },
       publicId: { type: String },
     },
 
-    isActive: { type: Boolean, default: false },
-    lastSeen: { type: Date, default: Date.now },
+    isActive: {
+      type: Boolean,
+      default: false,
+    },
+
+    lastSeen: {
+      type: Date,
+      default: Date.now,
+    },
   },
   { timestamps: true }
 );
 
-const Teacher = mongoose.model('Teacher', teacherSchema);
+const Teacher = mongoose.model("Teacher", teacherSchema);
 module.exports = Teacher;

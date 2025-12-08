@@ -52,8 +52,8 @@ const validateDescription = (description) => {
  * Validate exam subject
  */
 const validateSubject = (subject) => {
-  if (!isRequired(subject)) {
-    return { isValid: false, message: 'مادة الامتحان مطلوبة' };
+  if (!subject || subject.toString().trim() === '') {
+    return { isValid: true, value: '' }; // Optional field
   }
   
   const subjectStr = subject.toString().trim();
@@ -78,11 +78,11 @@ const validateExamType = (type) => {
     return { isValid: true, value: 'شفهي' }; // Default type
   }
   
-  const validTypes = ['شفهي', 'كتابي', 'عملي', 'مشروع', 'تقييم شامل'];
+  const validTypes = ['شفهي', 'كتابي', 'تقييم شامل'];
   const typeStr = type.toString().trim();
   
   if (!validTypes.includes(typeStr)) {
-    return { isValid: true, value: typeStr }; // Allow custom types
+    return { isValid: false, message: 'نوع الامتحان يجب أن يكون: شفهي، كتابي، أو تقييم شامل' };
   }
   
   return { isValid: true, value: typeStr };
@@ -92,8 +92,8 @@ const validateExamType = (type) => {
  * Validate group assignment
  */
 const validateGroup = (group) => {
-  if (!isRequired(group)) {
-    return { isValid: false, message: 'مجموعة الامتحان مطلوبة' };
+  if (!group || group.toString().trim() === '') {
+    return { isValid: true, value: null }; // Optional field
   }
   
   const groupStr = group.toString().trim();
@@ -147,19 +147,58 @@ const validateExamDate = (date) => {
     return { isValid: false, message: 'تاريخ الامتحان غير صحيح' };
   }
   
-  // Check if date is not too far in the past
-  const oneYearAgo = new Date();
-  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+  // Check if date is at least 2 days in the future
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // بداية اليوم
   
-  if (examDate < oneYearAgo) {
-    return { isValid: false, message: 'تاريخ الامتحان لا يمكن أن يكون أكثر من سنة في الماضي' };
+  const minDate = new Date(today);
+  minDate.setDate(minDate.getDate() + 2); // بعد يومين على الأقل
+  
+  const examDateOnly = new Date(examDate);
+  examDateOnly.setHours(0, 0, 0, 0); // بداية يوم الامتحان
+  
+  if (examDateOnly < minDate) {
+    return { isValid: false, message: 'يجب أن يكون تاريخ الامتحان بعد يومين على الأقل من اليوم' };
   }
   
   return { isValid: true, value: examDate };
 };
 
 /**
- * Validate exam duration in minutes
+ * Validate exam time (12:00 PM to 9:00 PM)
+ */
+const validateExamTime = (time) => {
+  if (!time || time.toString().trim() === '') {
+    return { isValid: true, value: null }; // Optional field
+  }
+  
+  const timeStr = time.toString().trim();
+  
+  // Check time format HH:MM
+  const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+  if (!timeRegex.test(timeStr)) {
+    return { isValid: false, message: 'صيغة الوقت غير صحيحة (يجب أن تكون HH:MM)' };
+  }
+  
+  // Parse hours and minutes
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  
+  // Allowed time: 12:00 PM (12:00) to 9:00 PM (21:00)
+  // 12:00 = noon, 21:00 = 9 PM
+  if (hours < 12 || hours > 21) {
+    return { isValid: false, message: 'الوقت المسموح من 12:00 ظهراً إلى 9:00 مساءً' };
+  }
+  
+  // If hour is 21 (9 PM), minutes must be 00
+  if (hours === 21 && minutes > 0) {
+    return { isValid: false, message: 'الوقت المسموح من 12:00 ظهراً إلى 9:00 مساءً' };
+  }
+  
+  return { isValid: true, value: timeStr };
+};
+
+/**
+ * Validate exam duration in minutes (max 2 hours = 120 minutes)
  */
 const validateDuration = (duration) => {
   if (!duration) {
@@ -171,8 +210,8 @@ const validateDuration = (duration) => {
     return { isValid: false, message: 'مدة الامتحان يجب أن تكون 5 دقائق على الأقل' };
   }
   
-  if (durationNum > 480) { // 8 hours max
-    return { isValid: false, message: 'مدة الامتحان لا يمكن أن تزيد عن 8 ساعات' };
+  if (durationNum > 120) { // 2 hours max
+    return { isValid: false, message: 'مدة الامتحان لا يمكن أن تزيد عن ساعتين (120 دقيقة)' };
   }
   
   return { isValid: true, value: durationNum };
@@ -183,16 +222,16 @@ const validateDuration = (duration) => {
  */
 const validateTotalMarks = (totalMarks) => {
   if (!totalMarks) {
-    return { isValid: true, value: 100 }; // Default 100 marks
+    return { isValid: true, value: 20 }; // Default 20 marks
   }
   
   const marksNum = parseFloat(totalMarks);
-  if (isNaN(marksNum) || marksNum <= 0) {
-    return { isValid: false, message: 'مجموع الدرجات يجب أن يكون أكبر من صفر' };
+  if (isNaN(marksNum) || marksNum < 10) {
+    return { isValid: false, message: 'مجموع الدرجات يجب أن يكون 10 على الأقل' };
   }
   
-  if (marksNum > 1000) {
-    return { isValid: false, message: 'مجموع الدرجات لا يمكن أن يزيد عن 1000' };
+  if (marksNum > 40) {
+    return { isValid: false, message: 'مجموع الدرجات لا يمكن أن يزيد عن 40' };
   }
   
   return { isValid: true, value: marksNum };
@@ -201,14 +240,14 @@ const validateTotalMarks = (totalMarks) => {
 /**
  * Validate passing marks
  */
-const validatePassingMarks = (passingMarks, totalMarks = 100) => {
+const validatePassingMarks = (passingMarks, totalMarks = 20) => {
   if (!passingMarks) {
-    return { isValid: true, value: totalMarks * 0.5 }; // Default 50% of total
+    return { isValid: true, value: Math.ceil(totalMarks * 0.5) }; // Default 50% of total
   }
   
   const passingNum = parseFloat(passingMarks);
-  if (isNaN(passingNum) || passingNum < 0) {
-    return { isValid: false, message: 'درجة النجاح يجب أن تكون صفر أو أكثر' };
+  if (isNaN(passingNum) || passingNum < 5) {
+    return { isValid: false, message: 'درجة النجاح يجب أن تكون 5 على الأقل' };
   }
   
   if (passingNum > totalMarks) {
@@ -308,7 +347,12 @@ const validateExamScheduleData = async (req, res, next) => {
     
     // Optional: time
     if (data.time !== undefined) {
-      validatedData.time = data.time;
+      const timeValidation = validateExamTime(data.time);
+      if (!timeValidation.isValid) {
+        errors.push(timeValidation.message);
+      } else {
+        validatedData.time = timeValidation.value;
+      }
     }
     
     // Validate optional fields
@@ -389,6 +433,7 @@ const validateExamScheduleData = async (req, res, next) => {
 module.exports = {
   validateExamScheduleData,
   sanitizeExamData,
+  validateExamTime,
   validateExamTitle,
   validateDescription,
   validateSubject,

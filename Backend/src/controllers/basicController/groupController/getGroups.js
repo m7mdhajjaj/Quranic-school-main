@@ -4,6 +4,7 @@
 
 const Group = require("../../../schema/Group");
 const Student = require("../../../schema/Student");
+const ExamSchedule = require("../../../schema/ExamSchedule");
 const { getStudentCountsForAllGroups, getStudentCountsForTeacher } = require("./cache");
 const { getTeacherInfo } = require("./helpers");
 
@@ -220,14 +221,13 @@ exports.getGroupsByTeacherIdWithFilters = async (req, res) => {
 
     const teacherFullName = `${teacher.firstName} ${teacher.lastName}`;
 
-    // 2. جلب حلقات المعلم
+    // 2. جلب حلقات المعلم (بدون فلتر isActive للعلامات)
     const groups = await Group.find({
       $or: [
         { teacher: teacherId },
         { teacher: teacherId.toString() },
         { teacherName: teacherFullName },
       ],
-      isActive: true,
     })
       .select("name _id capacity description schedule")
       .lean()
@@ -235,24 +235,37 @@ exports.getGroupsByTeacherIdWithFilters = async (req, res) => {
 
     console.log(`📚 تم جلب ${groups.length} حلقة للمعلم`);
 
-    // 3. جلب عدد الطلاب لكل حلقة
+    // 3. جلب عدد الطلاب وعدد الامتحانات لكل حلقة
     const groupNames = groups.map((g) => g.name);
-    const studentCounts = await Student.aggregate([
-      { $match: { group: { $in: groupNames } } },
-      { $group: { _id: "$group", count: { $sum: 1 } } },
+    
+    const [studentCounts, examCounts] = await Promise.all([
+      Student.aggregate([
+        { $match: { group: { $in: groupNames } } },
+        { $group: { _id: "$group", count: { $sum: 1 } } },
+      ]),
+      ExamSchedule.aggregate([
+        { $match: { group: { $in: groupNames } } },
+        { $group: { _id: "$group", count: { $sum: 1 } } },
+      ])
     ]);
 
     const studentCountMap = new Map(
       studentCounts.map((item) => [item._id, item.count])
     );
+    
+    const examCountMap = new Map(
+      examCounts.map((item) => [item._id, item.count])
+    );
 
-    // 4. إضافة معلومات الطلاب لكل حلقة
+    // 4. إضافة معلومات الطلاب والامتحانات لكل حلقة
     let groupsWithInfo = groups.map((group) => {
       const currentStudents = studentCountMap.get(group.name) || 0;
+      const examCount = examCountMap.get(group.name) || 0;
       return {
         ...group,
         currentStudents,
         totalStudents: currentStudents, // إجمالي عدد الطلاب (نفس currentStudents)
+        examCount, // عدد الامتحانات
         capacity: group.capacity || 30,
         hasStudents: currentStudents > 0,
         isEmpty: currentStudents === 0,

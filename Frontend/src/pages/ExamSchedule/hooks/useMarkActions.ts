@@ -1,4 +1,4 @@
-import { bulkSaveMarks, deleteStudentMark, updateStudentMark } from "@/Api/exam.api";
+import { bulkSaveMarks, deleteStudentMark, updateStudentMark } from "@/Api/ExamShedule";
 import { showSuccessToast, showErrorToast } from "@/components/utils/toastUtils";
 import Swal from 'sweetalert2';
 

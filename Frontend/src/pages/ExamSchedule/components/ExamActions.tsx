@@ -1,34 +1,34 @@
 import React from 'react';
-import type { Exam } from "@/Api/exam.api";
+import { FileEdit, Trash2 } from 'lucide-react';
+import type { Exam } from "@/Api/ExamShedule";
 
 export const ExamActions: React.FC<{
   exam: Exam;
-  onOpenMarks: (exam: Exam) => void;
   onEditExam: (exam: Exam) => void;
   onDeleteExam: (examId: string) => void;
-}> = ({ exam, onOpenMarks, onEditExam, onDeleteExam }) => {
+}> = ({ exam, onEditExam, onDeleteExam }) => {
   const examId = String(exam._id ?? exam.id);
-  
+
   return (
-    <div className="flex flex-wrap items-center justify-center gap-1 md:gap-2">
-      <button 
-        className="text-xs md:text-sm whitespace-nowrap px-2 py-1 md:px-3 md:py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors" 
-        onClick={() => onOpenMarks(exam)}
-      >
-        <span className="hidden sm:inline">إضافة العلامات</span>
-        <span className="sm:hidden">علامات</span>
-      </button>
-      <button 
-        className="text-xs md:text-sm px-2 py-1 md:px-3 md:py-1.5 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition-colors"
+    <div className="flex items-center justify-center gap-2">
+      {/* زر التعديل */}
+      <button
+        className="flex items-center gap-1.5 text-sm px-3 py-2 bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white rounded-lg transition-all hover:shadow-lg font-medium transform hover:scale-105"
         onClick={() => onEditExam(exam)}
+        title="تعديل الامتحان"
       >
-        تعديل
+        <FileEdit className="w-4 h-4" />
+        <span>تعديل</span>
       </button>
-      <button 
-        className="text-xs md:text-sm px-2 py-1 md:px-3 md:py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+      
+      {/* زر الحذف */}
+      <button
+        className="flex items-center gap-1.5 text-sm px-3 py-2 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white rounded-lg transition-all hover:shadow-lg font-medium transform hover:scale-105"
         onClick={() => onDeleteExam(examId)}
+        title="حذف الامتحان"
       >
-        حذف
+        <Trash2 className="w-4 h-4" />
+        <span>حذف</span>
       </button>
     </div>
   );

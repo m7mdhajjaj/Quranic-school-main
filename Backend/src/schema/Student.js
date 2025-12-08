@@ -3,7 +3,12 @@ const mongoose = require("mongoose");
 
 const studentSchema = new mongoose.Schema(
   {
-    studentId: { type: Number, required: true, unique: true },
+    studentId: {
+      type: Number,
+      required: true,
+      unique: true,
+    },
+
     idNumber: {
       type: String,
       required: [true, "رقم الهوية مطلوب"],
@@ -11,15 +16,13 @@ const studentSchema = new mongoose.Schema(
       trim: true,
       validate: [
         {
-          validator: function (value) {
-            // التحقق من أن القيمة تحتوي على أرقام فقط
+          validator(value) {
             return /^\d+$/.test(value);
           },
           message: "رقم الهوية يجب أن يحتوي على أرقام فقط",
         },
         {
-          validator: function (value) {
-            // التحقق من أن الطول 9 أرقام بالضبط
+          validator(value) {
             return value && value.length === 9;
           },
           message: "رقم الهوية يجب أن يتكون من 9 أرقام بالضبط",
@@ -28,21 +31,39 @@ const studentSchema = new mongoose.Schema(
       match: [/^\d{9}$/, "رقم الهوية يجب أن يتكون من 9 أرقام فقط"],
     },
 
-    // لا تخزن كلمة المرور نصًا عاديًا
-    password: { type: String, required: [true, "كلمة المرور مطلوبة"] },
+    password: {
+      type: String,
+      required: [true, "كلمة المرور مطلوبة"],
+    },
 
-    firstName: { type: String, required: [true, "الاسم الأول مطلوب"] },
-    fatherName: { type: String, required: [true, "اسم الأب مطلوب"] },
-    grandFatherName: { type: String, required: [true, "اسم الجد مطلوب"] },
-    motherName: { type: String, required: [true, "اسم الأم مطلوب"] },
-    lastName: { type: String, required: [true, "اسم العائلة مطلوب"] },
+    firstName: {
+      type: String,
+      required: [true, "الاسم الأول مطلوب"],
+    },
+    fatherName: {
+      type: String,
+      required: [true, "اسم الأب مطلوب"],
+    },
+    grandFatherName: {
+      type: String,
+      required: [true, "اسم الجد مطلوب"],
+    },
+    motherName: {
+      type: String,
+      required: [true, "اسم الأم مطلوب"],
+    },
+    lastName: {
+      type: String,
+      required: [true, "اسم العائلة مطلوب"],
+    },
 
-    birthDate: { type: Date, required: [true, "تاريخ الميلاد مطلوب"] },
+    birthDate: {
+      type: Date,
+      required: [true, "تاريخ الميلاد مطلوب"],
+    },
 
-    // إما تخليه اختياري:
     age: {
       type: Number,
-      required: false,
       min: [0, "العمر يجب أن يكون رقماً موجباً"],
     },
 
@@ -54,78 +75,140 @@ const studentSchema = new mongoose.Schema(
           "الجنس يجب أن يكون ذكر أو أنثى (Arabic) or male/female (English)",
       },
       required: [true, "الجنس مطلوب"],
-      // تطبيع تسوية تلقائية للقيم
-      set: function (value) {
+      set(value) {
         if (!value) return value;
         const normalized = value.toString().toLowerCase().trim();
         if (normalized === "male" || normalized === "ذكر") return "ذكر";
-        if (
-          normalized === "female" ||
-          normalized === "أنثى" ||
-          normalized === "انثى"
-        )
-          return "أنثى";
+        if (["female", "أنثى", "انثى"].includes(normalized)) return "أنثى";
         return value;
       },
     },
 
-    residence: { type: String, required: [true, "مكان السكن مطلوب"] },
-    teacher: {
+    residence: {
       type: String,
-      required: [true, "اسم المعلم مطلوب"],
+      required: [true, "مكان السكن مطلوب"],
     },
-    group: {
+
+    // ✅ Relation to Teacher (for populate)
+    teacher: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Teacher",
+      required: false, // keep false while migrating, can be true later
+    },
+
+    // Optional: keep teacherName as plain string for legacy data
+    teacherName: {
       type: String,
-      required: false, // السماح بـ null للطلاب المفصولين مؤقتاً
+      trim: true,
+    },
+
+    // ✅ Relation to Group (for populate)
+    group: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Group",
+      required: false,
+      default: null, // null for temporarily suspended students
+    },
+
+    // Optional: keep groupName for legacy usages or quick display
+    groupName: {
+      type: String,
+      trim: true,
       default: null,
     },
 
     email: {
       type: String,
-      required: false,
       match: [/\S+@\S+\.\S+/, "البريد الإلكتروني غير صالح"],
     },
+
     phoneNumber: {
       type: String,
       required: [true, "رقم الهاتف مطلوب"],
       match: [/^05\d{8}$/, "الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام"],
       unique: true,
     },
+
     avatar: {
       url: { type: String },
       publicId: { type: String },
     },
-    isActive: { type: Boolean, default: false },
-    lastSeen: { type: Date, default: Date.now },
 
-    // المعدلات الشهرية للطالب
+    isActive: {
+      type: Boolean,
+      default: false,
+    },
+
+    lastSeen: {
+      type: Date,
+      default: Date.now,
+    },
+
+    // Monthly performance averages
     monthlyAverages: [
       {
-        month: { type: Number, required: true, min: 1, max: 12 }, // رقم الشهر (1-12)
-        year: { type: Number, required: true }, // السنة
-        reviewAverage: { type: Number, min: 0, max: 100, default: null }, // معدل المراجعة من 100
-        memorizationAverage: { type: Number, min: 0, max: 100, default: null }, // معدل الحفظ من 100
-        overallAverage: { type: Number, min: 0, max: 100, default: null }, // المعدل الإجمالي من 100
-        totalMarks: { type: Number, default: 0 }, // عدد العلامات المسجلة
-        lastUpdated: { type: Date, default: Date.now }, // آخر تحديث
+        month: {
+          type: Number,
+          required: true,
+          min: 1,
+          max: 12, // 1–12
+        },
+        year: {
+          type: Number,
+          required: true,
+        },
+        reviewAverage: {
+          type: Number,
+          min: 0,
+          max: 100,
+          default: null,
+        },
+        memorizationAverage: {
+          type: Number,
+          min: 0,
+          max: 100,
+          default: null,
+        },
+        overallAverage: {
+          type: Number,
+          min: 0,
+          max: 100,
+          default: null,
+        },
+        totalMarks: {
+          type: Number,
+          default: 0,
+        },
+        lastUpdated: {
+          type: Date,
+          default: Date.now,
+        },
       },
     ],
   },
-
   { timestamps: true }
 );
 
-// إضافة فهارس مركبة لتحسين أداء البحث
-studentSchema.index({ teacher: 1, group: 1 }); // فهرس مركب للمعلم والحلقة
+// Compound index to speed up teacher + group queries
+studentSchema.index({ teacher: 1, group: 1 });
 
-// مثال Virtual لعمر محسوب (اختياري)
+// Computed age virtual
 studentSchema.virtual("computedAge").get(function () {
   if (!this.birthDate) return undefined;
+
   const today = new Date();
   let age = today.getFullYear() - this.birthDate.getFullYear();
-  const m = today.getMonth() - this.birthDate.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < this.birthDate.getDate())) age--;
+  const monthDiff = today.getMonth() - this.birthDate.getMonth();
+
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < this.birthDate.getDate())
+  ) {
+    age--;
+  }
+
   return age;
 });
 
-module.exports = mongoose.model("Student", studentSchema);
+const Student = mongoose.model("Student", studentSchema);
+module.exports = Student;

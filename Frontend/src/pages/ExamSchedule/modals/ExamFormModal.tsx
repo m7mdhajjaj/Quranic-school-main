@@ -3,7 +3,7 @@
 // ============================================================================
 
 import { memo, useState, useEffect, useMemo, useCallback } from 'react';
-import { TransparentModal } from '../components/TransparentModal';
+import { TransparentModal } from './TransparentModal';
 import { DatePicker } from '@/components/UI';
 
 // ============================================================================
@@ -38,35 +38,35 @@ interface ExamFormModalProps {
 const EXAM_TYPES = [
   { value: 'شفهي', label: 'شفهي' },
   { value: 'كتابي', label: 'كتابي' },
-  { value: 'عملي', label: 'عملي' },
-  { value: 'مشروع', label: 'مشروع' },
   { value: 'تقييم شامل', label: 'تقييم شامل' },
 ] as const;
 
+// دالة للحصول على تاريخ بعد يومين
+const getDateAfterTwoDays = (): string => {
+  const date = new Date();
+  date.setDate(date.getDate() + 2); // إضافة يومين
+  return date.toISOString().split('T')[0];
+};
+
 const DEFAULT_VALUES: ExamFormData = {
   name: '',
-  date: new Date().toISOString().split('T')[0],
-  time: new Date().toTimeString().slice(0, 5),
+  date: getDateAfterTwoDays(), // تاريخ بعد يومين تلقائياً
+  time: '12:00', // وقت افتراضي 12 ظهراً (بصيغة 24 ساعة)
   subject: '',
   type: 'شفهي',
   duration: 60,
-  totalMarks: 100,
-  passingMarks: 50,
+  totalMarks: 20,
+  passingMarks: 10,
 };
-
-const TIME_CONSTRAINTS = {
-  min: '09:00',
-  max: '19:00',
-} as const;
 
 const DURATION_CONSTRAINTS = {
   min: 5,
-  max: 480,
+  max: 120, // Max 9 hours (flexible)
 } as const;
 
 const MARKS_CONSTRAINTS = {
-  min: 1,
-  max: 1000,
+  min: 10,
+  max: 40,
 } as const;
 
 // ============================================================================
@@ -168,8 +168,8 @@ export const ExamFormModal = memo<ExamFormModalProps>(({
     edit: {
       title: 'تعديل الامتحان',
       submitText: 'حفظ التعديلات',
-      gradientFrom: 'blue-500',
-      gradientTo: 'indigo-600',
+      gradientFrom: 'emerald-500',
+      gradientTo: 'teal-600',
     },
   }), []);
 
@@ -261,21 +261,6 @@ export const ExamFormModal = memo<ExamFormModalProps>(({
         )
       }
     >
-      {/* Info Banner */}
-      {mode === 'add' && isTeacherWithGroups && (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4 mb-6">
-          <div className="flex items-start gap-3">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <div className="text-sm text-blue-800">
-              <p className="font-bold mb-1">ملاحظة:</p>
-              <p>سيتم إضافة هذا الامتحان فقط لطلاب الحلقة المحددة أدناه.</p>
-            </div>
-          </div>
-        </div>
-      )}
-
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Section 1: Basic Information */}
         <FormSection
@@ -368,7 +353,7 @@ export const ExamFormModal = memo<ExamFormModalProps>(({
                   value={selectedGroup}
                   onChange={(e) => setSelectedGroup(e.target.value)}
                   required
-                  disabled={isSubmitting || mode === 'edit'}
+                  disabled={isSubmitting}
                   title="الحلقة"
                 >
                   {teacherGroups.map((group) => (
@@ -383,9 +368,9 @@ export const ExamFormModal = memo<ExamFormModalProps>(({
         {/* Section 2: Schedule */}
         <FormSection
           title="موعد الامتحان"
-          bgColor="bg-blue-50"
+          bgColor="bg-emerald-50"
           icon={
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
           }
@@ -403,48 +388,83 @@ export const ExamFormModal = memo<ExamFormModalProps>(({
 
             {/* Time and Duration - Side by Side */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Time */}
+              {/* Time - Combined HH:MM + AM/PM */}
               <InputField
                 label="الوقت"
                 required
                 icon={
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 }
               >
-                <input
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition duration-200 outline-none"
-                  type="time"
-                  min={TIME_CONSTRAINTS.min}
-                  max={TIME_CONSTRAINTS.max}
-                  value={formData.time}
-                  onChange={(e) => updateFormField('time', e.target.value)}
-                  required
-                  disabled={isSubmitting}
-                  title="الوقت"
-                />
+                <div>
+                  <select
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition duration-200 outline-none bg-white"
+                    value={formData.time || '12:00'}
+                    onChange={(e) => updateFormField('time', e.target.value)}
+                    required
+                    disabled={isSubmitting}
+                    title="الوقت من 12:00 ظهراً إلى 9:00 مساءً"
+                  >
+                    <option value="12:00">12:00 ظهراً</option>
+                    <option value="12:30">12:30 ظهراً</option>
+                    <option value="13:00">1:00 مساءً</option>
+                    <option value="13:30">1:30 مساءً</option>
+                    <option value="14:00">2:00 مساءً</option>
+                    <option value="14:30">2:30 مساءً</option>
+                    <option value="15:00">3:00 مساءً</option>
+                    <option value="15:30">3:30 مساءً</option>
+                    <option value="16:00">4:00 مساءً</option>
+                    <option value="16:30">4:30 مساءً</option>
+                    <option value="17:00">5:00 مساءً</option>
+                    <option value="17:30">5:30 مساءً</option>
+                    <option value="18:00">6:00 مساءً</option>
+                    <option value="18:30">6:30 مساءً</option>
+                    <option value="19:00">7:00 مساءً</option>
+                    <option value="19:30">7:30 مساءً</option>
+                    <option value="20:00">8:00 مساءً</option>
+                    <option value="20:30">8:30 مساءً</option>
+                    <option value="21:00">9:00 مساءً</option>
+                  </select>
+                
+                {/* Hint - الوقت المسموح */}
+                <p className="mt-2 text-xs text-emerald-600 flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  الوقت المسموح من 12:00 ظهراً إلى 9:00 مساءً
+                </p>
+              </div>
               </InputField>
 
-              {/* Duration */}
+              {/* Duration - يظهر لجميع أنواع الامتحانات */}
               <InputField
                 label="المدة (دقيقة)"
                 icon={
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 }
               >
-                <input
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition duration-200 outline-none"
-                  type="number"
-                  min={DURATION_CONSTRAINTS.min}
-                  max={DURATION_CONSTRAINTS.max}
-                  value={formData.duration || 60}
-                  onChange={(e) => updateFormField('duration', parseInt(e.target.value) || 60)}
-                  disabled={isSubmitting}
-                  title="المدة بالدقائق"
-                />
+                <div>
+                  <input
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition duration-200 outline-none"
+                    type="number"
+                    min={DURATION_CONSTRAINTS.min}
+                    max={DURATION_CONSTRAINTS.max}
+                    value={formData.duration || 60}
+                    onChange={(e) => updateFormField('duration', parseInt(e.target.value) || 60)}
+                    disabled={isSubmitting}
+                    title="المدة بالدقائق (الحد الأقصى ساعتين)"
+                  />
+                  <p className="mt-2 text-xs text-emerald-600 flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                    الحد الأقصى للمدة ساعتين (120 دقيقة)
+                  </p>
+                </div>
               </InputField>
             </div>
           </div>
@@ -453,9 +473,9 @@ export const ExamFormModal = memo<ExamFormModalProps>(({
         {/* Section 3: Grading */}
         <FormSection
           title="نظام التقييم"
-          bgColor="bg-purple-50"
+          bgColor="bg-emerald-50"
           icon={
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
             </svg>
           }
@@ -465,13 +485,13 @@ export const ExamFormModal = memo<ExamFormModalProps>(({
             <InputField
               label="مجموع الدرجات"
               icon={
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               }
             >
               <input
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition duration-200 outline-none"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition duration-200 outline-none"
                 type="number"
                 min={MARKS_CONSTRAINTS.min}
                 max={MARKS_CONSTRAINTS.max}
@@ -486,13 +506,13 @@ export const ExamFormModal = memo<ExamFormModalProps>(({
             <InputField
               label="درجة النجاح"
               icon={
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               }
             >
               <input
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-100 transition duration-200 outline-none"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 transition duration-200 outline-none"
                 type="number"
                 min={0}
                 max={formData.totalMarks || 100}
