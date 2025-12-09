@@ -156,19 +156,18 @@ export const StudentGridView: React.FC<StudentGridViewProps> = ({
               )}
             </div>
           </div>
-
-          {/* Card Footer - Actions */}
+  {/* Card Footer - Actions */}
           <div className="p-3 bg-gray-50 border-t border-gray-100">
             <div className="flex gap-2">
               <button
                 onClick={() => onEdit(student)}
-                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium">
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-xs font-medium shadow-sm">
                 <FaEdit className="w-3 h-3" />
                 تعديل
               </button>
               <button
                 onClick={() => onDelete(student)}
-                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-xs font-medium">
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-xs font-medium shadow-sm">
                 <FaTrash className="w-3 h-3" />
                 حذف
               </button>

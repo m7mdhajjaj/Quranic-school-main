@@ -11,6 +11,9 @@ interface StudentTableViewProps {
   onSort?: (field: string) => void;
   sortField?: string;
   sortOrder?: "asc" | "desc";
+  selectedStudents?: Set<string>;
+  onToggleStudent?: (studentId: string) => void;
+  onToggleAll?: () => void;
 }
 
 // دالة مساعدة للحصول على اسم الحلقة بشكل آمن
@@ -47,8 +50,35 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
   onEdit,
   onDelete,
   isLoading = false,
+  selectedStudents,
+  onToggleStudent,
+  onToggleAll,
 }) => {
+  const allSelected = selectedStudents && students.length > 0 && students.every(s => selectedStudents.has(s._id || ""));
+  
   const columns: Column<Student>[] = [
+    // Checkbox column for bulk selection
+    ...(selectedStudents && onToggleStudent && onToggleAll ? [{
+      key: "select",
+      header: (
+        <input
+          type="checkbox"
+          checked={allSelected}
+          onChange={onToggleAll}
+          className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500 cursor-pointer"
+        />
+      ),
+      width: "50px",
+      align: "center" as const,
+      render: (student: Student) => (
+        <input
+          type="checkbox"
+          checked={selectedStudents.has(student._id || "")}
+          onChange={() => onToggleStudent(student._id || "")}
+          className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500 cursor-pointer"
+        />
+      ),
+    }] : []),
     {
       key: "studentId",
       header: "رقم الطالب",

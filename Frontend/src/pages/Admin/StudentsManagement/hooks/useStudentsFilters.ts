@@ -11,10 +11,12 @@ export const useStudentsFilters = (
   const [groupsFilter, setGroupsFilter] = useState<GroupsFilter>("all");
   const [ageRange, setAgeRange] = useState<[number, number]>([0, 100]);
   const [showFilters, setShowFilters] = useState(false);
-  const [sortField] = useState<SortField>("studentId");
-  const [sortOrder] = useState<SortOrder>("asc");
+  const [sortField, setSortField] = useState<SortField>("studentId");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
   const [currentPage, setCurrentPage] = useState(1);
   const [studentsPerPage, setStudentsPerPage] = useState(1000); // عرض 1000 طالب في الصفحة
+  const [selectedTeacher, setSelectedTeacher] = useState("all");
+  const [selectedGroup, setSelectedGroup] = useState("all");
 
   // Count active filters
   const activeFiltersCount = useMemo(() => {
@@ -23,8 +25,10 @@ export const useStudentsFilters = (
     if (groupsFilter !== "all") count++;
     if (ageRange[0] !== 0 || ageRange[1] !== 100) count++;
     if (searchTerm) count++;
+    if (selectedTeacher !== "all") count++;
+    if (selectedGroup !== "all") count++;
     return count;
-  }, [selectedGender, groupsFilter, ageRange, searchTerm]);
+  }, [selectedGender, groupsFilter, ageRange, searchTerm, selectedTeacher, selectedGroup]);
 
   // Enhanced search function using API
   const handleSearch = useCallback(
@@ -47,17 +51,7 @@ export const useStudentsFilters = (
     [fetchStudents]
   );
 
-  useEffect(() => {
-    const delayedSearch = setTimeout(() => {
-      if (searchTerm.length > 2) {
-        handleSearch(searchTerm);
-      } else if (searchTerm === "") {
-        fetchStudents();
-      }
-    }, 800);
-
-    return () => clearTimeout(delayedSearch);
-  }, [searchTerm, handleSearch, fetchStudents]);
+  // Removed - search is now handled by the main filter effect below
 
   // Server-side filtering - all filtering done in backend
   useEffect(() => {
@@ -80,9 +74,17 @@ export const useStudentsFilters = (
       if (groupsFilter !== "all") {
         filters.group = groupsFilter;
       }
+
+      if (selectedTeacher !== "all") {
+        filters.teacher = selectedTeacher;
+      }
+
+      if (selectedGroup !== "all") {
+        filters.groupId = selectedGroup;
+      }
       
-      if (searchTerm && searchTerm.length > 2) {
-        filters.search = searchTerm;
+      if (searchTerm && searchTerm.trim().length > 0) {
+        filters.search = searchTerm.trim();
       }
       
       if (sortField) {
@@ -96,10 +98,10 @@ export const useStudentsFilters = (
 
     const debounceTimer = setTimeout(() => {
       applyFilters();
-    }, 500); // Debounce for 500ms
+    }, 300); // Debounce for 300ms - faster response
 
     return () => clearTimeout(debounceTimer);
-  }, [searchTerm, selectedGender, groupsFilter, ageRange, sortField, sortOrder, fetchStudents]);
+  }, [searchTerm, selectedGender, groupsFilter, ageRange, sortField, sortOrder, selectedTeacher, selectedGroup, fetchStudents]);
 
   // No client-side filtering needed - backend handles everything
   const filteredAndSortedStudents = useMemo(() => students, [students]);
@@ -113,6 +115,8 @@ export const useStudentsFilters = (
     ageRange,
     sortField,
     sortOrder,
+    selectedTeacher,
+    selectedGroup,
   ]);
 
   // Pagination
@@ -126,12 +130,26 @@ export const useStudentsFilters = (
     filteredAndSortedStudents.length / studentsPerPage
   );
 
+  // Handle sort
+  const handleSort = (columnKey: string) => {
+    if (sortField === columnKey) {
+      // Toggle sort order
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      // New column, default to ascending
+      setSortField(columnKey as SortField);
+      setSortOrder("asc");
+    }
+  };
+
   // Reset filters
   const resetFilters = () => {
     setSearchTerm("");
     setSelectedGender("all");
     setGroupsFilter("all");
     setAgeRange([0, 100]);
+    setSelectedTeacher("all");
+    setSelectedGroup("all");
     setCurrentPage(1);
   };
 
@@ -155,5 +173,12 @@ export const useStudentsFilters = (
     currentStudents,
     totalPages,
     resetFilters,
+    selectedTeacher,
+    setSelectedTeacher,
+    selectedGroup,
+    setSelectedGroup,
+    sortField,
+    sortOrder,
+    handleSort,
   };
 };

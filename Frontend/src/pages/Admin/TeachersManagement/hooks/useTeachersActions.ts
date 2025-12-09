@@ -217,7 +217,7 @@ export const useTeachersActions = (
     }
   };
 
-  // Export to CSV
+  // Export to CSV with proper formatting for Arabic Excel
   const handleExport = (filteredTeachers: Teacher[]) => {
     const headers = [
       "رقم المعلم",
@@ -229,28 +229,48 @@ export const useTeachersActions = (
       "العمر",
       "الجنس",
     ];
+    
     const rows = filteredTeachers.map((t) => [
-      t.teacherId,
-      t.firstName,
+      t.teacherId || "",
+      t.firstName || "",
       t.fatherName || "",
-      t.lastName,
-      t.email,
-      t.phoneNumber,
+      t.lastName || "",
+      t.email || "",
+      t.phoneNumber || "",
       t.age || "",
       t.gender || "",
     ]);
 
-    const csvContent = [headers, ...rows]
-      .map((row) => row.join(","))
-      .join("\n");
+    // Use semicolon as delimiter for better Excel compatibility in Arabic regions
+    const delimiter = ";";
+    
+    // Helper function to escape CSV fields properly
+    const escapeCSVField = (field: string | number) => {
+      const stringField = String(field);
+      // If field contains delimiter, newline, or double quote, wrap in quotes and escape quotes
+      if (stringField.includes(delimiter) || stringField.includes('\n') || stringField.includes('"')) {
+        return `"${stringField.replace(/"/g, '""')}"`;
+      }
+      return stringField;
+    };
 
+    // Create CSV content with proper escaping
+    const csvContent = [headers, ...rows]
+      .map((row) => row.map(escapeCSVField).join(delimiter))
+      .join("\r\n");
+
+    // Add BOM for proper UTF-8 encoding in Excel
     const blob = new Blob(["\ufeff" + csvContent], {
       type: "text/csv;charset=utf-8;",
     });
+    
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = `teachers_${new Date().toISOString().split("T")[0]}.csv`;
     link.click();
+    
+    // Clean up
+    setTimeout(() => URL.revokeObjectURL(link.href), 100);
   };
 
   // Bulk delete

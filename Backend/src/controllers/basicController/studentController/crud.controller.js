@@ -45,16 +45,38 @@ exports.getStudents = async (req, res) => {
       }
     }
 
-    // Search filter (across multiple fields)
+    // Search filter (across multiple fields including full name, ID number, teacher, and group)
     if (search) {
       const searchRegex = new RegExp(search, 'i');
       query.$or = [
         { firstName: searchRegex },
         { lastName: searchRegex },
         { fatherName: searchRegex },
+        { grandFatherName: searchRegex },
+        { motherName: searchRegex },
         { idNumber: searchRegex },
         { teacher: searchRegex },
-        { group: searchRegex }
+        { group: searchRegex },
+        // Search in full name (combining first, father, grandfather, last names)
+        {
+          $expr: {
+            $regexMatch: {
+              input: {
+                $concat: [
+                  { $ifNull: ["$firstName", ""] },
+                  " ",
+                  { $ifNull: ["$fatherName", ""] },
+                  " ",
+                  { $ifNull: ["$grandFatherName", ""] },
+                  " ",
+                  { $ifNull: ["$lastName", ""] }
+                ]
+              },
+              regex: search,
+              options: "i"
+            }
+          }
+        }
       ];
     }
 
@@ -63,7 +85,7 @@ exports.getStudents = async (req, res) => {
     if (sortBy) {
       sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
     } else {
-      sortOptions.createdAt = -1; // Default: newest first
+      sortOptions.studentId = 1; // Default: sort by studentId ascending (oldest first)
     }
 
     // Pagination
@@ -85,7 +107,6 @@ exports.getStudents = async (req, res) => {
     const endTime = Date.now();
     const duration = endTime - startTime;
 
-    console.log(`✅ تم تحميل ${students.length} طالب من ${total} في ${duration}ms`);
     res.json({
       success: true,
       data: students,
@@ -215,9 +236,8 @@ exports.createStudent = async (req, res) => {
       if (!teacherMatches) {
         return res.status(400).json({
           success: false,
-          message: `المعلم "${teacher}" لا يطابق معلم الحلقة "${
-            groupData.teacher || groupData.teacherName
-          }". يجب أن يكون الطالب في حلقة تابعة لنفس المعلم.`,
+          message: `المعلم "${teacher}" لا يطابق معلم الحلقة "${groupData.teacher || groupData.teacherName
+            }". يجب أن يكون الطالب في حلقة تابعة لنفس المعلم.`,
         });
       }
 
@@ -253,7 +273,7 @@ exports.createStudent = async (req, res) => {
 
     // Invalidate all student-related caches
     await invalidateCache('cache:/api/students*');
-    
+
     // إبطال cache عدد الطلاب في الحلقات
     const { invalidateStudentCountsCache } = require("../groupController");
     invalidateStudentCountsCache();
@@ -338,9 +358,8 @@ exports.updateStudent = async (req, res) => {
       if (!teacherMatches) {
         return res.status(400).json({
           success: false,
-          message: `المعلم "${teacher}" لا يطابق معلم الحلقة "${
-            groupData.teacher || groupData.teacherName
-          }". يجب أن يكون الطالب في حلقة تابعة لنفس المعلم.`,
+          message: `المعلم "${teacher}" لا يطابق معلم الحلقة "${groupData.teacher || groupData.teacherName
+            }". يجب أن يكون الطالب في حلقة تابعة لنفس المعلم.`,
         });
       }
 
@@ -378,7 +397,7 @@ exports.updateStudent = async (req, res) => {
 
     // Invalidate all student-related caches
     await invalidateCache('cache:/api/students*');
-    
+
     // إبطال cache
     const { invalidateStudentCountsCache } = require("../groupController");
     invalidateStudentCountsCache();
@@ -425,7 +444,7 @@ exports.deleteStudent = async (req, res) => {
 
     // Invalidate all student-related caches
     await invalidateCache('cache:/api/students*');
-    
+
     // إبطال cache
     const { invalidateStudentCountsCache } = require("../groupController");
     invalidateStudentCountsCache();
@@ -477,6 +496,9 @@ exports.bulkDeleteStudents = async (req, res) => {
     });
 
     console.log(`✅ تم حذف ${result.deletedCount} طالب من أصل ${studentIds.length}`);
+
+    // Invalidate all student-related caches
+    await invalidateCache('cache:/api/students*');
 
     // إبطال cache
     const { invalidateStudentCountsCache } = require("../groupController");
@@ -579,9 +601,31 @@ exports.getStudentsStatistics = async (req, res) => {
         { firstName: searchRegex },
         { lastName: searchRegex },
         { fatherName: searchRegex },
+        { grandFatherName: searchRegex },
+        { motherName: searchRegex },
         { idNumber: searchRegex },
         { teacher: searchRegex },
-        { group: searchRegex }
+        { group: searchRegex },
+        // Search in full name
+        {
+          $expr: {
+            $regexMatch: {
+              input: {
+                $concat: [
+                  { $ifNull: ["$firstName", ""] },
+                  " ",
+                  { $ifNull: ["$fatherName", ""] },
+                  " ",
+                  { $ifNull: ["$grandFatherName", ""] },
+                  " ",
+                  { $ifNull: ["$lastName", ""] }
+                ]
+              },
+              regex: search,
+              options: "i"
+            }
+          }
+        }
       ];
     }
 
@@ -657,7 +701,7 @@ exports.getStudentsStatistics = async (req, res) => {
 exports.checkDuplicate = async (req, res) => {
   try {
     const { field, value, excludeId } = req.query;
-    
+
     if (!field || !value) {
       return res.status(400).json({
         success: false,
@@ -667,7 +711,7 @@ exports.checkDuplicate = async (req, res) => {
 
     const data = { [field]: value };
     const duplicateError = await checkDuplicateFields(data, excludeId, 'student');
-    
+
     if (duplicateError) {
       return res.json({
         success: false,

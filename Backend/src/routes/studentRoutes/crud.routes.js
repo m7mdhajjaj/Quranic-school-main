@@ -6,6 +6,7 @@ const {
   validateStudentData, 
   sanitizeStudentData 
 } = require("../../Validation/Student/StudentValidation");
+const { validateStudentSearchQuery } = require("../../Validation/Student/StudentQueryValidation");
 const { protect } = require("../../middleware/authMiddleware");
 const { cacheMiddleware } = require("../../middleware/cacheMiddleware");
 
@@ -14,11 +15,11 @@ const { cacheMiddleware } = require("../../middleware/cacheMiddleware");
  * All routes use StudentValidation middleware
  */
 
-// Get all students (with 2 minute cache)
-router.get("/", protect, cacheMiddleware(120), studentController.getStudents);
+// Get all students (with validation and 2 minute cache)
+router.get("/", protect, validateStudentSearchQuery, cacheMiddleware(120), studentController.getStudents);
 
-// Get students statistics (with 5 minute cache)
-router.get("/statistics", protect, cacheMiddleware(300), studentController.getStudentsStatistics);
+// Get students statistics (with validation and 5 minute cache)
+router.get("/statistics", protect, validateStudentSearchQuery, cacheMiddleware(300), studentController.getStudentsStatistics);
 
 // Check duplicate field (no cache - real-time check needed)
 router.get("/check-duplicate", protect, studentController.checkDuplicate);

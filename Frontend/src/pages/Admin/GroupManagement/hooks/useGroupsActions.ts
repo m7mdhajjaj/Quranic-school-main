@@ -180,7 +180,7 @@ export const useGroupsActions = (
     });
   }, []);
 
-  // Export to CSV
+  // Export to CSV with proper formatting
   const handleExport = (filteredGroups: Group[]) => {
     const headers = [
       "اسم الحلقة",
@@ -190,26 +190,46 @@ export const useGroupsActions = (
       "المواعيد",
       "الوصف",
     ];
+    
     const rows = filteredGroups.map((g) => [
-      g.name,
-      g.teacher,
-      g.capacity,
+      g.name || "",
+      g.teacher || "",
+      g.capacity || "",
       g.currentStudents || 0,
       g.schedule || "",
       g.description || "",
     ]);
 
-    const csvContent = [headers, ...rows]
-      .map((row) => row.join(","))
-      .join("\n");
+    // Use semicolon as delimiter for better Excel compatibility in Arabic regions
+    const delimiter = ";";
+    
+    // Helper function to escape CSV fields properly
+    const escapeCSVField = (field: string | number) => {
+      const stringField = String(field);
+      // If field contains delimiter, newline, or double quote, wrap in quotes and escape quotes
+      if (stringField.includes(delimiter) || stringField.includes('\n') || stringField.includes('"')) {
+        return `"${stringField.replace(/"/g, '""')}"`;
+      }
+      return stringField;
+    };
 
+    // Create CSV content with proper escaping
+    const csvContent = [headers, ...rows]
+      .map((row) => row.map(escapeCSVField).join(delimiter))
+      .join("\r\n");
+
+    // Add BOM for proper UTF-8 encoding in Excel
     const blob = new Blob(["\ufeff" + csvContent], {
       type: "text/csv;charset=utf-8;",
     });
+    
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = `groups_${new Date().toISOString().split("T")[0]}.csv`;
     link.click();
+    
+    // Clean up
+    setTimeout(() => URL.revokeObjectURL(link.href), 100);
   };
 
   return {
