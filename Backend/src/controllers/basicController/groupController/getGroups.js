@@ -7,6 +7,7 @@ const Student = require("../../../schema/Student");
 const ExamSchedule = require("../../../schema/ExamSchedule");
 const { getStudentCountsForAllGroups, getStudentCountsForTeacher } = require("./cache");
 const { getTeacherInfo } = require("./helpers");
+const { successResponse, notFoundResponse, handleError } = require("./utils");
 
 /**
  * الحصول على جميع الحلقات
@@ -64,11 +65,7 @@ exports.getAllGroups = async (req, res) => {
       data: groupsWithStudentCount,
     });
   } catch (error) {
-    console.error("Error fetching groups:", error);
-    res.status(500).json({
-      success: false,
-      message: "حدث خطأ أثناء جلب الحلقات",
-    });
+    return handleError(res, error, "جلب الحلقات");
   }
 };
 
@@ -92,19 +89,9 @@ exports.getGroupById = async (req, res) => {
       group: group.name,
     });
 
-    res.status(200).json({
-      success: true,
-      data: {
-        ...group.toObject(),
-        currentStudents,
-      },
-    });
+    return successResponse(res, { ...group.toObject(), currentStudents });
   } catch (error) {
-    console.error("Error fetching group:", error);
-    res.status(500).json({
-      success: false,
-      message: "حدث خطأ أثناء جلب الحلقة",
-    });
+    return handleError(res, error, "جلب الحلقة");
   }
 };
 
@@ -189,6 +176,70 @@ exports.getGroupsMonthlyStats = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "حدث خطأ أثناء جلب إحصائيات الحلقات",
+    });
+  }
+};
+
+/**
+ * 🆕 جلب طلاب حلقة معينة بكامل معلوماتهم
+ * GET /api/groups/:id/students
+ */
+exports.getGroupStudents = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { includeDetails = 'true' } = req.query;
+    
+    console.log(`👥 جلب طلاب الحلقة - ID: ${id}, مع التفاصيل: ${includeDetails}`);
+    const startTime = Date.now();
+
+    // 1. جلب الحلقة
+    const group = await Group.findById(id).lean();
+    
+    if (!group) {
+      return res.status(404).json({
+        success: false,
+        message: "الحلقة غير موجودة",
+      });
+    }
+
+    // 2. جلب الطلاب
+    let students;
+    
+    if (includeDetails === 'true') {
+      // جلب الطلاب مع كامل معلوماتهم
+      students = await Student.find({ group: group.name })
+        .select('-password -avatar') // استبعاد الحقول الحساسة
+        .lean()
+        .sort({ firstName: 1, lastName: 1 });
+    } else {
+      // جلب الطلاب بمعلومات مختصرة فقط
+      students = await Student.find({ group: group.name })
+        .select('studentId firstName lastName')
+        .lean()
+        .sort({ firstName: 1, lastName: 1 });
+    }
+
+    const duration = Date.now() - startTime;
+    console.log(`✅ تم جلب ${students.length} طالب من الحلقة "${group.name}" في ${duration}ms`);
+
+    res.json({
+      success: true,
+      data: {
+        group: {
+          _id: group._id,
+          name: group.name,
+          teacher: group.teacherName || group.teacher,
+          capacity: group.capacity || 30,
+        },
+        students: students,
+        totalStudents: students.length,
+      },
+    });
+  } catch (error) {
+    console.error("❌ خطأ في جلب طلاب الحلقة:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "حدث خطأ أثناء جلب طلاب الحلقة",
     });
   }
 };

@@ -1,5 +1,5 @@
 import React from "react";
-import AddStudentFormWithYup from "../../Forms/AddStudentForm";
+import AddStudentFormWithYup from "@/pages/Admin/StudentsManagement/Model/StudentForm";
 import type { Student } from "@/Api/studentApi";
 
 interface StudentFormModalProps {

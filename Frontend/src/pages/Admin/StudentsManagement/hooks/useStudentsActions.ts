@@ -2,10 +2,10 @@ import { useState } from "react";
 import { deleteStudent, bulkDeleteStudents } from "@/Api/studentApi";
 import {
   showCenteredSwal,
-  showSuccessMessage,
   showWarningMessage,
   showErrorMessage,
 } from "@/components/utils/sweetalertUtils";
+import { showSuccessToast } from "@/components/utils/toastUtils";
 import type { Student } from "../types";
 
 export const useStudentsActions = (
@@ -20,8 +20,14 @@ export const useStudentsActions = (
     new Set()
   );
 
-  // Handle delete
+  // Handle delete - Optimized
   const handleDelete = async (studentId: string | number) => {
+    // Early validation
+    if (typeof studentId !== "string" || studentId.length <= 10) {
+      console.error("Invalid student ID");
+      return;
+    }
+
     const student = students.find((s) => s._id === studentId);
     const studentName = student
       ? `${student.firstName} ${student.lastName}`
@@ -48,22 +54,17 @@ export const useStudentsActions = (
 
     if (result.isConfirmed) {
       try {
-        if (typeof studentId === "string" && studentId.length > 10) {
-          const deleteResult = await deleteStudent(studentId);
-          if (deleteResult.success) {
-            setStudents((prev) => prev.filter((s) => s._id !== studentId));
-
-            await showSuccessMessage(
-              "تم الحذف!",
-              `تم حذف الطالب ${studentName} من النظام بنجاح`
-            );
-          } else {
-            throw new Error(deleteResult.message || "فشل في حذف الطالب");
-          }
+        const deleteResult = await deleteStudent(studentId);
+        
+        if (!deleteResult.success) {
+          throw new Error(deleteResult.message || "فشل في حذف الطالب");
         }
+
+        // Update state optimistically
+        setStudents((prev) => prev.filter((s) => s._id !== studentId));
+        showSuccessToast(`✅ تم حذف الطالب ${studentName} من النظام بنجاح`);
       } catch (deleteError) {
         console.error("❌ فشل في حذف الطالب:", deleteError);
-
         await showErrorMessage(
           "خطأ في الحذف!",
           "حدث خطأ أثناء حذف الطالب. يرجى المحاولة مرة أخرى"
@@ -80,32 +81,19 @@ export const useStudentsActions = (
   };
 
   // Handle add/edit success
-  const handleAddSuccess = async (studentData?: unknown) => {
+  const handleAddSuccess = async () => {
     try {
       setIsFormVisible(false);
       setIsEditMode(false);
       setSelectedStudent(null);
 
       await fetchStudents();
-
-      if (
-        !isEditMode &&
-        studentData &&
-        typeof studentData === "object" &&
-        "firstName" in studentData
-      ) {
-        await showSuccessMessage(
-          "مرحباً بالطالب الجديد!",
-          `أهلاً وسهلاً! تم إضافة ${
-            studentData.firstName || "الطالب الجديد"
-          } إلى المدرسة بنجاح`
-        );
-      }
     } catch (error: unknown) {
       console.error("❌ خطأ في معالجة نجاح إضافة الطالب:", error);
 
       const errorMessage = "حدث خطأ أثناء إعادة تحميل البيانات";
 
+      // عرض SweetAlert للفشل
       await showWarningMessage(
         "تحذير ⚠️",
         `${errorMessage} - يرجى تحديث الصفحة يدوياً`
@@ -186,9 +174,9 @@ export const useStudentsActions = (
           );
           setSelectedStudents(new Set());
 
-          await showSuccessMessage(
-            "تم حذف الطلاب!",
-            `تم حذف ${deletedCount} طالب من النظام بنجاح`
+          // عرض Toast للنجاح
+          showSuccessToast(
+            `✅ تم حذف ${deletedCount} طالب من النظام بنجاح`
           );
         } else {
           throw new Error(bulkDeleteResult.message || "فشل في حذف الطلاب");
@@ -196,6 +184,7 @@ export const useStudentsActions = (
       } catch (bulkDeleteError) {
         console.error("❌ فشل في حذف الطلاب:", bulkDeleteError);
 
+        // عرض SweetAlert للفشل
         await showErrorMessage(
           "فشل في الحذف!",
           "حدث خطأ أثناء حذف الطلاب المحددين. يرجى المحاولة مرة أخرى"

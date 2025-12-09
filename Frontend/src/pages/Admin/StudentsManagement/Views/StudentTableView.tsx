@@ -2,7 +2,6 @@ import React from "react";
 import { Table, type Column } from "@/components/UI";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import type { Student } from "@/Api/studentApi";
-import Avatar from "@/components/Avatar/Avatar";
 
 interface StudentTableViewProps {
   students: Student[];
@@ -54,24 +53,13 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
       key: "studentId",
       header: "رقم الطالب",
       sortable: true,
-      width: "120px",
+      width: "100px",
       align: "center",
       render: (student) => (
         <div className="flex justify-center">
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-            {student.studentId}
+          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+            #{student.studentId}
           </span>
-        </div>
-      ),
-    },
-    {
-      key: "avatar",
-      header: "الصورة",
-      width: "80px",
-      align: "center",
-      render: (student) => (
-        <div className="flex justify-center">
-          <Avatar user={student} size="sm" border="ring" />
         </div>
       ),
     },
@@ -118,16 +106,16 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
     {
       key: "gender",
       header: "الجنس",
-      width: "100px",
+      width: "80px",
       align: "center",
       render: (student) => (
         <div className="flex justify-center">
           {student.gender ? (
             <span
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                 student.gender === "ذكر"
-                  ? "bg-blue-100 text-blue-800"
-                  : "bg-pink-100 text-pink-800"
+                  ? "bg-blue-50 text-blue-700 border border-blue-200"
+                  : "bg-pink-50 text-pink-700 border border-pink-200"
               }`}>
               {student.gender}
             </span>
@@ -141,12 +129,12 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
       key: "age",
       header: "العمر",
       sortable: true,
-      width: "80px",
+      width: "70px",
       align: "center",
       render: (student) => (
         <div className="flex justify-center">
           {student.age ? (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
               {student.age}
             </span>
           ) : (
@@ -161,18 +149,17 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
       render: (student) => {
         if (student.group) {
           return (
-            <div className="inline-flex items-center gap-1 px-2 py-1 bg-green-50 text-green-700 rounded text-xs font-medium border border-green-200">
-              <div className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0"></div>
-              <span className="font-semibold truncate max-w-[200px]">
+            <div className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-700 rounded-md text-xs font-medium border border-emerald-200">
+              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full flex-shrink-0"></div>
+              <span className="truncate max-w-[150px]">
                 {getGroupDisplayName(student.group)}
               </span>
             </div>
           );
         }
         return (
-          <div className="inline-flex items-center gap-1 px-2 py-1 bg-red-50 rounded border border-red-200">
-            <div className="w-1.5 h-1.5 bg-red-500 rounded-full flex-shrink-0"></div>
-            <span className="text-red-600 text-xs font-medium">لا توجد</span>
+          <div className="inline-flex items-center gap-1 px-2 py-1 bg-gray-50 rounded-md border border-gray-200">
+            <span className="text-gray-500 text-xs">-</span>
           </div>
         );
       },
@@ -183,18 +170,17 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
       render: (student) => {
         if (student.teacher) {
           return (
-            <div className="inline-flex items-center gap-1 px-2 py-1 bg-purple-50 text-purple-700 rounded text-xs font-medium border border-purple-200">
-              <div className="w-1.5 h-1.5 bg-purple-500 rounded-full flex-shrink-0"></div>
-              <span className="font-semibold truncate max-w-[200px]">
+            <div className="inline-flex items-center gap-1 px-2 py-1 bg-violet-50 text-violet-700 rounded-md text-xs font-medium border border-violet-200">
+              <div className="w-1.5 h-1.5 bg-violet-500 rounded-full flex-shrink-0"></div>
+              <span className="truncate max-w-[150px]">
                 {getTeacherDisplayName(student.teacher)}
               </span>
             </div>
           );
         }
         return (
-          <div className="inline-flex items-center gap-1 px-2 py-1 bg-gray-50 rounded border border-gray-200">
-            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full flex-shrink-0"></div>
-            <span className="text-gray-600 text-xs font-medium">غير محدد</span>
+          <div className="inline-flex items-center gap-1 px-2 py-1 bg-gray-50 rounded-md border border-gray-200">
+            <span className="text-gray-500 text-xs">-</span>
           </div>
         );
       },
@@ -232,7 +218,7 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
   ];
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl overflow-hidden" dir="rtl">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" dir="rtl">
       <Table
         data={students}
         columns={columns}

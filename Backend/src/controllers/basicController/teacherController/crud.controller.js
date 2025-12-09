@@ -5,37 +5,44 @@ const bcrypt = require("bcryptjs");
 const { calculateAge, generateTeacherId } = require("./utils.controller");
 
 /**
- * جلب جميع المعلمين مع حلقاتهم
+ * جلب جميع المعلمين مع حلقاتهم (محسّن)
  */
 exports.getAllTeachers = async (req, res) => {
   try {
-    const teachers = await Teacher.find({}).select("-password");
+    // جلب جميع المعلمين والحلقات في استعلامين فقط
+    const [teachers, allGroups] = await Promise.all([
+      Teacher.find({}).select("-password").lean(),
+      Group.find({}).select("name teacher _id").lean()
+    ]);
 
-    // جلب الحلقات لكل معلم
-    const teachersWithGroups = await Promise.all(
-      teachers.map(async (teacher) => {
-        // البحث عن الحلقات بناءً على ID المعلم فقط لتجنب التداخل بين معلمين بنفس الاسم
-        const groups = await Group.find({
-          $or: [{ teacher: teacher._id }, { teacher: teacher._id.toString() }],
+    // إنشاء Map للحلقات حسب المعلم (للبحث السريع)
+    const groupsByTeacher = new Map();
+    allGroups.forEach(group => {
+      const teacherId = group.teacher?.toString();
+      if (teacherId) {
+        if (!groupsByTeacher.has(teacherId)) {
+          groupsByTeacher.set(teacherId, []);
+        }
+        groupsByTeacher.get(teacherId).push({
+          name: group.name,
+          id: group._id,
         });
+      }
+    });
 
-        // إذا كانت الحلقات موجودة في قاعدة البيانات، استخدمها
-        // وإلا استخدم الحلقات المخزنة في المعلم
-        const finalGroups =
-          groups.length > 0
-            ? groups.map((g) => ({
-                name: g.name,
-                id: g._id,
-                number: groups.indexOf(g) + 1,
-              }))
-            : teacher.groups || [];
-
-        return {
-          ...teacher.toObject(),
-          groups: finalGroups,
-        };
-      })
-    );
+    // إضافة الحلقات لكل معلم
+    const teachersWithGroups = teachers.map(teacher => {
+      const teacherId = teacher._id.toString();
+      const groups = groupsByTeacher.get(teacherId) || teacher.groups || [];
+      
+      return {
+        ...teacher,
+        groups: groups.map((g, index) => ({
+          ...g,
+          number: index + 1
+        }))
+      };
+    });
 
     return res.status(200).json({ success: true, data: teachersWithGroups });
   } catch (error) {
@@ -540,46 +547,6 @@ exports.getTeacherWithGroupsAndStudents = async (req, res) => {
   }
 };
 
-/**
- * جلب الطلاب حسب ID المعلم (نسخة مبسطة للاستخدام العام)
- * يستخدم الـ function الموجودة في studentController
- */
-exports.getStudentsByTeacherId = async (req, res) => {
-  try {
-    const { id: teacherId } = req.params;
-    console.log(`🔍 جلب طلاب المعلم - ID: ${teacherId}`);
-
-    const teacher = await Teacher.findById(teacherId).select(
-      "firstName lastName"
-    );
-    
-    if (!teacher) {
-      return res.status(404).json({
-        success: false,
-        message: "المعلم غير موجود",
-      });
-    }
-
-    const teacherFullName = `${teacher.firstName} ${teacher.lastName}`;
-
-    // استخدام الـ function الموجودة في studentController
-    const { getStudentsByTeacher } = require("../studentController/query.controller");
-    
-    // محاكاة request object
-    const mockReq = {
-      params: {
-        teacher: encodeURIComponent(teacherFullName),
-      },
-    };
-
-    // استدعاء الـ function الموجودة مباشرة
-    await getStudentsByTeacher(mockReq, res);
-  } catch (error) {
-    console.error("❌ خطأ في جلب طلاب المعلم:", error);
-    res.status(500).json({
-      success: false,
-      message: error.message || "حدث خطأ أثناء جلب الطلاب",
-    });
-  }
-};
+// ❌ تم حذف getStudentsByTeacherId - مكرر!
+// استخدم بدلاً منه: GET /api/students/teacher/:teacher من Student Controller
 

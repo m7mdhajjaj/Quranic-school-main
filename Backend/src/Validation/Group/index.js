@@ -2,4 +2,14 @@
  * Group Validation - Central Export
  */
 
-module.exports = require("./GroupValidation");
+// Export both old and new validators for backward compatibility
+const oldValidators = require('./GroupValidation');
+const newValidators = require('./groupValidators');
+
+module.exports = {
+  // Old validators (deprecated)
+  ...oldValidators,
+  
+  // New express-validator validators (recommended)
+  ...newValidators,
+};

@@ -24,13 +24,11 @@ interface Group {
 interface UseStudentsManagementProps {
   teacherGroups: Group[];
   selectedGroup: string;
-  socketLastUpdate?: Date | null;
 }
 
 export const useStudentsManagement = ({
   teacherGroups,
   selectedGroup,
-  socketLastUpdate,
 }: UseStudentsManagementProps) => {
   // Core States
   const [students, setStudents] = useState<Student[]>([]);
@@ -116,14 +114,6 @@ export const useStudentsManagement = ({
     );
     setFilteredStudents(filtered);
   }, [students, selectedGroup, teacherGroups]);
-
-  // Socket: إعادة جلب البيانات عند استقبال تحديث
-  useEffect(() => {
-    if (socketLastUpdate) {
-      console.log("📡 Socket update received, refreshing students...");
-      fetchStudents();
-    }
-  }, [socketLastUpdate, fetchStudents]);
 
   // Apply filters and search
   const processedStudents = useMemo(() => {

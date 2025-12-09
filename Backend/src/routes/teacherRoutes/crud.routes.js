@@ -20,8 +20,8 @@ router.get("/", protect, controller.getAllTeachers);
 // Get teacher with groups and students (for attendance page)
 router.get("/:id/with-groups-and-students", protect, controller.getTeacherWithGroupsAndStudents);
 
-// Get students by teacher ID
-router.get("/:id/students", protect, controller.getStudentsByTeacherId);
+// ❌ تم حذف route مكرر: /:id/students
+// استخدم بدلاً منه: GET /api/students/teacher/:teacher
 
 // Get teacher by ID
 router.get("/:id", protect, controller.getTeacherById);

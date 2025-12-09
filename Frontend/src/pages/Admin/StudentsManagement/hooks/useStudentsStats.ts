@@ -5,23 +5,32 @@ export const calculateStats = (
   students: Student[],
   apiStats: ApiStats | null
 ): StudentStats => {
-  const maleCount = students.filter((s) => s.gender === "ذكر").length;
-  const femaleCount = students.filter((s) => s.gender === "أنثى").length;
-  const avgAge =
-    students.length > 0
-      ? (
-          students.reduce((sum, s) => sum + (s.age || 0), 0) / students.length
-        ).toFixed(1)
-      : 0;
+  // Optimize: single loop instead of multiple filters
+  let maleCount = 0;
+  let femaleCount = 0;
+  let totalAge = 0;
+  let withGroupCount = 0;
 
-  const withGroupCount = students.filter(
-    (s) =>
-      s.group &&
-      s.group.trim() !== "" &&
-      s.group.toLowerCase() !== "غير محدد" &&
-      s.group.toLowerCase() !== "undefined" &&
-      s.group !== null
-  ).length;
+  for (const student of students) {
+    // Count gender
+    if (student.gender === "ذكر") maleCount++;
+    else if (student.gender === "أنثى") femaleCount++;
+    
+    // Sum age
+    totalAge += student.age || 0;
+    
+    // Count students with groups
+    if (
+      student.group &&
+      student.group.trim() !== "" &&
+      student.group.toLowerCase() !== "غير محدد" &&
+      student.group.toLowerCase() !== "undefined"
+    ) {
+      withGroupCount++;
+    }
+  }
+
+  const avgAge = students.length > 0 ? (totalAge / students.length).toFixed(1) : 0;
   const withoutGroupCount = students.length - withGroupCount;
 
   if (apiStats) {

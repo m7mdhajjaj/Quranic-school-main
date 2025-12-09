@@ -1,4 +1,5 @@
 import React from "react";
+import { FaTimes } from "react-icons/fa";
 
 interface StudentsFiltersProps {
   showFilters: boolean;
@@ -10,9 +11,8 @@ interface StudentsFiltersProps {
   setGroupsFilter: (filter: "all" | "withGroups" | "withoutGroups") => void;
   ageRange: [number, number];
   setAgeRange: (range: [number, number]) => void;
-  studentsPerPage: number;
-  setStudentsPerPage: (perPage: number) => void;
   activeFiltersCount: number;
+  onResetFilters: () => void;
 }
 
 const StudentsFilters: React.FC<StudentsFiltersProps> = ({
@@ -25,21 +25,20 @@ const StudentsFilters: React.FC<StudentsFiltersProps> = ({
   setGroupsFilter,
   ageRange,
   setAgeRange,
-  studentsPerPage,
-  setStudentsPerPage,
   activeFiltersCount,
+  onResetFilters,
 }) => {
   return (
     <>
       {showFilters && (
-        <div className="bg-gradient-to-br from-white to-gray-50 p-6 rounded-2xl border-2 border-gray-100 shadow-lg animate-fadeIn relative">
+        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm animate-fadeIn relative mt-4">
           {/* Close Button */}
           <button
             onClick={() => setShowFilters(false)}
-            className="absolute top-4 left-4 p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-full transition-all duration-200"
+            className="absolute top-3 left-3 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200"
             title="إغلاق الفلاتر">
             <svg
-              className="w-5 h-5"
+              className="w-4 h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24">
@@ -52,41 +51,40 @@ const StudentsFilters: React.FC<StudentsFiltersProps> = ({
             </svg>
           </button>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {/* Gender Filter */}
-            <div className="space-y-3">
-              <label className="flex items-center gap-2 text-sm font-semibold text-gray-800">
-                <div className="w-2 h-2 rounded-full bg-pink-500"></div>
+            <div className="space-y-2.5">
+              <label className="text-xs font-semibold text-gray-700">
                 تصفية حسب الجنس
               </label>
               <div className="grid grid-cols-3 gap-2">
                 <button
                   onClick={() => setSelectedGender("all")}
                   title="عرض جميع الطلاب"
-                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                     selectedGender === "all"
-                      ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      ? "bg-slate-600 text-white shadow-sm"
+                      : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200"
                   }`}>
                   الكل
                 </button>
                 <button
                   onClick={() => setSelectedGender("ذكر")}
                   title="عرض الطلاب الذكور فقط"
-                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                     selectedGender === "ذكر"
-                      ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-md"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      ? "bg-blue-600 text-white shadow-sm"
+                      : "bg-gray-50 text-gray-700 hover:bg-blue-50 border border-gray-200"
                   }`}>
                   ذكر
                 </button>
                 <button
                   onClick={() => setSelectedGender("أنثى")}
                   title="عرض الطالبات الإناث فقط"
-                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                     selectedGender === "أنثى"
-                      ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      ? "bg-pink-600 text-white shadow-sm"
+                      : "bg-gray-50 text-gray-700 hover:bg-pink-50 border border-gray-200"
                   }`}>
                   أنثى
                 </button>
@@ -94,49 +92,47 @@ const StudentsFilters: React.FC<StudentsFiltersProps> = ({
             </div>
 
             {/* Groups Filter */}
-            <div className="space-y-3">
-              <label className="flex items-center gap-2 text-sm font-semibold text-gray-800">
-                <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+            <div className="space-y-2.5">
+              <label className="text-xs font-semibold text-gray-700">
                 تصفية حسب الحلقات
               </label>
               <div className="grid grid-cols-1 gap-2">
                 <button
                   onClick={() => setGroupsFilter("all")}
                   title="عرض جميع الطلاب"
-                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                     groupsFilter === "all"
-                      ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-md"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      ? "bg-slate-600 text-white shadow-sm"
+                      : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200"
                   }`}>
                   الكل
                 </button>
                 <button
                   onClick={() => setGroupsFilter("withGroups")}
                   title="عرض الطلاب الذين لديهم حلقات"
-                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                     groupsFilter === "withGroups"
-                      ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      ? "bg-emerald-600 text-white shadow-sm"
+                      : "bg-gray-50 text-gray-700 hover:bg-emerald-50 border border-gray-200"
                   }`}>
-                  🎯 لديهم حلقات
+                  لديهم حلقات
                 </button>
                 <button
                   onClick={() => setGroupsFilter("withoutGroups")}
                   title="عرض الطلاب الذين لا ينتمون لأي حلقة"
-                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                     groupsFilter === "withoutGroups"
-                      ? "bg-gradient-to-r from-red-500 to-pink-600 text-white shadow-md"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      ? "bg-orange-600 text-white shadow-sm"
+                      : "bg-gray-50 text-gray-700 hover:bg-orange-50 border border-gray-200"
                   }`}>
-                  🚫 بلا حلقات
+                  بلا حلقات
                 </button>
               </div>
             </div>
 
             {/* Age Range Filter */}
-            <div className="space-y-3">
-              <label className="flex items-center gap-2 text-sm font-semibold text-gray-800">
-                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+            <div className="space-y-2.5">
+              <label className="text-xs font-semibold text-gray-700">
                 العمر: {ageRange[0]} - {ageRange[1]} سنة
               </label>
               <div className="space-y-2">
@@ -149,9 +145,9 @@ const StudentsFilters: React.FC<StudentsFiltersProps> = ({
                     setAgeRange([ageRange[0], parseInt(e.target.value)])
                   }
                   aria-label="الحد الأقصى للعمر"
-                  className="w-full h-2 bg-gradient-to-r from-green-200 to-green-400 rounded-lg appearance-none cursor-pointer"
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                 />
-                <div className="flex justify-between text-xs text-gray-500">
+                <div className="flex justify-between text-xs text-gray-400">
                   <span>0</span>
                   <span>50</span>
                   <span>100</span>
@@ -159,67 +155,60 @@ const StudentsFilters: React.FC<StudentsFiltersProps> = ({
               </div>
             </div>
 
-            {/* Items per page */}
-            <div className="space-y-3">
-              <label className="flex items-center gap-2 text-sm font-semibold text-gray-800">
-                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                عدد الطلاب
-              </label>
-              <select
-                value={studentsPerPage}
-                onChange={(e) => {
-                  setStudentsPerPage(parseInt(e.target.value));
-                }}
-                aria-label="عدد الطلاب في الصفحة"
-                className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
-                <option value="10">10 طلاب</option>
-                <option value="25">25 طالب</option>
-                <option value="50">50 طالب</option>
-                <option value="100">100 طالب</option>
-              </select>
-            </div>
           </div>
 
-          {/* Filter Summary */}
-          <div className="mt-6 pt-4 border-t border-gray-200">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm text-gray-600 font-medium">
-                الفلاتر النشطة:
-              </span>
-              {selectedGender !== "all" && (
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    selectedGender === "ذكر"
-                      ? "bg-blue-100 text-blue-800"
-                      : "bg-pink-100 text-pink-800"
-                  }`}>
-                  الجنس: {selectedGender}
+          {/* Filter Summary & Reset */}
+          <div className="mt-5 pt-4 border-t border-gray-200">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs text-gray-600 font-medium">
+                  الفلاتر النشطة:
                 </span>
-              )}
+                {selectedGender !== "all" && (
+                  <span
+                    className={`px-2.5 py-1 rounded-md text-xs font-medium ${
+                      selectedGender === "ذكر"
+                        ? "bg-blue-50 text-blue-700 border border-blue-200"
+                        : "bg-pink-50 text-pink-700 border border-pink-200"
+                    }`}>
+                    الجنس: {selectedGender}
+                  </span>
+                )}
 
-              {groupsFilter !== "all" && (
-                <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-medium">
-                  الحلقات:{" "}
-                  {groupsFilter === "withGroups" ? "لديهم حلقات" : "بلا حلقات"}
-                </span>
-              )}
+                {groupsFilter !== "all" && (
+                  <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-md text-xs font-medium border border-emerald-200">
+                    الحلقات:{" "}
+                    {groupsFilter === "withGroups" ? "لديهم حلقات" : "بلا حلقات"}
+                  </span>
+                )}
 
-              {(ageRange[0] !== 0 || ageRange[1] !== 100) && (
-                <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
-                  العمر: {ageRange[0]}-{ageRange[1]}
-                </span>
-              )}
+                {(ageRange[0] !== 0 || ageRange[1] !== 100) && (
+                  <span className="px-2.5 py-1 bg-gray-100 text-gray-700 rounded-md text-xs font-medium border border-gray-200">
+                    العمر: {ageRange[0]}-{ageRange[1]}
+                  </span>
+                )}
 
-              {searchTerm && (
-                <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">
-                  البحث: "{searchTerm}"
-                </span>
-              )}
+                {searchTerm && (
+                  <span className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-md text-xs font-medium border border-slate-200">
+                    البحث: "{searchTerm}"
+                  </span>
+                )}
 
-              {activeFiltersCount === 0 && (
-                <span className="text-xs text-gray-400 italic">
-                  لا توجد فلاتر مطبقة
-                </span>
+                {activeFiltersCount === 0 && (
+                  <span className="text-xs text-gray-400">
+                    لا توجد فلاتر مطبقة
+                  </span>
+                )}
+              </div>
+
+              {/* Reset Filters Button */}
+              {activeFiltersCount > 0 && (
+                <button
+                  onClick={onResetFilters}
+                  className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all flex items-center gap-1.5 text-xs font-medium border border-red-200">
+                  <FaTimes className="w-3 h-3" />
+                  إعادة تعيين
+                </button>
               )}
             </div>
           </div>

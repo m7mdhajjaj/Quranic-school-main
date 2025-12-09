@@ -2,29 +2,99 @@ const Student = require("../../../schema/Student");
 const Group = require("../../../schema/Group");
 const bcrypt = require("bcryptjs");
 const { notifyStudentStatsUpdate } = require("../../../Notifications/handlers/dashboardNotifications");
+const { checkDuplicateFields } = require("../../../utils/validators/duplicateChecker");
+const { invalidateCache } = require("../../../middleware/cacheMiddleware");
 
 /**
- * جلب جميع الطلاب (محسّن للأداء)
+ * جلب جميع الطلاب مع فلترة وترتيب (محسّن للأداء)
  */
 exports.getStudents = async (req, res) => {
   try {
     console.log("🚀 تحميل بيانات الطلاب...");
     const startTime = Date.now();
 
-    // Optimized query: exclude heavy fields like avatar
-    const students = await Student.find()
-      .select("-avatar") // استبعاد الصور لتسريع التحميل
-      .lean() // استخدام lean() لتحسين الأداء
-      .sort({ createdAt: -1 }) // ترتيب حسب الأحدث
-      .limit(1000); // حد أقصى 1000 طالب
+    // Build query from filters
+    const query = {};
+    const { gender, minAge, maxAge, group, search, sortBy, sortOrder, page, limit } = req.query;
+
+    // Gender filter
+    if (gender && gender !== 'all') {
+      query.gender = gender;
+    }
+
+    // Age range filter
+    if (minAge || maxAge) {
+      query.age = {};
+      if (minAge) query.age.$gte = parseInt(minAge);
+      if (maxAge) query.age.$lte = parseInt(maxAge);
+    }
+
+    // Group filter
+    if (group) {
+      if (group === 'withGroups') {
+        query.group = { $exists: true, $ne: null, $ne: '', $ne: 'غير محدد' };
+      } else if (group === 'withoutGroups') {
+        query.$or = [
+          { group: { $exists: false } },
+          { group: null },
+          { group: '' },
+          { group: 'غير محدد' }
+        ];
+      } else {
+        query.group = group;
+      }
+    }
+
+    // Search filter (across multiple fields)
+    if (search) {
+      const searchRegex = new RegExp(search, 'i');
+      query.$or = [
+        { firstName: searchRegex },
+        { lastName: searchRegex },
+        { fatherName: searchRegex },
+        { idNumber: searchRegex },
+        { teacher: searchRegex },
+        { group: searchRegex }
+      ];
+    }
+
+    // Sorting
+    const sortOptions = {};
+    if (sortBy) {
+      sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+    } else {
+      sortOptions.createdAt = -1; // Default: newest first
+    }
+
+    // Pagination
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 1000;
+    const skip = (pageNum - 1) * limitNum;
+
+    // Execute query
+    const students = await Student.find(query)
+      .select("-avatar")
+      .lean()
+      .sort(sortOptions)
+      .skip(skip)
+      .limit(limitNum);
+
+    // Get total count for pagination
+    const total = await Student.countDocuments(query);
 
     const endTime = Date.now();
     const duration = endTime - startTime;
 
-    console.log(`✅ تم تحميل ${students.length} طالب في ${duration}ms`);
+    console.log(`✅ تم تحميل ${students.length} طالب من ${total} في ${duration}ms`);
     res.json({
       success: true,
       data: students,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        pages: Math.ceil(total / limitNum)
+      },
       message: `تم تحميل ${students.length} طالب بنجاح`,
     });
   } catch (error) {
@@ -181,6 +251,9 @@ exports.createStudent = async (req, res) => {
     const newStudent = await student.save();
     console.log("Student created successfully:", newStudent._id);
 
+    // Invalidate all student-related caches
+    await invalidateCache('cache:/api/students*');
+    
     // إبطال cache عدد الطلاب في الحلقات
     const { invalidateStudentCountsCache } = require("../groupController");
     invalidateStudentCountsCache();
@@ -303,6 +376,9 @@ exports.updateStudent = async (req, res) => {
       });
     }
 
+    // Invalidate all student-related caches
+    await invalidateCache('cache:/api/students*');
+    
     // إبطال cache
     const { invalidateStudentCountsCache } = require("../groupController");
     invalidateStudentCountsCache();
@@ -347,6 +423,9 @@ exports.deleteStudent = async (req, res) => {
       });
     }
 
+    // Invalidate all student-related caches
+    await invalidateCache('cache:/api/students*');
+    
     // إبطال cache
     const { invalidateStudentCountsCache } = require("../groupController");
     invalidateStudentCountsCache();
@@ -461,3 +540,154 @@ function handleStudentError(error, res, operation) {
     error: error.message,
   });
 }
+
+/**
+ * حساب إحصائيات الطلاب مع فلترة (محسّن)
+ */
+exports.getStudentsStatistics = async (req, res) => {
+  try {
+    console.log("📊 حساب إحصائيات الطلاب...");
+    const startTime = Date.now();
+
+    // Build query from filters (same as getStudents)
+    const query = {};
+    const { gender, minAge, maxAge, group, search } = req.query;
+
+    if (gender && gender !== 'all') query.gender = gender;
+    if (minAge || maxAge) {
+      query.age = {};
+      if (minAge) query.age.$gte = parseInt(minAge);
+      if (maxAge) query.age.$lte = parseInt(maxAge);
+    }
+    if (group) {
+      if (group === 'withGroups') {
+        query.group = { $exists: true, $ne: null, $ne: '', $ne: 'غير محدد' };
+      } else if (group === 'withoutGroups') {
+        query.$or = [
+          { group: { $exists: false } },
+          { group: null },
+          { group: '' },
+          { group: 'غير محدد' }
+        ];
+      } else {
+        query.group = group;
+      }
+    }
+    if (search) {
+      const searchRegex = new RegExp(search, 'i');
+      query.$or = [
+        { firstName: searchRegex },
+        { lastName: searchRegex },
+        { fatherName: searchRegex },
+        { idNumber: searchRegex },
+        { teacher: searchRegex },
+        { group: searchRegex }
+      ];
+    }
+
+    // Use aggregation for efficient statistics calculation
+    const stats = await Student.aggregate([
+      { $match: query },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          maleCount: {
+            $sum: { $cond: [{ $eq: ['$gender', 'ذكر'] }, 1, 0] }
+          },
+          femaleCount: {
+            $sum: { $cond: [{ $eq: ['$gender', 'أنثى'] }, 1, 0] }
+          },
+          totalAge: { $sum: '$age' },
+          withGroupCount: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $ne: ['$group', null] },
+                    { $ne: ['$group', ''] },
+                    { $ne: ['$group', 'غير محدد'] }
+                  ]
+                },
+                1,
+                0
+              ]
+            }
+          }
+        }
+      }
+    ]);
+
+    const result = stats[0] || {
+      total: 0,
+      maleCount: 0,
+      femaleCount: 0,
+      totalAge: 0,
+      withGroupCount: 0
+    };
+
+    const avgAge = result.total > 0 ? (result.totalAge / result.total).toFixed(1) : 0;
+
+    const duration = Date.now() - startTime;
+    console.log(`✅ تم حساب الإحصائيات في ${duration}ms`);
+
+    res.json({
+      success: true,
+      data: {
+        total: result.total,
+        male: result.maleCount,
+        female: result.femaleCount,
+        active: result.withGroupCount,
+        inactive: result.total - result.withGroupCount,
+        avgAge: avgAge
+      }
+    });
+  } catch (error) {
+    console.error("❌ خطأ في حساب الإحصائيات:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+/**
+ * التحقق من تكرار البيانات (للتحقق الفوري في الفرونت إند)
+ */
+exports.checkDuplicate = async (req, res) => {
+  try {
+    const { field, value, excludeId } = req.query;
+    
+    if (!field || !value) {
+      return res.status(400).json({
+        success: false,
+        message: "يجب تحديد الحقل والقيمة",
+      });
+    }
+
+    const data = { [field]: value };
+    const duplicateError = await checkDuplicateFields(data, excludeId, 'student');
+    
+    if (duplicateError) {
+      return res.json({
+        success: false,
+        isDuplicate: true,
+        message: duplicateError.message,
+        field: duplicateError.field,
+        existingUserType: duplicateError.existingUserType,
+      });
+    }
+
+    return res.json({
+      success: true,
+      isDuplicate: false,
+      message: "القيمة متاحة",
+    });
+  } catch (error) {
+    console.error("خطأ في التحقق من التكرار:", error);
+    return res.status(500).json({
+      success: false,
+      message: "حدث خطأ أثناء التحقق من البيانات",
+    });
+  }
+};

@@ -45,7 +45,7 @@ router.get("/stats", async (req, res) => {
       await Promise.all([
         Student.countDocuments(),
         Student.countDocuments({ gender: "ذكر" }),
-        Student.countDocuments({ gender: "انثى" }),
+        Student.countDocuments({ gender: "أنثى" }),
         Student.countDocuments({
           group: { $exists: true, $ne: null, $ne: "", $ne: "غير محدد", $ne: "undefined" },
         }),
@@ -101,7 +101,7 @@ router.get("/stats/summary/all", async (req, res) => {
     const [totalCount, maleCount, femaleCount, activeCount] = await Promise.all([
       Student.countDocuments(),
       Student.countDocuments({ gender: "ذكر" }),
-      Student.countDocuments({ gender: "انثى" }),
+      Student.countDocuments({ gender: "أنثى" }),
       Student.countDocuments({
         group: { $exists: true, $ne: null, $ne: "", $ne: "غير محدد", $ne: "undefined" },
       }),

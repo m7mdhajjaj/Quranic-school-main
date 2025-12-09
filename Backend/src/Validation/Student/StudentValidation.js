@@ -88,16 +88,23 @@ const validateStudentData = async (req, res, next) => {
       errors.idNumber = 'رقم الهوية مطلوب';
     }
 
-    // التحقق من تاريخ الميلاد - اختياري ولكن إذا تم إدخاله يجب أن يكون صحيحاً
-    if (birthDate !== undefined && birthDate !== null && birthDate !== '') {
+    // التحقق من تاريخ الميلاد - مطلوب للطلاب الجدد
+    if (isNewStudent && (!birthDate || birthDate === '')) {
+      errors.birthDate = 'تاريخ الميلاد مطلوب';
+    } else if (birthDate !== undefined && birthDate !== null && birthDate !== '') {
       if (typeof birthDate !== 'string') {
         errors.birthDate = 'تاريخ الميلاد يجب أن يكون نصاً';
       } else {
-        const birthDateObj = new Date(birthDate);
-        if (isNaN(birthDateObj.getTime())) {
-          errors.birthDate = 'تاريخ الميلاد غير صحيح';
-        } else if (birthDateObj > new Date()) {
-          errors.birthDate = 'تاريخ الميلاد لا يمكن أن يكون في المستقبل';
+        // التحقق من صيغة YYYY-MM-DD
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
+          errors.birthDate = 'صيغة تاريخ الميلاد يجب أن تكون YYYY-MM-DD';
+        } else {
+          const birthDateObj = new Date(birthDate);
+          if (isNaN(birthDateObj.getTime())) {
+            errors.birthDate = 'تاريخ الميلاد غير صحيح';
+          } else if (birthDateObj > new Date()) {
+            errors.birthDate = 'تاريخ الميلاد لا يمكن أن يكون في المستقبل';
+          }
         }
       }
     }

@@ -73,6 +73,8 @@ const validateDescription = (description) => {
 
 /**
  * Validate teacher assignment
+ * يقبل: ObjectId, teacher ID (8 digits), أو اسم المعلم
+ * ملاحظة: الـ controller سيقوم بتحويل الاسم إلى ObjectId
  */
 const validateTeacher = (teacherId) => {
   if (!teacherId || teacherId.toString().trim() === "") {
@@ -81,7 +83,7 @@ const validateTeacher = (teacherId) => {
 
   const teacherStr = teacherId.toString().trim();
 
-  // If it's an ObjectId string
+  // If it's an ObjectId string (24 hex characters)
   if (/^[0-9a-fA-F]{24}$/.test(teacherStr)) {
     return { isValid: true, value: teacherStr };
   }
@@ -96,7 +98,7 @@ const validateTeacher = (teacherId) => {
     return { isValid: true, value: teacherStr };
   }
   
-  // If we get here, it might still be valid (allow any non-empty string for flexibility)
+  // Allow any non-empty string for flexibility (controller will validate existence)
   return { isValid: true, value: teacherStr };
 };
 

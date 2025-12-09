@@ -10,22 +10,17 @@ const Group = require("../../../schema/Group");
  */
 const findTeacherByIdOrName = async (teacherIdentifier) => {
   try {
-    // محاولة البحث بالـ ObjectId أولاً
+    // البحث بالـ ObjectId
     if (teacherIdentifier.match(/^[0-9a-fA-F]{24}$/)) {
-      console.log("🆔 البحث بالـ ObjectId");
       return await Teacher.findById(teacherIdentifier);
     }
 
     // البحث بالاسم
-    console.log("👤 البحث بالاسم الكامل");
     const nameParts = teacherIdentifier.trim().split(/\s+/);
     const firstName = nameParts[0] || "";
     const lastName = nameParts.slice(1).join(" ") || "";
 
-    console.log("📝 أجزاء الاسم:", { firstName, lastName });
-
     const searchQuery = {};
-
     if (firstName && lastName) {
       searchQuery.$and = [
         { firstName: { $regex: `^${firstName}$`, $options: "i" } },
@@ -35,10 +30,9 @@ const findTeacherByIdOrName = async (teacherIdentifier) => {
       searchQuery.firstName = { $regex: `^${firstName}$`, $options: "i" };
     }
 
-    console.log("🔎 استعلام البحث:", JSON.stringify(searchQuery, null, 2));
     return await Teacher.findOne(searchQuery);
   } catch (error) {
-    console.error("❌ خطأ في البحث عن المعلم:", error);
+    console.error("❌ خطأ في البحث عن المعلم:", error.message);
     return null;
   }
 };
@@ -49,15 +43,10 @@ const findTeacherByIdOrName = async (teacherIdentifier) => {
 const checkGroupTeacherConflict = async (groupName, teacherId, excludeGroupId = null) => {
   const query = {
     name: groupName,
-    $and: [
-      { teacher: { $ne: teacherId } },
-      { teacher: { $exists: true, $ne: null, $ne: "" } },
-    ],
+    teacher: { $ne: teacherId, $exists: true, $ne: null, $ne: "" },
   };
 
-  if (excludeGroupId) {
-    query._id = { $ne: excludeGroupId };
-  }
+  if (excludeGroupId) query._id = { $ne: excludeGroupId };
 
   return await Group.findOne(query);
 };
@@ -69,7 +58,6 @@ const getTeacherInfo = async (teacherId) => {
   try {
     const teacherStr = String(teacherId);
 
-    // إذا كان teacher هو ObjectId
     if (/^[0-9a-fA-F]{24}$/.test(teacherStr)) {
       const teacherInfo = await Teacher.findById(teacherStr);
       if (teacherInfo) {
@@ -85,17 +73,10 @@ const getTeacherInfo = async (teacherId) => {
       }
     }
 
-    // إذا كان teacher هو اسم المعلم بالفعل
-    return {
-      name: teacherStr,
-      info: null,
-    };
+    return { name: teacherStr, info: null };
   } catch (err) {
-    console.error("خطأ في معالجة معلومات المعلم:", err);
-    return {
-      name: String(teacherId),
-      info: null,
-    };
+    console.error("خطأ في معالجة معلومات المعلم:", err.message);
+    return { name: String(teacherId), info: null };
   }
 };
 

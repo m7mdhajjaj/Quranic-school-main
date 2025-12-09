@@ -13,53 +13,57 @@ export const useStudentsData = (hasPermission: boolean) => {
   const [retryCount, setRetryCount] = useState(0);
   const [apiStats, setApiStats] = useState<ApiStats | null>(null);
 
-  const fetchStudents = useCallback(async (retryAttempt = 0) => {
+  const fetchStudents = useCallback(async (retryAttempt = 0, filters?: {
+    gender?: string;
+    minAge?: number;
+    maxAge?: number;
+    group?: string;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }) => {
     setIsLoading(true);
     setError(null);
     setRetryCount(retryAttempt);
 
     try {
       const startTime = performance.now();
-      const result = await getAllStudents();
+      const result = await getAllStudents(filters);
 
-      const endTime = performance.now();
-      const duration = (endTime - startTime).toFixed(2);
-
-      if (result.success && result.data) {
-        const cleanedStudents = result.data.map((student: ApiStudent) => ({
-          ...student,
-          firstName: student.firstName || "",
-          lastName: student.lastName || "",
-          fatherName: student.fatherName || "",
-          idNumber: student.idNumber || "",
-          teacher: student.teacher || "غير محدد",
-          group: student.group || "غير محدد",
-          gender: student.gender || "غير محدد",
-          age: student.age || 0,
-        }));
-
-        console.log(
-          `✅ تم تحميل ${cleanedStudents.length} طالب بنجاح في ${duration}ms`
-        );
-        setStudents(cleanedStudents);
-        setError(null);
-        setRetryCount(0);
-      } else {
+      if (!result.success || !result.data) {
         throw new Error(result.message || "البيانات المستلمة غير صحيحة");
       }
+
+      // Optimize: avoid unnecessary spread and map operations
+      const cleanedStudents = result.data.map((student: ApiStudent) => {
+        // Only add defaults for missing fields
+        const cleaned: any = { ...student };
+        if (!cleaned.firstName) cleaned.firstName = "";
+        if (!cleaned.lastName) cleaned.lastName = "";
+        if (!cleaned.fatherName) cleaned.fatherName = "";
+        if (!cleaned.idNumber) cleaned.idNumber = "";
+        if (!cleaned.teacher) cleaned.teacher = "غير محدد";
+        if (!cleaned.group) cleaned.group = "غير محدد";
+        if (!cleaned.gender) cleaned.gender = "غير محدد";
+        if (!cleaned.age) cleaned.age = 0;
+        return cleaned;
+      });
+
+      const duration = (performance.now() - startTime).toFixed(2);
+      console.log(`✅ تم تحميل ${cleanedStudents.length} طالب بنجاح في ${duration}ms`);
+      
+      setStudents(cleanedStudents);
+      setError(null);
+      setRetryCount(0);
     } catch (error: unknown) {
       console.error("❌ خطأ في تحميل الطلاب:", error);
-      let errorMessage = "حدث خطأ في تحميل البيانات";
-
-      if (error instanceof Error) {
-        if (error.name === "AbortError" || error.message === "canceled") {
-          setIsLoading(false);
-          return;
-        } else {
-          errorMessage = error.message || "خطأ غير محدد";
-        }
+      
+      if (error instanceof Error && (error.name === "AbortError" || error.message === "canceled")) {
+        setIsLoading(false);
+        return;
       }
 
+      const errorMessage = error instanceof Error ? error.message : "حدث خطأ في تحميل البيانات";
       setError(errorMessage);
       setStudents([]);
     } finally {

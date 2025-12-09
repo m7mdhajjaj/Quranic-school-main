@@ -9,9 +9,7 @@ export { socketManager, default as SocketManager } from "./SocketManager";
 // تصدير Hooks المخصصة
 export { useDashboardSocket } from "./useDashboardSocket";
 export { useTeachersSocket } from "./useTeachersSocket";
-export { useStudentsSocket } from "./useStudentsSocket";
 export { useGroupsSocket } from "./useGroupsSocket";
-export { useMyStudentsSocket } from "./useMyStudentsSocket";
 export { useRankingSocket } from "./useRankingSocket";
 export { useNotificationsSocket } from "./useNotificationsSocket"; // ✅ نظام الإشعارات
 

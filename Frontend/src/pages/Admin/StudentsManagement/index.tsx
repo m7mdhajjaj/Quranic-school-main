@@ -1,11 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { FaUserGraduate } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
-import { useStudentsSocket } from "../../../Socket";
-import { socketManager } from "@/Socket/SocketManager";
 
-import AddStudentFormWithYup from "../../../Forms/AddStudentForm";
-import ResponsivePagination from "@/components/UI/ResponsivePagination";
+import AddStudentFormWithYup from "@/pages/Admin/StudentsManagement/Model/StudentForm";
 import {
   StudentGridView,
   StudentTableView,
@@ -13,11 +10,9 @@ import {
   StudentToolbar,
 } from "@/components/Students";
 
-import StudentsHeader from "./components/StudentsHeader";
-import StudentsFilters from "./components/StudentsFilters";
-import StudentsBulkActions from "./components/StudentsBulkActions";
+import StudentsHeader from "./components/PageHeader";
+// import StudentsBulkActions from "./components/StudentsBulkActions";
 import { EmptyState } from "@/components/UI/EmptyState";
-import { LoadingSpinner } from "@/components/UI/LoadingSpinner";
 
 import {
   useStudentsData,
@@ -29,11 +24,6 @@ import type { ViewMode } from "./types";
 
 const StudentsManagement: React.FC = () => {
   const { user: currentUser } = useAuth();
-  const {
-    isConnected,
-    lastUpdate: socketLastUpdate,
-    socketId,
-  } = useStudentsSocket();
 
   const userRole = currentUser?.role || "";
   const hasPermission = userRole === "teacher" || userRole === "admin";
@@ -64,14 +54,9 @@ const StudentsManagement: React.FC = () => {
     setAgeRange,
     showFilters,
     setShowFilters,
-    currentPage,
-    setCurrentPage,
-    studentsPerPage,
-    setStudentsPerPage,
     activeFiltersCount,
     filteredAndSortedStudents,
     currentStudents,
-    totalPages,
     resetFilters,
   } = useStudentsFilters(students, fetchStudents);
 
@@ -83,100 +68,22 @@ const StudentsManagement: React.FC = () => {
     setIsEditMode,
     selectedStudent,
     setSelectedStudent,
-    selectedStudents,
     handleDelete,
     handleEdit,
     handleAddSuccess,
     handleExport,
-    handleBulkDelete,
   } = useStudentsActions(students, setStudents, fetchStudents);
 
   // Statistics
   const stats = useStudentsStats(students, apiStats);
 
-  // Socket updates
-  useEffect(() => {
-    if (!hasPermission) return;
-
-    if (socketLastUpdate) {
-      console.log("🔄 Socket update detected, refreshing students list...");
-      fetchStudents();
-    }
-  }, [socketLastUpdate, hasPermission, fetchStudents]);
-
-  // Real-time user status updates
-  useEffect(() => {
-    if (!hasPermission) return;
-
-    const handleUserStatusChange = (data: {
-      userId: string;
-      isActive: boolean;
-      lastSeen?: string;
-    }) => {
-      console.log("👤 User status changed:", data);
-      
-      // تحديث حالة الطالب في القائمة
-      setStudents((prevStudents) =>
-        prevStudents.map((student) =>
-          student._id === data.userId
-            ? {
-                ...student,
-                isActive: data.isActive,
-                lastSeen: data.lastSeen ? new Date(data.lastSeen) : student.lastSeen,
-              }
-            : student
-        )
-      );
-    };
-
-    const socket = socketManager.getSocket();
-    if (socket) {
-      socket.on("userStatusChange", handleUserStatusChange);
-    }
-
-    return () => {
-      const socket = socketManager.getSocket();
-      if (socket) {
-        socket.off("userStatusChange", handleUserStatusChange);
-      }
-    };
-  }, [hasPermission, setStudents]);
-
-  // Auto refresh when not connected
-  useEffect(() => {
-    if (!hasPermission || isConnected) return;
-
-    const autoRefreshInterval = setInterval(() => {
-      console.log("🔄 Auto refreshing students data...");
-      fetchStudents();
-    }, 60000);
-
-    return () => clearInterval(autoRefreshInterval);
-  }, [hasPermission, isConnected, fetchStudents]);
-
   return (
     <div
-      className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4 md:p-6 relative"
+      className="min-h-screen bg-gray-50 p-4 md:p-6"
       dir="rtl">
-      {/* Background Design */}
-      <div className="fixed inset-0 flex items-center justify-center pointer-events-none opacity-5 z-0">
-        <div className="relative">
-          <div className="absolute left-1/2 top-0 w-0.5 h-screen bg-gradient-to-b from-blue-400 via-indigo-500 to-purple-600 transform -translate-x-1/2"></div>
-          <div className="absolute top-1/2 left-0 h-0.5 w-screen bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-600 transform -translate-y-1/2"></div>
-          <div className="absolute top-1/2 left-1/2 w-32 h-32 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center shadow-2xl">
-            <FaUserGraduate className="w-16 h-16 text-white opacity-70" />
-          </div>
-          <div className="absolute top-1/2 left-1/2 w-48 h-48 border-2 border-blue-300 rounded-full transform -translate-x-1/2 -translate-y-1/2 animate-pulse"></div>
-          <div className="absolute top-1/2 left-1/2 w-64 h-64 border border-indigo-200 rounded-full transform -translate-x-1/2 -translate-y-1/2 animate-ping"></div>
-        </div>
-      </div>
-
-      <div className="max-w-full mx-auto relative z-10 px-2">
+      <div className="max-w-full mx-auto">
         {/* Header Section */}
         <StudentsHeader
-          isConnected={isConnected}
-          socketLastUpdate={socketLastUpdate}
-          socketId={socketId || null}
           onAddStudent={() => {
             setIsEditMode(false);
             setSelectedStudent(null);
@@ -185,68 +92,44 @@ const StudentsManagement: React.FC = () => {
           onExport={() => handleExport(filteredAndSortedStudents)}
           hasStudents={filteredAndSortedStudents.length > 0}
         />
+         <StudentStatsCards
+          stats={{
+            total: stats.total,
+            male: stats.male,
+            female: stats.female,
+            avgAge: stats.avgAge,
+          }}
+        />
 
-        {/* Toolbar */}
+        {/* Toolbar & Filters */}
         <StudentToolbar
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
           showFilters={showFilters}
           onToggleFilters={() => setShowFilters(!showFilters)}
+          setShowFilters={setShowFilters}
           activeFiltersCount={activeFiltersCount}
           viewMode={viewMode}
           onViewModeChange={() =>
             setViewMode(viewMode === "table" ? "grid" : "table")
           }
-          onAddStudent={() => {
-            setIsEditMode(false);
-            setSelectedStudent(null);
-            setIsFormVisible(true);
-          }}
-          onRefresh={() => fetchStudents()}
-          isLoading={isLoading}
           selectedGender={selectedGender}
-          onGenderChange={setSelectedGender}
+          setSelectedGender={setSelectedGender}
+          groupsFilter={groupsFilter}
+          setGroupsFilter={setGroupsFilter}
+          ageRange={ageRange}
+          setAgeRange={setAgeRange}
           onResetFilters={resetFilters}
         />
 
-        {/* Extended Filters */}
-        {showFilters && (
-          <StudentsFilters
-            showFilters={showFilters}
-            setShowFilters={setShowFilters}
-            searchTerm={searchTerm}
-            selectedGender={selectedGender}
-            setSelectedGender={setSelectedGender}
-            groupsFilter={groupsFilter}
-            setGroupsFilter={setGroupsFilter}
-            ageRange={ageRange}
-            setAgeRange={setAgeRange}
-            studentsPerPage={studentsPerPage}
-            setStudentsPerPage={(perPage) => {
-              setStudentsPerPage(perPage);
-              setCurrentPage(1);
-            }}
-            activeFiltersCount={activeFiltersCount}
-          />
-        )}
-
         {/* Statistics Cards */}
-        {!isLoading && (
-          <StudentStatsCards
-            stats={{
-              total: stats.total,
-              male: stats.male,
-              female: stats.female,
-              avgAge: stats.avgAge,
-            }}
-          />
-        )}
+       
 
         {/* Bulk Actions */}
-        <StudentsBulkActions
+        {/* <StudentsBulkActions
           selectedCount={selectedStudents.size}
           onBulkDelete={handleBulkDelete}
-        />
+        /> */}
 
         {/* Error Display */}
         {error && !isLoading && (
@@ -288,7 +171,7 @@ const StudentsManagement: React.FC = () => {
         )}
 
         {/* Grid View */}
-        {viewMode === "grid" && !isLoading && currentStudents.length > 0 && (
+        {viewMode === "grid" && currentStudents.length > 0 && (
           <StudentGridView
             students={currentStudents}
             onEdit={handleEdit}
@@ -297,7 +180,7 @@ const StudentsManagement: React.FC = () => {
         )}
 
         {/* Table View */}
-        {viewMode === "table" && !isLoading && currentStudents.length > 0 && (
+        {viewMode === "table" && currentStudents.length > 0 && (
           <StudentTableView
             students={currentStudents}
             onEdit={handleEdit}
@@ -305,15 +188,8 @@ const StudentsManagement: React.FC = () => {
           />
         )}
 
-        {/* Loading State */}
-        {isLoading && (
-          <div className="flex justify-center items-center py-12">
-            <LoadingSpinner size="lg" />
-          </div>
-        )}
-
         {/* Empty State */}
-        {!isLoading && currentStudents.length === 0 && (
+        {currentStudents.length === 0 && (
           <EmptyState
             icon={<FaUserGraduate className="w-12 h-12" />}
             title={
@@ -344,18 +220,6 @@ const StudentsManagement: React.FC = () => {
           />
         )}
 
-        {/* Pagination */}
-        {!isLoading && currentStudents.length > 0 && totalPages > 1 && (
-          <ResponsivePagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={filteredAndSortedStudents.length}
-            itemsPerPage={studentsPerPage}
-            onPageChange={setCurrentPage}
-            itemName="طالب"
-            showQuickJump={true}
-          />
-        )}
       </div>
 
       {/* Student Form Modal */}
@@ -371,57 +235,7 @@ const StudentsManagement: React.FC = () => {
         />
       )}
 
-      {/* Custom Styles */}
-      <style>{`
-        input[type="range"] {
-          -webkit-appearance: none;
-          appearance: none;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 20px;
-          height: 20px;
-          border-radius: 50%;
-          background: #3b82f6;
-          cursor: pointer;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        input[type="range"]::-moz-range-thumb {
-          width: 20px;
-          height: 20px;
-          border-radius: 50%;
-          background: #3b82f6;
-          cursor: pointer;
-          border: none;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        input[type="range"]:focus::-webkit-slider-thumb {
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
-        }
-
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #f1f5f9;
-          border-radius: 4px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #cbd5e1;
-          border-radius: 4px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #94a3b8;
-        }
-      `}</style>
+     
     </div>
   );
 };

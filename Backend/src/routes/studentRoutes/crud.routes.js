@@ -2,34 +2,44 @@
 const express = require("express");
 const router = express.Router();
 const studentController = require("../../controllers/basicController/studentController");
-const { validateStudentData } = require("../../Validation/Student/StudentValidation");
+const { 
+  validateStudentData, 
+  sanitizeStudentData 
+} = require("../../Validation/Student/StudentValidation");
 const { protect } = require("../../middleware/authMiddleware");
+const { cacheMiddleware } = require("../../middleware/cacheMiddleware");
 
 /**
  * CRUD Routes for Students
  * All routes use StudentValidation middleware
  */
 
-// Get all students
-router.get("/", protect, studentController.getStudents);
+// Get all students (with 2 minute cache)
+router.get("/", protect, cacheMiddleware(120), studentController.getStudents);
 
-// Get students by group
-router.get("/group/:group", protect, studentController.getStudentsByGroup);
+// Get students statistics (with 5 minute cache)
+router.get("/statistics", protect, cacheMiddleware(300), studentController.getStudentsStatistics);
 
-// Get students by teacher
-router.get("/teacher/:teacher", protect, studentController.getStudentsByTeacher);
+// Check duplicate field (no cache - real-time check needed)
+router.get("/check-duplicate", protect, studentController.checkDuplicate);
 
-// Get students with absence statistics (optimized)
-router.get("/with-absence-stats", protect, studentController.getStudentsWithAbsenceStats);
+// Get students by group (with 3 minute cache)
+router.get("/group/:group", protect, cacheMiddleware(180), studentController.getStudentsByGroup);
 
-// Get student by ID
-router.get("/:id", protect, studentController.getStudentById);
+// Get students by teacher (with 3 minute cache)
+router.get("/teacher/:teacher", protect, cacheMiddleware(180), studentController.getStudentsByTeacher);
+
+// Get students with absence statistics (with 2 minute cache)
+router.get("/with-absence-stats", protect, cacheMiddleware(120), studentController.getStudentsWithAbsenceStats);
+
+// Get student by ID (with 5 minute cache)
+router.get("/:id", protect, cacheMiddleware(300), studentController.getStudentById);
 
 // Create new student (with validation)
-router.post("/", protect, validateStudentData, studentController.createStudent);
+router.post("/", protect, sanitizeStudentData, validateStudentData, studentController.createStudent);
 
 // Update student (with validation)
-router.put("/:id", protect, validateStudentData, studentController.updateStudent);
+router.put("/:id", protect, sanitizeStudentData, validateStudentData, studentController.updateStudent);
 
 // Bulk delete students (must be before /:id)
 router.delete("/bulk", protect, studentController.bulkDeleteStudents);

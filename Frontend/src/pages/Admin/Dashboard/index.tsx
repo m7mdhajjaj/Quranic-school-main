@@ -20,7 +20,7 @@ import {
 } from "./components";
 import { useDashboardData } from "./hooks";
 import type { ChartData } from "./types";
-import AddStudentForm from "../../../Forms/AddStudentForm";
+import AddStudentForm from "../StudentsManagement/Model/StudentForm";
 import AddTeacherForm from "../../../Forms/AddTeacherForm";
 import AddGroupForm from "../../../Forms/AddGroupForm";
 import { useDashboardSocket } from "@/Socket";

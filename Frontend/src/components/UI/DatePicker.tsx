@@ -22,8 +22,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   required = false,
   disabled = false,
   className = '',
-  minYear = new Date().getFullYear() - 5, // 5 سنوات للخلف
-  maxYear = new Date().getFullYear() + 1, // سنة واحدة للأمام (تزيد تلقائياً كل سنة)
+  minYear = 1950, // من سنة 1950
+  maxYear = new Date().getFullYear(), // حتى السنة الحالية
 }) => {
   // Parse the date value
   const parseDate = (dateString: string) => {
@@ -88,8 +88,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   return (
     <div className={`w-full ${className}`}>
       {label && (
-        <label className="flex items-center gap-2 text-base font-semibold text-gray-700 mb-3 min-h-[28px]">
-          <Calendar className="h-5 w-5 text-emerald-600 flex-shrink-0" />
+        <label className="flex items-center gap-1 text-sm font-medium text-gray-700 mb-3">
+          <Calendar className="h-3.5 w-3.5 text-gray-500 flex-shrink-0" />
           {label} {required && <span className="text-red-500">*</span>}
         </label>
       )}

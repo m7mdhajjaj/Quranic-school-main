@@ -4,7 +4,7 @@ import type { Student, SortField, SortOrder, GroupsFilter } from "../types";
 
 export const useStudentsFilters = (
   students: Student[],
-  fetchStudents: () => Promise<void>
+  fetchStudents: (retryAttempt?: number, filters?: any) => Promise<void>
 ) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedGender, setSelectedGender] = useState("all");
@@ -14,7 +14,7 @@ export const useStudentsFilters = (
   const [sortField] = useState<SortField>("studentId");
   const [sortOrder] = useState<SortOrder>("asc");
   const [currentPage, setCurrentPage] = useState(1);
-  const [studentsPerPage, setStudentsPerPage] = useState(10);
+  const [studentsPerPage, setStudentsPerPage] = useState(1000); // عرض 1000 طالب في الصفحة
 
   // Count active filters
   const activeFiltersCount = useMemo(() => {
@@ -59,72 +59,50 @@ export const useStudentsFilters = (
     return () => clearTimeout(delayedSearch);
   }, [searchTerm, handleSearch, fetchStudents]);
 
-  // Filter and sort students
-  const filteredAndSortedStudents = useMemo(() => {
-    const filtered = students.filter((student) => {
-      if (groupsFilter === "withGroups") {
-        if (
-          !student.group ||
-          student.group.trim() === "" ||
-          student.group === "غير محدد"
-        ) {
-          return false;
-        }
-      } else if (groupsFilter === "withoutGroups") {
-        if (
-          student.group &&
-          student.group.trim() !== "" &&
-          student.group !== "غير محدد"
-        ) {
-          return false;
-        }
+  // Server-side filtering - all filtering done in backend
+  useEffect(() => {
+    const applyFilters = async () => {
+      // Build filters object for backend
+      const filters: any = {};
+      
+      if (selectedGender !== "all") {
+        filters.gender = selectedGender;
+      }
+      
+      if (ageRange[0] !== 0) {
+        filters.minAge = ageRange[0];
+      }
+      
+      if (ageRange[1] !== 100) {
+        filters.maxAge = ageRange[1];
+      }
+      
+      if (groupsFilter !== "all") {
+        filters.group = groupsFilter;
+      }
+      
+      if (searchTerm && searchTerm.length > 2) {
+        filters.search = searchTerm;
+      }
+      
+      if (sortField) {
+        filters.sortBy = sortField;
+        filters.sortOrder = sortOrder;
       }
 
-      const searchLower = searchTerm.toLowerCase();
-      const matchesSearch =
-        !searchTerm ||
-        (student.firstName || "").toLowerCase().includes(searchLower) ||
-        (student.lastName || "").toLowerCase().includes(searchLower) ||
-        (student.fatherName || "").toLowerCase().includes(searchLower) ||
-        (student.idNumber || "").includes(searchLower) ||
-        student.studentId.toString().includes(searchLower) ||
-        (student.teacher || "").toLowerCase().includes(searchLower) ||
-        (student.group || "").toLowerCase().includes(searchLower);
+      // Fetch filtered data from backend
+      await fetchStudents(0, filters);
+    };
 
-      const matchesGender =
-        selectedGender === "all" || student.gender === selectedGender;
-      const matchesAge =
-        (student.age || 0) >= ageRange[0] && (student.age || 0) <= ageRange[1];
+    const debounceTimer = setTimeout(() => {
+      applyFilters();
+    }, 500); // Debounce for 500ms
 
-      return matchesSearch && matchesGender && matchesAge;
-    });
+    return () => clearTimeout(debounceTimer);
+  }, [searchTerm, selectedGender, groupsFilter, ageRange, sortField, sortOrder, fetchStudents]);
 
-    filtered.sort((a, b) => {
-      let compareResult = 0;
-
-      if (sortField === "studentId") {
-        compareResult = a.studentId - b.studentId;
-      } else if (sortField === "firstName") {
-        compareResult = a.firstName.localeCompare(b.firstName, "ar");
-      } else if (sortField === "age") {
-        compareResult = (a.age || 0) - (b.age || 0);
-      } else if (sortField === "group") {
-        compareResult = a.group.localeCompare(b.group, "ar");
-      }
-
-      return sortOrder === "asc" ? compareResult : -compareResult;
-    });
-
-    return filtered;
-  }, [
-    students,
-    searchTerm,
-    selectedGender,
-    groupsFilter,
-    ageRange,
-    sortField,
-    sortOrder,
-  ]);
+  // No client-side filtering needed - backend handles everything
+  const filteredAndSortedStudents = useMemo(() => students, [students]);
 
   useEffect(() => {
     setCurrentPage(1);

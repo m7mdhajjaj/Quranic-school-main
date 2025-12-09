@@ -102,17 +102,10 @@ export const studentValidationSchema = yup.object({
       otherwise: (schema) => schema.nullable().notRequired(),
     })
     .trim()
-    .test('only-numbers', 'رقم الهوية يجب أن يحتوي على أرقام فقط', function(value) {
+    .test('valid-id-number', 'رقم الهوية يجب أن يتكون من 9 أرقام فقط', function(value) {
       if (!value) return true; // Allow empty for updates
-      return /^\d+$/.test(value);
-    })
-    .test('exactly-nine-digits', 'رقم الهوية يجب أن يتكون من 9 أرقام بالضبط', function(value) {
-      if (!value) return true; // Allow empty for updates
-      return value.length === 9;
-    })
-    .test('unique-id', 'رقم الهوية موجود بالفعل', function() {
-      // هذا التحقق يتم في الباك اند - unique constraint
-      return true;
+      const cleanValue = value.replace(/\s+/g, '');
+      return /^\d{9}$/.test(cleanValue);
     }),
     
   birthDate: yup
@@ -158,7 +151,8 @@ export const studentValidationSchema = yup.object({
     .nullable()
     .test('valid-phone', 'الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام', function(value) {
       if (!value) return true; // Allow empty
-      return /^05\d{8}$/.test(value);
+      const cleanValue = value.replace(/\s+/g, '');
+      return /^05\d{8}$/.test(cleanValue);
     })
     .test('unique-phone', 'رقم الهاتف موجود بالفعل', function() {
       // هذا التحقق يتم في الباك اند - unique constraint

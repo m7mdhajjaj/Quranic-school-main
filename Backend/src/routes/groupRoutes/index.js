@@ -3,9 +3,14 @@ const router = express.Router();
 const groupController = require('../../controllers/basicController/groupController');
 const authMiddleware = require('../../middleware/authMiddleware');
 const {
-  validateGroupData,
-  validateRenameGroup,
-} = require('../../Validation/Group/GroupValidation');
+  createGroupValidation,
+  updateGroupValidation,
+  deleteGroupValidation,
+  getGroupByIdValidation,
+  getGroupStudentsValidation,
+  renameGroupValidation,
+  getGroupsByTeacherIdValidation,
+} = require('../../Validation/Group/groupValidators');
 
 // الحصول على جميع الحلقات - متاح للجميع المسجلين (معلمين وإداريين)
 router.get('/', authMiddleware.protect, groupController.getAllGroups);
@@ -15,12 +20,15 @@ router.get('/', authMiddleware.protect, groupController.getAllGroups);
 router.post(
   '/',
   authMiddleware.adminProtect,
-  validateGroupData,
+  createGroupValidation,
   groupController.createGroup
 );
 
 // الحصول على حلقة بالمعرف - متاح للجميع المسجلين
-router.get('/:id', authMiddleware.protect, groupController.getGroupById);
+router.get('/:id', authMiddleware.protect, getGroupByIdValidation, groupController.getGroupById);
+
+// 🆕 جلب طلاب حلقة معينة - متاح للجميع المسجلين
+router.get('/:id/students', authMiddleware.protect, getGroupStudentsValidation, groupController.getGroupStudents);
 
 // الحصول على حلقات المعلم - متاح للجميع المسجلين
 router.get(
@@ -34,6 +42,7 @@ router.get(
 router.get(
   '/teacher-id/:teacherId/filtered',
   authMiddleware.protect,
+  getGroupsByTeacherIdValidation,
   groupController.getGroupsByTeacherIdWithFilters
 );
 
@@ -41,18 +50,18 @@ router.get(
 router.put(
   '/:id',
   authMiddleware.adminProtect,
-  validateGroupData,
+  updateGroupValidation,
   groupController.updateGroup
 );
 
 // حذف حلقة - إداري فقط
-router.delete('/:id', authMiddleware.adminProtect, groupController.deleteGroup);
+router.delete('/:id', authMiddleware.adminProtect, deleteGroupValidation, groupController.deleteGroup);
 
 // إعادة تسمية مجموعة - إداري فقط
 router.post(
   '/rename',
   authMiddleware.adminProtect,
-  validateRenameGroup,
+  renameGroupValidation,
   groupController.renameGroup
 );
 

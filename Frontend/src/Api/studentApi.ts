@@ -42,14 +42,44 @@ export interface StudentStats {
   }>;
 }
 
-// Get all students
-export const getAllStudents = async (): Promise<{
+// Get all students with optional filters
+export const getAllStudents = async (filters?: {
+  gender?: string;
+  minAge?: number;
+  maxAge?: number;
+  group?: string;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+}): Promise<{
   success: boolean;
   data?: Student[];
+  pagination?: {
+    total: number;
+    page: number;
+    limit: number;
+    pages: number;
+  };
   message?: string;
 }> => {
   try {
-    const response = await api.get("/students");
+    const params = new URLSearchParams();
+    if (filters) {
+      if (filters.gender) params.append('gender', filters.gender);
+      if (filters.minAge) params.append('minAge', filters.minAge.toString());
+      if (filters.maxAge) params.append('maxAge', filters.maxAge.toString());
+      if (filters.group) params.append('group', filters.group);
+      if (filters.search) params.append('search', filters.search);
+      if (filters.sortBy) params.append('sortBy', filters.sortBy);
+      if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
+      if (filters.page) params.append('page', filters.page.toString());
+      if (filters.limit) params.append('limit', filters.limit.toString());
+    }
+    
+    const url = params.toString() ? `/students?${params}` : '/students';
+    const response = await api.get(url);
     return response.data;
   } catch (error) {
     console.error("Error fetching students:", error);
@@ -78,40 +108,40 @@ export const getStudentById = async (
   }
 };
 
+// Check if field value is duplicate
+export const checkDuplicateField = async (
+  field: 'idNumber' | 'phoneNumber' | 'email',
+  value: string,
+  excludeId?: string
+): Promise<{ success: boolean; isDuplicate: boolean; message?: string; existingUserType?: string }> => {
+  try {
+    const params = new URLSearchParams({ field, value });
+    if (excludeId) params.append('excludeId', excludeId);
+    
+    const response = await api.get(`/students/check-duplicate?${params}`);
+    return response.data;
+  } catch (error) {
+    console.error("خطأ في التحقق من التكرار:", error);
+    return {
+      success: false,
+      isDuplicate: false,
+      message: "حدث خطأ أثناء التحقق",
+    };
+  }
+};
+
 // Create new student
 export const createStudent = async (
   studentData: StudentFormData
 ): Promise<{ success: boolean; data?: Student; message?: string }> => {
-  try {
-    console.log(
-      "📤 إرسال بيانات الطالب إلى الخادم:",
-      JSON.stringify(studentData, null, 2)
-    );
-    const response = await api.post("/students", studentData);
-    console.log("✅ استجابة الخادم:", response.data);
-    return response.data;
-  } catch (error) {
-    console.error("❌ خطأ في إنشاء الطالب:", error);
-    const axiosError = error as AxiosError<{
-      message?: string;
-      details?: unknown;
-    }>;
-
-    // تسجيل تفاصيل أكثر عن الخطأ
-    if (axiosError.response) {
-      console.error("🔍 تفاصيل الخطأ من الخادم:");
-      console.error("   - كود الحالة:", axiosError.response.status);
-      console.error("   - الرسالة:", axiosError.response.data?.message);
-      console.error("   - التفاصيل:", axiosError.response.data?.details);
-      console.error("   - البيانات الكاملة:", axiosError.response.data);
-    }
-
-    return {
-      success: false,
-      message:
-        axiosError.response?.data?.message || "حدث خطأ أثناء إنشاء الطالب",
-    };
-  }
+  console.log(
+    "📤 إرسال بيانات الطالب إلى الخادم:",
+    JSON.stringify(studentData, null, 2)
+  );
+  
+  const response = await api.post("/students", studentData);
+  console.log("✅ استجابة الخادم:", response.data);
+  return response.data;
 };
 
 // Update student
@@ -119,18 +149,8 @@ export const updateStudent = async (
   id: string,
   studentData: Partial<StudentFormData>
 ): Promise<{ success: boolean; data?: Student; message?: string }> => {
-  try {
-    const response = await api.put(`/students/${id}`, studentData);
-    return response.data;
-  } catch (error) {
-    console.error("Error updating student:", error);
-    const axiosError = error as AxiosError<{ message?: string }>;
-    return {
-      success: false,
-      message:
-        axiosError.response?.data?.message || "حدث خطأ أثناء تحديث الطالب",
-    };
-  }
+  const response = await api.put(`/students/${id}`, studentData);
+  return response.data;
 };
 
 // Delete student
@@ -150,7 +170,7 @@ export const deleteStudent = async (
   }
 };
 
-// Get student statistics
+// Get student statistics (old endpoint - deprecated)
 export const getStudentStats = async (): Promise<{
   success: boolean;
   data?: StudentStats;
@@ -167,6 +187,48 @@ export const getStudentStats = async (): Promise<{
       message:
         axiosError.response?.data?.message ||
         "حدث خطأ أثناء جلب إحصائيات الطلاب",
+    };
+  }
+};
+
+// Get students statistics with filters (NEW - server-side)
+export const getStudentsStatistics = async (filters?: {
+  gender?: string;
+  minAge?: number;
+  maxAge?: number;
+  group?: string;
+  search?: string;
+}): Promise<{
+  success: boolean;
+  data?: {
+    total: number;
+    male: number;
+    female: number;
+    active: number;
+    inactive: number;
+    avgAge: string | number;
+  };
+  message?: string;
+}> => {
+  try {
+    const params = new URLSearchParams();
+    if (filters) {
+      if (filters.gender) params.append('gender', filters.gender);
+      if (filters.minAge) params.append('minAge', filters.minAge.toString());
+      if (filters.maxAge) params.append('maxAge', filters.maxAge.toString());
+      if (filters.group) params.append('group', filters.group);
+      if (filters.search) params.append('search', filters.search);
+    }
+    
+    const url = params.toString() ? `/students/statistics?${params}` : '/students/statistics';
+    const response = await api.get(url);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching statistics:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
+    return {
+      success: false,
+      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب الإحصائيات",
     };
   }
 };
