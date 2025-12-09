@@ -134,14 +134,41 @@ export const checkDuplicateField = async (
 export const createStudent = async (
   studentData: StudentFormData
 ): Promise<{ success: boolean; data?: Student; message?: string }> => {
-  console.log(
-    "📤 إرسال بيانات الطالب إلى الخادم:",
-    JSON.stringify(studentData, null, 2)
-  );
-  
-  const response = await api.post("/students", studentData);
-  console.log("✅ استجابة الخادم:", response.data);
-  return response.data;
+  try {
+    console.log(
+      "📤 إرسال بيانات الطالب إلى الخادم:",
+      JSON.stringify(studentData, null, 2)
+    );
+    
+    const response = await api.post("/students", studentData);
+    console.log("✅ استجابة الخادم:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ خطأ في إضافة الطالب:", error);
+    const axiosError = error as AxiosError<{ message?: string; error?: string; details?: any }>;
+    
+    // Log detailed error information
+    if (axiosError.response) {
+      console.error("📋 تفاصيل الخطأ من السيرفر:", {
+        status: axiosError.response.status,
+        errorMessage: axiosError.response.data?.message || axiosError.response.data?.error,
+        errorDetails: axiosError.response.data?.details,
+        fullResponse: axiosError.response.data,
+      });
+      console.error("📤 البيانات المرسلة:", studentData);
+    }
+    
+    const errorMessage = axiosError.response?.data?.message || 
+                        axiosError.response?.data?.error || 
+                        "حدث خطأ أثناء إضافة الطالب";
+    
+    console.error("💬 رسالة الخطأ النهائية:", errorMessage);
+    
+    return {
+      success: false,
+      message: errorMessage,
+    };
+  }
 };
 
 // Update student
@@ -149,8 +176,29 @@ export const updateStudent = async (
   id: string,
   studentData: Partial<StudentFormData>
 ): Promise<{ success: boolean; data?: Student; message?: string }> => {
-  const response = await api.put(`/students/${id}`, studentData);
-  return response.data;
+  try {
+    console.log("📤 تحديث بيانات الطالب:", { id, data: studentData });
+    const response = await api.put(`/students/${id}`, studentData);
+    console.log("✅ تم تحديث الطالب بنجاح");
+    return response.data;
+  } catch (error) {
+    console.error("❌ خطأ في تحديث الطالب:", error);
+    const axiosError = error as AxiosError<{ message?: string; error?: string }>;
+    
+    if (axiosError.response) {
+      console.error("📋 تفاصيل الخطأ:", {
+        status: axiosError.response.status,
+        data: axiosError.response.data,
+      });
+    }
+    
+    return {
+      success: false,
+      message: axiosError.response?.data?.message || 
+               axiosError.response?.data?.error || 
+               "حدث خطأ أثناء تحديث الطالب",
+    };
+  }
 };
 
 // Delete student
@@ -411,6 +459,59 @@ export const getStudentsWithAbsenceStats = async (
     const axiosError = error as AxiosError<{ message?: string }>;
     throw new Error(
       axiosError.response?.data?.message || "حدث خطأ أثناء جلب بيانات الطلاب"
+    );
+  }
+};
+
+/**
+ * Export students to CSV
+ */
+export const exportStudentsToCSV = async (filters?: {
+  gender?: string;
+  minAge?: number;
+  maxAge?: number;
+  group?: string;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}) => {
+  try {
+    console.log("📥 تصدير الطلاب إلى CSV...");
+    
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== 'all') {
+          params.append(key, String(value));
+        }
+      });
+    }
+
+    const url = `/students/export${params.toString() ? `?${params}` : ''}`;
+    
+    // Download file directly
+    const response = await api.get(url, {
+      responseType: 'blob',
+    });
+
+    // Create download link
+    const blob = new Blob([response.data], { type: 'text/csv; charset=utf-8' });
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = `students_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(downloadUrl);
+
+    console.log("✅ تم تصدير البيانات بنجاح");
+    return { success: true };
+  } catch (error) {
+    console.error("❌ خطأ في تصدير البيانات:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
+    throw new Error(
+      axiosError.response?.data?.message || "حدث خطأ أثناء تصدير البيانات"
     );
   }
 };

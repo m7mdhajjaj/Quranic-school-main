@@ -41,7 +41,7 @@ export default {
         'pulse-slow': 'pulse-slow 2s ease-in-out infinite',
         'pulse-slow-delayed': 'pulse-slow 2s ease-in-out 1s infinite',
         'bar': 'bar 1s ease-in-out infinite',
-        'fadeIn': 'fadeIn 0.5s ease-out',
+        'fadeIn': 'fadeIn 0.2s ease-out',
         'slideUp': 'slideUp 0.4s ease-out',
         
         // Warnings Page animations
@@ -96,8 +96,8 @@ export default {
           '50%': { transform: 'scaleY(1)' }
         },
         'fadeIn': {
-          'from': { opacity: '0', transform: 'translateY(-10px)' },
-          'to': { opacity: '1', transform: 'translateY(0)' }
+          'from': { opacity: '0' },
+          'to': { opacity: '1' }
         },
         'slideUp': {
           'from': { opacity: '0', transform: 'translateY(20px)' },
@@ -173,7 +173,24 @@ export default {
         // Background size for gradient animation
         '.bg-size-200': {
           'background-size': '200% 200%'
-        }
+        },
+        // Performance optimizations
+        '.gpu-accelerate': {
+          'transform': 'translateZ(0)',
+          'will-change': 'transform',
+        },
+        '.will-change-opacity': {
+          'will-change': 'opacity',
+        },
+        '.will-change-transform': {
+          'will-change': 'transform',
+        },
+        '.backface-hidden': {
+          'backface-visibility': 'hidden',
+        },
+        '.perspective-1000': {
+          'perspective': '1000px',
+        },
       });
     }
   ],

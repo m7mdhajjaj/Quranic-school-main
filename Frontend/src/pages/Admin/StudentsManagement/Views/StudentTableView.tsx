@@ -1,6 +1,7 @@
 import React from "react";
 import { Table, type Column } from "@/components/UI";
 import { FaEdit, FaTrash } from "react-icons/fa";
+import { User, UserCheck, Cake } from "lucide-react";
 import type { Student } from "@/Api/studentApi";
 
 interface StudentTableViewProps {
@@ -136,17 +137,22 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
     {
       key: "gender",
       header: "الجنس",
-      width: "80px",
+      width: "100px",
       align: "center",
       render: (student) => (
         <div className="flex justify-center">
           {student.gender ? (
             <span
-              className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
                 student.gender === "ذكر"
                   ? "bg-blue-50 text-blue-700 border border-blue-200"
                   : "bg-pink-50 text-pink-700 border border-pink-200"
               }`}>
+              {student.gender === "ذكر" ? (
+                <User className="w-3 h-3" />
+              ) : (
+                <UserCheck className="w-3 h-3" />
+              )}
               {student.gender}
             </span>
           ) : (
@@ -159,12 +165,13 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
       key: "age",
       header: "العمر",
       sortable: true,
-      width: "70px",
+      width: "90px",
       align: "center",
       render: (student) => (
         <div className="flex justify-center">
           {student.age ? (
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+              <Cake className="w-3 h-3" />
               {student.age}
             </span>
           ) : (

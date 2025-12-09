@@ -11,6 +11,15 @@ const normalizeGender = (value) => {
   return value;
 };
 
+// تطبيع الأسماء المركبة - إزالة الفراغ بعد "عبد"
+// مثال: "عبد الرحمن" → "عبدالرحمن"، "عبد الله" → "عبدالله"
+const normalizeCompoundNames = (value) => {
+  if (!value || typeof value !== 'string') return value;
+  
+  // إزالة الفراغ بين "عبد" و (ا، أ، إ)
+  return value.replace(/عبد\s+([اأإ])/gi, 'عبد$1');
+};
+
 // حساب العمر من تاريخ الميلاد
 const calculateAge = (birthDate) => {
   if (!birthDate) return null;
@@ -128,9 +137,11 @@ const validateStudentData = async (req, res, next) => {
       }
     }
 
-    // التحقق من المعلم - مطلوب للطلاب الجدد فقط
-    if (isNewStudent && (!teacher || typeof teacher !== 'string' || teacher.trim().length === 0)) {
-      errors.teacher = 'اسم المعلم مطلوب';
+    // التحقق من المعلم - اختياري (يتم الحصول عليه من الحلقة)
+    if (teacher !== undefined && teacher !== null && teacher !== '') {
+      if (typeof teacher !== 'string' || teacher.trim().length === 0) {
+        errors.teacher = 'اسم المعلم غير صحيح';
+      }
     }
 
     // التحقق من الحلقة - مطلوب للطلاب الجدد فقط
@@ -158,16 +169,24 @@ const validateStudentData = async (req, res, next) => {
       }
     }
 
-    // التحقق من كلمة المرور للطالب الجديد
-    if (isNewStudent) {
-      if (!password || typeof password !== 'string' || password.trim().length === 0) {
-        errors.password = 'كلمة المرور مطلوبة للطلاب الجدد';
+    // التحقق من كلمة المرور - اختيارية (سيتم استخدام رقم الهوية إذا لم تُدخل)
+    if (password !== undefined && password !== null && password !== '') {
+      if (typeof password !== 'string' || password.trim().length === 0) {
+        errors.password = 'كلمة المرور غير صحيحة';
       } else {
-        // استيراد وتشغيل validatePasswordStrength من AuthValidation
-        const { validatePasswordStrength } = require('../Auth/AuthValidation');
-        const strengthValidation = validatePasswordStrength(password);
-        if (!strengthValidation.isValid) {
-          errors.password = strengthValidation.error;
+        // التحقق من الطول الأدنى
+        if (password.length < 4) {
+          errors.password = 'كلمة المرور يجب أن تكون 4 أحرف على الأقل';
+        } else {
+          const numbers = (password.match(/[\d\u0660-\u0669]/g) || []).length;
+          const letters = (password.match(/[a-zA-Z\u0600-\u06FF]/g) || []).length;
+          
+          const hasMinimumNumbers = numbers >= 4;
+          const hasMinimumLettersWithNumbers = letters >= 3 && numbers >= 1;
+          
+          if (!hasMinimumNumbers && !hasMinimumLettersWithNumbers) {
+            errors.password = 'كلمة المرور يجب أن تحتوي على 4 أرقام على الأقل، أو 3 حروف مع أرقام';
+          }
         }
       }
     }
@@ -252,7 +271,15 @@ const sanitizeStudentData = (req, res, next) => {
     
     for (const [field, value] of Object.entries(textFields)) {
       if (value && typeof value === 'string') {
-        req.body[field] = value.trim();
+        // تنظيف المسافات الزائدة
+        let cleanValue = value.trim();
+        
+        // تطبيع الأسماء المركبة (عبد الرحمن → عبدالرحمن)
+        if (['firstName', 'fatherName', 'grandFatherName', 'motherName', 'lastName', 'teacher'].includes(field)) {
+          cleanValue = normalizeCompoundNames(cleanValue);
+        }
+        
+        req.body[field] = cleanValue;
       }
     }
     
@@ -337,6 +364,7 @@ module.exports = {
   validateStudentData,
   sanitizeStudentData,
   normalizeGender,
+  normalizeCompoundNames,
   calculateAge,
   formatBirthDateForBackend,
   commonStudentValidationErrors

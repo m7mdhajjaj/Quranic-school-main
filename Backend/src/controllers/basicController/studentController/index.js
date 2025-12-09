@@ -2,6 +2,7 @@
 const crudController = require("./crud.controller");
 const averageController = require("./average.controller");
 const absenceController = require("./absence.controller");
+const exportOperation = require("./ExportOperation");
 const queryController = require("./query.controller");
 
 module.exports = {
@@ -15,5 +16,8 @@ module.exports = {
   ...absenceController,
   
   // وظائف الاستعلام والتصفية
+  ...exportOperation,
+  
+  // وظائف الاستعلام (البحث، التصفية)
   ...queryController,
 };

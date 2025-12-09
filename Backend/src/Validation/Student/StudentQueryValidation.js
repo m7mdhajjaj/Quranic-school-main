@@ -16,8 +16,8 @@ const validateStudentSearchQuery = (req, res, next) => {
         });
       }
       
-      // Sanitize search term - remove special regex characters except spaces
-      req.query.search = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      // Trim search term
+      req.query.search = search.trim();
       
       // Limit search term length
       if (req.query.search.length > 100) {

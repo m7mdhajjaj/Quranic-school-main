@@ -23,7 +23,7 @@ exports.getStudents = async (req, res) => {
     const startTime = Date.now();
 
     // Build query from filters using helper
-    const { sortBy, sortOrder, page, limit, search } = req.query;
+    const { sortBy, sortOrder, page, limit } = req.query;
     const query = buildStudentQuery(req.query);
 
     // Sorting
@@ -40,52 +40,12 @@ exports.getStudents = async (req, res) => {
     const skip = (pageNum - 1) * limitNum;
 
     // Execute query
-    let students = await Student.find(query)
+    const students = await Student.find(query)
       .select("-avatar")
       .lean()
       .sort(sortOptions)
       .skip(skip)
       .limit(limitNum);
-
-    // Smart sorting when search is active - exact matches first
-    if (search && search.trim()) {
-      const searchTerm = search.trim().toLowerCase();
-      students = students.sort((a, b) => {
-        const aGroup = (a.group || '').toLowerCase();
-        const bGroup = (b.group || '').toLowerCase();
-        const aFirstName = (a.firstName || '').toLowerCase();
-        const bFirstName = (b.firstName || '').toLowerCase();
-        const aLastName = (a.lastName || '').toLowerCase();
-        const bLastName = (b.lastName || '').toLowerCase();
-
-        // Priority 1: Exact match in group
-        const aGroupExact = aGroup === searchTerm;
-        const bGroupExact = bGroup === searchTerm;
-        if (aGroupExact && !bGroupExact) return -1;
-        if (!aGroupExact && bGroupExact) return 1;
-
-        // Priority 2: Starts with in group
-        const aGroupStarts = aGroup.startsWith(searchTerm);
-        const bGroupStarts = bGroup.startsWith(searchTerm);
-        if (aGroupStarts && !bGroupStarts) return -1;
-        if (!aGroupStarts && bGroupStarts) return 1;
-
-        // Priority 3: Exact match in name fields
-        const aNameExact = aFirstName === searchTerm || aLastName === searchTerm;
-        const bNameExact = bFirstName === searchTerm || bLastName === searchTerm;
-        if (aNameExact && !bNameExact) return -1;
-        if (!aNameExact && bNameExact) return 1;
-
-        // Priority 4: Starts with in name fields
-        const aNameStarts = aFirstName.startsWith(searchTerm) || aLastName.startsWith(searchTerm);
-        const bNameStarts = bFirstName.startsWith(searchTerm) || bLastName.startsWith(searchTerm);
-        if (aNameStarts && !bNameStarts) return -1;
-        if (!aNameStarts && bNameStarts) return 1;
-
-        // Default: maintain original order
-        return 0;
-      });
-    }
 
     // Get total count for pagination
     const total = await Student.countDocuments(query);

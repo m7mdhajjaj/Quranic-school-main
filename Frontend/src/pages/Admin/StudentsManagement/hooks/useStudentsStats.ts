@@ -5,56 +5,26 @@ export const calculateStats = (
   students: Student[],
   apiStats: ApiStats | null
 ): StudentStats => {
-  // Optimize: single loop instead of multiple filters
-  let maleCount = 0;
-  let femaleCount = 0;
-  let totalAge = 0;
-  let withGroupCount = 0;
-
-  for (const student of students) {
-    // Count gender
-    if (student.gender === "ذكر") maleCount++;
-    else if (student.gender === "أنثى") femaleCount++;
-    
-    // Sum age
-    totalAge += student.age || 0;
-    
-    // Count students with groups
-    if (
-      student.group &&
-      student.group.trim() !== "" &&
-      student.group.toLowerCase() !== "غير محدد" &&
-      student.group.toLowerCase() !== "undefined"
-    ) {
-      withGroupCount++;
-    }
-  }
-
-  const avgAge = students.length > 0 ? (totalAge / students.length).toFixed(1) : 0;
-  const withoutGroupCount = students.length - withGroupCount;
-
+  // Backend sends all stats - just use them directly
   if (apiStats) {
-    const apiActiveStudents = apiStats.activeStudents || withGroupCount;
-    const apiInactiveStudents =
-      (apiStats.totalStudents || students.length) - apiActiveStudents;
-
     return {
       total: apiStats.totalStudents || students.length,
-      male: apiStats.maleStudents || maleCount,
-      female: apiStats.femaleStudents || femaleCount,
-      active: apiActiveStudents,
-      inactive: apiInactiveStudents,
-      avgAge: avgAge,
+      male: apiStats.maleStudents || 0,
+      female: apiStats.femaleStudents || 0,
+      active: apiStats.activeStudents || 0,
+      inactive: (apiStats.totalStudents || students.length) - (apiStats.activeStudents || 0),
+      avgAge: "0", // Backend should calculate this
     };
   }
 
+  // Fallback only if no API stats (shouldn't happen)
   return {
     total: students.length,
-    male: maleCount,
-    female: femaleCount,
-    active: withGroupCount,
-    inactive: withoutGroupCount,
-    avgAge,
+    male: 0,
+    female: 0,
+    active: 0,
+    inactive: students.length,
+    avgAge: "0",
   };
 };
 
@@ -64,6 +34,6 @@ export const useStudentsStats = (
 ) => {
   return useMemo(
     () => calculateStats(students, apiStats),
-    [students, apiStats]
+    [students.length, apiStats] // Only depend on length, not full array
   );
 };

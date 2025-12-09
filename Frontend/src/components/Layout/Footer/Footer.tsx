@@ -57,7 +57,7 @@ export const Footer: React.FC<FooterProps> = ({
 
   return (
     <footer
-      className={`relative bg-gradient-to-br from-emerald-700 via-teal-700 to-green-800 text-white overflow-hidden mt-auto [contain-intrinsic-size:auto_700px] ${className}`}
+      className={`relative bg-gradient-to-br from-emerald-700 via-teal-700 to-green-800 text-white overflow-hidden mt-auto min-h-[500px] ${className}`}
     >
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-10">

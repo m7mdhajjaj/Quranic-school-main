@@ -34,25 +34,11 @@ export const useStudentsData = (hasPermission: boolean) => {
         throw new Error(result.message || "البيانات المستلمة غير صحيحة");
       }
 
-      // Optimize: avoid unnecessary spread and map operations
-      const cleanedStudents = result.data.map((student: ApiStudent) => {
-        // Only add defaults for missing fields
-        const cleaned: any = { ...student };
-        if (!cleaned.firstName) cleaned.firstName = "";
-        if (!cleaned.lastName) cleaned.lastName = "";
-        if (!cleaned.fatherName) cleaned.fatherName = "";
-        if (!cleaned.idNumber) cleaned.idNumber = "";
-        if (!cleaned.teacher) cleaned.teacher = "غير محدد";
-        if (!cleaned.group) cleaned.group = "غير محدد";
-        if (!cleaned.gender) cleaned.gender = "غير محدد";
-        if (!cleaned.age) cleaned.age = 0;
-        return cleaned;
-      });
-
+      // Backend sends clean data with defaults - no need to process
       const duration = (performance.now() - startTime).toFixed(2);
-      console.log(`✅ تم تحميل ${cleanedStudents.length} طالب بنجاح في ${duration}ms`);
+      console.log(`✅ تم تحميل ${result.data.length} طالب بنجاح في ${duration}ms`);
       
-      setStudents(cleanedStudents);
+      setStudents(result.data);
       setError(null);
       setRetryCount(0);
     } catch (error: unknown) {

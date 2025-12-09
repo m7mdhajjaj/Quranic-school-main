@@ -53,46 +53,29 @@ export const useStudentsFilters = (
 
   // Removed - search is now handled by the main filter effect below
 
+  // Helper to build filters object - avoid duplication
+  const buildFiltersObject = useCallback(() => {
+    const filters: any = {};
+    
+    if (selectedGender !== "all") filters.gender = selectedGender;
+    if (ageRange[0] !== 0) filters.minAge = ageRange[0];
+    if (ageRange[1] !== 100) filters.maxAge = ageRange[1];
+    if (groupsFilter !== "all") filters.group = groupsFilter;
+    if (selectedTeacher !== "all") filters.teacher = selectedTeacher;
+    if (selectedGroup !== "all") filters.groupId = selectedGroup;
+    if (searchTerm?.trim()) filters.search = searchTerm.trim();
+    if (sortField) {
+      filters.sortBy = sortField;
+      filters.sortOrder = sortOrder;
+    }
+    
+    return filters;
+  }, [selectedGender, ageRange, groupsFilter, selectedTeacher, selectedGroup, searchTerm, sortField, sortOrder]);
+
   // Server-side filtering - all filtering done in backend
   useEffect(() => {
     const applyFilters = async () => {
-      // Build filters object for backend
-      const filters: any = {};
-      
-      if (selectedGender !== "all") {
-        filters.gender = selectedGender;
-      }
-      
-      if (ageRange[0] !== 0) {
-        filters.minAge = ageRange[0];
-      }
-      
-      if (ageRange[1] !== 100) {
-        filters.maxAge = ageRange[1];
-      }
-      
-      if (groupsFilter !== "all") {
-        filters.group = groupsFilter;
-      }
-
-      if (selectedTeacher !== "all") {
-        filters.teacher = selectedTeacher;
-      }
-
-      if (selectedGroup !== "all") {
-        filters.groupId = selectedGroup;
-      }
-      
-      if (searchTerm && searchTerm.trim().length > 0) {
-        filters.search = searchTerm.trim();
-      }
-      
-      if (sortField) {
-        filters.sortBy = sortField;
-        filters.sortOrder = sortOrder;
-      }
-
-      // Fetch filtered data from backend
+      const filters = buildFiltersObject();
       await fetchStudents(0, filters);
     };
 
@@ -101,7 +84,7 @@ export const useStudentsFilters = (
     }, 300); // Debounce for 300ms - faster response
 
     return () => clearTimeout(debounceTimer);
-  }, [searchTerm, selectedGender, groupsFilter, ageRange, sortField, sortOrder, selectedTeacher, selectedGroup, fetchStudents]);
+  }, [buildFiltersObject, fetchStudents]);
 
   // No client-side filtering needed - backend handles everything
   const filteredAndSortedStudents = useMemo(() => students, [students]);
@@ -119,16 +102,9 @@ export const useStudentsFilters = (
     selectedGroup,
   ]);
 
-  // Pagination
-  const indexOfLastStudent = currentPage * studentsPerPage;
-  const indexOfFirstStudent = indexOfLastStudent - studentsPerPage;
-  const currentStudents = filteredAndSortedStudents.slice(
-    indexOfFirstStudent,
-    indexOfLastStudent
-  );
-  const totalPages = Math.ceil(
-    filteredAndSortedStudents.length / studentsPerPage
-  );
+  // Server handles pagination - we just display what we get
+  const currentStudents = filteredAndSortedStudents;
+  const totalPages = 1; // Backend handles this
 
   // Handle sort
   const handleSort = (columnKey: string) => {
@@ -180,5 +156,6 @@ export const useStudentsFilters = (
     sortField,
     sortOrder,
     handleSort,
+    buildFiltersObject, // Export for use in export function
   };
 };

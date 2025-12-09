@@ -31,11 +31,11 @@ const StudentsFilters: React.FC<StudentsFiltersProps> = ({
   return (
     <>
       {showFilters && (
-        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm animate-fadeIn relative mt-4">
+        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm relative mt-4 will-change-opacity">
           {/* Close Button */}
           <button
             onClick={() => setShowFilters(false)}
-            className="absolute top-3 left-3 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all duration-200"
+            className="absolute top-3 left-3 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
             title="إغلاق الفلاتر">
             <svg
               className="w-4 h-4"
@@ -61,7 +61,7 @@ const StudentsFilters: React.FC<StudentsFiltersProps> = ({
                 <button
                   onClick={() => setSelectedGender("all")}
                   title="عرض جميع الطلاب"
-                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                  className={`px-3 py-2 rounded-lg text-xs font-medium ${
                     selectedGender === "all"
                       ? "bg-slate-600 text-white shadow-sm"
                       : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200"
@@ -71,7 +71,7 @@ const StudentsFilters: React.FC<StudentsFiltersProps> = ({
                 <button
                   onClick={() => setSelectedGender("ذكر")}
                   title="عرض الطلاب الذكور فقط"
-                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                  className={`px-3 py-2 rounded-lg text-xs font-medium ${
                     selectedGender === "ذكر"
                       ? "bg-blue-600 text-white shadow-sm"
                       : "bg-gray-50 text-gray-700 hover:bg-blue-50 border border-gray-200"
@@ -81,7 +81,7 @@ const StudentsFilters: React.FC<StudentsFiltersProps> = ({
                 <button
                   onClick={() => setSelectedGender("أنثى")}
                   title="عرض الطالبات الإناث فقط"
-                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                  className={`px-3 py-2 rounded-lg text-xs font-medium ${
                     selectedGender === "أنثى"
                       ? "bg-pink-600 text-white shadow-sm"
                       : "bg-gray-50 text-gray-700 hover:bg-pink-50 border border-gray-200"
@@ -100,7 +100,7 @@ const StudentsFilters: React.FC<StudentsFiltersProps> = ({
                 <button
                   onClick={() => setGroupsFilter("all")}
                   title="عرض جميع الطلاب"
-                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                  className={`px-3 py-2 rounded-lg text-xs font-medium ${
                     groupsFilter === "all"
                       ? "bg-slate-600 text-white shadow-sm"
                       : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200"
@@ -110,7 +110,7 @@ const StudentsFilters: React.FC<StudentsFiltersProps> = ({
                 <button
                   onClick={() => setGroupsFilter("withGroups")}
                   title="عرض الطلاب الذين لديهم حلقات"
-                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                  className={`px-3 py-2 rounded-lg text-xs font-medium ${
                     groupsFilter === "withGroups"
                       ? "bg-emerald-600 text-white shadow-sm"
                       : "bg-gray-50 text-gray-700 hover:bg-emerald-50 border border-gray-200"
@@ -120,7 +120,7 @@ const StudentsFilters: React.FC<StudentsFiltersProps> = ({
                 <button
                   onClick={() => setGroupsFilter("withoutGroups")}
                   title="عرض الطلاب الذين لا ينتمون لأي حلقة"
-                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                  className={`px-3 py-2 rounded-lg text-xs font-medium ${
                     groupsFilter === "withoutGroups"
                       ? "bg-orange-600 text-white shadow-sm"
                       : "bg-gray-50 text-gray-700 hover:bg-orange-50 border border-gray-200"
@@ -205,7 +205,7 @@ const StudentsFilters: React.FC<StudentsFiltersProps> = ({
               {activeFiltersCount > 0 && (
                 <button
                   onClick={onResetFilters}
-                  className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all flex items-center gap-1.5 text-xs font-medium border border-red-200">
+                  className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 flex items-center gap-1.5 text-xs font-medium border border-red-200">
                   <FaTimes className="w-3 h-3" />
                   إعادة تعيين
                 </button>

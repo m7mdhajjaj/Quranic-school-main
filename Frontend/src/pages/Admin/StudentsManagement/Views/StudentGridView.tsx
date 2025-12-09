@@ -9,6 +9,7 @@ import {
   FaChalkboardTeacher,
   FaUsers,
 } from "react-icons/fa";
+import { User, UserCheck, Cake } from "lucide-react";
 import type { Student } from "@/Api/studentApi";
 import Avatar from "@/components/Avatar/Avatar";
 
@@ -57,7 +58,7 @@ export const StudentGridView: React.FC<StudentGridViewProps> = ({
       {students.map((student) => (
         <div
           key={student._id}
-          className="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden border border-gray-200 hover:border-blue-300">
+          className="group bg-white rounded-xl shadow-sm hover:shadow-md overflow-hidden border border-gray-200 hover:border-blue-300">
           {/* Card Header - Simplified */}
           <div className="relative bg-gradient-to-br from-slate-50 to-blue-50 p-4 border-b border-gray-100">
             {/* Student Avatar */}
@@ -90,15 +91,21 @@ export const StudentGridView: React.FC<StudentGridViewProps> = ({
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                 )}
                 <span
-                  className={`px-2 py-0.5 rounded text-xs font-medium ${
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
                     student.gender === "ذكر"
-                      ? "bg-blue-50 text-blue-700"
-                      : "bg-pink-50 text-pink-700"
+                      ? "bg-blue-50 text-blue-700 border border-blue-200"
+                      : "bg-pink-50 text-pink-700 border border-pink-200"
                   }`}>
+                  {student.gender === "ذكر" ? (
+                    <User className="w-3 h-3" />
+                  ) : (
+                    <UserCheck className="w-3 h-3" />
+                  )}
                   {student.gender}
                 </span>
                 {student.age && (
-                  <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs font-medium">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded text-xs font-medium">
+                    <Cake className="w-3 h-3" />
                     {student.age}
                   </span>
                 )}

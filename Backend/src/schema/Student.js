@@ -31,11 +31,11 @@ const studentSchema = new mongoose.Schema(
     // لا تخزن كلمة المرور نصًا عاديًا
     password: { type: String, required: [true, "كلمة المرور مطلوبة"] },
 
-    firstName: { type: String, required: [true, "الاسم الأول مطلوب"] },
-    fatherName: { type: String, required: [true, "اسم الأب مطلوب"] },
-    grandFatherName: { type: String, required: [true, "اسم الجد مطلوب"] },
-    motherName: { type: String, required: [true, "اسم الأم مطلوب"] },
-    lastName: { type: String, required: [true, "اسم العائلة مطلوب"] },
+    firstName: { type: String, required: [true, "الاسم الأول مطلوب"], default: "" },
+    fatherName: { type: String, required: [true, "اسم الأب مطلوب"], default: "" },
+    grandFatherName: { type: String, required: [true, "اسم الجد مطلوب"], default: "" },
+    motherName: { type: String, required: [true, "اسم الأم مطلوب"], default: "" },
+    lastName: { type: String, required: [true, "اسم العائلة مطلوب"], default: "" },
 
     birthDate: { type: Date, required: [true, "تاريخ الميلاد مطلوب"] },
 
@@ -44,10 +44,12 @@ const studentSchema = new mongoose.Schema(
       type: Number,
       required: false,
       min: [0, "العمر يجب أن يكون رقماً موجباً"],
+      default: 0,
     },
 
     gender: {
       type: String,
+      default: "غير محدد",
       enum: {
         values: ["ذكر", "انثى", "أنثى", "male", "female", "Male", "Female"],
         message:
@@ -69,16 +71,16 @@ const studentSchema = new mongoose.Schema(
       },
     },
 
-    residence: { type: String, required: [true, "مكان السكن مطلوب"] },
+    residence: { type: String, required: [true, "مكان السكن مطلوب"], default: "" },
     teacher: {
       type: String,
       required: false, // اختياري - يُحدد تلقائياً من الحلقة
-      default: null,
+      default: "غير محدد",
     },
     group: {
       type: String,
       required: false, // اختياري - يمكن إضافة طالب بلا حلقة
-      default: null,
+      default: "غير محدد",
     },
 
     email: {

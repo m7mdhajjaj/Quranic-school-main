@@ -81,9 +81,9 @@ const AddStudentForm: React.FC<Props> = ({
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 animate-fadeIn"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4 will-change-opacity"
       dir="rtl">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col relative z-[10000]">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col relative z-[10000] will-change-transform gpu-accelerate">
         <div className="p-6 border-b bg-gradient-to-r from-emerald-50 to-teal-50">
           <div className="flex justify-between items-start mb-4">
             <div>
@@ -99,7 +99,7 @@ const AddStudentForm: React.FC<Props> = ({
             </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-2 transition-all duration-200"
+              className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-2 transition-colors"
               aria-label="إغلاق">
               <X size={24} />
             </button>
@@ -110,7 +110,7 @@ const AddStudentForm: React.FC<Props> = ({
               <React.Fragment key={step.number}>
                 <div className="flex items-center gap-2">
                   <div
-                    className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-300 ${currentStep === step.number
+                    className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors ${currentStep === step.number
                         ? "bg-emerald-600 text-white shadow-lg"
                         : currentStep > step.number
                           ? "bg-green-100 text-green-700"
@@ -236,13 +236,14 @@ const AddStudentForm: React.FC<Props> = ({
                       onChange={handleChange}
                       onBlur={() => handleBlur("firstName")}
                       placeholder="أدخل الاسم الأول"
-                      className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${getFieldError("firstName")
+                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-right transition-colors ${getFieldError("firstName")
                           ? "border-red-300 focus:ring-red-500 bg-red-50"
                           : "border-gray-300 focus:ring-emerald-500 focus:border-emerald-500"
                         }`}
+                      style={{ minHeight: '42px' }}
                     />
                     {getFieldError("firstName") && (
-                      <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
+                      <div className="flex items-center gap-1 text-red-600 text-xs min-h-[20px]">
                         <AlertCircle size={12} />
                         <span>{getFieldError("firstName")}</span>
                       </div>
@@ -262,17 +263,19 @@ const AddStudentForm: React.FC<Props> = ({
                       onChange={handleChange}
                       onBlur={() => handleBlur("fatherName")}
                       placeholder="أدخل اسم الأب"
-                      className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${getFieldError("fatherName")
+                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-right ${getFieldError("fatherName")
                           ? "border-red-300 focus:ring-red-500 bg-red-50"
                           : "border-gray-300 focus:ring-emerald-500 focus:border-emerald-500"
                         }`}
                     />
-                    {getFieldError("fatherName") && (
-                      <div className="flex items-center gap-1 text-red-600 text-xs animate-fadeIn">
-                        <AlertCircle size={12} />
-                        <span>{getFieldError("fatherName")}</span>
-                      </div>
-                    )}
+                    <div className="min-h-[20px]">
+                      {getFieldError("fatherName") && (
+                        <div className="flex items-center gap-1 text-red-600 text-xs">
+                          <AlertCircle size={12} />
+                          <span>{getFieldError("fatherName")}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* اسم الجد */}
@@ -288,7 +291,7 @@ const AddStudentForm: React.FC<Props> = ({
                       onChange={handleChange}
                       onBlur={() => handleBlur("grandFatherName")}
                       placeholder="أدخل اسم الجد"
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-right"
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-right"
                     />
                   </div>
 
@@ -305,7 +308,7 @@ const AddStudentForm: React.FC<Props> = ({
                       onChange={handleChange}
                       onBlur={() => handleBlur("motherName")}
                       placeholder="أدخل اسم الأم"
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-right"
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-right"
                     />
                   </div>
 
@@ -322,7 +325,7 @@ const AddStudentForm: React.FC<Props> = ({
                       onChange={handleChange}
                       onBlur={() => handleBlur("lastName")}
                       placeholder="أدخل الكنية"
-                      className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${getFieldError("lastName")
+                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-right ${getFieldError("lastName")
                           ? "border-red-300 focus:ring-red-500 bg-red-50"
                           : "border-gray-300 focus:ring-emerald-500 focus:border-emerald-500"
                         }`}
@@ -350,7 +353,7 @@ const AddStudentForm: React.FC<Props> = ({
                       onChange={handleChange}
                       onBlur={() => handleBlur("idNumber")}
                       placeholder="123456789 (9 أرقام)"
-                      className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
+                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-right ${
                         getFieldError("idNumber")
                           ? isDuplicateError("idNumber")
                             ? "border-orange-300 focus:ring-orange-500 bg-orange-50"
@@ -410,7 +413,7 @@ const AddStudentForm: React.FC<Props> = ({
                       onChange={handleChange}
                       onBlur={() => handleBlur("gender")}
                       title="اختر الجنس"
-                      className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${
+                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-right ${
                         getFieldError("gender")
                           ? "border-red-300 focus:ring-red-500 bg-red-50"
                           : "border-gray-300 focus:ring-emerald-500 focus:border-emerald-500"
@@ -466,7 +469,7 @@ const AddStudentForm: React.FC<Props> = ({
                       onChange={handleChange}
                       onBlur={() => handleBlur("residence")}
                       placeholder="أدخل مكان السكن"
-                      className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${getFieldError("residence")
+                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-right ${getFieldError("residence")
                           ? "border-red-300 focus:ring-red-500 bg-red-50"
                           : "border-gray-300 focus:ring-emerald-500 focus:border-emerald-500"
                         }`}
@@ -516,7 +519,7 @@ const AddStudentForm: React.FC<Props> = ({
                         onChange={handleChange}
                         onBlur={() => handleBlur("group")}
                         disabled={loadingGroups}
-                        className={`w-full px-4 py-3 pr-12 border-2 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 text-right appearance-none ${
+                        className={`w-full px-4 py-3 pr-12 border-2 rounded-xl focus:outline-none focus:ring-2 text-right appearance-none ${
                           getFieldError("group")
                             ? "border-red-300 focus:ring-red-500 bg-red-50"
                             : "border-gray-300 focus:ring-emerald-500 focus:border-emerald-500 hover:border-emerald-400"
@@ -588,19 +591,27 @@ const AddStudentForm: React.FC<Props> = ({
                     <input
                       name="phoneNumber"
                       type="tel"
-                      inputMode="tel"
+                      inputMode="numeric"
                       maxLength={10}
                       value={formData.phoneNumber || ""}
                       onChange={handleChange}
                       onBlur={() => handleBlur("phoneNumber")}
                       placeholder="0512345678 (10 أرقام)"
-                      className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${getFieldError("phoneNumber")
+                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-right ${getFieldError("phoneNumber")
                           ? isDuplicateError("phoneNumber")
                             ? "border-orange-300 focus:ring-orange-500 bg-orange-50"
                             : "border-red-300 focus:ring-red-500 bg-red-50"
                           : "border-gray-300 focus:ring-emerald-500 focus:border-emerald-500"
                         }`}
                     />
+                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                      {formData.phoneNumber && (
+                        <span className={formData.phoneNumber.length === 10 ? "text-green-600" : "text-orange-600"}>
+                          {formData.phoneNumber.length}/10 أرقام
+                        </span>
+                      )}
+                      {!formData.phoneNumber && "يجب أن يبدأ بـ 05 ويتكون من 10 أرقام"}
+                    </p>
                     {getFieldError("phoneNumber") && (
                       <div
                         className={`flex items-center gap-1 text-xs animate-fadeIn ${isDuplicateError("phoneNumber")
@@ -626,7 +637,7 @@ const AddStudentForm: React.FC<Props> = ({
                       onChange={handleChange}
                       onBlur={() => handleBlur("email")}
                       placeholder="example@email.com"
-                      className={`w-full px-3 py-2.5 border rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 text-right ${getFieldError("email")
+                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 text-right ${getFieldError("email")
                           ? isDuplicateError("email")
                             ? "border-orange-300 focus:ring-orange-500 bg-orange-50"
                             : "border-red-300 focus:ring-red-500 bg-red-50"
@@ -682,7 +693,7 @@ const AddStudentForm: React.FC<Props> = ({
                 <button
                   type="button"
                   onClick={handlePrevStep}
-                  className="px-6 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-all font-medium flex items-center gap-2">
+                  className="px-6 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium flex items-center gap-2">
                   رجوع
                 </button>
               )}
@@ -692,7 +703,7 @@ const AddStudentForm: React.FC<Props> = ({
                   type="button"
                   onClick={handleNextStep}
                   disabled={!isStep1Valid}
-                  className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-700 hover:to-teal-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center gap-2 shadow-lg shadow-emerald-500/30">
+                  className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-700 hover:to-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center gap-2 shadow-lg shadow-emerald-500/30">
                   التالي
                 </button>
               ) : (
@@ -700,7 +711,7 @@ const AddStudentForm: React.FC<Props> = ({
                   type="submit"
                   onClick={handleSubmit}
                   disabled={isSubmitting || !isStep2Valid}
-                  className={`px-6 py-2.5 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center gap-2 shadow-lg ${hasRetryableError
+                  className={`px-6 py-2.5 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center gap-2 shadow-lg ${hasRetryableError
                       ? "bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 shadow-orange-500/30"
                       : "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-green-500/30"
                     }`}>

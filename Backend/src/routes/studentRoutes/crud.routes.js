@@ -24,6 +24,9 @@ router.get("/statistics", protect, validateStudentSearchQuery, cacheMiddleware(3
 // Check duplicate field (no cache - real-time check needed)
 router.get("/check-duplicate", protect, studentController.checkDuplicate);
 
+// Export students to CSV (no cache - always fresh data)
+router.get("/export", protect, validateStudentSearchQuery, studentController.exportStudentsToCSV);
+
 // Get students by group (with 3 minute cache)
 router.get("/group/:group", protect, cacheMiddleware(180), studentController.getStudentsByGroup);
 

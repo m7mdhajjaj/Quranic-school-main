@@ -130,11 +130,8 @@ export const studentValidationSchema = yup.object({
     
   teacher: yup
     .string()
-    .when('$isNewStudent', {
-      is: true,
-      then: (schema) => schema.required('اسم المعلم مطلوب'),
-      otherwise: (schema) => schema.nullable().notRequired(),
-    })
+    .nullable()
+    .notRequired()
     .trim(),
     
   group: yup
@@ -149,13 +146,16 @@ export const studentValidationSchema = yup.object({
   phoneNumber: yup
     .string()
     .nullable()
+    .transform((value) => value === '' ? null : value)
     .test('valid-phone', 'الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام', function(value) {
-      if (!value) return true; // Allow empty
+      if (!value || value === null) return true; // Allow empty
       const cleanValue = value.replace(/\s+/g, '');
-      return /^05\d{8}$/.test(cleanValue);
-    })
-    .test('unique-phone', 'رقم الهاتف موجود بالفعل', function() {
-      // هذا التحقق يتم في الباك اند - unique constraint
+      // التحقق من أن الرقم يبدأ بـ 05 ويتكون من 10 أرقام بالضبط
+      if (!/^05\d{8}$/.test(cleanValue)) {
+        return this.createError({ 
+          message: `الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام (أدخلت ${cleanValue.length} رقم)` 
+        });
+      }
       return true;
     }),
     
@@ -168,34 +168,27 @@ export const studentValidationSchema = yup.object({
     
   password: yup
     .string()
-    .when('$isNewStudent', {
-      is: true,
-      then: (schema) => schema.required('كلمة المرور مطلوبة'),
-      otherwise: (schema) => schema.nullable().notRequired(),
-    })
+    .nullable()
+    .notRequired()
     .test('password-strength', 'كلمة المرور لا تلبي المتطلبات', function(value) {
-      const { isNewStudent } = this.options.context || {};
+      // إذا لم يتم إدخال كلمة مرور، سيتم استخدام رقم الهوية تلقائياً
+      if (!value || value === '') return true;
       
-      // إذا كان طالب جديد يجب التحقق من قوة كلمة المرور
-      if (isNewStudent && value) {
-        // التحقق من الطول الأدنى
-        if (value.length < 4) {
-          return this.createError({ message: 'كلمة المرور يجب أن تكون 4 أحرف على الأقل' });
-        }
-        
-        // عد الأرقام والحروف (يدعم الأرقام العربية والإنجليزية)
-        const numbers = (value.match(/[\d٠-٩]/g) || []).length;
-        const letters = (value.match(/[a-zA-Z\u0600-\u06FF]/g) || []).length;
-        
-        // التحقق من القواعد الجديدة
-        const hasMinimumNumbers = numbers >= 4;
-        const hasMinimumLettersWithNumbers = letters >= 3 && numbers >= 1;
-        
-        if (!hasMinimumNumbers && !hasMinimumLettersWithNumbers) {
-          return this.createError({ 
-            message: 'كلمة المرور يجب أن تحتوي على 4 أرقام على الأقل، أو 3 حروف مع أرقام' 
-          });
-        }
+      // إذا تم إدخال كلمة مرور، تحقق من قوتها
+      if (value.length < 4) {
+        return this.createError({ message: 'كلمة المرور يجب أن تكون 4 أحرف على الأقل' });
+      }
+      
+      const numbers = (value.match(/[\d٠-٩]/g) || []).length;
+      const letters = (value.match(/[a-zA-Z\u0600-\u06FF]/g) || []).length;
+      
+      const hasMinimumNumbers = numbers >= 4;
+      const hasMinimumLettersWithNumbers = letters >= 3 && numbers >= 1;
+      
+      if (!hasMinimumNumbers && !hasMinimumLettersWithNumbers) {
+        return this.createError({ 
+          message: 'كلمة المرور يجب أن تحتوي على 4 أرقام على الأقل، أو 3 حروف مع أرقام' 
+        });
       }
       
       return true;
@@ -239,40 +232,19 @@ export type StudentFormData = yup.InferType<typeof studentValidationSchema>;
 // دالة للتحقق من صحة البيانات
 export const validateStudentWithYup = async (
   data: Record<string, unknown>, 
-  isNewStudent: boolean = false
-): Promise<{ isValid: boolean; errors: Record<string, string>; data?: StudentFormData }> => {
-  try {
-    console.log('🔍 التحقق من البيانات - isNewStudent:', isNewStudent);
-    console.log('🔍 البيانات المُدخلة:', JSON.stringify(data, null, 2));
-    
-    const validData = await studentValidationSchema.validate(data, {
-      abortEarly: false,
-      context: { isNewStudent },
-    });
-    
-    return {
-      isValid: true,
-      errors: {},
-      data: validData,
-    };
-  } catch (error) {
-    if (error instanceof yup.ValidationError) {
-      const errors: Record<string, string> = {};
-      
-      error.inner.forEach((err) => {
-        if (err.path) {
-          errors[err.path] = err.message;
-        }
-      });
-      
-      return {
-        isValid: false,
-        errors,
-      };
-    }
-    
-    throw error;
-  }
+  isNewStudent: boolean = true
+): Promise<StudentFormData> => {
+  console.log('🔍 التحقق من البيانات - isNewStudent:', isNewStudent);
+  console.log('🔍 البيانات المُدخلة:', JSON.stringify(data, null, 2));
+  
+  const validData = await studentValidationSchema.validate(data, {
+    abortEarly: false,
+    context: { isNewStudent },
+  });
+  
+  console.log('✅ البيانات بعد التحقق:', JSON.stringify(validData, null, 2));
+  
+  return validData;
 };
 
 // دالة للتحقق من حقل واحد

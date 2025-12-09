@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import {
   validateStudentWithYup,
   type StudentFormData,
@@ -95,42 +95,75 @@ export const useStudentForm = ({
     userType: string;
   } | null>(null);
 
+  // Refs for debounce timers
+  const debounceTimers = useRef<{ [key: string]: NodeJS.Timeout }>({});
+
   // حساب العمر
   const calculatedAge = useMemo(() => {
     if (!formData.birthDate) return null;
     return calculateAge(formData.birthDate);
   }, [formData.birthDate]);
 
-  // تحميل المعلمين
+  // تحميل المعلمين - مع تحسين الأداء
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchTeachers = async () => {
       setLoadingTeachers(true);
       try {
         const response = await getAllTeachers();
-        setTeachers(response.data || []);
+        if (isMounted && response.data) {
+          setTeachers(response.data);
+        }
       } catch (error) {
         console.error("خطأ في تحميل المعلمين:", error);
       } finally {
-        setLoadingTeachers(false);
+        if (isMounted) {
+          setLoadingTeachers(false);
+        }
       }
     };
+    
     fetchTeachers();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  // تحميل الحلقات
+  // تحميل الحلقات - مع تحسين الأداء
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchGroups = async () => {
       setLoadingGroups(true);
       try {
         const response = await getAllGroups();
-        setGroups(response.data || []);
+        
+        if (isMounted) {
+          if (response.success && response.data) {
+            setGroups(response.data);
+          } else {
+            setGroups([]);
+          }
+        }
       } catch (error) {
-        console.error("خطأ في تحميل الحلقات:", error);
+        console.error("❌ خطأ في تحميل الحلقات:", error);
+        if (isMounted) {
+          setGroups([]);
+        }
       } finally {
-        setLoadingGroups(false);
+        if (isMounted) {
+          setLoadingGroups(false);
+        }
       }
     };
+    
     fetchGroups();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // الحصول على المعلم من الحلقة المختارة
@@ -147,90 +180,147 @@ export const useStudentForm = ({
     return null;
   }, [formData.group, groups]);
 
-  // التحقق من صحة الخطوة الأولى
+  // تحديث المعلم تلقائياً عند تحميل الحلقات أو تغيير الحلقة
+  useEffect(() => {
+    if (formData.group && selectedGroupTeacher && formData.teacher !== selectedGroupTeacher) {
+      setFormData((prev) => ({
+        ...prev,
+        teacher: selectedGroupTeacher,
+      }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedGroupTeacher]);
+
+  // تنظيف timers عند إغلاق الفورم
+  useEffect(() => {
+    return () => {
+      Object.values(debounceTimers.current).forEach(timer => clearTimeout(timer));
+    };
+  }, []);
+
+  // التحقق من صحة الخطوة الأولى (optimized)
   const isStep1Valid = useMemo(() => {
-    return !!(
-      formData.firstName &&
-      formData.fatherName &&
-      formData.lastName &&
-      formData.idNumber &&
+    return Boolean(
+      formData.firstName?.trim() &&
+      formData.fatherName?.trim() &&
+      formData.lastName?.trim() &&
+      formData.idNumber?.trim() &&
       formData.birthDate &&
       formData.gender &&
-      formData.residence
+      formData.residence?.trim()
     );
-  }, [formData]);
+  }, [
+    formData.firstName,
+    formData.fatherName,
+    formData.lastName,
+    formData.idNumber,
+    formData.birthDate,
+    formData.gender,
+    formData.residence,
+  ]);
 
-  // التحقق من صحة الخطوة الثانية
+  // التحقق من صحة الخطوة الثانية (optimized)
   const isStep2Valid = useMemo(() => {
-    return !!formData.group;
+    return Boolean(formData.group?.trim());
   }, [formData.group]);
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       const { name, value } = e.target;
 
-      setFormData((prev) => ({
-        ...prev,
-        [name]: name === "gender" ? normalizeGender(value) : value,
-      }));
+      // تحديث الحالة فوراً للاستجابة السريعة
+      if (name === "group") {
+        const selectedGroup = groups.find((g) => g.name === value);
+        let teacherName = "";
+        
+        if (selectedGroup) {
+          const teacher = selectedGroup.teacher as string | { firstName?: string; lastName?: string };
+          if (typeof teacher === "string") {
+            teacherName = teacher;
+          } else if (teacher && typeof teacher === "object" && teacher.firstName && teacher.lastName) {
+            teacherName = `${teacher.firstName} ${teacher.lastName}`;
+          }
+        }
+        
+        setFormData((prev) => ({
+          ...prev,
+          group: value,
+          teacher: teacherName,
+        }));
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          [name]: name === "gender" ? normalizeGender(value) : value,
+        }));
+      }
 
-      if (touchedFields.has(name)) {
+      // مسح الأخطاء بشكل محسّن
+      if (errors[name]) {
         setErrors((prev) => {
-          const newErrors = { ...prev };
-          delete newErrors[name];
-          return newErrors;
+          const { [name]: _, ...rest } = prev;
+          return rest;
         });
       }
     },
-    [touchedFields]
+    [groups, errors]
   );
 
   const handleBlur = useCallback(async (fieldName: string) => {
     setTouchedFields((prev) => new Set(prev).add(fieldName));
     
-    // التحقق من التكرار للحقول الحساسة
+    // التحقق من التكرار للحقول الحساسة فقط
     if (['idNumber', 'phoneNumber', 'email'].includes(fieldName)) {
       const value = formData[fieldName as keyof typeof formData];
       
-      // تخطي التحقق إذا كان الحقل فارغاً
+      // تخطي التحقق إذا كان الحقل فارغاً أو لم يتغير
       if (!value || value === '') return;
       
-      try {
-        const result = await checkDuplicateField(
-          fieldName as 'idNumber' | 'phoneNumber' | 'email',
-          value as string,
-          student?._id
-        );
-        
-        if (result.isDuplicate) {
-          setErrors((prev) => ({
-            ...prev,
-            [fieldName]: result.message || `${fieldName} موجود بالفعل`,
-          }));
-          setDuplicateFieldInfo({
-            field: fieldName,
-            userType: result.existingUserType || 'مستخدم',
-          });
-        } else {
-          // إزالة الخطأ إذا كانت القيمة متاحة
-          setErrors((prev) => {
-            const newErrors = { ...prev };
-            delete newErrors[fieldName];
-            return newErrors;
-          });
-          if (duplicateFieldInfo?.field === fieldName) {
-            setDuplicateFieldInfo(null);
-          }
-        }
-      } catch (error) {
-        console.error('خطأ في التحقق من التكرار:', error);
+      // تخطي إذا كانت القيمة نفسها للطالب الحالي
+      if (student && student[fieldName as keyof Student] === value) return;
+      
+      // إلغاء أي طلب سابق
+      if (debounceTimers.current[fieldName]) {
+        clearTimeout(debounceTimers.current[fieldName]);
       }
+      
+      // استخدام debounce للتحقق من التكرار (تأخير 500ms)
+      debounceTimers.current[fieldName] = setTimeout(async () => {
+        try {
+          const result = await checkDuplicateField(
+            fieldName as 'idNumber' | 'phoneNumber' | 'email',
+            value as string,
+            student?._id
+          );
+          
+          if (result.isDuplicate) {
+            setErrors((prev) => ({
+              ...prev,
+              [fieldName]: result.message || `${fieldName} موجود بالفعل`,
+            }));
+            setDuplicateFieldInfo({
+              field: fieldName,
+              userType: result.existingUserType || 'مستخدم',
+            });
+          } else {
+            setErrors((prev) => {
+              const { [fieldName]: _, ...rest } = prev;
+              return rest;
+            });
+            if (duplicateFieldInfo?.field === fieldName) {
+              setDuplicateFieldInfo(null);
+            }
+          }
+        } catch (error) {
+          console.error('خطأ في التحقق من التكرار:', error);
+        }
+      }, 500);
     }
-  }, [formData, student?._id, duplicateFieldInfo]);
+  }, [formData, student, duplicateFieldInfo]);
 
   const getFieldError = useCallback(
     (fieldName: string): string => {
-      return touchedFields.has(fieldName) ? errors[fieldName] || "" : "";
+      if (!touchedFields.has(fieldName)) return "";
+      return errors[fieldName] || "";
     },
     [errors, touchedFields]
   );
@@ -251,7 +341,8 @@ export const useStudentForm = ({
     setTouchedFields(allFields);
 
     try {
-      await validateStudentWithYup(formData);
+      const isNewStudent = !student?._id;
+      await validateStudentWithYup(formData, isNewStudent);
       setErrors({});
       setIsSubmitting(true);
 
@@ -295,10 +386,35 @@ export const useStudentForm = ({
           onClose();
         }, 1000);
       } else {
-        // في حالة فشل العملية (لن يحدث عادةً لأن API سترمي exception)
+        // في حالة فشل العملية
         setIsSubmitting(false);
         const errorMessage = response.message || "حدث خطأ أثناء حفظ البيانات";
-        setErrors({ submit: errorMessage });
+        
+        console.error("❌ فشل في حفظ الطالب:", errorMessage);
+        
+        // التحقق من أخطاء التكرار
+        const duplicateMatch = errorMessage.match(
+          /(رقم الهوية|رقم الهاتف|البريد الإلكتروني) موجود بالفعل لدى (طالب|معلم)/
+        );
+
+        if (duplicateMatch) {
+          const fieldMap: Record<string, string> = {
+            "رقم الهوية": "idNumber",
+            "رقم الهاتف": "phoneNumber",
+            "البريد الإلكتروني": "email",
+          };
+
+          const field = fieldMap[duplicateMatch[1]];
+          const userType = duplicateMatch[2];
+
+          if (field) {
+            setDuplicateFieldInfo({ field, userType });
+            setErrors({ [field]: errorMessage });
+          }
+        } else {
+          setErrors({ submit: errorMessage });
+        }
+        
         showErrorMessage("خطأ في العملية", errorMessage);
       }
     } catch (error: any) {

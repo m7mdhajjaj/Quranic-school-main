@@ -42,10 +42,12 @@ export const getAllGroups = async (): Promise<{
   message?: string;
 }> => {
   try {
+    console.log('📡 API: جلب جميع الحلقات من /groups');
     const response = await api.get("/groups");
+    console.log('✅ API Response:', response.data);
     return response.data;
   } catch (error) {
-    console.error("Error fetching groups:", error);
+    console.error("❌ Error fetching groups:", error);
     const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,

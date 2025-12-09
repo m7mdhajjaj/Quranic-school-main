@@ -26,7 +26,7 @@ interface StudentToolbarProps {
   onResetFilters: () => void;
 }
 
-export const StudentToolbar: React.FC<StudentToolbarProps> = ({
+export const StudentToolbar: React.FC<StudentToolbarProps> = React.memo(({
   searchTerm,
   onSearchChange,
   showFilters,
@@ -55,7 +55,7 @@ export const StudentToolbar: React.FC<StudentToolbarProps> = ({
               placeholder="بحث (الاسم الثلاثي، رقم الهوية، المعلم، الحلقة...)"
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full pr-10 pl-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+              className="w-full pr-10 pl-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             />
           </div>
         </div>
@@ -65,7 +65,7 @@ export const StudentToolbar: React.FC<StudentToolbarProps> = ({
           {/* Filter Toggle */}
           <button
             onClick={onToggleFilters}
-            className={`px-4 py-2.5 rounded-lg font-medium transition-all flex items-center gap-2 text-sm ${
+            className={`px-4 py-2.5 rounded-lg font-medium flex items-center gap-2 text-sm ${
               showFilters || activeFiltersCount > 0
                 ? "bg-emerald-600 text-white shadow-sm"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -84,7 +84,7 @@ export const StudentToolbar: React.FC<StudentToolbarProps> = ({
           {/* View Mode */}
           <button
             onClick={onViewModeChange}
-            className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all"
+            className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
             aria-label={viewMode === "table" ? "عرض الشبكة" : "عرض الجدول"}
             title={viewMode === "table" ? "عرض الشبكة" : "عرض الجدول"}>
             {viewMode === "table" ? <FaTh className="w-4 h-4" /> : <FaList className="w-4 h-4" />}
@@ -108,4 +108,4 @@ export const StudentToolbar: React.FC<StudentToolbarProps> = ({
       />
     </div>
   );
-};
+});

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { deleteStudent, bulkDeleteStudents } from "@/Api/studentApi";
+import { deleteStudent, bulkDeleteStudents, exportStudentsToCSV } from "@/Api/studentApi";
 import {
   showCenteredSwal,
   showWarningMessage,
@@ -101,62 +101,18 @@ export const useStudentsActions = (
     }
   };
 
-  // Export to CSV with proper formatting for Arabic Excel
-  const handleExport = (filteredStudents: Student[]) => {
-    const headers = [
-      "رقم الطالب",
-      "الاسم الأول",
-      "اسم الأب",
-      "اسم العائلة",
-      "رقم الهوية",
-      "العمر",
-      "الجنس",
-      "المعلم",
-      "الحلقة",
-    ];
-    
-    const rows = filteredStudents.map((s) => [
-      s.studentId || "",
-      s.firstName || "",
-      s.fatherName || "",
-      s.lastName || "",
-      s.idNumber || "",
-      s.age || "",
-      s.gender || "",
-      s.teacher || "",
-      s.group || "",
-    ]);
-
-    // Use semicolon as delimiter for better Excel compatibility in Arabic regions
-    const delimiter = ";";
-    
-    // Helper function to escape CSV fields properly
-    const escapeCSVField = (field: string | number) => {
-      const stringField = String(field);
-      // If field contains delimiter, newline, or double quote, wrap in quotes and escape quotes
-      if (stringField.includes(delimiter) || stringField.includes('\n') || stringField.includes('"')) {
-        return `"${stringField.replace(/"/g, '""')}"`;
-      }
-      return stringField;
-    };
-
-    // Create CSV content with proper escaping
-    const csvContent = [headers, ...rows]
-      .map((row) => row.map(escapeCSVField).join(delimiter))
-      .join("\r\n");
-
-    // Add BOM for proper UTF-8 encoding in Excel
-    const blob = new Blob(["\ufeff" + csvContent], {
-      type: "text/csv;charset=utf-8;",
-    });
-    
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `students_${new Date().toISOString().split("T")[0]}.csv`;
-    link.click();
-    
-    // Clean up
-    setTimeout(() => URL.revokeObjectURL(link.href), 100);
+  // Export to CSV - now uses backend endpoint
+  const handleExport = async (filters?: any) => {
+    try {
+      await exportStudentsToCSV(filters);
+      showSuccessToast("✅ تم تصدير البيانات بنجاح");
+    } catch (error) {
+      console.error("❌ فشل في تصدير البيانات:", error);
+      await showErrorMessage(
+        "خطأ في التصدير!",
+        "حدث خطأ أثناء تصدير البيانات. يرجى المحاولة مرة أخرى"
+      );
+    }
   };
 
   // Bulk delete

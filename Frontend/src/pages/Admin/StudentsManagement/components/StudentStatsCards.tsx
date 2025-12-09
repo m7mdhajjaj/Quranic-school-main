@@ -1,5 +1,5 @@
 import React from "react";
-import { FaUserGraduate, FaUsers, FaChartBar, FaClock } from "react-icons/fa";
+import { GraduationCap, User, UserCheck, Cake } from "lucide-react";
 
 interface StudentStatsCardsProps {
   stats: {
@@ -24,7 +24,7 @@ export const StudentStatsCards: React.FC<StudentStatsCardsProps> = ({
             <p className="text-xs text-gray-400 mt-1">جميع الطلاب المسجلين</p>
           </div>
           <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-            <FaUserGraduate className="w-6 h-6 text-blue-600" />
+            <GraduationCap className="w-6 h-6 text-blue-600" />
           </div>
         </div>
       </div>
@@ -40,7 +40,7 @@ export const StudentStatsCards: React.FC<StudentStatsCardsProps> = ({
             </p>
           </div>
           <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-            <FaUsers className="w-6 h-6 text-blue-600" />
+            <User className="w-6 h-6 text-blue-600" />
           </div>
         </div>
       </div>
@@ -56,7 +56,7 @@ export const StudentStatsCards: React.FC<StudentStatsCardsProps> = ({
             </p>
           </div>
           <div className="w-12 h-12 bg-pink-50 rounded-lg flex items-center justify-center">
-            <FaChartBar className="w-6 h-6 text-pink-600" />
+            <UserCheck className="w-6 h-6 text-pink-600" />
           </div>
         </div>
       </div>
@@ -70,7 +70,7 @@ export const StudentStatsCards: React.FC<StudentStatsCardsProps> = ({
             <p className="text-xs text-gray-400 mt-1">متوسط أعمار الطلاب</p>
           </div>
           <div className="w-12 h-12 bg-amber-50 rounded-lg flex items-center justify-center">
-            <FaClock className="w-6 h-6 text-amber-600" />
+            <Cake className="w-6 h-6 text-amber-600" />
           </div>
         </div>
       </div>
