@@ -166,34 +166,6 @@ export const studentValidationSchema = yup.object({
     .nullable()
     .transform((value) => value === '' ? null : value),
     
-  password: yup
-    .string()
-    .nullable()
-    .notRequired()
-    .test('password-strength', 'كلمة المرور لا تلبي المتطلبات', function(value) {
-      // إذا لم يتم إدخال كلمة مرور، سيتم استخدام رقم الهوية تلقائياً
-      if (!value || value === '') return true;
-      
-      // إذا تم إدخال كلمة مرور، تحقق من قوتها
-      if (value.length < 4) {
-        return this.createError({ message: 'كلمة المرور يجب أن تكون 4 أحرف على الأقل' });
-      }
-      
-      const numbers = (value.match(/[\d٠-٩]/g) || []).length;
-      const letters = (value.match(/[a-zA-Z\u0600-\u06FF]/g) || []).length;
-      
-      const hasMinimumNumbers = numbers >= 4;
-      const hasMinimumLettersWithNumbers = letters >= 3 && numbers >= 1;
-      
-      if (!hasMinimumNumbers && !hasMinimumLettersWithNumbers) {
-        return this.createError({ 
-          message: 'كلمة المرور يجب أن تحتوي على 4 أرقام على الأقل، أو 3 حروف مع أرقام' 
-        });
-      }
-      
-      return true;
-    }),
-    
   age: yup
     .number()
     .min(0, 'العمر يجب أن يكون رقماً موجباً')

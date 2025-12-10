@@ -1,32 +1,50 @@
 import { useState, useEffect, useCallback } from "react";
-import { getAllTeachers } from "@/Api/teacherApi";
-import type { Teacher, ApiStats } from "../types";
+import { getAllTeachers, getTeacherStats } from "@/Api/teacherApi";
+import type { Teacher, ApiStats, TeacherFiltersParams } from "../types";
 
 export const useTeachersData = (hasPermission: boolean) => {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
-  const [apiStats] = useState<ApiStats | null>(null);
+  const [apiStats, setApiStats] = useState<ApiStats | null>(null);
 
-  const fetchTeachers = useCallback(async (retryAttempt = 0) => {
+  const fetchTeachers = useCallback(async (retryAttempt = 0, filters?: TeacherFiltersParams) => {
     setIsLoading(true);
     setError(null);
     setRetryCount(retryAttempt);
 
     try {
-      const result = await getAllTeachers();
+      const startTime = performance.now();
+      
+      // جلب المعلمين والإحصائيات بالتوازي
+      const [teachersResult, statsResult] = await Promise.all([
+        getAllTeachers(filters),
+        getTeacherStats()
+      ]);
 
-      if (result.success && result.data) {
-        console.log(`✅ تم تحميل ${result.data.length} معلم بنجاح`);
-        setTeachers(result.data);
+      if (teachersResult.success && teachersResult.data) {
+        const duration = (performance.now() - startTime).toFixed(2);
+        console.log(`✅ تم تحميل ${teachersResult.data.length} معلم بنجاح في ${duration}ms`);
+        setTeachers(teachersResult.data);
+        
+        // حفظ الإحصائيات من الـ API
+        if (statsResult.success && statsResult.data) {
+          setApiStats(statsResult.data as ApiStats);
+        }
+        
         setError(null);
         setRetryCount(0);
       } else {
-        throw new Error(result.message || "فشل في تحميل بيانات المعلمين");
+        throw new Error(teachersResult.message || "فشل في تحميل بيانات المعلمين");
       }
     } catch (error: unknown) {
       console.error("خطأ في تحميل المعلمين:", error);
+
+      if (error instanceof Error && (error.name === "AbortError" || error.message === "canceled")) {
+        setIsLoading(false);
+        return;
+      }
 
       let errorMessage = "حدث خطأ في تحميل البيانات";
 

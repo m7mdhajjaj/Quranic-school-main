@@ -1,5 +1,4 @@
-export { default as TeachersHeader } from "./TeachersHeader";
+export { default as TeachersHeader } from "./PageHeader";
 export { default as TeachersFilters } from "./TeachersFilters";
-export { default as TeachersBulkActions } from "./TeachersBulkActions";
-export { default as TeachersStatsCards } from "./TeachersStatsCards";
+export { TeacherStatsCards } from "./TeachersStatsCards";
 export { TeachersToolbar } from "./TeachersToolbar";

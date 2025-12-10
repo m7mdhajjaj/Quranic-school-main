@@ -21,7 +21,7 @@ import {
 import { useDashboardData } from "./hooks";
 import type { ChartData } from "./types";
 import AddStudentForm from "../StudentsManagement/Model/StudentForm";
-import AddTeacherForm from "../../../Forms/AddTeacherForm";
+import TeacherForm from "../TeachersManagement/Model/TeacherForm";
 import AddGroupForm from "../../../Forms/AddGroupForm";
 import { useDashboardSocket } from "@/Socket";
 
@@ -386,7 +386,7 @@ const AdminDashboard = () => {
         )}
 
         {showAddTeacherForm && (
-          <AddTeacherForm
+          <TeacherForm
             onClose={() => setShowAddTeacherForm(false)}
             onSuccess={() => {
               setShowAddTeacherForm(false);

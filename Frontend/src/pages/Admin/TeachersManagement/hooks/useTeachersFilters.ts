@@ -1,7 +1,9 @@
-import { useState, useEffect, useMemo } from "react";
-import type { Teacher, SortField, SortOrder, GroupsFilter } from "../types";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import type { SortField, SortOrder, GroupsFilter, TeacherFiltersParams } from "../types";
 
-export const useTeachersFilters = (teachers: Teacher[]) => {
+export const useTeachersFilters = (
+  fetchTeachers: (retryAttempt?: number, filters?: TeacherFiltersParams) => Promise<void>
+) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedGender, setSelectedGender] = useState("all");
   const [groupsFilter, setGroupsFilter] = useState<GroupsFilter>("all");
@@ -10,7 +12,6 @@ export const useTeachersFilters = (teachers: Teacher[]) => {
   const [sortField, setSortField] = useState<SortField>("teacherId");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
   const [currentPage, setCurrentPage] = useState(1);
-  const [teachersPerPage, setTeachersPerPage] = useState(10);
 
   // Count active filters
   const activeFiltersCount = useMemo(() => {
@@ -22,69 +23,39 @@ export const useTeachersFilters = (teachers: Teacher[]) => {
     return count;
   }, [selectedGender, groupsFilter, ageRange, searchTerm]);
 
-  // Filter and sort teachers
-  const filteredAndSortedTeachers = useMemo(() => {
-    const filtered = teachers.filter((teacher) => {
-      // Groups filter
-      const hasGroups =
-        teacher.groups &&
-        Array.isArray(teacher.groups) &&
-        teacher.groups.length > 0;
+  // Helper to build filters object
+  const buildFiltersObject = useCallback((): TeacherFiltersParams => {
+    const filters: TeacherFiltersParams = {};
+    
+    if (selectedGender !== "all") filters.gender = selectedGender;
+    if (ageRange[0] !== 0) filters.minAge = ageRange[0];
+    if (ageRange[1] !== 100) filters.maxAge = ageRange[1];
+    if (groupsFilter !== "all") filters.group = groupsFilter;
+    if (searchTerm?.trim()) filters.search = searchTerm.trim();
+    if (sortField) {
+      filters.sortBy = sortField;
+      filters.sortOrder = sortOrder;
+    }
+    filters.page = currentPage;
+    filters.limit = 1000;
+    
+    return filters;
+  }, [selectedGender, ageRange, groupsFilter, searchTerm, sortField, sortOrder, currentPage]);
 
-      if (groupsFilter === "withGroups" && !hasGroups) return false;
-      if (groupsFilter === "withoutGroups" && hasGroups) return false;
+  // Server-side filtering - كل الفلترة تتم في الـ Backend
+  useEffect(() => {
+    const applyFilters = async () => {
+      const filters = buildFiltersObject();
+      console.log('🔍 Applying filters:', filters);
+      await fetchTeachers(0, filters);
+    };
 
-      // Search filter
-      const searchLower = searchTerm.toLowerCase();
-      const matchesSearch =
-        !searchTerm ||
-        (teacher.firstName || "").toLowerCase().includes(searchLower) ||
-        (teacher.lastName || "").toLowerCase().includes(searchLower) ||
-        (teacher.fatherName || "").toLowerCase().includes(searchLower) ||
-        (teacher.idNumber || "").includes(searchLower) ||
-        teacher.teacherId.toString().includes(searchLower) ||
-        (teacher.email || "").toLowerCase().includes(searchLower) ||
-        (teacher.phoneNumber || "").includes(searchLower);
+    const debounceTimer = setTimeout(() => {
+      applyFilters();
+    }, 300); // Debounce for 300ms
 
-      // Gender filter
-      const matchesGender =
-        selectedGender === "all" || teacher.gender === selectedGender;
-
-      // Age filter
-      const matchesAge = teacher.age
-        ? teacher.age >= ageRange[0] && teacher.age <= ageRange[1]
-        : true;
-
-      return matchesSearch && matchesGender && matchesAge;
-    });
-
-    // Sort
-    filtered.sort((a, b) => {
-      let compareResult = 0;
-
-      if (sortField === "teacherId") {
-        compareResult = a.teacherId - b.teacherId;
-      } else if (sortField === "firstName") {
-        compareResult = a.firstName.localeCompare(b.firstName, "ar");
-      } else if (sortField === "age") {
-        compareResult = (a.age || 0) - (b.age || 0);
-      } else if (sortField === "email") {
-        compareResult = a.email.localeCompare(b.email);
-      }
-
-      return sortOrder === "asc" ? compareResult : -compareResult;
-    });
-
-    return filtered;
-  }, [
-    teachers,
-    searchTerm,
-    selectedGender,
-    groupsFilter,
-    ageRange,
-    sortField,
-    sortOrder,
-  ]);
+    return () => clearTimeout(debounceTimer);
+  }, [buildFiltersObject, fetchTeachers]);
 
   // Reset page when filters change
   useEffect(() => {
@@ -98,16 +69,15 @@ export const useTeachersFilters = (teachers: Teacher[]) => {
     sortOrder,
   ]);
 
-  // Pagination
-  const indexOfLastTeacher = currentPage * teachersPerPage;
-  const indexOfFirstTeacher = indexOfLastTeacher - teachersPerPage;
-  const currentTeachers = filteredAndSortedTeachers.slice(
-    indexOfFirstTeacher,
-    indexOfLastTeacher
-  );
-  const totalPages = Math.ceil(
-    filteredAndSortedTeachers.length / teachersPerPage
-  );
+  // Handle sort
+  const handleSort = (columnKey: string) => {
+    if (sortField === columnKey) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(columnKey as SortField);
+      setSortOrder("asc");
+    }
+  };
 
   // Reset filters
   const resetFilters = () => {
@@ -116,16 +86,8 @@ export const useTeachersFilters = (teachers: Teacher[]) => {
     setGroupsFilter("all");
     setAgeRange([0, 100]);
     setCurrentPage(1);
-  };
-
-  // Handle sorting
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortOrder("asc");
-    }
+    setSortField("teacherId");
+    setSortOrder("asc");
   };
 
   return {
@@ -144,12 +106,8 @@ export const useTeachersFilters = (teachers: Teacher[]) => {
     handleSort,
     currentPage,
     setCurrentPage,
-    teachersPerPage,
-    setTeachersPerPage,
     activeFiltersCount,
-    filteredAndSortedTeachers,
-    currentTeachers,
-    totalPages,
     resetFilters,
+    buildFiltersObject,
   };
 };

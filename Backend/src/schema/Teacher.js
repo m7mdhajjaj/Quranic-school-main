@@ -139,5 +139,49 @@ const teacherSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// ====================================
+// Indexes للأداء الأفضل
+// ====================================
+
+// Index للبحث السريع
+teacherSchema.index({ firstName: 1, lastName: 1 });
+teacherSchema.index({ email: 1 });
+teacherSchema.index({ phoneNumber: 1 });
+teacherSchema.index({ idNumber: 1 });
+
+// Index للفلترة
+teacherSchema.index({ gender: 1 });
+teacherSchema.index({ age: 1 });
+teacherSchema.index({ isActive: 1 });
+
+// Compound index للترتيب والفلترة معاً
+teacherSchema.index({ gender: 1, age: 1 });
+teacherSchema.index({ isActive: 1, teacherId: 1 });
+
+// Index للحلقات - للبحث السريع عن المعلمين حسب الحلقة
+teacherSchema.index({ 'groups.name': 1 });
+teacherSchema.index({ 'groups.id': 1 });
+
+// Text index للبحث النصي الكامل (يشمل جميع الحقول النصية)
+teacherSchema.index({
+  firstName: 'text',
+  lastName: 'text',
+  fatherName: 'text',
+  grandFatherName: 'text',
+  motherName: 'text',
+  email: 'text',
+  residence: 'text',
+  'groups.name': 'text'
+}, {
+  weights: {
+    firstName: 10,
+    lastName: 10,
+    fatherName: 5,
+    email: 5,
+    'groups.name': 8
+  },
+  name: 'teacher_text_search'
+});
+
 const Teacher = mongoose.model('Teacher', teacherSchema);
 module.exports = Teacher;

@@ -2,7 +2,7 @@
 const crudController = require("./crud.controller");
 const statsController = require("./stats.controller");
 const utilsController = require("./utils.controller");
-const groupManagementController = require("./groupManagement.controller");
+const exportOperation = require("./ExportOperation");
 
 module.exports = {
   // وظائف CRUD (إنشاء، قراءة، تحديث، حذف)
@@ -14,6 +14,6 @@ module.exports = {
   // وظائف مساعدة
   ...utilsController,
   
-  // وظائف إدارة الحلقات
-  ...groupManagementController,
+  // وظائف التصدير
+  ...exportOperation,
 };

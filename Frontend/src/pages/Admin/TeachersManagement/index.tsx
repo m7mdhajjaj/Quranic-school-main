@@ -1,19 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { FaUserTie } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
-import { useTeachersSocket } from "../../../Socket";
-import { socketManager } from "@/Socket/SocketManager";
+import { useDisableBodyScroll } from "@/hooks/useDisableBodyScroll";
 
-import EnhancedTeacherForm from "../../../Forms/AddTeacherForm";
-import ResponsivePagination from "@/components/UI/ResponsivePagination";
+import TeacherForm from "./Model/TeacherForm";
 import { EmptyState } from "@/components/UI/EmptyState";
 import { LoadingSpinner } from "@/components/UI/LoadingSpinner";
 
 import {
   TeachersHeader,
-  TeachersFilters,
-  TeachersBulkActions,
-  TeachersStatsCards,
+  TeacherStatsCards,
   TeachersToolbar,
 } from "./components";
 
@@ -26,16 +22,12 @@ import {
 
 import type { ViewMode } from "./types";
 
-// استخدام Components من مجلد Teachers
-import { TeacherGridView, TeacherTableView } from "@/components/Teachers";
+// استخدام Components المحلية
+import { TeacherGridView } from "./Views/TeacherGridView";
+import { TeacherTableView } from "./Views/TeacherTableView";
 
 const TeachersManagement: React.FC = () => {
   const { user: currentUser } = useAuth();
-  const {
-    isConnected,
-    lastUpdate: socketLastUpdate,
-    socketId,
-  } = useTeachersSocket();
 
   const userRole = currentUser?.role || "";
   const hasPermission = userRole === "admin";
@@ -69,16 +61,10 @@ const TeachersManagement: React.FC = () => {
     sortField,
     sortOrder,
     handleSort,
-    currentPage,
-    setCurrentPage,
-    teachersPerPage,
-    setTeachersPerPage,
     activeFiltersCount,
-    filteredAndSortedTeachers,
-    currentTeachers,
-    totalPages,
     resetFilters,
-  } = useTeachersFilters(teachers);
+    buildFiltersObject,
+  } = useTeachersFilters(fetchTeachers);
 
   // Actions Management
   const {
@@ -89,6 +75,7 @@ const TeachersManagement: React.FC = () => {
     selectedTeacher,
     setSelectedTeacher,
     selectedTeachers,
+    setSelectedTeachers,
     handleDelete,
     handleEdit,
     handleAddSuccess,
@@ -96,100 +83,72 @@ const TeachersManagement: React.FC = () => {
     handleBulkDelete,
   } = useTeachersActions(teachers, setTeachers, fetchTeachers);
 
+  // Toggle select teacher
+  const handleToggleSelect = (teacherId: string) => {
+    setSelectedTeachers((prev: Set<string>) => {
+      const newSet = new Set(prev);
+      if (newSet.has(teacherId)) {
+        newSet.delete(teacherId);
+      } else {
+        newSet.add(teacherId);
+      }
+      return newSet;
+    });
+  };
+
+  // Toggle select all
+  const handleToggleSelectAll = () => {
+    const currentTeachers = teachers.filter((t) => t._id);
+    if (selectedTeachers.size === currentTeachers.length) {
+      setSelectedTeachers(new Set());
+    } else {
+      setSelectedTeachers(new Set(currentTeachers.map((t) => t._id || '')));
+    }
+  };
+
   // Statistics
   const stats = useTeachersStats(teachers, apiStats);
 
-  // Socket updates
-  useEffect(() => {
-    if (!hasPermission) return;
-
-    if (socketLastUpdate) {
-      console.log("🔄 Socket update detected, refreshing teachers list...");
-      fetchTeachers();
-    }
-  }, [socketLastUpdate, hasPermission, fetchTeachers]);
-
-  // Real-time user status updates
-  useEffect(() => {
-    if (!hasPermission) return;
-
-    const handleUserStatusChange = (data: {
-      userId: string;
-      isActive: boolean;
-      lastSeen?: string;
-    }) => {
-      console.log("👤 User status changed:", data);
-      
-      // تحديث حالة المعلم في القائمة
-      setTeachers((prevTeachers) =>
-        prevTeachers.map((teacher) =>
-          teacher._id === data.userId
-            ? {
-                ...teacher,
-                isActive: data.isActive,
-                lastSeen: data.lastSeen ? new Date(data.lastSeen) : teacher.lastSeen,
-              }
-            : teacher
-        )
-      );
-    };
-
-    const socket = socketManager.getSocket();
-    if (socket) {
-      socket.on("userStatusChange", handleUserStatusChange);
-    }
-
-    return () => {
-      const socket = socketManager.getSocket();
-      if (socket) {
-        socket.off("userStatusChange", handleUserStatusChange);
-      }
-    };
-  }, [hasPermission, setTeachers]);
-
-  // Auto refresh when not connected
-  useEffect(() => {
-    if (!hasPermission || isConnected) return;
-
-    const autoRefreshInterval = setInterval(() => {
-      console.log("🔄 Auto refreshing teachers data...");
-      fetchTeachers();
-    }, 60000);
-
-    return () => clearInterval(autoRefreshInterval);
-  }, [hasPermission, isConnected, fetchTeachers]);
+  // تعطيل scroll الصفحة عند فتح الـ Modal
+  useDisableBodyScroll(isFormVisible);
 
   return (
-    <div
-      className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4 md:p-6 relative"
-      dir="rtl">
-      {/* Background Design */}
-      <div className="fixed inset-0 flex items-center justify-center pointer-events-none opacity-5 z-0">
-        <div className="relative">
-          <div className="absolute left-1/2 top-0 w-0.5 h-screen bg-gradient-to-b from-green-400 via-blue-500 to-purple-600 transform -translate-x-1/2"></div>
-          <div className="absolute top-1/2 left-0 h-0.5 w-screen bg-gradient-to-r from-green-400 via-blue-500 to-purple-600 transform -translate-y-1/2"></div>
-          <div className="absolute top-1/2 left-1/2 w-32 h-32 bg-gradient-to-br from-green-500 to-blue-600 rounded-full transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center shadow-2xl">
-            <FaUserTie className="w-16 h-16 text-white opacity-70" />
-          </div>
-          <div className="absolute top-1/2 left-1/2 w-48 h-48 border-2 border-green-300 rounded-full transform -translate-x-1/2 -translate-y-1/2 animate-pulse"></div>
-          <div className="absolute top-1/2 left-1/2 w-64 h-64 border border-blue-200 rounded-full transform -translate-x-1/2 -translate-y-1/2 animate-ping"></div>
-        </div>
-      </div>
-
-      <div className="max-w-full mx-auto relative z-10 px-2">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6" dir="rtl">
+      <div className="max-w-full mx-auto">
         {/* Header Section */}
         <TeachersHeader
-          isConnected={isConnected}
-          socketLastUpdate={socketLastUpdate}
-          socketId={socketId || null}
           onAddTeacher={() => {
             setIsEditMode(false);
             setSelectedTeacher(null);
             setIsFormVisible(true);
           }}
-          onExport={() => handleExport(filteredAndSortedTeachers)}
-          hasTeachers={filteredAndSortedTeachers.length > 0}
+          onExport={() => handleExport(buildFiltersObject())}
+          hasTeachers={teachers.length > 0}
         />
+
+        {/* Stats Cards with Skeleton */}
+        {isLoading && teachers.length === 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <div className="animate-pulse">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3 bg-gray-200 rounded w-20"></div>
+                      <div className="h-8 bg-gray-300 rounded w-16"></div>
+                      <div className="h-3 bg-gray-100 rounded w-24"></div>
+                    </div>
+                    <div className="w-12 h-12 bg-gray-100 rounded-lg"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <TeacherStatsCards
+            stats={stats}
+          />
+        )}
 
         {/* Toolbar */}
         <TeachersToolbar
@@ -197,58 +156,26 @@ const TeachersManagement: React.FC = () => {
           onSearchChange={setSearchTerm}
           showFilters={showFilters}
           onToggleFilters={() => setShowFilters(!showFilters)}
+          setShowFilters={setShowFilters}
           activeFiltersCount={activeFiltersCount}
           viewMode={viewMode}
           onViewModeChange={() =>
             setViewMode(viewMode === "table" ? "grid" : "table")
           }
-          onAddTeacher={() => {
-            setIsEditMode(false);
-            setSelectedTeacher(null);
-            setIsFormVisible(true);
-          }}
-          onRefresh={() => fetchTeachers()}
-          isLoading={isLoading}
-          selectedGender={selectedGender}
-          onGenderChange={setSelectedGender}
-          onResetFilters={resetFilters}
-        />
-
-        {/* Extended Filters */}
-        <TeachersFilters
-          showFilters={showFilters}
-          setShowFilters={setShowFilters}
-          searchTerm={searchTerm}
           selectedGender={selectedGender}
           setSelectedGender={setSelectedGender}
           groupsFilter={groupsFilter}
           setGroupsFilter={setGroupsFilter}
           ageRange={ageRange}
           setAgeRange={setAgeRange}
-          teachersPerPage={teachersPerPage}
-          setTeachersPerPage={(perPage) => {
-            setTeachersPerPage(perPage);
-            setCurrentPage(1);
-          }}
-          activeFiltersCount={activeFiltersCount}
+          onResetFilters={resetFilters}
         />
 
-        {/* Statistics Cards */}
-        {!isLoading && (
-          <TeachersStatsCards
-            stats={stats}
-            onFilterClick={(filter) => {
-              setGroupsFilter(filter);
-              setShowFilters(true);
-            }}
-          />
-        )}
-
-        {/* Bulk Actions */}
-        <TeachersBulkActions
+        {/* Bulk Actions - Removed as per Students pattern */}
+        {/* <TeachersBulkActions
           selectedCount={selectedTeachers.size}
           onBulkDelete={handleBulkDelete}
-        />
+        /> */}
 
         {/* Error Display */}
         {error && !isLoading && (
@@ -290,35 +217,71 @@ const TeachersManagement: React.FC = () => {
         )}
 
         {/* Grid View */}
-        {viewMode === "grid" && !isLoading && currentTeachers.length > 0 && (
+        {viewMode === "grid" && teachers.length > 0 && (
           <TeacherGridView
-            teachers={currentTeachers}
+            teachers={teachers}
             onEdit={handleEdit}
             onDelete={(teacher) => handleDelete(teacher._id!)}
           />
         )}
 
         {/* Table View */}
-        {viewMode === "table" && !isLoading && currentTeachers.length > 0 && (
-          <TeacherTableView
-            teachers={currentTeachers}
-            onEdit={handleEdit}
-            onDelete={(teacher) => handleDelete(teacher._id!)}
-            sortField={sortField}
-            sortOrder={sortOrder}
-            onSort={(field) => handleSort(field as any)}
+        {viewMode === "table" && teachers.length > 0 && (
+          <>
+            {/* Bulk Delete Button */}
+            {selectedTeachers.size > 0 && (
+              <div className="mb-4 bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-emerald-700">
+                  <span className="font-semibold">
+                    تم تحديد {selectedTeachers.size} معلم
+                  </span>
+                </div>
+                <button
+                  onClick={handleBulkDelete}
+                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors flex items-center gap-2 font-medium"
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  حذف المحدد
+                </button>
+              </div>
+            )}
+            
+            <TeacherTableView
+              teachers={teachers}
+              onEdit={handleEdit}
+              onDelete={(teacher) => handleDelete(teacher._id!)}
+              sortField={sortField}
+              sortOrder={sortOrder}
+              onSort={(field) => handleSort(field as any)}
+              selectedTeachers={selectedTeachers}
+              onToggleTeacher={handleToggleSelect}
+              onToggleAll={handleToggleSelectAll}
+            />
+          </>
+        )}
+
+        {/* Loading for Grid */}
+        {isLoading && viewMode === "grid" && (
+          <LoadingSpinner
+            size="lg"
+            color="emerald"
+            text="جاري تحميل بيانات المعلمين..."
           />
         )}
 
-        {/* Loading State */}
-        {isLoading && (
-          <div className="flex justify-center items-center py-12">
-            <LoadingSpinner size="lg" />
-          </div>
+        {/* Loading for Table */}
+        {isLoading && viewMode === "table" && (
+          <LoadingSpinner
+            size="lg"
+            color="emerald"
+            text="جاري تحميل بيانات المعلمين..."
+          />
         )}
 
         {/* Empty State */}
-        {!isLoading && currentTeachers.length === 0 && (
+        {!isLoading && teachers.length === 0 && (
           <EmptyState
             icon={<FaUserTie className="w-12 h-12" />}
             title={
@@ -348,24 +311,11 @@ const TeachersManagement: React.FC = () => {
             }
           />
         )}
-
-        {/* Pagination */}
-        {!isLoading && currentTeachers.length > 0 && totalPages > 1 && (
-          <ResponsivePagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={filteredAndSortedTeachers.length}
-            itemsPerPage={teachersPerPage}
-            onPageChange={setCurrentPage}
-            itemName="معلم"
-            showQuickJump={true}
-          />
-        )}
       </div>
 
       {/* Teacher Form Modal */}
       {isFormVisible && (
-        <EnhancedTeacherForm
+        <TeacherForm
           onClose={() => {
             setIsFormVisible(false);
             setIsEditMode(false);
@@ -375,72 +325,6 @@ const TeachersManagement: React.FC = () => {
           teacher={isEditMode && selectedTeacher ? selectedTeacher : undefined}
         />
       )}
-
-      {/* Custom Styles */}
-      <style>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.3s ease-out;
-        }
-        
-        input[type="range"] {
-          -webkit-appearance: none;
-          appearance: none;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 20px;
-          height: 20px;
-          border-radius: 50%;
-          background: #3b82f6;
-          cursor: pointer;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        input[type="range"]::-moz-range-thumb {
-          width: 20px;
-          height: 20px;
-          border-radius: 50%;
-          background: #3b82f6;
-          cursor: pointer;
-          border: none;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        input[type="range"]:focus::-webkit-slider-thumb {
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
-        }
-
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #f1f5f9;
-          border-radius: 4px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #cbd5e1;
-          border-radius: 4px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #94a3b8;
-        }
-      `}</style>
     </div>
   );
 };

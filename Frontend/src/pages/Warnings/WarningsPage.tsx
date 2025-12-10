@@ -2,8 +2,8 @@
 // WarningsPage - الصفحة الرئيسية للإنذارات
 // ============================================================================
 
-import React, { useCallback, useEffect, useState } from "react";
-import { useWarningsSocket } from "@/Socket/useWarningsSocket";
+import React, { useCallback, useEffect } from "react";
+// import { useWarningsSocket } from "@/Socket/useWarningsSocket";
 import { socketManager } from "@/Socket/SocketManager";
 import { useWarningsData } from "./hooks/useWarningsData";
 import { useWarningsActions } from "./hooks/useWarningsActions";
@@ -132,14 +132,7 @@ const WarningsPage: React.FC = () => {
   }, [isStudent, refetchData]);
 
   // Socket للتحديثات الفورية - مباشرة من مجلد Socket
-  useWarningsSocket(
-    handleNewWarning,
-    handleWarningDeleted,
-    handleStatisticsUpdated,
-    handleStudentStatusUpdated,
-    handleSuspensionExpired,
-    handleSuspensionRestored
-  );
+
 
   // Real-time user status updates (للطلاب في الحلقة)
   useEffect(() => {

@@ -35,7 +35,6 @@ const validateTeacherData = async (req, res, next) => {
       phoneNumber, 
       idNumber,
       birthDate,
-      password,
       fatherName,
       grandFatherName,
       motherName,
@@ -114,20 +113,6 @@ const validateTeacherData = async (req, res, next) => {
         const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
         if (!emailRegex.test(email.trim())) {
           errors.email = 'صيغة البريد الإلكتروني غير صحيحة';
-        }
-      }
-    }
-
-    // التحقق من كلمة المرور للمعلم الجديد
-    if (isNewTeacher) {
-      if (!password || typeof password !== 'string' || password.trim().length === 0) {
-        errors.password = 'كلمة المرور مطلوبة للمعلمين الجدد';
-      } else {
-        // استيراد وتشغيل validatePasswordStrength من AuthValidation
-        const { validatePasswordStrength } = require('../Auth/AuthValidation');
-        const strengthValidation = validatePasswordStrength(password);
-        if (!strengthValidation.isValid) {
-          errors.password = strengthValidation.error;
         }
       }
     }
@@ -374,52 +359,10 @@ const sanitizeTeacherData = (req, res, next) => {
   }
 };
 
-// دالة مساعدة لتحويل تاريخ الميلاد إلى صيغة YYYY-MM-DD
-const formatBirthDateForBackend = (dateInput) => {
-  const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
-  
-  if (isNaN(date.getTime())) {
-    throw new Error('تاريخ غير صالح');
-  }
-  
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  
-  return `${year}-${month}-${day}`;
-};
-
-// دالة مساعدة لتحويل صيغة YYYY-MM-DD إلى تاريخ للعرض
-const parseBirthDateFromBackend = (dateString) => {
-  if (!dateString || !dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
-    return null;
-  }
-  
-  const date = new Date(dateString);
-  return isNaN(date.getTime()) ? null : date;
-};
-
-// الأخطاء الشائعة - متطابقة مع Frontend
-const commonTeacherValidationErrors = {
-  phoneFormat: 'الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام',
-  emailFormat: 'صيغة البريد الإلكتروني غير صحيحة',
-  birthDateFormat: 'صيغة التاريخ يجب أن تكون YYYY-MM-DD',
-  idNumberFormat: 'رقم الهوية يجب أن يتكون من 9 أرقام فقط',
-  passwordRequired: 'كلمة المرور مطلوبة للمعلم الجديد',
-  uniqueConstraints: {
-    phone: 'رقم الهاتف موجود بالفعل',
-    email: 'البريد الإلكتروني موجود بالفعل',
-    idNumber: 'رقم الهوية موجود بالفعل'
-  },
-};
-
 module.exports = {
   validateTeacherData,
   validateTeacherGroups,
   sanitizeTeacherData,
   normalizeGender,
   calculateAge,
-  formatBirthDateForBackend,
-  parseBirthDateFromBackend,
-  commonTeacherValidationErrors
 };

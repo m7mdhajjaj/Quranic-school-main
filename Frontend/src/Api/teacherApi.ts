@@ -14,17 +14,19 @@ export interface Teacher {
   idNumber?: string;
   email: string;
   phoneNumber: string;
-  birthDate?: string;
+  birthDate?: string; // YYYY-MM-DD format
   age?: number;
   gender?: string;
   residence?: string;
-  address?: string; // مكان السكن
-  specialCircle?: string; // الحلقة الخاصة
   groups?: {
     id: string;
     name: string;
     number: number;
   }[]; // الحلقات التي يدرسها المعلم
+  avatar?: {
+    data: Buffer;
+    contentType: string;
+  };
   role: string;
   isActive: boolean;
   lastSeen: Date;
@@ -33,16 +35,20 @@ export interface Teacher {
 }
 
 export interface TeacherStats {
-  totalTeachers: number;
-  activeTeachers: number;
-  maleTeachers: number;
-  femaleTeachers: number;
+  total: number;
+  active: number;
+  inactive: number;
+  male: number;
+  female: number;
+  withGroups: number;
+  withoutGroups: number;
+  avgAge: string | number;
 }
 
-// Get all teachers
-export const getAllTeachers = async (): Promise<{ success: boolean; data?: Teacher[]; message?: string }> => {
+// Get all teachers with filters
+export const getAllTeachers = async (filters?: any): Promise<{ success: boolean; data?: Teacher[]; stats?: any; message?: string }> => {
   try {
-    const response = await api.get('/teachers');
+    const response = await api.get('/teachers', { params: filters });
     return response.data;
   } catch (error) {
     console.error('Error fetching teachers:', error);
@@ -50,21 +56,6 @@ export const getAllTeachers = async (): Promise<{ success: boolean; data?: Teach
     return {
       success: false,
       message: axiosError.response?.data?.message || 'حدث خطأ أثناء جلب المعلمين'
-    };
-  }
-};
-
-// Get teacher by ID
-export const getTeacherById = async (id: string): Promise<{ success: boolean; data?: Teacher; message?: string }> => {
-  try {
-    const response = await api.get(`/teachers/${id}`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching teacher:', error);
-    const axiosError = error as AxiosError<{message?: string}>;
-    return {
-      success: false,
-      message: axiosError.response?.data?.message || 'حدث خطأ أثناء جلب المعلم'
     };
   }
 };
@@ -129,86 +120,89 @@ export const getTeacherStats = async (): Promise<{ success: boolean; data?: Teac
   }
 };
 
-// Upload teacher avatar
-export const uploadTeacherAvatar = async (id: string, avatarFile: File): Promise<{ success: boolean; message?: string }> => {
+// Export teachers to CSV
+export const exportTeachersToCSV = async (filters?: {
+  gender?: string;
+  minAge?: number;
+  maxAge?: number;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}) => {
   try {
-    const formData = new FormData();
-    formData.append('avatar', avatarFile);
+    console.log("📥 تصدير المعلمين إلى CSV...");
+    
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== 'all') {
+          params.append(key, String(value));
+        }
+      });
+    }
 
-    const response = await api.post(`/teachers/${id}/avatar`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+    const url = `/teachers/export${params.toString() ? `?${params}` : ''}`;
+    
+    // Download file directly
+    const response = await api.get(url, {
+      responseType: 'blob',
+    });
+
+    // Create download link
+    const blob = new Blob([response.data], { type: 'text/csv; charset=utf-8' });
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = `teachers_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(downloadUrl);
+
+    console.log("✅ تم تصدير البيانات بنجاح");
+    return { success: true };
+  } catch (error) {
+    console.error("❌ خطأ في تصدير البيانات:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
+    throw new Error(
+      axiosError.response?.data?.message || "حدث خطأ أثناء تصدير البيانات"
+    );
+  }
+};
+
+// Check for duplicate field
+export const checkDuplicateTeacher = async (params: {
+  field: 'email' | 'phoneNumber' | 'idNumber';
+  value: string;
+  excludeId?: string;
+}): Promise<{ success: boolean; isDuplicate: boolean; message?: string; field?: string; existingUserType?: string }> => {
+  try {
+    const response = await api.get('/teachers/check-duplicate', { params });
+    return response.data;
+  } catch (error) {
+    console.error('Error checking duplicate:', error);
+    const axiosError = error as AxiosError<{message?: string}>;
+    return {
+      success: false,
+      isDuplicate: false,
+      message: axiosError.response?.data?.message || 'حدث خطأ أثناء التحقق من التكرار'
+    };
+  }
+};
+
+// Bulk delete teachers
+export const bulkDeleteTeachers = async (teacherIds: string[]): Promise<{ success: boolean; message?: string; deletedCount?: number }> => {
+  try {
+    const response = await api.delete('/teachers/bulk', {
+      data: { teacherIds }
     });
     return response.data;
   } catch (error) {
-    console.error('Error uploading teacher avatar:', error);
-    const axiosError = error as AxiosError<{message?: string}>;
+    console.error('Error bulk deleting teachers:', error);
+    const axiosError = error as AxiosError<{message?: string; details?: any}>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || 'حدث خطأ أثناء رفع الصورة'
-    };
-  }
-};
-
-// ⚡ NEW: Get teacher with all groups and students (for attendance page)
-export interface TeacherWithGroupsAndStudents {
-  teacher: {
-    _id: string;
-    teacherId: number;
-    name: string;
-  };
-  groups: Array<{
-    _id: string;
-    name: string;
-  }>;
-  students: Array<{
-    _id: string;
-    studentId: number;
-    name: string;
-    group: string;
-    teacher?: string;
-    totalAbsences: number;
-    absenceDates: Date[];
-  }>;
-}
-
-export const getTeacherWithGroupsAndStudents = async (
-  teacherId: string
-): Promise<{ success: boolean; data?: TeacherWithGroupsAndStudents; message?: string }> => {
-  try {
-    console.log('⚡ [API] جلب بيانات المعلم مع الحلقات والطلاب - ID:', teacherId);
-    const startTime = Date.now();
-    
-    const response = await api.get(`/teachers/${teacherId}/with-groups-and-students`);
-    
-    const duration = Date.now() - startTime;
-    console.log(`✅ [API] تم جلب البيانات في ${duration}ms`);
-    
-    return response.data;
-  } catch (error) {
-    console.error('❌ خطأ في جلب بيانات المعلم مع الحلقات والطلاب:', error);
-    const axiosError = error as AxiosError<{message?: string}>;
-    return {
-      success: false,
-      message: axiosError.response?.data?.message || 'حدث خطأ أثناء جلب البيانات'
-    };
-  }
-};
-
-// Get students by teacher ID
-export const getStudentsByTeacherId = async (
-  teacherId: string
-): Promise<{ success: boolean; data?: any[]; message?: string }> => {
-  try {
-    const response = await api.get(`/teachers/${teacherId}/students`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching students by teacher ID:', error);
-    const axiosError = error as AxiosError<{message?: string}>;
-    return {
-      success: false,
-      message: axiosError.response?.data?.message || 'حدث خطأ أثناء جلب الطلاب'
+      message: axiosError.response?.data?.message || 'حدث خطأ أثناء حذف المعلمين'
     };
   }
 };

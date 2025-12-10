@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { FaUsers, FaTh } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
+import { useDisableBodyScroll } from "@/hooks/useDisableBodyScroll";
 import { useGroupsSocket } from "@/Socket";
 import AddGroupForm from "@/Forms/AddGroupForm";
 import ResponsivePagination from "@/components/UI/ResponsivePagination";
@@ -45,6 +46,9 @@ const GroupManagement: React.FC = () => {
   const filters = useGroupsFilters(groups);
   const stats = useGroupsStats(groups);
   const actions = useGroupsActions(setGroups, fetchGroups);
+
+  // تعطيل scroll الصفحة عند فتح الـ Modal
+  useDisableBodyScroll(actions.isFormVisible);
 
   // Socket event handlers - التحديثات الفورية تتم عبر useGroupsSocket Hook
   useEffect(() => {

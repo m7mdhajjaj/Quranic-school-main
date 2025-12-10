@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { useAuth } from '@/hooks/useAuth';
+import { useDisableBodyScroll } from '@/hooks/useDisableBodyScroll';
 import { useNewsData } from './hooks/useNewsData';
 import {
   NewsHeader,
@@ -41,6 +42,9 @@ const News = () => {
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+
+  // تعطيل scroll الصفحة عند فتح الـ Modal
+  useDisableBodyScroll(isModalOpen);
 
   // Initialize AOS
   useEffect(() => {

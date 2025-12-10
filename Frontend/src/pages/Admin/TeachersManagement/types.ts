@@ -8,22 +8,32 @@ export type SortOrder = "asc" | "desc";
 export type ViewMode = "table" | "grid";
 export type GroupsFilter = "all" | "withGroups" | "withoutGroups";
 
+export interface TeacherFiltersParams {
+  gender?: string;
+  minAge?: number;
+  maxAge?: number;
+  group?: GroupsFilter | string;
+  search?: string;
+  sortBy?: SortField;
+  sortOrder?: SortOrder;
+  page?: number;
+  limit?: number;
+}
+
 export interface TeacherStats {
   total: number;
   male: number;
   female: number;
-  active: number;
-  inactive: number;
   withGroups: number;
   withoutGroups: number;
   avgAge: string | number;
 }
 
 export interface ApiStats {
-  totalTeachers: number;
-  activeTeachers: number;
-  maleTeachers: number;
-  femaleTeachers: number;
+  total: number;
+  male: number;
+  female: number;
   withGroups: number;
   withoutGroups: number;
+  avgAge: string | number;
 }

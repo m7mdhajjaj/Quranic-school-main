@@ -51,7 +51,6 @@ const validateStudentData = async (req, res, next) => {
       residence,
       teacher,
       group,
-      password,
       age
     } = req.body;
 
@@ -166,28 +165,6 @@ const validateStudentData = async (req, res, next) => {
       const emailRegex = /\S+@\S+\.\S+/;
       if (!emailRegex.test(email.trim())) {
         errors.email = 'البريد الإلكتروني غير صالح';
-      }
-    }
-
-    // التحقق من كلمة المرور - اختيارية (سيتم استخدام رقم الهوية إذا لم تُدخل)
-    if (password !== undefined && password !== null && password !== '') {
-      if (typeof password !== 'string' || password.trim().length === 0) {
-        errors.password = 'كلمة المرور غير صحيحة';
-      } else {
-        // التحقق من الطول الأدنى
-        if (password.length < 4) {
-          errors.password = 'كلمة المرور يجب أن تكون 4 أحرف على الأقل';
-        } else {
-          const numbers = (password.match(/[\d\u0660-\u0669]/g) || []).length;
-          const letters = (password.match(/[a-zA-Z\u0600-\u06FF]/g) || []).length;
-          
-          const hasMinimumNumbers = numbers >= 4;
-          const hasMinimumLettersWithNumbers = letters >= 3 && numbers >= 1;
-          
-          if (!hasMinimumNumbers && !hasMinimumLettersWithNumbers) {
-            errors.password = 'كلمة المرور يجب أن تحتوي على 4 أرقام على الأقل، أو 3 حروف مع أرقام';
-          }
-        }
       }
     }
 
@@ -353,7 +330,6 @@ const commonStudentValidationErrors = {
   emailFormat: 'البريد الإلكتروني غير صالح',
   birthDateFormat: 'تاريخ الميلاد لا يمكن أن يكون في المستقبل',
   idNumberFormat: 'رقم الهوية يجب أن يتكون من 9 أرقام فقط',
-  passwordRequired: 'كلمة المرور مطلوبة للطالب الجديد',
   uniqueConstraints: {
     phone: 'رقم الهاتف موجود بالفعل',
     idNumber: 'رقم الهوية موجود بالفعل'

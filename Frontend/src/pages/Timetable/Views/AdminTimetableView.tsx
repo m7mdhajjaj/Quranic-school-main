@@ -3,6 +3,7 @@
 // ============================================================================
 
 import React from "react";
+import { useDisableBodyScroll } from "@/hooks/useDisableBodyScroll";
 import type { Session, SessionFormData } from "../types/timetable.types";
 import { useViewMode, useSessionModal } from "../hooks";
 import { AdvancedTimetableView } from "../components/AdvancedTimetableView";
@@ -34,6 +35,9 @@ export const AdminTimetableView: React.FC<AdminTimetableViewProps> = ({
 }) => {
   const { viewMode, setViewMode } = useViewMode('grid');
   const { showModal, editingSession, openAddModal, openEditModal, closeModal } = useSessionModal();
+
+  // تعطيل scroll الصفحة عند فتح الـ Modal
+  useDisableBodyScroll(showModal);
 
   // التعامل مع إضافة/تعديل موعد
   const handleSubmitSession = async (formData: Session, sessionId?: string) => {

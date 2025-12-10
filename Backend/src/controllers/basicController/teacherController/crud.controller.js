@@ -3,17 +3,187 @@ const Group = require("../../../schema/Group");
 const Student = require("../../../schema/Student");
 const bcrypt = require("bcryptjs");
 const { calculateAge, generateTeacherId } = require("./utils.controller");
+const { checkDuplicateFields } = require("../../../utils/validators/duplicateChecker");
 
 /**
- * جلب جميع المعلمين مع حلقاتهم (محسّن)
+ * جلب جميع المعلمين مع فلترة، بحث، ترتيب و pagination
  */
 exports.getAllTeachers = async (req, res) => {
   try {
-    // جلب جميع المعلمين والحلقات في استعلامين فقط
-    const [teachers, allGroups] = await Promise.all([
-      Teacher.find({}).select("-password").lean(),
+    const {
+      gender,
+      minAge,
+      maxAge,
+      search,
+      group,
+      sortBy = 'teacherId',
+      sortOrder = 'asc',
+      page = 1,
+      limit = 1000
+    } = req.query;
+
+    // بناء query object للفلترة
+    let query = {};
+
+    // Gender filter
+    if (gender && gender !== 'all') {
+      query.gender = gender === 'ذكر' ? 'ذكر' : 'أنثى';
+    }
+
+    // Age range filter
+    if (minAge || maxAge) {
+      query.age = {};
+      if (minAge && parseInt(minAge) > 0) {
+        query.age.$gte = parseInt(minAge);
+      }
+      if (maxAge && parseInt(maxAge) < 100) {
+        query.age.$lte = parseInt(maxAge);
+      }
+    }
+
+    // Search filter المحسّن - البحث في جميع الحقول المهمة
+    if (search && search.trim()) {
+      const searchTerm = search.trim();
+      const searchRegex = new RegExp(searchTerm, 'i');
+      
+      // البحث باستخدام $or في جميع الحقول النصية
+      query.$or = [
+        { firstName: searchRegex },
+        { lastName: searchRegex },
+        { fatherName: searchRegex },
+        { grandFatherName: searchRegex },
+        { motherName: searchRegex },
+        { email: searchRegex },
+        { phoneNumber: searchRegex },
+        { idNumber: searchRegex },
+        { residence: searchRegex },
+        // البحث في اسم الحلقة ضمن groups array
+        { 'groups.name': searchRegex },
+        // البحث في الاسم الكامل (firstName + lastName)
+        { $expr: {
+          $regexMatch: {
+            input: { $concat: ['$firstName', ' ', '$lastName'] },
+            regex: searchTerm,
+            options: 'i'
+          }
+        }},
+        // البحث في الاسم الثلاثي (firstName + fatherName + lastName)
+        { $expr: {
+          $regexMatch: {
+            input: { 
+              $concat: [
+                '$firstName', ' ', 
+                { $ifNull: ['$fatherName', ''] }, ' ',
+                '$lastName'
+              ] 
+            },
+            regex: searchTerm,
+            options: 'i'
+          }
+        }},
+        // البحث في الاسم الرباعي الكامل
+        { $expr: {
+          $regexMatch: {
+            input: { 
+              $concat: [
+                '$firstName', ' ',
+                { $ifNull: ['$fatherName', ''] }, ' ',
+                { $ifNull: ['$grandFatherName', ''] }, ' ',
+                '$lastName'
+              ] 
+            },
+            regex: searchTerm,
+            options: 'i'
+          }
+        }}
+      ];
+      
+      // إذا كان البحث رقمي، ابحث في teacherId أيضاً
+      if (!isNaN(searchTerm)) {
+        query.$or.push({ teacherId: parseInt(searchTerm) });
+      }
+      
+      console.log(`🔍 البحث عن: "${searchTerm}" في جميع الحقول (الاسم، الاسم الثلاثي، الرباعي، رقم الهوية، الحلقة...)`);
+    }
+
+    // بناء sort object
+    let sort = {};
+    const validSortFields = ['teacherId', 'firstName', 'lastName', 'age', 'email', 'createdAt'];
+    if (validSortFields.includes(sortBy)) {
+      sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+    } else {
+      sort.teacherId = 1; // default sort
+    }
+
+    // Pagination
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(1000, Math.max(1, parseInt(limit)));
+    const skip = (pageNum - 1) * limitNum;
+
+    // تنفيذ الاستعلامات بالتوازي
+    const [teachers, totalCount, allGroups] = await Promise.all([
+      Teacher.find(query)
+        .select("-password")
+        .sort(sort)
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      Teacher.countDocuments(query),
       Group.find({}).select("name teacher _id").lean()
     ]);
+
+    // فلترة حسب الحلقات إذا تم تحديد group filter
+    let filteredTeachers = teachers;
+    
+    // إذا كان هناك بحث عن حلقة محددة في group filter
+    if (group && group !== 'all') {
+      if (group === 'withGroups') {
+        // المعلمين الذين لديهم حلقات
+        const teacherIdsWithGroups = new Set(
+          allGroups.filter(g => g.teacher).map(g => g.teacher.toString())
+        );
+        filteredTeachers = teachers.filter(t => 
+          teacherIdsWithGroups.has(t._id.toString()) ||
+          (t.groups && Array.isArray(t.groups) && t.groups.length > 0)
+        );
+      } else if (group === 'withoutGroups') {
+        // المعلمين الذين ليس لديهم حلقات
+        const teacherIdsWithGroups = new Set(
+          allGroups.filter(g => g.teacher).map(g => g.teacher.toString())
+        );
+        filteredTeachers = teachers.filter(t => 
+          !teacherIdsWithGroups.has(t._id.toString()) &&
+          (!t.groups || !Array.isArray(t.groups) || t.groups.length === 0)
+        );
+      } else {
+        // البحث عن اسم حلقة محددة
+        const groupRegex = new RegExp(group, 'i');
+        const groupsMatchingSearch = allGroups.filter(g => 
+          groupRegex.test(g.name)
+        );
+        const teacherIdsForGroups = new Set(
+          groupsMatchingSearch.filter(g => g.teacher).map(g => g.teacher.toString())
+        );
+        
+        filteredTeachers = teachers.filter(t => {
+          const teacherId = t._id.toString();
+          // إذا كان المعلم مرتبط بحلقة من الحلقات المطابقة
+          if (teacherIdsForGroups.has(teacherId)) return true;
+          
+          // أو إذا كان لديه حلقة في البيانات القديمة تطابق البحث
+          if (t.groups && Array.isArray(t.groups)) {
+            return t.groups.some(g => {
+              const groupName = typeof g === 'string' ? g : g.name;
+              return groupRegex.test(groupName);
+            });
+          }
+          
+          return false;
+        });
+        
+        console.log(`🔍 البحث عن حلقة "${group}" - وجد ${filteredTeachers.length} معلم`);
+      }
+    }
 
     // إنشاء Map للحلقات حسب المعلم (للبحث السريع)
     const groupsByTeacher = new Map();
@@ -31,20 +201,61 @@ exports.getAllTeachers = async (req, res) => {
     });
 
     // إضافة الحلقات لكل معلم
-    const teachersWithGroups = teachers.map(teacher => {
+    const teachersWithGroups = filteredTeachers.map(teacher => {
       const teacherId = teacher._id.toString();
-      const groups = groupsByTeacher.get(teacherId) || teacher.groups || [];
+      const teacherGroups = groupsByTeacher.get(teacherId) || [];
+      
+      // دمج الحلقات من الـ Groups collection والـ groups field في المعلم
+      let allGroups = [...teacherGroups];
+      
+      // إضافة الحلقات القديمة إذا كانت موجودة
+      if (teacher.groups && Array.isArray(teacher.groups)) {
+        teacher.groups.forEach(g => {
+          const groupName = typeof g === 'string' ? g : g.name;
+          // تجنب التكرار
+          if (!allGroups.some(ag => ag.name === groupName)) {
+            allGroups.push({
+              name: groupName,
+              id: typeof g === 'object' ? g.id : null,
+            });
+          }
+        });
+      }
       
       return {
         ...teacher,
-        groups: groups.map((g, index) => ({
+        groups: allGroups.map((g, index) => ({
           ...g,
           number: index + 1
         }))
       };
     });
 
-    return res.status(200).json({ success: true, data: teachersWithGroups });
+    // حساب عدد الصفحات
+    const totalPages = Math.ceil(totalCount / limitNum);
+
+    console.log(`✅ جلب ${teachersWithGroups.length} معلم من ${totalCount} - صفحة ${pageNum}/${totalPages}`);
+
+    return res.status(200).json({
+      success: true,
+      data: teachersWithGroups,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total: totalCount,
+        pages: totalPages,
+        hasMore: pageNum < totalPages
+      },
+      filters: {
+        gender,
+        minAge,
+        maxAge,
+        search,
+        group,
+        sortBy,
+        sortOrder
+      }
+    });
   } catch (error) {
     console.error("Error fetching teachers:", error);
     return res
@@ -94,7 +305,6 @@ exports.createTeacher = async (req, res) => {
       gender,
       residence,
       groups = [],
-      yearsOfExperience = 0,
       role = "teacher",
       password,
     } = req.body;
@@ -167,7 +377,6 @@ exports.createTeacher = async (req, res) => {
             return group;
           })
         : [],
-      yearsOfExperience,
       role,
     });
 
@@ -190,12 +399,6 @@ exports.createTeacher = async (req, res) => {
           );
         }
       }
-    }
-
-    // Emit socket event for real-time update
-    if (global.io) {
-      global.io.emit("teacherCreated", doc);
-      console.log("📡 Teacher created event emitted via socket");
     }
 
     return res
@@ -296,18 +499,6 @@ exports.updateTeacher = async (req, res) => {
         .json({ success: false, message: "المعلم غير موجود" });
     }
 
-    // Emit socket event for real-time update
-    const io = req.app.get("io");
-    if (io) {
-      io.to("profile").emit("profileUpdated", {
-        user: updated,
-        userId: req.params.id,
-        userRole: "teacher",
-        timestamp: Date.now(),
-      });
-      console.log("📡 Profile updated event emitted via socket (teacher)");
-    }
-
     return res.status(200).json({
       success: true,
       message: "تم تحديث بيانات المعلم بنجاح",
@@ -378,12 +569,6 @@ exports.deleteTeacher = async (req, res) => {
     // 3. حذف المعلم نهائياً
     await Teacher.findByIdAndDelete(id);
     console.log(`🗑️ تم حذف المعلم ${teacherName} نهائياً من قاعدة البيانات`);
-
-    // Emit socket event
-    if (global.io) {
-      global.io.emit("teacherDeleted", { _id: id, teacherName });
-      console.log("📡 Teacher deleted event emitted via socket");
-    }
 
     return res.status(200).json({
       success: true,
@@ -543,6 +728,117 @@ exports.getTeacherWithGroupsAndStudents = async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message || "حدث خطأ أثناء جلب البيانات",
+    });
+  }
+};
+
+/**
+ * التحقق من تكرار البيانات (للتحقق الفوري في الفرونت إند)
+ */
+exports.checkDuplicate = async (req, res) => {
+  try {
+    const { field, value, excludeId } = req.query;
+
+    if (!field || !value) {
+      return res.status(400).json({
+        success: false,
+        message: "يجب تحديد الحقل والقيمة",
+      });
+    }
+
+    const data = { [field]: value };
+    const duplicateError = await checkDuplicateFields(data, excludeId, 'teacher');
+
+    if (duplicateError) {
+      return res.json({
+        success: false,
+        isDuplicate: true,
+        message: duplicateError.message,
+        field: duplicateError.field,
+        existingUserType: duplicateError.existingUserType,
+      });
+    }
+
+    return res.json({
+      success: true,
+      isDuplicate: false,
+      message: "القيمة متاحة",
+    });
+  } catch (error) {
+    console.error("خطأ في التحقق من التكرار:", error);
+    return res.status(500).json({
+      success: false,
+      message: "حدث خطأ أثناء التحقق من البيانات",
+    });
+  }
+};
+
+/**
+ * حذف مجموعة من المعلمين (Bulk Delete)
+ */
+exports.bulkDeleteTeachers = async (req, res) => {
+  try {
+    const { teacherIds } = req.body;
+
+    if (!teacherIds || !Array.isArray(teacherIds) || teacherIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "يجب تحديد معرفات المعلمين المراد حذفهم",
+      });
+    }
+
+    console.log(`🗑️ محاولة حذف ${teacherIds.length} معلم...`);
+
+    // التحقق من وجود طلاب أو حلقات مرتبطة بأي معلم
+    const teachersToDelete = await Teacher.find({
+      _id: { $in: teacherIds }
+    }).select('_id firstName lastName');
+
+    const teachersWithGroups = await Group.countDocuments({
+      teacher: { $in: teacherIds }
+    });
+
+    const teachersWithStudents = await Student.countDocuments({
+      teacher: { $in: teachersToDelete.map(t => `${t.firstName} ${t.lastName}`) }
+    });
+
+    if (teachersWithGroups > 0 || teachersWithStudents > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `لا يمكن حذف المعلمين. بعضهم مرتبط بـ ${teachersWithGroups} حلقة و ${teachersWithStudents} طالب`,
+        details: {
+          groupsCount: teachersWithGroups,
+          studentsCount: teachersWithStudents
+        }
+      });
+    }
+
+    const result = await Teacher.deleteMany({
+      _id: { $in: teacherIds },
+    });
+
+    console.log(`✅ تم حذف ${result.deletedCount} معلم من أصل ${teacherIds.length}`);
+
+    // Emit events if socket.io is available
+    if (global.io) {
+      console.log("📡 Broadcasting bulk teachers deleted event");
+      global.io.emit("teachers:bulk-deleted", { 
+        deletedCount: result.deletedCount,
+        teacherIds 
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `تم حذف ${result.deletedCount} معلم بنجاح`,
+      deletedCount: result.deletedCount,
+    });
+  } catch (error) {
+    console.error("❌ خطأ في حذف المعلمين:", error);
+    res.status(500).json({
+      success: false,
+      message: "حدث خطأ أثناء حذف المعلمين",
+      error: error.message,
     });
   }
 };

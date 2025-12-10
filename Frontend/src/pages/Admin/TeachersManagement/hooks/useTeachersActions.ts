@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { deleteTeacher } from "@/Api/teacherApi";
+import { deleteTeacher, bulkDeleteTeachers, exportTeachersToCSV } from "@/Api/teacherApi";
 import {
   showCenteredSwal,
-  showSuccessMessage,
-  showErrorMessage,
 } from "@/components/utils/sweetalertUtils";
 import { useSounds } from "@/components/Hooks/useSounds";
-import type { Teacher } from "../types";
+import {
+  showSuccessToast,
+  showErrorToast,
+} from "@/components/utils/toastUtils";
+import type { Teacher, TeacherFiltersParams } from "../types";
 
 export const useTeachersActions = (
   teachers: Teacher[],
@@ -16,22 +18,20 @@ export const useTeachersActions = (
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
-  const [selectedTeachers, setSelectedTeachers] = useState<Set<string>>(
-    new Set()
-  );
+  const [selectedTeachers, setSelectedTeachers] = useState<Set<string>>(new Set());
 
   const { playAdd, playUpdate, playDelete, playError } = useSounds();
 
   // Handle delete
   const handleDelete = async (teacherId: string) => {
     const teacher = teachers.find((t) => t._id === teacherId);
-    const teacherName = teacher
-      ? `${teacher.firstName} ${teacher.lastName}`
-      : "المعلم";
+    if (!teacher) return;
+
+    const teacherName = `${teacher.firstName} ${teacher.lastName}`;
 
     const result = await showCenteredSwal({
       title: "حذف المعلم",
-      text: `هل تريد حذف "${teacherName}" نهائياً؟`,
+      text: `هل تريد حذف المعلم "${teacherName}" نهائياً؟`,
       icon: "question",
       showCancelButton: true,
       confirmButtonColor: "#ef4444",
@@ -52,20 +52,20 @@ export const useTeachersActions = (
       try {
         const deleteResult = await deleteTeacher(teacherId);
 
-        if (deleteResult.success) {
-          setTeachers((prevTeachers) =>
-            prevTeachers.filter((t) => t._id !== teacherId)
-          );
-
-          playDelete();
-
-          await showSuccessMessage(
-            "تم الحذف!",
-            `تم حذف المعلم ${teacherName} من النظام بنجاح`
-          );
-        } else {
+        if (!deleteResult.success) {
           throw new Error(deleteResult.message || "فشل في حذف المعلم");
         }
+
+        // تحديث القائمة
+        setTeachers((prevTeachers) =>
+          prevTeachers.filter((t) => t._id !== teacherId)
+        );
+
+        playDelete();
+
+        showSuccessToast(
+          `✅ تم حذف المعلم "${teacherName}" من النظام بنجاح`
+        );
       } catch (deleteError: unknown) {
         console.error("❌ فشل في حذف المعلم:", deleteError);
 
@@ -115,9 +115,8 @@ export const useTeachersActions = (
             },
           });
         } else {
-          await showErrorMessage(
-            "خطأ!",
-            error.response?.data?.message || "حدث خطأ أثناء حذف المعلم"
+          showErrorToast(
+            error.response?.data?.message || "❌ حدث خطأ أثناء حذف المعلم"
           );
         }
       }
@@ -146,9 +145,8 @@ export const useTeachersActions = (
 
           playUpdate();
 
-          await showSuccessMessage(
-            "تم التحديث!",
-            `تم تحديث بيانات ${
+          showSuccessToast(
+            `✅ تم تحديث بيانات ${
               "firstName" in teacherData && teacherData.firstName
                 ? teacherData.firstName
                 : "المعلم"
@@ -159,9 +157,8 @@ export const useTeachersActions = (
 
           playAdd();
 
-          await showSuccessMessage(
-            "مرحباً بالمعلم الجديد!",
-            `أهلاً وسهلاً! تم إضافة ${
+          showSuccessToast(
+            `🎉 أهلاً وسهلاً! تم إضافة ${
               "firstName" in teacherData && teacherData.firstName
                 ? teacherData.firstName
                 : "المعلم الجديد"
@@ -213,77 +210,34 @@ export const useTeachersActions = (
         }
       }
 
-      await showErrorMessage(errorTitle, errorMessage);
+      showErrorToast(`${errorTitle} ${errorMessage}`);
     }
   };
 
-  // Export to CSV with proper formatting for Arabic Excel
-  const handleExport = (filteredTeachers: Teacher[]) => {
-    const headers = [
-      "رقم المعلم",
-      "الاسم الأول",
-      "اسم الأب",
-      "اسم العائلة",
-      "البريد الإلكتروني",
-      "رقم الهاتف",
-      "العمر",
-      "الجنس",
-    ];
-    
-    const rows = filteredTeachers.map((t) => [
-      t.teacherId || "",
-      t.firstName || "",
-      t.fatherName || "",
-      t.lastName || "",
-      t.email || "",
-      t.phoneNumber || "",
-      t.age || "",
-      t.gender || "",
-    ]);
-
-    // Use semicolon as delimiter for better Excel compatibility in Arabic regions
-    const delimiter = ";";
-    
-    // Helper function to escape CSV fields properly
-    const escapeCSVField = (field: string | number) => {
-      const stringField = String(field);
-      // If field contains delimiter, newline, or double quote, wrap in quotes and escape quotes
-      if (stringField.includes(delimiter) || stringField.includes('\n') || stringField.includes('"')) {
-        return `"${stringField.replace(/"/g, '""')}"`;
-      }
-      return stringField;
-    };
-
-    // Create CSV content with proper escaping
-    const csvContent = [headers, ...rows]
-      .map((row) => row.map(escapeCSVField).join(delimiter))
-      .join("\r\n");
-
-    // Add BOM for proper UTF-8 encoding in Excel
-    const blob = new Blob(["\ufeff" + csvContent], {
-      type: "text/csv;charset=utf-8;",
-    });
-    
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `teachers_${new Date().toISOString().split("T")[0]}.csv`;
-    link.click();
-    
-    // Clean up
-    setTimeout(() => URL.revokeObjectURL(link.href), 100);
+  // Export to CSV
+  const handleExport = async (filters?: TeacherFiltersParams) => {
+    try {
+      await exportTeachersToCSV(filters);
+      showSuccessToast("✅ تم تصدير البيانات بنجاح");
+    } catch (error: unknown) {
+      console.error("❌ خطأ في تصدير البيانات:", error);
+      playError();
+      
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : "حدث خطأ أثناء تصدير البيانات";
+      
+      showErrorToast(`⚠️ فشل التصدير! ${errorMessage}`);
+    }
   };
 
   // Bulk delete
   const handleBulkDelete = async () => {
     if (selectedTeachers.size === 0) return;
 
-    const teachersCount = selectedTeachers.size;
-    const teachersText =
-      teachersCount === 1 ? "معلم واحد" : `${teachersCount} معلم`;
-
     const result = await showCenteredSwal({
       title: "حذف متعدد",
-      text: `هل تريد حذف ${teachersText} نهائياً؟`,
+      text: `هل تريد حذف ${selectedTeachers.size} معلم نهائياً؟`,
       icon: "question",
       showCancelButton: true,
       confirmButtonColor: "#ef4444",
@@ -302,27 +256,31 @@ export const useTeachersActions = (
 
     if (result.isConfirmed) {
       try {
-        await Promise.all(
-          Array.from(selectedTeachers).map((id) => deleteTeacher(id))
-        );
+        const teacherIds = Array.from(selectedTeachers);
+        const bulkDeleteResult = await bulkDeleteTeachers(teacherIds);
 
-        setTeachers((prev) => prev.filter((t) => !selectedTeachers.has(t._id)));
-        setSelectedTeachers(new Set());
+        if (bulkDeleteResult.success) {
+          const deletedCount = selectedTeachers.size;
+          setTeachers((prev) =>
+            prev.filter((t) => !selectedTeachers.has(t._id || ""))
+          );
+          setSelectedTeachers(new Set());
 
-        playDelete();
+          playDelete();
 
-        await showSuccessMessage(
-          "تم الحذف بنجاح! 🎉",
-          `تم حذف ${teachersText} من النظام بنجاح`
-        );
+          showSuccessToast(
+            `✅ تم حذف ${deletedCount} معلم من النظام بنجاح`
+          );
+        } else {
+          throw new Error(bulkDeleteResult.message || "فشل في حذف المعلمين");
+        }
       } catch (bulkDeleteError) {
         console.error("❌ فشل في حذف المعلمين:", bulkDeleteError);
 
         playError();
 
-        await showErrorMessage(
-          "❌ فشل في العملية",
-          "حدث خطأ أثناء حذف المعلمين - يرجى المحاولة مرة أخرى"
+        showErrorToast(
+          "⚠️ فشل في الحذف! حدث خطأ أثناء حذف المعلمين المحددين"
         );
       }
     }

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { FaUserGraduate } from 'react-icons/fa';
-import { useAuth } from '@/hooks/useAuth';
+import React, { useState } from "react";
+import { FaUserGraduate } from "react-icons/fa";
+import { useAuth } from "@/hooks/useAuth";
+import { useDisableBodyScroll } from "@/hooks/useDisableBodyScroll";
 
 import AddStudentFormWithYup from '@/pages/Admin/StudentsManagement/Model/StudentForm';
 import {
@@ -10,9 +11,9 @@ import {
   StudentToolbar,
 } from '@/components/Students';
 
-import StudentsHeader from './components/PageHeader';
 import { EmptyState } from '@/components/UI/EmptyState';
 import { LoadingSpinner } from '@/components/UI/LoadingSpinner';
+import StudentsHeader from './components/PageHeader';
 
 import {
   useStudentsData,
@@ -101,6 +102,9 @@ const StudentsManagement: React.FC = () => {
 
   // Statistics
   const stats = useStudentsStats(students, apiStats);
+
+  // تعطيل scroll الصفحة عند فتح الـ Modal
+  useDisableBodyScroll(isFormVisible);
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6" dir="rtl">

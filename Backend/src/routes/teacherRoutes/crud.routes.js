@@ -17,6 +17,12 @@ const {
 // Get all teachers
 router.get("/", protect, controller.getAllTeachers);
 
+// Check duplicate field (no cache - real-time check needed)
+router.get("/check-duplicate", protect, controller.checkDuplicate);
+
+// Export teachers to CSV (no cache - always fresh data)
+router.get("/export", protect, controller.exportTeachersToCSV);
+
 // Get teacher with groups and students (for attendance page)
 router.get("/:id/with-groups-and-students", protect, controller.getTeacherWithGroupsAndStudents);
 
@@ -45,6 +51,9 @@ router.put(
   validateTeacherGroups,
   controller.updateTeacher
 );
+
+// Bulk delete teachers (must be before /:id)
+router.delete("/bulk", protect, controller.bulkDeleteTeachers);
 
 // Delete teacher
 router.delete("/:id", protect, controller.deleteTeacher);

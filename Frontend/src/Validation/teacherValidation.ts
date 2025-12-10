@@ -52,42 +52,6 @@ export const teacherValidationSchema = yup.object({
     .positive('رقم المعلم يجب أن يكون رقماً موجباً')
     .nullable(),
     
-  // كلمة المرور - مطلوبة
-  password: yup
-    .string()
-    .when('$isNewTeacher', {
-      is: true,
-      then: (schema) => schema.required('كلمة المرور مطلوبة'),
-      otherwise: (schema) => schema.nullable(),
-    })
-    .test('password-strength', 'كلمة المرور لا تلبي المتطلبات', function(value) {
-      const { isNewTeacher } = this.options.context || {};
-      
-      // إذا كان معلم جديد يجب التحقق من قوة كلمة المرور
-      if (isNewTeacher && value) {
-        // التحقق من الطول الأدنى
-        if (value.length < 4) {
-          return this.createError({ message: 'كلمة المرور يجب أن تكون 4 أحرف على الأقل' });
-        }
-        
-        // عد الأرقام والحروف (يدعم الأرقام العربية والإنجليزية)
-        const numbers = (value.match(/[\d٠-٩]/g) || []).length;
-        const letters = (value.match(/[a-zA-Z\u0600-\u06FF]/g) || []).length;
-        
-        // التحقق من القواعد الجديدة
-        const hasMinimumNumbers = numbers >= 4;
-        const hasMinimumLettersWithNumbers = letters >= 3 && numbers >= 1;
-        
-        if (!hasMinimumNumbers && !hasMinimumLettersWithNumbers) {
-          return this.createError({ 
-            message: 'كلمة المرور يجب أن تحتوي على 4 أرقام على الأقل، أو 3 حروف مع أرقام' 
-          });
-        }
-      }
-      
-      return true;
-    }),
-    
   // الأسماء - الاسم الأول واسم العائلة مطلوبان
   firstName: yup
     .string()
@@ -130,6 +94,8 @@ export const teacherValidationSchema = yup.object({
       if (!value) return false;
       return value.length === 9;
     })
+    .min(9, 'رقم الهوية يجب أن يتكون من 9 أرقام')
+    .max(9, 'رقم الهوية يجب أن يتكون من 9 أرقام')
     .matches(/^\d{9}$/, 'رقم الهوية يجب أن يتكون من 9 أرقام فقط')
     .test('unique-id', 'رقم الهوية موجود بالفعل', function() {
       // هذا التحقق يتم في الباك اند - unique constraint
@@ -140,6 +106,9 @@ export const teacherValidationSchema = yup.object({
   phoneNumber: yup
     .string()
     .required('رقم الهاتف مطلوب')
+    .trim()
+    .min(10, 'رقم الهاتف يجب أن يتكون من 10 أرقام')
+    .max(10, 'رقم الهاتف يجب أن يتكون من 10 أرقام')
     .matches(/^05\d{8}$/, 'الرقم يجب أن يبدأ بـ 05 ويتكوّن من 10 أرقام')
     .test('unique-phone', 'رقم الهاتف موجود بالفعل', function() {
       // هذا التحقق يتم في الباك اند - unique constraint
@@ -337,7 +306,6 @@ export const commonTeacherValidationErrors = {
   emailFormat: 'صيغة البريد الإلكتروني غير صحيحة',
   birthDateFormat: 'صيغة التاريخ يجب أن تكون YYYY-MM-DD',
   idNumberFormat: 'رقم الهوية يجب أن يتكون من 9 أرقام فقط',
-  passwordRequired: 'كلمة المرور مطلوبة للمعلم الجديد',
   uniqueConstraints: {
     phone: 'رقم الهاتف موجود بالفعل',
     email: 'البريد الإلكتروني موجود بالفعل',

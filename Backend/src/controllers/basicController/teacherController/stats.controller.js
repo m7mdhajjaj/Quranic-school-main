@@ -1,59 +1,141 @@
 const Teacher = require("../../../schema/Teacher");
 
 /**
- * جلب إحصائيات المعلمين
+ * جلب إحصائيات المعلمين (محسّنة مع Aggregation)
  */
 exports.getTeacherStats = async (req, res) => {
   try {
-    const totalTeachers = await Teacher.countDocuments({ isActive: true });
-    const totalAdmins = await Teacher.countDocuments({
-      role: "admin",
-      isActive: true,
-    });
-    const totalActiveTeachers = await Teacher.countDocuments({
-      role: "teacher",
-      isActive: true,
-    });
+    // استخدام Aggregation Pipeline للأداء الأفضل
+    const stats = await Teacher.aggregate([
+      {
+        $facet: {
+          // إجمالي المعلمين
+          total: [{ $count: "count" }],
+          
+          // المعلمين النشطين
+          active: [
+            { $match: { isActive: true } },
+            { $count: "count" }
+          ],
+          
+          // المعلمين غير النشطين
+          inactive: [
+            { $match: { isActive: false } },
+            { $count: "count" }
+          ],
+          
+          // التوزيع حسب الجنس
+          byGender: [
+            {
+              $group: {
+                _id: "$gender",
+                count: { $sum: 1 }
+              }
+            }
+          ],
+          
+          // التوزيع حسب الحلقات
+          byGroups: [
+            {
+              $project: {
+                hasGroups: {
+                  $cond: [
+                    { $gt: [{ $size: { $ifNull: ["$groups", []] } }, 0] },
+                    "withGroups",
+                    "withoutGroups"
+                  ]
+                }
+              }
+            },
+            {
+              $group: {
+                _id: "$hasGroups",
+                count: { $sum: 1 }
+              }
+            }
+          ],
+          
+          // متوسط العمر
+          avgAge: [
+            {
+              $group: {
+                _id: null,
+                average: { $avg: "$age" }
+              }
+            }
+          ],
+          
+          // التوزيع حسب الخبرة (إذا كان هناك حقل experience)
+          byExperience: [
+            {
+              $match: { experience: { $exists: true, $ne: null } }
+            },
+            {
+              $bucket: {
+                groupBy: "$experience",
+                boundaries: [0, 3, 6, 11, 100],
+                default: "other",
+                output: {
+                  count: { $sum: 1 }
+                }
+              }
+            }
+          ]
+        }
+      }
+    ]);
 
-    const teachers = await Teacher.find({ isActive: true }).select(
-      "-password -avatar"
-    );
-
-    const exp = (x) => (Number.isFinite(x) ? x : 0);
-    const experienceDistribution = {
-      "مبتدئ (0-2 سنة)": teachers.filter((t) => exp(t.yearsOfExperience) <= 2)
-        .length,
-      "متوسط (3-5 سنوات)": teachers.filter(
-        (t) => exp(t.yearsOfExperience) >= 3 && exp(t.yearsOfExperience) <= 5
-      ).length,
-      "خبير (6-10 سنوات)": teachers.filter(
-        (t) => exp(t.yearsOfExperience) >= 6 && exp(t.yearsOfExperience) <= 10
-      ).length,
-      "خبير جداً (+10 سنوات)": teachers.filter(
-        (t) => exp(t.yearsOfExperience) > 10
-      ).length,
+    // معالجة النتائج
+    const result = stats[0];
+    
+    const totalCount = result.total[0]?.count || 0;
+    const activeCount = result.active[0]?.count || 0;
+    const inactiveCount = result.inactive[0]?.count || 0;
+    
+    // معالجة الجنس
+    const genderStats = result.byGender.reduce((acc, item) => {
+      if (item._id === 'ذكر') acc.male = item.count;
+      else if (item._id === 'أنثى') acc.female = item.count;
+      return acc;
+    }, { male: 0, female: 0 });
+    
+    // معالجة الحلقات
+    const groupStats = result.byGroups.reduce((acc, item) => {
+      if (item._id === 'withGroups') acc.withGroups = item.count;
+      else if (item._id === 'withoutGroups') acc.withoutGroups = item.count;
+      return acc;
+    }, { withGroups: 0, withoutGroups: 0 });
+    
+    // متوسط العمر
+    const avgAge = result.avgAge[0]?.average || 0;
+    
+    // توزيع الخبرة
+    const experienceLabels = {
+      0: "مبتدئ (0-2 سنة)",
+      3: "متوسط (3-5 سنوات)",
+      6: "خبير (6-10 سنوات)",
+      11: "خبير جداً (+10 سنوات)"
     };
+    
+    const experienceDistribution = (result.byExperience || []).reduce((acc, item) => {
+      const label = experienceLabels[item._id] || "غير محدد";
+      acc[label] = item.count;
+      return acc;
+    }, {});
 
     return res.status(200).json({
       success: true,
       data: {
-        totalTeachers,
-        totalAdmins,
-        totalActiveTeachers,
-        experienceDistribution,
-        teachers: teachers.map((t) => ({
-          _id: t._id,
-          teacherId: t.teacherId,
-          fullName: `${t.firstName || ""} ${t.fatherName || ""} ${
-            t.lastName || ""
-          }`
-            .replace(/\s+/g, " ")
-            .trim(),
-          groups: t.groups || [],
-          yearsOfExperience: exp(t.yearsOfExperience),
-          role: t.role,
-        })),
-      },
+        total: totalCount,
+        active: activeCount,
+        inactive: inactiveCount,
+        male: genderStats.male,
+        female: genderStats.female,
+        withGroups: groupStats.withGroups,
+        withoutGroups: groupStats.withoutGroups,
+        avgAge: avgAge.toFixed(1),
+        experienceDistribution
+      }
     });
   } catch (error) {
     console.error("Error fetching teacher stats:", error);
