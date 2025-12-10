@@ -32,13 +32,8 @@ exports.getAllTimetables = async (req, res) => {
       // جلب أسماء جميع حلقات المعلم من Teacher.groups
       teacherGroups = await getTeacherGroups(user._id);
 
-      // المعلم: جلب المواعيد بطريقتين (teacherId الجديد + note القديم)
-      timetables = await TimeTable.find({ 
-        $or: [
-          { teacherId: user._id }, // الطريقة الجديدة
-          { note: { $in: teacherGroups } } // الطريقة القديمة للبيانات بدون teacherId
-        ]
-      })
+      // المعلم: فقط حلقاته المرتبطة بـ teacherId
+      timetables = await TimeTable.find({ teacherId: user._id })
         .populate('groupId', 'name')
         .populate('teacherId', 'firstName lastName');
     } else {

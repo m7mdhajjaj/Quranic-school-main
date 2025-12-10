@@ -4,7 +4,7 @@
 
 import React from "react";
 import type { Session } from "../types/timetable.types";
-import { AdvancedTimetableView } from "../components/AdvancedTimetableView";
+import { AdvancedTimetableView } from "../components/DisplayType/AdvancedTimetableView";
 import PageHeader from "@/components/UI/PageHeader";
 import { Alert } from "@/components/UI/Alert";
 import { Button } from "@/components/UI/Button";

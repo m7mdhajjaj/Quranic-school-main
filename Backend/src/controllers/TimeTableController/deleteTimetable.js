@@ -3,13 +3,15 @@
 // ============================================
 
 const TimeTable = require("../../schema/TimeTable");
-const { removeTimetableFromGroup, emitSocketEvent } = require("./helpers");
+const { removeTimetableFromGroup } = require("./Helper/groupHelpers");
 
 /**
  * حذف موعد
  */
 exports.deleteTimetable = async (req, res) => {
   try {
+    // ✅ المعلم يمكنه الحذف لحلقاته فقط - يتم التحقق من teacherId لاحقاً
+
     const { id } = req.params;
     const timetable = await TimeTable.findById(id);
 
@@ -21,6 +23,22 @@ exports.deleteTimetable = async (req, res) => {
       });
     }
 
+    // ✅ فحص الصلاحيات: المعلم يمكنه حذف مواعيده فقط (بناءً على teacherId)
+    const currentUser = req.user;
+    if (currentUser && currentUser.role === 'teacher') {
+      console.log(`👨‍🏫 محاولة حذف من المعلم ${currentUser._id} - موعد ${id} - teacherId في الموعد: ${timetable.teacherId}`);
+      // التحقق من أن الموعد يخص هذا المعلم
+      if (!timetable.teacherId || timetable.teacherId.toString() !== currentUser._id.toString()) {
+        console.log(`🚫 محاولة حذف غير مصرح بها: teacherId لا يطابق`);
+        return res.status(403).json({
+          success: false,
+          error: "Forbidden",
+          message: "غير مسموح لك بحذف هذا الموعد - يمكنك فقط حذف مواعيدك الخاصة",
+        });
+      }
+      console.log(`✅ الصلاحيات صحيحة - يحذف المعلم موعده الخاص`);
+    }
+
     // إزالة الموعد من جدول الحلقة
     if (timetable.note && timetable.note.trim()) {
       await removeTimetableFromGroup(timetable.note, id);
@@ -28,10 +46,6 @@ exports.deleteTimetable = async (req, res) => {
 
     // حذف الموعد من قاعدة البيانات
     await TimeTable.findByIdAndDelete(id);
-
-    // إرسال حدث Socket
-    const io = req.app.get("io");
-    emitSocketEvent(io, "timetableDeleted", { timetableId: id });
 
     res.json({ 
       success: true, 

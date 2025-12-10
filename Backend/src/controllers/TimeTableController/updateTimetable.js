@@ -4,26 +4,23 @@
 
 const TimeTable = require("../../schema/TimeTable");
 const Group = require("../../schema/Group");
-const {
-  removeTimetableFromGroup,
-  updateTimetableInGroup,
-  emitSocketEvent,
-  checkTimetableConflict,
-  checkTeacherTimetableConflict,
-} = require("./helpers");
+const { removeTimetableFromGroup, updateTimetableInGroup } = require("./Helper/groupHelpers");
+const { checkTimetableConflict, checkSessionConflict } = require("./Helper/conflictChecker");
 
 /**
  * تحديث موعد
  */
 exports.updateTimetable = async (req, res) => {
   try {
+    // ✅ المعلم يمكنه التعديل لحلقاته فقط - يتم التحقق من teacherId لاحقاً
+
     const { id } = req.params;
     
     console.log("📝 البيانات الأصلية:", req.body);
     console.log("✅ البيانات المتحقق منها:", req.validatedData);
 
     const timetableData = req.validatedData || req.body;
-    const { day, startHour, endHour, note, sessionType, teacherId } = timetableData;
+    const { day, startHour, endHour, note, description, sessionType, teacherId } = timetableData;
 
     // احصل على الموعد القديم قبل التحديث
     const oldTimetable = await TimeTable.findById(id);
@@ -31,26 +28,45 @@ exports.updateTimetable = async (req, res) => {
       return res.status(404).json({
         success: false,
         error: "Not found",
-        message: "لم يتم العثور علموعد",
+        message: "لم يتم العثور على الموعد",
       });
+    }
+
+    // ✅ فحص الصلاحيات: المعلم يمكنه تعديل مواعيده فقط (بناءً على teacherId)
+    const currentUser = req.user;
+    if (currentUser && currentUser.role === 'teacher') {
+      console.log(`👨‍🏫 محاولة تعديل من المعلم ${currentUser._id} - موعد ${id} - teacherId في الموعد: ${oldTimetable.teacherId}`);
+      // التحقق من أن الموعد يخص هذا المعلم
+      if (!oldTimetable.teacherId || oldTimetable.teacherId.toString() !== currentUser._id.toString()) {
+        console.log(`🚫 محاولة تعديل غير مصرح بها: teacherId لا يطابق`);
+        return res.status(403).json({
+          success: false,
+          error: "Forbidden",
+          message: "غير مسموح لك بتعديل هذا الموعد - يمكنك فقط تعديل مواعيدك الخاصة",
+        });
+      }
+      console.log(`✅ الصلاحيات صحيحة - يعدّل المعلم موعده الخاص`);
     }
 
     // 1. فحص التعارب لجميع حلقات المعلم - الفحص الأساسي والأهم
     // استخدام teacherId من البيانات الجديدة أو القديمة
     const currentTeacherId = teacherId || oldTimetable.teacherId;
     if (currentTeacherId) {
-      const teacherConflictCheck = await checkTeacherTimetableConflict(
+      const conflictCheck = await checkSessionConflict(
         currentTeacherId,
-        timetableData,
-        id
+        day || oldTimetable.day,
+        startHour || oldTimetable.startHour,
+        endHour || oldTimetable.endHour,
+        id // استثناء الجلسة الحالية
       );
       
-      if (teacherConflictCheck.hasConflict) {
+      if (conflictCheck.hasConflict) {
+        const conflictSession = conflictCheck.conflictingSession;
         return res.status(409).json({
           success: false,
           error: "Teacher time conflict",
-          message: `المعلم لديه موعد آخر في نفس الوقت (${teacherConflictCheck.conflictDetails.note}) يوم ${teacherConflictCheck.conflictDetails.day} من ${teacherConflictCheck.conflictDetails.startHour} إلى ${teacherConflictCheck.conflictDetails.endHour}`,
-          conflictDetails: teacherConflictCheck.conflictDetails
+          message: `المعلم لديه موعد آخر في نفس الوقت (${conflictSession.note}) يوم ${conflictSession.day} من ${conflictSession.startHour} إلى ${conflictSession.endHour}`,
+          conflictDetails: conflictSession
         });
       }
     }
@@ -82,8 +98,25 @@ exports.updateTimetable = async (req, res) => {
     if (sessionType !== undefined) {
       updateData.sessionType = sessionType; // ✅ تحديث sessionType فقط إذا تم إرساله
     }
+    if (description !== undefined) {
+      updateData.description = description; // ✅ تحديث description فقط إذا تم إرساله
+    }
+    
+    // ✅ منع المعلم من تغيير teacherId (يمكن فقط للإداري تغييره)
     if (teacherId !== undefined) {
-      updateData.teacherId = teacherId; // ✅ تحديث teacherId فقط إذا تم إرساله
+      if (currentUser && currentUser.role === 'teacher') {
+        // المعلم لا يمكنه تغيير المعلم المسؤول
+        if (teacherId !== oldTimetable.teacherId?.toString()) {
+          return res.status(403).json({
+            success: false,
+            error: "Forbidden",
+            message: "غير مسموح لك بتغيير المعلم المسؤول عن الموعد",
+          });
+        }
+      } else {
+        // الإداري يمكنه تحديث teacherId
+        updateData.teacherId = teacherId;
+      }
     }
     const timetable = await TimeTable.findByIdAndUpdate(
       id,
@@ -102,10 +135,6 @@ exports.updateTimetable = async (req, res) => {
     if (note && note.trim()) {
       await updateTimetableInGroup(note, id, { day, startHour, endHour });
     }
-
-    // إرسال حدث Socket
-    const io = req.app.get("io");
-    emitSocketEvent(io, "timetableUpdated", { timetable });
 
     res.json(timetable);
   } catch (err) {

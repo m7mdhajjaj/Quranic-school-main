@@ -11,17 +11,27 @@ const TimeTableSchema = new mongoose.Schema({
     required: true,
     validate: {
       validator: function(v) {
-        // ✅ التحقق من أن الوقت بين 12:00 PM و 9:00 PM فقط
+        // ✅ التحقق من صحة الصيغة والنطاق الزمني
+        // صيفي: 12:00 PM - 9:00 PM
+        // شتوي: 11:00 AM - 8:00 PM
+        const cleanTime = v.trim().toLowerCase();
         const hour = parseInt(v.split(':')[0]);
-        const isPM = v.toLowerCase().includes('pm');
+        const isAM = cleanTime.includes('am');
+        const isPM = cleanTime.includes('pm');
+        
+        if (isAM) {
+          // مسموح: 11:00 AM و 11:30 AM فقط (التوقيت الشتوي)
+          return hour === 11;
+        }
         
         if (isPM) {
-          // مسموح: 12:00 PM إلى 9:00 PM فقط
+          // مسموح: 12:00 PM إلى 9:00 PM (صيفي وشتوي)
           return hour === 12 || (hour >= 1 && hour <= 9);
         }
+        
         return false;
       },
-      message: 'أوقات العمل من 12:00 PM إلى 9:00 PM فقط'
+      message: 'أوقات العمل: صيفي (12:00 PM - 9:00 PM) أو شتوي (11:00 AM - 8:00 PM)'
     }
   },
   endHour: { 
@@ -29,20 +39,36 @@ const TimeTableSchema = new mongoose.Schema({
     required: true,
     validate: {
       validator: function(v) {
-        // ✅ التحقق من أن الوقت بين 12:00 PM و 9:00 PM فقط
+        // ✅ التحقق من صحة الصيغة والنطاق الزمني
+        // صيفي: 12:00 PM - 9:00 PM
+        // شتوي: 11:00 AM - 8:00 PM
+        const cleanTime = v.trim().toLowerCase();
         const hour = parseInt(v.split(':')[0]);
-        const isPM = v.toLowerCase().includes('pm');
+        const isAM = cleanTime.includes('am');
+        const isPM = cleanTime.includes('pm');
+        
+        if (isAM) {
+          // مسموح: 11:00 AM و 11:30 AM فقط (التوقيت الشتوي)
+          return hour === 11;
+        }
         
         if (isPM) {
-          // مسموح: 12:00 PM إلى 9:00 PM فقط
+          // مسموح: 12:00 PM إلى 9:00 PM (صيفي وشتوي)
           return hour === 12 || (hour >= 1 && hour <= 9);
         }
+        
         return false;
       },
-      message: 'أوقات العمل من 12:00 PM إلى 9:00 PM فقط'
+      message: 'أوقات العمل: صيفي (12:00 PM - 9:00 PM) أو شتوي (11:00 AM - 8:00 PM)'
     }
   },
-  note: { type: String },
+  note: { type: String }, // اسم الحلقة أو ملاحظة عامة
+  
+  description: { 
+    type: String, 
+    default: "",
+    maxlength: 500, // حد أقصى 500 حرف للوصف
+  }, // وصف تفصيلي أو ملاحظات إضافية عن الحلقة
 
   groupId: { 
     type: mongoose.Schema.Types.ObjectId, 

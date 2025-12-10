@@ -57,22 +57,28 @@ const playSoundWithDuration = (soundPath: string, volume: number = 0.6): Promise
 // Sound Player - دوال الأصوات الجاهزة
 // ============================================================================
 
+// استيراد ملفات الصوت
+import successfulSound from '@/assets/sounds/successful.mp3';
+import errorSound from '@/assets/sounds/error.wav';
+import notificationSound from '@/assets/sounds/notification.mp3';
+import loginSound from '@/assets/sounds/Login.mp3';
+
 export const soundPlayer = {
   // عمليات CRUD
-  playAdd: () => playSound('/src/assets/sounds/successful.mp3', 0.6),
-  playUpdate: () => playSound('/src/assets/sounds/successful.mp3', 0.6),
-  playDelete: () => playSound('/src/assets/sounds/successful.mp3', 0.5),
+  playAdd: () => playSound(successfulSound, 0.6),
+  playUpdate: () => playSound(successfulSound, 0.6),
+  playDelete: () => playSound(successfulSound, 0.5),
   
   // حالات النجاح والخطأ
-  playError: () => playSound('/src/assets/sounds/error.wav', 0.6),
-  playSuccess: () => playSoundWithDuration('/src/assets/sounds/successful.mp3', 0.7),
+  playError: () => playSound(errorSound, 0.6),
+  playSuccess: () => playSoundWithDuration(successfulSound, 0.7),
   
   // إشعارات
-  playNotification: () => playSound('/src/assets/sounds/notification.mp3', 0.7),
+  playNotification: () => playSound(notificationSound, 0.7),
   
   // تسجيل الدخول/الخروج
-  playLogin: () => playSound('/src/assets/sounds/Login.mp3', 0.6),
-  playLogout: () => playSoundWithDuration('/src/assets/sounds/Login.mp3', 0.5),
+  playLogin: () => playSound(loginSound, 0.6),
+  playLogout: () => playSoundWithDuration(loginSound, 0.5),
 };
 
 // ============================================================================
@@ -91,7 +97,7 @@ interface UseSoundOptions {
  * @returns { playSound, stopSound, setVolume }
  */
 export const useSound = ({
-  soundPath = '/src/assets/sounds/notification.mp3',
+  soundPath = notificationSound,
   volume = 0.6,
   preload = true,
 }: UseSoundOptions = {}) => {

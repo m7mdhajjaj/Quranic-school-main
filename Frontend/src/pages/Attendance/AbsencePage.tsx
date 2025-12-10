@@ -1,6 +1,5 @@
 // AbsencePage.tsx
 import { useState, useEffect, useMemo } from "react";
-import { useAbsenceSocket } from "../../Socket";
 import { useAbsenceData, useAttendanceStats, useUnsavedChanges, useStudentFilters, useStudentSelection, useAttendanceSave } from "./hooks";
 import { TeacherToolbar, StudentView, StudentsTable } from "./components";
 import { isDateTooOld, getDaysAgo } from "./utils/dateHelpers";
@@ -10,10 +9,6 @@ import ResponsivePagination from "@/components/UI/ResponsivePagination";
 import { LoadingSpinner } from "@/components/UI/LoadingSpinner";
 
 const AbsencePage = () => {
-  const {
-    lastUpdate: socketLastUpdate,
-  } = useAbsenceSocket();
-
   const {
     currentUser,
     error,

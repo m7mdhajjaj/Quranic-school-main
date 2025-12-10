@@ -17,13 +17,13 @@ exports.updateGroup = async (req, res) => {
     const { id } = req.params;
     const updates = req.body;
 
-    // تحديث اسم المعلم إذا تم تغيير المعلم
+    // التحقق من صحة المعلم إذا تم تغييره
     if (updates.teacher) {
       const teacherExists = await findTeacherByIdOrName(updates.teacher);
-      if (teacherExists) {
-        updates.teacher = teacherExists._id;
-        updates.teacherName = `${teacherExists.firstName} ${teacherExists.lastName}`;
+      if (!teacherExists) {
+        return notFoundResponse(res, "المعلم المحدد غير موجود في النظام");
       }
+      updates.teacher = teacherExists._id;
     }
 
     const group = await Group.findByIdAndUpdate(id, updates, { new: true, runValidators: true });

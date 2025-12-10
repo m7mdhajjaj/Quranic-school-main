@@ -8,4 +8,7 @@ export { useViewMode } from "./useViewMode";
 export { useSessionModal } from "./useSessionModal";
 export { useSessionForm } from "./useSessionForm";
 export { useTeachers } from "./useTeachers";
-export { useSessionValidation } from "./useSessionValidation";
+export { useTeacherGroups } from "./useTeacherGroups";
+export { useSessionModalLogic } from "./useSessionModalLogic";
+export { useTeacherSelection } from "./useTeacherSelection";
+export { useSessionDuration } from "./useSessionDuration";

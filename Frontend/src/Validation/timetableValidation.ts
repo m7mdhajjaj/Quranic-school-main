@@ -44,7 +44,20 @@ const VALID_SESSION_TYPES: SessionType[] = ['hifz', 'murajaah', 'both'];
 const TIME_FORMAT_REGEX = /^(1[0-2]|[1-9]):[0-5][0-9]\s?(AM|PM|am|pm)$/i;
 
 /**
- * التحقق من أن الوقت ضمن أوقات العمل (12:00 PM - 9:00 AM)
+ * تحديد إذا كان التوقيت صيفي أو شتوي (تلقائي)
+ * الصيفي: من مايو (5) إلى سبتمبر (9)
+ * الشتوي: من أكتوبر (10) إلى أبريل (4)
+ */
+const isSummerTime = (): boolean => {
+  const now = new Date();
+  const month = now.getMonth() + 1; // 1-12
+  return month >= 5 && month <= 9;
+};
+
+/**
+ * التحقق من أن الوقت ضمن أوقات العمل حسب التوقيت الحالي (تلقائي)
+ * صيفي: 12:00 PM - 9:00 PM
+ * شتوي: 11:00 AM - 8:00 PM
  */
 const isValidWorkingHour = (timeStr: string): boolean => {
   const match = timeStr.match(/^([0-9]{1,2}):([0-5][0-9])\s?(AM|PM|am|pm)$/i);
@@ -52,13 +65,23 @@ const isValidWorkingHour = (timeStr: string): boolean => {
 
   const hour = parseInt(match[1]);
   const period = match[3].toLowerCase();
+  const isSummer = isSummerTime();
 
-  if (period === 'pm') {
-    // PM: 12:00 PM - 11:59 PM (all valid)
-    return hour === 12 || (hour >= 1 && hour < 12);
-  } else if (period === 'am') {
-    // AM: 12:00 AM - 9:00 AM only
-    return (hour >= 1 && hour <= 9) || hour === 12;
+  if (isSummer) {
+    // ☀️ صيفي: 12:00 PM - 9:00 PM فقط
+    if (period === 'pm') {
+      return hour === 12 || (hour >= 1 && hour <= 9);
+    } else if (period === 'am') {
+      // AM غير مسموح في الصيف
+      return false;
+    }
+  } else {
+    // ❄️ شتوي: 11:00 AM - 8:00 PM
+    if (period === 'pm') {
+      return hour === 12 || (hour >= 1 && hour <= 8);
+    } else if (period === 'am') {
+      return hour === 11; // 11:00 AM و 11:30 AM فقط
+    }
   }
 
   return false;
@@ -79,15 +102,16 @@ const isEndTimeAfterStartTime = (startHour: string, endHour: string): boolean =>
 
     // تحويل إلى 24 ساعة
     if (period === 'pm' && hour !== 12) {
+      // 1 PM = 13, 2 PM = 14, ..., 9 PM = 21
       hour += 12;
     } else if (period === 'am' && hour === 12) {
+      // 12 AM = 0 (منتصف الليل)
       hour = 0;
+    } else if (period === 'pm' && hour === 12) {
+      // 12 PM = 12 (الظهر)
+      hour = 12;
     }
-
-    // إضافة 24 ساعة للأوقات AM (لأنها تعتبر اليوم التالي)
-    if (period === 'am' && hour < 12) {
-      hour += 24;
-    }
+    // AM: 11 AM = 11 (يبقى كما هو)
 
     return hour * 60 + minutes;
   };
@@ -131,7 +155,12 @@ export const timetableValidationSchema = yup.object({
     .matches(TIME_FORMAT_REGEX, 'ساعة النهاية يجب أن تكون بصيغة HH:MM AM/PM (مثل: 1:00 PM)')
     .test(
       'is-valid-working-hour',
-      'أوقات العمل من 12:00 PM إلى 9:00 AM فقط',
+      () => {
+        const isSummer = isSummerTime();
+        return isSummer 
+          ? '☀️ التوقيت الصيفي الحالي: 12:00 PM - 9:00 PM فقط'
+          : '❄️ التوقيت الشتوي الحالي: 11:00 AM - 8:00 PM فقط';
+      },
       (value) => {
         if (!value) return false;
         return isValidWorkingHour(value);
@@ -201,7 +230,7 @@ export const validateTimetableData = async (
  */
 export const validateField = async (
   fieldName: keyof SessionFormData,
-  value: any
+  value: unknown
 ): Promise<{ isValid: boolean; error?: string }> => {
   try {
     const schema = yup.reach(timetableValidationSchema, fieldName) as yup.Schema;

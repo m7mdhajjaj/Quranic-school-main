@@ -22,39 +22,35 @@ exports.createGroup = async (req, res) => {
       return res.status(400).json({ success: false, message: "يوجد حلقة بنفس الاسم بالفعل" });
     }
 
-    // التحقق من وجود المعلم (إذا تم تحديده)
-    let teacherExists = null;
-    if (teacher) {
-      teacherExists = await findTeacherByIdOrName(teacher);
-      if (!teacherExists) {
-        return notFoundResponse(res, "المعلم المحدد غير موجود في النظام");
-      }
+    // التحقق من وجود المعلم (مطلوب)
+    if (!teacher) {
+      return res.status(400).json({ success: false, message: "معرف المعلم مطلوب" });
     }
 
-    const teacherFullName = teacherExists ? `${teacherExists.firstName} ${teacherExists.lastName}` : null;
+    const teacherExists = await findTeacherByIdOrName(teacher);
+    if (!teacherExists) {
+      return notFoundResponse(res, "المعلم المحدد غير موجود في النظام");
+    }
 
     // إنشاء الحلقة
     const group = await Group.create({
       name,
-      teacher: teacherExists ? teacherExists._id : null,
-      teacherName: teacherFullName,
+      teacher: teacherExists._id,
       description: description || '',
       capacity: capacity || 30,
       schedule: schedule || '',
     });
 
     // تحديث قائمة حلقات المعلم
-    if (teacherExists) {
-      const teacherGroups = teacherExists.groups || [];
-      teacherGroups.push({
-        id: group._id,
-        name: group.name,
-        number: teacherGroups.length + 1,
-      });
+    const teacherGroups = teacherExists.groups || [];
+    teacherGroups.push({
+      id: group._id,
+      name: group.name,
+      number: teacherGroups.length + 1,
+    });
 
-      await Teacher.findByIdAndUpdate(teacherExists._id, { groups: teacherGroups });
-      console.log(`✅ تم ربط الحلقة بالمعلم ${teacherFullName}`);
-    }
+    await Teacher.findByIdAndUpdate(teacherExists._id, { groups: teacherGroups });
+    console.log(`✅ تم ربط الحلقة بالمعلم ${teacherExists.firstName} ${teacherExists.lastName} (ID: ${teacherExists._id})`);
 
     // Socket event
     emitSocketEvent("groupCreated", group);

@@ -8,7 +8,6 @@ import {
   deleteNews,
   type INews,
 } from '@/Api/newsApi';
-import { useNewsSocket } from '@/Socket';
 import { validateNewsForm } from '@/Validation/NewsValidation';
 import {
   showSuccessToast,
@@ -48,25 +47,10 @@ export const useNewsData = () => {
   // Get current user for author field
   const { user } = useAuth();
 
-  // Socket Connection
-  const {
-    isConnected: socketConnected,
-    lastUpdate: socketLastUpdate,
-    socketId,
-  } = useNewsSocket();
-
   // ✅ تحميل الأخبار عند فتح الصفحة أول مرة فقط
   useEffect(() => {
     loadNews();
   }, []);
-
-  // ✅ تحديث تلقائي صامت عند استلام تحديثات من السوكت
-  useEffect(() => {
-    if (socketLastUpdate) {
-      console.log('🔄 News Socket update received, refreshing news...');
-      refreshNews(); // لا يظهر loading spinner
-    }
-  }, [socketLastUpdate]);
 
   const loadNews = async () => {
     // ✅ يظهر loading spinner في الصفحة الرئيسية

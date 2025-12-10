@@ -9,13 +9,10 @@ const groupSchema = new mongoose.Schema(
       trim: true,
     },
     teacher: {
-      type: mongoose.Schema.Types.Mixed, // يدعم ObjectId أو String
-      required: false, // اختياري لدعم البيانات القديمة
-    },
-    teacherName: {
-      type: String,
-      trim: true,
-      // حقل مؤقت لدعم البيانات القديمة
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Teacher',
+      required: [true, "معرف المعلم مطلوب"],
+      index: true, // فهرس للبحث السريع
     },
     description: {
       type: String,
@@ -35,11 +32,6 @@ const groupSchema = new mongoose.Schema(
       match: [/^[\u0600-\u06FF\s0-9:,،|-]*$/, "صيغة الجدول غير صحيحة"],
       trim: true,
       maxlength: [200, "الجدول الزمني يجب ألا يتجاوز 200 حرف"],
-    },
-
-    isActive: {
-      type: Boolean,
-      default: true,
     },
 
     // إحصائيات الحضور للشهر الحالي
@@ -80,6 +72,9 @@ const groupSchema = new mongoose.Schema(
 // اسم الحلقة يجب أن يكون فريداً بغض النظر عن المعلم
 groupSchema.index({ name: 1 }, { unique: true });
 
+// فهرس للمعلم للبحث السريع عن حلقاته
+groupSchema.index({ teacher: 1 });
+
 // middleware للتحقق من تفرد اسم الحلقة قبل الحفظ
 groupSchema.pre("save", async function (next) {
   if (this.isNew || this.isModified("name")) {
@@ -97,6 +92,21 @@ groupSchema.pre("save", async function (next) {
       return next(error);
     }
   }
+
+  // التحقق من صحة معرف المعلم
+  if (this.isNew || this.isModified("teacher")) {
+    const Teacher = mongoose.model('Teacher');
+    const teacherExists = await Teacher.findById(this.teacher);
+    
+    if (!teacherExists) {
+      const error = new Error(
+        `المعلم غير موجود. يرجى التحقق من معرف المعلم.`
+      );
+      error.code = "TEACHER_NOT_FOUND";
+      return next(error);
+    }
+  }
+  
   next();
 });
 

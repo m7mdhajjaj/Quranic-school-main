@@ -18,11 +18,47 @@ export interface Session {
   startHour: string;
   endHour: string;
   note: string;
+  description?: string;
   groupId?: string;
   teacherId?: string | Teacher; // معرف المعلم أو بياناته الكاملة
   sessionType?: 'hifz' | 'murajaah' | 'both'; // حفظ، مراجعة، أو الاثنين
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface AvailableHoursResponse {
+  success: boolean;
+  data: {
+    isSummerTime: boolean;
+    season: 'summer' | 'winter';
+    seasonAr: string;
+    range: string;
+    hours: string[];
+    totalSlots: number;
+    currentMonth: number;
+    currentDate: string;
+  };
+}
+
+export interface TeacherAvailableHoursResponse {
+  success: boolean;
+  data: {
+    isSummerTime: boolean;
+    season: 'summer' | 'winter';
+    seasonAr: string;
+    teacherId: string;
+    day: string;
+    availableHours: string[];
+    bookedSessions: Array<{
+      _id: string;
+      startHour: string;
+      endHour: string;
+      note: string;
+    }>;
+    totalSlots: number;
+    bookedSlots: number;
+    availableSlots: number;
+  };
 }
 
 export interface ConflictError {
@@ -43,6 +79,26 @@ export interface GetSessionsResponse {
   timetables: Session[];
   teacherGroups: string[];
 }
+
+// Get available hours - الأوقات المتاحة حسب التوقيت الحالي (عامة)
+export const getAvailableHours = async (): Promise<AvailableHoursResponse> => {
+  const response = await api.get('/sessions/available-hours');
+  return response.data;
+};
+
+// Get available hours for teacher - الأوقات المتاحة للمعلم في يوم معين (بعد حذف المحجوزة)
+export const getAvailableHoursForTeacher = async (
+  teacherId: string,
+  day: string,
+  excludeSessionId?: string
+): Promise<TeacherAvailableHoursResponse> => {
+  const params: any = { teacherId, day };
+  if (excludeSessionId) {
+    params.excludeSessionId = excludeSessionId;
+  }
+  const response = await api.get('/sessions/available-hours-teacher', { params });
+  return response.data;
+};
 
 // Get all sessions - Backend filters by user role
 export const getAllSessions = async (): Promise<GetSessionsResponse | Session[]> => {

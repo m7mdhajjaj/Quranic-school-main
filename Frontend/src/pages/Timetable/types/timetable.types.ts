@@ -15,7 +15,8 @@ export interface Session {
   day: string;
   startHour: string;
   endHour: string;
-  note: string;
+  note: string; // اسم الحلقة
+  description?: string; // وصف أو ملاحظات إضافية
   sessionType?: SessionType; // حفظ، مراجعة، أو الاثنين
   groupId?: string;
   teacherId?: string | Teacher; // معرف المعلم أو بياناته الكاملة
@@ -44,7 +45,8 @@ export interface SessionFormData {
   day: string;
   startHour: string;
   endHour: string;
-  note: string;
+  note: string; // اسم الحلقة
+  description?: string; // وصف أو ملاحظات إضافية
   sessionType?: SessionType;
   teacherId: string; // معرف المعلم مطلوب
 }

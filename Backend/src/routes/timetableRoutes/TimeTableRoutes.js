@@ -8,6 +8,12 @@ const { protect } = require("../../middleware/authMiddleware");
 // TIMETABLE ROUTES
 // ============================================
 
+// Get available hours - الأوقات المتاحة حسب التوقيت الحالي (صيفي/شتوي)
+router.get("/available-hours", protect, timetableController.getAvailableHours);
+
+// Get available hours for teacher - الأوقات المتاحة للمعلم في يوم معين (بعد حذف الأوقات المحجوزة)
+router.get("/available-hours-teacher", protect, timetableController.getAvailableHoursForTeacher);
+
 // Get all timetables - مع المصادقة لفلترة البيانات حسب المستخدم
 router.get("/", protect, timetableController.getAllTimetables);
 

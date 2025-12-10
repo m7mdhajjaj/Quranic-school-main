@@ -6,9 +6,9 @@ import React from "react";
 import { useDisableBodyScroll } from "@/hooks/useDisableBodyScroll";
 import type { Session, SessionFormData } from "../types/timetable.types";
 import { useViewMode, useSessionModal } from "../hooks";
-import { AdvancedTimetableView } from "../components/AdvancedTimetableView";
-import { WeeklyGridView } from "../components/WeeklyGridView";
-import { SessionModal } from "../components/SessionModal";
+import { AdvancedTimetableView } from "../components/DisplayType/AdvancedTimetableView";
+import { WeeklyGridView } from "../components/DisplayType/WeeklyGridView";
+import { SessionModal } from "../Model/SessionModal";
 import PageHeader from "@/components/UI/PageHeader";
 import { Button } from "@/components/UI/Button";
 import { Alert } from "@/components/UI/Alert";
@@ -40,7 +40,7 @@ export const AdminTimetableView: React.FC<AdminTimetableViewProps> = ({
   useDisableBodyScroll(showModal);
 
   // التعامل مع إضافة/تعديل موعد
-  const handleSubmitSession = async (formData: Session, sessionId?: string) => {
+  const handleSubmitSession = async (formData: SessionFormData, sessionId?: string) => {
     const result = sessionId
       ? await onEditSession(sessionId, formData)
       : await onAddSession(formData);
@@ -107,7 +107,7 @@ export const AdminTimetableView: React.FC<AdminTimetableViewProps> = ({
               }`}
               title="عرض الشبكة الأسبوعية">
               <Grid3x3 size={18} />
-              <span className="text-sm font-medium hidden sm:inline">شبكة أسبوعية</span>
+              <span className="text-sm font-medium">شبكة أسبوعية</span>
             </button>
             <button
               onClick={() => setViewMode('cards')}
@@ -116,9 +116,9 @@ export const AdminTimetableView: React.FC<AdminTimetableViewProps> = ({
                   ? 'bg-emerald-600 text-white shadow-md'
                   : 'text-gray-600 hover:bg-gray-100'
               }`}
-              title="عرض البطاقات">
+              title="عرض البطاقات المتقدم">
               <List size={18} />
-              <span className="text-sm font-medium hidden sm:inline">بطاقات</span>
+              <span className="text-sm font-medium">بطاقات متقدمة</span>
             </button>
           </div>
         </div>

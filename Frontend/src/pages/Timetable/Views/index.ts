@@ -5,5 +5,5 @@
 export { AdminTimetableView } from "./AdminTimetableView";
 export { TeacherTimetableView } from "./TeacherTimetableView";
 export { StudentTimetableView } from "./StudentTimetableView";
-export { AdvancedTimetableView } from "../components/AdvancedTimetableView";
-export { WeeklyGridView } from "../components/WeeklyGridView";
+export { AdvancedTimetableView } from "../components/DisplayType/AdvancedTimetableView";
+export { WeeklyGridView } from "../components/DisplayType/WeeklyGridView";

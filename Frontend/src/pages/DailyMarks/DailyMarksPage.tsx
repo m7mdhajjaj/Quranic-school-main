@@ -7,8 +7,6 @@ import { lazy, Suspense } from 'react';
 
 // Socket Hooks
 import {
-  useDailyMarksSocket,
-  useDailyMarksSocketEffects,
   useNotificationsSocket,
 } from '../../Socket';
 
@@ -53,7 +51,6 @@ const DailyMarksPage = () => {
   // ==========================================================================
   // SOCKET CONNECTIONS
   // ==========================================================================
-  const { lastUpdate: socketLastUpdate } = useDailyMarksSocket();
   const { lastNotification } = useNotificationsSocket();
 
   // ==========================================================================
@@ -161,16 +158,6 @@ const DailyMarksPage = () => {
   // ==========================================================================
   // SIDE EFFECTS
   // ==========================================================================
-
-  // Socket-based effects (marks refetch, notifications)
-  useDailyMarksSocketEffects({
-    socketLastUpdate,
-    lastNotification,
-    currentUser,
-    selectedStudentId,
-    refetchMarks,
-    refetchSections,
-  });
 
   // ==========================================================================
   // RENDER

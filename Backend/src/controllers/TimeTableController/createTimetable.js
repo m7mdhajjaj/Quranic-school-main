@@ -4,12 +4,8 @@
 
 const TimeTable = require("../../schema/TimeTable");
 const Group = require("../../schema/Group");
-const { 
-  addTimetableToGroup, 
-  emitSocketEvent,
-  checkTimetableConflict,
-  checkTeacherTimetableConflict
-} = require("./helpers");
+const { addTimetableToGroup } = require("./Helper/groupHelpers");
+const { checkTimetableConflict, checkSessionConflict } = require("./Helper/conflictChecker");
 
 /**
  * إضافة موعد جديد
@@ -17,21 +13,35 @@ const {
 exports.createTimetable = async (req, res) => {
   try {
     const timetableData = req.validatedData || req.body;
-    const { day, startHour, endHour, note, sessionType, teacherId } = timetableData;
+    const { day, startHour, endHour, note, description, sessionType, teacherId } = timetableData;
+
+    // ✅ فحص الصلاحيات: المعلم يمكنه إضافة مواعيد لنفسه فقط (بناءً على teacherId)
+    const currentUser = req.user;
+    if (currentUser && currentUser.role === 'teacher') {
+      console.log(`👨‍🏫 محاولة إضافة من المعلم ${currentUser._id} - teacherId في البيانات: ${teacherId}`);
+      // التأكد من أن teacherId في البيانات يطابق ID المعلم الحالي
+      if (!teacherId || teacherId.toString() !== currentUser._id.toString()) {
+        console.log(`🚫 محاولة إضافة غير مصرح بها: teacherId لا يطابق`);
+        return res.status(403).json({
+          success: false,
+          error: "Forbidden",
+          message: "غير مسموح لك بإضافة مواعيد لمعلمين آخرين - يمكنك فقط إضافة مواعيدك الخاصة",
+        });
+      }
+      console.log(`✅ الصلاحيات صحيحة - يضيف المعلم موعده الخاص`);
+    }
 
     // 1. فحص التعارب لجميع حلقات المعلم - الفحص الأساسي والأهم
     if (teacherId) {
-      const teacherConflictCheck = await checkTeacherTimetableConflict(
-        teacherId,
-        timetableData
-      );
+      const conflictCheck = await checkSessionConflict(teacherId, day, startHour, endHour);
       
-      if (teacherConflictCheck.hasConflict) {
+      if (conflictCheck.hasConflict) {
+        const conflictSession = conflictCheck.conflictingSession;
         return res.status(409).json({
           success: false,
           error: "Teacher time conflict",
-          message: `المعلم لديه موعد آخر في نفس الوقت (${teacherConflictCheck.conflictDetails.note}) يوم ${teacherConflictCheck.conflictDetails.day} من ${teacherConflictCheck.conflictDetails.startHour} إلى ${teacherConflictCheck.conflictDetails.endHour}`,
-          conflictDetails: teacherConflictCheck.conflictDetails
+          message: `المعلم لديه موعد آخر في نفس الوقت (${conflictSession.note}) يوم ${conflictSession.day} من ${conflictSession.startHour} إلى ${conflictSession.endHour}`,
+          conflictDetails: conflictSession
         });
       }
     }
@@ -58,12 +68,13 @@ exports.createTimetable = async (req, res) => {
       }
     }
 
-    // إنشاء موعد جديد مع groupId و sessionType و teacherId
+    // إنشاء موعد جديد مع groupId و sessionType و teacherId و description
     const timetable = new TimeTable({ 
       day, 
       startHour, 
       endHour, 
       note: note || "",
+      description: description || "", // ✅ إضافة حقل الوصف/الملاحظات
       groupId,
       teacherId, // ✅ معرف المعلم مطلوب
       sessionType: sessionType || undefined // ✅ إضافة sessionType إذا كان موجود
@@ -84,10 +95,6 @@ exports.createTimetable = async (req, res) => {
     const populatedTimetable = await TimeTable.findById(timetable._id)
       .populate('groupId', 'name')
       .populate('teacherId', 'firstName lastName');
-
-    // إرسال حدث Socket
-    const io = req.app.get("io");
-    emitSocketEvent(io, "timetableCreated", { timetable: populatedTimetable });
 
     res.status(201).json(populatedTimetable);
   } catch (err) {

@@ -30,18 +30,15 @@ exports.getAllGroups = async (req, res) => {
         const isFull = currentStudents >= capacity;
 
         // جلب معلومات المعلم إذا كان موجود
-        let teacherName = group.teacher || "";
         let teacherInfo = null;
 
         if (group.teacher) {
           const teacherData = await getTeacherInfo(group.teacher);
-          teacherName = teacherData.name;
           teacherInfo = teacherData.info;
         }
 
         return {
           ...group.toObject(),
-          teacher: teacherName,
           teacherInfo,
           currentStudents,
           capacity,
@@ -107,7 +104,6 @@ exports.getGroupsByTeacher = async (req, res) => {
     const [groups, studentCountMap] = await Promise.all([
       Group.find({
         teacher,
-        isActive: true,
       }).sort({ createdAt: -1 }),
       getStudentCountsForTeacher(teacher),
     ]);
@@ -147,14 +143,14 @@ exports.getGroupsMonthlyStats = async (req, res) => {
 
     // جلب جميع الحلقات مع إحصائياتها
     const groups = await Group.find({})
-      .select("name teacher teacherName currentMonthStats")
+      .select("name teacher currentMonthStats")
       .sort({ name: 1 });
 
     // تنسيق البيانات
     const stats = groups.map((group) => ({
       _id: group._id,
       name: group.name,
-      teacher: group.teacherName || group.teacher,
+      teacher: group.teacher,
       currentMonthStats: group.currentMonthStats || {
         month: null,
         absenceRate: 0,
@@ -228,7 +224,7 @@ exports.getGroupStudents = async (req, res) => {
         group: {
           _id: group._id,
           name: group.name,
-          teacher: group.teacherName || group.teacher,
+          teacher: group.teacher,
           capacity: group.capacity || 30,
         },
         students: students,
@@ -272,13 +268,9 @@ exports.getGroupsByTeacherIdWithFilters = async (req, res) => {
 
     const teacherFullName = `${teacher.firstName} ${teacher.lastName}`;
 
-    // 2. جلب حلقات المعلم (بدون فلتر isActive للعلامات)
+    // 2. جلب حلقات المعلم
     const groups = await Group.find({
-      $or: [
-        { teacher: teacherId },
-        { teacher: teacherId.toString() },
-        { teacherName: teacherFullName },
-      ],
+      teacher: teacherId
     })
       .select("name _id capacity description schedule")
       .lean()

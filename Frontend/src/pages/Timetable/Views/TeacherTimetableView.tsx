@@ -1,18 +1,18 @@
 // ============================================================================
-// TeacherTimetableView - عرض الجدول للمعلم (مع إمكانية التعديل)
+// TeacherTimetableView - عرض الجدول للمعلم
 // ============================================================================
+// المعلم يمكنه إضافة/تعديل/حذف مواعيد حلقاته فقط
 
-import React from "react";
-import { useDisableBodyScroll } from "@/hooks/useDisableBodyScroll";
+import React, { useState } from "react";
 import type { Session, SessionFormData } from "../types/timetable.types";
-import { useViewMode, useSessionModal } from "../hooks";
-import { AdvancedTimetableView } from "../components/AdvancedTimetableView";
-import { WeeklyGridView } from "../components/WeeklyGridView";
-import { SessionModal } from "../components/SessionModal";
+import { useViewMode } from "../hooks";
+import { SessionModal } from "../Model/SessionModal";
+import { AdvancedTimetableView } from "../components/DisplayType/AdvancedTimetableView";
+import { WeeklyGridView } from "../components/DisplayType/WeeklyGridView";
 import PageHeader from "@/components/UI/PageHeader";
 import { Button } from "@/components/UI/Button";
 import { Alert } from "@/components/UI/Alert";
-import { Calendar, Plus, Grid3x3, List } from "lucide-react";
+import { Calendar, Grid3x3, List } from "lucide-react";
 
 interface TeacherTimetableViewProps {
   sessions: Session[];
@@ -36,28 +36,35 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
   refetchSessions,
 }) => {
   const { viewMode, setViewMode } = useViewMode('grid');
-  const { showModal, editingSession, openAddModal, openEditModal, closeModal } = useSessionModal();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingSession, setEditingSession] = useState<Session | null>(null);
 
-  // تعطيل scroll الصفحة عند فتح الـ Modal
-  useDisableBodyScroll(showModal);
-
-  // التعامل مع إضافة/تعديل موعد
-  const handleSubmitSession = async (formData: Session, sessionId?: string) => {
-    const result = sessionId
-      ? await onEditSession(sessionId, formData)
-      : await onAddSession(formData);
-
-    if (result) {
-      closeModal();
-    }
-
-    return result;
+  const handleOpenAddModal = () => {
+    setEditingSession(null);
+    setIsModalOpen(true);
   };
 
-  // استخدام الدوال من useSessionModal
-  const handleEditClick = openEditModal;
-  const handleAddClick = openAddModal;
-  const handleCloseModal = closeModal;
+  const handleOpenEditModal = (session: Session) => {
+    setEditingSession(session);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingSession(null);
+  };
+
+  const handleSubmit = async (formData: SessionFormData, sessionId?: string) => {
+    const success = sessionId 
+      ? await onEditSession(sessionId, formData)
+      : await onAddSession(formData);
+    
+    if (success) {
+      handleCloseModal();
+      refetchSessions();
+    }
+    return success;
+  };
 
   return (
     <div
@@ -89,15 +96,8 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
           </Alert>
         )}
 
-        {/* أزرار التحكم */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-          <Button
-            leftIcon={<Plus className="w-5 h-5" />}
-            onClick={handleAddClick}
-            size="lg">
-            إضافة موعد حلقة
-          </Button>
-
+        {/* شريط التحكم العلوي */}
+        <div className="flex items-center justify-between mb-6">
           {/* أزرار تبديل العرض */}
           <div className="flex gap-2 bg-white rounded-lg p-1 shadow-md">
             <button
@@ -108,7 +108,7 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
                   : 'text-gray-600 hover:bg-gray-100'
               }`}>
               <Grid3x3 size={18} />
-              <span className="text-sm font-medium hidden sm:inline">شبكة أسبوعية</span>
+              <span className="text-sm font-medium">شبكة أسبوعية</span>
             </button>
             <button
               onClick={() => setViewMode('cards')}
@@ -118,18 +118,27 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
                   : 'text-gray-600 hover:bg-gray-100'
               }`}>
               <List size={18} />
-              <span className="text-sm font-medium hidden sm:inline">بطاقات</span>
+              <span className="text-sm font-medium">بطاقات متقدمة</span>
             </button>
           </div>
+
+          {/* زر إضافة موعد */}
+          <Button
+            onClick={handleOpenAddModal}
+            variant="primary"
+            size="lg">
+            ➕ إضافة موعد حلقة
+          </Button>
         </div>
 
+       
         {/* الجدول */}
         {viewMode === 'grid' ? (
           <WeeklyGridView
             sessions={sessions}
             loading={loading}
             role="teacher"
-            onEdit={handleEditClick}
+            onEdit={handleOpenEditModal}
             onDelete={onDeleteSession}
           />
         ) : (
@@ -137,7 +146,7 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
             sessions={sessions}
             loading={loading}
             role="teacher"
-            onEdit={handleEditClick}
+            onEdit={handleOpenEditModal}
             onDelete={onDeleteSession}
           />
         )}
@@ -149,17 +158,17 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
               variant="info"
               title="لا توجد مواعيد"
               className="max-w-2xl mx-auto">
-              لم يتم إضافة مواعيد لحلقاتك بعد. ابدأ بإضافة موعد جديد.
+              لم يتم إضافة مواعيد لحلقاتك بعد من قبل الإدارة.
             </Alert>
           </div>
         )}
       </div>
 
-      {/* نافذة إضافة/تعديل الموعد */}
+      {/* Modal إضافة/تعديل موعد */}
       <SessionModal
-        isOpen={showModal}
+        isOpen={isModalOpen}
         onClose={handleCloseModal}
-        onSubmit={handleSubmitSession}
+        onSubmit={handleSubmit}
         editingSession={editingSession}
         role="teacher"
         teacherGroups={teacherGroups}

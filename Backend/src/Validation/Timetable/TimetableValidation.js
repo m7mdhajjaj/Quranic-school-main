@@ -4,6 +4,17 @@
 // Validation middleware for timetable/session scheduling
 
 /**
+ * تحديد إذا كان التوقيت صيفي أو شتوي (تلقائي)
+ * الصيفي: من مايو (5) إلى سبتمبر (9)
+ * الشتوي: من أكتوبر (10) إلى أبريل (4)
+ */
+const isSummerTime = () => {
+  const now = new Date();
+  const month = now.getMonth() + 1; // 1-12
+  return month >= 5 && month <= 9;
+};
+
+/**
  * Check if a value exists and is not empty
  */
 const isRequired = (value) => {
@@ -54,7 +65,7 @@ const validateStartHour = (startHour) => {
     };
   }
 
-  // Check working hours (12:00 PM to 9:00 AM)
+  // Check working hours (صيفي: 12:00 PM - 9:00 PM، شتوي: 11:00 AM - 8:00 PM)
   const match = timeStr.match(/^([0-1]?[0-9]):[0-5][0-9]\s?(AM|PM|am|pm)$/i);
   if (match) {
     const hour = parseInt(match[1]);
@@ -63,15 +74,17 @@ const validateStartHour = (startHour) => {
     
     let isValidHour = false;
     if (isPM) {
-      isValidHour = hour === 12 || (hour >= 1 && hour < 12); // 12PM-11:59PM
+      // PM: 12:00 PM - 9:00 PM مسموح (صيفي وشتوي)
+      isValidHour = hour === 12 || (hour >= 1 && hour <= 9);
     } else if (isAM) {
-      isValidHour = (hour >= 1 && hour <= 9) || hour === 12; // 12AM-9AM
+      // AM: 11:00 AM و 11:30 AM فقط (شتوي)
+      isValidHour = hour === 11;
     }
     
     if (!isValidHour) {
       return {
         isValid: false,
-        message: 'أوقات العمل من 12:00 PM إلى 9:00 AM فقط'
+        message: 'أوقات العمل: صيفي (12:00 PM - 9:00 PM) أو شتوي (11:00 AM - 8:00 PM)'
       };
     }
   }
@@ -97,24 +110,43 @@ const validateEndHour = (endHour) => {
     };
   }
 
-  // Check working hours (12:00 PM to 9:00 AM)
+  // ✅ فحص الأوقات حسب التوقيت الحالي (تلقائي)
   const match = timeStr.match(/^([0-1]?[0-9]):[0-5][0-9]\s?(AM|PM|am|pm)$/i);
   if (match) {
     const hour = parseInt(match[1]);
     const isPM = match[2].toLowerCase() === 'pm';
     const isAM = match[2].toLowerCase() === 'am';
+    const isSummer = isSummerTime();
     
     let isValidHour = false;
-    if (isPM) {
-      isValidHour = hour === 12 || (hour >= 1 && hour < 12); // 12PM-11:59PM
-    } else if (isAM) {
-      isValidHour = (hour >= 1 && hour <= 9) || hour === 12; // 12AM-9AM
+    
+    if (isSummer) {
+      // ☀️ صيفي: 12:00 PM - 9:00 PM فقط
+      if (isPM) {
+        isValidHour = hour === 12 || (hour >= 1 && hour <= 9);
+      } else if (isAM) {
+        // AM غير مسموح في الصيف
+        return {
+          isValid: false,
+          message: '⚠️ التوقيت الصيفي الحالي: 12:00 PM - 9:00 PM فقط'
+        };
+      }
+    } else {
+      // ❄️ شتوي: 11:00 AM - 8:00 PM
+      if (isPM) {
+        isValidHour = hour === 12 || (hour >= 1 && hour <= 8);
+      } else if (isAM) {
+        isValidHour = hour === 11;
+      }
     }
     
     if (!isValidHour) {
+      const seasonMsg = isSummer 
+        ? '☀️ التوقيت الصيفي: 12:00 PM - 9:00 PM'
+        : '❄️ التوقيت الشتوي: 11:00 AM - 8:00 PM';
       return {
         isValid: false,
-        message: 'أوقات العمل من 12:00 PM إلى 9:00 AM فقط'
+        message: `أوقات العمل الحالية: ${seasonMsg}`
       };
     }
   }
@@ -140,6 +172,26 @@ const validateNote = (note) => {
   }
 
   return { isValid: true, value: noteStr };
+};
+
+/**
+ * Validate description (detailed notes or report)
+ */
+const validateDescription = (description) => {
+  if (!description || description.trim() === '') {
+    return { isValid: true, value: '' }; // Optional field
+  }
+
+  const descStr = description.toString().trim();
+  
+  if (descStr.length > 500) {
+    return { 
+      isValid: false, 
+      message: 'الوصف يجب أن يكون 500 حرف أو أقل' 
+    };
+  }
+
+  return { isValid: true, value: descStr };
 };
 
 /**
@@ -188,11 +240,40 @@ const validateSessionType = (sessionType) => {
  * Validate time logic (start should be before end)
  */
 const validateTimeLogic = (startHour, endHour) => {
-  const [startH, startM] = startHour.split(':').map(Number);
-  const [endH, endM] = endHour.split(':').map(Number);
+  // تحويل الوقت من 12-hour إلى دقائق
+  const timeToMinutes = (timeStr) => {
+    const match = timeStr.match(/^([0-9]{1,2}):([0-5][0-9])\s?(AM|PM|am|pm)$/i);
+    if (!match) return -1;
+
+    let hour = parseInt(match[1]);
+    const minutes = parseInt(match[2]);
+    const period = match[3].toLowerCase();
+
+    // تحويل إلى 24 ساعة
+    if (period === 'pm' && hour !== 12) {
+      // 1 PM = 13, 2 PM = 14, ..., 9 PM = 21
+      hour += 12;
+    } else if (period === 'am' && hour === 12) {
+      // 12 AM = 0 (منتصف الليل)
+      hour = 0;
+    } else if (period === 'pm' && hour === 12) {
+      // 12 PM = 12 (الظهر)
+      hour = 12;
+    }
+    // AM: 11 AM = 11 (يبقى كما هو)
+
+    return hour * 60 + minutes;
+  };
+
+  const startMinutes = timeToMinutes(startHour);
+  const endMinutes = timeToMinutes(endHour);
   
-  const startMinutes = startH * 60 + startM;
-  const endMinutes = endH * 60 + endM;
+  if (startMinutes === -1 || endMinutes === -1) {
+    return { 
+      isValid: false, 
+      message: 'صيغة الوقت غير صحيحة' 
+    };
+  }
   
   if (startMinutes >= endMinutes) {
     return { 
@@ -275,6 +356,16 @@ const validateTimetableData = async (req, res, next) => {
         errors.push(noteValidation.message);
       } else {
         validatedData.note = noteValidation.value;
+      }
+    }
+    
+    // Validate optional description field
+    if (data.description !== undefined) {
+      const descriptionValidation = validateDescription(data.description);
+      if (!descriptionValidation.isValid) {
+        errors.push(descriptionValidation.message);
+      } else {
+        validatedData.description = descriptionValidation.value;
       }
     }
     

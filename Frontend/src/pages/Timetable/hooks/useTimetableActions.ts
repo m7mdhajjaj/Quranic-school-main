@@ -1,6 +1,8 @@
 // ============================================================================
-// useTimetableActions - هوك لإدارة عمليات الجدول (إضافة، تعديل، حذف)
+// useTimetableActions - هوك لإدارة عمليات الجدول (CRUD Operations)
 // ============================================================================
+// يوفر دوال لإضافة، تعديل، وحذف الحصص عبر الـ Backend API
+// جميع العمليات تتحقق من الصلاحيات والتعارب في الـ Backend
 
 import { useCallback } from "react";
 import {
@@ -19,11 +21,17 @@ interface UseTimetableActionsProps {
 export const useTimetableActions = ({
   setSessions,
 }: UseTimetableActionsProps) => {
-  // إضافة موعد جديد
+  
+  // ============================================
+  // ➕ إضافة موعد جديد
+  // ============================================
+  // Backend يتحقق من:
+  // 1. Validation (Yup schema)
+  // 2. تعارب أوقات المعلم
+  // 3. تعارب أوقات الحلقة
   const addSession = useCallback(
     async (formData: SessionFormData) => {
       try {
-        // ✅ Backend سيتحقق من validation
         const added = await createSession(formData);
         setSessions((prev) => [...prev, added]);
 
@@ -35,7 +43,7 @@ export const useTimetableActions = ({
       } catch (error: any) {
         console.error("❌ خطأ في حفظ الموعد:", error);
         
-        // Handle conflict errors
+        // معالجة خاصة لأخطاء التعارب (409 Conflict)
         if (error?.isConflict) {
           await showErrorMessage("تعارض في المواعيد!", error.message);
           return false;
@@ -54,11 +62,16 @@ export const useTimetableActions = ({
     [setSessions]
   );
 
-  // تحديث موعد موجود
+  // ============================================
+  // ✏️ تعديل موعد موجود
+  // ============================================
+  // Backend يتحقق من:
+  // 1. Validation (Yup schema)
+  // 2. تعارب أوقات المعلم (مع استثناء الجلسة الحالية)
+  // 3. الصلاحيات (المعلم يعدل مواعيده فقط)
   const editSession = useCallback(
     async (sessionId: string, formData: SessionFormData) => {
       try {
-        // ✅ Backend سيتحقق من validation
         const updated = await updateSession(sessionId, formData);
         setSessions((prev) =>
           prev.map((s) => (s._id === sessionId ? updated : s))
@@ -70,7 +83,7 @@ export const useTimetableActions = ({
       } catch (error: any) {
         console.error("❌ خطأ في تحديث الموعد:", error);
         
-        // Handle conflict errors
+        // معالجة خاصة لأخطاء التعارب (409 Conflict)
         if (error?.isConflict) {
           await showErrorMessage("تعارض في المواعيد!", error.message);
           return false;
@@ -89,7 +102,10 @@ export const useTimetableActions = ({
     [setSessions]
   );
 
-  // حذف موعد
+  // ============================================
+  // 🗑️ حذف موعد
+  // ============================================
+  // يطلب تأكيد من المستخدم قبل الحذف
   const removeSession = useCallback(
     async (session: Session) => {
       const result = await showConfirmDialog(
