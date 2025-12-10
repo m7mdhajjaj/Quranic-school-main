@@ -846,3 +846,91 @@ exports.bulkDeleteTeachers = async (req, res) => {
 // ❌ تم حذف getStudentsByTeacherId - مكرر!
 // استخدم بدلاً منه: GET /api/students/teacher/:teacher من Student Controller
 
+/**
+ * جلب الحلقات للمعلم في نموذج التعديل/الإضافة
+ * - عند الإضافة: إرجاع الحلقات غير المرتبطة بأي معلم
+ * - عند التعديل: إرجاع حلقات المعلم فقط + الحلقات غير المرتبطة (للإضافة)
+ */
+exports.getAvailableGroupsForTeacher = async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+    const mongoose = require('mongoose');
+    
+    if (teacherId && teacherId !== 'new') {
+      // عند التعديل: جلب حلقات المعلم الحالي + الحلقات المتاحة
+      console.log(`📋 جلب حلقات المعلم ${teacherId} (تعديل)`);
+      
+      // جلب جميع الحلقات
+      const allGroups = await Group.find({})
+        .select('name number teacher teacherName description capacity isActive')
+        .sort({ name: 1 })
+        .lean();
+
+      console.log(`📊 إجمالي الحلقات في النظام: ${allGroups.length}`);
+      
+      // تصفية الحلقات: المتاحة + حلقات المعلم الحالي
+      const filteredGroups = allGroups.filter(group => {
+        // إذا كانت الحلقة غير مرتبطة بأي معلم
+        if (!group.teacher || group.teacher === '' || group.teacher === null) {
+          return true;
+        }
+        
+        // إذا كانت الحلقة مرتبطة بالمعلم الحالي
+        const teacherStr = group.teacher.toString();
+        if (teacherStr === teacherId || teacherStr === teacherId.toString()) {
+          return true;
+        }
+        
+        return false;
+      });
+
+      console.log(`✅ تم تصفية ${filteredGroups.length} حلقة`);
+      
+      // حساب عدد حلقات المعلم والحلقات المتاحة
+      const teacherGroups = filteredGroups.filter(g => 
+        g.teacher && g.teacher.toString() === teacherId
+      );
+      const availableGroups = filteredGroups.filter(g => 
+        !g.teacher || g.teacher === '' || g.teacher === null
+      );
+      
+      console.log(`   📌 حلقات المعلم: ${teacherGroups.length} - ${teacherGroups.map(g => g.name).join(', ')}`);
+      console.log(`   📌 حلقات متاحة: ${availableGroups.length}`);
+
+      return res.status(200).json({
+        success: true,
+        data: filteredGroups,
+        count: filteredGroups.length
+      });
+    } else {
+      // عند الإضافة: الحلقات غير المرتبطة فقط
+      console.log('📋 جلب الحلقات المتاحة (إضافة معلم جديد)');
+      
+      const groups = await Group.find({})
+        .select('name number teacher teacherName description capacity isActive')
+        .sort({ name: 1 })
+        .lean();
+
+      // تصفية الحلقات غير المرتبطة فقط
+      const availableGroups = groups.filter(g => 
+        !g.teacher || g.teacher === '' || g.teacher === null
+      );
+
+      console.log(`✅ تم جلب ${availableGroups.length} حلقة متاحة من ${groups.length} حلقة`);
+
+      return res.status(200).json({
+        success: true,
+        data: availableGroups,
+        count: availableGroups.length
+      });
+    }
+  } catch (error) {
+    console.error('❌ خطأ في جلب الحلقات:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'حدث خطأ أثناء جلب الحلقات',
+      error: error.message
+    });
+  }
+};
+

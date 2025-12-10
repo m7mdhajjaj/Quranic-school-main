@@ -98,13 +98,16 @@ router.get("/stats/summary/all", async (req, res) => {
     console.log("📊 تحميل إحصائيات الطلاب (ملخص شامل)...");
     const startTime = Date.now();
 
-    const [totalCount, maleCount, femaleCount, activeCount] = await Promise.all([
+    const [totalCount, maleCount, femaleCount, activeCount, avgAge] = await Promise.all([
       Student.countDocuments(),
       Student.countDocuments({ gender: "ذكر" }),
       Student.countDocuments({ gender: "أنثى" }),
       Student.countDocuments({
         group: { $exists: true, $ne: null, $ne: "", $ne: "غير محدد", $ne: "undefined" },
       }),
+      Student.aggregate([{ $group: { _id: null, avgAge: { $avg: "$age" } } }]).then(
+        (result) => (result.length > 0 ? Math.round(result[0].avgAge || 0) : 0)
+      ),
     ]);
 
     const duration = Date.now() - startTime;
@@ -114,6 +117,7 @@ router.get("/stats/summary/all", async (req, res) => {
       activeStudents: activeCount,
       maleStudents: maleCount,
       femaleStudents: femaleCount,
+      avgAge: avgAge,
       byGroup: [],
     };
 

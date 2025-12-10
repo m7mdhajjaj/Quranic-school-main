@@ -3,7 +3,7 @@ import { FaUserGraduate } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
 import { useDisableBodyScroll } from "@/hooks/useDisableBodyScroll";
 
-import AddStudentFormWithYup from '@/pages/Admin/StudentsManagement/Model/StudentForm';
+import { AddStudentFormWithYup } from './Model';
 import {
   StudentGridView,
   StudentTableView,

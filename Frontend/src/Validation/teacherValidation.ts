@@ -164,7 +164,10 @@ export const teacherValidationSchema = yup.object({
       yup.object({
         id: yup.string().required('معرف الحلقة مطلوب'),
         name: yup.string().trim().required('اسم الحلقة مطلوب'),
-        number: yup.number().min(1, 'رقم الحلقة يجب أن يكون أكبر من 0').required('رقم الحلقة مطلوب')
+        number: yup.number()
+          .min(1, 'رقم الحلقة يجب أن يكون أكبر من 0')
+          .nullable()
+          .transform((value) => value === null || value === undefined || isNaN(value) ? null : value)
       })
     )
     .default([])

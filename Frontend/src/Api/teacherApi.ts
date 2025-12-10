@@ -21,7 +21,7 @@ export interface Teacher {
   groups?: {
     id: string;
     name: string;
-    number: number;
+    number?: number;
   }[]; // الحلقات التي يدرسها المعلم
   avatar?: {
     data: Buffer;
@@ -190,6 +190,28 @@ export const checkDuplicateTeacher = async (params: {
   }
 };
 
+// Check for duplicate field (simplified version for forms)
+export const checkDuplicateField = async (
+  field: string,
+  value: string,
+  excludeId?: string
+): Promise<{ exists: boolean; userType?: string }> => {
+  try {
+    const response = await checkDuplicateTeacher({
+      field: field as 'email' | 'phoneNumber' | 'idNumber',
+      value,
+      excludeId,
+    });
+    return {
+      exists: response.isDuplicate || false,
+      userType: response.existingUserType,
+    };
+  } catch (error) {
+    console.error('Error checking duplicate field:', error);
+    return { exists: false };
+  }
+};
+
 // Bulk delete teachers
 export const bulkDeleteTeachers = async (teacherIds: string[]): Promise<{ success: boolean; message?: string; deletedCount?: number }> => {
   try {
@@ -203,6 +225,38 @@ export const bulkDeleteTeachers = async (teacherIds: string[]): Promise<{ succes
     return {
       success: false,
       message: axiosError.response?.data?.message || 'حدث خطأ أثناء حذف المعلمين'
+    };
+  }
+};
+
+// Get available groups for teacher (for create/edit form)
+export const getAvailableGroupsForTeacher = async (teacherId?: string): Promise<{ 
+  success: boolean; 
+  data?: Array<{
+    _id: string;
+    name: string;
+    number?: number;
+    teacher?: string;
+    teacherName?: string;
+    description?: string;
+    capacity?: number;
+    isActive: boolean;
+  }>; 
+  message?: string;
+  count?: number;
+}> => {
+  try {
+    const id = teacherId || 'new';
+    console.log(`📡 طلب الحلقات المتاحة للمعلم: ${id}`);
+    const response = await api.get(`/teachers/available-groups/${id}`);
+    console.log(`✅ تم جلب ${response.data.count} حلقة متاحة`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching available groups:', error);
+    const axiosError = error as AxiosError<{message?: string}>;
+    return {
+      success: false,
+      message: axiosError.response?.data?.message || 'حدث خطأ أثناء جلب الحلقات المتاحة'
     };
   }
 };

@@ -17,6 +17,9 @@ const {
 // Get all teachers
 router.get("/", protect, controller.getAllTeachers);
 
+// Get available groups for teacher (must be before /:id)
+router.get("/available-groups/:teacherId", protect, controller.getAvailableGroupsForTeacher);
+
 // Check duplicate field (no cache - real-time check needed)
 router.get("/check-duplicate", protect, controller.checkDuplicate);
 

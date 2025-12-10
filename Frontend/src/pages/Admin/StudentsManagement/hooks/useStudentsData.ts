@@ -28,17 +28,27 @@ export const useStudentsData = (hasPermission: boolean) => {
 
     try {
       const startTime = performance.now();
-      const result = await getAllStudents(filters);
+      
+      // Load students and stats in parallel
+      const [studentsResult, statsResult] = await Promise.all([
+        getAllStudents(filters),
+        getStudentStats()
+      ]);
 
-      if (!result.success || !result.data) {
-        throw new Error(result.message || "البيانات المستلمة غير صحيحة");
+      if (!studentsResult.success || !studentsResult.data) {
+        throw new Error(studentsResult.message || "البيانات المستلمة غير صحيحة");
+      }
+
+      // Update stats immediately
+      if (statsResult.success && statsResult.data) {
+        setApiStats(statsResult.data);
       }
 
       // Backend sends clean data with defaults - no need to process
       const duration = (performance.now() - startTime).toFixed(2);
-      console.log(`✅ تم تحميل ${result.data.length} طالب بنجاح في ${duration}ms`);
+      console.log(`✅ تم تحميل ${studentsResult.data.length} طالب بنجاح في ${duration}ms`);
       
-      setStudents(result.data);
+      setStudents(studentsResult.data);
       setError(null);
       setRetryCount(0);
     } catch (error: unknown) {
@@ -56,22 +66,6 @@ export const useStudentsData = (hasPermission: boolean) => {
       setIsLoading(false);
     }
   }, []);
-
-  useEffect(() => {
-    const loadStats = async () => {
-      try {
-        const result = await getStudentStats();
-        if (result.success && result.data) {
-          setApiStats(result.data);
-        }
-      } catch (error) {
-        console.error("❌ خطأ في تحميل الإحصائيات:", error);
-      }
-    };
-    if (students.length > 0) {
-      loadStats();
-    }
-  }, [students.length]);
 
   useEffect(() => {
     if (!hasPermission) return;

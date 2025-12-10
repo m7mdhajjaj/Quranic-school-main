@@ -5,6 +5,7 @@ import { AxiosError } from "axios";
 export interface Group {
   _id: string;
   name: string;
+  number?: number; // رقم الحلقة
   teacher: string;
   teacherName?: string; // حقل إضافي للاسم
   description?: string;

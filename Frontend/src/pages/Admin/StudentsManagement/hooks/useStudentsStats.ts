@@ -13,7 +13,7 @@ export const calculateStats = (
       female: apiStats.femaleStudents || 0,
       active: apiStats.activeStudents || 0,
       inactive: (apiStats.totalStudents || students.length) - (apiStats.activeStudents || 0),
-      avgAge: "0", // Backend should calculate this
+      avgAge: apiStats.avgAge || "0",
     };
   }
 

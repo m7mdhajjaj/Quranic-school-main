@@ -148,17 +148,17 @@ export const TeacherGridView: React.FC<TeacherGridViewProps> = ({
           </div>
 
           {/* Card Footer - Actions */}
-          <div className="p-3 bg-gray-50 border-t border-gray-100">
+          <div className="p-3 bg-gradient-to-br from-gray-50 to-emerald-50/30 border-t border-gray-100">
             <div className="flex gap-2">
               <button
                 onClick={() => onEdit(teacher)}
-                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium shadow-sm">
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition-all duration-200 text-xs font-medium shadow-sm hover:shadow-md transform hover:-translate-y-0.5">
                 <FaEdit className="w-3 h-3" />
                 تعديل
               </button>
               <button
                 onClick={() => onDelete(teacher)}
-                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-xs font-medium shadow-sm">
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 text-xs font-medium shadow-sm hover:shadow-md transform hover:-translate-y-0.5">
                 <FaTrash className="w-3 h-3" />
                 حذف
               </button>

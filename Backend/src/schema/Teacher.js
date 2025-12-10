@@ -15,7 +15,7 @@ const groupSubSchema = new mongoose.Schema({
   },
   number: {
     type: Number,
-    required: [true, 'رقم الحلقة مطلوب'],
+    required: false, // جعله اختيارياً
     min: [1, 'رقم الحلقة يجب أن يكون أكبر من 0']
   }
 }, { _id: false }); // منع إنشاء _id تلقائي للعناصر الفرعية

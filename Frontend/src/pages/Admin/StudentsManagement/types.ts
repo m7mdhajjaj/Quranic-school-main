@@ -22,5 +22,6 @@ export interface ApiStats {
   activeStudents: number;
   maleStudents: number;
   femaleStudents: number;
+  avgAge?: string | number;
   byGroup: Array<{ group: string; count: number }>;
 }
