@@ -3,8 +3,8 @@
 // ============================================================================
 
 import React, { useMemo } from "react";
-import type { Session, UserRole } from "../../types/timetable.types";
-import { WEEK_DAYS, generateHours, isSummerTime } from "../../utils";
+import type { Session, UserRole } from "../types/timetable.types";
+import { WEEK_DAYS, generateHours, isSummerTime } from "../utils";
 import { Edit, Trash2 } from "lucide-react";
 
 interface WeeklyGridViewProps {
@@ -70,7 +70,7 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
         const sessionStartIndex = hours.indexOf(session.startHour);
         
         // التحقق إذا كان السلوت الحالي ضمن نطاق الحصة (يشمل البداية والنهاية)
-        if (currentIndex > sessionStartIndex && currentIndex < sessionStartIndex + rowSpan) {
+        if (currentIndex > sessionStartIndex && currentIndex <= sessionStartIndex + rowSpan) {
           return true;
         }
       }
@@ -111,27 +111,27 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
             <thead>
               <tr>
                 <th className="sticky right-0 bg-gradient-to-br from-gray-50 to-gray-100 border-b-2 border-l-2 border-emerald-200 p-4 text-base font-bold text-gray-700 w-32 z-10 shadow-sm">
-                  اليوم
+                  الوقت
                 </th>
-                {hours.map((hour) => (
+                {WEEK_DAYS.map((day) => (
                   <th
-                    key={hour}
-                    className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-b-2 border-l border-emerald-200 p-3 text-sm font-bold text-emerald-900 shadow-sm min-w-[120px]">
-                    {hour}
+                    key={day}
+                    className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-b-2 border-l border-emerald-200 p-3 text-sm font-bold text-emerald-900 shadow-sm min-w-[140px]">
+                    {day}
                   </th>
                 ))}
               </tr>
             </thead>
           <tbody>
-            {WEEK_DAYS.map((day) => (
-              <tr key={day} className="hover:bg-emerald-50/30 transition-colors">
+            {hours.map((hour) => (
+              <tr key={hour} className="hover:bg-emerald-50/30 transition-colors">
                 <td className="sticky right-0 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-l-2 border-emerald-200 p-4 text-sm font-bold text-gray-700 text-center z-10 shadow-sm">
-                  {day}
+                  {hour}
                 </td>
-                {hours.map((hour) => {
+                {WEEK_DAYS.map((day) => {
                   // تحقق إذا كان السلوت مشغول بحصة ممتدة من سلوت سابق
                   if (isSlotOccupied(day, hour)) {
-                    return null; // لا نعرض td لأن الحصة ممتدة من العمود السابق
+                    return null; // لا نعرض td لأن الحصة ممتدة من الصف السابق
                   }
 
                   const daySessions = sessionGrid[day]?.[hour] || [];
@@ -216,7 +216,7 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
                   return (
                     <td
                       key={`${day}-${hour}`}
-                      colSpan={daySessions.length > 0 ? daySessions[0].rowSpan : 1}
+                      rowSpan={daySessions.length > 0 ? daySessions[0].rowSpan : 1}
                       className="border-b border-l border-emerald-100 p-3 align-top min-h-[80px] relative bg-white hover:bg-emerald-50/20 transition-colors">
                       {daySessions.length > 0 ? (
                         <div className="h-full">

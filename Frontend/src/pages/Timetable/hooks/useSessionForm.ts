@@ -141,8 +141,8 @@ export const useSessionForm = ({ editingSession, role, teacherGroups = [] }: Use
       
       setFormData({
         day: editingSession.day,
-        startHour: editingSession.startHour,
-        endHour: editingSession.endHour,
+        startHour: editingSession.startHour, // محدد مسبقاً - وقت الحلقة الحالي
+        endHour: editingSession.endHour,     // محدد مسبقاً - وقت الحلقة الحالي
         note: editingSession.note,
         description: editingSession.description || "",
         sessionType: editingSession.sessionType,

@@ -6,8 +6,8 @@ import React from "react";
 import { useDisableBodyScroll } from "@/hooks/useDisableBodyScroll";
 import type { Session, SessionFormData } from "../types/timetable.types";
 import { useViewMode, useSessionModal } from "../hooks";
-import { AdvancedTimetableView } from "../components/DisplayType/AdvancedTimetableView";
-import { WeeklyGridView } from "../components/DisplayType/WeeklyGridView";
+import { AdvancedTimetableView } from "../DisplayType/AdvancedTimetableView";
+import { WeeklyGridView } from "../DisplayType/WeeklyGridView";
 import { SessionModal } from "../Model/SessionModal";
 import PageHeader from "@/components/UI/PageHeader";
 import { Button } from "@/components/UI/Button";
@@ -109,6 +109,7 @@ export const AdminTimetableView: React.FC<AdminTimetableViewProps> = ({
               <Grid3x3 size={18} />
               <span className="text-sm font-medium">شبكة أسبوعية</span>
             </button>
+           
             <button
               onClick={() => setViewMode('cards')}
               className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${

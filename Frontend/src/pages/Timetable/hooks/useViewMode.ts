@@ -1,10 +1,10 @@
 // ============================================================================
-// useViewMode - إدارة حالة طريقة العرض (Grid/Cards)
+// useViewMode - إدارة حالة طريقة العرض (Grid/Cards/Timeline)
 // ============================================================================
 
 import { useState } from "react";
 
-export type ViewMode = "grid" | "cards";
+export type ViewMode = "grid" | "cards" | "timeline";
 
 export const useViewMode = (defaultMode: ViewMode = "grid") => {
   const [viewMode, setViewMode] = useState<ViewMode>(defaultMode);
@@ -15,6 +15,7 @@ export const useViewMode = (defaultMode: ViewMode = "grid") => {
 
   const isGridView = viewMode === "grid";
   const isCardsView = viewMode === "cards";
+  const isTimelineView = viewMode === "timeline";
 
   return {
     viewMode,
@@ -22,5 +23,6 @@ export const useViewMode = (defaultMode: ViewMode = "grid") => {
     toggleViewMode,
     isGridView,
     isCardsView,
+    isTimelineView,
   };
 };

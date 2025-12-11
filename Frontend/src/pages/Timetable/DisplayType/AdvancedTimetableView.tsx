@@ -3,14 +3,14 @@
 // ============================================================================
 
 import React, { useMemo } from 'react';
-import type { Session, UserRole } from '../../types/timetable.types';
+import type { Session, UserRole } from '../types/timetable.types';
 import {
   WEEK_DAYS,
   isSummerTime,
   calculateDuration,
   formatDuration,
   organizeSessionsByDay,
-} from '../../utils';
+} from '../utils';
 import { Button } from '@/components/UI/Button';
 import { Edit, Trash2, Clock, Calendar, User } from 'lucide-react';
 
