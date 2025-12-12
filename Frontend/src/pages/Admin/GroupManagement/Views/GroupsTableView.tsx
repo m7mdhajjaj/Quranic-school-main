@@ -145,7 +145,7 @@ export const GroupsTableView: React.FC<GroupsTableViewProps> = ({
                             className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold border ${
                               activeStatus
                                 ? "bg-green-100 text-green-700 border-green-200"
-                                : "bg-gray-100 text-gray-700 border-gray-200"
+                                : "bg-red-100 text-red-700 border-red-300"
                             }`}>
                             {activeStatus ? (
                               <CheckCircle2 className="w-3.5 h-3.5" />
@@ -186,10 +186,10 @@ export const GroupsTableView: React.FC<GroupsTableViewProps> = ({
                       {/* Expanded Details Row */}
                       {isExpanded && (
                         <tr>
-                          <td colSpan={7} className="px-6 py-4 bg-gradient-to-br from-gray-50 to-white">
+                          <td colSpan={7} className="px-6 py-6 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 border-t-2 border-emerald-300">
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                               {/* معلومات الحلقة */}
-                              <div className="bg-white rounded-xl border border-gray-200 p-5">
+                              <div className="bg-white rounded-xl border-2 border-emerald-200 p-5 shadow-md">
                                 <h3 className="text-base font-bold text-emerald-700 mb-4 pb-2 border-b border-emerald-100">
                                   معلومات الحلقة
                                 </h3>
@@ -230,7 +230,7 @@ export const GroupsTableView: React.FC<GroupsTableViewProps> = ({
                               </div>
 
                               {/* الجدول الزمني */}
-                              <div className="bg-white rounded-xl border border-gray-200 p-5">
+                              <div className="bg-white rounded-xl border-2 border-emerald-200 p-5 shadow-md">
                                 <h3 className="text-base font-bold text-emerald-700 mb-4 pb-2 border-b border-emerald-100">
                                   الجدول الأسبوعي
                                 </h3>
@@ -256,7 +256,7 @@ export const GroupsTableView: React.FC<GroupsTableViewProps> = ({
 
                               {/* الوصف - Full width if exists */}
                               {group.description && (
-                                <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-5">
+                                <div className="lg:col-span-2 bg-white rounded-xl border-2 border-emerald-200 p-5 shadow-md">
                                   <h3 className="text-base font-bold text-emerald-700 mb-3 pb-2 border-b border-emerald-100">
                                     الوصف
                                   </h3>

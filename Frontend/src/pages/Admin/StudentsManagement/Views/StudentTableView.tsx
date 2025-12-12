@@ -71,7 +71,7 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
                 type="checkbox"
                 checked={allSelected}
                 onChange={onToggleAll}
-                className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500 cursor-pointer"
+                className="w-4 h-4 text-white border-white rounded focus:ring-white cursor-pointer"
                 title="تحديد الكل"
                 placeholder="تحديد الكل"
               />
@@ -278,6 +278,7 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
         columns={columns}
         loading={isLoading}
         emptyMessage="لا يوجد طلاب"
+        headerClassName="bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-white shadow-lg"
       />
     </div>
   );

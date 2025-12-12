@@ -35,6 +35,7 @@ export interface TableProps<T = unknown> {
   renderActions?: (row: T, index: number) => ReactNode;
   actionsWidth?: string;
   actionsHeader?: string;
+  headerClassName?: string;
 }
 
 
@@ -97,6 +98,7 @@ export const Table = <T,>({
   renderActions,
   actionsWidth = "150px",
   actionsHeader = "الإجراءات",
+  headerClassName = "",
 }: TableProps<T>) => {
   // Calculate total columns including actions column
   const totalColumns = columns.length + (renderActions ? 1 : 0);
@@ -138,8 +140,8 @@ export const Table = <T,>({
           {showHeader && (
             <thead
               className={[
-                "bg-gray-50",
-                "border-b border-gray-200",
+                headerClassName || "bg-gray-50",
+                headerClassName ? "" : "border-b border-gray-200",
                 stickyHeader && "sticky top-0 z-10",
               ]
                 .filter(Boolean)
@@ -155,12 +157,13 @@ export const Table = <T,>({
                         : "px-3 py-2.5 sm:px-4 sm:py-3 md:px-6 md:py-4",
                       "font-semibold",
                       "text-xs sm:text-sm",
-                      "text-gray-900",
+                      headerClassName ? "text-white" : "text-gray-900",
                       "whitespace-nowrap",
                       "align-middle",
                       getAlignClass(column.align),
                       column.className,
-                      column.sortable && "cursor-pointer hover:bg-gray-100",
+                      column.sortable && "cursor-pointer",
+                      column.sortable && (headerClassName ? "hover:bg-white/20" : "hover:bg-gray-100"),
                     ]
                       .filter(Boolean)
                       .join(" ")}>
@@ -178,7 +181,7 @@ export const Table = <T,>({
                         : "px-3 py-2.5 sm:px-4 sm:py-3 md:px-6 md:py-4",
                       "font-semibold",
                       "text-xs sm:text-sm",
-                      "text-gray-900",
+                      headerClassName ? "text-white" : "text-gray-900",
                       "text-center",
                       "whitespace-nowrap",
                       "align-middle",
@@ -193,7 +196,7 @@ export const Table = <T,>({
           )}
 
           {/* Table Body */}
-          <tbody className="divide-y divide-gray-100 bg-white">
+          <tbody className={`divide-y ${headerClassName ? "divide-emerald-100/50" : "divide-gray-100"} bg-white`}>
             {loading ? (
               <tr>
                 <td colSpan={totalColumns} className="px-3 py-6 sm:px-4 sm:py-8">

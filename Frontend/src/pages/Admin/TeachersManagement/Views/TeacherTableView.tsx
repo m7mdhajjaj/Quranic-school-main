@@ -266,41 +266,42 @@ export const TeacherTableView: React.FC<TeacherTableViewProps> = ({
 
                   {/* Expanded Details Row */}
                   {isExpanded && (
-                    <tr className="bg-gradient-to-r from-emerald-50/50 to-teal-50/50">
-                      <td colSpan={8} className="px-6 py-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <tr>
+                      <td colSpan={8} className="px-6 py-6 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 border-t-2 border-emerald-300">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                           {/* Personal Information Section */}
-                          <div className="space-y-3">
-                            <h4 className="text-sm font-bold text-emerald-700 border-b-2 border-emerald-200 pb-2">
+                          <div className="bg-white rounded-xl border-2 border-emerald-200 p-5 shadow-md">
+                            <h4 className="text-base font-bold text-emerald-700 mb-4 pb-3 border-b-2 border-emerald-200 flex items-center gap-2">
+                              <div className="w-1 h-6 bg-emerald-500 rounded-full"></div>
                               المعلومات الشخصية
                             </h4>
 
-                            <div className="space-y-2">
-                              <div className="flex items-start gap-2">
-                                <span className="text-xs font-semibold text-gray-600 min-w-[100px]">
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                                <span className="text-sm font-semibold text-gray-600">
                                   الاسم الكامل:
                                 </span>
-                                <span className="text-xs text-gray-900">
+                                <span className="text-sm font-bold text-gray-900 text-right">
                                   {getTeacherFullName(teacher)}
                                 </span>
                               </div>
 
                               {teacher.motherName && (
-                                <div className="flex items-start gap-2">
-                                  <span className="text-xs font-semibold text-gray-600 min-w-[100px]">
+                                <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                                  <span className="text-sm font-semibold text-gray-600">
                                     اسم الأم:
                                   </span>
-                                  <span className="text-xs text-gray-900">
+                                  <span className="text-sm text-gray-900 text-right">
                                     {teacher.motherName}
                                   </span>
                                 </div>
                               )}
 
-                              <div className="flex items-start gap-2">
-                                <span className="text-xs font-semibold text-gray-600 min-w-[100px]">
+                              <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                                <span className="text-sm font-semibold text-gray-600">
                                   رقم الهوية:
                                 </span>
-                                <span className="text-xs text-gray-900 font-mono">
+                                <span className="text-sm text-gray-900 font-mono">
                                   {teacher.idNumber || (
                                     <span className="text-gray-400">
                                       غير محدد
@@ -309,13 +310,13 @@ export const TeacherTableView: React.FC<TeacherTableViewProps> = ({
                                 </span>
                               </div>
 
-                              <div className="flex items-start gap-2">
-                                <span className="text-xs font-semibold text-gray-600 min-w-[100px]">
+                              <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                                <span className="text-sm font-semibold text-gray-600">
                                   العمر:
                                 </span>
-                                <span className="text-xs text-gray-900">
+                                <span className="text-sm">
                                   {teacher.age ? (
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-medium">
+                                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-amber-100 text-amber-800 font-semibold">
                                       {teacher.age} سنة
                                     </span>
                                   ) : (
@@ -326,11 +327,11 @@ export const TeacherTableView: React.FC<TeacherTableViewProps> = ({
                                 </span>
                               </div>
 
-                              <div className="flex items-start gap-2">
-                                <span className="text-xs font-semibold text-gray-600 min-w-[100px]">
+                              <div className="flex items-center justify-between py-2">
+                                <span className="text-sm font-semibold text-gray-600">
                                   تاريخ الميلاد:
                                 </span>
-                                <span className="text-xs text-gray-900">
+                                <span className="text-sm text-gray-900">
                                   {formatDateArabic(teacher.birthDate)}
                                 </span>
                               </div>
@@ -338,30 +339,31 @@ export const TeacherTableView: React.FC<TeacherTableViewProps> = ({
                           </div>
 
                           {/* Contact Information Section */}
-                          <div className="space-y-3">
-                            <h4 className="text-sm font-bold text-emerald-700 border-b-2 border-emerald-200 pb-2">
+                          <div className="bg-white rounded-xl border-2 border-emerald-200 p-5 shadow-md">
+                            <h4 className="text-base font-bold text-emerald-700 mb-4 pb-3 border-b-2 border-emerald-200 flex items-center gap-2">
+                              <div className="w-1 h-6 bg-emerald-500 rounded-full"></div>
                               معلومات التواصل
                             </h4>
 
-                            <div className="space-y-2">
-                              <div className="flex items-start gap-2">
-                                <span className="text-xs font-semibold text-gray-600 min-w-[100px]">
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                                <span className="text-sm font-semibold text-gray-600">
                                   البريد الإلكتروني:
                                 </span>
                                 <span
-                                  className="text-xs text-gray-900"
+                                  className="text-sm text-gray-900 font-medium"
                                   dir="ltr"
                                 >
                                   {teacher.email}
                                 </span>
                               </div>
 
-                              <div className="flex items-start gap-2">
-                                <span className="text-xs font-semibold text-gray-600 min-w-[100px]">
+                              <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                                <span className="text-sm font-semibold text-gray-600">
                                   رقم الهاتف:
                                 </span>
                                 <span
-                                  className="text-xs text-gray-900 font-mono"
+                                  className="text-sm text-gray-900 font-mono font-semibold"
                                   dir="ltr"
                                 >
                                   {teacher.phoneNumber}
@@ -369,25 +371,25 @@ export const TeacherTableView: React.FC<TeacherTableViewProps> = ({
                               </div>
 
                               {teacher.residence && (
-                                <div className="flex items-start gap-2">
-                                  <span className="text-xs font-semibold text-gray-600 min-w-[100px]">
+                                <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                                  <span className="text-sm font-semibold text-gray-600">
                                     مكان السكن:
                                   </span>
-                                  <span className="text-xs text-gray-900">
+                                  <span className="text-sm text-gray-900 text-right">
                                     {teacher.residence}
                                   </span>
                                 </div>
                               )}
 
-                              <div className="flex items-start gap-2">
-                                <span className="text-xs font-semibold text-gray-600 min-w-[100px]">
+                              <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                                <span className="text-sm font-semibold text-gray-600">
                                   حالة النشاط:
                                 </span>
-                                <span className="text-xs">
+                                <span className="text-sm">
                                   {(() => {
                                     const status = getActivityStatus(teacher.isActive);
                                     return (
-                                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full font-medium ${status.className}`}>
+                                      <span className={`inline-flex items-center px-3 py-1 rounded-full font-semibold ${status.className}`}>
                                         {status.label}
                                       </span>
                                     );
@@ -396,11 +398,11 @@ export const TeacherTableView: React.FC<TeacherTableViewProps> = ({
                               </div>
 
                               {teacher.lastSeen && (
-                                <div className="flex items-start gap-2">
-                                  <span className="text-xs font-semibold text-gray-600 min-w-[100px]">
+                                <div className="flex items-center justify-between py-2">
+                                  <span className="text-sm font-semibold text-gray-600">
                                     آخر ظهور:
                                   </span>
-                                  <span className="text-xs text-gray-900">
+                                  <span className="text-sm text-gray-900">
                                     {formatDateTimeArabic(teacher.lastSeen)}
                                   </span>
                                 </div>
@@ -408,27 +410,28 @@ export const TeacherTableView: React.FC<TeacherTableViewProps> = ({
                             </div>
                           </div>
 
-                          {/* Groups Section */}
-                          <div className="space-y-3 md:col-span-2">
-                            <h4 className="text-sm font-bold text-emerald-700 border-b-2 border-emerald-200 pb-2">
+                          {/* Groups Section - Full Width */}
+                          <div className="lg:col-span-2 bg-white rounded-xl border-2 border-emerald-200 p-5 shadow-md">
+                            <h4 className="text-base font-bold text-emerald-700 mb-4 pb-3 border-b-2 border-emerald-200 flex items-center gap-2">
+                              <div className="w-1 h-6 bg-emerald-500 rounded-full"></div>
                               الحلقات المُدرَّسة ({teacher.groups?.length || 0})
                             </h4>
 
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                               {teacher.groups && teacher.groups.length > 0 ? (
                                 teacher.groups.map((group, index) => (
                                   <div
                                     key={index}
-                                    className="flex items-center gap-2 p-2 bg-white rounded-lg border border-emerald-100 hover:border-emerald-300 transition-colors"
+                                    className="flex items-center gap-2 p-3 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg border-2 border-emerald-200 hover:border-emerald-400 hover:shadow-md transition-all"
                                   >
-                                    <div className="w-2 h-2 bg-emerald-500 rounded-full flex-shrink-0"></div>
-                                    <span className="text-xs text-gray-900 font-medium truncate">
+                                    <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full flex-shrink-0"></div>
+                                    <span className="text-sm text-gray-900 font-semibold truncate">
                                       {getGroupDisplayName(group)}
                                     </span>
                                   </div>
                                 ))
                               ) : (
-                                <div className="text-xs text-gray-400 italic p-2 bg-gray-50 rounded col-span-full">
+                                <div className="text-sm text-gray-500 italic p-4 bg-gray-50 rounded-lg col-span-full text-center border-2 border-dashed border-gray-200">
                                   لا توجد حلقات مُدرَّسة
                                 </div>
                               )}
