@@ -1,8 +1,8 @@
-import React from "react";
-import { Table, type Column } from "@/components/UI";
-import { FaEdit, FaTrash } from "react-icons/fa";
-import { User, UserCheck, Cake } from "lucide-react";
-import type { Student } from "@/Api/studentApi";
+import React from 'react';
+import { Table, type Column } from '@/components/UI';
+import { Edit2, Trash2 } from 'lucide-react';
+import { User, UserCheck, Cake } from 'lucide-react';
+import type { Student } from '@/Api/studentApi';
 
 interface StudentTableViewProps {
   students: Student[];
@@ -11,7 +11,7 @@ interface StudentTableViewProps {
   isLoading?: boolean;
   onSort?: (field: string) => void;
   sortField?: string;
-  sortOrder?: "asc" | "desc";
+  sortOrder?: 'asc' | 'desc';
   selectedStudents?: Set<string>;
   onToggleStudent?: (studentId: string) => void;
   onToggleAll?: () => void;
@@ -25,9 +25,9 @@ const getGroupDisplayName = (
     | null
     | undefined
 ): string => {
-  if (!group) return "حلقة غير محددة";
-  if (typeof group === "string") return group;
-  return group.name || "حلقة غير محددة";
+  if (!group) return 'حلقة غير محددة';
+  if (typeof group === 'string') return group;
+  return group.name || 'حلقة غير محددة';
 };
 
 // دالة مساعدة للحصول على اسم المعلم بشكل آمن
@@ -38,12 +38,12 @@ const getTeacherDisplayName = (
     | null
     | undefined
 ): string => {
-  if (!teacher) return "معلم غير محدد";
-  if (typeof teacher === "string") return teacher;
+  if (!teacher) return 'معلم غير محدد';
+  if (typeof teacher === 'string') return teacher;
   if (teacher.firstName || teacher.lastName) {
-    return `${teacher.firstName || ""} ${teacher.lastName || ""}`.trim();
+    return `${teacher.firstName || ''} ${teacher.lastName || ''}`.trim();
   }
-  return teacher.name || "معلم غير محدد";
+  return teacher.name || 'معلم غير محدد';
 };
 
 export const StudentTableView: React.FC<StudentTableViewProps> = ({
@@ -55,37 +55,48 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
   onToggleStudent,
   onToggleAll,
 }) => {
-  const allSelected = selectedStudents && students.length > 0 && students.every(s => selectedStudents.has(s._id || ""));
-  
+  const allSelected =
+    selectedStudents &&
+    students.length > 0 &&
+    students.every((s) => selectedStudents.has(s._id || ''));
+
   const columns: Column<Student>[] = [
     // Checkbox column for bulk selection
-    ...(selectedStudents && onToggleStudent && onToggleAll ? [{
-      key: "select",
-      header: (
-        <input
-          type="checkbox"
-          checked={allSelected}
-          onChange={onToggleAll}
-          className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500 cursor-pointer"
-        />
-      ),
-      width: "50px",
-      align: "center" as const,
-      render: (student: Student) => (
-        <input
-          type="checkbox"
-          checked={selectedStudents.has(student._id || "")}
-          onChange={() => onToggleStudent(student._id || "")}
-          className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500 cursor-pointer"
-        />
-      ),
-    }] : []),
+    ...(selectedStudents && onToggleStudent && onToggleAll
+      ? [
+          {
+            key: 'select',
+            header: (
+              <input
+                type="checkbox"
+                checked={allSelected}
+                onChange={onToggleAll}
+                className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500 cursor-pointer"
+                title="تحديد الكل"
+                placeholder="تحديد الكل"
+              />
+            ),
+            width: '50px',
+            align: 'center' as const,
+            render: (student: Student) => (
+              <input
+                type="checkbox"
+                checked={selectedStudents.has(student._id || '')}
+                onChange={() => onToggleStudent(student._id || '')}
+                className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500 cursor-pointer"
+                title="تحديد الطالب"
+                placeholder="تحديد الطالب"
+              />
+            ),
+          },
+        ]
+      : []),
     {
-      key: "studentId",
-      header: "رقم الطالب",
+      key: 'studentId',
+      header: 'رقم الطالب',
       sortable: true,
-      width: "100px",
-      align: "center",
+      width: '100px',
+      align: 'center',
       render: (student) => (
         <div className="flex justify-center">
           <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
@@ -95,10 +106,10 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
       ),
     },
     {
-      key: "name",
-      header: "الاسم الكامل",
+      key: 'name',
+      header: 'الاسم الكامل',
       sortable: true,
-      align: "right",
+      align: 'right',
       render: (student) => (
         <div className="text-right">
           <div className="text-sm font-semibold text-gray-900">
@@ -111,9 +122,9 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
       ),
     },
     {
-      key: "phoneNumber",
-      header: "رقم الهاتف",
-      align: "center",
+      key: 'phoneNumber',
+      header: 'رقم الهاتف',
+      align: 'center',
       render: (student) => (
         <div className="flex justify-center">
           <span className="text-sm text-gray-900 font-mono" dir="ltr">
@@ -123,9 +134,9 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
       ),
     },
     {
-      key: "idNumber",
-      header: "رقم الهوية",
-      align: "center",
+      key: 'idNumber',
+      header: 'رقم الهوية',
+      align: 'center',
       render: (student) => (
         <div className="flex justify-center">
           <span className="text-sm text-gray-900 font-mono">
@@ -135,20 +146,21 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
       ),
     },
     {
-      key: "gender",
-      header: "الجنس",
-      width: "100px",
-      align: "center",
+      key: 'gender',
+      header: 'الجنس',
+      width: '100px',
+      align: 'center',
       render: (student) => (
         <div className="flex justify-center">
           {student.gender ? (
             <span
               className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
-                student.gender === "ذكر"
-                  ? "bg-blue-50 text-blue-700 border border-blue-200"
-                  : "bg-pink-50 text-pink-700 border border-pink-200"
-              }`}>
-              {student.gender === "ذكر" ? (
+                student.gender === 'ذكر'
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                  : 'bg-pink-50 text-pink-700 border border-pink-200'
+              }`}
+            >
+              {student.gender === 'ذكر' ? (
                 <User className="w-3 h-3" />
               ) : (
                 <UserCheck className="w-3 h-3" />
@@ -162,11 +174,11 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
       ),
     },
     {
-      key: "age",
-      header: "العمر",
+      key: 'age',
+      header: 'العمر',
       sortable: true,
-      width: "90px",
-      align: "center",
+      width: '90px',
+      align: 'center',
       render: (student) => (
         <div className="flex justify-center">
           {student.age ? (
@@ -181,8 +193,8 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
       ),
     },
     {
-      key: "group",
-      header: "الحلقة",
+      key: 'group',
+      header: 'الحلقة',
       render: (student) => {
         if (student.group) {
           return (
@@ -202,8 +214,8 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
       },
     },
     {
-      key: "teacher",
-      header: "المعلم",
+      key: 'teacher',
+      header: 'المعلم',
       render: (student) => {
         if (student.teacher) {
           return (
@@ -223,8 +235,8 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
       },
     },
     {
-      key: "residence",
-      header: "مكان السكن",
+      key: 'residence',
+      header: 'مكان السكن',
       render: (student) => (
         <span className="text-sm text-gray-900">
           {student.residence || <span className="text-gray-400">-</span>}
@@ -232,22 +244,24 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
       ),
     },
     {
-      key: "actions",
-      header: "الإجراءات",
-      width: "120px",
+      key: 'actions',
+      header: 'الإجراءات',
+      width: '120px',
       render: (student) => (
         <div className="flex items-center justify-center gap-2">
           <button
             onClick={() => onEdit(student)}
             className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-            title="تعديل">
-            <FaEdit className="w-4 h-4" />
+            title="تعديل"
+          >
+            <Edit2 className="w-4 h-4" />
           </button>
           <button
             onClick={() => onDelete(student)}
             className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-            title="حذف">
-            <FaTrash className="w-4 h-4" />
+            title="حذف"
+          >
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
       ),
@@ -255,7 +269,10 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
   ];
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" dir="rtl">
+    <div
+      className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+      dir="rtl"
+    >
       <Table
         data={students}
         columns={columns}

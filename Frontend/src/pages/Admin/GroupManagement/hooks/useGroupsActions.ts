@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { deleteGroup, type Group } from "@/Api/groupApi";
 import {
   showCenteredSwal,
@@ -16,7 +16,7 @@ export const useGroupsActions = (
   const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set());
 
   // Handle delete
-  const handleDelete = async (groupId: string) => {
+  const handleDelete = useCallback(async (groupId: string) => {
     const result = await showCenteredSwal({
       title: "تأكيد حذف الحلقة",
       text: "هل أنت متأكد من حذف هذه الحلقة؟",
@@ -88,17 +88,17 @@ export const useGroupsActions = (
         }
       }
     }
-  };
+  }, [setGroups]);
 
   // Handle edit
-  const handleEdit = (group: Group) => {
+  const handleEdit = useCallback((group: Group) => {
     setSelectedGroup(group);
     setIsEditMode(true);
     setIsFormVisible(true);
-  };
+  }, []);
 
   // Handle add/edit success
-  const handleAddSuccess = async () => {
+  const handleAddSuccess = useCallback(async () => {
     try {
       console.log("تمت العملية بنجاح");
       fetchGroups();
@@ -118,10 +118,10 @@ export const useGroupsActions = (
 
       await showErrorMessage("خطأ!", "حدث خطأ أثناء حفظ بيانات الحلقة");
     }
-  };
+  }, [isEditMode, fetchGroups]);
 
   // Bulk delete
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = useCallback(async () => {
     if (selectedGroups.size === 0) return;
 
     const result = await showCenteredSwal({
@@ -156,10 +156,10 @@ export const useGroupsActions = (
         await showErrorMessage("خطأ!", "حدث خطأ أثناء حذف الحلقات");
       }
     }
-  };
+  }, [selectedGroups, setGroups]);
 
   // Toggle group selection
-  const toggleGroupSelection = (groupId: string) => {
+  const toggleGroupSelection = useCallback((groupId: string) => {
     const newSelected = new Set(selectedGroups);
     if (newSelected.has(groupId)) {
       newSelected.delete(groupId);
@@ -167,7 +167,7 @@ export const useGroupsActions = (
       newSelected.add(groupId);
     }
     setSelectedGroups(newSelected);
-  };
+  }, [selectedGroups]);
 
   // Select all groups (current page)
   const selectAllGroups = useCallback((currentGroups: Group[]) => {
@@ -180,59 +180,39 @@ export const useGroupsActions = (
     });
   }, []);
 
-  // Export to CSV with proper formatting
-  const handleExport = (filteredGroups: Group[]) => {
-    const headers = [
-      "اسم الحلقة",
-      "المعلم",
-      "السعة",
-      "الطلاب المشتركين",
-      "المواعيد",
-      "الوصف",
-    ];
-    
-    const rows = filteredGroups.map((g) => [
-      g.name || "",
-      g.teacher || "",
-      g.capacity || "",
-      g.currentStudents || 0,
-      g.schedule || "",
-      g.description || "",
-    ]);
+  // Export to CSV from Backend
+  const handleExport = useCallback(async (filters?: any) => {
+    try {
+      console.log("📥 تصدير الحلقات إلى CSV...");
+      
+      const { exportGroupsToCSV } = await import("@/Api/groupApi");
+      const blob = await exportGroupsToCSV(filters);
 
-    // Use semicolon as delimiter for better Excel compatibility in Arabic regions
-    const delimiter = ";";
-    
-    // Helper function to escape CSV fields properly
-    const escapeCSVField = (field: string | number) => {
-      const stringField = String(field);
-      // If field contains delimiter, newline, or double quote, wrap in quotes and escape quotes
-      if (stringField.includes(delimiter) || stringField.includes('\n') || stringField.includes('"')) {
-        return `"${stringField.replace(/"/g, '""')}"`;
+      if (!blob) {
+        await showErrorMessage("خطأ!", "فشل تصدير البيانات");
+        return;
       }
-      return stringField;
-    };
 
-    // Create CSV content with proper escaping
-    const csvContent = [headers, ...rows]
-      .map((row) => row.map(escapeCSVField).join(delimiter))
-      .join("\r\n");
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `groups_${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up
+      setTimeout(() => window.URL.revokeObjectURL(url), 100);
 
-    // Add BOM for proper UTF-8 encoding in Excel
-    const blob = new Blob(["\ufeff" + csvContent], {
-      type: "text/csv;charset=utf-8;",
-    });
-    
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `groups_${new Date().toISOString().split("T")[0]}.csv`;
-    link.click();
-    
-    // Clean up
-    setTimeout(() => URL.revokeObjectURL(link.href), 100);
-  };
+      await showSuccessMessage("تم التصدير!", "تم تصدير البيانات بنجاح");
+    } catch (error) {
+      console.error("❌ خطأ في تصدير البيانات:", error);
+      await showErrorMessage("خطأ!", "حدث خطأ أثناء تصدير البيانات");
+    }
+  }, []);
 
-  return {
+  return useMemo(() => ({
     isFormVisible,
     setIsFormVisible,
     isEditMode,
@@ -247,5 +227,17 @@ export const useGroupsActions = (
     toggleGroupSelection,
     selectAllGroups,
     handleExport,
-  };
+  }), [
+    isFormVisible,
+    isEditMode,
+    selectedGroup,
+    selectedGroups,
+    handleDelete,
+    handleEdit,
+    handleAddSuccess,
+    handleBulkDelete,
+    toggleGroupSelection,
+    selectAllGroups,
+    handleExport,
+  ]);
 };

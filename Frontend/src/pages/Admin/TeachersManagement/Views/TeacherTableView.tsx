@@ -1,5 +1,6 @@
 import React from 'react';
-import { FaEdit, FaTrash, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { Edit2, Trash2 } from "lucide-react";
+import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import type { Teacher } from '@/Api/teacherApi';
 import { useExpandableRows } from '../hooks/useExpandableRows';
 import {
@@ -250,14 +251,14 @@ export const TeacherTableView: React.FC<TeacherTableViewProps> = ({
                           className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
                           title="تعديل"
                         >
-                          <FaEdit className="w-4 h-4" />
+                              <Edit2 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => onDelete(teacher)}
                           className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
                           title="حذف"
                         >
-                          <FaTrash className="w-4 h-4" />
+            <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </td>

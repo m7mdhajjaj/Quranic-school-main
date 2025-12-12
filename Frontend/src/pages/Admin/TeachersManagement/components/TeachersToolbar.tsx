@@ -81,14 +81,35 @@ export const TeachersToolbar: React.FC<TeachersToolbarProps> = React.memo(({
             فلاتر
           </button>
 
-          {/* View Mode */}
-          <button
-            onClick={onViewModeChange}
-            className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
-            aria-label={viewMode === "table" ? "عرض الشبكة" : "عرض الجدول"}
-            title={viewMode === "table" ? "عرض الشبكة" : "عرض الجدول"}>
-            {viewMode === "table" ? <FaTh className="w-4 h-4" /> : <FaList className="w-4 h-4" />}
-          </button>
+          {/* View Mode Toggle */}
+          <div className="flex bg-gray-100 rounded-lg p-1" title="تبديل طريقة العرض">
+            <button
+              onClick={() => onViewModeChange()}
+              className={`px-3 py-1.5 rounded-md flex items-center gap-2 text-sm font-medium transition-colors ${
+                viewMode === 'table'
+                  ? 'bg-white text-emerald-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+              title="التبديل إلى عرض الجدول"
+              aria-label="التبديل إلى عرض الجدول"
+            >
+              <FaList className="w-4 h-4" />
+              <span className="hidden sm:inline">جدول</span>
+            </button>
+            <button
+              onClick={() => onViewModeChange()}
+              className={`px-3 py-1.5 rounded-md flex items-center gap-2 text-sm font-medium transition-colors ${
+                viewMode === 'grid'
+                  ? 'bg-white text-emerald-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+              title="التبديل إلى عرض الكاردات"
+              aria-label="التبديل إلى عرض الكاردات"
+            >
+              <FaTh className="w-4 h-4" />
+              <span className="hidden sm:inline">كاردات</span>
+            </button>
+          </div>
         </div>
       </div>
 

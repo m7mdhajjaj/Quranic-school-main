@@ -12,7 +12,6 @@ const groupSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Teacher',
       required: [true, "معرف المعلم مطلوب"],
-      index: true, // فهرس للبحث السريع
     },
     description: {
       type: String,
@@ -32,6 +31,12 @@ const groupSchema = new mongoose.Schema(
       match: [/^[\u0600-\u06FF\s0-9:,،|-]*$/, "صيغة الجدول غير صحيحة"],
       trim: true,
       maxlength: [200, "الجدول الزمني يجب ألا يتجاوز 200 حرف"],
+    },
+
+    // حالة الحلقة (فعالة إذا كان لها معلم وفيها طالب واحد على الأقل)
+    activeStatus: {
+      type: Boolean,
+      default: false,
     },
 
     // إحصائيات الحضور للشهر الحالي
@@ -68,11 +73,8 @@ const groupSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// فهرس لاسم الحلقة فقط - لضمان التفرد
-// اسم الحلقة يجب أن يكون فريداً بغض النظر عن المعلم
-groupSchema.index({ name: 1 }, { unique: true });
-
 // فهرس للمعلم للبحث السريع عن حلقاته
+// ملاحظة: الفهرس على name تم إنشاؤه تلقائياً عبر unique: true
 groupSchema.index({ teacher: 1 });
 
 // middleware للتحقق من تفرد اسم الحلقة قبل الحفظ

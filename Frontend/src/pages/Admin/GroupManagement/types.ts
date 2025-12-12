@@ -9,26 +9,8 @@ export type SortOrder = "asc" | "desc";
 export type ViewMode = "table" | "grid";
 
 // Filter Types
-export type TeacherFilter = string | "all";
 export type CapacityFilter = "all" | "small" | "medium" | "large";
 export type StatusFilter = "all" | "active" | "inactive";
-export type OccupancyFilter =
-  | "all"
-  | "empty"
-  | "low"
-  | "medium"
-  | "high"
-  | "full";
-export type DayFilter =
-  | "all"
-  | "السبت"
-  | "الأحد"
-  | "الإثنين"
-  | "الثلاثاء"
-  | "الأربعاء"
-  | "الخميس"
-  | "الجمعة";
-export type TimeFilter = "all" | "morning" | "afternoon" | "evening";
 
 // Statistics Interface
 export interface GroupStats {

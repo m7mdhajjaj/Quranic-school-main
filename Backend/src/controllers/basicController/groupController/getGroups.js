@@ -5,47 +5,194 @@
 const Group = require("../../../schema/Group");
 const Student = require("../../../schema/Student");
 const ExamSchedule = require("../../../schema/ExamSchedule");
+const TimeTable = require("../../../schema/TimeTable");
+const Teacher = require("../../../schema/Teacher");
 const { getStudentCountsForAllGroups, getStudentCountsForTeacher } = require("./cache");
 const { getTeacherInfo } = require("./helpers");
 const { successResponse, notFoundResponse, handleError } = require("./utils");
 
 /**
- * الحصول على جميع الحلقات
+ * الحصول على جميع الحلقات مع الفلترة والترتيب والـ pagination
+ * GET /api/groups?search=&capacity=&status=&sortBy=&sortOrder=&page=&limit=
  */
 exports.getAllGroups = async (req, res) => {
   try {
     const startTime = Date.now();
 
-    // جلب جميع الحلقات و عدد الطلاب بشكل متوازي للسرعة
+    // استخراج الفلاتر من query parameters
+    const {
+      search,
+      capacity,
+      status,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+      page = 1,
+      limit = 1000,
+    } = req.query;
+
+    // Pagination
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+
+    // بناء pipeline للـ aggregation
+    const pipeline = [];
+
+    // 1. Join مع Teacher collection للبحث في أسماء المعلمين
+    pipeline.push({
+      $lookup: {
+        from: 'teachers',
+        localField: 'teacher',
+        foreignField: '_id',
+        as: 'teacherData'
+      }
+    });
+
+    // 2. إضافة حقول متعددة للبحث عن المعلم
+    pipeline.push({
+      $addFields: {
+        teacherFirstName: { $arrayElemAt: ['$teacherData.firstName', 0] },
+        teacherFatherName: { $arrayElemAt: ['$teacherData.fatherName', 0] },
+        teacherLastName: { $arrayElemAt: ['$teacherData.lastName', 0] },
+        teacherFullName: {
+          $trim: {
+            input: {
+              $concat: [
+                { $ifNull: [{ $arrayElemAt: ['$teacherData.firstName', 0] }, ''] },
+                ' ',
+                { $ifNull: [{ $arrayElemAt: ['$teacherData.fatherName', 0] }, ''] },
+                ' ',
+                { $ifNull: [{ $arrayElemAt: ['$teacherData.lastName', 0] }, ''] }
+              ]
+            }
+          }
+        },
+        teacherFirstLast: {
+          $trim: {
+            input: {
+              $concat: [
+                { $ifNull: [{ $arrayElemAt: ['$teacherData.firstName', 0] }, ''] },
+                ' ',
+                { $ifNull: [{ $arrayElemAt: ['$teacherData.lastName', 0] }, ''] }
+              ]
+            }
+          }
+        }
+      }
+    });
+
+    // 3. بناء الفلاتر
+    const matchStage = {};
+
+    // فلتر البحث النصي (يشمل جميع أشكال اسم المعلم)
+    if (search && search.trim()) {
+      const searchRegex = { $regex: search.trim(), $options: "i" };
+      matchStage.$or = [
+        { name: searchRegex },
+        { description: searchRegex },
+        { schedule: searchRegex },
+        { teacherFirstName: searchRegex },      // الاسم الأول فقط
+        { teacherFullName: searchRegex },       // الاسم الثلاثي
+        { teacherFirstLast: searchRegex },      // الاسم الأول + العائلة
+      ];
+    }
+
+    // فلتر السعة
+    if (capacity && capacity !== 'all') {
+      switch (capacity) {
+        case 'small':
+          matchStage.capacity = { $lte: 15 };
+          break;
+        case 'medium':
+          matchStage.capacity = { $gt: 15, $lte: 25 };
+          break;
+        case 'large':
+          matchStage.capacity = { $gt: 25 };
+          break;
+      }
+    }
+
+    // فلتر الحالة
+    if (status && status !== 'all') {
+      matchStage.activeStatus = status === 'active';
+    }
+
+    if (Object.keys(matchStage).length > 0) {
+      pipeline.push({ $match: matchStage });
+    }
+
+    // 4. إحصاء الكلي قبل pagination
+    const countPipeline = [...pipeline, { $count: 'total' }];
+    const countResult = await Group.aggregate(countPipeline);
+    const totalCount = countResult.length > 0 ? countResult[0].total : 0;
+
+    // 5. الترتيب
+    const sortOptions = {};
+    sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+    pipeline.push({ $sort: sortOptions });
+
+    // 6. Pagination
+    pipeline.push({ $skip: skip });
+    pipeline.push({ $limit: limitNum });
+
+    // 7. تنفيذ الـ aggregation
     const [groups, studentCountMap] = await Promise.all([
-      Group.find().sort({ createdAt: -1 }),
+      Group.aggregate(pipeline),
       getStudentCountsForAllGroups(),
     ]);
 
     // إضافة عدد الطلاب وحالة السعة ومعلومات المعلم لكل حلقة
-    const groupsWithStudentCount = await Promise.all(
+    let groupsWithStudentCount = await Promise.all(
       groups.map(async (group) => {
         const currentStudents = studentCountMap[group.name] || 0;
         const capacity = group.capacity || 30;
+        const capacityPercentage = Math.round((currentStudents / capacity) * 100);
         const isFull = currentStudents >= capacity;
 
-        // جلب معلومات المعلم إذا كان موجود
+        // استخدام اسم المعلم الكامل من الـ aggregation
+        const teacherName = group.teacherFullName || "غير محدد";
+        
+        // جلب معلومات المعلم الكاملة إذا كان موجود
         let teacherInfo = null;
-
         if (group.teacher) {
           const teacherData = await getTeacherInfo(group.teacher);
           teacherInfo = teacherData.info;
         }
 
+        // جلب أوقات الحلقة من TimeTable
+        const timetable = await TimeTable.find({ groupId: group._id })
+          .select("day startHour endHour")
+          .sort({ day: 1, startHour: 1 })
+          .lean();
+
+        // ترتيب الأيام بشكل صحيح
+        const daysOrder = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
+        const sortedTimetable = timetable.sort((a, b) => {
+          return daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day);
+        });
+
+        // تحديد حالة الحلقة: فعالة إذا كان لها معلم وفيها طالب واحد على الأقل
+        const activeStatus = !!group.teacher && currentStudents > 0;
+
+        // ✅ إرسال بيانات كاملة مع default values من Backend
+        // استخدام spread operator مباشرة بدون toObject() لأن النتيجة من aggregation
         return {
-          ...group.toObject(),
+          ...group,
+          name: group.name || "",
+          teacher: teacherName, // استخدام الاسم من aggregation
           teacherInfo,
+          teacherData: undefined, // إزالة teacherData من النتيجة النهائية
+          teacherName: undefined, // إزالة teacherName الزائد
+          description: group.description || "",
+          schedule: group.schedule || "غير محدد",
           currentStudents,
           capacity,
+          capacityPercentage,
           isFull,
+          activeStatus, // حالة الحلقة (فعالة/غير فعالة)
           availableSpots: Math.max(0, capacity - currentStudents),
           capacityStatus: `${currentStudents}/${capacity}`,
-          capacityPercentage: Math.round((currentStudents / capacity) * 100),
+          timetable: sortedTimetable, // أوقات الحلقة من TimeTable
         };
       })
     );
@@ -54,12 +201,19 @@ exports.getAllGroups = async (req, res) => {
     const duration = endTime - startTime;
 
     console.log(
-      `✓ تم جلب ${groupsWithStudentCount.length} حلقة مع عدد الطلاب في ${duration}ms`
+      `✓ تم جلب ${groupsWithStudentCount.length} حلقة من ${totalCount} في ${duration}ms`
     );
 
     res.status(200).json({
       success: true,
       data: groupsWithStudentCount,
+      pagination: {
+        total: totalCount,
+        page: pageNum,
+        limit: limitNum,
+        pages: Math.ceil(totalCount / limitNum),
+        showing: groupsWithStudentCount.length,
+      },
     });
   } catch (error) {
     return handleError(res, error, "جلب الحلقات");
@@ -204,7 +358,7 @@ exports.getGroupStudents = async (req, res) => {
     if (includeDetails === 'true') {
       // جلب الطلاب مع كامل معلوماتهم
       students = await Student.find({ group: group.name })
-        .select('-password -avatar') // استبعاد الحقول الحساسة
+        .select('-password') // استبعاد الحقول الحساسة
         .lean()
         .sort({ firstName: 1, lastName: 1 });
     } else {
@@ -375,5 +529,86 @@ exports.getGroupsByTeacherIdWithFilters = async (req, res) => {
       success: false,
       message: error.message || "حدث خطأ أثناء جلب الحلقات",
     });
+  }
+};
+
+/**
+ * الحصول على إحصائيات الحلقات
+ * GET /api/groups/stats
+ */
+exports.getGroupsStats = async (req, res) => {
+  try {
+    console.log("📊 حساب إحصائيات الحلقات...");
+    const startTime = Date.now();
+
+    // جلب جميع الحلقات وعدد الطلاب
+    const [groups, studentCountMap] = await Promise.all([
+      Group.find().lean(),
+      getStudentCountsForAllGroups(),
+    ]);
+
+    // حساب الإحصائيات
+    const totalGroups = groups.length;
+    
+    let totalStudents = 0;
+    let fullGroups = 0;
+    let emptyGroups = 0;
+    let totalCapacity = 0;
+    const teacherStats = {};
+
+    groups.forEach(group => {
+      const capacity = group.capacity || 30;
+      const currentStudents = studentCountMap[group.name] || 0;
+      
+      totalCapacity += capacity;
+      totalStudents += currentStudents;
+      
+      // تحديد الحلقات الممتلئة والفارغة
+      if (currentStudents >= capacity) {
+        fullGroups++;
+      }
+      if (currentStudents === 0) {
+        emptyGroups++;
+      }
+
+      // إحصائيات حسب المعلم
+      const teacherName = group.teacher || 'غير محدد';
+      if (!teacherStats[teacherName]) {
+        teacherStats[teacherName] = {
+          teacher: teacherName,
+          groupsCount: 0,
+          studentsCount: 0,
+        };
+      }
+      teacherStats[teacherName].groupsCount++;
+      teacherStats[teacherName].studentsCount += currentStudents;
+    });
+
+    const availableSeats = Math.max(0, totalCapacity - totalStudents);
+    const occupancyRate = totalCapacity > 0 
+      ? Math.round((totalStudents / totalCapacity) * 100) 
+      : 0;
+
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+
+    console.log(`✅ تم حساب إحصائيات ${totalGroups} حلقة في ${duration}ms`);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalGroups,
+        totalStudents,
+        fullGroups,
+        emptyGroups,
+        totalCapacity,
+        availableSeats,
+        occupancyRate,
+        activeGroups: totalGroups - emptyGroups,
+        byTeacher: Object.values(teacherStats).sort((a, b) => b.groupsCount - a.groupsCount),
+      },
+    });
+  } catch (error) {
+    return handleError(res, error, "حساب إحصائيات الحلقات");
   }
 };

@@ -56,14 +56,14 @@ const EmptyState: React.FC<{
 }) => {
   return (
     <tr>
-      <td colSpan={columns} className="px-4 py-8 md:px-6 md:py-12 text-center">
-        <div className="flex flex-col items-center justify-center gap-2 md:gap-3">
-          <div className="text-4xl md:text-6xl opacity-30">{icon}</div>
-          <div className="text-gray-500 font-medium text-base md:text-lg">
+      <td colSpan={columns} className="px-3 py-6 sm:px-4 sm:py-8 md:px-6 md:py-12 text-center">
+        <div className="flex flex-col items-center justify-center gap-2 sm:gap-3">
+          <div className="text-3xl sm:text-4xl md:text-6xl opacity-30">{icon}</div>
+          <div className="text-gray-500 font-medium text-sm sm:text-base md:text-lg">
             {message}
           </div>
           {description && (
-            <div className="text-gray-400 text-xs md:text-sm">
+            <div className="text-gray-400 text-xs sm:text-sm">
               {description}
             </div>
           )}
@@ -138,9 +138,8 @@ export const Table = <T,>({
           {showHeader && (
             <thead
               className={[
-                "bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600",
-                "text-white",
-                "shadow-lg shadow-emerald-200/50",
+                "bg-gray-50",
+                "border-b border-gray-200",
                 stickyHeader && "sticky top-0 z-10",
               ]
                 .filter(Boolean)
@@ -149,55 +148,40 @@ export const Table = <T,>({
                 {columns.map((column, index) => (
                   <th
                     key={column.key || index}
+                    style={column.width ? { width: column.width } : undefined}
                     className={[
                       dense
-                        ? "px-3 py-2 md:px-4 md:py-3 lg:px-6 lg:py-4"
-                        : "px-4 py-3 md:px-6 md:py-4",
-                      "font-bold",
-                      "text-sm md:text-base",
+                        ? "px-2 py-2 sm:px-3 sm:py-2.5 md:px-4 md:py-3"
+                        : "px-3 py-2.5 sm:px-4 sm:py-3 md:px-6 md:py-4",
+                      "font-semibold",
+                      "text-xs sm:text-sm",
+                      "text-gray-900",
                       "whitespace-nowrap",
                       "align-middle",
                       getAlignClass(column.align),
                       column.className,
-                      column.sortable && "cursor-pointer hover:bg-white/10",
-                      column.width && `w-[${column.width}]`,
+                      column.sortable && "cursor-pointer hover:bg-gray-100",
                     ]
                       .filter(Boolean)
                       .join(" ")}>
-                    {column.sortable ? (
-                      <div
-                        className={[
-                          "flex items-center gap-2",
-                          column.align === "center"
-                            ? "justify-center"
-                            : column.align === "left"
-                            ? "justify-start"
-                            : "justify-end",
-                        ]
-                          .filter(Boolean)
-                          .join(" ")}>
-                        {column.header}
-                        <span className="text-xs opacity-50">⇅</span>
-                      </div>
-                    ) : (
-                      column.header
-                    )}
+                    {column.header}
                   </th>
                 ))}
 
                 {/* Actions Column Header */}
                 {renderActions && (
                   <th
+                    style={{ width: actionsWidth }}
                     className={[
                       dense
-                        ? "px-3 py-2 md:px-4 md:py-3"
-                        : "px-4 py-3 md:px-6 md:py-4",
-                      "font-bold",
-                      "text-sm md:text-base",
+                        ? "px-2 py-2 sm:px-3 sm:py-2.5 md:px-4 md:py-3"
+                        : "px-3 py-2.5 sm:px-4 sm:py-3 md:px-6 md:py-4",
+                      "font-semibold",
+                      "text-xs sm:text-sm",
+                      "text-gray-900",
                       "text-center",
                       "whitespace-nowrap",
                       "align-middle",
-                      `w-[${actionsWidth}]`,
                     ]
                       .filter(Boolean)
                       .join(" ")}>
@@ -209,12 +193,12 @@ export const Table = <T,>({
           )}
 
           {/* Table Body */}
-          <tbody className="divide-y divide-emerald-100/50 bg-white/80">
+          <tbody className="divide-y divide-gray-100 bg-white">
             {loading ? (
               <tr>
-                <td colSpan={totalColumns} className="px-4 py-8">
+                <td colSpan={totalColumns} className="px-3 py-6 sm:px-4 sm:py-8">
                   <div className="flex justify-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-3 border-emerald-600 border-t-transparent"></div>
+                    <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-3 border-emerald-600 border-t-transparent"></div>
                   </div>
                 </td>
               </tr>
@@ -231,9 +215,8 @@ export const Table = <T,>({
                   ? rowClassName(row, rowIndex)
                   : "";
                 const rowClasses = [
-                  hoverable &&
-                    "hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 transition-all duration-300",
-                  striped && rowIndex % 2 === 0 && "bg-emerald-50/30",
+                  hoverable && "hover:bg-gray-50 transition-colors duration-150",
+                  striped && rowIndex % 2 === 0 && "bg-gray-50/50",
                   onRowClick && "cursor-pointer",
                   customRowClass,
                 ]
@@ -253,16 +236,16 @@ export const Table = <T,>({
                     {columns.map((column, colIndex) => (
                       <td
                         key={`${column.key}-${colIndex}`}
+                        style={column.width ? { width: column.width } : undefined}
                         className={[
                           dense
-                            ? "px-3 py-2 md:px-4 md:py-3 lg:px-6 lg:py-4"
-                            : "px-4 py-3 md:px-6 md:py-4",
-                          "text-xs md:text-sm",
+                            ? "px-2 py-2 sm:px-3 sm:py-2.5 md:px-4 md:py-3"
+                            : "px-3 py-2.5 sm:px-4 sm:py-3 md:px-6 md:py-4",
+                          "text-xs sm:text-sm",
                           "text-gray-900",
-                          "align-top",
+                          "align-middle",
                           getAlignClass(column.align),
                           column.className,
-                          column.width && `w-[${column.width}]`,
                         ]
                           .filter(Boolean)
                           .join(" ")}>
@@ -275,19 +258,19 @@ export const Table = <T,>({
                     {/* Actions Column */}
                     {renderActions && (
                       <td
+                        style={{ width: actionsWidth }}
                         className={[
                           dense
-                            ? "px-2 py-2 md:px-4 md:py-3"
-                            : "px-3 py-3 md:px-6 md:py-4",
+                            ? "px-2 py-2 sm:px-3 sm:py-2.5 md:px-4 md:py-3"
+                            : "px-3 py-2.5 sm:px-4 sm:py-3 md:px-6 md:py-4",
                           "text-center",
-                          "align-top",
-                          `w-[${actionsWidth}]`,
+                          "align-middle",
                         ]
                           .filter(Boolean)
                           .join(" ")}
                         onClick={(e) => e.stopPropagation()} // Prevent row click
                       >
-                        <div className="flex items-center justify-center gap-1 md:gap-2 flex-wrap">
+                        <div className="flex items-center justify-center gap-1 sm:gap-2 flex-wrap">
                           {renderActions(row, rowIndex)}
                         </div>
                       </td>

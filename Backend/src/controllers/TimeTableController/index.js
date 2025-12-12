@@ -9,6 +9,7 @@ const { updateTimetable } = require("./updateTimetable");
 const { deleteTimetable } = require("./deleteTimetable");
 const { getAvailableHours } = require("./getAvailableHours");
 const { getAvailableHoursForTeacher } = require("./getAvailableHoursForTeacher");
+const { getGroupTimetable, getGroupTimetableByName } = require("./getGroupTimetable");
 
 module.exports = {
   // Read operations
@@ -16,6 +17,8 @@ module.exports = {
   getSessions: getAllTimetables, // backward compatibility
   getAvailableHours, // إرجاع الأوقات المتاحة (عامة)
   getAvailableHoursForTeacher, // إرجاع الأوقات المتاحة للمعلم في يوم معين
+  getGroupTimetable, // إرجاع جدول حلقة معينة
+  getGroupTimetableByName, // إرجاع جدول حلقة باسمها
 
   // Create operations
   createTimetable,

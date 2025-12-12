@@ -256,16 +256,23 @@ exports.updateStudent = async (req, res) => {
       delete updatedData.password;
     }
 
-    // التحقق من توافق المعلم مع الحلقة عند التعديل
-    const { teacher, group } = updatedData;
-    if (teacher && group) {
-      const teacherGroupValidation = await validateTeacherGroupMatch(teacher, group);
-      if (!teacherGroupValidation.valid) {
+    // التحقق من الحلقة وتحديث المعلم تلقائياً
+    const { group } = updatedData;
+    if (group) {
+      // جلب بيانات الحلقة
+      const groupData = await Group.findOne({ name: group });
+      
+      if (!groupData) {
         return res.status(400).json({
           success: false,
-          message: teacherGroupValidation.error,
+          message: `الحلقة "${group}" غير موجودة`,
         });
       }
+
+      // تحديث اسم المعلم تلقائياً من الحلقة
+      const { getTeacherInfo } = require('./studentHelpers');
+      const teacherData = await getTeacherInfo(groupData.teacher);
+      updatedData.teacher = teacherData.name || groupData.teacherName || updatedData.teacher;
 
       // التحقق من سعة الحلقة الجديدة (فقط إذا تم تغيير الحلقة)
       const currentStudent = await Student.findById(req.params.id);
@@ -273,7 +280,7 @@ exports.updateStudent = async (req, res) => {
         const capacityValidation = await validateGroupCapacity(
           group,
           req.params.id,
-          teacherGroupValidation.groupData
+          groupData
         );
         if (!capacityValidation.valid) {
           return res.status(400).json({

@@ -11,10 +11,12 @@ const {
   getGroupsMonthlyStats,
   getGroupsByTeacherIdWithFilters,
   getGroupStudents,
+  getGroupsStats,
 } = require('./getGroups');
 const { updateGroup, renameGroup } = require('./updateGroup');
 const { deleteGroup } = require('./deleteGroup');
 const { invalidateStudentCountsCache } = require('./cache');
+const { exportGroupsToCSV } = require('./ExportOperation');
 
 module.exports = {
   // Create operations
@@ -27,6 +29,7 @@ module.exports = {
   getGroupsMonthlyStats,
   getGroupsByTeacherIdWithFilters,
   getGroupStudents,
+  getGroupsStats,
 
   // Update operations
   updateGroup,
@@ -34,6 +37,9 @@ module.exports = {
 
   // Delete operations
   deleteGroup,
+
+  // Export operations
+  exportGroupsToCSV,
 
   // Cache utilities
   invalidateStudentCountsCache,

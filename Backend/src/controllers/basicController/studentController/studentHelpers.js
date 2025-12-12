@@ -7,6 +7,7 @@ const Group = require('../../../schema/Group');
 const Student = require('../../../schema/Student');
 const { invalidateCache } = require('../../../middleware/cacheMiddleware');
 const { notifyStudentStatsUpdate } = require('../../../Notifications/handlers/dashboardNotifications');
+const { getTeacherInfo } = require('../groupController/helpers');
 
 /**
  * تطبيع اسم المعلم للمقارنة
@@ -49,23 +50,23 @@ const validateTeacherGroupMatch = async (teacher, group) => {
     };
   }
 
+  // جلب اسم المعلم الفعلي من الحلقة (إذا كان ObjectId)
+  const groupTeacherData = await getTeacherInfo(groupData.teacher);
+  const groupTeacherName = groupTeacherData.name || groupData.teacherName || '';
+
   // التحقق من تطابق المعلم
   const normalizedStudentTeacher = normalizeTeacherName(teacher);
-  const normalizedGroupTeacher = normalizeTeacherName(groupData.teacher || '');
-  const normalizedGroupTeacherName = normalizeTeacherName(groupData.teacherName || '');
+  const normalizedGroupTeacher = normalizeTeacherName(groupTeacherName);
 
   const teacherMatches =
     normalizedStudentTeacher === normalizedGroupTeacher ||
-    normalizedStudentTeacher === normalizedGroupTeacherName ||
     normalizedGroupTeacher.includes(normalizedStudentTeacher) ||
-    normalizedGroupTeacherName.includes(normalizedStudentTeacher);
+    normalizedStudentTeacher.includes(normalizedGroupTeacher);
 
   if (!teacherMatches) {
     return {
       valid: false,
-      error: `المعلم "${teacher}" لا يطابق معلم الحلقة "${
-        groupData.teacher || groupData.teacherName
-      }". يجب أن يكون الطالب في حلقة تابعة لنفس المعلم.`,
+      error: `المعلم "${teacher}" لا يطابق معلم الحلقة "${groupTeacherName}". يجب أن يكون الطالب في حلقة تابعة لنفس المعلم.`,
     };
   }
 
@@ -332,4 +333,5 @@ module.exports = {
   emitStudentEvent,
   notifyStudentUpdate,
   handleStudentError,
+  getTeacherInfo,
 };

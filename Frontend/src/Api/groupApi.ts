@@ -11,17 +11,17 @@ export interface Group {
   description?: string;
   capacity?: number;
   schedule?: string;
-  isActive: boolean;
+  activeStatus: boolean;
   currentStudents?: number; // عدد الطلاب المشتركين في الحلقة
   isFull?: boolean; // هل الحلقة ممتلئة؟
   availableSpots?: number; // عدد الأماكن المتاحة
   capacityStatus?: string; // حالة السعة مثل "25/30"
   capacityPercentage?: number; // نسبة الإشغال المئوية
   timetable?: Array<{
+    _id?: string;
     day: string;
     startHour: string;
     endHour: string;
-    sessionId?: string;
   }>;
   createdAt: Date;
   updatedAt: Date;
@@ -33,18 +33,52 @@ export interface GroupFormData {
   description?: string;
   capacity?: number;
   schedule?: string;
-  isActive?: boolean;
+  activeStatus?: boolean;
 }
 
-// Get all groups
-export const getAllGroups = async (): Promise<{
+// Query parameters for filtering groups
+export interface GroupsQueryParams {
+  search?: string;
+  capacity?: 'all' | 'small' | 'medium' | 'large';
+  status?: 'all' | 'active' | 'inactive';
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginationInfo {
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+  showing: number;
+}
+
+// Get all groups with filters and pagination
+export const getAllGroups = async (params?: GroupsQueryParams): Promise<{
   success: boolean;
   data?: Group[];
+  pagination?: PaginationInfo;
   message?: string;
 }> => {
   try {
-    console.log('📡 API: جلب جميع الحلقات من /groups');
-    const response = await api.get("/groups");
+    console.log('📡 API: جلب الحلقات مع فلاتر:', params);
+    
+    // Build query string
+    const queryParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          queryParams.append(key, String(value));
+        }
+      });
+    }
+    
+    const queryString = queryParams.toString();
+    const url = queryString ? `/groups?${queryString}` : '/groups';
+    
+    const response = await api.get(url);
     console.log('✅ API Response:', response.data);
     return response.data;
   } catch (error) {
@@ -242,5 +276,106 @@ export const getGroupsByTeacherIdWithFilters = async (
       success: false,
       message: axiosError.response?.data?.message || 'حدث خطأ أثناء جلب حلقات المعلم',
     };
+  }
+};
+
+// Get group timetable
+export const getGroupTimetable = async (groupId: string): Promise<{
+  success: boolean;
+  data?: {
+    groupId: string;
+    groupName: string;
+    timetable: Array<{
+      _id: string;
+      day: string;
+      startHour: string;
+      endHour: string;
+      teacher: string;
+      teacherId?: string;
+      note?: string;
+    }>;
+    totalSessions: number;
+  };
+  message?: string;
+}> => {
+  try {
+    console.log(`📡 API: جلب جدول الحلقة ${groupId}`);
+    const response = await api.get(`/timetable/group/${groupId}`);
+    console.log('✅ API Response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في جلب جدول الحلقة:', error);
+    const axiosError = error as AxiosError<{ message?: string }>;
+    return {
+      success: false,
+      message: axiosError.response?.data?.message || 'حدث خطأ أثناء جلب جدول الحلقة',
+    };
+  }
+};
+
+// Get groups statistics
+export interface GroupsStats {
+  totalGroups: number;
+  totalStudents: number;
+  fullGroups: number;
+  emptyGroups: number;
+  totalCapacity: number;
+  availableSeats: number;
+  occupancyRate: number;
+  activeGroups: number;
+  byTeacher: Array<{
+    teacher: string;
+    groupsCount: number;
+    studentsCount: number;
+  }>;
+}
+
+export const getGroupsStats = async (): Promise<{
+  success: boolean;
+  data?: GroupsStats;
+  message?: string;
+}> => {
+  try {
+    console.log('📊 API: جلب إحصائيات الحلقات');
+    const response = await api.get('/groups/stats/overview');
+    console.log('✅ API Response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في جلب الإحصائيات:', error);
+    const axiosError = error as AxiosError<{ message?: string }>;
+    return {
+      success: false,
+      message: axiosError.response?.data?.message || 'حدث خطأ أثناء جلب الإحصائيات',
+    };
+  }
+};
+
+// Export groups to CSV
+export const exportGroupsToCSV = async (filters?: GroupsQueryParams): Promise<Blob | null> => {
+  try {
+    console.log('📥 API: تصدير الحلقات إلى CSV');
+    
+    // Build query string
+    const queryParams = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '' && key !== 'page' && key !== 'limit') {
+          queryParams.append(key, String(value));
+        }
+      });
+    }
+    
+    const queryString = queryParams.toString();
+    const url = queryString ? `/groups/export?${queryString}` : '/groups/export';
+    
+    const response = await api.get(url, {
+      responseType: 'blob',
+    });
+    
+    console.log('✅ تم تصدير البيانات بنجاح');
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في تصدير البيانات:', error);
+    return null;
   }
 };

@@ -22,7 +22,6 @@ import { useDashboardData } from "./hooks";
 import type { ChartData } from "./types";
 import AddStudentForm from "../StudentsManagement/Model/StudentForm";
 import TeacherForm from "../TeachersManagement/Model/TeacherForm";
-import AddGroupForm from "../../../Forms/AddGroupForm";
 import { useDashboardSocket } from "@/Socket";
 
 const AdminDashboard = () => {
@@ -38,7 +37,6 @@ const AdminDashboard = () => {
   // State لإدارة الـ Modals
   const [showAddStudentForm, setShowAddStudentForm] = useState(false);
   const [showAddTeacherForm, setShowAddTeacherForm] = useState(false);
-  const [showAddGroupForm, setShowAddGroupForm] = useState(false);
 
   // Navigation handlers
   const handleTeachersClick = () => navigate("/admin/teachers");
@@ -253,7 +251,6 @@ const AdminDashboard = () => {
           <QuickActions
             onAddStudent={() => setShowAddStudentForm(true)}
             onAddTeacher={() => setShowAddTeacherForm(true)}
-            onAddGroup={() => setShowAddGroupForm(true)}
           />
         </div>
 
@@ -395,15 +392,8 @@ const AdminDashboard = () => {
           />
         )}
 
-        {showAddGroupForm && (
-          <AddGroupForm
-            onClose={() => setShowAddGroupForm(false)}
-            onSuccess={() => {
-              setShowAddGroupForm(false);
-              fetchStats(true); // إعادة تحميل البيانات بعد إضافة حلقة
-            }}
-          />
-        )}
+        {/* Add Group Form - Disabled */}
+        {/* TODO: Implement Group Form */}
       </div>
     </div>
   );

@@ -61,11 +61,21 @@ const getTeacherInfo = async (teacherId) => {
     if (/^[0-9a-fA-F]{24}$/.test(teacherStr)) {
       const teacherInfo = await Teacher.findById(teacherStr);
       if (teacherInfo) {
+        // بناء الاسم الكامل: الاسم الأول + اسم الأب + اسم العائلة
+        const nameParts = [
+          teacherInfo.firstName,
+          teacherInfo.fatherName,
+          teacherInfo.lastName
+        ].filter(Boolean); // إزالة القيم الفارغة
+        
+        const fullName = nameParts.join(' ');
+        
         return {
-          name: `${teacherInfo.firstName} ${teacherInfo.lastName}`,
+          name: fullName,
           info: {
             _id: teacherInfo._id,
             firstName: teacherInfo.firstName,
+            fatherName: teacherInfo.fatherName,
             lastName: teacherInfo.lastName,
             email: teacherInfo.email,
           },

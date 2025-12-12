@@ -1,28 +1,5 @@
 const Admin = require("../../../schema/Admin");
-
-/**
- * حساب العمر من تاريخ الميلاد
- */
-const calculateAge = (birthDate) => {
-  if (!birthDate) return 0;
-
-  const today = new Date();
-  const birthDateObj = new Date(birthDate);
-
-  if (isNaN(birthDateObj.getTime())) return 0;
-
-  let age = today.getFullYear() - birthDateObj.getFullYear();
-  const monthDiff = today.getMonth() - birthDateObj.getMonth();
-
-  if (
-    monthDiff < 0 ||
-    (monthDiff === 0 && today.getDate() < birthDateObj.getDate())
-  ) {
-    age--;
-  }
-
-  return age;
-};
+const { calculateAge } = require("../groupController/utils");
 
 /**
  * توليد رقم إداري جديد

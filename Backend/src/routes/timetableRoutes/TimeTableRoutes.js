@@ -14,6 +14,12 @@ router.get("/available-hours", protect, timetableController.getAvailableHours);
 // Get available hours for teacher - الأوقات المتاحة للمعلم في يوم معين (بعد حذف الأوقات المحجوزة)
 router.get("/available-hours-teacher", protect, timetableController.getAvailableHoursForTeacher);
 
+// Get group timetable by ID - جدول أوقات حلقة معينة
+router.get("/group/:groupId", protect, timetableController.getGroupTimetable);
+
+// Get group timetable by name - جدول أوقات حلقة باسمها
+router.get("/group/name/:groupName", protect, timetableController.getGroupTimetableByName);
+
 // Get all timetables - مع المصادقة لفلترة البيانات حسب المستخدم
 router.get("/", protect, timetableController.getAllTimetables);
 

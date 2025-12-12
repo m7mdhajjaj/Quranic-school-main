@@ -68,6 +68,31 @@ const checkDocumentExists = async (Model, id, errorMessage = 'العنصر غي�
   return doc;
 };
 
+/**
+ * حساب العمر من تاريخ الميلاد
+ * دالة مشتركة بين Student, Teacher, Admin Controllers
+ */
+const calculateAge = (birthDate) => {
+  if (!birthDate) return 0;
+
+  const today = new Date();
+  const birthDateObj = new Date(birthDate);
+
+  if (isNaN(birthDateObj.getTime())) return 0;
+
+  let age = today.getFullYear() - birthDateObj.getFullYear();
+  const monthDiff = today.getMonth() - birthDateObj.getMonth();
+
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < birthDateObj.getDate())
+  ) {
+    age--;
+  }
+
+  return age;
+};
+
 module.exports = {
   successResponse,
   errorResponse,
@@ -75,4 +100,5 @@ module.exports = {
   emitSocketEvent,
   handleError,
   checkDocumentExists,
+  calculateAge,
 };

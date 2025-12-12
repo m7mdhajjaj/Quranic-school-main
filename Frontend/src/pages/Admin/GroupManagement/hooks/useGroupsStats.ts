@@ -1,31 +1,47 @@
-import { useMemo } from "react";
-import type { Group, GroupStats } from "../types";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { getGroupsStats } from "@/Api/groupApi";
+import type { GroupStats } from "../types";
 
-export const useGroupsStats = (groups: Group[]): GroupStats => {
-  return useMemo(() => {
-    const totalGroups = groups.length;
-    const totalStudents = groups.reduce(
-      (sum, g) => sum + (g.currentStudents || 0),
-      0
-    );
-    const fullGroups = groups.filter(
-      (g) =>
-        g.isFull ||
-        (g.currentStudents && g.capacity && g.currentStudents >= g.capacity)
-    ).length;
-    const emptyGroups = groups.filter(
-      (g) => (g.currentStudents || 0) === 0
-    ).length;
-    const totalCapacity = groups.reduce((sum, g) => sum + (g.capacity || 0), 0);
-    const availableSeats = Math.max(0, totalCapacity - totalStudents);
+export const useGroupsStats = () => {
+  const [stats, setStats] = useState<GroupStats>({
+    totalGroups: 0,
+    totalStudents: 0,
+    fullGroups: 0,
+    emptyGroups: 0,
+    totalCapacity: 0,
+    availableSeats: 0,
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    return {
-      totalGroups,
-      totalStudents,
-      fullGroups,
-      emptyGroups,
-      totalCapacity,
-      availableSeats,
-    };
-  }, [groups]);
+  const fetchStats = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const result = await getGroupsStats();
+
+      if (result.success && result.data) {
+        setStats(result.data);
+      } else {
+        throw new Error(result.message || "فشل جلب الإحصائيات");
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "حدث خطأ غير متوقع";
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
+
+  return useMemo(() => ({
+    stats,
+    isLoading,
+    error,
+    refetch: fetchStats,
+  }), [stats, isLoading, error, fetchStats]);
 };

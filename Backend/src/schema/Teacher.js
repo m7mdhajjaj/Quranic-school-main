@@ -144,10 +144,8 @@ const teacherSchema = new mongoose.Schema(
 // ====================================
 
 // Index للبحث السريع
+// ملاحظة: الفهارس على email, phoneNumber, idNumber تم إنشاؤها تلقائياً عبر unique: true
 teacherSchema.index({ firstName: 1, lastName: 1 });
-teacherSchema.index({ email: 1 });
-teacherSchema.index({ phoneNumber: 1 });
-teacherSchema.index({ idNumber: 1 });
 
 // Index للفلترة
 teacherSchema.index({ gender: 1 });

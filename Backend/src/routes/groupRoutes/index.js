@@ -12,7 +12,14 @@ const {
   getGroupsByTeacherIdValidation,
 } = require('../../Validation/Group/groupValidators');
 
-// الحصول على جميع الحلقات - متاح للجميع المسجلين (معلمين وإداريين)
+// 🆕 الحصول على إحصائيات الحلقات - متاح للجميع المسجلين
+router.get('/stats/overview', authMiddleware.protect, groupController.getGroupsStats);
+
+// 🆕 تصدير الحلقات إلى CSV - إداري فقط
+router.get('/export', authMiddleware.adminProtect, groupController.exportGroupsToCSV);
+
+// الحصول على جميع الحلقات مع فلترة وترتيب - متاح للجميع المسجلين (معلمين وإداريين)
+// Query params: search, teacher, capacity, status, occupancy, day, time, sortBy, sortOrder, page, limit
 router.get('/', authMiddleware.protect, groupController.getAllGroups);
 
 // باقي routes تحتاج إلى مصادقة الإداري
