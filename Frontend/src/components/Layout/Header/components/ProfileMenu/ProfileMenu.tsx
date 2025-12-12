@@ -45,7 +45,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="absolute left-0 mt-3 w-72 animate-slide-down z-50">
+    <div className="absolute right-0 mt-3 w-72 animate-slide-down z-50">
       <Card 
         variant="elevated" 
         padding="none"
