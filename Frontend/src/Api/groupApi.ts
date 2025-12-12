@@ -379,3 +379,38 @@ export const exportGroupsToCSV = async (filters?: GroupsQueryParams): Promise<Bl
     return null;
   }
 };
+
+// Check duplicate group name
+export const checkDuplicateGroupName = async (
+  field: 'name',
+  value: string,
+  excludeId?: string
+): Promise<{
+  success: boolean;
+  isDuplicate: boolean;
+  message?: string;
+  existingGroupName?: string;
+}> => {
+  try {
+    console.log(`🔍 API: فحص تكرار ${field}: "${value}"`);
+    
+    const params = new URLSearchParams();
+    params.append('field', field);
+    params.append('value', value);
+    if (excludeId) {
+      params.append('excludeId', excludeId);
+    }
+    
+    const response = await api.get(`/groups/check-duplicate?${params.toString()}`);
+    console.log('✅ نتيجة الفحص:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ خطأ في فحص التكرار:', error);
+    const axiosError = error as AxiosError<{ message?: string }>;
+    return {
+      success: false,
+      isDuplicate: false,
+      message: axiosError.response?.data?.message || 'حدث خطأ أثناء فحص التكرار',
+    };
+  }
+};

@@ -54,7 +54,6 @@ export interface GroupFormData {
   teacher: string;
   description?: string;
   capacity?: number;
-  schedule?: string;
   isActive?: boolean;
   currentStudents?: number; // عدد الطلاب المشتركين (للعرض فقط)
 }

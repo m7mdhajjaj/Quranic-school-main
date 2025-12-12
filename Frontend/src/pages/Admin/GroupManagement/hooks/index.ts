@@ -3,3 +3,4 @@ export { useGroupsFilters } from "./useGroupsFilters";
 export { useGroupsActions } from "./useGroupsActions";
 export { useGroupsStats } from "./useGroupsStats";
 export { useTeachers } from "./useTeachers";
+export { useGroupForm } from "./useGroupForm";

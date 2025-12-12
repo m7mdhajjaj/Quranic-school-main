@@ -1,6 +1,7 @@
 const Student = require("../../schema/Student");
 const Teacher = require("../../schema/Teacher");
 const Admin = require("../../schema/Admin");
+const Group = require("../../schema/Group");
 
 /**
  * التحقق من وجود تكرار للحقول الحساسة عبر جميع أنواع المستخدمين
@@ -186,7 +187,88 @@ async function validateAndCheckDuplicates(req, res, data, excludeId = null, excl
   }
 }
 
+/**
+ * التحقق من تكرار اسم الحلقة
+ * @param {string} groupName - اسم الحلقة المراد التحقق منه
+ * @param {string} excludeId - معرف الحلقة المراد استثناؤها (في حالة التحديث)
+ * @returns {Object|null} - كائن الخطأ إذا وجد تكرار، null إذا لم يوجد
+ */
+async function checkDuplicateGroupName(groupName, excludeId = null) {
+  try {
+    console.log(`🔍 فحص تكرار اسم الحلقة: "${groupName}"`);
+
+    // إعداد الاستعلام
+    const query = { name: groupName.trim() };
+    
+    // استثناء الحلقة الحالية عند التعديل
+    if (excludeId) {
+      query._id = { $ne: excludeId };
+    }
+
+    // البحث عن حلقة بنفس الاسم
+    const existingGroup = await Group.findOne(query);
+
+    if (existingGroup) {
+      console.log(`❌ اسم الحلقة "${groupName}" موجود بالفعل`);
+      return {
+        success: false,
+        isDuplicate: true,
+        message: `اسم الحلقة "${groupName}" موجود بالفعل، يرجى اختيار اسم آخر`,
+        field: "name",
+        duplicateValue: groupName,
+        existingGroupId: existingGroup._id,
+        existingGroupName: existingGroup.name,
+      };
+    }
+
+    console.log(`✅ اسم الحلقة "${groupName}" متاح`);
+    return null;
+
+  } catch (error) {
+    console.error("❌ خطأ في فحص تكرار اسم الحلقة:", error);
+    throw new Error("حدث خطأ أثناء التحقق من اسم الحلقة في قاعدة البيانات");
+  }
+}
+
+/**
+ * دالة مساعدة للتحقق من تكرار اسم الحلقة وإرجاع استجابة HTTP مناسبة
+ * @param {Object} req - كائن الطلب
+ * @param {Object} res - كائن الاستجابة
+ * @param {string} groupName - اسم الحلقة
+ * @param {string} excludeId - معرف الحلقة المراد استثناؤها
+ * @returns {boolean} - true إذا وجد تكرار (تم إرسال استجابة خطأ), false إذا لم يوجد تكرار
+ */
+async function validateAndCheckGroupName(req, res, groupName, excludeId = null) {
+  try {
+    const duplicateError = await checkDuplicateGroupName(groupName, excludeId);
+    
+    if (duplicateError) {
+      return res.json({
+        success: true,
+        isDuplicate: true,
+        message: duplicateError.message,
+        field: duplicateError.field,
+        existingGroupName: duplicateError.existingGroupName,
+      });
+    }
+    
+    return res.json({
+      success: true,
+      isDuplicate: false,
+      message: "اسم الحلقة متاح",
+    });
+  } catch (error) {
+    console.error("خطأ في التحقق من تكرار اسم الحلقة:", error);
+    return res.status(500).json({
+      success: false,
+      message: "حدث خطأ أثناء التحقق من اسم الحلقة"
+    });
+  }
+}
+
 module.exports = {
   checkDuplicateFields,
-  validateAndCheckDuplicates
+  validateAndCheckDuplicates,
+  checkDuplicateGroupName,
+  validateAndCheckGroupName,
 };

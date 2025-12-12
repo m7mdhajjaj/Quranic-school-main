@@ -8,6 +8,7 @@ const Student = require("../../../schema/Student");
 const { findTeacherByIdOrName } = require("./helpers");
 const { invalidateStudentCountsCache } = require("./cache");
 const { successResponse, notFoundResponse, handleError, emitSocketEvent } = require("./utils");
+const { checkDuplicateGroupName } = require("../../../utils/validators/duplicateChecker");
 
 /**
  * تحديث حلقة
@@ -16,6 +17,17 @@ exports.updateGroup = async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
+
+    // التحقق من تفرد اسم الحلقة إذا تم تغييره
+    if (updates.name) {
+      const duplicateError = await checkDuplicateGroupName(updates.name, id);
+      if (duplicateError) {
+        return res.status(400).json({ 
+          success: false, 
+          message: duplicateError.message 
+        });
+      }
+    }
 
     // التحقق من صحة المعلم إذا تم تغييره
     if (updates.teacher) {
@@ -51,9 +63,13 @@ exports.renameGroup = async (req, res) => {
       return notFoundResponse(res, `المجموعة "${oldName}" غير موجودة`);
     }
 
-    const existingGroup = await Group.findOne({ name: newName });
-    if (existingGroup && existingGroup._id.toString() !== group._id.toString()) {
-      return res.status(400).json({ success: false, message: `يوجد مجموعة أخرى بالاسم "${newName}" بالفعل` });
+    // التحقق من تفرد الاسم الجديد باستخدام الدالة الموحدة
+    const duplicateError = await checkDuplicateGroupName(newName, group._id);
+    if (duplicateError) {
+      return res.status(400).json({ 
+        success: false, 
+        message: duplicateError.message 
+      });
     }
 
     // تحديث اسم المجموعة

@@ -14,6 +14,7 @@ import {
   useGroupsActions,
   useGroupsStats,
 } from './hooks';
+import { AddGroupForm } from './Model';
 import type { ViewMode } from './types';
 
 const GroupManagement: React.FC = () => {
@@ -103,6 +104,17 @@ const GroupManagement: React.FC = () => {
             isConnected={false}
           />
 
+          {/* Statistics Cards */}
+          {statsLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <StatCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : (
+            <GroupsStatsCards stats={stats} />
+          )}
+
           {/* Search and Filters */}
           <GroupsToolbar
             searchTerm={filters.searchTerm}
@@ -130,17 +142,6 @@ const GroupManagement: React.FC = () => {
               filters.setCurrentPage(1);
             }}
           />
-
-          {/* Statistics Cards */}
-          {statsLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <StatCardSkeleton key={i} />
-              ))}
-            </div>
-          ) : (
-            <GroupsStatsCards stats={stats} />
-          )}
 
           {/* Loading State */}
           {isLoading && (
@@ -240,6 +241,19 @@ const GroupManagement: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* نموذج إضافة/تعديل الحلقة */}
+      {actions.isFormVisible && (
+        <AddGroupForm
+          group={actions.selectedGroup || undefined}
+          onClose={() => {
+            actions.setIsFormVisible(false);
+            actions.setIsEditMode(false);
+            actions.setSelectedGroup(null);
+          }}
+          onSuccess={actions.handleAddSuccess}
+        />
+      )}
     </>
   );
 };

@@ -18,6 +18,10 @@ router.get('/stats/overview', authMiddleware.protect, groupController.getGroupsS
 // 🆕 تصدير الحلقات إلى CSV - إداري فقط
 router.get('/export', authMiddleware.adminProtect, groupController.exportGroupsToCSV);
 
+// 🆕 فحص تكرار اسم الحلقة - إداري فقط
+// Query params: field=name, value=<group_name>, excludeId=<group_id> (optional)
+router.get('/check-duplicate', authMiddleware.adminProtect, groupController.checkDuplicateGroupName);
+
 // الحصول على جميع الحلقات مع فلترة وترتيب - متاح للجميع المسجلين (معلمين وإداريين)
 // Query params: search, teacher, capacity, status, occupancy, day, time, sortBy, sortOrder, page, limit
 router.get('/', authMiddleware.protect, groupController.getAllGroups);

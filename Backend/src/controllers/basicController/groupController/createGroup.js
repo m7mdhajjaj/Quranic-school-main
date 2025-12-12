@@ -6,6 +6,7 @@ const Group = require("../../../schema/Group");
 const Teacher = require("../../../schema/Teacher");
 const { findTeacherByIdOrName } = require("./helpers");
 const { successResponse, notFoundResponse, handleError, emitSocketEvent } = require("./utils");
+const { checkDuplicateGroupName } = require("../../../utils/validators/duplicateChecker");
 
 /**
  * إنشاء حلقة جديدة
@@ -16,10 +17,13 @@ exports.createGroup = async (req, res) => {
 
     const { name, teacher, description, capacity, schedule } = req.body;
 
-    // التحقق من تفرد اسم الحلقة
-    const existingGroup = await Group.findOne({ name });
-    if (existingGroup) {
-      return res.status(400).json({ success: false, message: "يوجد حلقة بنفس الاسم بالفعل" });
+    // التحقق من تفرد اسم الحلقة باستخدام الدالة الموحدة
+    const duplicateError = await checkDuplicateGroupName(name);
+    if (duplicateError) {
+      return res.status(400).json({ 
+        success: false, 
+        message: duplicateError.message 
+      });
     }
 
     // التحقق من وجود المعلم (مطلوب)
