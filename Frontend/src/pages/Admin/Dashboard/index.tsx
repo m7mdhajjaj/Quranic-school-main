@@ -59,12 +59,12 @@ const AdminDashboard = () => {
           g._id === "male" ? "ذكور" : "إناث"
         ),
         data: chartsData.genderDistribution.map((g) => g.count),
-        colors: ["from-blue-500 to-blue-600", "from-pink-500 to-pink-600"],
+        colors: ["from-green-500 to-green-600", "from-emerald-500 to-emerald-600"],
       }
     : {
         labels: ["ذكور", "إناث"],
         data: [0, 0],
-        colors: ["from-blue-500 to-blue-600", "from-pink-500 to-pink-600"],
+        colors: ["from-green-500 to-green-600", "from-emerald-500 to-emerald-600"],
       };
 
   // Socket: Refresh data when socket updates
@@ -128,10 +128,10 @@ const AdminDashboard = () => {
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-green-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50 to-emerald-50 flex items-center justify-center" dir="rtl">
         <LoadingSpinner 
           size="xl" 
-          color="blue" 
+          color="green" 
           text="جاري تحميل الإحصائيات..." 
         />
       </div>
@@ -141,7 +141,7 @@ const AdminDashboard = () => {
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-green-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50 to-emerald-50 flex items-center justify-center" dir="rtl">
         <div className="text-center">
           <div className="bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded-xl shadow-lg max-w-md">
             <svg
@@ -169,13 +169,11 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div
-      className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100"
-      dir="rtl">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50 to-emerald-50" dir="rtl">
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-12">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-gray-900 via-blue-900 to-indigo-900 bg-clip-text text-transparent mb-3">
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-gray-900 via-green-700 to-emerald-700 bg-clip-text text-transparent mb-3">
             لوحة الإحصائيات
           </h1>
           <p className="text-gray-600 text-xl font-medium">
@@ -189,9 +187,9 @@ const AdminDashboard = () => {
             icon={<FaGraduationCap className="text-3xl" />}
             title="إجمالي الطلاب"
             value={stats.totalStudents}
-            color="bg-gradient-to-br from-blue-500 to-blue-700"
-            bgColor="bg-blue-50"
-            borderColor="border-blue-200"
+            color="bg-gradient-to-br from-green-500 to-green-700"
+            bgColor="bg-green-50"
+            borderColor="border-green-200"
             trend="+12% هذا الشهر"
             percentage={85}
             onClick={handleStudentsClick}
@@ -201,9 +199,9 @@ const AdminDashboard = () => {
             icon={<FaChalkboardTeacher className="text-3xl" />}
             title="إجمالي المعلمين"
             value={stats.totalTeachers}
-            color="bg-gradient-to-br from-green-500 to-green-700"
-            bgColor="bg-green-50"
-            borderColor="border-green-200"
+            color="bg-gradient-to-br from-emerald-500 to-emerald-700"
+            bgColor="bg-emerald-50"
+            borderColor="border-emerald-200"
             trend="+8% هذا الشهر"
             percentage={92}
             onClick={handleTeachersClick}
@@ -213,9 +211,9 @@ const AdminDashboard = () => {
             icon={<FaClipboardCheck className="text-3xl" />}
             title="معدل الدرجات"
             value={stats.averageExamMarks}
-            color="bg-gradient-to-br from-purple-500 to-purple-700"
-            bgColor="bg-purple-50"
-            borderColor="border-purple-200"
+            color="bg-gradient-to-br from-teal-500 to-teal-700"
+            bgColor="bg-teal-50"
+            borderColor="border-teal-200"
             trend="+5% تحسن"
             percentage={stats.averageExamMarks}
           />
@@ -224,9 +222,9 @@ const AdminDashboard = () => {
             icon={<FaClipboardCheck className="text-3xl" />}
             title="عدد الامتحانات"
             value={stats.totalExams}
-            color="bg-gradient-to-br from-orange-500 to-orange-700"
-            bgColor="bg-orange-50"
-            borderColor="border-orange-200"
+            color="bg-gradient-to-br from-lime-500 to-lime-700"
+            bgColor="bg-lime-50"
+            borderColor="border-lime-200"
             percentage={68}
             onClick={handleExamsClick}
           />
@@ -235,9 +233,9 @@ const AdminDashboard = () => {
             icon={<FaUsers className="text-3xl" />}
             title="عدد الحلقات"
             value={stats.totalGroups}
-            color="bg-gradient-to-br from-pink-500 to-pink-700"
-            bgColor="bg-pink-50"
-            borderColor="border-pink-200"
+            color="bg-gradient-to-br from-green-600 to-emerald-600"
+            bgColor="bg-green-50"
+            borderColor="border-green-200"
             percentage={75}
             onClick={handleGroupsClick}
           />
@@ -260,12 +258,12 @@ const AdminDashboard = () => {
           <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transition-shadow duration-300">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                <FaChartLine className="text-blue-600" />
+                <FaChartLine className="text-green-600" />
                 توزيع الطلاب حسب الحلقات
               </h3>
               {groupDistribution.data.length > 0 && (
-                <div className="bg-blue-50 px-3 py-1 rounded-lg">
-                  <span className="text-sm font-bold text-blue-600">
+                <div className="bg-green-50 px-3 py-1 rounded-lg">
+                  <span className="text-sm font-bold text-green-600">
                     {groupDistribution.data.reduce((a, b) => a + b, 0)} طالب
                   </span>
                 </div>
@@ -282,8 +280,8 @@ const AdminDashboard = () => {
               ) : (
                 <div className="flex items-center justify-center h-full text-gray-400">
                   <div className="text-center max-w-md mx-auto">
-                    <div className="bg-blue-50 rounded-full w-24 h-24 mx-auto mb-4 flex items-center justify-center">
-                      <FaChartLine className="text-5xl text-blue-300" />
+                    <div className="bg-green-50 rounded-full w-24 h-24 mx-auto mb-4 flex items-center justify-center">
+                      <FaChartLine className="text-5xl text-green-300" />
                     </div>
                     <p className="text-lg font-bold text-gray-600 mb-2">
                       لا توجد حلقات بها طلاب
@@ -293,7 +291,7 @@ const AdminDashboard = () => {
                     </p>
                     <button
                       onClick={handleGroupsClick}
-                      className="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105">
+                      className="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105">
                       إدارة الحلقات
                     </button>
                   </div>
@@ -306,13 +304,13 @@ const AdminDashboard = () => {
           <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transition-shadow duration-300">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                <FaUsers className="text-purple-600" />
+                <FaUsers className="text-green-600" />
                 توزيع الطلاب حسب الجنس
               </h3>
               {genderDistribution.data.length > 0 &&
                 genderDistribution.data.reduce((a, b) => a + b, 0) > 0 && (
-                  <div className="bg-purple-50 px-3 py-1 rounded-lg">
-                    <span className="text-sm font-bold text-purple-600">
+                  <div className="bg-green-50 px-3 py-1 rounded-lg">
+                    <span className="text-sm font-bold text-green-600">
                       {genderDistribution.data.reduce((a, b) => a + b, 0)} طالب
                     </span>
                   </div>
@@ -329,8 +327,8 @@ const AdminDashboard = () => {
               ) : (
                 <div className="flex items-center justify-center h-full text-gray-400">
                   <div className="text-center max-w-md mx-auto">
-                    <div className="bg-purple-50 rounded-full w-24 h-24 mx-auto mb-4 flex items-center justify-center">
-                      <FaUsers className="text-5xl text-purple-300" />
+                    <div className="bg-green-50 rounded-full w-24 h-24 mx-auto mb-4 flex items-center justify-center">
+                      <FaUsers className="text-5xl text-green-300" />
                     </div>
                     <p className="text-lg font-bold text-gray-600 mb-2">
                       لا توجد بيانات
@@ -340,7 +338,7 @@ const AdminDashboard = () => {
                     </p>
                     <button
                       onClick={() => setShowAddStudentForm(true)}
-                      className="px-6 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105">
+                      className="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105">
                       إضافة طالب
                     </button>
                   </div>

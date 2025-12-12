@@ -4,11 +4,11 @@
 
 import React from "react";
 import { useDisableBodyScroll } from "@/hooks/useDisableBodyScroll";
-import type { Session, SessionFormData } from "../types/timetable.types";
-import { useViewMode, useSessionModal } from "../hooks";
-import { AdvancedTimetableView } from "../DisplayType/AdvancedTimetableView";
-import { WeeklyGridView } from "../DisplayType/WeeklyGridView";
-import { SessionModal } from "../Model/SessionModal";
+import type { Session, SessionFormData } from "../../Timetable/types/timetable.types";
+import { useViewMode, useSessionModal } from "../../Timetable/hooks";
+import { AdvancedTimetableView } from "../../Timetable/DisplayType/AdvancedTimetableView";
+import { WeeklyGridView } from "../../Timetable/DisplayType/WeeklyGridView";
+import { SessionModal } from "../../Timetable/Model/SessionModal";
 import PageHeader from "@/components/UI/PageHeader";
 import { Button } from "@/components/UI/Button";
 import { Alert } from "@/components/UI/Alert";

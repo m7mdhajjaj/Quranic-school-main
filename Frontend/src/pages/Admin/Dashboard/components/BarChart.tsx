@@ -11,11 +11,11 @@ export const BarChart: React.FC<BarChartProps> = ({
   const total = data.reduce((sum, val) => sum + val, 0);
 
   const defaultColors = [
-    "bg-gradient-to-t from-blue-500 to-blue-600",
     "bg-gradient-to-t from-green-500 to-green-600",
-    "bg-gradient-to-t from-purple-500 to-purple-600",
-    "bg-gradient-to-t from-orange-500 to-orange-600",
-    "bg-gradient-to-t from-pink-500 to-pink-600",
+    "bg-gradient-to-t from-emerald-500 to-emerald-600",
+    "bg-gradient-to-t from-teal-500 to-teal-600",
+    "bg-gradient-to-t from-lime-500 to-lime-600",
+    "bg-gradient-to-t from-green-600 to-emerald-600",
   ];
 
   return (
@@ -31,7 +31,7 @@ export const BarChart: React.FC<BarChartProps> = ({
             className="flex-1 flex flex-col items-center group relative">
             {/* النسبة المئوية عند hover */}
             <div className="mb-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:-translate-y-1">
-              <span className="text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-purple-600 px-3 py-1.5 rounded-lg shadow-lg border border-white/20">
+              <span className="text-xs font-bold text-white bg-gradient-to-r from-green-600 to-emerald-600 px-3 py-1.5 rounded-lg shadow-lg border border-white/20">
                 {percentage.toFixed(1)}%
               </span>
             </div>

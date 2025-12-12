@@ -19,8 +19,10 @@
 
 import React from 'react';
 import { useLocation } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 import Header from './Header';
 import { Footer } from './Footer';
+import { AdminLayout } from './Admin';
 
 // ============================================================================
 // Types & Interfaces
@@ -45,6 +47,17 @@ const ROUTES_WITHOUT_FOOTER = ['/login'];
 const ROUTES_WITHOUT_LAYOUT = ['/login'];
 
 /**
+ * Admin routes that use their own header (AdminHeader)
+ * Note: Some routes like /timetable are shared but should use AdminLayout when user is admin
+ */
+const ADMIN_ROUTES = ['/admin', '/admin/dashboard', '/admin/students', '/admin/teachers', '/admin/groups', '/admin/settings'];
+
+/**
+ * Shared routes that should use AdminLayout when user is admin
+ */
+const SHARED_ADMIN_ROUTES = ['/timetable'];
+
+/**
  * Check if current path should hide footer
  */
 const shouldHideFooter = (pathname: string): boolean => {
@@ -56,6 +69,23 @@ const shouldHideFooter = (pathname: string): boolean => {
  */
 const shouldHideLayout = (pathname: string): boolean => {
   return ROUTES_WITHOUT_LAYOUT.some((route) => pathname === route);
+};
+
+/**
+ * Check if current path is an admin route (uses AdminHeader)
+ */
+const isAdminRoute = (pathname: string, userRole?: string): boolean => {
+  // Check if it's a direct admin route
+  if (ADMIN_ROUTES.some((route) => pathname === route || pathname.startsWith(route + '/'))) {
+    return true;
+  }
+  
+  // Check if it's a shared route and user is admin
+  if (userRole === 'admin' && SHARED_ADMIN_ROUTES.some((route) => pathname === route || pathname.startsWith(route + '/'))) {
+    return true;
+  }
+  
+  return false;
 };
 
 // ============================================================================
@@ -81,19 +111,27 @@ const shouldHideLayout = (pathname: string): boolean => {
  */
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
+  const { user } = useAuth();
+  const userRole = user?.role;
 
   // Determine what to show based on current route
   const hideLayout = shouldHideLayout(location.pathname);
   const hideFooter = shouldHideFooter(location.pathname);
-  const showHeader = !hideLayout;
-  const showFooter = !hideLayout && !hideFooter;
+  const isAdmin = isAdminRoute(location.pathname, userRole);
+  const showHeader = !hideLayout && !isAdmin; // Don't show regular header for admin routes
+  const showFooter = !hideLayout && !hideFooter && !isAdmin; // Don't show footer for admin routes
 
-  // Use unified Header component for all roles
+  // If admin route, use AdminLayout
+  if (isAdmin) {
+    return <AdminLayout>{children}</AdminLayout>;
+  }
+
+  // Use unified Header component for all roles (except admin)
   const HeaderComponent = Header;
 
   return (
     <div className="app-content">
-      {/* Header - Conditional rendering based on route */}
+      {/* Header - Conditional rendering based on route (not shown for admin routes) */}
       {showHeader && <HeaderComponent />}
 
       {/* Main Content Area */}

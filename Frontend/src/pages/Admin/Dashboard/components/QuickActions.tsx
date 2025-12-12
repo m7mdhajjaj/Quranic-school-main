@@ -16,22 +16,22 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
     {
       icon: FaUserPlus,
       label: "إضافة طالب",
-      color: "from-blue-500 to-blue-600",
-      hoverColor: "hover:from-blue-600 hover:to-blue-700",
+      color: "from-green-500 to-green-600",
+      hoverColor: "hover:from-green-600 hover:to-green-700",
       onClick: onAddStudent,
     },
     {
       icon: FaChalkboardTeacher,
       label: "إضافة معلم",
-      color: "from-green-500 to-green-600",
-      hoverColor: "hover:from-green-600 hover:to-green-700",
+      color: "from-emerald-500 to-emerald-600",
+      hoverColor: "hover:from-emerald-600 hover:to-emerald-700",
       onClick: onAddTeacher,
     },
     {
       icon: FaUsers,
       label: "إضافة حلقة",
-      color: "from-purple-500 to-purple-600",
-      hoverColor: "hover:from-purple-600 hover:to-purple-700",
+      color: "from-teal-500 to-teal-600",
+      hoverColor: "hover:from-teal-600 hover:to-teal-700",
       onClick: onAddGroup,
     },
   ];
@@ -47,7 +47,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
             text-white p-6 rounded-2xl shadow-lg 
             transform transition-all duration-300 
             hover:scale-105 hover:shadow-2xl
-            focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-blue-400
+            focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-green-400
             active:scale-95
             group
           `}>

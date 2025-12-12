@@ -52,7 +52,7 @@ export const StatCard: React.FC<StatCardProps> = ({
                   stroke="currentColor"
                   strokeWidth="4"
                   strokeDasharray={`${percentage * 1.76} 176`}
-                  className="text-blue-500"
+                  className="text-green-500"
                   strokeLinecap="round"
                 />
               </svg>
