@@ -1,6 +1,6 @@
 import { memo } from "react";
 import ResponsivePagination from "@/components/UI/ResponsivePagination";
-import type { PaginationProps } from "@/types/pagination";
+import type { PaginationProps } from "../types/pagination";
 
 const Pagination = memo(({
   currentPage,

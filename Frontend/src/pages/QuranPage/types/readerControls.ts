@@ -1,4 +1,4 @@
-import type { SurahData } from "../pages/QuranPage/types/quran.types";
+import type { SurahData } from "./quran.types";
 
 export interface ReaderControlsProps {
   selectedSurah: SurahData | null;

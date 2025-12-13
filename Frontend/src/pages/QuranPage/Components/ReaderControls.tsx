@@ -1,7 +1,7 @@
 import { memo, useCallback, startTransition } from "react";
 import { Button, Card, RangeSlider } from "@/components/UI";
 import { ArrowLeft, BookOpen } from "lucide-react";
-import type { ReaderControlsProps } from "@/types/readerControls";
+import type { ReaderControlsProps } from "../types/readerControls";
 
 const ReaderControls = memo(({
   selectedSurah,

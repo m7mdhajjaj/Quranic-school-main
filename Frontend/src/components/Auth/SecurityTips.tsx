@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { ChevronDown, ChevronUp, Shield } from 'lucide-react';
 
 interface SecurityTipsProps {
   /**
@@ -9,15 +10,28 @@ interface SecurityTipsProps {
    * نصائح مخصصة (اختياري)
    */
   customTips?: string[];
+  /**
+   * هل القسم قابل للطي (افتراضي: true)
+   */
+  collapsible?: boolean;
+  /**
+   * الحالة الافتراضية (افتراضي: false - مطوي)
+   */
+  defaultOpen?: boolean;
 }
 
 /**
  * مكون قابل لإعادة الاستخدام لعرض نصائح الأمان لكلمة المرور
+ * مع إمكانية الطي والفتح
  */
 export const SecurityTips: React.FC<SecurityTipsProps> = ({
   className = '',
   customTips,
+  collapsible = true,
+  defaultOpen = false,
 }) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+
   const defaultTips = [
     'لا تشارك كلمة المرور مع أي شخص',
     'استخدم كلمة مرور فريدة لكل حساب',
@@ -30,30 +44,66 @@ export const SecurityTips: React.FC<SecurityTipsProps> = ({
 
   return (
     <div
-      className={`p-4 bg-blue-50/80 backdrop-blur-sm border border-blue-200/50 rounded-lg ${className}`}
+      className={`
+        bg-gradient-to-br from-blue-50/90 to-indigo-50/90 
+        backdrop-blur-sm border border-blue-200/60 rounded-xl 
+        shadow-sm transition-all duration-300 overflow-hidden
+        ${className}
+      `}
       dir="rtl"
     >
-      <div className="flex items-start gap-3">
-        <svg
-          className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
-          <path
-            fillRule="evenodd"
-            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-            clipRule="evenodd"
-          />
-        </svg>
-        <div className="flex-1">
-          <h3 className="text-sm font-semibold text-blue-900 mb-2 text-right">
+      {/* Header - قابل للنقر إذا كان collapsible */}
+      <button
+        type="button"
+        onClick={() => collapsible && setIsOpen(!isOpen)}
+        className={`
+          w-full flex items-center justify-between gap-3 p-4
+          transition-colors duration-200
+          ${collapsible 
+            ? 'hover:bg-blue-100/50 cursor-pointer' 
+            : 'cursor-default'
+          }
+        `}
+        aria-expanded={isOpen}
+        aria-label={collapsible ? 'إظهار/إخفاء نصائح الأمان' : undefined}
+      >
+        <div className="flex items-center gap-3 flex-1">
+          <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+            <Shield className="w-5 h-5 text-blue-600" />
+          </div>
+          <h3 className="text-sm font-semibold text-blue-900 text-right">
             نصائح الأمان
           </h3>
-          <ul className="text-sm text-blue-800 space-y-1 text-right list-none">
+        </div>
+        
+        {collapsible && (
+          <div className="flex-shrink-0 transition-transform duration-300">
+            {isOpen ? (
+              <ChevronUp className="w-5 h-5 text-blue-600" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-blue-600" />
+            )}
+          </div>
+        )}
+      </button>
+
+      {/* Content - قابل للطي */}
+      <div
+        className={`
+          transition-all duration-300 ease-in-out overflow-hidden
+          ${isOpen || !collapsible ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}
+        `}
+      >
+        <div className="px-4 pb-4">
+          <ul className="space-y-2.5 text-right">
             {tips.map((tip, index) => (
-              <li key={index} className="flex items-start gap-2">
-                <span className="text-blue-600">•</span>
-                <span>{tip}</span>
+              <li
+                key={index}
+                className="flex items-start gap-3 text-sm text-blue-800 animate-in fade-in slide-in-from-right-2 duration-300"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 flex-shrink-0" />
+                <span className="leading-relaxed">{tip}</span>
               </li>
             ))}
           </ul>

@@ -3,7 +3,7 @@ import { Card } from "@/components/UI";
 import AyahCard from "../../QuranAudio/components/AyahCard";
 import { getFontSizeClass } from "../utils/fontSizeMapper";
 import { shouldShowBasmala } from "../utils/basmalaHelper";
-import type { SurahReaderProps } from "@/types/surahReader";
+import type { SurahReaderProps } from "../types/surahReader";
 
 const SurahReader = memo(({
   surah,

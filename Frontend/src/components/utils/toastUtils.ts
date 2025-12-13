@@ -1,17 +1,10 @@
 import { toast, Bounce } from 'react-toastify';
 import type { ToastOptions } from 'react-toastify';
+import { audioManager } from "@/utils/AudioManager";
 
-// دالة لتشغيل الصوت
+// ✅ استخدام AudioManager الموحد بدلاً من دالة محلية
 const playSound = (soundFile: string) => {
-  try {
-    const audio = new Audio(`/src/assets/sounds/${soundFile}`);
-    audio.volume = 0.6; // ضبط مستوى الصوت (60%)
-    audio.play().catch((error) => {
-      console.warn('Could not play sound:', error);
-    });
-  } catch (error) {
-    console.warn('Error playing sound:', error);
-  }
+  audioManager.play(soundFile, 0.6); // مستوى الصوت 60%
 };
 
 // الإعدادات الافتراضية للـ Toast

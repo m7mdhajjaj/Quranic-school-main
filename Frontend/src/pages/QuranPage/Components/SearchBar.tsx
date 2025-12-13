@@ -1,6 +1,6 @@
 import { Search } from 'lucide-react';
 import { Input } from "@/components/UI";
-import type { SearchBarProps } from "@/types/searchBar";
+import type { SearchBarProps } from "../types/searchBar";
 
 const SearchBar = ({
   value,

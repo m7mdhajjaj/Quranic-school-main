@@ -9,7 +9,7 @@ import SurahCard from "./SurahCard";
 import { filterSurahs, SURAH_SORT_OPTIONS } from "../utils/filterSurahs";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import type { SortOrder } from "../types/quran.types";
-import type { SurahListProps } from "@/types/surahList";
+import type { SurahListProps } from "../types/surahList";
 
 const SurahList = ({ surahs, onSelectSurah }: SurahListProps) => {
   const [searchTerm, setSearchTerm] = useState("");

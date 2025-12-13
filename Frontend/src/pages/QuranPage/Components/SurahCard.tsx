@@ -1,6 +1,6 @@
 import { memo, useCallback, startTransition } from "react";
 import { Book, MapPin, Play } from "lucide-react";
-import type { SurahCardProps } from "@/types/surahCard";
+import type { SurahCardProps } from "../types/surahCard";
 
 const SurahCard = memo(({ surah, onClick }: SurahCardProps) => {
   const handleClick = useCallback(() => {

@@ -1,4 +1,4 @@
-import type { Surah } from "../pages/QuranPage/types/quran.types";
+import type { Surah } from "./quran.types";
 
 export interface SurahListProps {
   surahs: Surah[];

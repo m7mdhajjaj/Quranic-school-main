@@ -104,3 +104,5 @@ export const audioManager = AudioManager.getInstance();
 // تحميل الأصوات الشائعة مسبقاً
 audioManager.preload('successful.mp3');
 audioManager.preload('Adhan.mp3');
+audioManager.preload('error.wav');
+audioManager.preload('notification.mp3');

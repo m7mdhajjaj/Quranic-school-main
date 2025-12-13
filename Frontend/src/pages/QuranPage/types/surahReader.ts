@@ -1,4 +1,4 @@
-import type { SurahData, Ayah } from "../pages/QuranPage/types/quran.types";
+import type { SurahData, Ayah } from "./quran.types";
 
 export interface SurahReaderProps {
   surah: SurahData;

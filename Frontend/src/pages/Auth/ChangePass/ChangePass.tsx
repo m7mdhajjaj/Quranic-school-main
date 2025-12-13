@@ -1,296 +1,50 @@
-import { useState, useEffect } from 'react';
-import { changePassword } from "@/Api/authApi";
+/**
+ * ============================================================================
+ * CHANGE PASSWORD MODAL - نافذة تغيير كلمة المرور
+ * ============================================================================
+ * مكون React محسّن UX/UI لعرض نافذة تغيير كلمة المرور مع:
+ * - التحقق اللحظي (Real-time Validation)
+ * - Password Strength Indicator
+ * - Micro-interactions و Animations
+ * - Responsive Design
+ */
+
 import { useLogo } from "@/components/Hooks/useLogo";
-import { showSuccessMessage, showErrorMessage } from "@/components/utils/sweetalertUtils";
 import { Modal } from "@/components/UI";
-import { Input, Button ,Logo} from "@/components/UI";
-import { PasswordRequirements, SecurityTips, PasswordStrengthIndicator } from "@/components/Auth";
-import { validatePassword, calculatePasswordStrength } from "@/utils/passwordValidation";
+import { Input, Button, Logo } from "@/components/UI";
+import { 
+  PasswordRequirements, 
+  SecurityTips, 
+  PasswordStrengthIndicator 
+} from "@/components/Auth";
 import { Lock, CheckCircle2, XCircle } from 'lucide-react';
-import type {
-  ChangePasswordModalProps,
-  ChangePasswordFormData,
-  PasswordValidationErrors
-} from '../types';
+import { useChangePassword } from './hooks/useChangePassword';
+import type { ChangePasswordModalProps } from '../types';
 
 const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
-  const [formData, setFormData] = useState<ChangePasswordFormData>({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
-  const [isLoading, setIsLoading] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<PasswordValidationErrors>(
-    {}
-  );
-  const [step, setStep] = useState(1);
+  // ==========================================================================
+  // HOOKS - الـ Hooks
+  // ==========================================================================
   const { logoUrl, logoLoading } = useLogo();
-  const [passwordStrength, setPasswordStrength] = useState<{
-    score: number;
-    label: string;
-    color: string;
-  }>({
-    score: 0,
-    label: '',
-    color: 'bg-gray-300',
-  });
+  
+  const {
+    formData,
+    isLoading,
+    validationErrors,
+    passwordStrength,
+    handleChange,
+    handleBlur,
+    handleSubmit,
+  } = useChangePassword({ isOpen, onClose });
 
-  // Handle ESC key to close modal and form reset
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleEscKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    document.addEventListener('keydown', handleEscKey);
-    return () => {
-      document.removeEventListener('keydown', handleEscKey);
-    };
-  }, [isOpen, onClose]);
-
-  // Reset form when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      setFormData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      });
-      setValidationErrors({});
-      setStep(1);
-      setPasswordStrength({
-        score: 0,
-        label: '',
-        color: 'bg-gray-300',
-      });
-    }
-  }, [isOpen]);
-
-  // Update password strength
-  const updatePasswordStrength = (password: string) => {
-    if (!password) {
-      setPasswordStrength({ score: 0, label: '', color: 'bg-gray-300' });
-      return;
-    }
-
-    const { strength, score } = calculatePasswordStrength(password);
-    
-    let label = '';
-    let color = 'bg-gray-300';
-
-    switch (strength) {
-      case 'weak':
-        label = 'ضعيفة';
-        color = 'bg-red-500';
-        break;
-      case 'medium':
-        label = 'جيدة';
-        color = 'bg-yellow-500';
-        break;
-      case 'strong':
-        label = 'ممتازة';
-        color = 'bg-green-500';
-        break;
-    }
-
-    setPasswordStrength({ score, label, color });
-  };
-
-  // Auto-advance steps
-  useEffect(() => {
-    if (
-      step === 1 &&
-      formData.currentPassword &&
-      !validationErrors.currentPassword
-    ) {
-      setTimeout(() => setStep(2), 500);
-    }
-    if (step === 2 && formData.newPassword && passwordStrength.score >= 75) {
-      setTimeout(() => setStep(3), 500);
-    }
-  }, [step, formData, validationErrors, passwordStrength]);
-
-  // Validate field
-  const validateFieldLocal = (name: string, value: string): string => {
-    switch (name) {
-      case 'currentPassword': {
-        if (!value) return 'كلمة المرور الحالية مطلوبة';
-        if (value.length < 1) return 'كلمة المرور الحالية مطلوبة';
-        return '';
-      }
-
-      case 'newPassword': {
-        if (!value) return 'كلمة المرور الجديدة مطلوبة';
-
-        const validation = validatePassword(value);
-        if (!validation.isValid) {
-          return validation.error || 'كلمة المرور غير صالحة';
-        }
-
-        if (value === formData.currentPassword)
-          return 'يجب أن تكون مختلفة عن الحالية';
-        return '';
-      }
-
-      case 'confirmPassword': {
-        if (!value) return 'تأكيد كلمة المرور مطلوب';
-        if (value !== formData.newPassword) return 'كلمة المرور غير متطابقة';
-        return '';
-      }
-
-      default:
-        return '';
-    }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-
-    // Update password strength for new password
-    if (name === 'newPassword') {
-      updatePasswordStrength(value);
-    }
-
-    // Real-time validation
-    const fieldError = validateFieldLocal(name, value);
-    setValidationErrors((prev) => ({ ...prev, [name]: fieldError }));
-  };
-
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    const fieldError = validateFieldLocal(name, value);
-    setValidationErrors({
-      ...validationErrors,
-      [name]: fieldError,
-    });
-  };
-
-  const validateForm = (): boolean => {
-    const errors: PasswordValidationErrors = {
-      currentPassword: validateFieldLocal(
-        'currentPassword',
-        formData.currentPassword
-      ),
-      newPassword: validateFieldLocal('newPassword', formData.newPassword),
-      confirmPassword: validateFieldLocal(
-        'confirmPassword',
-        formData.confirmPassword
-      ),
-    };
-
-    setValidationErrors(errors);
-    return !Object.values(errors).some((error) => error !== '');
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Validate form
-    if (!validateForm()) {
-      showErrorMessage('خطأ في النموذج! ❌', 'يرجى تصحيح الأخطاء في النموذج');
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const token = localStorage.getItem('token');
-      const userJson = localStorage.getItem('user');
-
-      if (!token || !userJson) {
-        showErrorMessage('خطأ في الدخول! ❌', 'يجب تسجيل الدخول أولاً').then(
-          () => {
-            onClose();
-          }
-        );
-        return;
-      }
-
-      const user = JSON.parse(userJson);
-
-      const response = await changePassword({
-        currentPassword: formData.currentPassword,
-        newPassword: formData.newPassword,
-        userId: user._id,
-        userType: user.role || 'student',
-      });
-
-      if (response.success) {
-        // Reset form
-        setFormData({
-          currentPassword: '',
-          newPassword: '',
-          confirmPassword: '',
-        });
-        setPasswordStrength({
-          score: 0,
-          label: '',
-          color: 'bg-gray-300',
-        });
-        setValidationErrors({});
-        setStep(1);
-
-        // Show success message with SweetAlert
-        showSuccessMessage('تم بنجاح! ✅', 'تم تغيير كلمة المرور بنجاح').then(
-          () => {
-            onClose();
-          }
-        );
-      }
-    } catch (error: unknown) {
-      console.error('Change password error:', error);
-
-      let errorMessage = 'حدث خطأ أثناء تغيير كلمة المرور';
-
-      // Type-safe error handling
-      if (typeof error === 'object' && error !== null && 'response' in error) {
-        const axiosError = error as {
-          response?: { status?: number; data?: { message?: string } };
-        };
-        if (axiosError.response?.status === 400) {
-          // Handle bad request - usually wrong current password
-          errorMessage = 'كلمة المرور الحالية غير صحيحة';
-          // Set validation error for current password field
-          setValidationErrors({
-            ...validationErrors,
-            currentPassword: 'كلمة المرور الحالية غير صحيحة'
-          });
-          showErrorMessage('خطأ في كلمة المرور! ❌', errorMessage);
-          return;
-        } else if (axiosError.response?.status === 401) {
-          errorMessage = 'انتهت صلاحية جلسة العمل. يرجى تسجيل الدخول مرة أخرى';
-          showErrorMessage('خطأ في الجلسة! ❌', errorMessage).then(() => {
-            onClose();
-          });
-          return;
-        } else if (axiosError.response?.data?.message) {
-          errorMessage = axiosError.response.data.message;
-        } else {
-          errorMessage = `خطأ من الخادم: ${axiosError.response?.status || 'غير معروف'}`;
-        }
-      } else if (
-        typeof error === 'object' &&
-        error !== null &&
-        'request' in error
-      ) {
-        errorMessage = 'لا يمكن الوصول إلى الخادم. تأكد من أن الخادم يعمل';
-      } else if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-
-      // Show error message with SweetAlert
-      showErrorMessage('فشل تغيير كلمة المرور! ❌', errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  // ==========================================================================
+  // EARLY RETURN - إرجاع مبكر
+  // ==========================================================================
   if (!isOpen) return null;
 
+  // ==========================================================================
+  // RENDER - العرض
+  // ==========================================================================
   return (
     <Modal
       isOpen={isOpen}
@@ -298,15 +52,22 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
       size="4xl"
       showCloseButton={true}
       closeOnOverlayClick={true}
-      bodyClassName="p-8 pb-24 relative"
-      overlayClassName="bg-black/30"
+      bodyClassName="p-6 sm:p-8"
+      overlayClassName="bg-black/30 backdrop-blur-sm"
     >
       {logoLoading ? (
-        <div className="text-center py-8" dir="rtl">جاري التحميل...</div>
+        <div className="text-center py-12">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+          <p className="mt-4 text-gray-600">جاري التحميل...</p>
+        </div>
       ) : (
-        <div dir="rtl" className="text-right">
-          <div className="flex justify-center mb-6">
-            <div className="relative">
+        <div dir="rtl" className="w-full animate-in fade-in slide-in-from-bottom-4 duration-300">
+          {/* ================================================================== */}
+          {/* HEADER - رأس الصفحة */}
+          {/* ================================================================== */}
+          <div className="flex flex-col items-center mb-8">
+            {/* Logo with Lock Icon - Animated */}
+            <div className="relative mb-4 animate-in zoom-in duration-500">
               <Logo
                 logoUrl={logoUrl}
                 logoLoading={logoLoading}
@@ -314,20 +75,30 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
                 showGlow={false}
                 className="!h-20 !w-20"
               />
-              <div className="absolute -bottom-1 -right-1 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full p-1.5 shadow-md shadow-emerald-500/50">
+              <div className="absolute -bottom-1 -right-1 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full p-1.5 shadow-lg shadow-emerald-500/50 animate-pulse">
                 <Lock className="w-4 h-4 text-white" />
               </div>
             </div>
-          </div>
-        
-          <h1 className="text-3xl font-bold text-center mb-2 text-gray-800">
-            تغيير كلمة المرور
-          </h1>
-          <p className="text-center text-gray-600 text-sm mb-8">
-            يرجى إدخال كلمة المرور الحالية والجديدة
-          </p>
 
-          <form onSubmit={handleSubmit} className="text-right" dir="rtl">
+            {/* Title */}
+            <h1 className="text-2xl sm:text-3xl font-bold text-center mb-2 text-gray-800 animate-in fade-in slide-in-from-top-2 duration-500">
+              تغيير كلمة المرور
+            </h1>
+            
+            {/* Subtitle */}
+            <p className="text-center text-gray-600 text-sm animate-in fade-in slide-in-from-top-2 duration-500 delay-100">
+              يرجى إدخال كلمة المرور الحالية والجديدة
+            </p>
+          </div>
+
+          {/* ================================================================== */}
+          {/* FORM - النموذج */}
+          {/* ================================================================== */}
+          <form 
+            onSubmit={handleSubmit} 
+            className="text-right" 
+            dir="rtl"
+          >
             {/* Hidden username field for accessibility */}
             <input
               type="text"
@@ -338,43 +109,51 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
               value=""
               aria-hidden="true"
             />
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 pb-24" dir="rtl">
-              {/* Right Column - Password Fields (في RTL يكون على اليمين) */}
-              <div className="space-y-5" dir="rtl">
-                {/* Current Password */}
-                <Input
-                  label="كلمة المرور الحالية"
-                  id="currentPassword"
-                  name="currentPassword"
-                  type="password"
-                  value={formData.currentPassword}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  placeholder="أدخل كلمة المرور الحالية"
-                  autoComplete="current-password"
-                  error={validationErrors.currentPassword}
-                  showPasswordToggle={true}
-                  required
-                />
 
-                {/* New Password */}
-                <Input
-                  label="كلمة المرور الجديدة"
-                  id="newPassword"
-                  name="newPassword"
-                  type="password"
-                  value={formData.newPassword}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  placeholder="أدخل كلمة المرور الجديدة"
-                  autoComplete="new-password"
-                  error={validationErrors.newPassword}
-                  showPasswordToggle={true}
-                  required
-                />
+            {/* Form Content Grid - Responsive */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 xl:gap-8" dir="rtl">
+              {/* ============================================================== */}
+              {/* LEFT COLUMN - العمود الأيسر: حقول كلمة المرور */}
+              {/* ============================================================== */}
+              <div className="space-y-5 order-2 xl:order-1">
+                {/* Current Password Field */}
+                <div className="animate-in fade-in slide-in-from-right-4 duration-500 delay-75">
+                  <Input
+                    label="كلمة المرور الحالية"
+                    id="currentPassword"
+                    name="currentPassword"
+                    type="password"
+                    value={formData.currentPassword}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    placeholder="أدخل كلمة المرور الحالية"
+                    autoComplete="current-password"
+                    error={validationErrors.currentPassword}
+                    showPasswordToggle={true}
+                    required
+                  />
+                </div>
 
-                {/* Confirm Password */}
-                <div>
+                {/* New Password Field */}
+                <div className="animate-in fade-in slide-in-from-right-4 duration-500 delay-150">
+                  <Input
+                    label="كلمة المرور الجديدة"
+                    id="newPassword"
+                    name="newPassword"
+                    type="password"
+                    value={formData.newPassword}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    placeholder="أدخل كلمة المرور الجديدة"
+                    autoComplete="new-password"
+                    error={validationErrors.newPassword}
+                    showPasswordToggle={true}
+                    required
+                  />
+                </div>
+
+                {/* Confirm Password Field */}
+                <div className="animate-in fade-in slide-in-from-right-4 duration-500 delay-225">
                   <Input
                     label="تأكيد كلمة المرور الجديدة"
                     id="confirmPassword"
@@ -389,27 +168,34 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
                     showPasswordToggle={true}
                     rightIcon={
                       formData.confirmPassword && !validationErrors.confirmPassword ? (
-                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                        <CheckCircle2 className="w-5 h-5 text-emerald-500 animate-in zoom-in duration-300" />
                       ) : undefined
                     }
                     required
                   />
                 </div>
 
-                {/* New Password Details */}
-                <div>
-                  {/* Password Strength Indicator */}
-                  <PasswordStrengthIndicator
-                    password={formData.newPassword}
-                    score={passwordStrength.score}
-                    label={passwordStrength.label}
-                    color={passwordStrength.color}
-                  />
+                {/* Password Strength Indicator */}
+                {formData.newPassword && (
+                  <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <PasswordStrengthIndicator
+                      password={formData.newPassword}
+                      score={passwordStrength.score}
+                      label={passwordStrength.label}
+                      color={passwordStrength.color}
+                    />
+                  </div>
+                )}
 
-                  {validationErrors.newPassword && (
-                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1 text-right" dir="rtl">
+                {/* Error Message - Animated */}
+                {validationErrors.newPassword && (
+                  <div 
+                    className="animate-in fade-in slide-in-from-top-2 duration-300"
+                    dir="rtl"
+                  >
+                    <p className="mt-1 text-xs text-red-600 flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg p-2">
                       <svg
-                        className="w-3 h-3"
+                        className="w-4 h-4 flex-shrink-0"
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
@@ -419,85 +205,63 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
                           clipRule="evenodd"
                         />
                       </svg>
-                      {validationErrors.newPassword}
+                      <span>{validationErrors.newPassword}</span>
                     </p>
-                  )}
-
-                  {/* Action Buttons */}
-                  <div className="mt-6 flex gap-3">
-                    <Button
-                      type="submit"
-                      variant="primary"
-                      size="md"
-                      fullWidth
-                      loading={isLoading}
-                      disabled={Object.values(validationErrors).some((e) => e !== '')}
-                      leftIcon={
-                        <CheckCircle2 className="w-4 h-4" />
-                      }
-                      gradient={true}
-                    >
-                      {isLoading ? 'جاري التغيير...' : 'تغيير كلمة المرور'}
-                    </Button>
-
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="md"
-                      fullWidth
-                      onClick={() => onClose()}
-                      disabled={isLoading}
-                      leftIcon={
-                        <XCircle className="w-4 h-4" />
-                      }
-                    >
-                      إلغاء
-                    </Button>
                   </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="mt-6 flex flex-col sm:flex-row gap-3" dir="rtl">
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    size="md"
+                    fullWidth
+                    loading={isLoading}
+                    disabled={
+                      isLoading || 
+                      Object.values(validationErrors).some((e) => e !== '') ||
+                      !formData.currentPassword ||
+                      !formData.newPassword ||
+                      !formData.confirmPassword
+                    }
+                    leftIcon={
+                      <CheckCircle2 className="w-4 h-4" />
+                    }
+                    gradient={true}
+                    className="transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    {isLoading ? 'جاري التغيير...' : 'تغيير كلمة المرور'}
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="md"
+                    fullWidth
+                    onClick={onClose}
+                    disabled={isLoading}
+                    leftIcon={<XCircle className="w-4 h-4" />}
+                    className="transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    إلغاء
+                  </Button>
                 </div>
               </div>
 
-              {/* Left Column - Password Requirements (في RTL يكون على اليسار) */}
-              <div className="space-y-6" dir="rtl">
-                {/* Password Requirements - Reusable Component */}
-                <PasswordRequirements password={formData.newPassword} />
+              {/* ============================================================== */}
+              {/* RIGHT COLUMN - العمود الأيمن: متطلبات ونصائح */}
+              {/* ============================================================== */}
+              <div className="space-y-6 order-1 xl:order-2">
+                {/* Password Requirements - Animated */}
+                <div className="animate-in fade-in slide-in-from-left-4 duration-500 delay-75">
+                  <PasswordRequirements password={formData.newPassword} />
+                </div>
 
-                {/* Security Tips */}
-                <SecurityTips />
-              </div>
-            </div>
-
-            {/* Fixed Action Buttons */}
-            <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg p-4 -mx-8 -mb-8 mt-8" dir="rtl">
-              <div className="flex gap-3">
-                <Button
-                  type="submit"
-                  variant="primary"
-                  size="lg"
-                  className="flex-1"
-                  loading={isLoading}
-                  disabled={Object.values(validationErrors).some((e) => e !== '')}
-                  leftIcon={
-                    <CheckCircle2 className="w-5 h-5" />
-                  }
-                  gradient={true}
-                >
-                  {isLoading ? 'جاري التغيير...' : 'تغيير كلمة المرور'}
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="lg"
-                  className="flex-1"
-                  onClick={() => onClose()}
-                  disabled={isLoading}
-                  leftIcon={
-                    <XCircle className="w-5 h-5" />
-                  }
-                >
-                  إلغاء
-                </Button>
+                {/* Security Tips - Collapsible */}
+                <div className="animate-in fade-in slide-in-from-left-4 duration-500 delay-150">
+                  <SecurityTips collapsible={true} defaultOpen={false} />
+                </div>
               </div>
             </div>
           </form>
@@ -506,5 +270,5 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
     </Modal>
   );
 };
-  
+
 export default ChangePasswordModal;
