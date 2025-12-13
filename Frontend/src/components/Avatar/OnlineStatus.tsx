@@ -63,40 +63,45 @@ const OnlineStatusComponent: React.FC<OnlineStatusProps> = ({
     };
   }, [lazyLoad, isVisible]);
 
-  // الحصول على Context مرة واحدة فقط
+  // الحصول على Context
   const context = useContext(UserStatusContext);
-  const [userStatus, setUserStatus] = useState<{ isActive?: boolean } | null>(null);
   
-  // جلب الحالة فقط عند الظهور ومرة واحدة - في useEffect بدلاً من render
-  useEffect(() => {
-    if (!isVisible || !user?._id || statusFetched || !context?.getUserStatus) return;
-    
-    setStatusFetched(true);
-    
-    // جلب الحالة بشكل آمن في useEffect
+  // جلب الحالة من Context مباشرة مع مراقبة التغييرات
+  // نستخدم getUserStatus مع dependency على userStatuses من context
+  const userStatusFromContext = useMemo(() => {
+    if (!user?._id || !context?.getUserStatus) return null;
     try {
-      const status = context.getUserStatus(user._id);
-      setUserStatus(status);
+      return context.getUserStatus(user._id);
     } catch (error) {
-      // Silent fail
-      setUserStatus(null);
+      return null;
     }
-  }, [isVisible, user?._id, statusFetched, context]);
+  }, [
+    user?._id, 
+    context?.getUserStatus, 
+    // مراقبة userStatuses للتحديثات - نستخدم userId المحدد
+    context?.userStatuses?.[user?._id || '']
+  ]);
+  
+  // جلب الحالة عند الظهور لأول مرة
+  useEffect(() => {
+    if (!isVisible || !user?._id || !context?.getUserStatus || statusFetched) return;
+    setStatusFetched(true);
+  }, [isVisible, user?._id, context, statusFetched]);
 
-  // تحديد الحالة مع useMemo للتحسين - بدون استدعاء getUserStatus
+  // تحديد الحالة مع useMemo للتحسين
   const isOnline = useMemo(() => {
     // الأولوية 1: من user.isActive (من Backend) - الأسرع والأكثر موثوقية
     if (user?.isActive !== undefined) return user.isActive;
     
-    // الأولوية 2: من userStatus المحفوظ في state
-    if (userStatus?.isActive !== undefined) return userStatus.isActive;
+    // الأولوية 2: من userStatusFromContext (من Context/Socket)
+    if (userStatusFromContext?.isActive !== undefined) return userStatusFromContext.isActive;
     
     // الأولوية 3: من externalIsOnline prop
     if (externalIsOnline !== undefined) return externalIsOnline;
     
     // افتراضي
     return false;
-  }, [user?.isActive, userStatus?.isActive, externalIsOnline]);
+  }, [user?.isActive, userStatusFromContext?.isActive, externalIsOnline]);
 
   // استخدام useMemo للـ static classes - تجنب إعادة الحساب
   const sizeClass = useMemo(() => {
@@ -130,7 +135,7 @@ const OnlineStatusComponent: React.FC<OnlineStatusProps> = ({
   }, [size, position]);
 
   const statusColor = useMemo(() => 
-    isOnline ? 'bg-green-500 shadow-green-500/50' : 'bg-red-500 shadow-red-500/50',
+    isOnline ? 'bg-green-500' : 'bg-red-500',
     [isOnline]
   );
 
@@ -150,36 +155,17 @@ const OnlineStatusComponent: React.FC<OnlineStatusProps> = ({
       sizeClass,
       positionClass,
       statusColor,
-      'rounded-full border-2 border-white shadow-lg transition-all duration-300',
-      isOnline && showPing && 'animate-pulse',
+      'rounded-full border-2 border-white transition-all duration-300',
       className
     ].filter(Boolean).join(' ');
-  }, [sizeClass, positionClass, statusColor, isOnline, showPing, className]);
-
-  const innerGlowClass = useMemo(() => 
-    `absolute inset-0.5 rounded-full ${innerGlowColor} opacity-60`,
-    [innerGlowColor]
-  );
-
-  const pingClass = useMemo(() => 
-    `absolute inset-0 ${statusColor} rounded-full animate-ping opacity-75`,
-    [statusColor]
-  );
+  }, [sizeClass, positionClass, statusColor, className]);
 
   return (
     <div
       ref={elementRef}
       className={containerClass}
       aria-label={ariaLabel}
-    >
-      {/* Inner glow effect */}
-      <div className={innerGlowClass} />
-      
-      {/* Ping animation ring - render conditionally */}
-      {isOnline && showPing && (
-        <div className={pingClass} />
-      )}
-    </div>
+    />
   );
 };
 

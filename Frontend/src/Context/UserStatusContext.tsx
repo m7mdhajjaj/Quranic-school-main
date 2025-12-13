@@ -2,6 +2,7 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { socketManager } from '../Socket/SocketManager';
+import { useUserStatusSocket } from '../Socket/useTeachersSocket';
 import api from '../Api/api';
 
 // تعريف الواجهات والأنواع
@@ -13,6 +14,7 @@ export interface UserStatusState {
 
 export interface UserStatusContextType {
   userStatus: UserStatusState;
+  userStatuses: Record<string, UserStatusState>;
   getUserStatus: (userId?: string) => UserStatusState;
   refreshStatus: () => void;
 }
@@ -61,44 +63,34 @@ export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   }, [token, user]);
 
-  // إعداد Socket.IO للتحديثات الفورية باستخدام socketManager
+  // معالج تحديث حالة المستخدم من Socket
+  const handleUserStatusChange = useCallback((data: { 
+    userId: string; 
+    isActive: boolean; 
+    lastSeen: string;
+  }) => {
+    console.log('🔄 [UserStatusContext] Status updated via socket:', data);
+    setUserStatuses(prev => ({
+      ...prev,
+      [data.userId]: {
+        isActive: data.isActive,
+        lastSeen: data.lastSeen ? new Date(data.lastSeen) : undefined,
+        isLoading: false,
+      },
+    }));
+  }, []);
+
+  // استخدام useUserStatusSocket hook للاستماع لتحديثات Socket
+  useUserStatusSocket(handleUserStatusChange);
+
+  // جلب الحالة الأولية للمستخدم الحالي
   useEffect(() => {
     if (!token || !user?._id) {
       return;
     }
 
-    // جلب الحالة الأولية للمستخدم الحالي
+    // جلب الحالة الأولية
     fetchUserStatus(user._id);
-
-    // الاستماع لتحديثات حالة المستخدمين من socketManager
-    const handleUserStatusChange = (data: { 
-      userId: string; 
-      isActive: boolean; 
-      lastSeen?: string;
-    }) => {
-      setUserStatuses(prev => ({
-        ...prev,
-        [data.userId]: {
-          isActive: data.isActive,
-          lastSeen: data.lastSeen ? new Date(data.lastSeen) : undefined,
-          isLoading: false,
-        },
-      }));
-    };
-
-    // الحصول على Socket من socketManager
-    const socket = socketManager.getSocket();
-    if (socket) {
-      socket.on('userStatusChange', handleUserStatusChange);
-    }
-
-    // Cleanup: إزالة المستمع عند unmount
-    return () => {
-      const socket = socketManager.getSocket();
-      if (socket) {
-        socket.off('userStatusChange', handleUserStatusChange);
-      }
-    };
   }, [token, user?._id, fetchUserStatus]);
 
   // ❌ تم إزالة التحديث الدوري - نعتمد على socket للتحديثات الفورية
@@ -150,6 +142,7 @@ export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const contextValue: UserStatusContextType = {
     userStatus,
+    userStatuses, // إضافة userStatuses للسماح للمكونات بمراقبة التغييرات
     getUserStatus,
     refreshStatus,
   };

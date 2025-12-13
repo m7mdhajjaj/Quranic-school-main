@@ -1,16 +1,13 @@
-import React from 'react';
+import React, { useContext, useMemo } from 'react';
 import { User as UserIcon, Camera } from 'lucide-react';
 import { useAvatar } from '../Hooks/useAvatar';
 import { LoadingSpinner, Tooltip, OnlineStatus } from '../UI';
+import { UserStatusContext } from '@/Context/UserStatusContext';
 import {
   getUserInfo,
   getAvatarUrl,
   getGenderColor,
   getTextColor,
-  getStatusTitle,
-  getStatusColor,
-  getStatusText,
-  getStatusDotSize,
 } from '.';
 
 export interface AvatarProps {
@@ -160,22 +157,15 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
   // حالة التحميل
   const loading = externalLoading || isFetchingAvatar;
 
-  // تحديد حالة المستخدم من مصادر متعددة
-  // 1. إذا كان user.isActive موجود من الباك إند، استخدمه (أعلى أولوية)
-  // 2. إذا كان forceStatus محدد، استخدمه
-  // 3. وإلا استخدم showStatus
+  // تحديد حالة المستخدم - الآن OnlineStatus يتولى المنطق من Context
+  // نستخدم forceStatus فقط إذا كان محدداً، وإلا OnlineStatus سيجلب الحالة من Context
   const userIsOnline = (() => {
-    if (user?.isActive !== undefined) return user.isActive;
     if (forceStatus === 'online' || forceStatus === 'active') return true;
     if (forceStatus === 'offline' || forceStatus === 'inactive') return false;
-    return showStatus;
+    // إذا لم يكن forceStatus محدداً، OnlineStatus سيتولى المنطق من Context
+    return undefined;
   })();
 
-  // استخدام utility functions من ملف utils
-  const statusTitle = getStatusTitle(forceStatus, userIsOnline);
-  const statusColor = getStatusColor(loading, userIsOnline);
-  const statusTextValue = getStatusText(loading, userIsOnline);
-  const statusDotSizeClass = getStatusDotSize(statusSize);
   const genderColorClass = getGenderColor(gender);
   const textColorClass = getTextColor();
 
@@ -199,10 +189,8 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
           flex 
           items-center 
           justify-center 
-          ${clickable ? 'cursor-pointer hover:scale-105 hover:shadow-lg transition-all duration-300' : ''} 
+          ${clickable ? 'cursor-pointer hover:scale-105 transition-all duration-300' : ''} 
           ${displaySrc ? 'bg-white' : genderColorClass} 
-          shadow-lg
-          ${size === '3xl' ? 'shadow-xl' : ''}
           group 
           relative
         `}
@@ -281,15 +269,15 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
         )}
       </div>
 
-      {/* Status indicator - استخدام OnlineStatus */}
+      {/* Status indicator - استخدام OnlineStatus مع المنطق الجديد من Context */}
       {showStatus && (
-        <OnlineStatus 
-          isOnline={userIsOnline}
-          size={size}
-          position="absolute"
-          showPing={userIsOnline}
-          user={user}
-        />
+          <OnlineStatus 
+            isOnline={userIsOnline !== undefined ? userIsOnline : undefined}
+            size={statusSize}
+            position="absolute"
+            showPing={true}
+            user={user || (userId ? { _id: userId } : undefined)}
+          />
       )}
 
       {/* Edit button مع Tooltip */}
@@ -323,24 +311,44 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
     </div>
   );
 
-  // إرجاع المحتوى مع النص الاختياري
+  // إرجاع المحتوى مع النص الاختياري - استخدام OnlineStatus مع showStatusText
   if (showStatusText) {
+    // جلب الحالة من Context للعرض مع النص
+    const context = useContext(UserStatusContext);
+    const targetUserId = userId || user?._id;
+    const userStatusFromContext = useMemo(() => {
+      if (!targetUserId || !context?.getUserStatus) return null;
+      try {
+        return context.getUserStatus(targetUserId);
+      } catch {
+        return null;
+      }
+    }, [targetUserId, context?.getUserStatus, context?.userStatuses?.[targetUserId || '']]);
+
+    const statusText = useMemo(() => {
+      if (userIsOnline === true) return 'نشط الآن';
+      if (userIsOnline === false) return 'غير نشط';
+      if (userStatusFromContext?.isActive === true) return 'نشط الآن';
+      if (userStatusFromContext?.isActive === false) return 'غير نشط';
+      if (user?.isActive === true) return 'نشط الآن';
+      if (user?.isActive === false) return 'غير نشط';
+      return 'جاري التحميل...';
+    }, [userIsOnline, userStatusFromContext?.isActive, user?.isActive]);
+
     return (
       <div className="flex items-center gap-2">
         <AvatarContent />
         {showStatus && (
           <div className="flex items-center gap-1">
-            <div
-              className={`
-                ${statusDotSizeClass}
-                ${statusColor}
-                rounded-full
-                border-2 border-white
-                shadow-sm
-              `}
+            <OnlineStatus 
+              isOnline={userIsOnline !== undefined ? userIsOnline : undefined}
+              size={statusSize}
+              position="relative"
+              showPing={false}
+              user={user || (userId ? { _id: userId } : undefined)}
             />
             <span className="text-xs text-gray-600">
-              {statusTextValue}
+              {statusText}
             </span>
           </div>
         )}

@@ -5,6 +5,5 @@ export { DonutChart } from "./DonutChart";
 export { QuickActions } from "./QuickActions";
 export { AttendanceSection } from "./AttendanceSection";
 export { TopListsSection } from "./TopListsSection";
-// NotificationsSection تم استبداله بـ NotificationList من components/Notifications
 export { NotificationList } from "@/components/Notifications";
 export type { Notification } from "@/components/Notifications";

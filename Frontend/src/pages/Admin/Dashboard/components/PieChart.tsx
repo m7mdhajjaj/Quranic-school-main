@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import type { PieChartProps } from "../types";
+import type { PieChartProps } from "../Types/types";
 import { COLOR_MAP, DEFAULT_PIE_COLORS } from "../Types/constants";
 import { calculateChartSegments } from "../utils/chartUtils";
 

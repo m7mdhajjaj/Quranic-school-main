@@ -190,6 +190,13 @@ export const useDashboardData = () => {
       value: student.totalMarks,
       avgMark: student.averageMark,
       group: student.group,
+      userId: student._id,
+      userRole: "student",
+      user: {
+        _id: student._id,
+        name: student.name,
+        role: "student",
+      },
       // بيانات إضافية للعرض
       memorizationMarks: student.memorizationMarks,
       reviewMarks: student.reviewMarks,
@@ -213,6 +220,13 @@ export const useDashboardData = () => {
       value: teacher.totalMarks,
       studentCount: teacher.studentCount,
       groups: teacher.groups,
+      userId: teacher._id,
+      userRole: "teacher",
+      user: {
+        _id: teacher._id,
+        name: teacher.name,
+        role: "teacher",
+      },
       // بيانات إضافية للعرض
       memorizationMarks: teacher.memorizationMarks,
       reviewMarks: teacher.reviewMarks,

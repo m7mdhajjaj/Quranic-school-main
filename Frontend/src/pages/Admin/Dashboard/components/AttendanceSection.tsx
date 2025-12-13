@@ -22,7 +22,7 @@ export const AttendanceSection: React.FC = () => {
           <FaTimesCircle className="text-red-600 text-base sm:text-lg" />
           <h3 className="text-lg sm:text-xl font-bold text-gray-800">
             الطلاب الغائبين لهذا اليوم
-          </h3>
+      </h3>
           {!isLoading && absentStudents.length > 0 && (
             <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs sm:text-sm font-bold">
               {absentStudents.length}
@@ -42,7 +42,7 @@ export const AttendanceSection: React.FC = () => {
         <div className="text-center py-12">
           <div className="bg-green-50 rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center">
             <FaUser className="text-4xl text-green-500" />
-          </div>
+              </div>
           <p className="text-base font-bold text-gray-600 mb-2">
             لا يوجد طلاب غائبين
           </p>
@@ -62,11 +62,11 @@ export const AttendanceSection: React.FC = () => {
                   <div className="w-7 h-7 sm:w-8 sm:h-8 bg-red-500 rounded-full flex items-center justify-center">
                     <FaUser className="text-white text-xs" />
                   </div>
-                </div>
+              </div>
                 <p className="font-bold text-gray-800 text-sm truncate flex-1" title={student.fullName}>
                   {student.fullName}
-                </p>
-              </div>
+              </p>
+            </div>
               
               <div className="flex flex-col gap-1 text-xs text-gray-600">
                 <div className="flex items-center gap-1.5 min-w-0">
@@ -84,7 +84,7 @@ export const AttendanceSection: React.FC = () => {
               </div>
             </div>
           ))}
-        </div>
+      </div>
       )}
     </Card>
   );
