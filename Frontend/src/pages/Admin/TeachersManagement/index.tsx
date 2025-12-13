@@ -114,7 +114,7 @@ const TeachersManagement: React.FC = () => {
   useDisableBodyScroll(isFormVisible);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6" dir="rtl">
+    <div className="min-h-screen p-4 md:p-6" dir="rtl">
       <div className="max-w-full mx-auto">
         {/* Header Section */}
         <TeachersHeader

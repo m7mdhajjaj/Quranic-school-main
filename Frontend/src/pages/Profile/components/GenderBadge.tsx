@@ -31,8 +31,9 @@ export const GenderBadge = ({ gender }: GenderBadgeProps) => {
 
   return (
     <span
-      className={`inline-flex items-center gap-2 ${style.bg} text-white px-5 py-2.5 rounded-full font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300`}>
-      <span className="text-lg">{style.icon}</span>
+      className={`inline-flex items-center gap-2.5 ${style.bg} text-white px-6 py-2.5 rounded-full font-bold text-base shadow-md hover:shadow-xl hover:scale-105 transition-all duration-300 border border-white/20`}
+      dir="rtl">
+      <span className="text-xl">{style.icon}</span>
       <span>{arabicGender}</span>
     </span>
   );

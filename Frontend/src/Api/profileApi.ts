@@ -165,3 +165,55 @@ export const getUserWithFallback = async (userId: string, userRole?: string): Pr
   
   throw new Error('المستخدم غير موجود في أي من قواعد البيانات');
 };
+
+// Check duplicate field value (real-time validation)
+export const checkDuplicateField = async (
+  field: 'email' | 'phoneNumber' | 'idNumber',
+  value: string
+): Promise<{ 
+  success: boolean; 
+  isDuplicate: boolean; 
+  message?: string; 
+  existingUserType?: string;
+  existingUserName?: string;
+}> => {
+  try {
+    const params = new URLSearchParams({ field, value });
+    const response = await api.get(`/profile/check-duplicate?${params}`);
+    return response.data;
+  } catch (error) {
+    console.error("خطأ في التحقق من التكرار:", error);
+    const axiosError = error as { response?: { data?: { message?: string } } };
+    return {
+      success: false,
+      isDuplicate: false,
+      message: axiosError?.response?.data?.message || "حدث خطأ أثناء التحقق",
+    };
+  }
+};
+
+// Get edit limits for a specific field
+export const getEditLimits = async (
+  field: 'birthDate'
+): Promise<{
+  success: boolean;
+  field: string;
+  editLimit: {
+    allowed: boolean;
+    remaining: number;
+    count: number;
+    maxEdits: number;
+    periodDays: number;
+  };
+}> => {
+  try {
+    const response = await api.get(`/profile/edit-limits/${field}`);
+    return response.data;
+  } catch (error) {
+    console.error("خطأ في جلب حدود التعديل:", error);
+    const axiosError = error as { response?: { data?: { message?: string } } };
+    throw new Error(
+      axiosError?.response?.data?.message || "حدث خطأ أثناء جلب حدود التعديل"
+    );
+  }
+};

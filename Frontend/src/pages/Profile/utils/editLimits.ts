@@ -1,36 +1,28 @@
 // utils/editLimits.ts
+// يستخدم Backend للحصول على معلومات حدود التعديل
 
-// تحكم التعديلات - السماح بتعديل تاريخ الميلاد والجنس مرتين فقط كل شهر
-const addOneMonth = (dt: Date) => {
-  const d = new Date(dt);
-  d.setMonth(d.getMonth() + 1);
-  return d;
-};
+import { getEditLimits as getEditLimitsAPI } from "@/Api/profileApi";
 
-const pruneRolling = (timestamps: string[]) => {
-  const now = new Date();
-  return timestamps.filter((iso) => now < addOneMonth(new Date(iso)));
-};
-
-const keyFor = (field: "birthDate" | "gender", userId: string) =>
-  `editHistory_${field}_${userId}`;
-
-export const canEditFieldLocal = (
-  field: "birthDate" | "gender",
-  userId: string
-) => {
-  const raw = localStorage.getItem(keyFor(field, userId));
-  const list = pruneRolling(raw ? JSON.parse(raw) : []);
-  const allowed = list.length < 2;
-  const remaining = Math.max(0, 2 - list.length);
-  return { allowed, remaining, list };
-};
-
-export const recordEditLocal = (
-  field: "birthDate" | "gender",
-  userId: string
-) => {
-  const { list } = canEditFieldLocal(field, userId);
-  const updated = [...list, new Date().toISOString()];
-  localStorage.setItem(keyFor(field, userId), JSON.stringify(updated));
+/**
+ * التحقق من إمكانية تعديل تاريخ الميلاد
+ * @returns {Promise<{allowed: boolean, remaining: number}>}
+ */
+export const canEditFieldLocal = async (): Promise<{
+  allowed: boolean;
+  remaining: number;
+}> => {
+  try {
+    const result = await getEditLimitsAPI("birthDate");
+    return {
+      allowed: result.editLimit.allowed,
+      remaining: result.editLimit.remaining,
+    };
+  } catch (error) {
+    console.error("Error getting edit limits:", error);
+    // في حالة الخطأ، نسمح بالتعديل (fail-open) لكن Backend سيتحقق في النهاية
+    return {
+      allowed: true,
+      remaining: 2,
+    };
+  }
 };

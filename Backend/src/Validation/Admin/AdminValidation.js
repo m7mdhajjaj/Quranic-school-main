@@ -323,7 +323,9 @@ const validateAdminData = async (req, res, next) => {
     }
     
     // التحقق من التكرار باستخدام duplicateChecker
-    const currentAdminId = isUpdate ? req.params.id : null;
+    // استخدام req.user.id عند التحديث من صفحة البروفايل (/api/me)
+    // أو req.params.id عند التحديث من صفحة الإدارة (/api/admins/:id)
+    const currentAdminId = isUpdate ? (req.params.id || req.user?.id || req.user?._id) : null;
     const duplicateError = await checkDuplicateFields(
       {
         email: validatedData.email,

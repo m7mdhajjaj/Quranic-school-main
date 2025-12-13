@@ -1,30 +1,22 @@
 import React from "react";
+import { formatTime12Arabic as formatTime12 } from "@/utils/helpers/dateHelpers";
 
 interface FormatTime12ArabicProps {
   time: string | Date;
   className?: string;
 }
 
-const formatTime12Arabic = (timeInput: string | Date): string => {
-  try {
-    const date = new Date(timeInput);
-    return date.toLocaleTimeString("ar-EG", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
-  } catch (error) {
-    console.error("Time formatting error:", error);
-    return new Date().toLocaleTimeString("ar-EG", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
-  }
-};
-
 const FormatTime12Arabic: React.FC<FormatTime12ArabicProps> = ({ time, className }) => {
-  return <span className={className}>{formatTime12Arabic(time)}</span>;
+  // تحويل Date إلى string بصيغة HH:MM
+  let timeStr: string;
+  if (typeof time === 'string') {
+    timeStr = time;
+  } else {
+    const hours = String(time.getHours()).padStart(2, '0');
+    const minutes = String(time.getMinutes()).padStart(2, '0');
+    timeStr = `${hours}:${minutes}`;
+  }
+  return <span className={className}>{formatTime12(timeStr)}</span>;
 };
 
 export default FormatTime12Arabic;

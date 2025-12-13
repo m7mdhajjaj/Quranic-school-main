@@ -59,7 +59,7 @@ export const AdminTimetableView: React.FC<AdminTimetableViewProps> = ({
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 p-4 md:p-6 lg:p-8"
+      className="min-h-screen p-4 md:p-6 lg:p-8"
       dir="rtl"
       lang="ar">
       <div className="max-w-7xl mx-auto">

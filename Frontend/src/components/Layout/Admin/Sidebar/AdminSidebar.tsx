@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { showLogoutConfirmation } from "@/pages/Auth/LogOut/logoutUtils";
-import { ChangePasswordModal } from "@/pages/Auth/ChangePass";
 
 interface SidebarItem {
   to: string;
@@ -29,18 +28,19 @@ interface AdminSidebarProps {
   onToggle?: () => void;
   onMobileToggle?: () => void;
   onMobileClose?: () => void;
+  onChangePasswordClick?: () => void;
 }
 
 const AdminSidebar: React.FC<AdminSidebarProps> = ({ 
   isCollapsed = false, 
   isMobileOpen = false,
   onToggle,
-  onMobileClose 
+  onMobileClose,
+  onChangePasswordClick
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user: currentUser, logout: authLogout } = useAuth();
-  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
 
   const sidebarItems: SidebarItem[] = [
     {
@@ -94,7 +94,8 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
   };
 
   const handleChangePasswordClick = () => {
-    setIsChangePasswordModalOpen(true);
+    onMobileClose?.();
+    onChangePasswordClick?.();
   };
 
   return (
@@ -148,16 +149,27 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                   handleProfileClick();
                   onMobileClose?.();
                 }}
-                className="w-full flex items-center gap-4 px-4 py-3 rounded-2xl text-emerald-600 hover:bg-white hover:text-emerald-700 transition-all duration-200 font-medium text-sm">
+                className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-200 font-medium text-sm relative ${
+                  location.pathname === "/profile" && !location.search.includes("change-password")
+                    ? "bg-white text-emerald-700 shadow-md"
+                    : "text-emerald-600 hover:bg-white hover:text-emerald-700"
+                }`}>
+                {location.pathname === "/profile" && !location.search.includes("change-password") && (
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-emerald-500 rounded-l-full" />
+                )}
                 <User size={20} />
                 <span>الملف الشخصي</span>
               </button>
               <button
-                onClick={() => {
-                  handleChangePasswordClick();
-                  onMobileClose?.();
-                }}
-                className="w-full flex items-center gap-4 px-4 py-3 rounded-2xl text-emerald-600 hover:bg-white hover:text-emerald-700 transition-all duration-200 font-medium text-sm">
+                onClick={handleChangePasswordClick}
+                className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-200 font-medium text-sm relative ${
+                  location.pathname === "/profile" && location.search.includes("change-password")
+                    ? "bg-white text-emerald-700 shadow-md"
+                    : "text-emerald-600 hover:bg-white hover:text-emerald-700"
+                }`}>
+                {location.pathname === "/profile" && location.search.includes("change-password") && (
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-emerald-500 rounded-l-full" />
+                )}
                 <Key size={20} />
                 <span>تغيير كلمة المرور</span>
               </button>
@@ -245,13 +257,27 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
           <div className="space-y-2">
             <button
               onClick={handleProfileClick}
-              className="w-full flex items-center gap-4 px-4 py-3 rounded-2xl text-emerald-600 hover:bg-white hover:text-emerald-700 transition-all duration-200 font-medium text-sm">
+              className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-200 font-medium text-sm relative ${
+                location.pathname === "/profile" && !location.search.includes("change-password")
+                  ? "bg-white text-emerald-700 shadow-md"
+                  : "text-emerald-600 hover:bg-white hover:text-emerald-700"
+              }`}>
+              {location.pathname === "/profile" && !location.search.includes("change-password") && (
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-emerald-500 rounded-l-full" />
+              )}
               <User size={20} />
               <span>الملف الشخصي</span>
             </button>
             <button
               onClick={handleChangePasswordClick}
-              className="w-full flex items-center gap-4 px-4 py-3 rounded-2xl text-emerald-600 hover:bg-white hover:text-emerald-700 transition-all duration-200 font-medium text-sm">
+              className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-200 font-medium text-sm relative ${
+                location.pathname === "/profile" && location.search.includes("change-password")
+                  ? "bg-white text-emerald-700 shadow-md"
+                  : "text-emerald-600 hover:bg-white hover:text-emerald-700"
+              }`}>
+              {location.pathname === "/profile" && location.search.includes("change-password") && (
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-emerald-500 rounded-l-full" />
+              )}
               <Key size={20} />
               <span>تغيير كلمة المرور</span>
             </button>
@@ -265,11 +291,6 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
         </div>
       )}
 
-      {/* Change Password Modal */}
-      <ChangePasswordModal
-        isOpen={isChangePasswordModalOpen}
-        onClose={() => setIsChangePasswordModalOpen(false)}
-      />
       </aside>
     </>
   );

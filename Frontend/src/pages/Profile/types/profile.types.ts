@@ -12,8 +12,5 @@ export type FetchState =
 
 export interface RoleConfig {
   label: string;
-  gradient: string;
-  lightGradient: string;
   icon: string;
-  pattern: string;
 }

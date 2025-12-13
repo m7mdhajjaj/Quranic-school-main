@@ -65,19 +65,19 @@ export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   // معالج تحديث حالة المستخدم من Socket
   const handleUserStatusChange = useCallback((data: { 
-    userId: string; 
-    isActive: boolean; 
+      userId: string; 
+      isActive: boolean; 
     lastSeen: string;
-  }) => {
+    }) => {
     console.log('🔄 [UserStatusContext] Status updated via socket:', data);
-    setUserStatuses(prev => ({
-      ...prev,
-      [data.userId]: {
-        isActive: data.isActive,
-        lastSeen: data.lastSeen ? new Date(data.lastSeen) : undefined,
-        isLoading: false,
-      },
-    }));
+      setUserStatuses(prev => ({
+        ...prev,
+        [data.userId]: {
+          isActive: data.isActive,
+          lastSeen: data.lastSeen ? new Date(data.lastSeen) : undefined,
+          isLoading: false,
+        },
+      }));
   }, []);
 
   // استخدام useUserStatusSocket hook للاستماع لتحديثات Socket

@@ -51,11 +51,11 @@ export const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps>
   const textColor = password ? color.replace('bg-', 'text-') : 'text-gray-400';
 
   return (
-    <div className={`mt-2 ${className}`}>
+    <div className={`mt-2 ${className}`} dir="rtl">
       {/* استخدام ProgressBar المشترك مع تخصيص للـ labels */}
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs text-gray-700">قوة كلمة المرور:</span>
-        <span className={`text-xs font-semibold ${textColor}`}>
+        <span className="text-xs text-gray-700 text-right">قوة كلمة المرور:</span>
+        <span className={`text-xs font-semibold ${textColor} text-right`}>
           {displayLabel}
         </span>
       </div>

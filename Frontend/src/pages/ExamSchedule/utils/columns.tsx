@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Exam } from "@/Api/ExamShedule";
 import type { Column } from "@/components/UI/Table";
+import { formatArabicDate, formatTime12Arabic } from "@/utils/helpers/dateHelpers";
 
 // Helper components
 const AvgBadge: React.FC<{ value?: number | null }> = ({ value }) => {
@@ -26,30 +27,8 @@ const StudentMarkDisplay: React.FC<{ mark?: string; isDesktop?: boolean }> = ({ 
   );
 };
 
-// Helper functions
-export const formatDateArabic = (dateStr: string | Date) => {
-  const date = typeof dateStr === 'string' ? new Date(dateStr) : dateStr;
-  return date.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
-};
-
-export const formatTime12Arabic = (timeStr: string) => {
-  if (!timeStr) return '-';
-  const [hours, minutes] = timeStr.split(':');
-  const hour = parseInt(hours);
-  
-  // تحديد الفترة (ظهراً/مساءً/صباحاً)
-  let period = '';
-  if (hour === 12) {
-    period = 'ظهراً';
-  } else if (hour > 12) {
-    period = 'مساءً';
-  } else {
-    period = 'صباحاً';
-  }
-  
-  const hour12 = hour % 12 || 12;
-  return `${hour12}:${minutes} ${period}`;
-};
+// إعادة تصدير للتوافق مع الكود القديم
+export { formatArabicDate as formatDateArabic, formatTime12Arabic };
 
 export function createExamColumns(params: {
   role: 'student' | 'teacher' | 'admin';

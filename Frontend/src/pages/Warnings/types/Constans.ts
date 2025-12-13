@@ -97,13 +97,5 @@ export const canRepeatWarning = (type: WarningType): boolean => {
   return type === "warning";
 };
 
-/**
- * تنسيق التاريخ بالعربي (ميلادي)
- */
-export const formatArabicDate = (date: string): string => {
-  return new Date(date).toLocaleDateString("ar-EG", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-};
+// إعادة تصدير من utils/helpers
+export { formatArabicDate } from "@/utils/helpers/dateHelpers";

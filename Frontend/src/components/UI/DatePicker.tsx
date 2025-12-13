@@ -86,9 +86,9 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   };
 
   return (
-    <div className={`w-full ${className}`}>
+    <div className={`w-full ${className}`} dir="rtl">
       {label && (
-        <label className="flex items-center gap-1 text-sm font-medium text-gray-700 mb-3">
+        <label className="flex items-center gap-1 text-sm font-medium text-gray-700 mb-3 text-right">
           <Calendar className="h-3.5 w-3.5 text-gray-500 flex-shrink-0" />
           {label} {required && <span className="text-red-500">*</span>}
         </label>
@@ -130,7 +130,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
       </div>
 
       {error && (
-        <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+        <p className="mt-2 text-sm text-red-600 flex items-center gap-1 text-right">
           <svg
             className="w-4 h-4"
             fill="currentColor"

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import AdminHeader from "./Header/AdminHeader";
 import { AdminSidebar } from "./Sidebar";
+import { ChangePasswordModal } from "@/pages/Auth/ChangePass";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -24,6 +25,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
+
+  const handleChangePasswordClick = () => {
+    setIsChangePasswordModalOpen(true);
+  };
 
   useEffect(() => {
     const checkMobile = () => {
@@ -38,7 +44,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   return (
     <>
       {/* AdminHeader - Only for admin (NOT regular Header) */}
-      <AdminHeader onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
+      <AdminHeader 
+        onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
+        onChangePasswordClick={handleChangePasswordClick}
+      />
       
       {/* AdminSidebar - Only for admin */}
       <AdminSidebar 
@@ -47,6 +56,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
         onMobileToggle={() => setSidebarOpen(!sidebarOpen)}
         onMobileClose={() => setSidebarOpen(false)}
+        onChangePasswordClick={handleChangePasswordClick}
       />
       
       {/* Mobile Overlay */}
@@ -59,7 +69,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       
       {/* Main Content Area - Admin pages */}
       <div
-        className={`min-h-screen transition-all duration-300 pt-14 sm:pt-16 lg:pt-16 ${
+        className={`min-h-screen bg-gradient-to-b from-emerald-50 via-green-50 to-teal-50 transition-all duration-300 pt-14 sm:pt-16 lg:pt-16 ${
           isMobile 
             ? "mr-0" 
             : sidebarCollapsed 
@@ -69,6 +79,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         dir="rtl">
         {children}
       </div>
+      
+      {/* Change Password Modal - Shared between Header and Sidebar */}
+      <ChangePasswordModal
+        isOpen={isChangePasswordModalOpen}
+        onClose={() => setIsChangePasswordModalOpen(false)}
+      />
       
       {/* NOTE: No Footer for admin pages */}
     </>

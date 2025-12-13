@@ -6,31 +6,7 @@ import React from 'react';
 import { TransparentModal } from './TransparentModal';
 import { LoadingSpinner } from '@/components/UI';
 import type { Exam, StudentDoc } from "@/Api/ExamShedule";
-
-// Helper functions
-const formatDateArabic = (dateStr: string) => {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
-};
-
-const formatTime12Arabic = (timeStr: string) => {
-  if (!timeStr) return '-';
-  const [hours, minutes] = timeStr.split(':');
-  const hour = parseInt(hours);
-  
-  // تحديد الفترة (ظهراً/مساءً/صباحاً)
-  let period = '';
-  if (hour === 12) {
-    period = 'ظهراً';
-  } else if (hour > 12) {
-    period = 'مساءً';
-  } else {
-    period = 'صباحاً';
-  }
-  
-  const hour12 = hour % 12 || 12;
-  return `${hour12}:${minutes} ${period}`;
-};
+import { formatArabicDate, formatTime12Arabic } from "@/utils/helpers/dateHelpers";
 
 interface MarksModalProps {
   open: boolean;

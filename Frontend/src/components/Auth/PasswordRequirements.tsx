@@ -57,8 +57,9 @@ export const PasswordRequirements: React.FC<PasswordRequirementsProps> = ({
   return (
     <div
       className={`p-3 sm:p-4 bg-emerald-50/80 backdrop-blur-sm rounded-lg border border-emerald-200/50 ${className}`}
+      dir="rtl"
     >
-      <p className="text-xs sm:text-sm font-semibold text-emerald-900 mb-1">
+      <p className="text-xs sm:text-sm font-semibold text-emerald-900 mb-1 text-right">
         متطلبات كلمة المرور الجديدة:
       </p>
       

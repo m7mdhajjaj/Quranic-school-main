@@ -67,6 +67,13 @@ const adminSchema = new mongoose.Schema(
 
     isActive: { type: Boolean, default: false },
     lastSeen: { type: Date, default: Date.now },
+
+    // تاريخ تعديلات birthDate (للتحكم بعدد التعديلات)
+    birthDateEditHistory: [
+      {
+        editDate: { type: Date, required: true, default: Date.now },
+      },
+    ],
   },
   {
     timestamps: true,

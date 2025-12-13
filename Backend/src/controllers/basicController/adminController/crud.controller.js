@@ -109,6 +109,61 @@ exports.updateAdmin = async (req, res) => {
     const id = req.params.id;
     const updates = { ...req.body };
 
+    // Check if birthDate is being changed - apply edit limits
+    if (updates.birthDate) {
+      const currentAdmin = await Admin.findById(id).select(
+        "birthDate birthDateEditHistory"
+      );
+
+      if (currentAdmin) {
+        // Check if birthDate is actually changing
+        // Admin schema uses String type
+        const currentBirthDate = currentAdmin.birthDate
+          ? currentAdmin.birthDate.split("T")[0].trim()
+          : null;
+        const newBirthDateStr = updates.birthDate
+          ? (typeof updates.birthDate === 'string'
+              ? updates.birthDate.split("T")[0].trim()
+              : new Date(updates.birthDate).toISOString().split("T")[0])
+          : null;
+
+        if (currentBirthDate !== newBirthDateStr && newBirthDateStr) {
+          // BirthDate is being changed - check edit limits
+          const oneMonthAgo = new Date();
+          oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+          // Count recent edits (within last month)
+          const recentEdits =
+            currentAdmin.birthDateEditHistory?.filter(
+              (edit) => new Date(edit.editDate) >= oneMonthAgo
+            ) || [];
+
+          const editCount = recentEdits.length;
+          const allowed = editCount < 2;
+
+          if (!allowed) {
+            return res.status(400).json({
+              success: false,
+              message:
+                "لا يمكنك تعديل تاريخ الميلاد أكثر من مرتين خلال شهر كامل من آخر تعديلاتك",
+              editLimit: {
+                allowed: false,
+                remaining: 0,
+                count: editCount,
+              },
+            });
+          }
+
+          // Add new edit to history (will be saved with the update)
+          if (!updates.birthDateEditHistory) {
+            updates.birthDateEditHistory =
+              currentAdmin.birthDateEditHistory || [];
+          }
+          updates.birthDateEditHistory.push({ editDate: new Date() });
+        }
+      }
+    }
+
     // حساب العمر إذا تم تحديث تاريخ الميلاد
     if (updates.birthDate) {
       updates.age = calculateAge(updates.birthDate);
@@ -124,6 +179,27 @@ exports.updateAdmin = async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: "الإداري غير موجود" });
+    }
+
+    // Cleanup old edit history entries (older than 2 months) for birthDate
+    if (
+      updated.birthDateEditHistory &&
+      updated.birthDateEditHistory.length > 0
+    ) {
+      const twoMonthsAgo = new Date();
+      twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+
+      const cleanedHistory = updated.birthDateEditHistory.filter(
+        (edit) => new Date(edit.editDate) >= twoMonthsAgo
+      );
+
+      // Only update if we removed old entries
+      if (cleanedHistory.length !== updated.birthDateEditHistory.length) {
+        await Admin.findByIdAndUpdate(id, {
+          birthDateEditHistory: cleanedHistory,
+        });
+        updated.birthDateEditHistory = cleanedHistory;
+      }
     }
 
     // إشعار تحديث الداشبورد

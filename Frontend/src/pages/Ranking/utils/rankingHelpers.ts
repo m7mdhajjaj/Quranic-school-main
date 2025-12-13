@@ -3,15 +3,13 @@
  */
 
 import type { StudentWithAverage } from "../types/ranking";
+import { getFullName as getUserFullName } from "@/utils/helpers/userHelpers";
 
 /**
  * Get student full name
  */
 export const getFullName = (student: StudentWithAverage): string => {
-  const firstName = student.firstName || "";
-  const fatherName = student.fatherName || "";
-  const lastName = student.lastName || "";
-  return `${firstName} ${fatherName} ${lastName}`.trim() || "-";
+  return getUserFullName(student);
 };
 
 /**

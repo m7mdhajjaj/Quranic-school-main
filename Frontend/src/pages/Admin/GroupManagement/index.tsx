@@ -117,7 +117,7 @@ const GroupManagement: React.FC = () => {
   return (
     <>
       <div
-        className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4 md:p-6"
+        className="min-h-screen p-4 md:p-6"
         dir="rtl"
       >
         <div className="max-w-full mx-auto px-2">

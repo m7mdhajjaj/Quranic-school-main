@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   FaGraduationCap,
   FaChalkboardTeacher,
@@ -25,7 +24,6 @@ import TeacherForm from '../TeachersManagement/Model/TeacherForm';
 import AddGroupForm from '../GroupManagement/Model/GroupForm';
 
 const AdminDashboard = () => {
-  const navigate = useNavigate();
 
   // استخدام hook لجلب البيانات - البيانات معالجة جاهزة
   const {
@@ -47,10 +45,6 @@ const AdminDashboard = () => {
   const [showAddTeacherForm, setShowAddTeacherForm] = useState(false);
   const [showAddGroupForm, setShowAddGroupForm] = useState(false);
 
-  // Navigation handlers
-  const handleTeachersClick = () => navigate('/admin/teachers');
-  const handleStudentsClick = () => navigate('/admin/students');
-  const handleGroupsClick = () => navigate('/admin/groups');
 
   // Loading state - استخدام Skeleton بدلاً من Spinner
 
@@ -58,7 +52,7 @@ const AdminDashboard = () => {
   if (error) {
     return (
       <div
-        className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50 to-emerald-50 flex items-center justify-center"
+        className="min-h-screen flex items-center justify-center"
         dir="rtl"
       >
         <div className="text-center">
@@ -91,7 +85,7 @@ const AdminDashboard = () => {
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50 to-emerald-50"
+      className="min-h-screen"
       dir="rtl"
     >
       <div className="max-w-7xl mx-auto py-4 sm:py-6 lg:py-8 px-3 sm:px-4 lg:px-6 xl:px-8">
@@ -121,7 +115,6 @@ const AdminDashboard = () => {
                 value={stats.totalStudents}
                 color="bg-gradient-to-br from-emerald-500 to-emerald-600"
                 bgColor="bg-white"
-                onClick={handleStudentsClick}
               />
 
               <StatCard
@@ -130,7 +123,6 @@ const AdminDashboard = () => {
                 value={stats.totalTeachers}
                 color="bg-gradient-to-br from-green-500 to-green-600"
                 bgColor="bg-white"
-                onClick={handleTeachersClick}
               />
 
               <StatCard
@@ -139,7 +131,6 @@ const AdminDashboard = () => {
                 value={stats.totalGroups}
                 color="bg-gradient-to-br from-green-600 to-emerald-600"
                 bgColor="bg-white"
-                onClick={handleGroupsClick}
               />
             </>
           )}
@@ -211,10 +202,10 @@ const AdminDashboard = () => {
                       لعرض التوزيع، يجب ربط الطلاب بالحلقات
                     </p>
                     <button
-                      onClick={handleGroupsClick}
+                      onClick={() => setShowAddGroupForm(true)}
                       className="px-4 sm:px-6 py-2 text-sm sm:text-base bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105"
                     >
-                      إدارة الحلقات
+                      إضافة حلقة
                     </button>
                   </div>
                 </div>

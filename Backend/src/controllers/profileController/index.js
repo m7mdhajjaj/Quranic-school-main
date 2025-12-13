@@ -15,6 +15,12 @@ const { getUserById } = require("./getUserById");
 // Import Get User Status Controller
 const { getUserStatus } = require("./getUserStatus");
 
+// Import Check Duplicate Controller
+const { checkDuplicate } = require("./checkDuplicate");
+
+// Import Get Edit Limits Controller
+const { getEditLimits } = require("./getEditLimits");
+
 // Export all controllers
 module.exports = {
   // Get Profile
@@ -28,4 +34,10 @@ module.exports = {
   
   // Get User Status
   getUserStatus,
+  
+  // Check Duplicate
+  checkDuplicate,
+  
+  // Get Edit Limits
+  getEditLimits,
 };

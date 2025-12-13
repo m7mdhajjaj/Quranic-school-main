@@ -10,14 +10,14 @@ import { ChangePasswordModal } from "@/pages/Auth/ChangePass";
 
 interface AdminHeaderProps {
   onMenuToggle?: () => void;
+  onChangePasswordClick?: () => void;
 }
 
-const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuToggle }) => {
+const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuToggle, onChangePasswordClick }) => {
   const { user: currentUser, logout: authLogout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
   // Get page title and breadcrumbs from location
@@ -54,7 +54,8 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuToggle }) => {
   };
 
   const handleChangePasswordClick = () => {
-    setIsChangePasswordModalOpen(true);
+    setProfileMenuOpen(false);
+    onChangePasswordClick?.();
   };
 
   useEffect(() => {
@@ -147,12 +148,6 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuToggle }) => {
           </div>
         </div>
       </header>
-
-      {/* Change Password Modal */}
-      <ChangePasswordModal
-        isOpen={isChangePasswordModalOpen}
-        onClose={() => setIsChangePasswordModalOpen(false)}
-      />
     </>
   );
 };

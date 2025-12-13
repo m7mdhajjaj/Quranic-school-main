@@ -135,13 +135,17 @@ const validateProfileImage = (image) => {
 const sanitizeProfileData = (data) => {
   const sanitized = {};
 
+  // منع تعديل رقم الهوية - حذفه من البيانات
+  if (data.idNumber !== undefined) {
+    delete data.idNumber;
+  }
+
   // Sanitize text fields
   const textFields = [
     'firstName',
     'lastName',
     'email',
     'phoneNumber',
-    'idNumber',
     'residence',
     'fatherName',
     'grandFatherName',

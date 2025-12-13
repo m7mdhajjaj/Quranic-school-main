@@ -419,6 +419,61 @@ exports.updateTeacher = async (req, res) => {
     const id = req.params.id;
     const updates = { ...req.body };
 
+    // Check if birthDate is being changed - apply edit limits
+    if (updates.birthDate) {
+      const currentTeacher = await Teacher.findById(id).select(
+        "birthDate birthDateEditHistory"
+      );
+
+      if (currentTeacher) {
+        // Check if birthDate is actually changing
+        // Teacher schema uses String type (YYYY-MM-DD format)
+        const currentBirthDate = currentTeacher.birthDate
+          ? currentTeacher.birthDate.split("T")[0].trim()
+          : null;
+        const newBirthDateStr = updates.birthDate
+          ? (typeof updates.birthDate === 'string'
+              ? updates.birthDate.split("T")[0].trim()
+              : new Date(updates.birthDate).toISOString().split("T")[0])
+          : null;
+
+        if (currentBirthDate !== newBirthDateStr && newBirthDateStr) {
+          // BirthDate is being changed - check edit limits
+          const oneMonthAgo = new Date();
+          oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+          // Count recent edits (within last month)
+          const recentEdits =
+            currentTeacher.birthDateEditHistory?.filter(
+              (edit) => new Date(edit.editDate) >= oneMonthAgo
+            ) || [];
+
+          const editCount = recentEdits.length;
+          const allowed = editCount < 2;
+
+          if (!allowed) {
+            return res.status(400).json({
+              success: false,
+              message:
+                "لا يمكنك تعديل تاريخ الميلاد أكثر من مرتين خلال شهر كامل من آخر تعديلاتك",
+              editLimit: {
+                allowed: false,
+                remaining: 0,
+                count: editCount,
+              },
+            });
+          }
+
+          // Add new edit to history (will be saved with the update)
+          if (!updates.birthDateEditHistory) {
+            updates.birthDateEditHistory =
+              currentTeacher.birthDateEditHistory || [];
+          }
+          updates.birthDateEditHistory.push({ editDate: new Date() });
+        }
+      }
+    }
+
     // معالجة كلمة المرور
     if (!updates.password || updates.password.trim() === "") {
       delete updates.password;
@@ -497,6 +552,27 @@ exports.updateTeacher = async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: "المعلم غير موجود" });
+    }
+
+    // Cleanup old edit history entries (older than 2 months) for birthDate
+    if (
+      updated.birthDateEditHistory &&
+      updated.birthDateEditHistory.length > 0
+    ) {
+      const twoMonthsAgo = new Date();
+      twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+
+      const cleanedHistory = updated.birthDateEditHistory.filter(
+        (edit) => new Date(edit.editDate) >= twoMonthsAgo
+      );
+
+      // Only update if we removed old entries
+      if (cleanedHistory.length !== updated.birthDateEditHistory.length) {
+        await Teacher.findByIdAndUpdate(id, {
+          birthDateEditHistory: cleanedHistory,
+        });
+        updated.birthDateEditHistory = cleanedHistory;
+      }
     }
 
     return res.status(200).json({

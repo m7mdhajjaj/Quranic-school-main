@@ -31,6 +31,7 @@ export const SecurityTips: React.FC<SecurityTipsProps> = ({
   return (
     <div
       className={`p-4 bg-blue-50/80 backdrop-blur-sm border border-blue-200/50 rounded-lg ${className}`}
+      dir="rtl"
     >
       <div className="flex items-start gap-3">
         <svg
@@ -44,13 +45,16 @@ export const SecurityTips: React.FC<SecurityTipsProps> = ({
             clipRule="evenodd"
           />
         </svg>
-        <div>
-          <h3 className="text-sm font-semibold text-blue-900 mb-2">
+        <div className="flex-1">
+          <h3 className="text-sm font-semibold text-blue-900 mb-2 text-right">
             نصائح الأمان
           </h3>
-          <ul className="text-sm text-blue-800 space-y-1">
+          <ul className="text-sm text-blue-800 space-y-1 text-right list-none">
             {tips.map((tip, index) => (
-              <li key={index}>• {tip}</li>
+              <li key={index} className="flex items-start gap-2">
+                <span className="text-blue-600">•</span>
+                <span>{tip}</span>
+              </li>
             ))}
           </ul>
         </div>

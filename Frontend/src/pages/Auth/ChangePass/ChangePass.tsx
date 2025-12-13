@@ -298,13 +298,13 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
       size="4xl"
       showCloseButton={true}
       closeOnOverlayClick={true}
-      bodyClassName="p-8"
+      bodyClassName="p-8 pb-24 relative"
       overlayClassName="bg-black/30"
     >
       {logoLoading ? (
-        <div className="text-center py-8">جاري التحميل...</div>
+        <div className="text-center py-8" dir="rtl">جاري التحميل...</div>
       ) : (
-        <div dir="rtl">
+        <div dir="rtl" className="text-right">
           <div className="flex justify-center mb-6">
             <div className="relative">
               <Logo
@@ -327,7 +327,7 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
             يرجى إدخال كلمة المرور الحالية والجديدة
           </p>
 
-          <form onSubmit={handleSubmit} className="text-right">
+          <form onSubmit={handleSubmit} className="text-right" dir="rtl">
             {/* Hidden username field for accessibility */}
             <input
               type="text"
@@ -338,9 +338,9 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
               value=""
               aria-hidden="true"
             />
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-              {/* Right Column - Password Fields */}
-              <div className="space-y-5">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 pb-24" dir="rtl">
+              {/* Right Column - Password Fields (في RTL يكون على اليمين) */}
+              <div className="space-y-5" dir="rtl">
                 {/* Current Password */}
                 <Input
                   label="كلمة المرور الحالية"
@@ -407,7 +407,7 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
                   />
 
                   {validationErrors.newPassword && (
-                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1 text-right" dir="rtl">
                       <svg
                         className="w-3 h-3"
                         fill="currentColor"
@@ -457,13 +457,47 @@ const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProps) => {
                 </div>
               </div>
 
-              {/* Left Column - Password Requirements */}
-              <div className="space-y-6">
+              {/* Left Column - Password Requirements (في RTL يكون على اليسار) */}
+              <div className="space-y-6" dir="rtl">
                 {/* Password Requirements - Reusable Component */}
                 <PasswordRequirements password={formData.newPassword} />
 
                 {/* Security Tips */}
                 <SecurityTips />
+              </div>
+            </div>
+
+            {/* Fixed Action Buttons */}
+            <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg p-4 -mx-8 -mb-8 mt-8" dir="rtl">
+              <div className="flex gap-3">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="lg"
+                  className="flex-1"
+                  loading={isLoading}
+                  disabled={Object.values(validationErrors).some((e) => e !== '')}
+                  leftIcon={
+                    <CheckCircle2 className="w-5 h-5" />
+                  }
+                  gradient={true}
+                >
+                  {isLoading ? 'جاري التغيير...' : 'تغيير كلمة المرور'}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="lg"
+                  className="flex-1"
+                  onClick={() => onClose()}
+                  disabled={isLoading}
+                  leftIcon={
+                    <XCircle className="w-5 h-5" />
+                  }
+                >
+                  إلغاء
+                </Button>
               </div>
             </div>
           </form>

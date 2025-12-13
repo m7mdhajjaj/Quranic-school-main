@@ -12,6 +12,8 @@ const { validateProfileData, sanitizeProfile } = require("../../Validation/Profi
 const {
   getUserProfile,
   updateUserProfile,
+  checkDuplicate,
+  getEditLimits,
 } = require("../../controllers/profileController");
 
 /**
@@ -22,6 +24,20 @@ const {
  */
 router.get("/me", protect, getUserProfile);
 router.get("/profile", protect, getUserProfile);
+
+/**
+ * @route   GET /api/profile/check-duplicate
+ * @desc    Check if a field value is duplicate (real-time validation)
+ * @access  Private
+ */
+router.get("/profile/check-duplicate", protect, checkDuplicate);
+
+/**
+ * @route   GET /api/profile/edit-limits/:field
+ * @desc    Get edit limits for a specific field (e.g., birthDate)
+ * @access  Private
+ */
+router.get("/profile/edit-limits/:field", protect, getEditLimits);
 
 /**
  * @route   PUT /api/me

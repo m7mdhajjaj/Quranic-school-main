@@ -17,48 +17,10 @@ export const getGroupDisplayName = (
   return group.name || "حلقة غير محددة";
 };
 
-/**
- * دالة لتنسيق الاسم الكامل للمعلم
- */
-export const getTeacherFullName = (teacher: {
-  firstName?: string;
-  fatherName?: string;
-  grandFatherName?: string;
-  lastName?: string;
-}): string => {
-  return [
-    teacher.firstName,
-    teacher.fatherName,
-    teacher.grandFatherName,
-    teacher.lastName,
-  ]
-    .filter(Boolean)
-    .join(" ");
-};
 
-/**
- * دالة لتنسيق التاريخ بصيغة عربية
- */
-export const formatDateArabic = (date: string | Date | null | undefined): string => {
-  if (!date) return "غير محدد";
-  try {
-    return new Date(date).toLocaleDateString("ar-EG");
-  } catch {
-    return "غير محدد";
-  }
-};
-
-/**
- * دالة لتنسيق التاريخ والوقت بصيغة عربية
- */
-export const formatDateTimeArabic = (date: string | Date | null | undefined): string => {
-  if (!date) return "غير محدد";
-  try {
-    return new Date(date).toLocaleString("ar-EG");
-  } catch {
-    return "غير محدد";
-  }
-};
+// إعادة تصدير الدوال من utils/helpers
+export { formatArabicDate as formatDateArabic, formatDateTimeArabic } from "@/utils/helpers/dateHelpers";
+export { getTeacherFullName } from "@/utils/helpers/userHelpers";
 
 /**
  * دالة للتحقق من وجود بيانات التواصل
