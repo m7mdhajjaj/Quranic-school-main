@@ -20,9 +20,9 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import Header from './Header';
 import { Footer } from './Footer';
 import { AdminLayout } from './Admin';
+import { UserLayout } from './User';
 
 // ============================================================================
 // Types & Interfaces
@@ -131,22 +131,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }
 
   // ============================================
-  // TEACHER & STUDENT: Use regular Layout (Header + Footer)
+  // TEACHER & STUDENT: Use UserLayout (UserHeader + UserSidebar, with Footer)
   // ============================================
-  // Teacher and Student see: regular Header + pages + regular Footer
+  // Teacher and Student see: UserHeader + UserSidebar + pages + Footer
   // Teacher and Student do NOT see: AdminHeader, AdminSidebar
-  const showHeader = !hideLayout;
-  const showFooter = !hideLayout && !hideFooter;
+  if (hideLayout) {
+    return <>{children}</>;
+  }
+
+  const showFooter = !hideFooter;
 
   return (
     <div className="app-content">
-      {/* Header - Only for teacher and student (NOT for admin) */}
-      {showHeader && <Header />}
-
-      {/* Main Content Area */}
-      <main className="main-content">
-        {children}
-      </main>
+      {/* UserLayout - Header + Sidebar for teacher and student */}
+      <UserLayout>{children}</UserLayout>
 
       {/* Footer - Only for teacher and student (NOT for admin) */}
       {showFooter && <Footer />}

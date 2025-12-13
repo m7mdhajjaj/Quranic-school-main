@@ -9,7 +9,7 @@
 // ============================================================================
 // External Dependencies
 // ============================================================================
-import { createBrowserRouter, RouterProvider, Routes, Route, useLocation } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import React, { useEffect } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -122,8 +122,8 @@ const AdminRoutes: React.FC = () => {
         {/* ============================================
             الصفحة الرئيسية - Dashboard
             ============================================ */}
-        <Route path="/" element={<AdminDashboard />} />
-        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
 
         {/* ============================================

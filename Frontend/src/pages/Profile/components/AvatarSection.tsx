@@ -50,7 +50,7 @@ export const AvatarSection = ({
       <div className="relative transform transition-all duration-300 hover:scale-105">
         <div className="absolute inset-0 bg-gradient-to-br from-teal-400/20 to-emerald-500/20 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         <Avatar
-          key={`avatar-${user._id}-${avatarUrl || 'no-avatar'}`}
+          key={`avatar-${user._id}-${avatarUrl || user.avatar || 'no-avatar'}`}
           // استخدام user object كاملاً مع autoFetch
           user={{
             _id: user._id,
@@ -60,8 +60,8 @@ export const AvatarSection = ({
             role: user.role,
             avatar: user.avatar ? { url: user.avatar } : undefined,
           }}
-          // مصادر الصورة
-          src={avatarUrl || undefined}
+          // مصادر الصورة - استخدام avatarUrl أولاً، ثم user.avatar
+          src={avatarUrl || (user.avatar ? user.avatar : undefined)}
           previewSrc={previewUrl}
           // معلومات المستخدم
           userName={`${user.firstName || ""} ${user.lastName || ""}`.trim()}

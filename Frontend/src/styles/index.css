@@ -653,3 +653,44 @@ input[type='password']::-webkit-credentials-auto-fill-button {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #ef4444;
 }
+
+/* Sidebar Scrollbar Styles */
+.sidebar-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(16, 185, 129, 0.4) rgba(243, 244, 246, 0.3);
+}
+
+.sidebar-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-track {
+  background: rgba(243, 244, 246, 0.3);
+  border-radius: 10px;
+  margin: 8px 0;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    rgba(16, 185, 129, 0.5),
+    rgba(5, 150, 105, 0.6)
+  );
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: background 0.2s ease;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    180deg,
+    rgba(16, 185, 129, 0.7),
+    rgba(5, 150, 105, 0.8)
+  );
+}
+
+/* Smooth scrolling for sidebar */
+.sidebar-scrollbar {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}

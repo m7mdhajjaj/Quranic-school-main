@@ -169,14 +169,14 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
   const genderColorClass = getGenderColor(gender);
   const textColorClass = getTextColor();
 
-  // عرض حالة التحميل باستخدام المكون القابل لإعادة الاستخدام
-  if (loading) {
-    return (
-      <div className={`${sizeClasses[size]} rounded-full ${borderClasses[border]} flex items-center justify-center ${genderColorClass}`}>
-        <LoadingSpinner size="sm" />
-      </div>
-    );
-  }
+  // عرض fallback بدلاً من spinner عند التحميل
+  // if (loading) {
+  //   return (
+  //     <div className={`${sizeClasses[size]} rounded-full ${borderClasses[border]} flex items-center justify-center ${genderColorClass}`}>
+  //       <LoadingSpinner size="sm" />
+  //     </div>
+  //   );
+  // }
 
   const AvatarContent = () => (
     <div className={`relative group ${className}`}>

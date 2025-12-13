@@ -66,6 +66,42 @@ export const useProfileData = () => {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // تحديث avatarUrl عند تغيير authUser.avatar (بعد تحميل user)
+  useEffect(() => {
+    if (authUser?.avatar?.url && user?._id === authUser._id && endpoint) {
+      // إذا كان هناك avatar في authUser، جلب الصورة من API
+      fetchAvatarBlobUrl(endpoint, user._id)
+        .then((url) => {
+          setAvatarUrl((prev) => {
+            if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+            return url;
+          });
+        })
+        .catch(() => {
+          // إذا فشل، استخدم URL من authUser مباشرة
+          setAvatarUrl(authUser.avatar?.url || null);
+        });
+    }
+  }, [authUser?.avatar?.url, user?._id, endpoint]);
+
+  // تحديث avatarUrl عند تغيير authUser.avatar
+  useEffect(() => {
+    if (authUser?.avatar?.url && user?._id === authUser._id && endpoint) {
+      // إذا كان هناك avatar في authUser، جلب الصورة من API
+      fetchAvatarBlobUrl(endpoint, user._id)
+        .then((url) => {
+          setAvatarUrl((prev) => {
+            if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+            return url;
+          });
+        })
+        .catch(() => {
+          // إذا فشل، استخدم URL من authUser مباشرة
+          setAvatarUrl(authUser.avatar?.url || null);
+        });
+    }
+  }, [authUser?.avatar?.url, user?._id, endpoint]);
+
   const updateUser = (updates: Partial<UserProfile>) => {
     if (user) {
       setUser({ ...user, ...updates });
