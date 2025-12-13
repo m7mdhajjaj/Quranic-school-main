@@ -85,7 +85,7 @@ const RankingPage = () => {
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 py-12 px-4"
+      className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 py-12 px-4"
       dir="rtl">
       <div className="container mx-auto">
        

@@ -195,7 +195,7 @@ const ExamSchedule: React.FC = () => {
   // ——— واجهة المستخدم
   return (
     <div
-      className="min-h-screen bg-gradient-to-br from-emerald-50/30 via-white to-teal-50/30"
+      className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100"
       dir="rtl"
       lang="ar">
       <div className="w-full mx-auto px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 md:pt-10 pb-12 sm:pb-16 md:pb-20">

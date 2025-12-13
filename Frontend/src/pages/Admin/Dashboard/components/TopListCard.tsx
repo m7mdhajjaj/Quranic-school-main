@@ -76,6 +76,7 @@ const defaultRenderItem = (item: TopListItem, index: number, getMedalColor: (ind
         showStatus={true}
         statusSize="sm"
         border="thick"
+        autoFetch={true}
       />
     </div>
 

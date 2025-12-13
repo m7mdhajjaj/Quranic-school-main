@@ -13,7 +13,7 @@ export const FooterPartners: React.FC<FooterPartnersProps> = ({
 }) => {
   return (
     <FooterSection title="فريق العمل" animated className={className}>
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-2 sm:gap-3 mb-2 sm:mb-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-2 sm:gap-2.5">
         {partners.map((partner, index) => (
           <PartnerCard key={index} partner={partner} index={index} />
         ))}

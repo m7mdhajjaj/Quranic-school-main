@@ -158,6 +158,10 @@ export interface TopStudent {
   reviewCount: number;
   examCount: number;
   group: string;
+  avatar?: {
+    url?: string;
+    publicId?: string;
+  };
 }
 
 export interface TopStudentsResponse {
@@ -205,6 +209,10 @@ export interface TopTeacher {
   reviewCount: number;
   examCount: number;
   groups: string[];
+  avatar?: {
+    url?: string;
+    publicId?: string;
+  };
 }
 
 export interface TopTeachersResponse {

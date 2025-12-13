@@ -165,7 +165,7 @@ const DailyMarksPage = () => {
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 py-8 px-4 md:px-6 lg:px-8"
+      className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 py-8 px-4 md:px-6 lg:px-8"
       dir="rtl"
     >
       <div className="w-full max-w-full mx-auto">

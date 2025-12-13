@@ -76,7 +76,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuToggle, onChangePasswor
   return (
     <>
       <header
-        className="fixed top-0 left-0 right-0 z-50 h-14 sm:h-16 bg-gradient-to-b from-emerald-50 via-green-50 to-teal-50 shadow-lg border-b border-emerald-100"
+        className="fixed top-0 left-0 right-0 z-50 h-14 sm:h-16 bg-gradient-to-b from-indigo-50 via-slate-50 to-blue-50 shadow-lg border-b border-indigo-100"
         dir="rtl">
         <div className="max-w-full mx-auto px-3 sm:px-4 lg:px-6 h-full">
           <div className="flex items-center justify-between h-full gap-2 sm:gap-4">
@@ -86,7 +86,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuToggle, onChangePasswor
               {onMenuToggle && (
                 <button
                   onClick={onMenuToggle}
-                  className="lg:hidden p-2 rounded-xl hover:bg-white/60 text-emerald-700 transition-colors duration-200">
+                  className="lg:hidden p-2 rounded-xl hover:bg-white/60 text-indigo-700 transition-colors duration-200">
                   <Menu size={20} />
                 </button>
               )}
@@ -94,7 +94,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuToggle, onChangePasswor
                 <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight truncate">
                   {pageInfo.title}
                 </h1>
-                <p className="text-[10px] sm:text-xs text-emerald-600 mt-0.5 hidden sm:block">
+                <p className="text-[10px] sm:text-xs text-indigo-600 mt-0.5 hidden sm:block">
                   {pageInfo.breadcrumb}
                 </p>
               </div>
@@ -111,7 +111,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuToggle, onChangePasswor
               <div className="relative" ref={profileMenuRef}>
                 <button
                   onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                  className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl bg-white/60 hover:bg-white border border-emerald-200 shadow-sm hover:shadow-md transition-all duration-200 group">
+                  className="flex items-center gap-1.5 sm:gap-2 lg:gap-3 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl bg-white/60 hover:bg-white border border-indigo-200 shadow-sm hover:shadow-md transition-all duration-200 group">
                   <Avatar
                     user={currentUser}
                     size="sm"

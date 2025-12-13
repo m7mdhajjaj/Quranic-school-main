@@ -144,10 +144,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className="app-content">
       {/* UserLayout - Header + Sidebar for teacher and student */}
-      <UserLayout>{children}</UserLayout>
-
-      {/* Footer - Only for teacher and student (NOT for admin) */}
-      {showFooter && <Footer />}
+      <UserLayout showFooter={showFooter}>{children}</UserLayout>
     </div>
   );
 };

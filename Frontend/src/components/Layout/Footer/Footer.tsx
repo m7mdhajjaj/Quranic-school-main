@@ -57,19 +57,19 @@ export const Footer: React.FC<FooterProps> = ({
 
   return (
     <footer
-      className={`relative bg-gradient-to-br from-emerald-700 via-teal-700 to-green-800 text-white overflow-hidden mt-auto min-h-[500px] ${className}`}
+      className={`relative bg-gradient-to-b from-emerald-50 via-green-50 to-teal-50 border-t border-emerald-100 shadow-lg overflow-hidden mt-auto ${className}`}
     >
       {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-10">
+      <div className="absolute inset-0 opacity-5">
         <div className="absolute inset-0 footer-background-pattern"></div>
       </div>
 
       <div
-        className="relative w-full max-w-none px-2 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8"
+        className="relative w-full max-w-none px-3 sm:px-4 md:px-6 py-4 sm:py-5 md:py-6"
         dir="rtl"
       >
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 md:mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-6 mb-3 sm:mb-4">
           {/* About Section */}
           <FooterAbout isAdmin={isAdminUser} socialLinks={SOCIAL_LINKS} />
 

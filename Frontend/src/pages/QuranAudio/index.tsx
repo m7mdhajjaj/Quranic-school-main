@@ -39,7 +39,7 @@ const QuranAudio: React.FC = () => {
   }, [isPlaying, pauseAudio, playFullSurah]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100" dir="rtl">
       {/* Hidden audio element */}
       <audio ref={audioRef} onEnded={handleAudioEnded} preload="none" />
 

@@ -13,19 +13,19 @@ export const FooterBottom: React.FC<FooterBottomProps> = ({
   className = '',
 }) => {
   return (
-    <div className={`pt-3 sm:pt-4 md:pt-6 border-t border-emerald-600/30 ${className}`}>
-      <div className="flex flex-col lg:flex-row justify-between items-center gap-2 sm:gap-3 md:gap-4">
+    <div className={`pt-3 sm:pt-3.5 border-t border-emerald-200 ${className}`}>
+      <div className="flex flex-col lg:flex-row justify-between items-center gap-2 sm:gap-2.5">
         {/* Copyright */}
-        <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 lg:gap-3 text-emerald-100 text-xs sm:text-sm lg:text-base">
-          <div className="flex items-center gap-1 sm:gap-2 text-center lg:text-right">
+        <div className="flex flex-col sm:flex-row items-center gap-1.5 sm:gap-2 text-gray-700 text-xs sm:text-sm">
+          <div className="flex items-center gap-1.5 text-center lg:text-right">
             <span>جميع الحقوق محفوظة © {currentYear}</span>
           </div>
           
           {/* Founding Date */}
           {showFoundingDate && (
-            <div className="flex items-center gap-1 sm:gap-2 mt-1 sm:mt-0 lg:mr-4">
-              <FaCalendarAlt className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-amber-400" />
-              <span className="text-amber-200 font-medium text-xs sm:text-sm lg:text-base">
+            <div className="flex items-center gap-1.5 sm:gap-2 sm:mr-3">
+              <FaCalendarAlt className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-600" />
+              <span className="text-emerald-700 font-medium text-xs sm:text-sm">
                 تأسس في: {foundingDate}
               </span>
             </div>
@@ -33,16 +33,16 @@ export const FooterBottom: React.FC<FooterBottomProps> = ({
         </div>
 
         {/* Bottom Links */}
-        <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 sm:gap-3 lg:gap-4 text-xs sm:text-sm lg:text-base text-emerald-200">
-          <a href="/privacy" className="hover:text-white transition-colors">
+        <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 sm:gap-2.5 text-xs sm:text-sm text-emerald-700">
+          <a href="/privacy" className="hover:text-emerald-800 transition-colors font-medium">
             سياسة الخصوصية
           </a>
-          <span className="hidden sm:inline">•</span>
-          <a href="/terms" className="hover:text-white transition-colors">
+          <span className="hidden sm:inline text-emerald-400">•</span>
+          <a href="/terms" className="hover:text-emerald-800 transition-colors font-medium">
             الشروط والأحكام
           </a>
-          <span className="hidden sm:inline">•</span>
-          <a href="/contact" className="hover:text-white transition-colors">
+          <span className="hidden sm:inline text-emerald-400">•</span>
+          <a href="/contact" className="hover:text-emerald-800 transition-colors font-medium">
             اتصل بنا
           </a>
         </div>

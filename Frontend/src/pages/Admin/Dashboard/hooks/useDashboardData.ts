@@ -185,7 +185,8 @@ export const useDashboardData = () => {
       return [{ name: "لا يوجد بيانات", value: 0 }];
     }
     // تحويل البيانات من TopStudent إلى TopStudent format للـ component
-    return topStudentsData.map((student) => ({
+    // تحديد أفضل 5 طلاب فقط
+    return topStudentsData.slice(0, 5).map((student) => ({
       name: student.name,
       value: student.totalMarks,
       avgMark: student.averageMark,
@@ -194,8 +195,11 @@ export const useDashboardData = () => {
       userRole: "student",
       user: {
         _id: student._id,
+        firstName: student.name?.split(' ')[0] || student.name,
         name: student.name,
         role: "student",
+        // إضافة avatar إذا كان موجوداً في البيانات
+        avatar: student.avatar,
       },
       // بيانات إضافية للعرض
       memorizationMarks: student.memorizationMarks,
@@ -215,7 +219,8 @@ export const useDashboardData = () => {
       return [{ name: "لا يوجد بيانات", value: 0 }];
     }
     // تحويل البيانات من TopTeacher إلى TopTeacher format للـ component
-    return topTeachersData.map((teacher) => ({
+    // تحديد أفضل 5 معلمين فقط
+    return topTeachersData.slice(0, 5).map((teacher) => ({
       name: teacher.name,
       value: teacher.totalMarks,
       studentCount: teacher.studentCount,
@@ -224,8 +229,11 @@ export const useDashboardData = () => {
       userRole: "teacher",
       user: {
         _id: teacher._id,
+        firstName: teacher.name?.split(' ')[0] || teacher.name,
         name: teacher.name,
         role: "teacher",
+        // إضافة avatar إذا كان موجوداً في البيانات
+        avatar: teacher.avatar,
       },
       // بيانات إضافية للعرض
       memorizationMarks: teacher.memorizationMarks,

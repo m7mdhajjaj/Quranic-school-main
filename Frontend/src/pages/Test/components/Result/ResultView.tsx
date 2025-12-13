@@ -20,7 +20,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 p-4 md:p-8 flex items-center justify-center"
+      className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 p-4 md:p-8 flex items-center justify-center"
       dir="rtl"
     >
       <div className="max-w-3xl w-full">

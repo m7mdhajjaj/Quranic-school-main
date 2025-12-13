@@ -192,9 +192,9 @@ const AdminRoutes: React.FC = () => {
 const TeacherRoutes: React.FC = () => {
   // Loading fallback component
   const LoadingFallback = ({ message }: { message: string }) => (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100">
       <div className="text-center">
-        <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
+        <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto"></div>
         <p className="mt-4 text-gray-600 font-medium">{message}</p>
       </div>
     </div>
@@ -340,9 +340,9 @@ const TeacherRoutes: React.FC = () => {
 const StudentRoutes: React.FC = () => {
   // Loading fallback component
   const LoadingFallback = ({ message }: { message: string }) => (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100">
       <div className="text-center">
-        <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
+        <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto"></div>
         <p className="mt-4 text-gray-600 font-medium">{message}</p>
       </div>
     </div>
@@ -517,12 +517,12 @@ function AppContent() {
   // Show loading screen while checking authentication
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100">
         <div className="text-center">
           <div className="relative inline-flex">
-            <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+            <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-8 h-8 bg-blue-600 rounded-full opacity-20 animate-pulse"></div>
+              <div className="w-8 h-8 bg-indigo-600 rounded-full opacity-20 animate-pulse"></div>
             </div>
           </div>
           <p className="mt-4 text-gray-600 font-medium animate-pulse">جاري التحميل...</p>

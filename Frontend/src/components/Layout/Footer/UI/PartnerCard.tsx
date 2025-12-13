@@ -9,51 +9,48 @@ import type { PartnerCardProps } from '../Types/types';
 export const PartnerCard: React.FC<PartnerCardProps> = ({ partner, index }) => {
   return (
     <div
-      className={`bg-white/10 backdrop-blur-md rounded-xl p-2 sm:p-3 lg:p-4 hover:bg-white/15 transition-all duration-300 border border-white/20 hover:scale-105 animate-fade-in partner-card-delay-${index}`}
+      className={`bg-white/60 backdrop-blur-md rounded-xl p-2.5 sm:p-3 hover:bg-white border border-emerald-200 hover:border-emerald-300 hover:shadow-md transition-all duration-300 hover:scale-105 animate-fade-in partner-card-delay-${index}`}
     >
-      <div className="flex items-start gap-2 sm:gap-3">
+      <div className="flex items-start gap-2 sm:gap-2.5">
         {/* Avatar */}
-        <div className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg">
-          <span className="text-white font-bold text-xs sm:text-sm lg:text-base">
+        <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-md">
+          <span className="text-white font-bold text-xs sm:text-sm">
             {partner.name.split(' ')[0][0]}
           </span>
         </div>
 
         {/* Info */}
-        <div className="flex-1">
-          <h5 className="font-bold text-white text-xs sm:text-sm lg:text-base xl:text-lg">
+        <div className="flex-1 min-w-0">
+          <h5 className="font-bold text-gray-900 text-xs sm:text-sm truncate">
             {partner.name}
           </h5>
-          <p className="text-emerald-200 text-xs sm:text-sm lg:text-base mb-1 sm:mb-2">
+          <p className="text-emerald-700 text-xs mb-1.5 font-medium">
             {partner.role}
           </p>
 
           {/* Contact Links */}
-          <div className="space-y-1 sm:space-y-2">
+          <div className="space-y-1">
             {/* Phone */}
             <a
               href={`tel:${partner.phone}`}
-              className="flex items-center gap-1 sm:gap-2 text-emerald-100 hover:text-white text-xs sm:text-sm transition-colors group"
+              className="flex items-center gap-1.5 text-emerald-700 hover:text-emerald-800 text-xs transition-colors group font-medium"
             >
-              <FaPhone className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 group-hover:scale-110 transition-transform" />
-              <span>{partner.phone}</span>
+              <FaPhone className="w-2.5 h-2.5 sm:w-3 sm:h-3 group-hover:scale-110 transition-transform flex-shrink-0" />
+              <span className="truncate">{partner.phone}</span>
             </a>
 
             {/* Email */}
             {partner.email && (
               <a
                 href={`mailto:${partner.email}`}
-                className="flex items-center gap-1 sm:gap-2 text-emerald-100 hover:text-white text-xs sm:text-sm lg:text-base transition-colors group w-full"
+                className="flex items-center gap-1.5 text-emerald-700 hover:text-emerald-800 text-xs transition-colors group font-medium"
                 title={partner.email}
               >
-                <FaEnvelope className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 group-hover:scale-110 transition-transform flex-shrink-0" />
-                <span className="truncate min-w-0 break-all sm:break-normal">
-                  <span className="hidden sm:inline">{partner.email}</span>
-                  <span className="sm:hidden">
-                    {partner.email.length > 15
-                      ? `${partner.email.substring(0, 12)}...`
-                      : partner.email}
-                  </span>
+                <FaEnvelope className="w-2.5 h-2.5 sm:w-3 sm:h-3 group-hover:scale-110 transition-transform flex-shrink-0" />
+                <span className="truncate min-w-0">
+                  {partner.email.length > 20
+                    ? `${partner.email.substring(0, 18)}...`
+                    : partner.email}
                 </span>
               </a>
             )}
@@ -63,9 +60,9 @@ export const PartnerCard: React.FC<PartnerCardProps> = ({ partner, index }) => {
               href={`https://wa.me/${partner.whatsapp}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 sm:gap-2 text-emerald-100 hover:text-white text-xs sm:text-sm transition-colors group"
+              className="flex items-center gap-1.5 text-emerald-700 hover:text-emerald-800 text-xs transition-colors group font-medium"
             >
-              <FaWhatsapp className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 group-hover:scale-110 transition-transform" />
+              <FaWhatsapp className="w-2.5 h-2.5 sm:w-3 sm:h-3 group-hover:scale-110 transition-transform flex-shrink-0" />
               <span>واتساب</span>
             </a>
           </div>

@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import UserHeader from './Header/UserHeader';
 import { UserSidebar } from './Sidebar';
 import { ChangePasswordModal } from '@/pages/Auth/ChangePass';
+import { Footer } from '../Footer';
 
 interface UserLayoutProps {
   children: React.ReactNode;
+  showFooter?: boolean;
 }
 
 /**
@@ -21,7 +23,7 @@ interface UserLayoutProps {
  *
  * @param children - User page content to render
  */
-const UserLayout: React.FC<UserLayoutProps> = ({ children }) => {
+const UserLayout: React.FC<UserLayoutProps> = ({ children, showFooter = false }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -70,7 +72,7 @@ const UserLayout: React.FC<UserLayoutProps> = ({ children }) => {
 
       {/* Main Content Area - User pages */}
       <div
-        className={`min-h-screen bg-gradient-to-b from-emerald-50 via-green-50 to-teal-50 transition-all duration-300 pt-14 sm:pt-16 lg:pt-16 ${
+        className={`min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 transition-all duration-300 pt-14 sm:pt-16 lg:pt-16 ${
           isMobile
             ? 'mr-0'
             : sidebarCollapsed
@@ -81,13 +83,26 @@ const UserLayout: React.FC<UserLayoutProps> = ({ children }) => {
         {children}
       </div>
 
+      {/* Footer - Only for teacher and student with proper sidebar margin */}
+      {showFooter && (
+        <div
+          className={`transition-all duration-300 ${
+            isMobile
+              ? 'mr-0'
+              : sidebarCollapsed
+                ? 'lg:mr-[80px]'
+                : 'lg:mr-[280px]'
+          }`}
+        >
+          <Footer />
+        </div>
+      )}
+
       {/* Change Password Modal - Shared between Header and Sidebar */}
       <ChangePasswordModal
         isOpen={isChangePasswordModalOpen}
         onClose={() => setIsChangePasswordModalOpen(false)}
       />
-
-      {/* NOTE: No Footer for user pages */}
     </>
   );
 };

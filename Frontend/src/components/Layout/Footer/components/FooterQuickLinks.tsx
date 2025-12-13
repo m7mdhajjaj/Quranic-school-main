@@ -17,7 +17,7 @@ export const FooterQuickLinks: React.FC<FooterQuickLinksProps> = ({
       animated
       className={className}
     >
-      <ul className="space-y-1 sm:space-y-2 lg:space-y-3">
+      <ul className="space-y-1.5 sm:space-y-2">
         {links.map((link, index) => (
           <li
             key={index}
@@ -25,12 +25,12 @@ export const FooterQuickLinks: React.FC<FooterQuickLinksProps> = ({
           >
             <a
               href={link.path}
-              className="text-emerald-100 hover:text-white hover:pr-2 transition-all duration-300 flex items-center gap-2 group text-xs sm:text-sm lg:text-base xl:text-lg"
+              className="text-emerald-700 hover:text-emerald-800 hover:pr-2 transition-all duration-300 flex items-center gap-2 group text-xs sm:text-sm font-medium"
             >
               {link.icon && isAdmin ? (
-                <link.icon className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 group-hover:scale-110 transition-all" />
+                <link.icon className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 group-hover:scale-110 transition-all text-emerald-600" />
               ) : (
-                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-emerald-300 rounded-full group-hover:w-2 sm:group-hover:w-2.5 transition-all"></span>
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-emerald-600 rounded-full group-hover:w-2 sm:group-hover:w-2.5 transition-all"></span>
               )}
               {link.name}
             </a>

@@ -21,7 +21,7 @@ export const SurahSelectionView: React.FC<SurahSelectionViewProps> = ({
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4 md:p-8"
+      className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 p-4 md:p-8"
       dir="rtl"
     >
       <div className="max-w-6xl mx-auto">

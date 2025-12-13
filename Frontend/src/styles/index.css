@@ -262,6 +262,19 @@ input[type='password']::-webkit-credentials-auto-fill-button {
 }
 @import 'tailwindcss';
 
+/* ============================================================================
+   Global Background - مريح للعين
+   ============================================================================ */
+body {
+  background: linear-gradient(to bottom, #f8fafc, #f1f5f9, #e2e8f0) !important;
+  min-height: 100vh;
+}
+
+#root {
+  background: linear-gradient(to bottom, #f8fafc, #f1f5f9, #e2e8f0);
+  min-height: 100vh;
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;

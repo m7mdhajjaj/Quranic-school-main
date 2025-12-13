@@ -196,7 +196,7 @@ const AbsencePage = () => {
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 py-8 px-4"
+      className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 py-8 px-4"
       dir="rtl">
       <div className="container mx-auto max-w-[1800px]">
         {/* العنوان */}

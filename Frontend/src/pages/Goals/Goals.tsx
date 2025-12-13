@@ -18,7 +18,7 @@ const Goals = () => {
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100"
+      className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100"
       dir="rtl">
       <div className="container mx-auto py-12 px-4">
         {/* Header Section */}

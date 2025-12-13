@@ -14,7 +14,7 @@ const Contact = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-emerald-50 to-teal-50 py-8 px-4" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 py-8 px-4" dir="rtl">
       <div className="max-w-7xl mx-auto">
         {/* Page Header */}
         <ContactHeader />

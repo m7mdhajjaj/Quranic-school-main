@@ -47,7 +47,7 @@ const QuranPage = () => {
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50"
+      className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100"
       dir="rtl">
       <div className="container mx-auto px-4 pt-8 pb-16 mb-8">
         <PageHeader

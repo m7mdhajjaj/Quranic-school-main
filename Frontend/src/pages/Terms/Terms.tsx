@@ -14,7 +14,7 @@ import {
 const Terms: React.FC = () => {
   return (
     <div
-      className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-12 px-4 font-arabic"
+      className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 py-12 px-4 font-arabic"
       dir="rtl"
       lang="ar"
     >

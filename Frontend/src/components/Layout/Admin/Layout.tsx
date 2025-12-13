@@ -69,7 +69,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       
       {/* Main Content Area - Admin pages */}
       <div
-        className={`min-h-screen bg-gradient-to-b from-emerald-50 via-green-50 to-teal-50 transition-all duration-300 pt-14 sm:pt-16 lg:pt-16 ${
+        className={`min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 transition-all duration-300 pt-14 sm:pt-16 lg:pt-16 ${
           isMobile 
             ? "mr-0" 
             : sidebarCollapsed 

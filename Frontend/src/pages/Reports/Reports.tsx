@@ -20,7 +20,7 @@ const Reports: React.FC = () => {
   } = useReportData();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 pb-8">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 pb-8">
       <ReportHeader />
       
       <div className="max-w-7xl mx-auto px-4 space-y-6">

@@ -111,7 +111,7 @@ const UserSidebar: React.FC<UserSidebarProps> = ({
     <>
       {/* Mobile Sidebar */}
       <aside
-        className={`fixed right-0 top-14 sm:top-16 h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-4rem)] bg-gradient-to-b from-emerald-50 via-green-50 to-teal-50 border-l border-emerald-100 shadow-xl z-40 overflow-y-auto overflow-x-hidden transition-all duration-300 lg:hidden sidebar-scrollbar ${
+        className={`fixed right-0 top-14 sm:top-16 h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-4rem)] bg-gradient-to-b from-indigo-50 via-slate-50 to-blue-50 border-l border-indigo-100 shadow-xl z-40 overflow-y-auto overflow-x-hidden transition-all duration-300 lg:hidden sidebar-scrollbar ${
           isMobileOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
         style={{ width: '280px' }}
@@ -136,8 +136,8 @@ const UserSidebar: React.FC<UserSidebarProps> = ({
                   className={`
                     group relative flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-200 mb-3
                     ${isHomeActive
-                      ? 'bg-emerald-600 text-white shadow-md'
-                      : 'text-emerald-600 hover:bg-white/60 hover:text-emerald-700'
+                      ? 'bg-indigo-600 text-white shadow-md'
+                      : 'text-indigo-600 hover:bg-white/60 hover:text-indigo-700'
                     }
                   `}>
                   {isHomeActive && (
@@ -146,7 +146,7 @@ const UserSidebar: React.FC<UserSidebarProps> = ({
                   <div
                     className={`
                     flex-shrink-0 transition-colors duration-200
-                    ${isHomeActive ? 'text-white' : 'text-emerald-500 group-hover:text-emerald-600'}
+                    ${isHomeActive ? 'text-white' : 'text-indigo-500 group-hover:text-indigo-600'}
                   `}>
                     <HomeIcon size={22} />
                   </div>
@@ -171,16 +171,16 @@ const UserSidebar: React.FC<UserSidebarProps> = ({
                   aria-expanded={isOpen ? true : false}
                   className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all duration-200 ${
                     groupActive
-                      ? 'bg-emerald-100 text-emerald-700'
-                      : 'text-emerald-600 hover:bg-white/60'
+                      ? 'bg-indigo-100 text-indigo-700'
+                      : 'text-indigo-600 hover:bg-white/60'
                   }`}>
                   <span className="font-semibold text-xs uppercase tracking-wide">
                     {group.title}
                   </span>
                   {isOpen ? (
-                    <ChevronUp size={16} className="text-emerald-600" aria-hidden="true" />
+                    <ChevronUp size={16} className="text-indigo-600" aria-hidden="true" />
                   ) : (
-                    <ChevronDown size={16} className="text-emerald-600" aria-hidden="true" />
+                    <ChevronDown size={16} className="text-indigo-600" aria-hidden="true" />
                   )}
                 </button>
 
@@ -199,8 +199,8 @@ const UserSidebar: React.FC<UserSidebarProps> = ({
                           className={`
                             group relative flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-200
                             ${active
-                              ? 'bg-emerald-600 text-white shadow-md'
-                              : 'text-emerald-600 hover:bg-white/60 hover:text-emerald-700'
+                              ? 'bg-indigo-600 text-white shadow-md'
+                              : 'text-indigo-600 hover:bg-white/60 hover:text-indigo-700'
                             }
                           `}>
                           {active && (
@@ -209,7 +209,7 @@ const UserSidebar: React.FC<UserSidebarProps> = ({
                           <div
                             className={`
                             flex-shrink-0 transition-colors duration-200
-                            ${active ? 'text-white' : 'text-emerald-500 group-hover:text-emerald-600'}
+                            ${active ? 'text-white' : 'text-indigo-500 group-hover:text-indigo-600'}
                           `}>
                             <Icon size={22} />
                           </div>
@@ -228,7 +228,7 @@ const UserSidebar: React.FC<UserSidebarProps> = ({
 
         {/* Mobile User Account Section - As Collapsible Group */}
         {currentUser && (
-          <div className="p-4 border-t border-emerald-200 bg-white/50 backdrop-blur-sm">
+          <div className="p-4 border-t border-indigo-200 bg-white/50 backdrop-blur-sm">
             <div className="space-y-2">
               {/* Account Group Header */}
               <button
@@ -237,16 +237,16 @@ const UserSidebar: React.FC<UserSidebarProps> = ({
                 aria-expanded={openGroups.has('الحساب') ? true : false}
                 className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all duration-200 ${
                   location.pathname === '/profile'
-                    ? 'bg-emerald-100 text-emerald-700'
-                    : 'text-emerald-600 hover:bg-white/60'
+                    ? 'bg-indigo-100 text-indigo-700'
+                    : 'text-indigo-600 hover:bg-white/60'
                 }`}>
                 <span className="font-semibold text-xs uppercase tracking-wide">
                   الحساب
                 </span>
                 {openGroups.has('الحساب') ? (
-                  <ChevronUp size={16} className="text-emerald-600" aria-hidden="true" />
+                  <ChevronUp size={16} className="text-indigo-600" aria-hidden="true" />
                 ) : (
-                  <ChevronDown size={16} className="text-emerald-600" aria-hidden="true" />
+                  <ChevronDown size={16} className="text-indigo-600" aria-hidden="true" />
                 )}
               </button>
 
@@ -261,17 +261,17 @@ const UserSidebar: React.FC<UserSidebarProps> = ({
                     className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-200 font-medium text-sm relative ${
                       location.pathname === '/profile' &&
                       !location.search.includes('change-password')
-                        ? 'bg-white text-emerald-700 shadow-md'
-                        : 'text-emerald-600 hover:bg-white/60 hover:text-emerald-700'
+                        ? 'bg-white text-indigo-700 shadow-md'
+                        : 'text-indigo-600 hover:bg-white/60 hover:text-indigo-700'
                     }`}>
                     {location.pathname === '/profile' &&
                       !location.search.includes('change-password') && (
-                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-emerald-500 rounded-l-full" />
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-l-full" />
                       )}
                     <div
                       className={`
                       flex-shrink-0 transition-colors duration-200
-                      ${location.pathname === '/profile' && !location.search.includes('change-password') ? 'text-emerald-600' : 'text-emerald-500'}
+                      ${location.pathname === '/profile' && !location.search.includes('change-password') ? 'text-indigo-600' : 'text-indigo-500'}
                     `}>
                       <User size={22} />
                     </div>
@@ -282,17 +282,17 @@ const UserSidebar: React.FC<UserSidebarProps> = ({
                     className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-200 font-medium text-sm relative ${
                       location.pathname === '/profile' &&
                       location.search.includes('change-password')
-                        ? 'bg-white text-emerald-700 shadow-md'
-                        : 'text-emerald-600 hover:bg-white/60 hover:text-emerald-700'
+                        ? 'bg-white text-indigo-700 shadow-md'
+                        : 'text-indigo-600 hover:bg-white/60 hover:text-indigo-700'
                     }`}>
                     {location.pathname === '/profile' &&
                       location.search.includes('change-password') && (
-                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-emerald-500 rounded-l-full" />
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-l-full" />
                       )}
                     <div
                       className={`
                       flex-shrink-0 transition-colors duration-200
-                      ${location.pathname === '/profile' && location.search.includes('change-password') ? 'text-emerald-600' : 'text-emerald-500'}
+                      ${location.pathname === '/profile' && location.search.includes('change-password') ? 'text-indigo-600' : 'text-indigo-500'}
                     `}>
                       <Key size={22} />
                     </div>
@@ -318,17 +318,17 @@ const UserSidebar: React.FC<UserSidebarProps> = ({
 
       {/* Desktop Sidebar */}
       <aside
-        className={`hidden lg:block fixed right-0 top-16 h-[calc(100vh-4rem)] bg-gradient-to-b from-emerald-50 via-green-50 to-teal-50 border-l border-emerald-100 shadow-xl z-40 overflow-y-auto overflow-x-hidden transition-all duration-300 sidebar-scrollbar`}
+        className={`hidden lg:block fixed right-0 top-16 h-[calc(100vh-4rem)] bg-gradient-to-b from-indigo-50 via-slate-50 to-blue-50 border-l border-indigo-100 shadow-xl z-40 overflow-y-auto overflow-x-hidden transition-all duration-300 sidebar-scrollbar`}
         style={{ width: isCollapsed ? '80px' : '280px' }}
         dir="rtl">
         {/* Toggle Button */}
         {onToggle && (
-          <div className="p-4 border-b border-emerald-200">
+          <div className="p-4 border-b border-indigo-200">
             <button
               onClick={onToggle}
               title={isCollapsed ? 'إظهار القائمة' : 'إخفاء القائمة'}
               aria-label={isCollapsed ? 'إظهار القائمة' : 'إخفاء القائمة'}
-              className="w-full flex items-center justify-center p-2 rounded-2xl hover:bg-white/60 transition-all duration-200 text-emerald-600">
+              className="w-full flex items-center justify-center p-2 rounded-2xl hover:bg-white/60 transition-all duration-200 text-indigo-600">
               <Menu size={20} aria-hidden="true" />
             </button>
           </div>
@@ -353,8 +353,8 @@ const UserSidebar: React.FC<UserSidebarProps> = ({
                   className={`
                     group relative flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-200 mb-3
                     ${isHomeActive
-                      ? 'bg-emerald-600 text-white shadow-md'
-                      : 'text-emerald-600 hover:bg-white/60 hover:text-emerald-700'
+                      ? 'bg-indigo-600 text-white shadow-md'
+                      : 'text-indigo-600 hover:bg-white/60 hover:text-indigo-700'
                     }
                   `}>
                   {isHomeActive && (
@@ -363,7 +363,7 @@ const UserSidebar: React.FC<UserSidebarProps> = ({
                   <div
                     className={`
                     flex-shrink-0 transition-colors duration-200
-                    ${isHomeActive ? 'text-white' : 'text-emerald-500 group-hover:text-emerald-600'}
+                    ${isHomeActive ? 'text-white' : 'text-indigo-500 group-hover:text-indigo-600'}
                   `}>
                     <HomeIcon size={22} />
                   </div>
@@ -380,7 +380,7 @@ const UserSidebar: React.FC<UserSidebarProps> = ({
                 <div key={group.title} className="space-y-1.5">
                   {/* Divider before group (except first group) */}
                   {navGroups.indexOf(group) > 0 && (
-                    <div className="my-3 border-t border-emerald-200/60" />
+                    <div className="my-3 border-t border-indigo-200/60" />
                   )}
                   {group.items.map((item) => {
                     const Icon = item.icon;
@@ -390,18 +390,18 @@ const UserSidebar: React.FC<UserSidebarProps> = ({
                       <NavLink
                         key={item.to}
                         to={item.to}
-                        className={`
+                          className={`
                           group relative flex items-center justify-center w-12 h-12 mx-auto rounded-2xl transition-all duration-300
                           ${active
-                            ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-400/50 border border-emerald-500 scale-105'
-                            : 'text-emerald-600 bg-white/90 hover:bg-white hover:shadow-md hover:shadow-emerald-200/30 border border-emerald-100/60 hover:border-emerald-200/80 hover:scale-105'
+                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-400/50 border border-indigo-500 scale-105'
+                            : 'text-indigo-600 bg-white/90 hover:bg-white hover:shadow-md hover:shadow-indigo-200/30 border border-indigo-100/60 hover:border-indigo-200/80 hover:scale-105'
                           }
                         `}
                         title={`${group.title} - ${item.label}`}>
                         <div
                           className={`
                           flex-shrink-0 transition-all duration-300
-                          ${active ? 'text-white scale-110' : 'text-emerald-500 group-hover:text-emerald-600 group-hover:scale-110'}
+                          ${active ? 'text-white scale-110' : 'text-indigo-500 group-hover:text-indigo-600 group-hover:scale-110'}
                         `}>
                           <Icon size={22} className="stroke-[2.5]" />
                         </div>
@@ -426,16 +426,16 @@ const UserSidebar: React.FC<UserSidebarProps> = ({
                   aria-expanded={isOpen ? true : false}
                   className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all duration-200 ${
                     groupActive
-                      ? 'bg-emerald-100 text-emerald-700'
-                      : 'text-emerald-600 hover:bg-white/60'
+                      ? 'bg-indigo-100 text-indigo-700'
+                      : 'text-indigo-600 hover:bg-white/60'
                   }`}>
                   <span className="font-semibold text-xs uppercase tracking-wide">
                     {group.title}
                   </span>
                   {isOpen ? (
-                    <ChevronUp size={16} className="text-emerald-600" aria-hidden="true" />
+                    <ChevronUp size={16} className="text-indigo-600" aria-hidden="true" />
                   ) : (
-                    <ChevronDown size={16} className="text-emerald-600" aria-hidden="true" />
+                    <ChevronDown size={16} className="text-indigo-600" aria-hidden="true" />
                   )}
                 </button>
 
@@ -453,8 +453,8 @@ const UserSidebar: React.FC<UserSidebarProps> = ({
                           className={`
                             group relative flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-200
                             ${active
-                              ? 'bg-emerald-600 text-white shadow-md'
-                              : 'text-emerald-600 hover:bg-white/60 hover:text-emerald-700'
+                              ? 'bg-indigo-600 text-white shadow-md'
+                              : 'text-indigo-600 hover:bg-white/60 hover:text-indigo-700'
                             }
                           `}>
                           {active && (
@@ -463,7 +463,7 @@ const UserSidebar: React.FC<UserSidebarProps> = ({
                           <div
                             className={`
                             flex-shrink-0 transition-colors duration-200
-                            ${active ? 'text-white' : 'text-emerald-500 group-hover:text-emerald-600'}
+                            ${active ? 'text-white' : 'text-indigo-500 group-hover:text-indigo-600'}
                           `}>
                             <Icon size={22} />
                           </div>
@@ -482,39 +482,39 @@ const UserSidebar: React.FC<UserSidebarProps> = ({
 
         {/* User Account Section - Collapsed State */}
         {isCollapsed && currentUser && (
-          <div className="p-4 border-t border-emerald-200/60 space-y-1.5">
+          <div className="p-4 border-t border-indigo-200/60 space-y-1.5">
             <button
               onClick={handleProfileClick}
-              className={`
+                className={`
                 group relative flex items-center justify-center w-12 h-12 mx-auto rounded-2xl transition-all duration-300
                 ${location.pathname === '/profile' && !location.search.includes('change-password')
-                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-400/50 border border-emerald-500 scale-105'
-                  : 'text-emerald-600 bg-white/90 hover:bg-white hover:shadow-md hover:shadow-emerald-200/30 border border-emerald-100/60 hover:border-emerald-200/80 hover:scale-105'
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-400/50 border border-indigo-500 scale-105'
+                  : 'text-indigo-600 bg-white/90 hover:bg-white hover:shadow-md hover:shadow-indigo-200/30 border border-indigo-100/60 hover:border-indigo-200/80 hover:scale-105'
                 }
               `}
               title="الملف الشخصي">
               <div
                 className={`
                 flex-shrink-0 transition-all duration-300
-                ${location.pathname === '/profile' && !location.search.includes('change-password') ? 'text-white scale-110' : 'text-emerald-500 group-hover:text-emerald-600 group-hover:scale-110'}
+                ${location.pathname === '/profile' && !location.search.includes('change-password') ? 'text-white scale-110' : 'text-indigo-500 group-hover:text-indigo-600 group-hover:scale-110'}
               `}>
                 <User size={22} className="stroke-[2.5]" />
               </div>
             </button>
             <button
               onClick={handleChangePasswordClick}
-              className={`
+                className={`
                 group relative flex items-center justify-center w-12 h-12 mx-auto rounded-2xl transition-all duration-300
                 ${location.pathname === '/profile' && location.search.includes('change-password')
-                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-400/50 border border-emerald-500 scale-105'
-                  : 'text-emerald-600 bg-white/90 hover:bg-white hover:shadow-md hover:shadow-emerald-200/30 border border-emerald-100/60 hover:border-emerald-200/80 hover:scale-105'
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-400/50 border border-indigo-500 scale-105'
+                  : 'text-indigo-600 bg-white/90 hover:bg-white hover:shadow-md hover:shadow-indigo-200/30 border border-indigo-100/60 hover:border-indigo-200/80 hover:scale-105'
                 }
               `}
               title="تغيير كلمة المرور">
               <div
                 className={`
                 flex-shrink-0 transition-all duration-300
-                ${location.pathname === '/profile' && location.search.includes('change-password') ? 'text-white scale-110' : 'text-emerald-500 group-hover:text-emerald-600 group-hover:scale-110'}
+                ${location.pathname === '/profile' && location.search.includes('change-password') ? 'text-white scale-110' : 'text-indigo-500 group-hover:text-indigo-600 group-hover:scale-110'}
               `}>
                 <Key size={22} className="stroke-[2.5]" />
               </div>
@@ -532,7 +532,7 @@ const UserSidebar: React.FC<UserSidebarProps> = ({
 
         {/* User Account Section - As Collapsible Group */}
         {!isCollapsed && currentUser && (
-          <div className="p-4 border-t border-emerald-200 bg-white/50 backdrop-blur-sm">
+          <div className="p-4 border-t border-indigo-200 bg-white/50 backdrop-blur-sm">
             <div className="space-y-2">
               {/* Account Group Header */}
               <button
@@ -541,16 +541,16 @@ const UserSidebar: React.FC<UserSidebarProps> = ({
                 aria-expanded={openGroups.has('الحساب') ? true : false}
                 className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all duration-200 ${
                   location.pathname === '/profile'
-                    ? 'bg-emerald-100 text-emerald-700'
-                    : 'text-emerald-600 hover:bg-white/60'
+                    ? 'bg-indigo-100 text-indigo-700'
+                    : 'text-indigo-600 hover:bg-white/60'
                 }`}>
                 <span className="font-semibold text-xs uppercase tracking-wide">
                   الحساب
                 </span>
                 {openGroups.has('الحساب') ? (
-                  <ChevronUp size={16} className="text-emerald-600" aria-hidden="true" />
+                  <ChevronUp size={16} className="text-indigo-600" aria-hidden="true" />
                 ) : (
-                  <ChevronDown size={16} className="text-emerald-600" aria-hidden="true" />
+                  <ChevronDown size={16} className="text-indigo-600" aria-hidden="true" />
                 )}
               </button>
 
@@ -562,17 +562,17 @@ const UserSidebar: React.FC<UserSidebarProps> = ({
                     className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-200 font-medium text-sm relative ${
                       location.pathname === '/profile' &&
                       !location.search.includes('change-password')
-                        ? 'bg-white text-emerald-700 shadow-md'
-                        : 'text-emerald-600 hover:bg-white/60 hover:text-emerald-700'
+                        ? 'bg-white text-indigo-700 shadow-md'
+                        : 'text-indigo-600 hover:bg-white/60 hover:text-indigo-700'
                     }`}>
                     {location.pathname === '/profile' &&
                       !location.search.includes('change-password') && (
-                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-emerald-500 rounded-l-full" />
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-l-full" />
                       )}
                     <div
                       className={`
                       flex-shrink-0 transition-colors duration-200
-                      ${location.pathname === '/profile' && !location.search.includes('change-password') ? 'text-emerald-600' : 'text-emerald-500'}
+                      ${location.pathname === '/profile' && !location.search.includes('change-password') ? 'text-indigo-600' : 'text-indigo-500'}
                     `}>
                       <User size={22} />
                     </div>
@@ -583,17 +583,17 @@ const UserSidebar: React.FC<UserSidebarProps> = ({
                     className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-200 font-medium text-sm relative ${
                       location.pathname === '/profile' &&
                       location.search.includes('change-password')
-                        ? 'bg-white text-emerald-700 shadow-md'
-                        : 'text-emerald-600 hover:bg-white/60 hover:text-emerald-700'
+                        ? 'bg-white text-indigo-700 shadow-md'
+                        : 'text-indigo-600 hover:bg-white/60 hover:text-indigo-700'
                     }`}>
                     {location.pathname === '/profile' &&
                       location.search.includes('change-password') && (
-                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-emerald-500 rounded-l-full" />
+                        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-l-full" />
                       )}
                     <div
                       className={`
                       flex-shrink-0 transition-colors duration-200
-                      ${location.pathname === '/profile' && location.search.includes('change-password') ? 'text-emerald-600' : 'text-emerald-500'}
+                      ${location.pathname === '/profile' && location.search.includes('change-password') ? 'text-indigo-600' : 'text-indigo-500'}
                     `}>
                       <Key size={22} />
                     </div>
