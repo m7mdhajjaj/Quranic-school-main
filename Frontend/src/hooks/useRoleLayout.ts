@@ -202,7 +202,6 @@ export const useRoleLayout = () => {
   // الحصول على معلومات الصفحة حسب المسار
   const getPageInfo = (pathname: string) => {
     const pageMap: Record<string, { title: string; breadcrumb: string }> = {
-      '/': { title: 'الصفحة الرئيسية', breadcrumb: 'الرئيسية' },
       '/goals': { title: 'الأهداف', breadcrumb: 'الرئيسية / الأهداف' },
       '/daily-marks': {
         title: 'العلامات اليومية',

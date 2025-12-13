@@ -97,7 +97,13 @@ export const uploadUserAvatar = async (
   endpoint: Endpoint,
   userId: string,
   formData: FormData
-): Promise<{ success: boolean; message: string; avatarUrl?: string }> => {
+): Promise<{ 
+  success: boolean; 
+  message: string; 
+  avatar?: { url: string; publicId: string }; 
+  avatarUrl?: string;
+  user?: UserProfile;
+}> => {
   const response = await api.post(`/${endpoint}/${userId}/avatar`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',

@@ -66,28 +66,21 @@ export const useProfileData = () => {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // تحديث avatarUrl عند تغيير authUser.avatar (بعد تحميل user)
-  useEffect(() => {
-    if (authUser?.avatar?.url && user?._id === authUser._id && endpoint) {
-      // إذا كان هناك avatar في authUser، جلب الصورة من API
-      fetchAvatarBlobUrl(endpoint, user._id)
-        .then((url) => {
-          setAvatarUrl((prev) => {
-            if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
-            return url;
-          });
-        })
-        .catch(() => {
-          // إذا فشل، استخدم URL من authUser مباشرة
-          setAvatarUrl(authUser.avatar?.url || null);
-        });
-    }
-  }, [authUser?.avatar?.url, user?._id, endpoint]);
-
   // تحديث avatarUrl عند تغيير authUser.avatar
   useEffect(() => {
+    // تحديث user المحلي عند تغيير authUser
+    if (authUser && user && authUser._id === user._id) {
+      setUser((prevUser) => {
+        if (!prevUser) return prevUser;
+        return {
+          ...prevUser,
+          avatar: authUser.avatar,
+        };
+      });
+    }
+
+    // جلب الصورة من API إذا كان هناك avatar في authUser
     if (authUser?.avatar?.url && user?._id === authUser._id && endpoint) {
-      // إذا كان هناك avatar في authUser، جلب الصورة من API
       fetchAvatarBlobUrl(endpoint, user._id)
         .then((url) => {
           setAvatarUrl((prev) => {
@@ -99,8 +92,14 @@ export const useProfileData = () => {
           // إذا فشل، استخدم URL من authUser مباشرة
           setAvatarUrl(authUser.avatar?.url || null);
         });
+    } else if (!authUser?.avatar?.url && user?._id === authUser?._id) {
+      // إذا تم حذف الصورة
+      setAvatarUrl((prev) => {
+        if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+        return null;
+      });
     }
-  }, [authUser?.avatar?.url, user?._id, endpoint]);
+  }, [authUser?.avatar?.url, authUser?.avatar?.publicId, user?._id, endpoint, authUser?._id]);
 
   const updateUser = (updates: Partial<UserProfile>) => {
     if (user) {

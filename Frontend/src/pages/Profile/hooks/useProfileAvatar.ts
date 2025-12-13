@@ -71,6 +71,14 @@ export const useProfileAvatar = (
         avatar: undefined,
       });
 
+      // حذف من localStorage مباشرة للتأكد من الاستمرارية
+      const savedUser = localStorage.getItem('user');
+      if (savedUser) {
+        const parsedUser = JSON.parse(savedUser);
+        delete parsedUser.avatar;
+        localStorage.setItem('user', JSON.stringify(parsedUser));
+      }
+
       if (onAvatarUpdate) {
         onAvatarUpdate(null);
       }
@@ -93,15 +101,28 @@ export const useProfileAvatar = (
       fd.append("avatar", avatarFile);
       const uploadResponse = await uploadUserAvatar(endpoint, user._id, fd);
 
+      // جلب الصورة الجديدة من API
       const newUrl = await fetchAvatarBlobUrl(endpoint, user._id);
       setAvatarFile(null);
 
-      if (uploadResponse?.avatarUrl) {
+      // تحديث AuthContext مع البيانات الكاملة من الاستجابة
+      if (uploadResponse?.avatar || uploadResponse?.avatarUrl) {
+        const avatarData = {
+          url: uploadResponse.avatar?.url || uploadResponse.avatarUrl || "",
+          publicId: uploadResponse.avatar?.publicId,
+        };
+        
         updateAuthUser({
-          avatar: {
-            url: uploadResponse.avatarUrl,
-          },
+          avatar: avatarData,
         });
+
+        // حفظ في localStorage مباشرة للتأكد من الاستمرارية
+        const savedUser = localStorage.getItem('user');
+        if (savedUser) {
+          const parsedUser = JSON.parse(savedUser);
+          parsedUser.avatar = avatarData;
+          localStorage.setItem('user', JSON.stringify(parsedUser));
+        }
       }
 
       if (onAvatarUpdate) {

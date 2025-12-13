@@ -131,7 +131,10 @@ const teacherSchema = new mongoose.Schema(
     role: { type: String, enum: ['teacher'], default: 'teacher' },
 
     // الصورة
-    avatar: { data: Buffer, contentType: String },
+    avatar: {
+      url: { type: String },
+      publicId: { type: String },
+    },
 
     isActive: { type: Boolean, default: false },
     lastSeen: { type: Date, default: Date.now },
