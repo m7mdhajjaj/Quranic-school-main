@@ -37,22 +37,22 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
       {actions.map((action, index) => (
         <button
           key={index}
           onClick={action.onClick}
           className={`
             bg-gradient-to-br ${action.color} ${action.hoverColor}
-            text-white p-6 rounded-2xl shadow-lg 
+            text-white p-4 sm:p-5 lg:p-6 rounded-xl sm:rounded-2xl shadow-lg 
             transform transition-all duration-300 
-            hover:scale-105 hover:shadow-2xl
+            hover:scale-[1.02] sm:hover:scale-105 hover:shadow-2xl
             focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-green-400
             active:scale-95
             group
           `}>
-          <action.icon className="text-4xl mb-3 mx-auto group-hover:scale-110 transition-transform duration-300" />
-          <p className="font-bold text-sm">{action.label}</p>
+          <action.icon className="text-3xl sm:text-4xl mb-2 sm:mb-3 mx-auto group-hover:scale-110 transition-transform duration-300" />
+          <p className="font-bold text-xs sm:text-sm">{action.label}</p>
         </button>
       ))}
     </div>

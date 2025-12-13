@@ -1,154 +1,74 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   FaGraduationCap,
   FaChalkboardTeacher,
   FaUsers,
-  FaClipboardCheck,
   FaChartLine,
-} from "react-icons/fa";
-import { LoadingSpinner } from "@/components/UI";
+} from 'react-icons/fa';
+import {
+  StatCardSkeleton,
+  ChartSkeleton,
+  ListSkeleton,
+} from '@/components/skeletons';
 import {
   StatCard,
-  BarChart,
+  DonutChart,
   PieChart,
   QuickActions,
   AttendanceSection,
   TopListsSection,
-  NotificationsSection,
-  type Notification,
-} from "./components";
-import { useDashboardData } from "./hooks";
-import type { ChartData } from "./types";
-import AddStudentForm from "../StudentsManagement/Model/StudentForm";
-import TeacherForm from "../TeachersManagement/Model/TeacherForm";
-import { useDashboardSocket } from "@/Socket";
+} from './components';
+import { useDashboardData } from './hooks';
+import AddStudentForm from '../StudentsManagement/Model/StudentForm';
+import TeacherForm from '../TeachersManagement/Model/TeacherForm';
+import AddGroupForm from '../GroupManagement/Model/GroupForm';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
 
-  // Socket للتحديثات الفورية
-  const { lastUpdate: socketLastUpdate } = useDashboardSocket();
-
-  // استخدام hook لجلب البيانات
-  const { stats, isLoading, error, fetchStats, chartsData } =
-    useDashboardData();
+  // استخدام hook لجلب البيانات - البيانات معالجة جاهزة
+  const {
+    stats,
+    isLoadingStats,
+    isLoadingCharts,
+    isLoadingTopStudents,
+    isLoadingTopTeachers,
+    error,
+    fetchStats,
+    groupDistribution,
+    genderDistribution,
+    topStudents,
+    topTeachers,
+  } = useDashboardData();
 
   // State لإدارة الـ Modals
   const [showAddStudentForm, setShowAddStudentForm] = useState(false);
   const [showAddTeacherForm, setShowAddTeacherForm] = useState(false);
+  const [showAddGroupForm, setShowAddGroupForm] = useState(false);
 
   // Navigation handlers
-  const handleTeachersClick = () => navigate("/admin/teachers");
-  const handleStudentsClick = () => navigate("/admin/students");
-  const handleGroupsClick = () => navigate("/admin/groups");
-  const handleExamsClick = () => navigate("/admin/exams");
+  const handleTeachersClick = () => navigate('/admin/teachers');
+  const handleStudentsClick = () => navigate('/admin/students');
+  const handleGroupsClick = () => navigate('/admin/groups');
 
-  // تحويل بيانات الحلقات للرسم البياني من API
-  const groupDistribution: ChartData = chartsData?.groupDistribution
-    ? {
-        labels: chartsData.groupDistribution.map((g) => g._id || "غير محدد"),
-        data: chartsData.groupDistribution.map((g) => g.count),
-      }
-    : { labels: [], data: [] };
-
-  // بيانات الجنس من API
-  const genderDistribution = chartsData?.genderDistribution
-    ? {
-        labels: chartsData.genderDistribution.map((g) =>
-          g._id === "male" ? "ذكور" : "إناث"
-        ),
-        data: chartsData.genderDistribution.map((g) => g.count),
-        colors: ["from-green-500 to-green-600", "from-emerald-500 to-emerald-600"],
-      }
-    : {
-        labels: ["ذكور", "إناث"],
-        data: [0, 0],
-        colors: ["from-green-500 to-green-600", "from-emerald-500 to-emerald-600"],
-      };
-
-  // Socket: Refresh data when socket updates
-  useEffect(() => {
-    if (socketLastUpdate) {
-      console.log("🔄 Socket update detected, refreshing dashboard...");
-      fetchStats();
-    }
-  }, [socketLastUpdate, fetchStats]);
-
-  // Debug: عرض البيانات في console
-  useEffect(() => {
-    console.log("🔍 Dashboard Debug:");
-    console.log("chartsData:", chartsData);
-    console.log("groupDistribution:", groupDistribution);
-    console.log("genderDistribution:", genderDistribution);
-  }, [chartsData, groupDistribution, genderDistribution]);
-
-  // إشعارات وهمية
-  const notifications: Notification[] = [
-    {
-      id: "1",
-      type: "info",
-      title: "طالب جديد",
-      message: "تم تسجيل طالب جديد في الحلقة الأولى",
-      time: "منذ 5 دقائق",
-    },
-    {
-      id: "2",
-      type: "warning",
-      title: "غياب متكرر",
-      message: "الطالب أحمد محمد لديه 3 غيابات هذا الأسبوع",
-      time: "منذ ساعة",
-    },
-  ];
-
-  // بيانات أفضل الطلاب والمعلمين من API
-  const topStudents =
-    chartsData?.topStudents && chartsData.topStudents.length > 0
-      ? chartsData.topStudents
-      : [{ name: "لا يوجد بيانات", value: 0 }];
-
-  const topTeachers =
-    chartsData?.topTeachers && chartsData.topTeachers.length > 0
-      ? chartsData.topTeachers
-      : [{ name: "لا يوجد بيانات", value: 0 }];
-
-  // بيانات الحضور الشهري من API
-  const attendanceData = chartsData?.monthlyAttendance
-    ? {
-        present: chartsData.monthlyAttendance.present || 0,
-        absent: chartsData.monthlyAttendance.absent || 0,
-        late: chartsData.monthlyAttendance.late || 0,
-      }
-    : {
-        present: 0,
-        absent: 0,
-        late: 0,
-      };
-
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50 to-emerald-50 flex items-center justify-center" dir="rtl">
-        <LoadingSpinner 
-          size="xl" 
-          color="green" 
-          text="جاري تحميل الإحصائيات..." 
-        />
-      </div>
-    );
-  }
+  // Loading state - استخدام Skeleton بدلاً من Spinner
 
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50 to-emerald-50 flex items-center justify-center" dir="rtl">
+      <div
+        className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50 to-emerald-50 flex items-center justify-center"
+        dir="rtl"
+      >
         <div className="text-center">
           <div className="bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded-xl shadow-lg max-w-md">
             <svg
               className="w-12 h-12 mx-auto mb-4 text-red-500"
               fill="none"
               stroke="currentColor"
-              viewBox="0 0 24 24">
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -159,7 +79,8 @@ const AdminDashboard = () => {
             <p className="text-lg font-medium mb-4">{error}</p>
             <button
               onClick={() => fetchStats(true)}
-              className="px-6 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-all">
+              className="px-6 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-all"
+            >
               إعادة المحاولة
             </button>
           </div>
@@ -169,129 +90,130 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50 to-emerald-50" dir="rtl">
-      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    <div
+      className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50 to-emerald-50"
+      dir="rtl"
+    >
+      <div className="max-w-7xl mx-auto py-4 sm:py-6 lg:py-8 px-3 sm:px-4 lg:px-6 xl:px-8">
         {/* Header */}
-        <div className="mb-12">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-gray-900 via-green-700 to-emerald-700 bg-clip-text text-transparent mb-3">
+        <div className="mb-6 sm:mb-8 lg:mb-12 pr-1 pt-2 sm:pt-3 lg:pt-4">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-gray-900 via-emerald-600 to-green-600 bg-clip-text text-transparent mb-2 sm:mb-3 leading-[1.3] sm:leading-[1.35] lg:leading-[1.4] pt-1 sm:pt-2">
             لوحة الإحصائيات
           </h1>
-          <p className="text-gray-600 text-xl font-medium">
-            نظرة شاملة ومتطورة على أداء المنصة
+          <p className="text-sm sm:text-base lg:text-lg text-gray-600 font-medium leading-relaxed pr-0.5">
+            نظرة شاملة على أداء المنصة
           </p>
         </div>
 
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8 mb-12">
-          <StatCard
-            icon={<FaGraduationCap className="text-3xl" />}
-            title="إجمالي الطلاب"
-            value={stats.totalStudents}
-            color="bg-gradient-to-br from-green-500 to-green-700"
-            bgColor="bg-green-50"
-            borderColor="border-green-200"
-            trend="+12% هذا الشهر"
-            percentage={85}
-            onClick={handleStudentsClick}
-          />
+        {/* Statistics Cards - Priority for LCP */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 lg:mb-12">
+          {isLoadingStats ? (
+            <>
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+            </>
+          ) : (
+            <>
+              <StatCard
+                icon={<FaGraduationCap className="text-3xl text-white" />}
+                title="إجمالي الطلاب"
+                value={stats.totalStudents}
+                color="bg-gradient-to-br from-emerald-500 to-emerald-600"
+                bgColor="bg-white"
+                onClick={handleStudentsClick}
+              />
 
-          <StatCard
-            icon={<FaChalkboardTeacher className="text-3xl" />}
-            title="إجمالي المعلمين"
-            value={stats.totalTeachers}
-            color="bg-gradient-to-br from-emerald-500 to-emerald-700"
-            bgColor="bg-emerald-50"
-            borderColor="border-emerald-200"
-            trend="+8% هذا الشهر"
-            percentage={92}
-            onClick={handleTeachersClick}
-          />
+              <StatCard
+                icon={<FaChalkboardTeacher className="text-3xl text-white" />}
+                title="إجمالي المعلمين"
+                value={stats.totalTeachers}
+                color="bg-gradient-to-br from-green-500 to-green-600"
+                bgColor="bg-white"
+                onClick={handleTeachersClick}
+              />
 
-          <StatCard
-            icon={<FaClipboardCheck className="text-3xl" />}
-            title="معدل الدرجات"
-            value={stats.averageExamMarks}
-            color="bg-gradient-to-br from-teal-500 to-teal-700"
-            bgColor="bg-teal-50"
-            borderColor="border-teal-200"
-            trend="+5% تحسن"
-            percentage={stats.averageExamMarks}
-          />
-
-          <StatCard
-            icon={<FaClipboardCheck className="text-3xl" />}
-            title="عدد الامتحانات"
-            value={stats.totalExams}
-            color="bg-gradient-to-br from-lime-500 to-lime-700"
-            bgColor="bg-lime-50"
-            borderColor="border-lime-200"
-            percentage={68}
-            onClick={handleExamsClick}
-          />
-
-          <StatCard
-            icon={<FaUsers className="text-3xl" />}
-            title="عدد الحلقات"
-            value={stats.totalGroups}
-            color="bg-gradient-to-br from-green-600 to-emerald-600"
-            bgColor="bg-green-50"
-            borderColor="border-green-200"
-            percentage={75}
-            onClick={handleGroupsClick}
-          />
+              <StatCard
+                icon={<FaUsers className="text-3xl text-white" />}
+                title="عدد الحلقات"
+                value={stats.totalGroups}
+                color="bg-gradient-to-br from-green-600 to-emerald-600"
+                bgColor="bg-white"
+                onClick={handleGroupsClick}
+              />
+            </>
+          )}
         </div>
 
         {/* Quick Actions */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">
+        <div className="mb-6 sm:mb-8 lg:mb-12">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6">
             إجراءات سريعة
           </h2>
           <QuickActions
             onAddStudent={() => setShowAddStudentForm(true)}
             onAddTeacher={() => setShowAddTeacherForm(true)}
+            onAddGroup={() => setShowAddGroupForm(true)}
           />
         </div>
 
         {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          {/* Bar Chart - توزيع الطلاب حسب الحلقات */}
-          <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transition-shadow duration-300">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                <FaChartLine className="text-green-600" />
-                توزيع الطلاب حسب الحلقات
-              </h3>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 lg:mb-12">
+          {/* Donut Chart - توزيع الطلاب حسب الحلقات */}
+          <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 border border-gray-100 hover:shadow-2xl transition-shadow duration-300">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl">
+                  <FaChartLine className="text-white text-base sm:text-lg" />
+                </div>
+                <div>
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-800">
+                    توزيع الطلاب حسب الحلقات
+                  </h3>
+                  {groupDistribution.data.length > 0 && (
+                    <p className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1">
+                      {groupDistribution.labels.length} حلقة
+                    </p>
+                  )}
+                </div>
+              </div>
               {groupDistribution.data.length > 0 && (
-                <div className="bg-green-50 px-3 py-1 rounded-lg">
-                  <span className="text-sm font-bold text-green-600">
-                    {groupDistribution.data.reduce((a, b) => a + b, 0)} طالب
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl self-start sm:self-auto">
+                  <span className="text-xs sm:text-sm font-bold text-green-700">
+                    {groupDistribution.data
+                      .reduce((a, b) => a + b, 0)
+                      .toLocaleString()}{' '}
+                    طالب
                   </span>
                 </div>
               )}
             </div>
-            <div className="h-80">
-              {groupDistribution.data.length > 0 &&
-              groupDistribution.data.reduce((a, b) => a + b, 0) > 0 ? (
-                <BarChart
+            <div className="min-h-[400px] sm:min-h-[500px] lg:min-h-[450px] flex items-center justify-center">
+              {isLoadingCharts ? (
+                <ChartSkeleton type="donut" />
+              ) : groupDistribution.data.length > 0 &&
+                groupDistribution.data.reduce((a, b) => a + b, 0) > 0 ? (
+                <DonutChart
                   data={groupDistribution.data}
                   labels={groupDistribution.labels}
-                  maxValue={Math.max(...groupDistribution.data, 20)}
+                  colors={groupDistribution.colors}
                 />
               ) : (
-                <div className="flex items-center justify-center h-full text-gray-400">
-                  <div className="text-center max-w-md mx-auto">
-                    <div className="bg-green-50 rounded-full w-24 h-24 mx-auto mb-4 flex items-center justify-center">
-                      <FaChartLine className="text-5xl text-green-300" />
+                <div className="flex items-center justify-center w-full text-gray-400 py-8">
+                  <div className="text-center max-w-md mx-auto px-4">
+                    <div className="bg-green-50 rounded-full w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-4 flex items-center justify-center">
+                      <FaChartLine className="text-4xl sm:text-5xl text-green-300" />
                     </div>
-                    <p className="text-lg font-bold text-gray-600 mb-2">
+                    <p className="text-base sm:text-lg font-bold text-gray-600 mb-2">
                       لا توجد حلقات بها طلاب
                     </p>
-                    <p className="text-sm text-gray-500 mb-4">
+                    <p className="text-xs sm:text-sm text-gray-500 mb-4">
                       لعرض التوزيع، يجب ربط الطلاب بالحلقات
                     </p>
                     <button
                       onClick={handleGroupsClick}
-                      className="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105">
+                      className="px-4 sm:px-6 py-2 text-sm sm:text-base bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+                    >
                       إدارة الحلقات
                     </button>
                   </div>
@@ -301,44 +223,47 @@ const AdminDashboard = () => {
           </div>
 
           {/* Pie Chart - توزيع الطلاب حسب الجنس */}
-          <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100 hover:shadow-2xl transition-shadow duration-300">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                <FaUsers className="text-green-600" />
+          <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 border border-gray-100 hover:shadow-2xl transition-shadow duration-300">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center gap-2">
+                <FaUsers className="text-green-600 text-base sm:text-lg" />
                 توزيع الطلاب حسب الجنس
               </h3>
               {genderDistribution.data.length > 0 &&
                 genderDistribution.data.reduce((a, b) => a + b, 0) > 0 && (
-                  <div className="bg-green-50 px-3 py-1 rounded-lg">
-                    <span className="text-sm font-bold text-green-600">
+                  <div className="bg-green-50 px-3 py-1.5 rounded-lg self-start sm:self-auto">
+                    <span className="text-xs sm:text-sm font-bold text-green-600">
                       {genderDistribution.data.reduce((a, b) => a + b, 0)} طالب
                     </span>
                   </div>
                 )}
             </div>
-            <div className="h-80">
-              {genderDistribution.data.length > 0 &&
-              genderDistribution.data.reduce((a, b) => a + b, 0) > 0 ? (
+            <div className="min-h-[400px] sm:min-h-[500px] lg:min-h-[450px] flex items-center justify-center">
+              {isLoadingCharts ? (
+                <ChartSkeleton type="pie" />
+              ) : genderDistribution.data.length > 0 &&
+                genderDistribution.data.reduce((a, b) => a + b, 0) > 0 ? (
                 <PieChart
                   data={genderDistribution.data}
                   labels={genderDistribution.labels}
                   colors={genderDistribution.colors}
                 />
               ) : (
-                <div className="flex items-center justify-center h-full text-gray-400">
-                  <div className="text-center max-w-md mx-auto">
-                    <div className="bg-green-50 rounded-full w-24 h-24 mx-auto mb-4 flex items-center justify-center">
-                      <FaUsers className="text-5xl text-green-300" />
+                <div className="flex items-center justify-center w-full text-gray-400 py-8">
+                  <div className="text-center max-w-md mx-auto px-4">
+                    <div className="bg-green-50 rounded-full w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-4 flex items-center justify-center">
+                      <FaUsers className="text-4xl sm:text-5xl text-green-300" />
                     </div>
-                    <p className="text-lg font-bold text-gray-600 mb-2">
+                    <p className="text-base sm:text-lg font-bold text-gray-600 mb-2">
                       لا توجد بيانات
                     </p>
-                    <p className="text-sm text-gray-500 mb-4">
+                    <p className="text-xs sm:text-sm text-gray-500 mb-4">
                       قم بإضافة طلاب لعرض توزيع الجنس
                     </p>
                     <button
                       onClick={() => setShowAddStudentForm(true)}
-                      className="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105">
+                      className="px-4 sm:px-6 py-2 text-sm sm:text-base bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+                    >
                       إضافة طالب
                     </button>
                   </div>
@@ -348,25 +273,34 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Attendance Section */}
-        <div className="mb-12">
-          <AttendanceSection data={attendanceData} />
+        {/* Attendance Section - Absent Students Today */}
+        <div className="mb-6 sm:mb-8 lg:mb-12">
+          <AttendanceSection />
         </div>
 
         {/* Top Lists Section */}
-        <div className="mb-12">
-          <TopListsSection
-            topStudents={topStudents}
-            topTeachers={topTeachers}
-          />
-        </div>
-
-        {/* Notifications Section */}
-        <div className="mb-12">
-          <NotificationsSection
-            notifications={notifications}
-            onMarkAsRead={(id) => console.log("Mark as read:", id)}
-          />
+        <div className="mb-6 sm:mb-8 lg:mb-12">
+          {(isLoadingCharts || isLoadingTopStudents || isLoadingTopTeachers) ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+              <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 lg:p-6 border border-gray-100 shadow-sm">
+                <div className="animate-pulse mb-4 sm:mb-6">
+                  <div className="h-6 bg-gray-300 rounded w-32"></div>
+                </div>
+                <ListSkeleton count={5} showAvatar={true} />
+              </div>
+              <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 lg:p-6 border border-gray-100 shadow-sm">
+                <div className="animate-pulse mb-4 sm:mb-6">
+                  <div className="h-6 bg-gray-300 rounded w-32"></div>
+                </div>
+                <ListSkeleton count={5} showAvatar={true} />
+              </div>
+            </div>
+          ) : (
+            <TopListsSection
+              topStudents={topStudents}
+              topTeachers={topTeachers}
+            />
+          )}
         </div>
 
         {/* Forms Modals */}
@@ -390,8 +324,15 @@ const AdminDashboard = () => {
           />
         )}
 
-        {/* Add Group Form - Disabled */}
-        {/* TODO: Implement Group Form */}
+        {showAddGroupForm && (
+          <AddGroupForm
+            onClose={() => setShowAddGroupForm(false)}
+            onSuccess={() => {
+              setShowAddGroupForm(false);
+              fetchStats(true); // إعادة تحميل البيانات بعد إضافة حلقة
+            }}
+          />
+        )}
       </div>
     </div>
   );

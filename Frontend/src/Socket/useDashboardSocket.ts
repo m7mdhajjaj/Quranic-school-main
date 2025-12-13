@@ -1,177 +1,81 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { socketManager } from './SocketManager';
 import { useAuth } from '../hooks/useAuth';
 
 /**
- * Types للبيانات
+ * Hook للاستماع لتحديثات Dashboard عبر Socket.IO
+ * يستمع لـ event "absentStudentsUpdated" من admin-room
+ * 
+ * @param onAbsentStudentsUpdate - Callback يتم استدعاؤه عند تحديث قائمة الطلاب الغائبين
+ *                                 يمكن أن يحتوي data على البيانات مباشرة من Backend
  */
-interface DashboardStats {
-  totalStudents?: number;
-  totalTeachers?: number;
-  totalGroups?: number;
-  activeStudents?: number;
-  [key: string]: unknown;
-}
-
-interface DashboardUpdateEvent {
-  type: 'stats' | 'notification' | 'activity' | 'update';
-  data: DashboardStats | unknown;
-  timestamp: number;
-}
-
-/**
- * Hook مخصص للـ Dashboard مع Socket.IO
- * يوفر heartbeat تلقائي كل 30 ثانية
- */
-export const useDashboardSocket = () => {
+export const useDashboardSocket = (
+  onAbsentStudentsUpdate?: (data?: { data?: unknown[]; count?: number }) => void
+) => {
   const { user } = useAuth();
   const [isConnected, setIsConnected] = useState(false);
-  const [dashboardData, setDashboardData] = useState<DashboardStats | null>(null);
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-  const hasJoinedRoom = useRef(false);
+  const [lastSocketUpdate, setLastSocketUpdate] = useState<Date | null>(null);
 
   /**
-   * الاتصال بـ Socket وإعداد الغرفة
+   * الاتصال وإعداد Socket
    */
   useEffect(() => {
-    if (!user) {
-      console.log('⚠️ No user, skipping dashboard socket connection');
+    if (!user || user.role !== 'admin') {
+      console.log('⚠️ [DashboardSocket] User is not admin, skipping socket connection');
       return;
     }
 
-    console.log('🔌 Initializing Dashboard Socket...');
+    console.log('🔌 [DashboardSocket] Initializing socket for admin dashboard...');
     
-    // الاتصال بـ Socket
-    const socket = socketManager.connect(user._id, user.role);
+    // الاتصال (SocketManager يدير Heartbeat تلقائياً)
+    socketManager.connect(user._id, user.role);
 
-    // الاشتراك في تحديثات حالة الاتصال
+    // الاشتراك في تحديثات الاتصال
     const unsubscribe = socketManager.onConnectionChange((connected) => {
-      console.log('📡 Dashboard socket connection status:', connected);
+      console.log('📡 [DashboardSocket] Connection status:', connected);
       setIsConnected(connected);
-      
-      // إعادة الانضمام للغرفة عند إعادة الاتصال
-      if (connected && !hasJoinedRoom.current) {
-        joinDashboardRoom();
-      }
     });
 
-    // تعيين حالة الاتصال الحالية
     setIsConnected(socketManager.isConnected());
 
-    // الانضمام لغرفة Dashboard
-    const joinDashboardRoom = () => {
-      if (socketManager.isConnected() && !hasJoinedRoom.current) {
-        console.log('📊 Joining dashboard room...');
-        socketManager.emit('joinDashboard', {
-          userId: user._id,
-          userRole: user.role,
-          timestamp: Date.now(),
-        });
-        hasJoinedRoom.current = true;
-      }
-    };
-
-    // الانضمام للغرفة إذا كان متصل
-    if (socket.connected) {
-      joinDashboardRoom();
-    }
-
-    // التنظيف عند إلغاء التحميل
     return () => {
-      console.log('🧹 Cleaning up Dashboard Socket...');
       unsubscribe();
-      
-      if (hasJoinedRoom.current) {
-        console.log('📊 Leaving dashboard room...');
-        socketManager.emit('leaveDashboard', {
-          userId: user._id,
-          timestamp: Date.now(),
-        });
-        hasJoinedRoom.current = false;
-      }
     };
   }, [user]);
 
   /**
-   * الاستماع لتحديثات Dashboard
+   * الاستماع لـ event "absentStudentsUpdated" لتحديث قائمة الطلاب الغائبين
    */
   useEffect(() => {
-    if (!isConnected) return;
+    if (!isConnected || !user || user.role !== 'admin') return;
 
-    if (import.meta.env.DEV) {
-      console.log('👂 Setting up dashboard event listeners...');
-    }
+    console.log('👂 [DashboardSocket] Setting up absentStudentsUpdated listener...');
 
-    // معالج تحديث Dashboard
-    const handleDashboardUpdate = (...args: unknown[]) => {
-      const data = args[0] as DashboardUpdateEvent;
-      setDashboardData(data.data as DashboardStats);
-      setLastUpdate(new Date());
+    const handleAbsentStudentsUpdate = (data: unknown) => {
+      // تحديث state بشكل غير متزامن لتقليل وقت معالجة الـ event
+      setLastSocketUpdate(new Date());
+      
+      // تمرير البيانات مباشرة إلى callback باستخدام queueMicrotask
+      // هذا أسرع من setTimeout ويجعل معالج الـ event يعود فوراً
+      if (onAbsentStudentsUpdate) {
+        queueMicrotask(() => {
+          onAbsentStudentsUpdate(data as { data?: unknown[]; count?: number });
+        });
+      }
     };
 
-    // معالج إحصائيات Dashboard
-    const handleStatsUpdate = (...args: unknown[]) => {
-      const stats = args[0] as DashboardStats;
-      setDashboardData(stats);
-      setLastUpdate(new Date());
-    };
-
-    // معالج الأخطاء
-    const handleError = (...args: unknown[]) => {
-      const error = args[0] as { message: string; code?: string };
-      console.error('❌ Dashboard error:', error);
-    };
-
-    // تسجيل المستمعين
-    socketManager.on('dashboardUpdate', handleDashboardUpdate);
-    socketManager.on('statsUpdate', handleStatsUpdate);
-    socketManager.on('error', handleError);
+    // الاشتراك في الحدث
+    socketManager.on('absentStudentsUpdated', handleAbsentStudentsUpdate);
 
     // التنظيف
     return () => {
-      socketManager.off('dashboardUpdate', handleDashboardUpdate);
-      socketManager.off('statsUpdate', handleStatsUpdate);
-      socketManager.off('error', handleError);
+      console.log('🧹 [DashboardSocket] Cleaning up absentStudentsUpdated listener...');
+      socketManager.off('absentStudentsUpdated', handleAbsentStudentsUpdate);
     };
-  }, [isConnected]);
-
-  /**
-   * طلب تحديث Dashboard يدوياً
-   */
-  const requestUpdate = useCallback(() => {
-    if (!isConnected) {
-      if (import.meta.env.DEV) {
-        console.warn('⚠️ Cannot request update: Socket not connected');
-      }
-      return;
-    }
-
-    socketManager.emit('requestDashboardUpdate', {
-      timestamp: Date.now(),
-    });
-  }, [isConnected]);
-
-  /**
-   * إعادة الاتصال يدوياً
-   */
-  const reconnect = useCallback(() => {
-    console.log('🔄 Manual reconnection requested...');
-    if (user) {
-      socketManager.disconnect();
-      setTimeout(() => {
-        socketManager.connect(user._id, user.role);
-      }, 1000);
-    }
-  }, [user]);
+  }, [isConnected, user, onAbsentStudentsUpdate]);
 
   return {
     isConnected,
-    dashboardData,
-    lastUpdate,
-    requestUpdate,
-    reconnect,
-    socketId: socketManager.getSocketId(),
+    lastSocketUpdate,
   };
 };
-
-export default useDashboardSocket;

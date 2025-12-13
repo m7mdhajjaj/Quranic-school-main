@@ -105,20 +105,13 @@ export const useGroupsActions = (
       setIsFormVisible(false);
       setIsEditMode(false);
       setSelectedGroup(null);
-
-      // SweetAlert for success
-      await showSuccessMessage(
-        isEditMode ? "تم التحديث!" : "تم الإضافة!",
-        isEditMode
-          ? "تم تحديث بيانات الحلقة بنجاح"
-          : "تم إضافة الحلقة الجديدة بنجاح"
-      );
+      // Toast notification is already shown in useGroupForm, no need for SweetAlert here
     } catch (error) {
       console.error("خطأ في حفظ الحلقة:", error);
 
       await showErrorMessage("خطأ!", "حدث خطأ أثناء حفظ بيانات الحلقة");
     }
-  }, [isEditMode, fetchGroups]);
+  }, [fetchGroups]);
 
   // Bulk delete
   const handleBulkDelete = useCallback(async () => {

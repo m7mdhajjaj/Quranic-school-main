@@ -16,15 +16,15 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ unreadCount,
       title="الإشعارات"
       aria-label="فتح/إغلاق الإشعارات">
       {/* Container with gradient background */}
-      <div className="relative flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 shadow-lg hover:shadow-xl transition-all duration-300 group-hover:scale-110 group-active:scale-95 overflow-hidden">
+      <div className="relative flex items-center justify-center w-12 h-12 rounded-2xl bg-gray-50 hover:bg-gray-100 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 group-hover:scale-105 group-active:scale-95 overflow-hidden">
         {/* Animated gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/20 via-cyan-400/20 to-blue-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/10 via-cyan-400/10 to-blue-400/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         
         {/* Bell Icon with animation */}
-        <IoNotificationsOutline className="relative z-10 w-6 h-6 text-slate-700 dark:text-slate-200 group-hover:animate-[swing_0.5s_ease-in-out] transition-colors duration-300" />
+        <IoNotificationsOutline className="relative z-10 w-6 h-6 text-gray-700 group-hover:text-emerald-600 group-hover:animate-[swing_0.5s_ease-in-out] transition-colors duration-300" />
 
         {/* Ripple effect on hover */}
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-500/30 to-cyan-500/30 scale-0 group-hover:scale-100 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
+        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 scale-0 group-hover:scale-100 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
       </div>
 
       {/* Badge with modern design */}
@@ -39,10 +39,9 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({ unreadCount,
       )}
 
       {/* Tooltip on hover */}
-      {/* Tooltip on hover */}
-      <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-medium rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap pointer-events-none z-50">
+      <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap pointer-events-none z-50">
         {unreadCount > 0 ? `${unreadCount} إشعار جديد` : 'الإشعارات'}
-        <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 dark:bg-slate-100 rotate-45"></div>
+        <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
       </div>
     </button>
   );

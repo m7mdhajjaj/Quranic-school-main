@@ -17,12 +17,16 @@ interface Props {
   onClose: () => void;
   onSuccess: (groupData: Group | GroupFormData) => void;
   group?: Group;
+  teachers?: any[]; // المعلمون المحملون مسبقاً
+  loadingTeachers?: boolean; // حالة تحميل المعلمين
 }
 
 const AddGroupForm: React.FC<Props> = ({
   onClose,
   onSuccess,
   group,
+  teachers: providedTeachers,
+  loadingTeachers: providedLoadingTeachers,
 }) => {
   const {
     formData,
@@ -42,6 +46,8 @@ const AddGroupForm: React.FC<Props> = ({
     group,
     onSuccess,
     onClose,
+    teachers: providedTeachers,
+    loadingTeachers: providedLoadingTeachers,
   });
 
   // منع scroll الصفحة عند فتح المودل

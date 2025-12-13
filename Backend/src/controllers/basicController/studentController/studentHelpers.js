@@ -6,7 +6,6 @@
 const Group = require('../../../schema/Group');
 const Student = require('../../../schema/Student');
 const { invalidateCache } = require('../../../middleware/cacheMiddleware');
-const { notifyStudentStatsUpdate } = require('../../../Notifications/handlers/dashboardNotifications');
 const { getTeacherInfo } = require('../groupController/helpers');
 
 /**
@@ -272,7 +271,6 @@ const notifyStudentUpdate = async (io, studentId) => {
   await invalidateStudentCaches();
 
   // Notify dashboard
-  notifyStudentStatsUpdate();
 
   // Emit profile update event
   if (io) {

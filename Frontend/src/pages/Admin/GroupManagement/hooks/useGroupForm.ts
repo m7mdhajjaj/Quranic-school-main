@@ -17,12 +17,16 @@ interface UseGroupFormProps {
   group?: Group;
   onSuccess: (groupData: Group | GroupFormData) => void;
   onClose: () => void;
+  teachers?: Teacher[]; // المعلمون المحملون مسبقاً
+  loadingTeachers?: boolean; // حالة تحميل المعلمين
 }
 
 export const useGroupForm = ({
   group,
   onSuccess,
   onClose,
+  teachers: providedTeachers,
+  loadingTeachers: providedLoadingTeachers = false,
 }: UseGroupFormProps) => {
   const [formData, setFormData] = useState<GroupFormData>({
     name: group?.name || "",
@@ -35,29 +39,36 @@ export const useGroupForm = ({
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [teachers, setTeachers] = useState<Teacher[]>([]);
-  const [loadingTeachers, setLoadingTeachers] = useState(false);
+  const [internalTeachers, setInternalTeachers] = useState<Teacher[]>([]);
+  const [internalLoadingTeachers, setInternalLoadingTeachers] = useState(false);
   const [checkingDuplicate, setCheckingDuplicate] = useState<Record<string, boolean>>({});
 
   // Refs for debounce timers
   const debounceTimers = useRef<{ [key: string]: NodeJS.Timeout }>({});
 
-  // تحميل المعلمين - مع تحسين الأداء
+  // استخدام المعلمين الممررة أو تحميلها إذا لم يتم تمريرها
+  const teachers = providedTeachers || internalTeachers;
+  const loadingTeachers = providedTeachers ? providedLoadingTeachers : internalLoadingTeachers;
+
+  // تحميل المعلمين فقط إذا لم يتم تمريرها (fallback للاستخدام من Dashboard)
   useEffect(() => {
+    // إذا تم تمرير المعلمين، لا نحتاج لتحميلها
+    if (providedTeachers !== undefined) return;
+
     let isMounted = true;
     
     const fetchTeachers = async () => {
-      setLoadingTeachers(true);
+      setInternalLoadingTeachers(true);
       try {
         const response = await getAllTeachers();
         if (isMounted && response.data) {
-          setTeachers(response.data);
+          setInternalTeachers(response.data);
         }
       } catch (error) {
         console.error("خطأ في تحميل المعلمين:", error);
       } finally {
         if (isMounted) {
-          setLoadingTeachers(false);
+          setInternalLoadingTeachers(false);
         }
       }
     };
@@ -67,7 +78,7 @@ export const useGroupForm = ({
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [providedTeachers]);
 
   // تنظيف timers عند إغلاق الفورم
   useEffect(() => {

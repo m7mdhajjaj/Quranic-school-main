@@ -20,10 +20,7 @@ export interface StatCardProps {
   value: number;
   color: string;
   bgColor: string;
-  borderColor: string;
-  trend?: string;
   onClick?: () => void;
-  percentage?: number;
 }
 
 export interface ChartData {
@@ -57,4 +54,32 @@ export interface SelectedGroup {
   percentage: number;
   color: string;
   index: number;
+}
+
+export interface ChartsData {
+  groupDistribution: Array<{ _id: string; count: number }>;
+  genderDistribution: Array<{ _id: string; count: number }>;
+  marksDistribution: any[];
+  attendanceByMonth: any[];
+  topStudents?: Array<{
+    name: string;
+    value: number;
+    avgMark?: number;
+    attendanceRate?: number;
+  }>;
+  topTeachers?: Array<{
+    name: string;
+    value: number;
+    studentCount?: number;
+    marksCount?: number;
+    attendanceCount?: number;
+    memorizedCount?: number;
+    reviewCount?: number;
+  }>;
+}
+
+export interface ProcessedChartData {
+  labels: string[];
+  data: number[];
+  colors: string[];
 }

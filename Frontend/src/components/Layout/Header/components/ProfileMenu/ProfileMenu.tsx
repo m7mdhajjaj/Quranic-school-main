@@ -45,14 +45,14 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="absolute right-0 mt-3 w-72 animate-slide-down z-50">
+    <div className="absolute left-0 mt-3 w-72 z-50 transition-all duration-200" dir="rtl">
       <Card 
         variant="elevated" 
         padding="none"
-        className="overflow-hidden backdrop-blur-sm border border-white/20 shadow-2xl transform transition-all duration-200 hover:shadow-3xl"
+        className="overflow-hidden bg-white border border-gray-200 shadow-2xl rounded-2xl"
       >
         {/* User Info Header with Enhanced Design */}
-        <div className="relative bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 px-6 py-6">
+        <div className="relative bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 px-6 py-6 rounded-t-2xl">
           {/* Decorative Background Pattern */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-0 left-0 w-32 h-32 bg-white rounded-full -translate-x-16 -translate-y-16"></div>
@@ -89,7 +89,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
         </div>
 
         {/* Menu Items with Enhanced Buttons */}
-        <div className="p-3 space-y-1">
+        <div className="p-3 space-y-1 bg-white">
           {menuButtons.map((button, index) => (
             <Button
               key={index}
@@ -97,7 +97,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
               size="md"
               onClick={button.onClick}
               leftIcon={button.icon}
-              className={`w-full h-12 ${button.className} font-medium transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-sm hover:shadow-md`}
+              className={`w-full h-12 ${button.className} font-medium transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] rounded-xl`}
             >
               {button.label}
             </Button>
@@ -105,7 +105,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
         </div>
 
         {/* Footer with Subtle Branding */}
-        <div className="px-4 py-3 bg-gradient-to-r from-gray-50 to-gray-100 border-t border-gray-200">
+        <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 rounded-b-2xl">
           <p className="text-xs text-gray-500 text-center font-medium">
             المدرسة القرآنية • الإصدار 2.0
           </p>

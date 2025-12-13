@@ -281,17 +281,15 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
         )}
       </div>
 
-      {/* Status indicator مع Tooltip - استخدام OnlineStatus */}
+      {/* Status indicator - استخدام OnlineStatus */}
       {showStatus && (
-        <Tooltip content={statusTitle} position="top">
-          <OnlineStatus 
-            isOnline={userIsOnline}
-            size={size}
-            position="absolute"
-            showPing={userIsOnline}
-            user={user}
-          />
-        </Tooltip>
+        <OnlineStatus 
+          isOnline={userIsOnline}
+          size={size}
+          position="absolute"
+          showPing={userIsOnline}
+          user={user}
+        />
       )}
 
       {/* Edit button مع Tooltip */}
@@ -340,7 +338,6 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
                 border-2 border-white
                 shadow-sm
               `}
-              title={statusTextValue}
             />
             <span className="text-xs text-gray-600">
               {statusTextValue}

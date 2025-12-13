@@ -79,20 +79,17 @@ export const fetchGroupsData = async (): Promise<{
 };
 
 /**
- * جلب جميع بيانات الداشبورد بشكل متوازٍ (الإحصائيات + الحلقات)
+ * جلب جميع بيانات الداشبورد (الإحصائيات فقط)
+ * ملاحظة: بيانات الحلقات موجودة في fetchDashboardCharts
  */
 export const fetchAllDashboardData = async () => {
   try {
-    console.log("🔄 جلب جميع بيانات الداشبورد...");
+    console.log("🔄 جلب إحصائيات الداشبورد...");
 
-    const [statsResponse, groupsResponse] = await Promise.all([
-      fetchDashboardStats(),
-      fetchGroupsData(),
-    ]);
+    const statsResponse = await fetchDashboardStats();
 
     return {
       stats: statsResponse.data,
-      groups: groupsResponse.data,
       success: true,
       timestamp: new Date().toISOString(),
     };
@@ -142,6 +139,99 @@ export const fetchDashboardCharts = async () => {
     return response.data.data;
   } catch (error) {
     console.error("❌ خطأ في جلب بيانات الرسوم البيانية:", error);
+    throw error;
+  }
+};
+
+/**
+ * Interface لأفضل الطلاب
+ */
+export interface TopStudent {
+  _id: string;
+  name: string;
+  totalMarks: number;
+  averageMark: number;
+  memorizationMarks: number;
+  reviewMarks: number;
+  examMarks: number;
+  memorizationCount: number;
+  reviewCount: number;
+  examCount: number;
+  group: string;
+}
+
+export interface TopStudentsResponse {
+  success: boolean;
+  message: string;
+  data: TopStudent[];
+  count: number;
+}
+
+/**
+ * جلب أفضل 5 طلاب بناءً على العلامات المجمعة
+ * يجمع: علامات الحفظ + علامات المراجعة + علامات الامتحان
+ */
+export const fetchTopStudents = async (): Promise<TopStudentsResponse> => {
+  try {
+    console.log("🏆 جلب أفضل 5 طلاب...");
+
+    const response = await api.get<TopStudentsResponse>("/dashboard/top-students");
+
+    if (!response.data.success) {
+      throw new Error(response.data.message || "فشل في جلب أفضل الطلاب");
+    }
+
+    console.log(`✅ تم جلب ${response.data.count} طالب بنجاح`);
+    return response.data;
+  } catch (error) {
+    console.error("❌ خطأ في جلب أفضل الطلاب:", error);
+    throw error;
+  }
+};
+
+/**
+ * Interface لأفضل المعلمين
+ */
+export interface TopTeacher {
+  _id: string;
+  name: string;
+  totalMarks: number;
+  averageMark: number;
+  memorizationMarks: number;
+  reviewMarks: number;
+  examMarks: number;
+  studentCount: number;
+  memorizationCount: number;
+  reviewCount: number;
+  examCount: number;
+  groups: string[];
+}
+
+export interface TopTeachersResponse {
+  success: boolean;
+  message: string;
+  data: TopTeacher[];
+  count: number;
+}
+
+/**
+ * جلب أفضل 5 معلمين بناءً على مجموع علامات جميع طلابهم
+ * يجمع علامات جميع طلاب كل معلم من جميع حلقاته
+ */
+export const fetchTopTeachers = async (): Promise<TopTeachersResponse> => {
+  try {
+    console.log("🏆 جلب أفضل 5 معلمين...");
+
+    const response = await api.get<TopTeachersResponse>("/dashboard/top-teachers");
+
+    if (!response.data.success) {
+      throw new Error(response.data.message || "فشل في جلب أفضل المعلمين");
+    }
+
+    console.log(`✅ تم جلب ${response.data.count} معلم بنجاح`);
+    return response.data;
+  } catch (error) {
+    console.error("❌ خطأ في جلب أفضل المعلمين:", error);
     throw error;
   }
 };

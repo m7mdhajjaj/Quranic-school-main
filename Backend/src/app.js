@@ -12,6 +12,7 @@ const Student = require('./schema/Student');
 const NotificationService = require('./Notifications/NotificationService');
 const MonthlyChampionService = require('./services/ChampionService');
 const SuspensionService = require('./services/SuspensionService');
+const AttendanceService = require('./services/DashboardService/GetStudentAbsence');
 // Initialize FCM service (reads env FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_SERVICE_ACCOUNT_PATH)
 const FCMService = require('./Notifications/config/FCMService');
 
@@ -199,20 +200,6 @@ app.set('io', io);
 // Store online users
 const onlineUsers = new Map();
 
-// Global function to notify dashboard updates
-global.notifyDashboardUpdate = (updateType, data = null) => {
-  if (io) {
-    const payload = {
-      type: updateType, // 'stats', 'groups', 'full'
-      data: data,
-      timestamp: new Date().toISOString(),
-    };
-
-    console.log(`📊 Broadcasting dashboard update: ${updateType}`);
-    io.to('dashboard').emit('dashboardUpdate', payload);
-  }
-};
-
 // Initialize Notification Service immediately after Socket.IO is ready
 const notificationService = new NotificationService(io);
 global.notificationService = notificationService; // Make it globally accessible
@@ -229,6 +216,11 @@ console.log('🏆 خدمة تتويج الأبطال الشهرية تم تفع�
 SuspensionService.setIO(io); // ربط Socket.IO بخدمة الفصل
 SuspensionService.start();
 console.log('⚠️ خدمة إدارة الفصل المؤقت تم تفعيلها');
+
+// تشغيل Cron Job لتحديث قائمة الطلاب الغائبين عند منتصف الليل
+AttendanceService.setIO(io); // ربط Socket.IO بخدمة الحضور
+AttendanceService.start();
+console.log('📋 خدمة تحديث قائمة الطلاب الغائبين اليومية تم تفعيلها');
 
 // Socket.IO error handling
 io.engine.on('connection_error', (err) => {
@@ -346,17 +338,6 @@ io.on('connection', (socket) => {
       serverId: socket.id,
       clientTimestamp: data?.timestamp,
     });
-  });
-
-  // Dashboard Socket Events
-  socket.on('joinDashboard', (data) => {
-    socket.join('dashboard');
-    console.log(`📊 User ${socket.id} joined dashboard room`, data);
-  });
-
-  socket.on('leaveDashboard', (data) => {
-    socket.leave('dashboard');
-    console.log(`📊 User ${socket.id} left dashboard room`, data);
   });
 
   // Teachers Socket Events
@@ -505,22 +486,6 @@ io.on('connection', (socket) => {
     console.log(`🔔 User ${socket.id} left notifications room`, data);
   });
 
-  socket.on('requestDashboardUpdate', async (data) => {
-    console.log(`📊 Dashboard update requested by ${socket.id}`, data);
-    try {
-      // يمكن إضافة منطق لجلب البيانات المحدثة وإرسالها
-      socket.emit('dashboardUpdate', {
-        type: 'full',
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      console.error('Error handling dashboard update request:', error);
-      socket.emit('error', {
-        message: 'فشل في تحديث الداشبورد',
-        timestamp: new Date().toISOString(),
-      });
-    }
-  });
 
   // Handle logout
   socket.on('logout', async (userData) => {

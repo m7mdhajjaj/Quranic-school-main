@@ -16,6 +16,7 @@ import {
 } from './hooks';
 import { AddGroupForm } from './Model';
 import type { ViewMode } from './types';
+import { getAllTeachers, type Teacher } from '@/Api/teacherApi';
 
 const GroupManagement: React.FC = () => {
   const { user: currentUser } = useAuth();
@@ -26,6 +27,10 @@ const GroupManagement: React.FC = () => {
   // View mode state
   const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [showFilters, setShowFilters] = useState(false);
+  
+  // تحميل المعلمين مرة واحدة عند تحميل الصفحة
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [loadingTeachers, setLoadingTeachers] = useState(false);
 
   // Custom Hooks
   const {
@@ -47,6 +52,30 @@ const GroupManagement: React.FC = () => {
 
   // تعطيل scroll عند فتح Modal
   useDisableBodyScroll(actions.isFormVisible);
+
+  // تحميل المعلمين مرة واحدة عند تحميل الصفحة
+  useEffect(() => {
+    if (!hasPermission) return;
+
+    const fetchTeachers = async () => {
+      setLoadingTeachers(true);
+      try {
+        const response = await getAllTeachers();
+        if (response.success && response.data) {
+          setTeachers(response.data);
+        }
+      } catch (error) {
+        console.error("خطأ في تحميل المعلمين:", error);
+      } finally {
+        setLoadingTeachers(false);
+      }
+    };
+
+    if (teachers.length === 0 && !loadingTeachers) {
+      fetchTeachers();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasPermission]);
 
   // جلب البيانات عند تغيير الفلاتر
   useEffect(() => {
@@ -246,6 +275,8 @@ const GroupManagement: React.FC = () => {
       {actions.isFormVisible && (
         <AddGroupForm
           group={actions.selectedGroup || undefined}
+          teachers={teachers}
+          loadingTeachers={loadingTeachers}
           onClose={() => {
             actions.setIsFormVisible(false);
             actions.setIsEditMode(false);

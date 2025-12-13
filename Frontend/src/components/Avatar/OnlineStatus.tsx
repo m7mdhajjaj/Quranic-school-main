@@ -144,11 +144,6 @@ const OnlineStatusComponent: React.FC<OnlineStatusProps> = ({
     [isOnline]
   );
 
-  const title = useMemo(() => 
-    isOnline ? 'متصل الآن' : 'غير متصل',
-    [isOnline]
-  );
-
   // تجميع classes مرة واحدة بدلاً من concatenation في كل render
   const containerClass = useMemo(() => {
     return [
@@ -176,7 +171,6 @@ const OnlineStatusComponent: React.FC<OnlineStatusProps> = ({
       ref={elementRef}
       className={containerClass}
       aria-label={ariaLabel}
-      title={title}
     >
       {/* Inner glow effect */}
       <div className={innerGlowClass} />

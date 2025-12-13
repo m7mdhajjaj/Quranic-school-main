@@ -49,29 +49,29 @@ const AbsencePage = () => {
     loadData();
   }, [date, currentUser, fetchStudentsForTeacher, fetchStudentAbsenceStats]);
 
-  // Re-fetch on socket update (فقط إذا كان هناك تحديث جديد)
-  useEffect(() => {
-    if (!socketLastUpdate || !currentUser || isLoadingDate) return;
-    
-    // منع re-fetch إذا كان آخر تحديث قبل أقل من 2 ثانية
-    const timeSinceLastUpdate = Date.now() - socketLastUpdate.getTime();
-    if (timeSinceLastUpdate < 2000) return;
-    
-    const refetchData = async () => {
-      try {
-        console.log('🔄 Re-fetching data due to socket update...');
-        if (currentUser.role === "teacher" || currentUser.role === "admin") {
-          await fetchStudentsForTeacher(date);
-        } else if (currentUser.role === "student") {
-          await fetchStudentAbsenceStats(currentUser._id);
-        }
-      } catch (err) {
-        console.error("Error refetching attendance after socket update:", err);
-      }
-    };
-    
-    refetchData();
-  }, [socketLastUpdate]);  // فقط socketLastUpdate للتجنب من re-renders غير ضرورية
+  // TODO: Re-fetch on socket update when attendance socket hook is implemented
+  // useEffect(() => {
+  //   if (!socketLastUpdate || !currentUser || isLoadingDate) return;
+  //   
+  //   // منع re-fetch إذا كان آخر تحديث قبل أقل من 2 ثانية
+  //   const timeSinceLastUpdate = Date.now() - socketLastUpdate.getTime();
+  //   if (timeSinceLastUpdate < 2000) return;
+  //   
+  //   const refetchData = async () => {
+  //     try {
+  //       console.log('🔄 Re-fetching data due to socket update...');
+  //       if (currentUser.role === "teacher" || currentUser.role === "admin") {
+  //         await fetchStudentsForTeacher(date);
+  //       } else if (currentUser.role === "student") {
+  //         await fetchStudentAbsenceStats(currentUser._id);
+  //       }
+  //     } catch (err) {
+  //       console.error("Error refetching attendance after socket update:", err);
+  //     }
+  //   };
+  //   
+  //   refetchData();
+  // }, [socketLastUpdate, currentUser, isLoadingDate, date, fetchStudentsForTeacher, fetchStudentAbsenceStats]);
 
   // Groups available - استخدام حلقات المعلم (بدون خيار "جميع الحلقات")
   const groupsAvailable = useMemo(() => {

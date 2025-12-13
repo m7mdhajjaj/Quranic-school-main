@@ -21,7 +21,7 @@ const getDashboardCharts = async (req, res) => {
       topStudentsData,
       topTeachersData,
     ] = await Promise.all([
-      // Students distribution by group - طريقة مباشرة وأكثر كفاءة
+      // Students distribution by group - مع جلب اسم الحلقة
       Student.aggregate([
         {
           // تجميع حسب حقل group (سواء كان string أو ObjectId)
@@ -37,6 +37,28 @@ const getDashboardCharts = async (req, res) => {
           },
         },
         {
+          // جلب بيانات الحلقة للحصول على الاسم
+          $lookup: {
+            from: "groups",
+            localField: "_id",
+            foreignField: "_id",
+            as: "groupInfo",
+          },
+        },
+        {
+          // تحويل النتيجة لشكل أبسط
+          $project: {
+            _id: {
+              $cond: {
+                if: { $gt: [{ $size: "$groupInfo" }, 0] },
+                then: { $arrayElemAt: ["$groupInfo.name", 0] },
+                else: { $toString: "$_id" }, // إذا لم تجد الحلقة، استخدم الـ ID كـ string
+              },
+            },
+            count: 1,
+          },
+        },
+        {
           // ترتيب حسب العدد
           $sort: { count: -1 },
         },
@@ -46,7 +68,7 @@ const getDashboardCharts = async (req, res) => {
         },
       ]),
 
-      // Students by gender - تجميع الجنس بشكل موحد
+      // Students by gender - تجميع الجنس بشكل موحد مع توحيد القيم
       Student.aggregate([
         {
           $group: {
@@ -55,19 +77,28 @@ const getDashboardCharts = async (req, res) => {
           },
         },
         {
-          // تحويل القيم للإنجليزية لتسهيل العرض في Frontend
+          // توحيد القيم للعربية
           $project: {
             _id: {
               $switch: {
                 branches: [
-                  { case: { $eq: ["$_id", "ذكر"] }, then: "male" },
-                  { case: { $eq: ["$_id", "أنثى"] }, then: "female" },
-                  { case: { $eq: ["$_id", "انثى"] }, then: "female" },
+                  { case: { $eq: ["$_id", "ذكر"] }, then: "ذكور" },
+                  { case: { $eq: ["$_id", "أنثى"] }, then: "إناث" },
+                  { case: { $eq: ["$_id", "انثى"] }, then: "إناث" },
+                  { case: { $eq: ["$_id", "male"] }, then: "ذكور" },
+                  { case: { $eq: ["$_id", "female"] }, then: "إناث" },
                 ],
                 default: "$_id",
               },
             },
             count: 1,
+          },
+        },
+        {
+          // تجميع القيم الموحدة (في حالة وجود "ذكر" و "ذكور")
+          $group: {
+            _id: "$_id",
+            count: { $sum: "$count" },
           },
         },
       ]),

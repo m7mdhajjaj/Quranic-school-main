@@ -1,7 +1,6 @@
 const Student = require("../../../schema/Student");
 const Group = require("../../../schema/Group");
 const bcrypt = require("bcryptjs");
-const { notifyStudentStatsUpdate } = require("../../../Notifications/handlers/dashboardNotifications");
 const { checkDuplicateFields } = require("../../../utils/validators/duplicateChecker");
 const { invalidateCache } = require("../../../middleware/cacheMiddleware");
 const {
@@ -185,7 +184,6 @@ exports.createStudent = async (req, res) => {
     // Invalidate caches and emit events using helpers
     await invalidateStudentCaches();
     emitStudentEvent('created', newStudent);
-    notifyStudentStatsUpdate();
 
     return res.status(201).json({
       success: true,
@@ -277,7 +275,6 @@ exports.updateStudent = async (req, res) => {
       console.log("✅ profileUpdated event emitted to profile room");
     }
 
-    notifyStudentStatsUpdate();
 
     res.json({ success: true, data: updatedStudent });
   } catch (error) {
@@ -305,7 +302,6 @@ exports.deleteStudent = async (req, res) => {
       studentId: req.params.id,
       student: deletedStudent,
     });
-    notifyStudentStatsUpdate();
 
     res.status(200).json({
       success: true,
@@ -354,7 +350,6 @@ exports.bulkDeleteStudents = async (req, res) => {
       });
     }
     
-    notifyStudentStatsUpdate();
 
     res.status(200).json({
       success: true,

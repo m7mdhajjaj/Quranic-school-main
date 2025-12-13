@@ -225,6 +225,111 @@ exports.createAttendance = async (req, res) => {
           count: insertResult.length,
           timestamp: Date.now(),
         });
+        
+        // إرسال event مع البيانات مباشرة لتحديث قائمة الطلاب الغائبين في Dashboard
+        // هذا event يستمع له Dashboard فقط (للادمن)
+        try {
+          // جلب البيانات مباشرة (نفس منطق getAbsentStudentsToday)
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const nextDay = new Date(today);
+          nextDay.setDate(today.getDate() + 1);
+
+          const absentStudents = await Attendance.aggregate([
+            {
+              $match: {
+                date: { $gte: today, $lt: nextDay },
+                isPresent: false,
+              },
+            },
+            {
+              $lookup: {
+                from: "students",
+                localField: "studentId",
+                foreignField: "_id",
+                as: "student",
+              },
+            },
+            { $unwind: { path: "$student", preserveNullAndEmptyArrays: false } },
+            {
+              $lookup: {
+                from: "groups",
+                localField: "student.group",
+                foreignField: "name",
+                as: "groupInfo",
+              },
+            },
+            { $unwind: { path: "$groupInfo", preserveNullAndEmptyArrays: true } },
+            {
+              $lookup: {
+                from: "teachers",
+                localField: "groupInfo.teacher",
+                foreignField: "_id",
+                as: "teacherInfo",
+              },
+            },
+            { $unwind: { path: "$teacherInfo", preserveNullAndEmptyArrays: true } },
+            {
+              $project: {
+                _id: "$student._id",
+                fullName: {
+                  $trim: {
+                    input: {
+                      $concat: [
+                        { $ifNull: ["$student.firstName", ""] },
+                        " ",
+                        { $ifNull: ["$student.fatherName", ""] },
+                        " ",
+                        { $ifNull: ["$student.lastName", ""] },
+                      ],
+                    },
+                  },
+                },
+                teacher: {
+                  $cond: {
+                    if: { $and: ["$teacherInfo.firstName", "$teacherInfo.lastName"] },
+                    then: {
+                      $trim: {
+                        input: {
+                          $concat: [
+                            { $ifNull: ["$teacherInfo.firstName", ""] },
+                            " ",
+                            { $ifNull: ["$teacherInfo.fatherName", ""] },
+                            " ",
+                            { $ifNull: ["$teacherInfo.lastName", ""] },
+                          ],
+                        },
+                      },
+                    },
+                    else: { $ifNull: ["$student.teacher", "غير محدد"] },
+                  },
+                },
+                group: { $ifNull: ["$student.group", "بدون حلقة"] },
+              },
+            },
+            { $sort: { fullName: 1 } },
+          ]);
+
+          // إرسال البيانات مباشرة في Socket event
+          global.io.to("admin-room").emit("absentStudentsUpdated", {
+            date: formattedDate,
+            timestamp: Date.now(),
+            message: "تم تحديث قائمة الطلاب الغائبين",
+            reason: "attendance_saved",
+            data: absentStudents,
+            count: absentStudents.length,
+          });
+          console.log(`📡 Broadcasting absentStudentsUpdated event with ${absentStudents.length} absent students`);
+        } catch (error) {
+          console.error("❌ خطأ في جلب البيانات لإرسالها في Socket:", error);
+          // إرسال event بدون بيانات (Frontend سيجلبها)
+          global.io.to("admin-room").emit("absentStudentsUpdated", {
+            date: formattedDate,
+            timestamp: Date.now(),
+            message: "تم تحديث قائمة الطلاب الغائبين",
+            reason: "attendance_saved",
+          });
+        }
       }
 
       return res.status(201).json({ message: "تم حفظ سجل الحضور بنجاح" });

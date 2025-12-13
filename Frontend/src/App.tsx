@@ -104,38 +104,66 @@ import NotificationPermissionPrompt from "./components/Notifications/Notificatio
 // ============================================================================
 /**
  * Handles all routing for admin users
- * - Shows unified Header with admin-specific navigation items
+ * - Shows AdminLayout with AdminHeader and AdminSidebar
  * - Provides access to admin dashboard and management pages
- * - Footer is now displayed for admin pages
+ * - Footer is NOT displayed for admin pages (only for teacher and student)
+ * 
+ * Admin Routes Structure:
+ * 1. Dashboard & Management Pages (/admin/*)
+ * 2. Academic Pages (shared with teachers)
+ * 3. Communication Pages
+ * 4. User Settings
+ * 5. Special Pages (Privacy, Terms, Contact)
  */
 const AdminRoutes: React.FC = () => {
   return (
     <Layout>
       <Routes>
-        {/* ====== Admin Dashboard Routes ====== */}
+        {/* ============================================
+            الصفحة الرئيسية - Dashboard
+            ============================================ */}
+        <Route path="/" element={<AdminDashboard />} />
+        <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+
+        {/* ============================================
+            صفحات الإدارة - Management Pages
+            ============================================ */}
         <Route path="/admin/students" element={<StudentsManagement />} />
         <Route path="/admin/teachers" element={<TeachersManagement />} />
         <Route path="/admin/groups" element={<GroupManagement />} />
         <Route path="/admin/settings" element={<NotFound />} />
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/" element={<AdminDashboard />} />
 
-        {/* ====== Admin - Academic Pages ====== */}
+        {/* ============================================
+            الصفحات الأكاديمية - Academic Pages
+            ============================================ */}
         <Route path="/timetable" element={<Timetable />} />
 
-        {/* ====== Admin - User Settings ====== */}
+        {/* ============================================
+            صفحات التواصل - Communication Pages
+            ============================================ */}
+        <Route path="/chat" element={<NotFound />} />
+
+        {/* ============================================
+            الإعدادات الشخصية - User Settings
+            ============================================ */}
         <Route path="/profile" element={<Profile />} />
 
-        {/* ====== Admin - Authentication ====== */}
-        <Route path="/login" element={<Login />} />
-
-        {/* ====== Special Pages ====== */}
+        {/* ============================================
+            صفحات خاصة - Special Pages
+            ============================================ */}
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/contact" element={<Contact />} />
 
-        {/* ====== Fallback - Redirect to Dashboard ====== */}
+        {/* ============================================
+            تسجيل الدخول - Authentication
+            ============================================ */}
+        <Route path="/login" element={<Login />} />
+
+        {/* ============================================
+            Fallback - إعادة توجيه للداشبورد
+            ============================================ */}
         <Route path="*" element={<AdminDashboard />} />
       </Routes>
     </Layout>
@@ -147,136 +175,143 @@ const AdminRoutes: React.FC = () => {
 // ============================================================================
 /**
  * Handles all routing for teacher users
- * - Shows unified Header with teacher-specific navigation
+ * - Shows Header and Footer (Layout component)
  * - Has access to management features and academic tools
  * - Can view and manage student data
  * - Restricted from admin-only pages
+ * 
+ * Teacher Routes Structure:
+ * 1. Home & Authentication
+ * 2. Academic Pages (Goals, Marks, Ranking, Tests, Reports, Timetable)
+ * 3. Communication & Activities (News, Chat, Activities)
+ * 4. Attendance & Management (Absence, Warnings)
+ * 5. Points Game
+ * 6. Islamic Resources (Prayer Times, Quran, Azkar)
+ * 7. User Settings & Special Pages
  */
 const TeacherRoutes: React.FC = () => {
+  // Loading fallback component
+  const LoadingFallback = ({ message }: { message: string }) => (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
+        <p className="mt-4 text-gray-600 font-medium">{message}</p>
+      </div>
+    </div>
+  );
+
   return (
     <Layout>
       <Routes>
-        {/* ====== Home & Authentication ====== */}
+        {/* ============================================
+            الصفحة الرئيسية وتسجيل الدخول
+            ============================================ */}
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
 
-        {/* ====== Academic Pages - Teacher Access ====== */}
-        <Route path="/goals" element={
-          <React.Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
-                <p className="mt-4 text-gray-600 font-medium">جاري تحميل الأهداف...</p>
-              </div>
-            </div>
-          }>
-            <Goals />
-          </React.Suspense>
-        } />
-        <Route path="/daily-marks" element={
-          <React.Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
-                <p className="mt-4 text-gray-600 font-medium">جاري تحميل العلامات اليومية...</p>
-              </div>
-            </div>
-          }>
-            <DailyMarks />
-          </React.Suspense>
-        } />
+        {/* ============================================
+            الصفحات الأكاديمية - Academic Pages
+            ============================================ */}
+        <Route 
+          path="/goals" 
+          element={
+            <React.Suspense fallback={<LoadingFallback message="جاري تحميل الأهداف..." />}>
+              <Goals />
+            </React.Suspense>
+          } 
+        />
+        <Route 
+          path="/daily-marks" 
+          element={
+            <React.Suspense fallback={<LoadingFallback message="جاري تحميل العلامات اليومية..." />}>
+              <DailyMarks />
+            </React.Suspense>
+          } 
+        />
         <Route path="/ranking" element={<Ranking />} />
         <Route path="/test" element={<NotFound />} />
         <Route path="/exam-schedule" element={<ExamSchedule />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/timetable" element={<Timetable />} />
 
-        {/* ====== Communication & Activities ====== */}
-        <Route path="/news" element={
-          <React.Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
-                <p className="mt-4 text-gray-600 font-medium">جاري تحميل الأخبار...</p>
-              </div>
-            </div>
-          }>
-            <News />
-          </React.Suspense>
-        } />
-        {/* <Route path="/chat" element={<Chat />} /> */}
+        {/* ============================================
+            التواصل والأنشطة - Communication & Activities
+            ============================================ */}
+        <Route 
+          path="/news" 
+          element={
+            <React.Suspense fallback={<LoadingFallback message="جاري تحميل الأخبار..." />}>
+              <News />
+            </React.Suspense>
+          } 
+        />
+        <Route path="/chat" element={<NotFound />} />
         <Route path="/activities" element={<Activities />} />
 
-        {/* ====== Attendance & Management - Teacher Features ====== */}
-        <Route path="/absence" element={
-          <React.Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
-                <p className="mt-4 text-gray-600 font-medium">جاري تحميل الحضور والغياب...</p>
-              </div>
-            </div>
-          }>
-            <Absence />
-          </React.Suspense>
-        } />
-        {/* <Route path="/my-students" element={<MyStudents />} /> */}
+        {/* ============================================
+            الحضور والإدارة - Attendance & Management
+            ============================================ */}
+        <Route 
+          path="/absence" 
+          element={
+            <React.Suspense fallback={<LoadingFallback message="جاري تحميل الحضور والغياب..." />}>
+              <Absence />
+            </React.Suspense>
+          } 
+        />
         <Route path="/warnings" element={<Warnings />} />
 
-        {/* ====== Points Game ====== */}
-        <Route path="/points-game" element={
-          <React.Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
-                <p className="mt-4 text-gray-600 font-medium">جاري تحميل لعبة النقاط...</p>
-              </div>
-            </div>
-          }>
-            <PointsGame />
-          </React.Suspense>
-        } />
+        {/* ============================================
+            لعبة النقاط - Points Game
+            ============================================ */}
+        <Route 
+          path="/points-game" 
+          element={
+            <React.Suspense fallback={<LoadingFallback message="جاري تحميل لعبة النقاط..." />}>
+              <PointsGame />
+            </React.Suspense>
+          } 
+        />
 
-        {/* ====== Islamic Resources ====== */}
+        {/* ============================================
+            الموارد الإسلامية - Islamic Resources
+            ============================================ */}
         <Route path="/prayer-times" element={<PrayerTimesPage />} />
-        <Route path="/quran" element={
-          <React.Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
-                <p className="mt-4 text-gray-600 font-medium">جاري تحميل القرآن الكريم...</p>
-              </div>
-            </div>
-          }>
-            <QuranPage />
-          </React.Suspense>
-        } />
-        <Route path="/quran-audio" element={
-          <React.Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
-                <p className="mt-4 text-gray-600 font-medium">جاري تحميل القرآن الصوتي...</p>
-              </div>
-            </div>
-          }>
-            <QuranAudio />
-          </React.Suspense>
-        } />
+        <Route 
+          path="/quran" 
+          element={
+            <React.Suspense fallback={<LoadingFallback message="جاري تحميل القرآن الكريم..." />}>
+              <QuranPage />
+            </React.Suspense>
+          } 
+        />
+        <Route 
+          path="/quran-audio" 
+          element={
+            <React.Suspense fallback={<LoadingFallback message="جاري تحميل القرآن الصوتي..." />}>
+              <QuranAudio />
+            </React.Suspense>
+          } 
+        />
         <Route path="/azkar" element={<Azkar />} />
 
-        {/* ====== User Settings ====== */}
+        {/* ============================================
+            الإعدادات الشخصية - User Settings
+            ============================================ */}
         <Route path="/profile" element={<Profile />} />
-        {/* ====== Special Pages ====== */}
+
+        {/* ============================================
+            صفحات خاصة - Special Pages
+            ============================================ */}
         <Route path="/soon" element={<Soon />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/contact" element={<Contact />} />
 
-        {/* ====== Protected & Fallback Routes ====== */}
-        {/* Block access to admin routes */}
+        {/* ============================================
+            Protected & Fallback Routes
+            ============================================ */}
         <Route path="/admin/*" element={<NotFound />} />
-        {/* 404 page for undefined routes */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Layout>
@@ -288,147 +323,150 @@ const TeacherRoutes: React.FC = () => {
 // ============================================================================
 /**
  * Handles all routing for student users
- * - Shows unified Header with student-specific navigation
+ * - Shows Header and Footer (Layout component)
  * - Limited access compared to teachers
  * - Can view their own data and resources
  * - Cannot access management or admin features
+ * 
+ * Student Routes Structure:
+ * 1. Home & Authentication
+ * 2. Academic Pages (Goals, Marks, Ranking, Tests, Reports, Timetable)
+ * 3. Communication & Activities (News, Chat, Activities)
+ * 4. Attendance (View Only)
+ * 5. Points Game
+ * 6. Islamic Resources (Prayer Times, Quran, Azkar)
+ * 7. User Settings & Special Pages
  */
 const StudentRoutes: React.FC = () => {
+  // Loading fallback component
+  const LoadingFallback = ({ message }: { message: string }) => (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
+        <p className="mt-4 text-gray-600 font-medium">{message}</p>
+      </div>
+    </div>
+  );
+
   return (
     <Layout>
       <Routes>
-        {/* ====== Home & Authentication ====== */}
+        {/* ============================================
+            الصفحة الرئيسية وتسجيل الدخول
+            ============================================ */}
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
 
-        {/* ====== Academic Pages - Student View Only ====== */}
-        <Route path="/goals" element={
-          <React.Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
-                <p className="mt-4 text-gray-600 font-medium">جاري تحميل الأهداف...</p>
-              </div>
-            </div>
-          }>
-            <Goals />
-          </React.Suspense>
-        } />
-        <Route path="/daily-marks" element={
-          <React.Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
-                <p className="mt-4 text-gray-600 font-medium">جاري تحميل العلامات اليومية...</p>
-              </div>
-            </div>
-          }>
-            <DailyMarks />
-          </React.Suspense>
-        } />
+        {/* ============================================
+            الصفحات الأكاديمية - Academic Pages
+            ============================================ */}
+        <Route 
+          path="/goals" 
+          element={
+            <React.Suspense fallback={<LoadingFallback message="جاري تحميل الأهداف..." />}>
+              <Goals />
+            </React.Suspense>
+          } 
+        />
+        <Route 
+          path="/daily-marks" 
+          element={
+            <React.Suspense fallback={<LoadingFallback message="جاري تحميل العلامات اليومية..." />}>
+              <DailyMarks />
+            </React.Suspense>
+          } 
+        />
         <Route path="/ranking" element={<Ranking />} />
         <Route path="/exam-schedule" element={<ExamSchedule />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/timetable" element={<Timetable />} />
-        <Route path="/test" element={
-          <React.Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
-                <p className="mt-4 text-gray-600 font-medium">جاري تحميل الاختبار...</p>
-              </div>
-            </div>
-          }>
-            <Test />
-          </React.Suspense>
-        } />
-        {/* ====== Communication & Activities ====== */}
-        <Route path="/news" element={
-          <React.Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
-                <p className="mt-4 text-gray-600 font-medium">جاري تحميل الأخبار...</p>
-              </div>
-            </div>
-          }>
-            <News />
-          </React.Suspense>
-        } />
-        {/* <Route path="/chat" element={<Chat />} /> */}
+        <Route 
+          path="/test" 
+          element={
+            <React.Suspense fallback={<LoadingFallback message="جاري تحميل الاختبار..." />}>
+              <Test />
+            </React.Suspense>
+          } 
+        />
+
+        {/* ============================================
+            التواصل والأنشطة - Communication & Activities
+            ============================================ */}
+        <Route 
+          path="/news" 
+          element={
+            <React.Suspense fallback={<LoadingFallback message="جاري تحميل الأخبار..." />}>
+              <News />
+            </React.Suspense>
+          } 
+        />
+        <Route path="/chat" element={<NotFound />} />
         <Route path="/activities" element={<Activities />} />
 
-        {/* ====== Attendance - View Only ====== */}
-        <Route path="/absence" element={
-          <React.Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
-                <p className="mt-4 text-gray-600 font-medium">جاري تحميل الحضور والغياب...</p>
-              </div>
-            </div>
-          }>
-            <Absence />
-          </React.Suspense>
-        } />
+        {/* ============================================
+            الحضور والغياب - Attendance (View Only)
+            ============================================ */}
+        <Route 
+          path="/absence" 
+          element={
+            <React.Suspense fallback={<LoadingFallback message="جاري تحميل الحضور والغياب..." />}>
+              <Absence />
+            </React.Suspense>
+          } 
+        />
         <Route path="/warnings" element={<Warnings />} />
 
-        {/* ====== Points Game ====== */}
-        <Route path="/points-game" element={
-          <React.Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
-                <p className="mt-4 text-gray-600 font-medium">جاري تحميل لعبة النقاط...</p>
-              </div>
-            </div>
-          }>
-            <PointsGame />
-          </React.Suspense>
-        } />
+        {/* ============================================
+            لعبة النقاط - Points Game
+            ============================================ */}
+        <Route 
+          path="/points-game" 
+          element={
+            <React.Suspense fallback={<LoadingFallback message="جاري تحميل لعبة النقاط..." />}>
+              <PointsGame />
+            </React.Suspense>
+          } 
+        />
 
-        {/* ====== Islamic Resources ====== */}
+        {/* ============================================
+            الموارد الإسلامية - Islamic Resources
+            ============================================ */}
         <Route path="/prayer-times" element={<PrayerTimesPage />} />
-        <Route path="/quran" element={
-          <React.Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
-                <p className="mt-4 text-gray-600 font-medium">جاري تحميل القرآن الكريم...</p>
-              </div>
-            </div>
-          }>
-            <QuranPage />
-          </React.Suspense>
-        } />
-        <Route path="/quran-audio" element={
-          <React.Suspense fallback={
-            <div className="min-h-screen flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-12 h-12 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mx-auto"></div>
-                <p className="mt-4 text-gray-600 font-medium">جاري تحميل القرآن الصوتي...</p>
-              </div>
-            </div>
-          }>
-            <QuranAudio />
-          </React.Suspense>
-        } />
+        <Route 
+          path="/quran" 
+          element={
+            <React.Suspense fallback={<LoadingFallback message="جاري تحميل القرآن الكريم..." />}>
+              <QuranPage />
+            </React.Suspense>
+          } 
+        />
+        <Route 
+          path="/quran-audio" 
+          element={
+            <React.Suspense fallback={<LoadingFallback message="جاري تحميل القرآن الصوتي..." />}>
+              <QuranAudio />
+            </React.Suspense>
+          } 
+        />
         <Route path="/azkar" element={<Azkar />} />
 
-        {/* ====== User Settings ====== */}
+        {/* ============================================
+            الإعدادات الشخصية - User Settings
+            ============================================ */}
         <Route path="/profile" element={<Profile />} />
-        {/* ====== Special Pages ====== */}
+
+        {/* ============================================
+            صفحات خاصة - Special Pages
+            ============================================ */}
         <Route path="/soon" element={<Soon />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/contact" element={<Contact />} />
 
-        {/* ====== Protected & Fallback Routes ====== */}
-        {/* Block access to management features (teacher-only) */}
-        <Route path="/test" element={<NotFound />} />
-        {/* Block access to admin routes */}
+        {/* ============================================
+            Protected & Fallback Routes
+            ============================================ */}
         <Route path="/admin/*" element={<NotFound />} />
-        {/* 404 page for undefined routes */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Layout>

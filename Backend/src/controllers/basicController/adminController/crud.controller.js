@@ -1,6 +1,5 @@
 const Admin = require("../../../schema/Admin");
 const bcrypt = require("bcryptjs");
-const { notifyDashboardUpdate } = require("../../../Notifications/handlers/dashboardNotifications");
 const { calculateAge, generateAdminId } = require("./utils.controller");
 
 /**
@@ -89,7 +88,6 @@ exports.createAdmin = async (req, res) => {
     console.log("Admin created successfully:", doc._id);
     
     // إشعار تحديث الداشبورد
-    notifyDashboardUpdate('stats');
     
     return res
       .status(201)
@@ -129,7 +127,6 @@ exports.updateAdmin = async (req, res) => {
     }
 
     // إشعار تحديث الداشبورد
-    notifyDashboardUpdate('stats');
 
     // إرسال تحديث مباشر عبر Socket
     const io = req.app.get("io");
@@ -175,7 +172,6 @@ exports.deleteAdmin = async (req, res) => {
     });
     
     // Notify dashboard about admin deletion
-    notifyDashboardUpdate('stats');
     
     return res
       .status(200)

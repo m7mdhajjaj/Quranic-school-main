@@ -3,6 +3,7 @@ const { createAttendance } = require("./createController");
 const {
   getAttendanceByDate,
   getStudentAttendance,
+  getAbsentStudentsToday,
 } = require("./getController");
 const {
   getStudentAttendanceStats,
@@ -21,6 +22,7 @@ module.exports = {
   createAttendance,
   getAttendanceByDate,
   getStudentAttendance,
+  getAbsentStudentsToday,
   getStudentAttendanceStats,
   deleteAttendance,
   updateGroupsMonthlyStats,

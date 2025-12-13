@@ -1,18 +1,15 @@
 // Helper functions for dashboard notifications
+// DISABLED: Dashboard Socket functionality removed
 
 /**
  * إرسال إشعار تحديث الداشبورد
  * @param {string} updateType - نوع التحديث ('stats', 'groups', 'full')
  * @param {object} data - البيانات المحدثة (اختياري)
+ * @deprecated Dashboard Socket functionality has been removed
  */
 const notifyDashboardUpdate = (updateType = 'full', data = null) => {
-  try {
-    if (global.notifyDashboardUpdate) {
-      global.notifyDashboardUpdate(updateType, data);
-    }
-  } catch (error) {
-    console.error('خطأ في إرسال إشعار تحديث الداشبورد:', error);
-  }
+  // Disabled - Dashboard Socket removed
+  return;
 };
 
 /**

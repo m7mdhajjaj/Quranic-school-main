@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   getAttendanceByDate,
   getStudentAttendance,
+  getAbsentStudentsToday,
   getTeacherGroupsForAttendance,
   getTeacherGroupsForMarks,
 } = require("../../controllers/AttendanceController/index");
@@ -14,6 +15,9 @@ router.get("/date/:date", protect, getAttendanceByDate);
 
 // Get all attendance records for a specific student
 router.get("/student/:studentId", protect, getStudentAttendance);
+
+// Get absent students for today
+router.get("/absent/today", protect, getAbsentStudentsToday);
 
 // Get all groups for a teacher (for attendance page)
 // Query params: includeStudents (default: true), filter (default: 'all')

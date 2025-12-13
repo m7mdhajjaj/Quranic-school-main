@@ -65,6 +65,26 @@ export const getStudentAttendance = async (studentId: string): Promise<any[]> =>
   return response.data;
 };
 
+// Get absent students for today
+export interface AbsentStudentToday {
+  _id: string;
+  fullName: string;
+  teacher: string;
+  group: string;
+}
+
+export interface AbsentStudentsTodayResponse {
+  success: boolean;
+  data: AbsentStudentToday[];
+  count: number;
+  message?: string;
+}
+
+export const getAbsentStudentsToday = async (): Promise<AbsentStudentsTodayResponse> => {
+  const response = await api.get('/attendance/absent/today');
+  return response.data;
+};
+
 // Bulk create/update attendance records
 export const bulkSaveAttendance = async (data: {
   date: string;
