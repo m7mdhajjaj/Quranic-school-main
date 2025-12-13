@@ -4,8 +4,8 @@ import {
   showCenteredSwal,
   showWarningMessage,
   showErrorMessage,
-} from "@/components/utils/sweetalertUtils";
-import { showSuccessToast } from "@/components/utils/toastUtils";
+} from "@/utils/sweetalertUtils";
+import { showSuccessToast } from "@/utils/toastUtils";
 import type { Student } from "../types";
 
 export const useStudentsActions = (

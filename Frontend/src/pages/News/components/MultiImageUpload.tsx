@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
-import { Button } from '../UI';
+import { Button } from '@/components/UI';
 
 interface MultiImageUploadProps {
   onImagesChange: (files: File[]) => void;
@@ -11,6 +11,11 @@ interface MultiImageUploadProps {
   mode?: 'single' | 'multiple'; // وضع الرفع: صورة واحدة أو متعدد
 }
 
+/**
+ * مكون رفع صور متعددة
+ * 
+ * مستخدم في: pages/News/components/NewsModal.tsx
+ */
 const MultiImageUpload = ({
   onImagesChange,
   existingImages = [],

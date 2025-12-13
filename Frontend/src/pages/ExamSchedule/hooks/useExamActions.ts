@@ -9,7 +9,7 @@ import {
   deleteExam,
   type Exam,
 } from "@/Api/ExamShedule";
-import { showSuccessMessage, showErrorMessage } from "@/components/utils/sweetalertUtils";
+import { showSuccessMessage, showErrorMessage } from "@/utils/sweetalertUtils";
 import Swal from 'sweetalert2';
 
 // Helper function: Check if time is within allowed range (12:00 - 21:00)

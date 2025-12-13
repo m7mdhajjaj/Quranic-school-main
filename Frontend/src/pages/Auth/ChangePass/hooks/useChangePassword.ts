@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { changePassword } from "@/Api/authApi";
-import { showErrorMessage } from "@/components/utils/sweetalertUtils";
-import { showSuccessToast } from "@/components/utils/toastUtils";
+import { showErrorMessage } from "@/utils/sweetalertUtils";
+import { showSuccessToast } from "@/utils/toastUtils";
 import { 
   validatePassword, 
   calculatePasswordStrength,

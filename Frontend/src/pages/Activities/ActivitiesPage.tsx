@@ -4,7 +4,7 @@ import 'aos/dist/aos.css';
 import {
   showSuccessToast,
   showErrorToast,
-} from "@/components/utils/toastUtils";
+} from "@/utils/toastUtils";
 import { createActivity, updateActivity } from "@/Api/activityApi";
 import {
   validateActivityForm,

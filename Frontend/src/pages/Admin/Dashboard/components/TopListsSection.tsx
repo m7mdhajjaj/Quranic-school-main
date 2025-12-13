@@ -1,6 +1,6 @@
 import React from "react";
 import { FaMedal, FaStar } from "react-icons/fa";
-import { TopListCard, type TopListItem } from "@/components/TopList";
+import TopListCard, { type TopListItem } from "./TopListCard";
 
 interface TopStudent {
   name: string;

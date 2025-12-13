@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { ChangeEvent } from 'react';
-import { showCenteredSwal } from '@/components/utils/sweetalertUtils';
+import { showCenteredSwal } from '@/utils/sweetalertUtils';
 import {
   getAllNews,
   createNews,
@@ -12,7 +12,7 @@ import { validateNewsForm } from '@/Validation/NewsValidation';
 import {
   showSuccessToast,
   showErrorToast,
-} from '@/components/utils/toastUtils';
+} from '@/utils/toastUtils';
 import { useAuth } from '@/hooks/useAuth';
 
 export const useNewsData = () => {

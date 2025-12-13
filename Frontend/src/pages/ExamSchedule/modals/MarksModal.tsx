@@ -6,7 +6,7 @@ import React from 'react';
 import { TransparentModal } from './TransparentModal';
 import { LoadingSpinner } from '@/components/UI';
 import type { Exam, StudentDoc } from "@/Api/ExamShedule";
-import { formatArabicDate, formatTime12Arabic } from "@/utils/helpers/dateHelpers";
+import { formatDateArabic, formatTime12Arabic } from "../utils";
 
 interface MarksModalProps {
   open: boolean;

@@ -10,8 +10,8 @@ import {
   getWarningLabel,
   getWarningDescription,
 } from "../types/Constans";
-import { showConfirmMessage, showCenteredSwal } from "@/components/utils/sweetalertUtils";
-import { showSuccessToast, showErrorToast } from "@/components/utils/toastUtils";
+import { showConfirmMessage, showCenteredSwal } from "@/utils/sweetalertUtils";
+import { showSuccessToast, showErrorToast } from "@/utils/toastUtils";
 
 interface UseWarningsModalsProps {
   giveWarning: (

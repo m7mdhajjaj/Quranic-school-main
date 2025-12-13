@@ -1,6 +1,8 @@
 /**
  * TopListCard Component
  * Reusable component for displaying top students or teachers list
+ * 
+ * مستخدم في: pages/Admin/Dashboard/components/TopListsSection.tsx
  */
 
 import React from "react";

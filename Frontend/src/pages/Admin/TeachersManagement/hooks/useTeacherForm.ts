@@ -11,7 +11,7 @@ import {
   type Teacher,
 } from '@/Api/teacherApi';
 import { type Group } from '@/Api/groupApi';
-import { showErrorMessage } from '@/components/utils/sweetalertUtils';
+import { showErrorMessage } from '@/utils/sweetalertUtils';
 
 // دالة لتحويل التاريخ من الخادم إلى تنسيق input[type="date"]
 const formatDateForInput = (dateValue?: string | Date): string => {

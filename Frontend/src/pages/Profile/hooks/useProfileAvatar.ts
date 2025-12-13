@@ -1,8 +1,8 @@
 // hooks/useProfileAvatar.ts
 import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { showConfirmDialog } from "@/components/utils/sweetalertUtils";
-import { showSuccessToast, showErrorToast } from "@/components/utils/toastUtils";
+import { showConfirmDialog } from "@/utils/sweetalertUtils";
+import { showSuccessToast, showErrorToast } from "@/utils/toastUtils";
 import {
   uploadUserAvatar,
   deleteUserAvatar,

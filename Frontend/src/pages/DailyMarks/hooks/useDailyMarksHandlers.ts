@@ -3,11 +3,11 @@ import { createMark } from "@/Api/dailyMarksApi";
 import {
   showCenteredSwal,
   showWarningMessage,
-} from "@/components/utils/sweetalertUtils";
+} from "@/utils/sweetalertUtils";
 import {
   showSuccessToast,
   showErrorToast,
-} from "@/components/utils/toastUtils";
+} from "@/utils/toastUtils";
 import type { Section, Mark } from "../types/types";
 
 interface UseHandlersProps {

@@ -2,12 +2,12 @@ import { useState } from "react";
 import { deleteTeacher, bulkDeleteTeachers, exportTeachersToCSV } from "@/Api/teacherApi";
 import {
   showCenteredSwal,
-} from "@/components/utils/sweetalertUtils";
+} from "@/utils/sweetalertUtils";
 import { useSounds } from "@/components/Hooks/useSounds";
 import {
   showSuccessToast,
   showErrorToast,
-} from "@/components/utils/toastUtils";
+} from "@/utils/toastUtils";
 import type { Teacher, TeacherFiltersParams } from "../types";
 
 export const useTeachersActions = (

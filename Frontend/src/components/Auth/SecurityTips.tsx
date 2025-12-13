@@ -32,6 +32,14 @@ export const SecurityTips: React.FC<SecurityTipsProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
+  // Prepare button props with proper ARIA attributes
+  const buttonProps: React.ButtonHTMLAttributes<HTMLButtonElement> = collapsible
+    ? {
+        'aria-expanded': isOpen,
+        'aria-label': 'إظهار/إخفاء نصائح الأمان',
+      }
+    : {};
+
   const defaultTips = [
     'لا تشارك كلمة المرور مع أي شخص',
     'استخدم كلمة مرور فريدة لكل حساب',
@@ -64,8 +72,7 @@ export const SecurityTips: React.FC<SecurityTipsProps> = ({
             : 'cursor-default'
           }
         `}
-        aria-expanded={isOpen}
-        aria-label={collapsible ? 'إظهار/إخفاء نصائح الأمان' : undefined}
+        {...buttonProps}
       >
         <div className="flex items-center gap-3 flex-1">
           <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">

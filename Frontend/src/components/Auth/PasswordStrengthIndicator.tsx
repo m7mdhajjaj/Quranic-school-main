@@ -27,16 +27,18 @@ interface PasswordStrengthIndicatorProps {
  * مكون قابل لإعادة الاستخدام لعرض قوة كلمة المرور
  * مع ألوان واضحة وتصميم احترافي
  */
-export const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps> = ({
+export const PasswordStrengthIndicator: React.FC<
+  PasswordStrengthIndicatorProps
+> = ({
   password,
   score,
   label,
-  color,
+
   className = '',
 }) => {
   const progressValue = password ? Math.min(score, 100) : 0;
   const displayLabel = password ? label : 'لم يتم الإدخال';
-  
+
   // تحديد الألوان بناءً على القوة
   const getStrengthColors = (strength: string) => {
     switch (strength) {
@@ -83,7 +85,7 @@ export const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps>
         <span className="text-xs font-medium text-gray-700 text-right">
           قوة كلمة المرور:
         </span>
-        <span 
+        <span
           className={`
             text-xs font-bold transition-colors duration-300
             ${password ? colors.text : 'text-gray-400'}
@@ -92,9 +94,9 @@ export const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps>
           {displayLabel}
         </span>
       </div>
-      
+
       {/* Progress Bar Container */}
-      <div 
+      <div
         className={`
           relative h-2.5 rounded-full overflow-hidden
           ${password ? colors.bgLight : 'bg-gray-100'}
@@ -109,14 +111,14 @@ export const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps>
             ${password ? colors.bg : 'bg-gray-300'}
             shadow-sm
           `}
-          style={{ 
+          style={{
             width: `${progressValue}%`,
-            transition: 'width 0.5s ease-out, background-color 0.3s ease-out'
+            transition: 'width 0.5s ease-out, background-color 0.3s ease-out',
           }}
         >
           {/* Shine Effect */}
           {password && progressValue > 0 && (
-            <div 
+            <div
               className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"
               style={{
                 animation: 'shimmer 2s infinite',
@@ -132,14 +134,14 @@ export const PasswordStrengthIndicator: React.FC<PasswordStrengthIndicatorProps>
           {[0, 1, 2, 3].map((segment) => {
             const segmentValue = (segment + 1) * 25;
             const isActive = progressValue >= segmentValue;
-            const segmentColor = isActive 
-              ? progressValue < 50 
-                ? 'bg-red-500' 
-                : progressValue < 75 
-                ? 'bg-amber-500' 
-                : 'bg-emerald-500'
+            const segmentColor = isActive
+              ? progressValue < 50
+                ? 'bg-red-500'
+                : progressValue < 75
+                  ? 'bg-amber-500'
+                  : 'bg-emerald-500'
               : 'bg-gray-200';
-            
+
             return (
               <div
                 key={segment}

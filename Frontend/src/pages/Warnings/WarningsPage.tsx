@@ -111,7 +111,7 @@ const WarningsPage: React.FC = () => {
     }
 
     // إظهار إشعار
-    import('@/components/utils/toastUtils').then(({ showSuccessToast }) => {
+    import('@/utils/toastUtils').then(({ showSuccessToast }) => {
       showSuccessToast(data.message || 'تم إعادة طالب إلى حلقته');
     });
   }, [isTeacher, selectedGroup, fetchTeacherStatistics, handleGroupSelect]);
@@ -121,7 +121,7 @@ const WarningsPage: React.FC = () => {
     console.log("✅ Suspension restored notification:", data);
     
     // إظهار إشعار للطالب
-    import('@/components/utils/toastUtils').then(({ showSuccessToast }) => {
+    import('@/utils/toastUtils').then(({ showSuccessToast }) => {
       showSuccessToast(data.message || 'تمت إعادتك إلى حلقتك');
     });
     

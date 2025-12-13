@@ -5,5 +5,7 @@ export { DonutChart } from "./DonutChart";
 export { QuickActions } from "./QuickActions";
 export { AttendanceSection } from "./AttendanceSection";
 export { TopListsSection } from "./TopListsSection";
+export { default as TopListCard } from "./TopListCard";
+export type { TopListItem, TopListCardProps } from "./TopListCard";
 export { NotificationList } from "@/components/Notifications";
 export type { Notification } from "@/components/Notifications";

@@ -18,6 +18,8 @@ interface FilterChipsProps {
 /**
  * مكون عرض الفلاتر النشطة كـ chips
  * يسهل على المستخدم رؤية وإزالة الفلاتر المطبقة
+ * 
+ * مستخدم في: pages/Reports/ReportFilters.tsx
  */
 const FilterChips: React.FC<FilterChipsProps> = ({
   chips,

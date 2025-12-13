@@ -6,9 +6,8 @@ import React, { useState, useEffect } from "react";
 import { 
   FilterContainer, 
   FilterSelect,
-  FilterChips,
-  type FilterChip
 } from "@/components/Filters";
+import FilterChips, { type FilterChip } from "./components/FilterChips";
 import { validateReportFilters } from "../../Validation/reportValidation";
 
 interface ReportFiltersProps {

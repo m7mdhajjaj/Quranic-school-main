@@ -4,7 +4,7 @@ import {
   showCenteredSwal,
   showSuccessMessage,
   showErrorMessage,
-} from "@/components/utils/sweetalertUtils";
+} from "@/utils/sweetalertUtils";
 
 export const useGroupsActions = (
   setGroups: React.Dispatch<React.SetStateAction<Group[]>>,

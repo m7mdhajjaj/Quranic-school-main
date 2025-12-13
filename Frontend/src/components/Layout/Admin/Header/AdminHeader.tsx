@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Bell, ChevronDown, Menu } from "lucide-react";
 import { NotificationHeader } from "@/components/Notifications";
 import Avatar from "@/components/Avatar/Avatar";
-import ProfileMenu from "../../Header/components/ProfileMenu/ProfileMenu";
+import ProfileMenu from "../../ProfileMenu";
 import { showLogoutConfirmation } from "@/pages/Auth/LogOut/logoutUtils";
 import { ChangePasswordModal } from "@/pages/Auth/ChangePass";
 

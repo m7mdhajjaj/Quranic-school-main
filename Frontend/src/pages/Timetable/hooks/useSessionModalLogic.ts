@@ -5,7 +5,7 @@
 import { useState, useCallback } from "react";
 import type { SessionFormData, Session } from "../types/timetable.types";
 import { validateTimetableData } from "@/Validation/timetableValidation";
-import { showErrorToast } from "@/components/utils/toastUtils";
+import { showErrorToast } from "@/utils/toastUtils";
 
 interface UseSessionModalLogicProps {
   onSubmit: (formData: SessionFormData, sessionId?: string) => Promise<boolean>;

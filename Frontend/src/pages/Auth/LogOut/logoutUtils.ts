@@ -2,7 +2,7 @@ import Swal from 'sweetalert2';
 import {
   showCenteredSwal,
   showErrorMessage,
-} from '../../../components/utils/sweetalertUtils';
+} from '../../../utils/sweetalertUtils';
 import { soundPlayer } from '../../../components/Hooks/useSounds';
 
 interface LogoutOptions {

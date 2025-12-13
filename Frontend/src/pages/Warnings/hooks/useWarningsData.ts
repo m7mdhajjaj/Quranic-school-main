@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import api from '@/Api/api';
 import * as warningApi from '@/Api/warningApi';
 import type { Group, Warning, UseWarningsDataReturn } from '../types/warnings';
-import { showErrorToast } from '@/components/utils/toastUtils';
+import { showErrorToast } from '@/utils/toastUtils';
 
 export const useWarningsData = (): UseWarningsDataReturn => {
   const { user } = useAuth();

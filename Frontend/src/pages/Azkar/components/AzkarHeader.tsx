@@ -1,7 +1,7 @@
 import PageHeader from "@/components/UI/PageHeader";
 import { Button, Badge } from "@/components/UI";
 import type { AzkarHeaderProps } from "../Types/types";
-import { showConfirmMessage, showSuccessMessage } from "@/components/utils/sweetalertUtils";
+import { showConfirmMessage, showSuccessMessage } from "@/utils/sweetalertUtils";
 
 const AzkarHeader = ({
   title,

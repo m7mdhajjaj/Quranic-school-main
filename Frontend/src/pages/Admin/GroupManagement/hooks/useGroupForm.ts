@@ -10,8 +10,8 @@ import {
   type Group,
 } from "@/Api/groupApi";
 import { getAllTeachers, type Teacher } from "@/Api/teacherApi";
-import { showSuccessToast } from "@/components/utils/toastUtils";
-import { showErrorMessage } from "@/components/utils/sweetalertUtils";
+import { showSuccessToast } from "@/utils/toastUtils";
+import { showErrorMessage } from "@/utils/sweetalertUtils";
 
 interface UseGroupFormProps {
   group?: Group;

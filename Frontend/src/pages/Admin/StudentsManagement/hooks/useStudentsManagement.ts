@@ -9,7 +9,7 @@ import {
   showSuccessMessage,
   showWarningMessage,
   showErrorMessage,
-} from "@/components/utils/sweetalertUtils";
+} from "@/utils/sweetalertUtils";
 
 type Student = ApiStudent;
 type SortField = "studentId" | "firstName" | "age" | "group";

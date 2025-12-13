@@ -3,7 +3,7 @@ import { bulkSaveAttendance } from "@/Api/attendanceApi";
 import {
   showSuccessToast,
   showErrorToast,
-} from "@/components/utils/toastUtils";
+} from "@/utils/toastUtils";
 import type { AttendanceStudent } from "../types/absence.types";
 
 interface UseAttendanceSaveProps {

@@ -38,13 +38,16 @@ class AttendanceService {
 
     console.log("🚀 [AttendanceService] Starting daily attendance reset service...");
 
-    // تشغيل cron job عند منتصف الليل كل يوم (00:00:00)
+    // تشغيل cron job عند منتصف الليل كل يوم (00:00:00) - كل 24 ساعة
     // Format: minute hour day month day-of-week
-    // "0 0 * * *" = كل يوم في الساعة 00:00
+    // "0 0 * * *" = كل يوم في الساعة 00:00 (كل 24 ساعة بالضبط)
+    // هذا الـ cron job يجلب الطلاب الغائبين لهذا اليوم تلقائياً كل 24 ساعة
     this.midnightJob = cron.schedule(
       "0 0 * * *",
       async () => {
-        console.log("🔄 [AttendanceService] بداية يوم جديد - جلب وإرسال بيانات الطلاب الغائبين...");
+        const executionTime = new Date().toLocaleString("ar-SA", { timeZone: "Asia/Riyadh" });
+        console.log(`🔄 [AttendanceService] بداية يوم جديد - جلب وإرسال بيانات الطلاب الغائبين لهذا اليوم...`);
+        console.log(`⏰ [AttendanceService] وقت التنفيذ: ${executionTime} (توقيت السعودية)`);
         
         if (this.io) {
           try {
@@ -130,8 +133,10 @@ class AttendanceService {
     );
 
     console.log("✅ [AttendanceService] Daily attendance reset service started");
-    console.log("⏰ [AttendanceService] سيتم إرسال event كل يوم في 00:00:00 (توقيت السعودية)");
+    console.log("⏰ [AttendanceService] سيتم إرسال event كل يوم في 00:00:00 (توقيت السعودية) - كل 24 ساعة بالضبط");
     console.log("⏰ [AttendanceService] سيتم إرسال event كل ساعة كـ backup");
+    console.log("📋 [AttendanceService] Cron job لجلب الطلاب الغائبين لهذا اليوم يعمل بشكل صحيح");
+    console.log("✅ [AttendanceService] تم تفعيل cron job كل 24 ساعة بنجاح");
   }
 
   /**

@@ -3,7 +3,7 @@ import { deleteActivity as deleteActivityApi } from "@/Api/activityApi";
 import {
   showSuccessToast,
   showErrorToast,
-} from "@/components/utils/toastUtils";
+} from "@/utils/toastUtils";
 
 interface DeleteActivityModalProps {
   activityId: string;

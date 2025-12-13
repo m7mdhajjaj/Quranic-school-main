@@ -6,7 +6,7 @@ import { getHeroImage, uploadHeroImage } from '@/Api/uploadApi';
 import {
   showSuccessMessage,
   showErrorMessage,
-} from '@/components/utils/sweetalertUtils';
+} from '@/utils/sweetalertUtils';
 import { HeroSection, VisionSection, ValuesSection } from './components';
 
 const Home = () => {

@@ -4,7 +4,7 @@ import type { Exam } from "@/Api/ExamShedule";
 import { bulkDeleteExams } from '@/Api/ExamShedule';
 import { ExamToolbar } from '../ExamToolbar';
 import { GroupedExamTable } from '../GroupedExamTable';
-import { showSuccessMessage, showErrorMessage, showConfirmDialog } from '@/components/utils/sweetalertUtils';
+import { showSuccessMessage, showErrorMessage, showConfirmDialog } from '@/utils/sweetalertUtils';
 
 interface TeacherViewProps {
   exams: Exam[];

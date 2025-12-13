@@ -11,8 +11,8 @@ import {
   deleteSession,
 } from "@/Api/TimeTable.Api";
 import type { Session, SessionFormData } from "../types/timetable.types";
-import { showConfirmDialog, showErrorMessage } from "@/components/utils";
-import { showSuccessToast, showErrorToast } from "@/components/utils/toastUtils";
+import { showConfirmDialog, showErrorMessage } from "@/utils/sweetalertUtils";
+import { showSuccessToast, showErrorToast } from "@/utils/toastUtils";
 
 interface UseTimetableActionsProps {
   setSessions: React.Dispatch<React.SetStateAction<Session[]>>;

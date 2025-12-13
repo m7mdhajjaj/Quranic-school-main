@@ -1,8 +1,8 @@
 // hooks/useProfileEdit.ts
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { showSuccessToast } from "@/components/utils/toastUtils";
-import { showErrorToast } from "@/components/utils/toastUtils";
+import { showSuccessToast } from "@/utils/toastUtils";
+import { showErrorToast } from "@/utils/toastUtils";
 import { updateUserById } from "@/Api/profileApi";
 import { validateProfileData, type FieldErrors } from "@/Validation/profileValidation";
 import { canEditFieldLocal } from "../utils/editLimits";

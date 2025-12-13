@@ -5,11 +5,11 @@ import { useDisableBodyScroll } from "@/hooks/useDisableBodyScroll";
 
 import { AddStudentFormWithYup } from './Model';
 import {
-  StudentGridView,
-  StudentTableView,
   StudentStatsCards,
   StudentToolbar,
-} from '@/components/Students';
+} from './components';
+import { StudentGridView } from './Views/StudentGridView';
+import { StudentTableView } from './Views/StudentTableView';
 
 import { EmptyState } from '@/components/UI/EmptyState';
 import { LoadingSpinner } from '@/components/UI/LoadingSpinner';

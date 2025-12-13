@@ -1,5 +1,4 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { useState } from "react";
 import {
   BarChart3,
   Users,

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Users, Plus, Edit2, Trash2, Save, X, Search, BookOpen, Calendar, ArrowRight, ChevronRight, CheckSquare, Square, ClipboardList } from 'lucide-react';
 import { getTeacherGroupsForMarks, getAllExams, type TeacherGroup, type TeacherGroupStudent, type Exam as ExamType } from '@/Api/ExamShedule';
 import { getExamMarks } from '@/Api/ExamShedule';
-import { showSuccessToast, showErrorToast } from '@/components/utils/toastUtils';
+import { showSuccessToast, showErrorToast } from '@/utils/toastUtils';
 import api from '@/Api/api';
 
 // استخدام نوع Student من ExamSchedule API

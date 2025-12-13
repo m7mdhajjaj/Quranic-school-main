@@ -1,6 +1,6 @@
 import type { NewsModalProps } from '../utils/types';
 import { Input, Textarea, Button, DatePicker } from '@/components/UI';
-import MultiImageUpload from '@/components/Forms/MultiImageUpload';
+import MultiImageUpload from './MultiImageUpload';
 import { MessageSquare, X, Plus, Edit } from 'lucide-react';
 
 const NewsModal = ({
