@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   ScrollView,
   StyleSheet,
   View,
@@ -102,29 +103,53 @@ const Home = () => {
   return (
     <LinearGradient
       colors={["#f0fdf4", "#ecfeff", "#f8fafc"]}
-      style={styles.gradient}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}>
-        <HeroSection
-          currentUser={currentUser}
-          heroImage={heroImage}
-          heroImageLoading={heroImageLoading}
-          uploading={uploading}
-          isTeacherOrAdmin={isTeacherOrAdmin}
-          onEditHeroImage={handlePickAndUploadHeroImage}
-          onStartJourney={handleStartJourney}
-        />
+      style={Platform.OS === "web" ? styles.webGradient : styles.gradient}>
+      {Platform.OS === "web" ? (
+        <View style={styles.content}>
+          <HeroSection
+            currentUser={currentUser}
+            heroImage={heroImage}
+            heroImageLoading={heroImageLoading}
+            uploading={uploading}
+            isTeacherOrAdmin={isTeacherOrAdmin}
+            onEditHeroImage={handlePickAndUploadHeroImage}
+            onStartJourney={handleStartJourney}
+          />
 
-        <VisionSection />
-        <ValuesSection />
+          <VisionSection />
+          <ValuesSection />
 
-        {heroImageLoading && (
-          <View style={styles.loadingRow}>
-            <ActivityIndicator />
-          </View>
-        )}
-      </ScrollView>
+          {heroImageLoading && (
+            <View style={styles.loadingRow}>
+              <ActivityIndicator />
+            </View>
+          )}
+        </View>
+      ) : (
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}>
+          <HeroSection
+            currentUser={currentUser}
+            heroImage={heroImage}
+            heroImageLoading={heroImageLoading}
+            uploading={uploading}
+            isTeacherOrAdmin={isTeacherOrAdmin}
+            onEditHeroImage={handlePickAndUploadHeroImage}
+            onStartJourney={handleStartJourney}
+          />
+
+          <VisionSection />
+          <ValuesSection />
+
+          {heroImageLoading && (
+            <View style={styles.loadingRow}>
+              <ActivityIndicator />
+            </View>
+          )}
+        </ScrollView>
+      )}
     </LinearGradient>
   );
 };
@@ -133,10 +158,17 @@ const styles = StyleSheet.create({
   gradient: {
     flex: 1,
   },
+  webGradient: {
+    width: "100%",
+  },
+  scroll: {
+    flex: 1,
+  },
   content: {
     paddingHorizontal: 16,
     paddingVertical: 16,
     gap: 20,
+    flexGrow: 1,
   },
   loadingRow: {
     paddingVertical: 16,

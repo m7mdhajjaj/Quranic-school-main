@@ -1,11 +1,19 @@
 import React, { useMemo } from "react";
-import { Image, StyleSheet, Text, View, type ViewStyle } from "react-native";
+import {
+  Image,
+  StyleSheet,
+  Text,
+  View,
+  type ImageStyle,
+  type StyleProp,
+  type ViewStyle,
+} from "react-native";
 import type { AuthUser } from "../../pages/Auth/types";
 
 interface AvatarProps {
   user: AuthUser;
   size?: number;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 const Avatar: React.FC<AvatarProps> = ({ user, size = 32, style }) => {
@@ -25,7 +33,7 @@ const Avatar: React.FC<AvatarProps> = ({ user, size = 32, style }) => {
         style={[
           styles.image,
           { width: size, height: size, borderRadius: size / 2 },
-          style,
+          style as unknown as StyleProp<ImageStyle>,
         ]}
       />
     );

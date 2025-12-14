@@ -1,5 +1,11 @@
 import React, { useMemo, useState } from "react";
-import { View, StyleSheet } from "react-native";
+import {
+  Dimensions,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import { useAuth, useRoleLayout } from "../../../hooks";
 import UserHeader from "./Header/UserHeader";
 import { UserSidebar } from "./Sidebar";
@@ -43,7 +49,16 @@ const UserLayout: React.FC<UserLayoutProps> = ({
         onChangePasswordClick={() => onNavigate("ChangePassword")}
       />
 
-      <View style={styles.content}>{children}</View>
+      {Platform.OS === "web" ? (
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.webContentContainer}
+          showsVerticalScrollIndicator={false}>
+          {children}
+        </ScrollView>
+      ) : (
+        <View style={styles.content}>{children}</View>
+      )}
     </View>
   );
 };
@@ -51,10 +66,18 @@ const UserLayout: React.FC<UserLayoutProps> = ({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+    minHeight: 0,
     backgroundColor: "#f0fdf4",
+    ...(Platform.OS === "web"
+      ? ({ height: Dimensions.get("window").height } as const)
+      : null),
   },
   content: {
     flex: 1,
+    minHeight: 0,
+  },
+  webContentContainer: {
+    flexGrow: 1,
   },
 });
 

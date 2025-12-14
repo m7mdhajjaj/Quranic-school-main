@@ -4,6 +4,7 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { useAuth } from "../Context";
 import Login from "../pages/Auth/Login";
 import Home from "../pages/Home";
+import Goals from "../pages/Goals";
 import ComingSoon from "../pages/NotFound/ComingSoon";
 import { UserLayout } from "../components/Layout/User";
 import { useRoleLayout } from "../hooks";
@@ -88,7 +89,7 @@ const AppNavigator = () => {
             {/* Same ordering/grouping as Frontend Sidebar */}
             <Stack.Screen
               name="Goals"
-              component={createComingSoonWrapped("الأهداف")}
+              component={createUserWrappedScreen(Goals)}
             />
             <Stack.Screen
               name="DailyMarks"
