@@ -12,6 +12,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "../../Context";
 import { getHeroImage, uploadHeroImage } from "../../Api/uploadApi";
 import { HeroSection, ValuesSection, VisionSection } from "./components/index";
+import { UserHeader } from "../../components/Layout/User/Header";
 
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 
@@ -105,6 +106,7 @@ const Home = () => {
       <LinearGradient
         colors={["#f0fdf4", "#ecfeff", "#f8fafc"]}
         style={styles.gradient}>
+        <UserHeader title="الرئيسية" breadcrumb="الرئيسية / الرئيسية" />
         <ScrollView
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}>
