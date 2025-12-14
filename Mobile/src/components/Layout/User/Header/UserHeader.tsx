@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { ChevronDown, Menu } from "lucide-react-native";
 import { useAuth, useRoleLayout } from "../../../../hooks";
@@ -41,6 +41,15 @@ const UserHeader: React.FC<UserHeaderProps> = ({
   if (!currentUser) return null;
 
   const handleLogout = () => {
+    if (Platform.OS === "web") {
+      // Alert في Expo Web قد لا يظهر أو يتصرف بشكل غير متوقع
+      const confirmed = window.confirm("هل تريد تسجيل الخروج؟");
+      if (!confirmed) return;
+      setProfileMenuOpen(false);
+      void authLogout();
+      return;
+    }
+
     Alert.alert("تأكيد", "هل تريد تسجيل الخروج؟", [
       { text: "إلغاء", style: "cancel" },
       {

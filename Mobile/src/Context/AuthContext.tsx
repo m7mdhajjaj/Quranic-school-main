@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { AuthStorage } from "../utils/storage";
 import type { AuthUser, AuthContextType } from "../pages/Auth/types";
+import { API_URL } from "../config/config";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -47,13 +48,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const logout = async () => {
     try {
+      const currentToken = token;
+
+      // مثل الـ Frontend: إرسال logout للـ Backend لتحديث lastSeen (إن أمكن)
+      if (currentToken) {
+        try {
+          await fetch(`${API_URL}/auth/logout`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${currentToken}`,
+            },
+          });
+        } catch {
+          // تجاهل أخطاء الشبكة/الخادم - الأهم تنظيف الجلسة محلياً
+        }
+      }
+
+      // مسح الحالة أولاً لإخراج المستخدم مباشرة
       setToken(null);
       setUser(null);
 
-      await AuthStorage.logout();
+      // مثل localStorage.clear() بالـ Frontend
+      try {
+        await AuthStorage.logout();
+      } catch (storageError) {
+        console.error("Error clearing auth data:", storageError);
+      }
     } catch (error) {
       console.error("Error clearing auth data:", error);
-      throw error;
     }
   };
 

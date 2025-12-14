@@ -133,11 +133,13 @@ export const AuthStorage = {
   },
 
   async logout(): Promise<void> {
-    await StorageHelper.removeMultiple(["token", "user", "userId"]);
+    // مثل Frontend localStorage.clear(): تنظيف شامل لكل بيانات التطبيق
+    // هذا يمنع بقاء lastVisitedRouteName أو أي بيانات جلسة تسبب مشاكل بعد الخروج
+    await StorageHelper.clear();
   },
 
   async clearAuth(): Promise<void> {
-    await StorageHelper.removeMultiple(["token", "user", "userId"]);
+    await StorageHelper.clear();
   },
 };
 

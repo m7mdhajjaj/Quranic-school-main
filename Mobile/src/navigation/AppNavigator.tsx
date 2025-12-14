@@ -82,6 +82,27 @@ const AppNavigator = () => {
   const { userRole } = useRoleLayout();
   const [navReady, setNavReady] = React.useState(false);
 
+  // عند تسجيل الخروج: تأكيد الرجوع لـ Login + تنظيف آخر مسار محفوظ
+  React.useEffect(() => {
+    if (!navReady) return;
+    if (isAuthenticated) return;
+
+    const run = async () => {
+      try {
+        await StorageHelper.removeItem(LAST_VISITED_KEY);
+      } catch {
+        // ignore
+      }
+
+      navigationRef.resetRoot({
+        index: 0,
+        routes: [{ name: "Login" }],
+      });
+    };
+
+    run();
+  }, [navReady, isAuthenticated]);
+
   React.useEffect(() => {
     if (!navReady) return;
     if (!isAuthenticated || !user) return;

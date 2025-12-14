@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -75,6 +76,14 @@ const UserSidebar: React.FC<UserSidebarProps> = ({
   };
 
   const handleLogout = () => {
+    if (Platform.OS === "web") {
+      const confirmed = window.confirm("هل تريد تسجيل الخروج؟");
+      if (!confirmed) return;
+      onMobileClose();
+      void authLogout();
+      return;
+    }
+
     Alert.alert("تأكيد", "هل تريد تسجيل الخروج؟", [
       { text: "إلغاء", style: "cancel" },
       {
