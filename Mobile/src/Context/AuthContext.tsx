@@ -20,7 +20,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       setIsLoading(true);
       const savedToken = await AuthStorage.getToken();
-      const savedUser = await AuthStorage.getUser();
+      const savedUser = await AuthStorage.getUser<AuthUser>();
 
       if (savedToken && savedUser) {
         setToken(savedToken);
@@ -33,33 +33,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const login = async (userToken: string, userData: AuthUser) => {
+  const login = async (userData: AuthUser, userToken: string) => {
+    setToken(userToken);
+    setUser(userData);
+
     try {
       await AuthStorage.saveToken(userToken);
       await AuthStorage.saveUser(userData);
-      setToken(userToken);
-      setUser(userData);
     } catch (error) {
       console.error("Error saving login data:", error);
-      throw error;
     }
   };
 
   const logout = async () => {
     try {
-      await AuthStorage.clearAuth();
       setToken(null);
       setUser(null);
+
+      await AuthStorage.logout();
     } catch (error) {
       console.error("Error clearing auth data:", error);
       throw error;
     }
   };
 
-  const updateUser = async (updatedUser: AuthUser) => {
+  const updateUser = async (updatedUser: Partial<AuthUser>) => {
     try {
-      await AuthStorage.saveUser(updatedUser);
-      setUser(updatedUser);
+      const nextUser = { ...(user || {}), ...(updatedUser || {}) } as AuthUser;
+      await AuthStorage.saveUser(nextUser);
+      setUser(nextUser);
     } catch (error) {
       console.error("Error updating user:", error);
       throw error;

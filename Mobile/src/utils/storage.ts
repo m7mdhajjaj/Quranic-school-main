@@ -97,7 +97,8 @@ export class StorageHelper {
    */
   static async getAllKeys(): Promise<string[]> {
     try {
-      return await AsyncStorage.getAllKeys();
+      const keys = await AsyncStorage.getAllKeys();
+      return Array.from(keys);
     } catch (error) {
       console.error("Error getting all keys from AsyncStorage:", error);
       return [];
@@ -132,6 +133,10 @@ export const AuthStorage = {
   },
 
   async logout(): Promise<void> {
+    await StorageHelper.removeMultiple(["token", "user", "userId"]);
+  },
+
+  async clearAuth(): Promise<void> {
     await StorageHelper.removeMultiple(["token", "user", "userId"]);
   },
 };

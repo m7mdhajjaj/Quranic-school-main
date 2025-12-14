@@ -17,6 +17,7 @@ import {
   CalendarClock,
   BookMarked,
   Home,
+  LayoutDashboard,
 } from "lucide-react-native";
 
 type Role = "student" | "teacher" | "admin";
@@ -49,6 +50,18 @@ export const useRoleLayout = () => {
 
   const allNavGroups: NavGroup[] = useMemo(
     () => [
+      {
+        title: "الرئيسية",
+        roles: ["admin"],
+        items: [
+          {
+            route: "AdminDashboard",
+            label: "لوحة التحكم",
+            icon: LayoutDashboard,
+            roles: ["admin"],
+          },
+        ],
+      },
       {
         title: "الرئيسية",
         roles: ["student", "teacher"],

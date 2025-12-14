@@ -1,5 +1,8 @@
 import React from "react";
-import { NavigationContainer } from "@react-navigation/native";
+import {
+  createNavigationContainerRef,
+  NavigationContainer,
+} from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { useAuth } from "../Context";
 import Login from "../pages/Auth/Login";
@@ -8,10 +11,12 @@ import Goals from "../pages/Goals";
 import ComingSoon from "../pages/NotFound/ComingSoon";
 import { UserLayout } from "../components/Layout/User";
 import { useRoleLayout } from "../hooks";
+import { StorageHelper } from "../utils/storage";
 
 type AppStackParamList = {
   Login: undefined;
   Home: undefined;
+  AdminDashboard: undefined;
   Goals: undefined;
   DailyMarks: undefined;
   Ranking: undefined;
@@ -32,6 +37,17 @@ type AppStackParamList = {
 };
 
 const Stack = createStackNavigator<AppStackParamList>();
+
+const navigationRef = createNavigationContainerRef<AppStackParamList>();
+
+const LAST_VISITED_KEY = "lastVisitedRouteName";
+
+const getDefaultRouteForRole = (
+  role?: string | null
+): keyof AppStackParamList => {
+  if (role === "admin") return "AdminDashboard";
+  return "Home";
+};
 
 const createUserWrappedScreen = (
   ScreenComponent: React.ComponentType<any>
@@ -62,16 +78,55 @@ const createComingSoonWrapped = (title: string): React.FC<any> => {
 };
 
 const AppNavigator = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const { userRole } = useRoleLayout();
+  const [navReady, setNavReady] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!navReady) return;
+    if (!isAuthenticated || !user) return;
+
+    const run = async () => {
+      const lastVisited = await StorageHelper.getItem(LAST_VISITED_KEY);
+      const fallback = getDefaultRouteForRole(user.role);
+
+      const target =
+        lastVisited && lastVisited !== "Login"
+          ? (lastVisited as keyof AppStackParamList)
+          : fallback;
+
+      await StorageHelper.removeItem(LAST_VISITED_KEY);
+
+      navigationRef.resetRoot({
+        index: 0,
+        routes: [{ name: target }],
+      });
+    };
+
+    run();
+  }, [navReady, isAuthenticated, user?._id]);
 
   if (isLoading) {
     return null; // يمكن إضافة شاشة تحميل هنا لاحقاً
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      ref={navigationRef}
+      onReady={() => setNavReady(true)}
+      onStateChange={() => {
+        if (!navigationRef.isReady()) return;
+        const current = navigationRef.getCurrentRoute()?.name;
+        if (!current || current === "Login") return;
+        StorageHelper.setItem(LAST_VISITED_KEY, String(current));
+      }}>
       <Stack.Navigator
+        key={isAuthenticated ? "app" : "auth"}
+        initialRouteName={
+          isAuthenticated
+            ? getDefaultRouteForRole(user?.role)
+            : ("Login" as const)
+        }
         screenOptions={{
           headerShown: false,
         }}>
@@ -81,6 +136,11 @@ const AppNavigator = () => {
         ) : (
           // Main App Stack - شاشات التطبيق الرئيسية
           <>
+            <Stack.Screen
+              name="AdminDashboard"
+              component={createComingSoonWrapped("لوحة التحكم")}
+            />
+
             <Stack.Screen
               name="Home"
               component={createUserWrappedScreen(Home)}

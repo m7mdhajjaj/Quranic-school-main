@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
 import { Alert } from "react-native";
-import { useNavigation } from "@react-navigation/native";
 import axios from "axios";
 import {
   loginStudent,
   loginTeacher,
   loginAdmin,
 } from "../../../../Api/authApi";
-import { StorageHelper, AuthStorage } from "../../../../utils/storage";
+import { StorageHelper } from "../../../../utils/storage";
+import { useAuth } from "../../../../hooks";
 import type { LoginFormData, AuthUser } from "../../types";
 
 export const useLoginLogic = () => {
-  const navigation = useNavigation();
+  const { login } = useAuth();
 
   const [formData, setFormData] = useState<LoginFormData>({
     userId: "",
@@ -128,9 +128,8 @@ export const useLoginLogic = () => {
       }
 
       if (response && response.user && response.token) {
-        // حفظ البيانات
-        await AuthStorage.saveToken(response.token);
-        await AuthStorage.saveUser(response.user);
+        // تحديث الـ AuthContext (وهو يقوم بالحفظ في AsyncStorage)
+        await login(response.user as unknown as AuthUser, response.token);
         await StorageHelper.setItem("userId", String(response.user._id));
 
         setFailedAttempts(0);
