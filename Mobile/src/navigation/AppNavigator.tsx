@@ -8,6 +8,7 @@ import { useAuth } from "../Context";
 import Login from "../pages/Auth/Login";
 import Home from "../pages/Home";
 import Goals from "../pages/Goals";
+import Azkar from "../pages/Azkar";
 import ComingSoon from "../pages/NotFound/ComingSoon";
 import { UserLayout } from "../components/Layout/User";
 import { useRoleLayout } from "../hooks";
@@ -226,7 +227,7 @@ const AppNavigator = () => {
             />
             <Stack.Screen
               name="Azkar"
-              component={createComingSoonWrapped("الأذكار")}
+              component={createUserWrappedScreen(Azkar)}
             />
 
             {/* Account */}
