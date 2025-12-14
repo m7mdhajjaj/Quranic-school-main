@@ -1,11 +1,5 @@
 import React, { useMemo, useState } from "react";
-import {
-  Alert,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { ChevronDown, Menu } from "lucide-react-native";
 import { useAuth, useRoleLayout } from "../../../../hooks";
@@ -33,7 +27,9 @@ const UserHeader: React.FC<UserHeaderProps> = ({
   const displayName = useMemo(() => {
     if (!currentUser) return "";
     return (
-      currentUser.firstName || currentUser.name || getRoleLabel(currentUser.role)
+      currentUser.firstName ||
+      currentUser.name ||
+      getRoleLabel(currentUser.role)
     );
   }, [currentUser, getRoleLabel]);
 
@@ -84,7 +80,10 @@ const UserHeader: React.FC<UserHeaderProps> = ({
           {!!onMenuToggle && (
             <Pressable
               onPress={onMenuToggle}
-              style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
+              style={({ pressed }) => [
+                styles.iconBtn,
+                pressed && styles.pressed,
+              ]}
               accessibilityRole="button"
               accessibilityLabel="فتح القائمة">
               <Menu size={20} color="#047857" />
@@ -106,13 +105,18 @@ const UserHeader: React.FC<UserHeaderProps> = ({
         <View style={styles.left}>
           <NotificationHeader
             userId={currentUser._id}
-            onPress={() => Alert.alert("قريباً", "صفحة الإشعارات غير مفعّلة حالياً")}
+            onPress={() =>
+              Alert.alert("قريباً", "صفحة الإشعارات غير مفعّلة حالياً")
+            }
           />
 
           <View>
             <Pressable
               onPress={() => setProfileMenuOpen((v) => !v)}
-              style={({ pressed }) => [styles.userBtn, pressed && styles.pressed]}
+              style={({ pressed }) => [
+                styles.userBtn,
+                pressed && styles.pressed,
+              ]}
               accessibilityRole="button"
               accessibilityLabel="قائمة المستخدم">
               <Avatar user={currentUser} size={32} />

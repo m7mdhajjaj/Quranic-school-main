@@ -6,13 +6,11 @@ import {
   StyleSheet,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "../../Context";
 import { getHeroImage, uploadHeroImage } from "../../Api/uploadApi";
 import { HeroSection, ValuesSection, VisionSection } from "./components/index";
-import { UserHeader } from "../../components/Layout/User/Header";
 
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 
@@ -102,43 +100,36 @@ const Home = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <LinearGradient
-        colors={["#f0fdf4", "#ecfeff", "#f8fafc"]}
-        style={styles.gradient}>
-        <UserHeader title="الرئيسية" breadcrumb="الرئيسية / الرئيسية" />
-        <ScrollView
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}>
-          <HeroSection
-            currentUser={currentUser}
-            heroImage={heroImage}
-            heroImageLoading={heroImageLoading}
-            uploading={uploading}
-            isTeacherOrAdmin={isTeacherOrAdmin}
-            onEditHeroImage={handlePickAndUploadHeroImage}
-            onStartJourney={handleStartJourney}
-          />
+    <LinearGradient
+      colors={["#f0fdf4", "#ecfeff", "#f8fafc"]}
+      style={styles.gradient}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}>
+        <HeroSection
+          currentUser={currentUser}
+          heroImage={heroImage}
+          heroImageLoading={heroImageLoading}
+          uploading={uploading}
+          isTeacherOrAdmin={isTeacherOrAdmin}
+          onEditHeroImage={handlePickAndUploadHeroImage}
+          onStartJourney={handleStartJourney}
+        />
 
-          <VisionSection />
-          <ValuesSection />
+        <VisionSection />
+        <ValuesSection />
 
-          {heroImageLoading && (
-            <View style={styles.loadingRow}>
-              <ActivityIndicator />
-            </View>
-          )}
-        </ScrollView>
-      </LinearGradient>
-    </SafeAreaView>
+        {heroImageLoading && (
+          <View style={styles.loadingRow}>
+            <ActivityIndicator />
+          </View>
+        )}
+      </ScrollView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#f0fdf4",
-  },
   gradient: {
     flex: 1,
   },
