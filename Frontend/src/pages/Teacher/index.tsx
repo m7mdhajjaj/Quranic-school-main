@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { 
   useTeacherGroups, 
@@ -11,6 +11,7 @@ import type { Student } from "@/Api/studentApi";
 const TeacherStudentManagement: React.FC = () => {
   const { user } = useAuth();
   const { groups, isLoading, error, refetch: refetchGroups } = useTeacherGroups();
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   
   // Navigation logic
   const {
@@ -31,7 +32,10 @@ const TeacherStudentManagement: React.FC = () => {
     handleDeleteStudent,
     handleFormSuccess,
     closeForm,
-  } = useStudentManagement({
+  } = useStudentManag() => {
+      refetchGroups();
+      setRefreshTrigger(prev => prev + 1);
+    }
     onRefetchGroups: refetchGroups,
     selectedGroupId,
     groups: groups?.groups,
@@ -57,6 +61,7 @@ const TeacherStudentManagement: React.FC = () => {
           groupId={selectedGroupId}
           groupName={selectedGroupName}
           onBack={navigateToGroups}
+          refreshTrigger={refreshTrigger}
           onAddStudent={handleAddStudent}
           onEditStudent={handleEditStudent}
           onDeleteStudent={handleDeleteStudent}
@@ -68,6 +73,7 @@ const TeacherStudentManagement: React.FC = () => {
           student={isEditMode ? selectedStudent : undefined}
           defaultGroup={selectedGroupName}
           restrictToGroup={selectedGroupName}
+          groups={groups?.groups ?? []}
         />
       </>
     );

@@ -1,6 +1,7 @@
 import React from "react";
 import { AddStudentFormWithYup } from "@/pages/Admin/StudentsManagement/Model";
 import type { Student } from "@/Api/studentApi";
+import type { Group } from "@/Api/groupApi";
 
 interface StudentFormModalProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface StudentFormModalProps {
   student?: Student;
   defaultGroup?: string;
   restrictToGroup?: string;
+  groups?: Group[];
 }
 
 export const StudentFormModal: React.FC<StudentFormModalProps> = ({
@@ -18,6 +20,7 @@ export const StudentFormModal: React.FC<StudentFormModalProps> = ({
   student,
   defaultGroup,
   restrictToGroup,
+  groups,
 }) => {
   if (!isOpen) return null;
 
@@ -31,6 +34,7 @@ export const StudentFormModal: React.FC<StudentFormModalProps> = ({
       student={student}
       defaultGroup={defaultGroup}
       restrictToGroup={restrictToGroup}
+      groups={groups}
     />
   );
 };

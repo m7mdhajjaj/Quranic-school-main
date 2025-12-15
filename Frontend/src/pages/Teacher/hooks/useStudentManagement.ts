@@ -44,10 +44,6 @@ export const useStudentManagement = ({
         
         // إعادة تحميل الحلقات والطلاب
         onRefetchGroups();
-        // إعادة تحميل الصفحة لإظهار التحديثات
-        setTimeout(() => {
-          window.location.reload();
-        }, 500);
       } else {
         alert(result.message || "فشل في حذف الطالب");
       }
@@ -63,11 +59,6 @@ export const useStudentManagement = ({
     setIsFormOpen(false);
     setSelectedStudent(undefined);
     setIsEditMode(false);
-    
-    // إعادة تحميل الصفحة لإظهار التحديثات
-    setTimeout(() => {
-      window.location.reload();
-    }, 500);
   }, [onRefetchGroups]);
 
   const closeForm = useCallback(() => {

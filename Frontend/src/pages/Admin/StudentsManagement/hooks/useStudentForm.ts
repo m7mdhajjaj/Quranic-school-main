@@ -57,6 +57,7 @@ interface UseStudentFormProps {
   defaultGroup?: string;
   onSuccess: (studentData: Student | StudentFormData) => void;
   onClose: () => void;
+  groups?: Group[];
 }
 
 export const useStudentForm = ({
@@ -64,6 +65,7 @@ export const useStudentForm = ({
   defaultGroup,
   onSuccess,
   onClose,
+  groups: providedGroups,
 }: UseStudentFormProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -133,6 +135,11 @@ export const useStudentForm = ({
 
   // تحميل الحلقات - مع تحسين الأداء
   useEffect(() => {
+    if (providedGroups) {
+      setGroups(providedGroups);
+      return;
+    }
+
     let isMounted = true;
     
     const fetchGroups = async () => {
@@ -164,7 +171,7 @@ export const useStudentForm = ({
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [providedGroups]);
 
   // الحصول على المعلم من الحلقة المختارة
   const selectedGroupTeacher = useMemo(() => {

@@ -14,6 +14,7 @@ interface StudentsListProps {
   onAddStudent: () => void;
   onEditStudent: (student: Student) => void;
   onDeleteStudent: (studentId: string) => void;
+  refreshTrigger?: number;
 }
 
 export const StudentsList: React.FC<StudentsListProps> = ({
@@ -23,6 +24,7 @@ export const StudentsList: React.FC<StudentsListProps> = ({
   onAddStudent,
   onEditStudent,
   onDeleteStudent,
+  refreshTrigger = 0,
 }) => {
 
   const { joinRoom, leaveRoom } = useUserStatusSocket();
@@ -43,10 +45,16 @@ export const StudentsList: React.FC<StudentsListProps> = ({
     return () => leaveRoom('students');
   }, [joinRoom, leaveRoom]);
 
-  const { students, error, isLoading } = useGroupStudents(groupId, {
+  const { students, error, isLoading, refetch } = useGroupStudents(groupId, {
     search: debouncedSearchTerm.trim() || undefined,
     gender: genderFilter !== 'all' ? genderFilter : undefined,
   });
+
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      refetch();
+    }
+  }, [refreshTrigger, refetch]);
 
   if (error) {
     return (

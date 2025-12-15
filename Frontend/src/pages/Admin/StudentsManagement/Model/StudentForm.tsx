@@ -17,6 +17,7 @@ import { useStudentForm } from "../hooks/useStudentForm";
 import { DatePicker } from "@/components/UI/DatePicker";
 import type { Student } from "@/Api/studentApi";
 import type { StudentFormData } from "@/Validation/studentValidation";
+import type { Group } from "@/Api/groupApi";
 
 interface Props {
   onClose: () => void;
@@ -24,6 +25,7 @@ interface Props {
   student?: Student;
   defaultGroup?: string;
   restrictToGroup?: string;
+  groups?: Group[];
 }
 
 const AddStudentForm: React.FC<Props> = ({
@@ -31,6 +33,7 @@ const AddStudentForm: React.FC<Props> = ({
   onSuccess,
   student,
   defaultGroup,
+  groups,
 }) => {
   const {
     currentStep,
@@ -38,7 +41,7 @@ const AddStudentForm: React.FC<Props> = ({
     errors,
     isSubmitting,
     showSuccess,
-    groups,
+    groups: formGroups,
     loadingGroups,
     duplicateFieldInfo,
     calculatedAge,
@@ -58,6 +61,7 @@ const AddStudentForm: React.FC<Props> = ({
     defaultGroup,
     onSuccess,
     onClose,
+    groups,
   });
 
   // منع scroll الصفحة عند فتح المودل
@@ -527,7 +531,7 @@ const AddStudentForm: React.FC<Props> = ({
                         <option value="">
                           {loadingGroups ? "جاري التحميل..." : "اختر الحلقة"}
                         </option>
-                        {groups.map((group: any) => (
+                        {formGroups.map((group: any) => (
                           <option
                             key={group._id}
                             value={group.name}
