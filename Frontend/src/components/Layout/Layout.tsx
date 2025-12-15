@@ -92,12 +92,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const HeaderComponent = Header;
 
   return (
-    <div className="app-content">
+    <div className="app-content m-0 p-0">
       {/* Header - Conditional rendering based on route */}
       {showHeader && <HeaderComponent />}
 
       {/* Main Content Area */}
-      <main className="main-content">
+      <main className="main-content m-0 p-0">
         {children}
       </main>
 

@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React from "react";
 import { Users, Search, X } from "lucide-react";
 import { GroupCard } from "./GroupCard";
 import { GroupTimetableModal } from "../Model/GroupTimetable";
 import { CardSkeleton } from "@/components/skeletons";
 import { EmptyState } from "@/components/UI/EmptyState";
+import { useGroupsListLogic } from "../hooks";
 import type { TeacherGroup } from "../types";
 
 interface GroupsData {
@@ -35,87 +36,110 @@ export const GroupsList: React.FC<GroupsListProps> = ({
   console.log('🔍 GroupsList - isLoading:', isLoading);
   console.log('🔍 GroupsList - error:', error);
   
-  const [searchTerm, setSearchTerm] = useState("");
-  const [timetableModal, setTimetableModal] = useState<{
-    isOpen: boolean;
-    groupId: string;
-    groupName: string;
-  }>({
-    isOpen: false,
-    groupId: "",
-    groupName: "",
-  });
+  // استخدام الـ hook لفصل المنطق
+  const {
+    searchTerm,
+    setSearchTerm,
+    clearSearch,
+    timetableModal,
+    handleTimetableClick,
+    handleCloseTimetableModal,
+  } = useGroupsListLogic({ onGroupClick });
 
   // Filter groups based on search term only
   const filteredGroups = groups?.groups.filter((group) =>
     group.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleTimetableClick = (e: React.MouseEvent, groupId: string, groupName: string) => {
-    e.stopPropagation(); // Prevent card onClick from firing
-    setTimetableModal({
-      isOpen: true,
-      groupId,
-      groupName,
-    });
-  };
-
-  const handleCloseTimetableModal = () => {
-    setTimetableModal({
-      isOpen: false,
-      groupId: "",
-      groupName: "",
-    });
-  };
-
   return (
-    <div className="min-h-screen p-4 md:p-6 bg-gradient-to-br from-emerald-50/30 via-teal-50/20 to-cyan-50/30" dir="rtl">
+    <div className="min-h-screen p-4 md:p-6 bg-gradient-to-br from-emerald-50/50 via-teal-50/40 to-cyan-50/50" dir="rtl">
       <div className="w-full mx-auto">
-        {/* Header */}
-        <div className="relative bg-gradient-to-br from-emerald-50 via-teal-50/50 to-cyan-50 rounded-2xl shadow-lg border-2 border-emerald-100 overflow-hidden p-6 mb-6">
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/60 via-teal-50/40 to-cyan-50/30 pointer-events-none" />
+        {/* Header with Statistics */}
+        <div className="relative bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-600 rounded-2xl shadow-xl border-2 border-emerald-500/30 overflow-hidden p-6 mb-6">
+          <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-emerald-700 via-emerald-600 to-teal-700" />
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-700/20 via-emerald-600/20 to-teal-700/20 pointer-events-none" />
 
-          <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl ring-2 ring-emerald-200 shadow-md">
-                <Users className="w-8 h-8 text-white" />
+          <div className="relative space-y-6">
+            {/* Header Section */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl ring-2 ring-white/30 shadow-lg">
+                  <Users className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-bold text-white drop-shadow-lg">إدارة الطلاب</h1>
+                  <p className="text-sm text-white/90 mt-1 font-semibold drop-shadow-md">
+                    اختر حلقة لعرض وإدارة طلابها
+                  </p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">إدارة الطلاب</h1>
-                <p className="text-sm text-emerald-600/80 mt-1 font-medium">
-                  اختر حلقة لعرض وإدارة طلابها
-                </p>
+
+              {/* Search Bar */}
+              <div className="w-full lg:w-[28rem]">
+                <div className="relative">
+                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-emerald-300" />
+                  <input
+                    type="text"
+                    placeholder="بحث عن حلقة..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pr-10 pl-10 py-2.5 bg-white/95 backdrop-blur-sm border-2 border-white/30 rounded-xl focus:ring-2 focus:ring-white/50 focus:border-white/50 outline-none transition-all shadow-lg hover:shadow-xl"
+                  />
+                  {searchTerm && (
+                    <button
+                      type="button"
+                      onClick={clearSearch}
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition-colors"
+                      title="مسح البحث"
+                      aria-label="مسح البحث"
+                    >
+                      <X className="w-4 h-4 text-gray-400" />
+                    </button>
+                  )}
+                </div>
+                <div className="mt-2 text-xs text-white/70">
+                  {searchTerm ? "يتم البحث حسب اسم الحلقة" : ""}
+                </div>
               </div>
             </div>
 
-            {/* Search Bar */}
-            <div className="w-full lg:w-[28rem]">
-              <div className="relative">
-                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-emerald-400" />
-                <input
-                  type="text"
-                  placeholder="بحث عن حلقة..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pr-10 pl-10 py-2.5 bg-white/90 backdrop-blur-sm border-2 border-emerald-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all shadow-md hover:shadow-lg"
-                />
-                {searchTerm && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchTerm("")}
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition-colors"
-                    title="مسح البحث"
-                    aria-label="مسح البحث"
-                  >
-                    <X className="w-4 h-4 text-gray-400" />
-                  </button>
-                )}
+            {/* Statistics Section */}
+            {!isLoading && !error && groups && (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t border-white/20">
+                <div className="text-center p-5 bg-white/10 backdrop-blur-sm rounded-xl border-2 border-white/20 shadow-lg hover:shadow-xl hover:scale-105 transition-all hover:bg-white/15">
+                  <div className="text-3xl font-bold text-white drop-shadow-lg">
+                    {groups.summary.totalGroups}
+                  </div>
+                  <div className="text-sm text-white/90 mt-2 font-bold drop-shadow-md">
+                    إجمالي الحلقات
+                  </div>
+                </div>
+                <div className="text-center p-5 bg-white/10 backdrop-blur-sm rounded-xl border-2 border-white/20 shadow-lg hover:shadow-xl hover:scale-105 transition-all hover:bg-white/15">
+                  <div className="text-3xl font-bold text-white drop-shadow-lg">
+                    {groups.summary.groupsWithStudents}
+                  </div>
+                  <div className="text-sm text-white/90 mt-2 font-bold drop-shadow-md">
+                    حلقات فيها طلاب
+                  </div>
+                </div>
+                <div className="text-center p-5 bg-white/10 backdrop-blur-sm rounded-xl border-2 border-white/20 shadow-lg hover:shadow-xl hover:scale-105 transition-all hover:bg-white/15">
+                  <div className="text-3xl font-bold text-white drop-shadow-lg">
+                    {groups.summary.emptyGroups}
+                  </div>
+                  <div className="text-sm text-white/90 mt-2 font-bold drop-shadow-md">
+                    حلقات فارغة
+                  </div>
+                </div>
+                <div className="text-center p-5 bg-white/10 backdrop-blur-sm rounded-xl border-2 border-white/20 shadow-lg hover:shadow-xl hover:scale-105 transition-all hover:bg-white/15">
+                  <div className="text-3xl font-bold text-white drop-shadow-lg">
+                    {groups.summary.totalStudents}
+                  </div>
+                  <div className="text-sm text-white/90 mt-2 font-bold drop-shadow-md">
+                    إجمالي الطلاب
+                  </div>
+                </div>
               </div>
-              <div className="mt-2 text-xs text-gray-500">
-                {searchTerm ? "يتم البحث حسب اسم الحلقة" : ""}
-              </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -173,47 +197,6 @@ export const GroupsList: React.FC<GroupsListProps> = ({
               />
             ) : (
               <>
-                {/* Summary */}
-                <div className="relative bg-gradient-to-br from-emerald-50 via-teal-50/50 to-cyan-50 rounded-2xl shadow-lg border-2 border-emerald-100 overflow-hidden p-6 mb-6">
-                  <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
-                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/60 via-teal-50/40 to-cyan-50/30 pointer-events-none" />
-                  
-                  <div className="relative grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div className="text-center p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-emerald-200/50 shadow-sm hover:shadow-md transition-all">
-                      <div className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-                        {groups.summary.totalGroups}
-                      </div>
-                      <div className="text-sm text-emerald-700/80 mt-1 font-medium">
-                        إجمالي الحلقات
-                      </div>
-                    </div>
-                    <div className="text-center p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-teal-200/50 shadow-sm hover:shadow-md transition-all">
-                      <div className="text-2xl font-bold bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">
-                        {groups.summary.groupsWithStudents}
-                      </div>
-                      <div className="text-sm text-teal-700/80 mt-1 font-medium">
-                        حلقات فيها طلاب
-                      </div>
-                    </div>
-                    <div className="text-center p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-cyan-200/50 shadow-sm hover:shadow-md transition-all">
-                      <div className="text-2xl font-bold bg-gradient-to-r from-cyan-600 to-emerald-600 bg-clip-text text-transparent">
-                        {groups.summary.emptyGroups}
-                      </div>
-                      <div className="text-sm text-cyan-700/80 mt-1 font-medium">
-                        حلقات فارغة
-                      </div>
-                    </div>
-                    <div className="text-center p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-emerald-200/50 shadow-sm hover:shadow-md transition-all">
-                      <div className="text-2xl font-bold bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent">
-                        {groups.summary.totalStudents}
-                      </div>
-                      <div className="text-sm text-emerald-700/80 mt-1 font-medium">
-                        إجمالي الطلاب
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
                 {/* Groups Cards */}
                 {filteredGroups && filteredGroups.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

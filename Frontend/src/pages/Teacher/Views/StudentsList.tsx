@@ -1,9 +1,8 @@
 import React, { useEffect } from "react";
-import { ArrowRight, Plus, Edit, Trash2, Users, Search, Phone, Mail, GraduationCap, User, UserCheck, Cake, MapPin, Filter, X, CreditCard } from "lucide-react";
+import { ArrowRight, Plus, Users, Search, Phone, Mail, GraduationCap, User, UserCheck, Cake, MapPin, Filter, X, CreditCard } from "lucide-react";
 import { useGroupStudents, useStudentsListLogic } from "../hooks";
 import type { Student } from "@/Api/studentApi";
 import { EmptyState } from "@/components/UI/EmptyState";
-import { DropdownMenu } from "@/components/UI/DropdownMenu";
 import Avatar from "@/components/Avatar/Avatar";
 import { CardSkeleton } from "@/components/skeletons";
 import { useUserStatusSocket } from "@/Socket/StatusSocket";
@@ -64,33 +63,33 @@ export const StudentsList: React.FC<StudentsListProps> = ({
     <div className="min-h-screen p-4 md:p-6 bg-gray-50" dir="rtl">
       <div className="w-full mx-auto">
         {/* Header */}
-        <div className="relative bg-gradient-to-br from-emerald-50 via-teal-50/50 to-cyan-50 rounded-2xl shadow-lg border-2 border-emerald-100 overflow-hidden p-6 mb-6">
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500" />
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/60 via-teal-50/40 to-cyan-50/30 pointer-events-none" />
+        <div className="relative bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-600 rounded-2xl shadow-xl border-2 border-emerald-500/30 overflow-hidden p-6 mb-6">
+          <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-emerald-700 via-emerald-600 to-teal-700" />
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-700/20 via-emerald-600/20 to-teal-700/20 pointer-events-none" />
           
           <div className="relative flex items-center justify-between mb-4">
             <div className="flex items-center gap-4 flex-1">
               <button
                 onClick={onBack}
-                className="p-2.5 hover:bg-white/60 rounded-xl transition-all hover:scale-110"
+                className="p-2.5 hover:bg-white/20 rounded-xl transition-all hover:scale-110 text-white"
                 title="العودة"
                 aria-label="العودة إلى قائمة الحلقات"
               >
-                <ArrowRight className="w-6 h-6 text-emerald-700" />
+                <ArrowRight className="w-6 h-6" />
               </button>
               <div className="flex-1">
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex-1">
-                    <h1 className="text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent mb-1">
+                    <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-1">
                       {groupName}
                     </h1>
                     <div className="flex items-center gap-3">
-                      <p className="text-sm text-emerald-600/80 font-medium">إدارة طلاب الحلقة</p>
-                      <span className="text-emerald-400">•</span>
+                      <p className="text-sm text-emerald-100 font-medium">إدارة طلاب الحلقة</p>
+                      <span className="text-emerald-300">•</span>
                       <div className="flex items-center gap-2">
-                        <Users className="w-4 h-4 text-emerald-600" />
-                        <span className="text-sm font-semibold text-emerald-700">
-                          إجمالي: <span className="text-base font-bold">{students.length}</span>
+                        <Users className="w-4 h-4 text-emerald-200" />
+                        <span className="text-sm font-semibold text-emerald-100">
+                          إجمالي: <span className="text-base font-bold text-white">{students.length}</span>
                         </span>
                         {(searchTerm || genderFilter !== 'all') && (
                           <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-md text-xs font-semibold border border-emerald-200">
@@ -105,7 +104,7 @@ export const StudentsList: React.FC<StudentsListProps> = ({
             </div>
             <button
               onClick={onAddStudent}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl hover:from-emerald-600 hover:to-teal-700 transition-all shadow-lg hover:shadow-xl font-semibold transform hover:scale-105"
+              className="flex items-center gap-2 px-6 py-3 bg-white text-emerald-700 rounded-xl hover:bg-emerald-50 transition-all shadow-lg hover:shadow-xl font-semibold transform hover:scale-105"
             >
               <Plus className="w-5 h-5" />
               إضافة طالب
@@ -116,13 +115,13 @@ export const StudentsList: React.FC<StudentsListProps> = ({
           <div className="space-y-4">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-emerald-400" />
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-emerald-500" />
               <input
                 type="text"
                 placeholder="بحث عن طالب (الاسم الكامل أو رقم الهوية)..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pr-10 pl-4 py-2.5 bg-white/90 backdrop-blur-sm border-2 border-emerald-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all shadow-md hover:shadow-lg"
+                className="w-full pr-10 pl-4 py-2.5 bg-white/95 backdrop-blur-sm border-2 border-white/30 rounded-xl focus:ring-2 focus:ring-white/50 focus:border-white/50 outline-none transition-all shadow-lg hover:shadow-xl text-gray-800 placeholder-gray-500"
               />
               {searchTerm && (
                 <button
@@ -138,15 +137,15 @@ export const StudentsList: React.FC<StudentsListProps> = ({
 
             {/* Gender Filter */}
             <div className="flex items-center gap-3">
-              <Filter className="w-5 h-5 text-emerald-600" />
-              <span className="text-sm font-semibold text-emerald-700">فلتر حسب الجنس:</span>
+              <Filter className="w-5 h-5 text-emerald-200" />
+              <span className="text-sm font-semibold text-emerald-100">فلتر حسب الجنس:</span>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setGenderFilter('all')}
                   className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm ${
                     genderFilter === 'all'
-                      ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg scale-105'
-                      : 'bg-white/80 text-gray-700 hover:bg-emerald-50 border-2 border-emerald-100'
+                      ? 'bg-white text-emerald-700 shadow-lg scale-105'
+                      : 'bg-white/20 text-white hover:bg-white/30 border border-white/30'
                   }`}
                 >
                   الكل
@@ -155,8 +154,8 @@ export const StudentsList: React.FC<StudentsListProps> = ({
                   onClick={() => setGenderFilter('ذكر')}
                   className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm ${
                     genderFilter === 'ذكر'
-                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg scale-105'
-                      : 'bg-white/80 text-gray-700 hover:bg-blue-50 border-2 border-blue-100'
+                      ? 'bg-blue-500 text-white shadow-lg scale-105 border-2 border-white/50'
+                      : 'bg-white/20 text-white hover:bg-blue-500/30 border border-white/30'
                   }`}
                 >
                   ذكر
@@ -165,8 +164,8 @@ export const StudentsList: React.FC<StudentsListProps> = ({
                   onClick={() => setGenderFilter('أنثى')}
                   className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm ${
                     genderFilter === 'أنثى'
-                      ? 'bg-gradient-to-r from-pink-500 to-rose-600 text-white shadow-lg scale-105'
-                      : 'bg-white/80 text-gray-700 hover:bg-pink-50 border-2 border-pink-100'
+                      ? 'bg-pink-500 text-white shadow-lg scale-105 border-2 border-white/50'
+                      : 'bg-white/20 text-white hover:bg-pink-500/30 border border-white/30'
                   }`}
                 >
                   أنثى
@@ -218,16 +217,20 @@ export const StudentsList: React.FC<StudentsListProps> = ({
               return (
                 <div
                   key={student._id}
-                  className={`group relative bg-gradient-to-br ${colors.bg} rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 border-2 ${colors.border} ${colors.hoverBorder} overflow-hidden`}
+                  className={`group relative bg-gradient-to-br ${colors.bg} rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border-2 ${colors.border} ${colors.hoverBorder} overflow-hidden transform hover:scale-[1.02] hover:-translate-y-1`}
                   dir="rtl"
                 >
                   {/* شريط علوي ملون */}
                   <div className={`absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r ${colors.gradient}`}></div>
 
+                  {/* تأثير خلفي متحرك */}
+                  <div className={`absolute inset-0 bg-gradient-to-br ${colors.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500`}></div>
+
                   <div className="relative z-10 p-6">
                     {/* رأس الكارد - Avatar والاسم */}
                     <div className="flex items-start gap-4 mb-5">
                       <div className="relative flex-shrink-0">
+                        <div className="absolute inset-0 bg-gradient-to-br from-white/50 to-transparent rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         <Avatar
                           key={`avatar-${student._id}-${typeof student.avatar === 'object' ? student.avatar?.url : student.avatar || 'no-avatar'}`}
                           user={{
@@ -260,29 +263,6 @@ export const StudentsList: React.FC<StudentsListProps> = ({
                           <h3 className="text-xl font-bold text-gray-900 group-hover:text-gray-800 transition-colors truncate">
                             {student.firstName} {student.lastName}
                           </h3>
-                          {/* Dropdown Menu */}
-                          <DropdownMenu
-                            items={[
-                              {
-                                label: "تعديل",
-                                icon: <Edit className="w-4 h-4" />,
-                                onClick: () => onEditStudent(student),
-                                variant: 'default',
-                              },
-                              {
-                                label: "حذف",
-                                icon: <Trash2 className="w-4 h-4" />,
-                                onClick: () => {
-                                  if (window.confirm(`هل أنت متأكد من حذف ${student.firstName} ${student.lastName}؟`)) {
-                                    onDeleteStudent(student._id!);
-                                  }
-                                },
-                                variant: 'danger',
-                              },
-                            ]}
-                            position="left"
-                            buttonClassName="hover:bg-white/80"
-                          />
                         </div>
                         <div className="flex items-center justify-between gap-2 mb-2">
                           <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-white/80 text-gray-700 border border-gray-200 shadow-sm">
@@ -340,6 +320,9 @@ export const StudentsList: React.FC<StudentsListProps> = ({
                       )}
                     </div>
                   </div>
+
+                  {/* تأثير لامع عند hover */}
+                  <div className={`absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000`}></div>
                 </div>
               );
             })}
