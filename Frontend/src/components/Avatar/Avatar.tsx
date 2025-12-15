@@ -29,6 +29,7 @@ export interface AvatarProps {
   user?: {
     _id?: string;
     firstName?: string;
+    lastName?: string;
     name?: string;
     gender?: string;
     role?: string;

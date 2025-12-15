@@ -248,7 +248,7 @@ export const StudentsList: React.FC<StudentsListProps> = ({
                           user={{
                             _id: student._id,
                             firstName: student.firstName,
-                            name: student.lastName,
+                            lastName: student.lastName,
                             gender: student.gender,
                             role: 'student',
                             isActive: student.isActive,
@@ -258,12 +258,13 @@ export const StudentsList: React.FC<StudentsListProps> = ({
                                 ? { url: student.avatar } 
                                 : undefined,
                           }}
+                          userName={`${student.firstName || ''} ${student.lastName || ''}`.trim()}
+                          gender={student.gender as 'male' | 'female' | 'ذكر' | 'أنثى' | undefined}
                           src={typeof student.avatar === 'object' ? student.avatar?.url : student.avatar || undefined}
                           size="lg"
                           border="ring"
                           showStatus={true}
                           statusSize="md"
-                          fallbackIcon={<GraduationCap className="w-6 h-6" />}
                           autoFetch={true}
                           userId={student._id}
                           userRole="student"
@@ -294,7 +295,7 @@ export const StudentsList: React.FC<StudentsListProps> = ({
                                 variant: 'danger',
                               },
                             ]}
-                            position="right"
+                            position="left"
                             buttonClassName="hover:bg-white/80"
                           />
                         </div>

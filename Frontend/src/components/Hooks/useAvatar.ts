@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { fetchAvatarBlobUrl, getUserEndpoint } from '@/Api/profileApi';
 
 export interface UseAvatarOptions {
@@ -39,6 +39,7 @@ export function useAvatar({
     // إذا كان الـ hook معطل
     if (!enabled) {
       setAvatarUrl(null);
+      setIsLoading(false);
       return;
     }
 
@@ -77,6 +78,21 @@ export function useAvatar({
   };
 
   useEffect(() => {
+    // إذا كان في avatarData.url موجود، نستخدمه مباشرة بدون تحميل
+    if (avatarData?.url) {
+      setAvatarUrl(avatarData.url);
+      setIsLoading(false);
+      return;
+    }
+
+    // إذا كان الـ hook معطل أو ما في userId
+    if (!enabled || !userId || !userRole) {
+      setAvatarUrl(null);
+      setIsLoading(false);
+      return;
+    }
+
+    // فقط إذا لم يكن هناك avatarData.url، نبدأ التحميل
     fetchAvatar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, userRole, avatarData?.url, enabled]);

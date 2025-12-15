@@ -44,11 +44,18 @@ export const getTextColor = (): string => {
 };
 
 /**
- * استخراج الأحرف الأولى من اسم المستخدم
+ * استخراج أول حرف من اسم المستخدم (من الاسم الأول فقط)
  */
 export const getUserInitials = (userName?: string): string => {
   if (!userName) return '';
-  return userName.charAt(0).toUpperCase();
+  
+  // تقسيم الاسم إلى كلمات وإزالة المسافات الفارغة
+  const words = userName.trim().split(/\s+/).filter(word => word.length > 0);
+  
+  if (words.length === 0) return '';
+  
+  // نأخذ فقط أول حرف من الكلمة الأولى (الاسم الأول)
+  return words[0].charAt(0).toUpperCase();
 };
 
 /**
@@ -59,6 +66,7 @@ export const getUserInfo = (
   user?: {
     firstName?: string;
     name?: string;
+    lastName?: string;
     gender?: string;
   },
   externalGender?: string
@@ -67,7 +75,21 @@ export const getUserInfo = (
   initials: string;
   gender: NormalizedGender;
 } => {
-  const userName = externalUserName || user?.firstName || user?.name || '';
+  // بناء الاسم الكامل من firstName و lastName إذا كانا متوفرين
+  let userName = '';
+  
+  if (externalUserName) {
+    userName = externalUserName;
+  } else if (user?.firstName && user?.lastName) {
+    userName = `${user.firstName} ${user.lastName}`;
+  } else if (user?.firstName) {
+    userName = user.firstName;
+  } else if (user?.name) {
+    userName = user.name;
+  } else if (user?.lastName) {
+    userName = user.lastName;
+  }
+  
   const initials = getUserInitials(userName);
   const userGender = user?.gender || externalGender;
   const gender = normalizeGender(userGender);
