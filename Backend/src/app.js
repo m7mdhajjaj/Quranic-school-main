@@ -330,14 +330,18 @@ io.on('connection', (socket) => {
           lastSeen: updateResult?.lastSeen?.toISOString() || new Date().toISOString(),
         };
 
-        // إرسال للـ Admins فقط (لتقليل العبء)
+        // إرسال للـ Admins
         io.to('admin-room').emit('userStatusChange', statusUpdate);
         
         // إرسال للمستخدم نفسه
         io.to(userId).emit('userStatusChange', statusUpdate);
         
-        // TODO: إذا كان طالب، إرسال لمعلمي حلقته فقط
-        // سيتم تحسينه لاحقاً بإضافة group rooms
+        // إرسال حسب نوع المستخدم
+        if (role === 'student') {
+          io.to('students').emit('userStatusChange', statusUpdate);
+        } else if (role === 'teacher') {
+          io.to('teachers').emit('userStatusChange', statusUpdate);
+        }
       } else {
         console.warn(`⚠️  User ${userId} not found in ${role} collection`);
       }
@@ -536,13 +540,21 @@ io.on('connection', (socket) => {
         );
       }
 
-      // ✅ إرسال تحديث الحالة للـ Admins فقط
+      // ✅ إرسال تحديث الحالة
       if (updateResult) {
-        io.to('admin-room').emit('userStatusChange', {
+        const statusUpdate = {
           userId: userData.userId,
           isActive: false,
           lastSeen: updateResult.lastSeen?.toISOString() || new Date().toISOString(),
-        });
+        };
+        
+        io.to('admin-room').emit('userStatusChange', statusUpdate);
+        
+        if (userData.role === 'student') {
+          io.to('students').emit('userStatusChange', statusUpdate);
+        } else if (userData.role === 'teacher') {
+          io.to('teachers').emit('userStatusChange', statusUpdate);
+        }
       }
     } catch (error) {
       console.error('Error setting isActive=false on logout:', error);
@@ -942,7 +954,7 @@ io.on('connection', (socket) => {
 
           console.log(`✅ User ${firstName} (${userId}) marked as inactive`);
 
-          // ✅ إرسال تحديث الحالة بذكاء (للـ Admins فقط)
+          // ✅ إرسال تحديث الحالة
           const statusUpdate = {
             userId: userId,
             isActive: false,
@@ -950,6 +962,12 @@ io.on('connection', (socket) => {
           };
           
           io.to('admin-room').emit('userStatusChange', statusUpdate);
+          
+          if (role === 'student') {
+            io.to('students').emit('userStatusChange', statusUpdate);
+          } else if (role === 'teacher') {
+            io.to('teachers').emit('userStatusChange', statusUpdate);
+          }
         } catch (error) {
           console.error(
             `❌ Error setting isActive=false for user ${userId}:`,

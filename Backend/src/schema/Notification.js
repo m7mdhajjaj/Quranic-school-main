@@ -10,7 +10,7 @@ const notificationSchema = new mongoose.Schema(
     recipientModel: {
       type: String,
       required: [true, "نوع المستلم مطلوب"],
-      enum: ["Student", "Teacher", "User"],
+      enum: ["Student", "Teacher", "Admin"],
     },
     type: {
       type: String,
@@ -24,7 +24,6 @@ const notificationSchema = new mongoose.Schema(
         "exam",
         "news",
         "general",
-        // "assignment",
         "daily_marks",
         "warning",
       ],

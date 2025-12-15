@@ -7,9 +7,10 @@ import React from 'react';
 import type { NotificationBellProps } from '../types';
 import { IoNotificationsOutline } from 'react-icons/io5';
 
-export const NotificationBell: React.FC<NotificationBellProps> = ({ unreadCount, onClick }) => {
+export const NotificationBell: React.FC<NotificationBellProps & { buttonRef?: React.RefObject<HTMLButtonElement> }> = ({ unreadCount, onClick, buttonRef }) => {
   return (
     <button
+      ref={buttonRef}
       type="button"
       className="relative group"
       onClick={onClick}

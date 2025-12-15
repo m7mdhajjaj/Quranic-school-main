@@ -25,12 +25,12 @@ export const FooterQuickLinks: React.FC<FooterQuickLinksProps> = ({
           >
             <a
               href={link.path}
-              className="text-emerald-700 hover:text-emerald-800 hover:pr-2 transition-all duration-300 flex items-center gap-2 group text-xs sm:text-sm font-medium"
+              className="text-white/90 hover:text-white hover:pr-2 transition-all duration-300 flex items-center gap-2 group text-xs sm:text-sm font-medium"
             >
               {link.icon && isAdmin ? (
-                <link.icon className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 group-hover:scale-110 transition-all text-emerald-600" />
+                <link.icon className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 group-hover:scale-110 transition-all text-emerald-100" />
               ) : (
-                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-emerald-600 rounded-full group-hover:w-2 sm:group-hover:w-2.5 transition-all"></span>
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white/80 rounded-full group-hover:w-2 sm:group-hover:w-2.5 transition-all"></span>
               )}
               {link.name}
             </a>

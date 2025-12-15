@@ -159,6 +159,15 @@ const getGroupStudentsValidation = [
     .optional()
     .isIn(['true', 'false']).withMessage('includeDetails يجب أن تكون true أو false'),
 
+  query('search')
+    .optional()
+    .trim()
+    .isLength({ min: 0, max: 200 }).withMessage('نص البحث يجب أن يكون أقل من 200 حرف'),
+
+  query('gender')
+    .optional()
+    .isIn(['ذكر', 'أنثى', 'male', 'female']).withMessage('الجنس يجب أن يكون ذكر أو أنثى'),
+
   handleValidationErrors,
 ];
 

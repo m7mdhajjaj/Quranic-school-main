@@ -26,7 +26,7 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] =
     useState(false);
 
-  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const profileMenuRef = useRef<HTMLButtonElement>(null);
   const navigate = useNavigate();
 
   // Custom hooks
@@ -68,18 +68,8 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
     }
   }, [isAuthenticated, currentUser, navigate]);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        profileMenuRef.current &&
-        !profileMenuRef.current.contains(event.target as Node)
-      ) {
-        setProfileMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  // إغلاق القائمة عند النقر خارجها (يتم التعامل معه عبر overlay في ProfileMenu)
+  // تم إزالة هذا الـ effect لأن ProfileMenu يستخدم overlay الآن
 
   useEffect(() => {
     const handleEscKey = (event: KeyboardEvent) => {
@@ -146,12 +136,13 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
               <div className="hidden min-[375px]:block h-6 sm:h-8 w-px bg-white/30"></div>
 
               {/* الملف الشخصي */}
-              <div className="relative z-[200]" ref={profileMenuRef}>
+              <div className="relative z-[200]">
                 <button
+                  ref={profileMenuRef}
                   onClick={() => setProfileMenuOpen(!profileMenuOpen)}
                   className="flex items-center gap-1 sm:gap-2 px-1.5 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl hover:bg-white/20 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/50"
                   aria-label="قائمة الملف الشخصي"
-                  aria-expanded={profileMenuOpen}
+                  aria-expanded={profileMenuOpen ? "true" : "false"}
                 >
                   <Avatar
                     user={currentUser}
@@ -189,6 +180,7 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
                   onProfileClick={handleProfileClick}
                   onChangePasswordClick={handleChangePasswordClick}
                   onLogout={handleLogout}
+                  buttonRef={profileMenuRef}
                 />
               </div>
 

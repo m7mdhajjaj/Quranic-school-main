@@ -1,8 +1,7 @@
 // contexts/UserStatusContext.tsx
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { socketManager } from '../Socket/SocketManager';
-import { useUserStatusSocket } from '../Socket/useTeachersSocket';
+import { useUserStatusSocket } from '../Socket/StatusSocket';
 import api from '../Api/api';
 
 // تعريف الواجهات والأنواع

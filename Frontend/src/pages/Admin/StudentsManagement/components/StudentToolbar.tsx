@@ -1,10 +1,6 @@
 import React from "react";
-import {
-  FaSearch,
-  FaFilter,
-  FaTh,
-  FaList,
-} from "react-icons/fa";
+import { FaSearch, FaFilter } from "react-icons/fa";
+import { LayoutGrid, List } from "lucide-react";
 import StudentsFilters from "./StudentsFilters";
 
 interface StudentToolbarProps {
@@ -15,7 +11,7 @@ interface StudentToolbarProps {
   setShowFilters: (show: boolean) => void;
   activeFiltersCount: number;
   viewMode: "table" | "grid";
-  onViewModeChange: () => void;
+  onViewModeChange: (mode: "table" | "grid") => void;
   // Filter props
   selectedGender: string;
   setSelectedGender: (gender: string) => void;
@@ -81,33 +77,43 @@ export const StudentToolbar: React.FC<StudentToolbarProps> = React.memo(({
             فلاتر
           </button>
 
-          {/* View Mode Toggle */}
-          <div className="flex bg-gray-100 rounded-lg p-1" title="تبديل طريقة العرض">
+          {/* View Mode Toggle - Enhanced Design */}
+          <div className="relative flex items-center bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-1.5 shadow-inner border border-gray-200" dir="rtl">
+            {/* Animated Background Slider */}
+            <div
+              className={`absolute top-1.5 bottom-1.5 w-[calc(50%-0.375rem)] bg-gradient-to-l from-emerald-500 to-emerald-600 rounded-lg shadow-lg transition-all duration-300 ease-out ${
+                viewMode === 'table' ? 'right-1.5' : 'left-1.5'
+              }`}
+            />
+            
+            {/* Table View Button */}
             <button
-              onClick={() => onViewModeChange()}
-              className={`px-3 py-1.5 rounded-md flex items-center gap-2 text-sm font-medium transition-colors ${
+              onClick={() => onViewModeChange('table')}
+              className={`relative z-10 flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 ${
                 viewMode === 'table'
-                  ? 'bg-white text-emerald-600 shadow-sm'
+                  ? 'text-white shadow-md transform scale-105'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
-              title="التبديل إلى عرض الجدول"
+              title="عرض الجدول"
               aria-label="التبديل إلى عرض الجدول"
             >
-              <FaList className="w-4 h-4" />
-              <span className="hidden sm:inline">جدول</span>
+              <List className={`w-4 h-4 transition-transform duration-300 ${viewMode === 'table' ? 'scale-110' : ''}`} />
+              <span className="hidden sm:inline whitespace-nowrap">جدول</span>
             </button>
+            
+            {/* Grid View Button */}
             <button
-              onClick={() => onViewModeChange()}
-              className={`px-3 py-1.5 rounded-md flex items-center gap-2 text-sm font-medium transition-colors ${
+              onClick={() => onViewModeChange('grid')}
+              className={`relative z-10 flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 ${
                 viewMode === 'grid'
-                  ? 'bg-white text-emerald-600 shadow-sm'
+                  ? 'text-white shadow-md transform scale-105'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
-              title="التبديل إلى عرض الكاردات"
+              title="عرض الكاردات"
               aria-label="التبديل إلى عرض الكاردات"
             >
-              <FaTh className="w-4 h-4" />
-              <span className="hidden sm:inline">كاردات</span>
+              <LayoutGrid className={`w-4 h-4 transition-transform duration-300 ${viewMode === 'grid' ? 'scale-110' : ''}`} />
+              <span className="hidden sm:inline whitespace-nowrap">كاردات</span>
             </button>
           </div>
         </div>

@@ -68,7 +68,7 @@ export const useNotificationData = ({
           isRead: apiNotification.isRead,
           priority: apiNotification.priority || 'medium',
           isNew: false,
-          data: apiNotification.metadata,
+          data: apiNotification.data || apiNotification.metadata,
         }));
 
         // ترتيب: غير المقروء أولاً ثم الأحدث
@@ -142,11 +142,23 @@ export const useNotificationData = ({
   const markAllAsReadLocal = useCallback(async () => {
     if (stats.unreadCount === 0 || isMarkingAll) return;
 
+    // Capture time to avoid marking messages that arrive during the API call
+    const actionTime = new Date().toISOString();
+
     try {
       setIsMarkingAll(true);
       await markAllAsRead(userId);
 
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true, isNew: false })));
+      setNotifications((prev) => 
+        prev.map((n) => {
+          // Only mark as read if it was created before the action started
+          // This prevents marking new socket messages as read in UI when they are unread in DB
+          if (n.createdAt <= actionTime) {
+            return { ...n, isRead: true, isNew: false };
+          }
+          return n;
+        })
+      );
 
       return { success: true };
     } catch (error) {
@@ -183,11 +195,13 @@ export const useNotificationData = ({
   const deleteNotificationLocal = useCallback(
     async (notificationId: string) => {
       try {
-        await deleteNotification(notificationId);
+        const success = await deleteNotification(notificationId);
 
-        setNotifications((prev) => prev.filter((n) => n._id !== notificationId));
-
-        return { success: true };
+        if (success) {
+          setNotifications((prev) => prev.filter((n) => n._id !== notificationId));
+          return { success: true };
+        }
+        return { success: false, error: 'Failed to delete' };
       } catch (error) {
         console.error('Error deleting notification:', error);
         return { success: false, error };

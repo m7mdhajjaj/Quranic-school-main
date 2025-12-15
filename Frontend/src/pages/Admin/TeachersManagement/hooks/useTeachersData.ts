@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { getAllTeachers, getTeacherStats } from "@/Api/teacherApi";
 import type { Teacher, ApiStats, TeacherFiltersParams } from "../types";
-import { useTeachersSocket } from "@/Socket/useTeachersSocket";
+import { useTeachersSocket } from "@/Socket/StatusSocket";
 
 export const useTeachersData = (hasPermission: boolean) => {
   const [teachers, setTeachers] = useState<Teacher[]>([]);

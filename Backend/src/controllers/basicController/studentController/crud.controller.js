@@ -5,6 +5,11 @@ const { checkDuplicateFields } = require("../../../utils/validators/duplicateChe
 const { invalidateCache } = require("../../../middleware/cacheMiddleware");
 const { updateGroupActiveStatus, updateGroupsActiveStatusOnStudentMove } = require("../groupController");
 const {
+  notifyStudentAddedToGroup,
+  notifyStudentRemovedFromGroup,
+  notifyStudentMovedGroup
+} = require("../../../Notifications");
+const {
   validateTeacherGroupMatch,
   validateGroupCapacity,
   buildStudentQuery,
@@ -222,6 +227,12 @@ exports.createStudent = async (req, res) => {
     const newStudent = await student.save();
     console.log("Student created successfully:", newStudent._id);
 
+    // Notify Teacher if added to group
+    if (group && group !== "غير محدد") {
+      const io = req.app.get("io");
+      notifyStudentAddedToGroup(newStudent, group, io);
+    }
+
     // Invalidate caches and emit events using helpers
     await invalidateStudentCaches();
     emitStudentEvent('created', newStudent);
@@ -398,9 +409,24 @@ exports.updateStudent = async (req, res) => {
     if (updatedData.group && currentStudent.group !== updatedData.group) {
       await updateGroupsActiveStatusOnStudentMove(currentStudent.group, updatedData.group);
     }
+
+    // Notification Logic
+    const io = req.app.get("io");
+    const oldGroup = currentStudent.group;
+    const newGroup = updatedStudent.group;
+    
+    const wasInGroup = oldGroup && oldGroup !== "غير محدد";
+    const isInGroup = newGroup && newGroup !== "غير محدد";
+
+    if (!wasInGroup && isInGroup) {
+       notifyStudentAddedToGroup(updatedStudent, newGroup, io);
+    } else if (wasInGroup && !isInGroup) {
+       notifyStudentRemovedFromGroup(updatedStudent, oldGroup, io);
+    } else if (wasInGroup && isInGroup && oldGroup !== newGroup) {
+       notifyStudentMovedGroup(updatedStudent, oldGroup, newGroup, io);
+    }
     
     // Emit profile update event
-    const io = req.app.get("io");
     if (io) {
       io.to("profile").emit("profileUpdated", {
         user: updatedStudent,
@@ -438,6 +464,12 @@ exports.deleteStudent = async (req, res) => {
       studentId: req.params.id,
       student: deletedStudent,
     });
+
+    // Notify Teacher if removed from group
+    if (deletedStudent.group && deletedStudent.group !== "غير محدد") {
+      const io = req.app.get("io");
+      notifyStudentRemovedFromGroup(deletedStudent, deletedStudent.group, io);
+    }
 
     // Update group activeStatus after student deletion
     if (deletedStudent.group) {

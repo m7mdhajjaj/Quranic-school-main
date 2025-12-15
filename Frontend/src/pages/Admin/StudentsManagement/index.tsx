@@ -30,7 +30,7 @@ const StudentsManagement: React.FC = () => {
   const userRole = currentUser?.role || '';
   const hasPermission = userRole === 'teacher' || userRole === 'admin';
 
-  // View Mode State
+  // View Mode State - Default to table for better UX
   const [viewMode, setViewMode] = useState<ViewMode>('table');
 
   // Data Management
@@ -147,9 +147,7 @@ const StudentsManagement: React.FC = () => {
           setShowFilters={setShowFilters}
           activeFiltersCount={activeFiltersCount}
           viewMode={viewMode}
-          onViewModeChange={() =>
-            setViewMode(viewMode === 'table' ? 'grid' : 'table')
-          }
+          onViewModeChange={(mode) => setViewMode(mode)}
           selectedGender={selectedGender}
           setSelectedGender={setSelectedGender}
           groupsFilter={groupsFilter}

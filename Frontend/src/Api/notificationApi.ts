@@ -60,7 +60,7 @@ export const getUnreadNotificationCount = async (userId: string): Promise<number
 // Mark notification as read
 export const markAsRead = async (notificationId: string): Promise<boolean> => {
   try {
-    const response = await api.patch(`/notifications/${notificationId}/read`);
+    const response = await api.put(`/notifications/${notificationId}/read`);
     return response.data.success;
   } catch (error) {
     console.error('Failed to mark notification as read:', error);
@@ -71,7 +71,7 @@ export const markAsRead = async (notificationId: string): Promise<boolean> => {
 // Mark all notifications as read for a user
 export const markAllAsRead = async (userId: string): Promise<boolean> => {
   try {
-    const response = await api.patch(`/notifications/${userId}/read-all`);
+    const response = await api.put(`/notifications/read-all`);
     return response.data.success;
   } catch (error) {
     console.error('Failed to mark all notifications as read:', error);

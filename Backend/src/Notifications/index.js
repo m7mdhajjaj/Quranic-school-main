@@ -14,11 +14,17 @@ const FCMService = require("./Core/FCMService");
 const DailyMarksHandler = require("./Handlers/DailyMarksHandler");
 const ExamHandler = require("./Handlers/ExamHandler");
 const NewsHandler = require("./Handlers/NewsHandler");
+const StudentHandler = require("./Handlers/StudentHandler");
 
 module.exports = {
   // Main Services
   NotificationService: NotificationManager, // Export as NotificationService for backward compatibility
   FCMService,
+  
+  // Student Notifications
+  notifyStudentAddedToGroup: StudentHandler.notifyStudentAddedToGroup,
+  notifyStudentRemovedFromGroup: StudentHandler.notifyStudentRemovedFromGroup,
+  notifyStudentMovedGroup: StudentHandler.notifyStudentMovedGroup,
   
   // Section Notifications
   notifySectionAdded: DailyMarksHandler.notifySectionAdded,

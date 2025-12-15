@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import { User, Key, LogOut, ChevronLeft } from "lucide-react";
 import { Card } from "@/components/UI";
 import Avatar from "@/components/Avatar/Avatar";
@@ -12,6 +12,7 @@ interface ProfileMenuProps {
   onProfileClick: () => void;
   onChangePasswordClick: () => void;
   onLogout: () => void;
+  buttonRef?: React.RefObject<HTMLButtonElement>;
 }
 
 const ProfileMenu: React.FC<ProfileMenuProps> = ({
@@ -21,10 +22,12 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
   onProfileClick,
   onChangePasswordClick,
   onLogout,
+  buttonRef,
 }) => {
   const location = useLocation();
   const isProfilePage = location.pathname === '/profile';
   const isChangePassword = isProfilePage && location.search.includes('change-password');
+  const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 });
 
   const menuButtons = useMemo(() => [
     {
@@ -70,15 +73,76 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
     isLogout: boolean;
   }>, [onClose, onProfileClick, onChangePasswordClick, onLogout, isProfilePage, isChangePassword]);
 
+  // حساب موضع القائمة المنسدلة - محاذاة مباشرة تحت الزر
+  useEffect(() => {
+    if (isOpen && buttonRef?.current) {
+      const updatePosition = () => {
+        if (!buttonRef.current) return;
+        
+        const buttonRect = buttonRef.current.getBoundingClientRect();
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+        const menuWidth = screenWidth >= 640 ? 256 : 224; // w-56 = 224px, w-64 = 256px
+        
+        // محاذاة الحافة اليمنى للقائمة مع الحافة اليمنى للزر مباشرة
+        const rightPosition = screenWidth - buttonRect.right;
+        
+        // حساب الموضع العمودي - مباشرة تحت الزر مع مسافة صغيرة
+        let topPosition = buttonRect.bottom + 6;
+        
+        // إذا لم يكن هناك مساحة كافية في الأسفل، افتح القائمة للأعلى
+        const estimatedHeight = 200; // تقدير ارتفاع القائمة
+        if (topPosition + estimatedHeight > screenHeight - 16) {
+          topPosition = buttonRect.top - estimatedHeight - 6;
+          if (topPosition < 16) {
+            topPosition = 16;
+          }
+        }
+        
+        setMenuPosition({
+          top: Math.max(16, topPosition),
+          right: Math.max(16, rightPosition),
+        });
+      };
+      
+      // حساب الموضع فوراً
+      updatePosition();
+      
+      // إعادة حساب الموضع عند تغيير حجم النافذة أو التمرير
+      window.addEventListener('resize', updatePosition);
+      window.addEventListener('scroll', updatePosition, true);
+      
+      return () => {
+        window.removeEventListener('resize', updatePosition);
+        window.removeEventListener('scroll', updatePosition, true);
+      };
+    }
+  }, [isOpen, buttonRef]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="absolute left-0 mt-1 sm:mt-2 w-56 sm:w-64 z-[200] transition-all duration-200 animate-fadeIn" dir="rtl">
-      <Card 
-        variant="elevated" 
-        padding="none"
-        className="overflow-hidden bg-white border border-emerald-200 shadow-lg rounded-xl backdrop-blur-sm"
+    <>
+      {/* Overlay للإغلاق */}
+      <div
+        className="fixed inset-0 z-[190]"
+        onClick={onClose}
+      />
+      
+      <div 
+        className="fixed w-56 sm:w-64 z-[200] transition-all duration-200 animate-fadeIn" 
+        dir="rtl"
+        style={{
+          top: `${menuPosition.top}px`,
+          right: `${menuPosition.right}px`,
+        }}
+        onClick={(e) => e.stopPropagation()}
       >
+        <Card 
+          variant="elevated" 
+          padding="none"
+          className="overflow-hidden bg-white border border-emerald-200 shadow-xl rounded-xl backdrop-blur-sm"
+        >
         {/* User Info Header - Compact Design */}
         <div className="relative bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 px-4 py-3 rounded-t-xl border-b border-emerald-100">
           <div className="flex items-center gap-3">
@@ -168,7 +232,8 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
           ))}
         </div>
       </Card>
-    </div>
+      </div>
+    </>
   );
 };
 

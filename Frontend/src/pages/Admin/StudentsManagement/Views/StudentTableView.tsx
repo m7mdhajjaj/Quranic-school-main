@@ -1,8 +1,9 @@
 import React from 'react';
 import { Table, type Column } from '@/components/UI';
-import { Edit2, Trash2 } from 'lucide-react';
+import { Edit2, Trash2, Phone, Mail, MapPin, Users, GraduationCap } from 'lucide-react';
 import { User, UserCheck, Cake } from 'lucide-react';
 import type { Student } from '@/Api/studentApi';
+import Avatar from '@/components/Avatar/Avatar';
 
 interface StudentTableViewProps {
   students: Student[];
@@ -19,31 +20,23 @@ interface StudentTableViewProps {
 
 // دالة مساعدة للحصول على اسم الحلقة بشكل آمن
 const getGroupDisplayName = (
-  group:
-    | string
-    | { name?: string; id?: string; number?: number }
-    | null
-    | undefined
+  group: string | { name?: string; id?: string; number?: number } | null | undefined
 ): string => {
-  if (!group) return 'حلقة غير محددة';
+  if (!group) return 'غير محدد';
   if (typeof group === 'string') return group;
-  return group.name || 'حلقة غير محددة';
+  return group.name || 'غير محدد';
 };
 
 // دالة مساعدة للحصول على اسم المعلم بشكل آمن
 const getTeacherDisplayName = (
-  teacher:
-    | string
-    | { firstName?: string; lastName?: string; name?: string }
-    | null
-    | undefined
+  teacher: string | { firstName?: string; lastName?: string; name?: string } | null | undefined
 ): string => {
-  if (!teacher) return 'معلم غير محدد';
+  if (!teacher) return 'غير محدد';
   if (typeof teacher === 'string') return teacher;
   if (teacher.firstName || teacher.lastName) {
     return `${teacher.firstName || ''} ${teacher.lastName || ''}`.trim();
   }
-  return teacher.name || 'معلم غير محدد';
+  return teacher.name || 'غير محدد';
 };
 
 export const StudentTableView: React.FC<StudentTableViewProps> = ({
@@ -71,9 +64,9 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
                 type="checkbox"
                 checked={allSelected}
                 onChange={onToggleAll}
-                className="w-4 h-4 text-white border-white rounded focus:ring-white cursor-pointer"
+                className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500 cursor-pointer"
                 title="تحديد الكل"
-                placeholder="تحديد الكل"
+                aria-label="تحديد الكل"
               />
             ),
             width: '50px',
@@ -85,109 +78,99 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
                 onChange={() => onToggleStudent(student._id || '')}
                 className="w-4 h-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500 cursor-pointer"
                 title="تحديد الطالب"
-                placeholder="تحديد الطالب"
+                aria-label="تحديد الطالب"
               />
             ),
           },
         ]
       : []),
     {
-      key: 'studentId',
-      header: 'رقم الطالب',
-      sortable: true,
-      width: '100px',
-      align: 'center',
-      render: (student) => (
-        <div className="flex justify-center">
-          <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-            #{student.studentId}
-          </span>
+      key: 'student',
+      header: 'الطالب',
+      width: '250px',
+      align: 'right' as const,
+      render: (student: Student) => (
+        <div className="flex items-center gap-3 py-2">
+          <Avatar
+            user={student}
+            size="sm"
+            border="ring"
+            fallbackIcon={<GraduationCap className="w-4 h-4" />}
+          />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-sm font-bold text-gray-900 truncate">
+                {student.firstName} {student.lastName}
+              </span>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 flex-shrink-0">
+                #{student.studentId}
+              </span>
+            </div>
+            {student.fatherName && (
+              <div className="text-xs text-gray-500 truncate">{student.fatherName}</div>
+            )}
+          </div>
         </div>
       ),
     },
     {
-      key: 'name',
-      header: 'الاسم الكامل',
-      sortable: true,
-      align: 'right',
-      render: (student) => (
-        <div className="text-right">
-          <div className="text-sm font-semibold text-gray-900">
-            {student.firstName} {student.lastName}
-          </div>
-          {student.fatherName && (
-            <div className="text-xs text-gray-500">{student.fatherName}</div>
+      key: 'contact',
+      header: 'معلومات الاتصال',
+      width: '200px',
+      align: 'right' as const,
+      render: (student: Student) => (
+        <div className="space-y-1.5 py-2">
+          {student.phoneNumber && (
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              <Phone className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+              <span className="font-mono text-xs" dir="ltr">{student.phoneNumber}</span>
+            </div>
+          )}
+          {student.email && (
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              <Mail className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+              <span className="text-xs truncate">{student.email}</span>
+            </div>
+          )}
+          {!student.phoneNumber && !student.email && (
+            <span className="text-xs text-gray-400">-</span>
           )}
         </div>
       ),
     },
     {
-      key: 'phoneNumber',
-      header: 'رقم الهاتف',
-      align: 'center',
-      render: (student) => (
-        <div className="flex justify-center">
-          <span className="text-sm text-gray-900 font-mono" dir="ltr">
-            {student.phoneNumber || <span className="text-gray-400">-</span>}
-          </span>
-        </div>
-      ),
-    },
-    {
-      key: 'idNumber',
-      header: 'رقم الهوية',
-      align: 'center',
-      render: (student) => (
-        <div className="flex justify-center">
-          <span className="text-sm text-gray-900 font-mono">
-            {student.idNumber || <span className="text-gray-400">-</span>}
-          </span>
-        </div>
-      ),
-    },
-    {
-      key: 'gender',
-      header: 'الجنس',
-      width: '100px',
-      align: 'center',
-      render: (student) => (
-        <div className="flex justify-center">
-          {student.gender ? (
+      key: 'info',
+      header: 'المعلومات الشخصية',
+      width: '180px',
+      align: 'center' as const,
+      render: (student: Student) => (
+        <div className="flex flex-col items-center gap-2 py-2">
+          {student.gender && (
             <span
-              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ${
                 student.gender === 'ذكر'
                   ? 'bg-blue-50 text-blue-700 border border-blue-200'
                   : 'bg-pink-50 text-pink-700 border border-pink-200'
               }`}
             >
               {student.gender === 'ذكر' ? (
-                <User className="w-3 h-3" />
+                <User className="w-3.5 h-3.5" />
               ) : (
-                <UserCheck className="w-3 h-3" />
+                <UserCheck className="w-3.5 h-3.5" />
               )}
               {student.gender}
             </span>
-          ) : (
-            <span className="text-gray-400">-</span>
           )}
-        </div>
-      ),
-    },
-    {
-      key: 'age',
-      header: 'العمر',
-      sortable: true,
-      width: '90px',
-      align: 'center',
-      render: (student) => (
-        <div className="flex justify-center">
-          {student.age ? (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
-              <Cake className="w-3 h-3" />
-              {student.age}
+          {student.age && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+              <Cake className="w-3.5 h-3.5" />
+              {student.age} سنة
             </span>
-          ) : (
-            <span className="text-gray-400">-</span>
+          )}
+          {student.idNumber && (
+            <span className="text-xs text-gray-600 font-mono bg-gray-50 px-2 py-1 rounded border border-gray-200">
+              {student.idNumber}
+            </span>
           )}
         </div>
       ),
@@ -195,20 +178,24 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
     {
       key: 'group',
       header: 'الحلقة',
-      render: (student) => {
+      width: '150px',
+      align: 'center' as const,
+      render: (student: Student) => {
         if (student.group) {
           return (
-            <div className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-700 rounded-md text-xs font-medium border border-emerald-200">
-              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full flex-shrink-0"></div>
-              <span className="truncate max-w-[150px]">
-                {getGroupDisplayName(student.group)}
-              </span>
+            <div className="flex items-center justify-center py-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-semibold border border-emerald-200 shadow-sm">
+                <Users className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="truncate max-w-[120px]">
+                  {getGroupDisplayName(student.group)}
+                </span>
+              </div>
             </div>
           );
         }
         return (
-          <div className="inline-flex items-center gap-1 px-2 py-1 bg-gray-50 rounded-md border border-gray-200">
-            <span className="text-gray-500 text-xs">-</span>
+          <div className="flex items-center justify-center py-2">
+            <span className="text-xs text-gray-400">-</span>
           </div>
         );
       },
@@ -216,20 +203,24 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
     {
       key: 'teacher',
       header: 'المعلم',
-      render: (student) => {
+      width: '150px',
+      align: 'center' as const,
+      render: (student: Student) => {
         if (student.teacher) {
           return (
-            <div className="inline-flex items-center gap-1 px-2 py-1 bg-violet-50 text-violet-700 rounded-md text-xs font-medium border border-violet-200">
-              <div className="w-1.5 h-1.5 bg-violet-500 rounded-full flex-shrink-0"></div>
-              <span className="truncate max-w-[150px]">
-                {getTeacherDisplayName(student.teacher)}
-              </span>
+            <div className="flex items-center justify-center py-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-violet-50 text-violet-700 rounded-lg text-xs font-semibold border border-violet-200 shadow-sm">
+                <GraduationCap className="w-3.5 h-3.5 text-violet-600" />
+                <span className="truncate max-w-[120px]">
+                  {getTeacherDisplayName(student.teacher)}
+                </span>
+              </div>
             </div>
           );
         }
         return (
-          <div className="inline-flex items-center gap-1 px-2 py-1 bg-gray-50 rounded-md border border-gray-200">
-            <span className="text-gray-500 text-xs">-</span>
+          <div className="flex items-center justify-center py-2">
+            <span className="text-xs text-gray-400">-</span>
           </div>
         );
       },
@@ -237,29 +228,70 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
     {
       key: 'residence',
       header: 'مكان السكن',
-      render: (student) => (
-        <span className="text-sm text-gray-900">
-          {student.residence || <span className="text-gray-400">-</span>}
-        </span>
+      width: '150px',
+      align: 'right' as const,
+      render: (student: Student) => (
+        <div className="py-2">
+          {student.residence ? (
+            <div className="flex items-center gap-2 text-sm text-gray-700">
+              <MapPin className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+              <span className="text-xs truncate">{student.residence}</span>
+            </div>
+          ) : (
+            <span className="text-xs text-gray-400">-</span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'الحالة',
+      width: '100px',
+      align: 'center' as const,
+      render: (student: Student) => (
+        <div className="flex items-center justify-center py-2">
+          {student.isActive !== undefined && (
+            <span
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ${
+                student.isActive
+                  ? 'bg-green-50 text-green-700 border border-green-200'
+                  : 'bg-gray-50 text-gray-600 border border-gray-200'
+              }`}
+            >
+              <div className={`w-2 h-2 rounded-full ${student.isActive ? 'bg-green-500' : 'bg-gray-400'}`} />
+              {student.isActive ? 'نشط' : 'غير نشط'}
+            </span>
+          )}
+          {student.isActive === undefined && (
+            <span className="text-xs text-gray-400">-</span>
+          )}
+        </div>
       ),
     },
     {
       key: 'actions',
       header: 'الإجراءات',
-      width: '120px',
-      render: (student) => (
-        <div className="flex items-center justify-center gap-2">
+      width: '100px',
+      align: 'center' as const,
+      render: (student: Student) => (
+        <div className="flex items-center justify-center gap-1 py-2">
           <button
             onClick={() => onEdit(student)}
-            className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+            className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all duration-200 hover:scale-110"
             title="تعديل"
+            aria-label="تعديل الطالب"
           >
             <Edit2 className="w-4 h-4" />
           </button>
           <button
-            onClick={() => onDelete(student)}
-            className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+            onClick={() => {
+              if (window.confirm(`هل أنت متأكد من حذف ${student.firstName} ${student.lastName}؟`)) {
+                onDelete(student);
+              }
+            }}
+            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-110"
             title="حذف"
+            aria-label="حذف الطالب"
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -270,7 +302,7 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
 
   return (
     <div
-      className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+      className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden"
       dir="rtl"
     >
       <Table
@@ -278,7 +310,16 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
         columns={columns}
         loading={isLoading}
         emptyMessage="لا يوجد طلاب"
-        headerClassName="bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-white shadow-lg"
+        emptyDescription="لم يتم إضافة أي طلاب بعد"
+        hoverable={true}
+        striped={true}
+        headerClassName="bg-gradient-to-r from-emerald-500 via-emerald-600 to-emerald-500 text-white shadow-lg"
+        rowClassName={(student, index) => {
+          const base = 'transition-colors duration-150';
+          const hover = 'hover:bg-emerald-50/50';
+          const stripe = index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50';
+          return `${base} ${stripe} ${hover}`;
+        }}
       />
     </div>
   );

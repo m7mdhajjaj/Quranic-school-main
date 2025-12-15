@@ -80,6 +80,11 @@ const Azkar = lazy(() => import("./pages/Azkar"));
 const Warnings = lazy(() => import("./pages/Warnings/WarningsPage"));
 
 // ============================================================================
+// Page Components - Teacher Student Management
+// ============================================================================
+const TeacherStudentManagement = lazy(() => import("./pages/Teacher"));
+
+// ============================================================================
 // Page Components - Points Game
 // ============================================================================
 const PointsGame = lazy(() => import("./pages/PointsGame/PointsGamePage"));
@@ -260,6 +265,14 @@ const TeacherRoutes: React.FC = () => {
           } 
         />
         <Route path="/warnings" element={<Warnings />} />
+        <Route 
+          path="/students-management" 
+          element={
+            <React.Suspense fallback={<LoadingFallback message="جاري تحميل إدارة الطلاب..." />}>
+              <TeacherStudentManagement />
+            </React.Suspense>
+          } 
+        />
 
         {/* ============================================
             لعبة النقاط - Points Game

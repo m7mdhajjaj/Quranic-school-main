@@ -4,7 +4,7 @@ import {
   getStudentStats,
 } from "@/Api/studentApi";
 import type { Student, ApiStats } from "../types";
-import { useUserStatusSocket } from "@/Socket/useTeachersSocket";
+import { useUserStatusSocket } from "@/Socket/StatusSocket";
 
 export const useStudentsData = (hasPermission: boolean) => {
   const [students, setStudents] = useState<Student[]>([]);

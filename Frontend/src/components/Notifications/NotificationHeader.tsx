@@ -55,8 +55,10 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
 
   const [showDropdown, setShowDropdown] = useState(false);
   const [refreshTime, setRefreshTime] = useState(Date.now());
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 });
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   // ============================================================================
   // Event Handlers
@@ -88,6 +90,9 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
       setShowDropdown(false);
     } else if (notification.type === 'news') {
       navigate('/news');
+      setShowDropdown(false);
+    } else {
+      // For other types, just close the dropdown
       setShowDropdown(false);
     }
   };
@@ -137,19 +142,51 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
     }
   }, [firebaseNotification, userId]);
 
-  // إغلاق القائمة عند النقر خارجها
+  // حساب موضع القائمة المنسدلة - محاذاة مباشرة تحت الزر
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setShowDropdown(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    if (showDropdown && buttonRef.current) {
+      const updatePosition = () => {
+        if (!buttonRef.current) return;
+        
+        const buttonRect = buttonRef.current.getBoundingClientRect();
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+        const dropdownWidth = screenWidth >= 640 ? 380 : 320;
+        
+        // محاذاة الحافة اليمنى للقائمة مع الحافة اليمنى للزر مباشرة
+        const rightPosition = screenWidth - buttonRect.right;
+        
+        // حساب الموضع العمودي - مباشرة تحت الزر مع مسافة صغيرة
+        let topPosition = buttonRect.bottom + 6;
+        
+        // إذا لم يكن هناك مساحة كافية في الأسفل، افتح القائمة للأعلى
+        const estimatedHeight = Math.min(500, screenHeight * 0.7);
+        if (topPosition + estimatedHeight > screenHeight - 16) {
+          topPosition = buttonRect.top - estimatedHeight - 6;
+          if (topPosition < 16) {
+            topPosition = 16;
+          }
+        }
+        
+        setDropdownPosition({
+          top: Math.max(16, topPosition),
+          right: Math.max(16, rightPosition),
+        });
+      };
+      
+      // حساب الموضع فوراً
+      updatePosition();
+      
+      // إعادة حساب الموضع عند تغيير حجم النافذة أو التمرير
+      window.addEventListener('resize', updatePosition);
+      window.addEventListener('scroll', updatePosition, true);
+      
+      return () => {
+        window.removeEventListener('resize', updatePosition);
+        window.removeEventListener('scroll', updatePosition, true);
+      };
+    }
+  }, [showDropdown]);
 
   // ============================================================================
   // Render
@@ -162,11 +199,27 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
         <NotificationBell
           unreadCount={stats.unreadCount}
           onClick={() => setShowDropdown(!showDropdown)}
+          buttonRef={buttonRef}
         />
+
+        {/* Overlay للإغلاق */}
+        {showDropdown && (
+          <div
+            className="fixed inset-0 z-[140]"
+            onClick={() => setShowDropdown(false)}
+          />
+        )}
 
         {/* القائمة المنسدلة */}
         {showDropdown && (
-          <div className="absolute top-full left-0 sm:left-0 mt-3 w-screen sm:w-[420px] max-w-[95vw] sm:max-w-none bg-white rounded-2xl shadow-2xl z-[150] animate-slideDown -ml-4 sm:ml-0 border border-gray-200 flex flex-col max-h-[85vh] sm:max-h-[600px]">
+          <div 
+            className="fixed w-[320px] sm:w-[380px] bg-white rounded-xl shadow-2xl z-[150] animate-slideDown border border-gray-200 flex flex-col max-h-[70vh] sm:max-h-[500px]"
+            style={{
+              top: `${dropdownPosition.top}px`,
+              right: `${dropdownPosition.right}px`,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* رأس القائمة */}
             <div className="flex-shrink-0 rounded-t-2xl overflow-hidden">
               <NotificationDropdownHeader

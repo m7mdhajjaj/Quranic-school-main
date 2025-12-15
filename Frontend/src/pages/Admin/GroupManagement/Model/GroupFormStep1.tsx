@@ -120,13 +120,30 @@ const GroupFormStep1: React.FC<GroupFormStep1Props> = ({
                 <option value="">
                   {loadingTeachers ? "جاري التحميل..." : "اختر المعلم"}
                 </option>
-                {teachers.map((teacher: Teacher) => (
-                  <option
-                    key={teacher._id}
-                    value={`${teacher.firstName} ${teacher.lastName}`}>
-                    {`${teacher.firstName} ${teacher.lastName}`}
-                  </option>
-                ))}
+                {teachers.map((teacher: Teacher) => {
+                  // بناء الاسم الثلاثي
+                  const fullName = [
+                    teacher.firstName,
+                    teacher.fatherName,
+                    teacher.lastName
+                  ].filter(Boolean).join(' ');
+                  
+                  // قيمة الخيار: المعرف الفريد (ID) لضمان الدقة
+                  const optionValue = teacher._id;
+                  
+                  // نص العرض: الاسم الثلاثي + رقم التسجيل
+                  const displayText = teacher.teacherId 
+                    ? `${fullName || `${teacher.firstName} ${teacher.lastName}`} - ${teacher.teacherId}`
+                    : fullName || `${teacher.firstName} ${teacher.lastName}`;
+                  
+                  return (
+                    <option
+                      key={teacher._id}
+                      value={optionValue}>
+                      {displayText}
+                    </option>
+                  );
+                })}
               </select>
 
               <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none">

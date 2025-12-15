@@ -109,6 +109,72 @@ export const getGroupById = async (
   }
 };
 
+// Get group students
+export const getGroupStudents = async (
+  groupId: string,
+  includeDetails: boolean = true,
+  search?: string,
+  gender?: 'ذكر' | 'أنثى' | 'male' | 'female'
+): Promise<{
+  success: boolean;
+  data?: {
+    group: {
+      _id: string;
+      name: string;
+      teacher: string;
+      capacity?: number;
+    };
+    students: Array<{
+      _id: string;
+      studentId: number;
+      firstName: string;
+      lastName: string;
+      fatherName?: string;
+      grandFatherName?: string;
+      motherName?: string;
+      idNumber?: string;
+      birthDate?: Date | string;
+      age?: number;
+      gender?: string;
+      residence?: string;
+      teacher?: string;
+      group?: string;
+      email?: string;
+      phoneNumber?: string;
+      avatar?: {
+        url?: string;
+        publicId?: string;
+      };
+      isActive?: boolean;
+      lastSeen?: Date;
+      createdAt?: Date;
+      updatedAt?: Date;
+    }>;
+    totalStudents: number;
+  };
+  message?: string;
+}> => {
+  try {
+    const params = new URLSearchParams();
+    params.append('includeDetails', includeDetails.toString());
+    if (search && search.trim()) {
+      params.append('search', search.trim());
+    }
+    if (gender) {
+      params.append('gender', gender);
+    }
+    const response = await api.get(`/groups/${groupId}/students?${params.toString()}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching group students:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
+    return {
+      success: false,
+      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب طلاب الحلقة",
+    };
+  }
+};
+
 // Get groups by teacher
 export const getGroupsByTeacher = async (
   teacherName: string
@@ -300,7 +366,7 @@ export const getGroupTimetable = async (groupId: string): Promise<{
 }> => {
   try {
     console.log(`📡 API: جلب جدول الحلقة ${groupId}`);
-    const response = await api.get(`/timetable/group/${groupId}`);
+    const response = await api.get(`/sessions/group/${groupId}`);
     console.log('✅ API Response:', response.data);
     return response.data;
   } catch (error) {

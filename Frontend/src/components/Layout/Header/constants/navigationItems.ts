@@ -86,7 +86,7 @@ export const getPrimaryNavItems = (rolePermissions: RolePermissions): Navigation
         color: "from-purple-500 to-pink-500",
       },
       {
-        to: "/my-students",
+        to: "/students-management",
         label: "إدارة الطلاب",
         icon: UserCheck,
         color: "from-emerald-500 to-green-500",

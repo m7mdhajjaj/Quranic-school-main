@@ -337,9 +337,9 @@ exports.getGroupsMonthlyStats = async (req, res) => {
 exports.getGroupStudents = async (req, res) => {
   try {
     const { id } = req.params;
-    const { includeDetails = 'true' } = req.query;
+    const { includeDetails = 'true', search, gender } = req.query;
     
-    console.log(`👥 جلب طلاب الحلقة - ID: ${id}, مع التفاصيل: ${includeDetails}`);
+    console.log(`👥 جلب طلاب الحلقة - ID: ${id}, مع التفاصيل: ${includeDetails}, بحث: ${search}, جنس: ${gender}`);
     const startTime = Date.now();
 
     // 1. جلب الحلقة
@@ -352,21 +352,59 @@ exports.getGroupStudents = async (req, res) => {
       });
     }
 
-    // 2. جلب الطلاب
+    // 2. بناء query للطلاب
+    const query = { group: group.name };
+    
+    // فلتر الجنس
+    if (gender && (gender === 'ذكر' || gender === 'أنثى' || gender === 'male' || gender === 'female')) {
+      const normalizedGender = gender === 'male' ? 'ذكر' : gender === 'female' ? 'أنثى' : gender;
+      query.gender = normalizedGender;
+    }
+
+    // 3. جلب الطلاب
     let students;
     
     if (includeDetails === 'true') {
       // جلب الطلاب مع كامل معلوماتهم
-      students = await Student.find({ group: group.name })
+      students = await Student.find(query)
         .select('-password') // استبعاد الحقول الحساسة
         .lean()
         .sort({ firstName: 1, lastName: 1 });
     } else {
       // جلب الطلاب بمعلومات مختصرة فقط
-      students = await Student.find({ group: group.name })
+      students = await Student.find(query)
         .select('studentId firstName lastName')
         .lean()
         .sort({ firstName: 1, lastName: 1 });
+    }
+
+    // 4. تطبيق البحث على النتائج (البحث في الاسم الكامل ورقم الهوية)
+    if (search && search.trim()) {
+      const searchTerm = search.trim().toLowerCase();
+      students = students.filter((student) => {
+        // البحث في الاسم الكامل (أول، أب، جد، عائلة)
+        const fullName = [
+          student.firstName,
+          student.fatherName,
+          student.grandFatherName,
+          student.lastName
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        
+        // البحث في رقم الهوية
+        const idNumber = student.idNumber ? student.idNumber.toLowerCase() : '';
+        
+        // البحث في رقم الطالب
+        const studentId = student.studentId ? student.studentId.toString() : '';
+        
+        return (
+          fullName.includes(searchTerm) ||
+          idNumber.includes(searchTerm) ||
+          studentId.includes(searchTerm)
+        );
+      });
     }
 
     const duration = Date.now() - startTime;
@@ -426,7 +464,7 @@ exports.getGroupsByTeacherIdWithFilters = async (req, res) => {
     const groups = await Group.find({
       teacher: teacherId
     })
-      .select("name _id capacity description schedule")
+      .select("name _id capacity description schedule activeStatus")
       .lean()
       .sort({ name: 1 });
 
@@ -458,6 +496,11 @@ exports.getGroupsByTeacherIdWithFilters = async (req, res) => {
     let groupsWithInfo = groups.map((group) => {
       const currentStudents = studentCountMap.get(group.name) || 0;
       const examCount = examCountMap.get(group.name) || 0;
+      // تحديث activeStatus: فعالة إذا كان لها معلم وفيها طالب واحد على الأقل
+      const calculatedActiveStatus = !!group.teacher && currentStudents > 0;
+      // استخدام activeStatus من قاعدة البيانات إذا كان موجوداً، وإلا استخدم الحساب
+      const activeStatus = group.activeStatus !== undefined ? group.activeStatus : calculatedActiveStatus;
+      
       return {
         ...group,
         currentStudents,
@@ -466,6 +509,7 @@ exports.getGroupsByTeacherIdWithFilters = async (req, res) => {
         capacity: group.capacity || 30,
         hasStudents: currentStudents > 0,
         isEmpty: currentStudents === 0,
+        activeStatus: activeStatus, // حالة الحلقة (فعالة/غير فعالة)
       };
     });
 
