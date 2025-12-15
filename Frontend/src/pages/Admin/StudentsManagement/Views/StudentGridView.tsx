@@ -82,18 +82,6 @@ export const StudentGridView: React.FC<StudentGridViewProps> = ({
                           {student.age} سنة
                         </span>
                       )}
-                      {student.isActive !== undefined && (
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium ${
-                            student.isActive
-                              ? "bg-green-50 text-green-700 border border-green-200"
-                              : "bg-gray-50 text-gray-600 border border-gray-200"
-                          }`}
-                        >
-                          <div className={`w-1.5 h-1.5 rounded-full ${student.isActive ? "bg-green-500" : "bg-gray-400"}`} />
-                          {student.isActive ? "نشط" : "غير نشط"}
-                        </span>
-                      )}
                     </div>
                   </div>
 
