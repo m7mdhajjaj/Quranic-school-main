@@ -1,0 +1,3 @@
+# Prevent accidental Windows device filenames that break Git
+nul
+NUL
