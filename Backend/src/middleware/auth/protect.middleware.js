@@ -58,6 +58,15 @@ exports.protect = async (req, res, next) => {
       await Student.findByIdAndUpdate(decoded.id, { 
         isActive: true 
       });
+      
+      // إرسال إشعار Socket بتغيير حالة الطالب
+      if (req.app && req.app.get("io")) {
+        req.app.get("io").emit("userStatusChange", {
+          userId: decoded.id,
+          isActive: true,
+          lastSeen: new Date().toISOString(),
+        });
+      }
     } else if (decoded.role === "admin") {
       // البحث عن المدير في قاعدة البيانات
       const currentAdmin = await Admin.findById(decoded.id);
@@ -77,6 +86,15 @@ exports.protect = async (req, res, next) => {
       await Admin.findByIdAndUpdate(decoded.id, { 
         isActive: true 
       });
+      
+      // إرسال إشعار Socket بتغيير حالة الأدمن
+      if (req.app && req.app.get("io")) {
+        req.app.get("io").emit("userStatusChange", {
+          userId: decoded.id,
+          isActive: true,
+          lastSeen: new Date().toISOString(),
+        });
+      }
     } else {
       // البحث عن المعلم في قاعدة البيانات
       const currentTeacher = await Teacher.findById(decoded.id);
@@ -96,6 +114,15 @@ exports.protect = async (req, res, next) => {
       await Teacher.findByIdAndUpdate(decoded.id, { 
         isActive: true 
       });
+      
+      // إرسال إشعار Socket بتغيير حالة المعلم
+      if (req.app && req.app.get("io")) {
+        req.app.get("io").emit("userStatusChange", {
+          userId: decoded.id,
+          isActive: true,
+          lastSeen: new Date().toISOString(),
+        });
+      }
     }
 
     next();
@@ -115,12 +142,23 @@ exports.protect = async (req, res, next) => {
       try {
         const decoded = jwt.decode(token);
         if (decoded && decoded.id) {
+          const lastSeen = new Date().toISOString();
+          
           if (decoded.role === "student" || !decoded.role) {
-            await Student.findByIdAndUpdate(decoded.id, { isActive: false });
+            await Student.findByIdAndUpdate(decoded.id, { isActive: false, lastSeen });
           } else if (decoded.role === "admin") {
-            await Admin.findByIdAndUpdate(decoded.id, { isActive: false });
+            await Admin.findByIdAndUpdate(decoded.id, { isActive: false, lastSeen });
           } else {
-            await Teacher.findByIdAndUpdate(decoded.id, { isActive: false });
+            await Teacher.findByIdAndUpdate(decoded.id, { isActive: false, lastSeen });
+          }
+          
+          // إرسال إشعار Socket بتغيير حالة المستخدم عند انتهاء الـ token
+          if (req.app && req.app.get("io")) {
+            req.app.get("io").emit("userStatusChange", {
+              userId: decoded.id,
+              isActive: false,
+              lastSeen,
+            });
           }
         }
       } catch (updateError) {

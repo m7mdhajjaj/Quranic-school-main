@@ -47,7 +47,13 @@ export const useProfileEdit = (
   }, [user?._id]);
 
   const saveProfile = async (avatarFile?: File | null) => {
-    if (!user || !edited) return;
+    if (!user) return;
+    
+    // إذا المستخدم بس بدو يرفع صورة بدون تعديل البيانات
+    if (!edited) {
+      // ما في شي لازم نحفظه، الصورة رح ترفع بشكل منفصل
+      return;
+    }
 
     setFieldErrors({});
 

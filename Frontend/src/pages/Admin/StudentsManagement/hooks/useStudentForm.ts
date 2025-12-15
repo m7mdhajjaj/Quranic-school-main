@@ -358,9 +358,6 @@ export const useStudentForm = ({
         teacher: teacherFromGroup, // اسم المعلم (String)
         age: calculatedAge || 0,
         ...(password && { password }), // إضافة كلمة المرور للطلاب الجدد فقط
-        avatar: null, // القيمة الافتراضية
-        isActive: false, // القيمة الافتراضية
-        lastSeen: new Date(), // القيمة الافتراضية
       } as StudentFormData;
 
       console.log('📤 البيانات المرسلة:', studentData);

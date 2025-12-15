@@ -171,31 +171,12 @@ export const studentValidationSchema = yup.object({
     .min(0, 'العمر يجب أن يكون رقماً موجباً')
     .nullable()
     .transform((value) => isNaN(value) ? null : value),
-    
-  // حقول إضافية من الباك اند
-  avatar: yup
-    .object({
-      data: yup.mixed().nullable(),
-      contentType: yup.string().nullable(),
-    })
-    .nullable(),
-    
-  isActive: yup
-    .boolean()
-    .default(false),
-    
-  lastSeen: yup
-    .date()
-    .default(() => new Date()),
 }).transform((data) => ({
   ...data,
   // حساب العمر تلقائياً من تاريخ الميلاد (مثل computedAge virtual في Backend)
   age: data.birthDate ? calculateAge(data.birthDate) : data.age,
   // تطبيع الجنس (مثل set function في Backend)
   gender: normalizeGender(data.gender),
-  // إضافة timestamps (مثل Backend)
-  ...(data.isActive === undefined && { isActive: false }),
-  ...(data.lastSeen === undefined && { lastSeen: new Date() }),
 }));
 
 // Type للبيانات بعد التحقق

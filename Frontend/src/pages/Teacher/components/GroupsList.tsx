@@ -31,6 +31,10 @@ export const GroupsList: React.FC<GroupsListProps> = ({
   refetch,
   onGroupClick,
 }) => {
+  console.log('🔍 GroupsList - groups:', groups);
+  console.log('🔍 GroupsList - isLoading:', isLoading);
+  console.log('🔍 GroupsList - error:', error);
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [timetableModal, setTimetableModal] = useState<{
     isOpen: boolean;
