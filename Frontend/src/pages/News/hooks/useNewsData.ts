@@ -39,6 +39,7 @@ export const useNewsData = () => {
     title: '',
     content: '',
     date: getLocalDate(),
+    visibility: 'general',
   });
 
   const [selectedFile, setSelectedFile] = useState<File | File[] | null>(null);
@@ -72,21 +73,6 @@ export const useNewsData = () => {
     }
   };
 
-  const refreshNews = async () => {
-    // ✅ تحديث صامت - لا يظهر loading spinner
-    setError(null);
-    try {
-      const response = await getAllNews();
-      if (response && Array.isArray(response)) {
-        setNewsItems(response);
-        console.log('✅ News refreshed via Socket update');
-      }
-    } catch (err) {
-      console.error('Failed to refresh news:', err);
-      setError('حدث خطأ أثناء تحديث الأخبار');
-    }
-  };
-
   const handleOpenModal = () => {
     // تعيين التاريخ الحالي تلقائياً عند فتح المودال
     setNewNews({
@@ -94,6 +80,7 @@ export const useNewsData = () => {
       content: '',
       date: getLocalDate(),
       image: undefined,
+      visibility: 'general',
     });
     setFieldErrors({});
     setSelectedFile(null);
@@ -112,6 +99,7 @@ export const useNewsData = () => {
       content: '',
       date: getLocalDate(),
       image: undefined, // لا صورة افتراضية
+      visibility: 'general',
     });
   };
 
@@ -151,15 +139,22 @@ export const useNewsData = () => {
     
     // التحقق إذا كان Event أو Array من Files
     if (Array.isArray(e)) {
-      // Array من Files من MultiImageUpload
+      // Array من Files من MultiImageUpload (تم التحقق منها مسبقاً)
       filesArray = e;
       console.log('📸 استلام ملفات من MultiImageUpload:', filesArray.length);
     } else {
-      // Event عادي من input
+      // Event عادي من input (احتياطي)
       const files = e.target.files;
       if (!files || files.length === 0) return;
       filesArray = Array.from(files);
       console.log('📸 استلام ملفات من input:', filesArray.length);
+      
+      // التحقق فقط في حالة الإدخال المباشر (ليس من MultiImageUpload)
+      const invalidFiles = filesArray.filter(file => !file.type.startsWith('image/'));
+      if (invalidFiles.length > 0) {
+        showErrorToast('يجب اختيار صور فقط');
+        return;
+      }
     }
 
     if (filesArray.length === 0) {
@@ -171,36 +166,9 @@ export const useNewsData = () => {
       return;
     }
 
-    // التحقق من أن جميع الملفات صور
-    const invalidFiles = filesArray.filter(file => !file.type.startsWith('image/'));
-    if (invalidFiles.length > 0) {
-      showErrorToast('يجب اختيار صور فقط');
-      return;
-    }
-
-    // التحقق من حجم الملفات
-    const oversizedFiles = filesArray.filter(file => file.size > 5 * 1024 * 1024);
-    if (oversizedFiles.length > 0) {
-      showErrorToast('حجم كل صورة يجب أن يكون أقل من 5 ميجابايت');
-      return;
-    }
-
-    // التحقق من العدد الأقصى
-    if (filesArray.length > 10) {
-      showErrorToast('يمكنك رفع حتى 10 صور فقط');
-      return;
-    }
-
     // حفظ الملفات
     setSelectedFile(filesArray as any);
     console.log('✅ تم حفظ', filesArray.length, 'صور');
-    
-    // إنشاء معاينة للصورة الأولى فقط (للتوافق مع الإصدار السابق)
-    const imageUrl = URL.createObjectURL(filesArray[0]);
-    setNewNews((prev) => ({
-      ...prev,
-      image: imageUrl,
-    }));
   };
 
   const handleAddNews = async (e: React.FormEvent) => {
@@ -258,6 +226,9 @@ export const useNewsData = () => {
       formData.append('title', newNews.title || 'خبر جديد');
       formData.append('content', newNews.content || 'محتوى الخبر');
       formData.append('author', user?._id || 'unknown');
+      // Default visibility to 'group' for teachers, 'general' for admins
+      const defaultVisibility = user?.role === 'admin' ? 'general' : 'group';
+      formData.append('visibility', (newNews.visibility as string) || defaultVisibility);
 
       // Log what we're sending
       console.log('📤 Sending news data:');
@@ -381,6 +352,7 @@ export const useNewsData = () => {
       // Use first image from images array or fallback to single image
       image: news.images && news.images.length > 0 ? news.images[0].url : news.image,
       images: news.images, // Keep reference to all images
+      visibility: news.visibility || 'general',
     });
     setSelectedFile(null);
     setIsEditMode(true);
@@ -427,10 +399,7 @@ export const useNewsData = () => {
     newsItems,
     newNews,
     fieldErrors,
-    socketConnected,
-    socketLastUpdate,
-    socketId,
-
+  
     // Actions
     handleOpenModal,
     handleCloseModal,
@@ -439,6 +408,5 @@ export const useNewsData = () => {
     handleAddNews,
     handleEditNews,
     handleDeleteNews,
-    refreshNews,
   };
 };

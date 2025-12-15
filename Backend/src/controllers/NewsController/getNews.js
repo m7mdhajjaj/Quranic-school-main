@@ -26,7 +26,7 @@ exports.getAllNews = async (req, res) => {
 
     if (userRole === 'student') {
       const Student = require('../../schema/Student');
-      const student = await Student.findById(userId).select('teacher');
+      const student = await Student.findById(userId).select('teacher group');
       
       if (student && student.teacher) {
         // Get teacher info
@@ -41,22 +41,23 @@ exports.getAllNews = async (req, res) => {
         }).select('_id');
 
         // Students see:
-        // 1. General news (من الكل)
-        // 2. Group news from their teacher (أخبار معلمهم)
-        // 3. Administrative news (أخبار إدارية)
-        query.$or = [
-          { visibility: 'general' },
-          { visibility: 'administrative' },
-          { visibility: 'group', author: teacher?._id, authorModel: 'Teacher' }
-        ];
-        console.log(`📚 Student viewing: general + administrative + their teacher's group news`);
+        // 1. General news (عام - لكل الطلاب)
+        // 2. Group news from their teacher ONLY (طلاب المعلم - فقط أخبار معلمهم)
+        if (teacher?._id) {
+          query.$or = [
+            { visibility: 'general' },
+            { visibility: 'group', author: teacher._id, authorModel: 'Teacher' }
+          ];
+        } else {
+          query.$or = [
+            { visibility: 'general' }
+          ];
+        }
+        console.log(`📚 Student viewing: general + their teacher's group news only`);
       } else {
-        // If no teacher, show only general and administrative
-        query.$or = [
-          { visibility: 'general' },
-          { visibility: 'administrative' }
-        ];
-        console.log(`📚 Student (no teacher): general + administrative news only`);
+        // If no teacher, show only general news
+        query.visibility = 'general';
+        console.log(`📚 Student (no teacher): general news only`);
       }
     } else if (userRole === 'teacher') {
       // Teachers see:
@@ -223,22 +224,21 @@ exports.getPublishedNews = async (req, res) => {
         }).select('_id');
 
         // Students see:
-        // 1. General published news
-        // 2. Group published news from their teacher
-        // 3. Administrative published news
-        query.$or = [
-          { visibility: 'general' },
-          { visibility: 'administrative' },
-          { visibility: 'group', author: teacher?._id, authorModel: 'Teacher' }
-        ];
-        console.log(`📚 Student viewing published: general + administrative + their teacher's group news`);
+        // 1. General published news (عام)
+        // 2. Group published news from their teacher ONLY (حلقة - فقط أخبار معلمهم)
+        if (teacher?._id) {
+          query.$or = [
+            { visibility: 'general' },
+            { visibility: 'group', author: teacher._id, authorModel: 'Teacher' }
+          ];
+        } else {
+          query.visibility = 'general';
+        }
+        console.log(`📚 Student viewing published: general + their teacher's group news only`);
       } else {
-        // If no teacher, show only general and administrative
-        query.$or = [
-          { visibility: 'general' },
-          { visibility: 'administrative' }
-        ];
-        console.log(`📚 Student (no teacher): general + administrative published news only`);
+        // If no teacher, show only general
+        query.visibility = 'general';
+        console.log(`📚 Student (no teacher): general published news only`);
       }
     }
 

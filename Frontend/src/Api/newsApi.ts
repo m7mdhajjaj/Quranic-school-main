@@ -26,9 +26,8 @@ export interface INews {
     name?: string;
     email?: string;
   } | string;
-  authorName?: string;
   authorModel?: string;
-  visibility?: 'general' | 'group' | 'administrative';
+  visibility?: 'general' | 'group';
   createdAt?: string;
   updatedAt?: string;
 }

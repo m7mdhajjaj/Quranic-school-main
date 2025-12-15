@@ -1,12 +1,11 @@
 import { EmptyState } from "@/components/UI";
-import type { NewsEmptyStateProps } from "../utils/types";
+import type { NewsEmptyStateProps } from "../Types/types";
 
 const NewsEmptyState = ({
   hasError,
   error,
   isFiltered,
   isTeacherOrAdmin,
-  onRetry,
   onAddNews,
 }: NewsEmptyStateProps) => {
   // Error State
@@ -17,11 +16,7 @@ const NewsEmptyState = ({
           illustration="error"
           title="حدث خطأ!"
           description={error || "حدث خطأ غير متوقع"}
-          action={{
-            label: "إعادة المحاولة",
-            onClick: onRetry,
-            icon: <span>🔄</span>,
-          }}
+         
         />
       </div>
     );

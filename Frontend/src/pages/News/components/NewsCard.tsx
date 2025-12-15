@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import type { NewsCardProps } from '../utils/types';
+import type { NewsCardProps } from '../Types/types';
 import AddedAgo from '@/components/UI/AddedAgo';
-import { Button, Card } from '@/components/UI';
-import { ArrowLeft, Edit, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button, Card, DropdownMenu } from '@/components/UI';
+import { ArrowLeft, Edit, Trash2, ChevronLeft, ChevronRight, Globe, Users } from 'lucide-react';
 import ImageSkeleton from '@/components/skeletons/ImageSkeleton';
 
 const NewsCard = ({
@@ -27,21 +27,16 @@ const NewsCard = ({
     : [];
 
   const hasMultipleImages = images.length > 1;
-  
-  // Log للتحقق من الصور
-  if (index === 0) {
-    console.log('📸 NewsCard:', news.title);
-    console.log('  - عدد الصور:', images.length);
-    console.log('  - hasMultipleImages:', hasMultipleImages);
-    if (images.length > 0) {
-      console.log('  - أول صورة:', images[0]);
-    }
-  }
 
   // استخراج author ID بشكل صحيح (قد يكون string أو object)
   const newsAuthorId = typeof news.author === 'string' 
     ? news.author 
     : news.author?._id;
+
+  // استخراج اسم الناشر
+  const authorName = typeof news.author === 'object' && news.author !== null
+    ? (news.author.name || `${news.author.firstName || ''} ${news.author.lastName || ''}`.trim())
+    : '';
 
   // التحقق من صلاحيات التعديل/الحذف
   const canEditOrDelete = 
@@ -54,9 +49,9 @@ const NewsCard = ({
         variant="gradient"
         padding="none"
         hover={true}
-        className="relative group overflow-hidden animate-fadeIn bg-gradient-to-br from-emerald-50 via-white to-emerald-100 border border-emerald-100"
+        className="relative group overflow-hidden animate-fadeIn bg-white border border-emerald-200 shadow-md hover:shadow-lg"
       >
-      <div className="relative overflow-hidden h-60 sm:h-64 md:h-72 flex items-center justify-center bg-gradient-to-t from-emerald-100 to-white">
+      <div className="relative overflow-hidden h-56 sm:h-64 md:h-72 flex items-center justify-center bg-gray-50">
         {/* Image Skeleton */}
         {imageLoading && !imageError && (
           <div className="absolute inset-0">
@@ -71,7 +66,7 @@ const NewsCard = ({
             loading={index < 2 ? 'eager' : 'lazy'}
             decoding="async"
             fetchPriority={index === 0 ? 'high' : 'auto'}
-            className={`w-full h-full object-cover rounded-t-3xl transition-all duration-500 shadow-sm group-hover:brightness-105 group-hover:scale-100 ${
+            className={`w-full h-full object-cover rounded-t-xl transition-all duration-300 ${
               imageLoading ? 'opacity-0' : 'opacity-100'
             }`}
             onLoad={() => {
@@ -138,18 +133,15 @@ const NewsCard = ({
                 <ChevronRight size={24} strokeWidth={3} />
               </button>
               
-              {/* Image Counter and Badge */}
-              <div className="absolute top-3 left-3 flex flex-col gap-2 z-30">
-                <div className="bg-emerald-600 text-white text-sm font-bold px-3 py-1.5 rounded-full backdrop-blur-sm shadow-lg flex items-center gap-1.5">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
-                  </svg>
+              {/* Image Counter */}
+              <div className="absolute top-3 left-3 z-30">
+                <div className="bg-emerald-600 text-white text-xs font-semibold px-2 py-1 rounded-md shadow">
                   {currentImageIndex + 1} / {images.length}
                 </div>
               </div>
               
               {/* Image Indicators */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-30">
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-30">
                 {images.map((_, idx) => (
                   <button
                     key={idx}
@@ -158,10 +150,10 @@ const NewsCard = ({
                       setCurrentImageIndex(idx);
                       setImageLoading(true);
                     }}
-                    className={`h-2.5 rounded-full transition-all shadow-md ${
+                    className={`h-1.5 rounded-full transition-all ${
                       idx === currentImageIndex
-                        ? 'bg-emerald-500 w-8'
-                        : 'bg-white/70 hover:bg-white w-2.5'
+                        ? 'bg-white w-6'
+                        : 'bg-white/50 hover:bg-white/70 w-1.5'
                     }`}
                     aria-label={`الذهاب للصورة ${idx + 1}`}
                   />
@@ -170,94 +162,71 @@ const NewsCard = ({
             </>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 pointer-events-none"></div>
-          {/* Visibility Badge top left */}
-          <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
-            {news.visibility === 'general' && (
-              <span className="bg-blue-500/90 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg backdrop-blur-sm flex items-center gap-1.5">
-                📢 عام
-              </span>
-            )}
-            {news.visibility === 'group' && (
-              <span className="bg-emerald-500/90 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg backdrop-blur-sm flex items-center gap-1.5">
-                👥 حلقة
-              </span>
-            )}
-            {news.visibility === 'administrative' && (
-              <span className="bg-purple-500/90 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg backdrop-blur-sm flex items-center gap-1.5">
-                🏫 إداري
-              </span>
-            )}
-          </div>
-
-          {/* Author top right */}
-          {news.authorName && (
-            <div className="absolute top-4 right-4 z-20 flex items-center gap-1">
-              <span className="bg-white/90 text-teal-700 text-xs font-semibold px-3 py-1 rounded-full shadow border border-teal-100 flex items-center gap-1 backdrop-blur-sm">
-                <svg
-                  className="w-4 h-4 text-teal-500"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path d="M10 10a4 4 0 100-8 4 4 0 000 8zm0 2c-4 0-7 2-7 4v1a1 1 0 001 1h12a1 1 0 001-1v-1c0-2-3-4-7-4z" />
-                </svg>
-                الناشر: {news.authorName}
-              </span>
+          {/* Actions top right */}
+          {canEditOrDelete && (
+            <div className="absolute top-3 right-3 z-20" onClick={(e) => e.stopPropagation()}>
+              <DropdownMenu
+                items={[
+                  {
+                    label: 'تعديل',
+                    icon: <Edit size={18} />,
+                    onClick: () => onEdit(news),
+                    variant: 'warning',
+                  },
+                  {
+                    label: 'حذف',
+                    icon: <Trash2 size={18} />,
+                    onClick: () => onDelete(news._id),
+                    variant: 'danger',
+                  },
+                ]}
+                position="right"
+              />
             </div>
           )}
         </div>
-        <div className="px-6 pt-4 flex items-center justify-between">
-          <h3 className="text-xs sm:text-sm font-bold text-emerald-700">أخبار</h3>
-          <AddedAgo date={displayDate} />
-        </div>
-        <div className="p-6 pt-2 pb-4 flex flex-col gap-3">
-          <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold text-emerald-800 transition-colors mb-2 line-clamp-2 group-hover:text-emerald-900 leading-tight">
+        <div className="p-5 flex flex-col gap-3">
+          <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Visibility Badge */}
+              {news.visibility === 'group' ? (
+                <span className="flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-1 rounded-md border border-blue-100" title="طلاب المعلم">
+                  <Users size={12} />
+                  <span>طلاب المعلم</span>
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 bg-gray-100 text-gray-600 px-2 py-1 rounded-md border border-gray-200" title="عام للجميع">
+                  <Globe size={12} />
+                  <span>عام</span>
+                </span>
+              )}
+
+              {authorName && (
+                <span className="flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-1 rounded-md border border-emerald-100">
+                  <span className="font-medium">نشر بواسطة:</span> {authorName}
+                </span>
+              )}
+            </div>
+            <AddedAgo date={displayDate} />
+          </div>
+          <h2 className="text-xl font-bold text-gray-800 line-clamp-2 leading-tight">
             {news.title}
           </h2>
-          <p className="text-gray-600 text-sm sm:text-base leading-relaxed line-clamp-4 mb-3">
+          <p className="text-gray-600 text-sm leading-relaxed line-clamp-3">
             {news.content}
           </p>
-          <div className="flex justify-between items-center mt-2 gap-1.5 sm:gap-2">
+          <div className="flex justify-end mt-2">
             <Button
               variant="primary"
               size="md"
-              className="rounded-xl shadow-md hover:shadow-lg group/btn flex-1 max-w-[130px] sm:max-w-[150px] text-[10px] xs:text-xs sm:text-sm"
+              className="rounded-xl shadow-md hover:shadow-lg group/btn px-6 py-2.5 text-sm"
             >
               <span>اقرأ المزيد</span>
               <ArrowLeft
-                size={14}
-                className="group-hover/btn:translate-x-1 transition-transform sm:w-4 sm:h-4"
+                size={16}
+                className="group-hover/btn:translate-x-1 transition-transform"
               />
             </Button>
-            {canEditOrDelete && (
-              <div className="flex gap-1.5 sm:gap-2 flex-shrink-0">
-                <Button
-                  variant="warning"
-                  size="md"
-                  className="rounded-lg shadow-md hover:shadow-lg px-2 sm:px-3 text-[10px] xs:text-xs sm:text-sm"
-                  title="تعديل الخبر"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit(news);
-                  }}
-                >
-                  <Edit size={14} className="sm:w-4 sm:h-4" />
-                  <span>تعديل</span>
-                </Button>
-                <Button
-                  variant="danger"
-                  size="md"
-                  className="rounded-lg shadow-md hover:shadow-lg px-2 sm:px-3 text-[10px] xs:text-xs sm:text-sm"
-                  title="حذف الخبر"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(news._id);
-                  }}
-                >
-                  <Trash2 size={14} className="sm:w-4 sm:h-4" />
-                  <span>حذف</span>
-                </Button>
-              </div>
-            )}
           </div>
         </div>
       </Card>

@@ -91,7 +91,7 @@ export const SectionsGridView = ({
       </button>
 
       {/* Header with Section Name and Action Buttons */}
-      <Card className="mb-6 bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 border-2 border-emerald-300 shadow-lg relative z-[100]">
+      <Card className="mb-6 bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 border-2 border-emerald-300 shadow-lg sticky top-4 z-[100]">
         <div className="p-5">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             {/* Section Name */}

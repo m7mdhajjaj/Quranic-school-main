@@ -22,7 +22,20 @@ export const newsValidationSchema = Yup.object().shape({
     .trim(),
 
   date: Yup.string()
-    .required('تاريخ الخبر مطلوب'),
+    .required('تاريخ الخبر مطلوب')
+    .test('not-past-date', 'لا يمكن اختيار تاريخ في الماضي، يجب أن يكون التاريخ اليوم أو تاريخ مستقبلي', function(value) {
+      if (!value) return false;
+      
+      const selectedDate = new Date(value);
+      const today = new Date();
+      
+      // Set hours to 0 for accurate date comparison (ignore time)
+      selectedDate.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+      
+      // Date must be today or in the future
+      return selectedDate >= today;
+    }),
 
   imageUrl: Yup.string()
     .url('رابط الصورة غير صحيح')
@@ -83,7 +96,7 @@ export const validateNewsForm = async (formData: {
   };
 
   try {
-    // Validate form data with Yup schema
+    // Validate form data with Yup schema (includes date validation)
     await newsValidationSchema.validate(dataToValidate, { abortEarly: false });
   } catch (err) {
     if (err instanceof Yup.ValidationError) {
@@ -116,6 +129,7 @@ export const validateField = async (
   value: string
 ): Promise<{ isValid: boolean; message?: string }> => {
   try {
+    // Yup schema already includes date validation (not-past-date test)
     await newsValidationSchema.validateAt(fieldName, { [fieldName]: value });
     return { isValid: true };
   } catch (err) {

@@ -5,13 +5,11 @@ import type { MarkStatus } from '../../components/SectionStatusBadge';
 // Import custom hooks
 import {
   useTeacherViewData,
-  useAllGroupsStats,
   useBulkMarkDelete,
 } from './hooks';
 
 // Import components
 import {
-  GroupsGridView,
   SectionDetailsView,
   SectionsGridView,
   StudentsMarksTable,
@@ -79,13 +77,7 @@ const TeacherViewComponent = ({
     };
   }, [sections]);
 
-  // Use custom hook for groups stats
-  const { groupsWithStats, isAnyGroupLoading } = useAllGroupsStats(
-    teacherGroups,
-    selectedGroup,
-    selectedMonth,
-    selectedYear
-  );
+  // Groups stats are now calculated in DailyMarksPage
 
   // Use merged custom hook for section selection, data fetching, and student filtering
   const {
@@ -152,15 +144,10 @@ const TeacherViewComponent = ({
     return tableData.filter((row) => row.mark?._id).map((row) => row.mark!._id);
   }, [tableData]);
 
-  // If no group selected, show groups cards
+  // GroupsGridView is now shown in DailyMarksPage, so we don't render it here
+  // If no group selected, return null (groups will be shown in parent)
   if (!selectedGroup || selectedGroup === 'all') {
-    return (
-      <GroupsGridView
-        groupsWithStats={groupsWithStats}
-        onGroupSelect={onGroupSelect || (() => {})}
-        isLoading={isAnyGroupLoading}
-      />
-    );
+    return null;
   }
 
   // If section selected, show students table

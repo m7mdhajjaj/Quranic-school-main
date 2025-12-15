@@ -199,7 +199,7 @@ const SectionsTableComponent = ({
   return (
     <>
       {/* Desktop Table View - Hidden on mobile */}
-      <div className="hidden lg:block">
+      <div className="hidden lg:block w-full">
         {/* Navigation Buttons - Above Table */}
         {(onMonthChange && onYearChange && selectedMonth && selectedYear) && (
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-emerald-50 to-teal-50 p-4 rounded-xl border border-emerald-200">
@@ -308,7 +308,7 @@ const SectionsTableComponent = ({
         )}
 
         {/* Table with Clean Design - Responsive to column count */}
-        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+        <div className="bg-white rounded-xl shadow-md overflow-hidden w-full">
           <Table
             columns={columns}
             data={tableData}

@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/UI';
+import { useMultiImageUpload } from '../hooks/useMultiImageUpload';
 
 interface MultiImageUploadProps {
   onImagesChange: (files: File[]) => void;
@@ -24,119 +24,20 @@ const MultiImageUpload = ({
   error,
   mode = 'multiple', // الوضع الافتراضي: متعدد
 }: MultiImageUploadProps) => {
-  const [previews, setPreviews] = useState<string[]>(existingImages);
-  const [files, setFiles] = useState<File[]>([]);
-  const [hasExistingImages, setHasExistingImages] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  // تحديد العدد الأقصى بناءً على الوضع
-  const effectiveMaxImages = mode === 'single' ? 1 : maxImages;
-
-  // Update previews when existingImages changes (e.g., when editing)
-  useEffect(() => {
-    if (existingImages && existingImages.length > 0) {
-      setPreviews(existingImages);
-      setHasExistingImages(true);
-      setFiles([]); // Reset files when showing existing images
-      console.log('📸 MultiImageUpload: عرض صور موجودة:', existingImages.length);
-    } else {
-      setPreviews([]);
-      setHasExistingImages(false);
-      setFiles([]);
-    }
-  }, [existingImages]);
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = Array.from(e.target.files || []);
-    
-    // في وضع Single، استبدل الصورة الحالية
-    // في وضع Multiple مع صور موجودة (تعديل)، استبدلها بالكامل
-    const currentFiles = (mode === 'single' || hasExistingImages) ? [] : files;
-    
-    // التحقق من العدد الأقصى
-    const totalImages = currentFiles.length + selectedFiles.length;
-    if (totalImages > effectiveMaxImages) {
-      const message = mode === 'single' 
-        ? 'يمكنك رفع صورة واحدة فقط'
-        : `يمكنك رفع حتى ${effectiveMaxImages} صور فقط`;
-      alert(message);
-      return;
-    }
-
-    // التحقق من نوع الملفات والصور المكررة
-    const validFiles = selectedFiles.filter(file => {
-      if (!file.type.startsWith('image/')) {
-        alert(`الملف ${file.name} ليس صورة`);
-        return false;
-      }
-      // التحقق من حجم الملف (5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert(`الملف ${file.name} أكبر من 5MB`);
-        return false;
-      }
-      // التحقق من الصور المكررة (نفس الاسم والحجم)
-      const isDuplicate = currentFiles.some(existingFile => 
-        existingFile.name === file.name && existingFile.size === file.size
-      );
-      if (isDuplicate) {
-        alert(`الصورة ${file.name} موجودة بالفعل`);
-        return false;
-      }
-      return true;
-    });
-
-    if (validFiles.length === 0) return;
-
-    // تحديث الملفات أولاً
-    const updatedFiles = hasExistingImages ? validFiles : [...currentFiles, ...validFiles];
-    setFiles(updatedFiles);
-    setHasExistingImages(false); // Clear flag after selecting new images
-    
-    console.log('📸 MultiImageUpload: تم اختيار', updatedFiles.length, 'صورة');
-    console.log('📸 أسماء الصور:', updatedFiles.map(f => f.name).join(', '));
-    
-    // ⚠️ استدعاء onImagesChange مرة واحدة فقط هنا
-    onImagesChange(updatedFiles);
-
-    // إنشاء معاينات للصور الجديدة (بدون استدعاء onImagesChange مرة أخرى)
-    const newPreviews: string[] = [];
-    validFiles.forEach(file => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        newPreviews.push(reader.result as string);
-        if (newPreviews.length === validFiles.length) {
-          // إذا كانت في وضع التعديل، استبدل الصور القديمة بالكاملة
-          if (hasExistingImages) {
-            setPreviews(newPreviews);
-          } else {
-            setPreviews(prev => [...prev, ...newPreviews]);
-          }
-        }
-      };
-      reader.readAsDataURL(file);
-    });
-
-    // إعادة تعيين input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const removeImage = (index: number) => {
-    const newPreviews = previews.filter((_, i) => i !== index);
-    const newFiles = files.filter((_, i) => i !== index);
-    
-    setPreviews(newPreviews);
-    setFiles(newFiles);
-    setHasExistingImages(false); // Clear existing images flag when removing
-    onImagesChange(newFiles);
-    
-    console.log('🗑️ تم حذف صورة، المتبقي:', newFiles.length);
-  };
-
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
+  const {
+    previews,
+    hasExistingImages,
+    fileInputRef,
+    effectiveMaxImages,
+    handleFileSelect,
+    removeImage,
+    handleUploadClick,
+  } = useMultiImageUpload({
+    existingImages,
+    maxImages,
+    mode,
+    onImagesChange,
+  });
 
   return (
     <div className="space-y-3">

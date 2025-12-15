@@ -86,6 +86,9 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
       );
       navigate('/chat');
       setShowDropdown(false);
+    } else if (notification.type === 'news') {
+      navigate('/news');
+      setShowDropdown(false);
     }
   };
 

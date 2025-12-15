@@ -22,11 +22,13 @@ import { useDailyMarksHandlers } from './hooks/useDailyMarksHandlers';
 import { useModalAndFormActions } from './hooks/useModalAndFormActions';
 import { useStudentSelection } from './hooks/useStudentSelection';
 import { useComputedValues } from './hooks/useComputedValues';
+import { useAllGroupsStats } from './Views/TeacherView/hooks';
 
 // Page Components
 import { AveragesSection } from './components/AveragesSection';
 import { StudentView } from './Views/StudentView';
 import { ModalsContainer } from './modals/ModalsContainer';
+import { GroupsGridView } from './Views/TeacherView/components/GroupsGridView';
 
 // Lazy load heavy component
 const TeacherView = lazy(() =>
@@ -153,6 +155,14 @@ const DailyMarksPage = () => {
     sections,
   });
 
+  // Get groups stats for GroupsGridView
+  const { groupsWithStats, isAnyGroupLoading } = useAllGroupsStats(
+    teacherGroups,
+    selectedGroup,
+    selectedMonth,
+    selectedYear
+  );
+
   // ==========================================================================
   // ROLE & DEFAULT VALUES
   // ==========================================================================
@@ -171,10 +181,10 @@ const DailyMarksPage = () => {
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-b from-emerald-50 via-teal-50 to-green-50 py-8 px-4 md:px-6 lg:px-8"
+      className="min-h-screen bg-gradient-to-b from-emerald-50 via-teal-50 to-green-50 py-6 px-3 md:px-4 lg:px-6"
       dir="rtl"
     >
-      <div className="w-full max-w-7xl mx-auto space-y-6">
+      <div className="w-full max-w-full mx-auto space-y-5">
         {/* Page Header */}
         <PageHeader
           title="نظام العلامات اليومية"
@@ -188,6 +198,15 @@ const DailyMarksPage = () => {
           icon={<BookOpen className="w-12 h-12 sm:w-16 sm:h-16 text-white" />}
           showDivider={true}
         />
+
+        {/* Groups Grid View - Teacher Only, shown when no group selected */}
+        {isTeacher && !loading && (!selectedGroup || selectedGroup === 'all') && (
+          <GroupsGridView
+            groupsWithStats={groupsWithStats}
+            onGroupSelect={setSelectedGroup}
+            isLoading={isAnyGroupLoading}
+          />
+        )}
 
         {/* Averages Section - Teacher Only */}
         {isTeacher && !loading && (

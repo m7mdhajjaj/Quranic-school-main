@@ -6,7 +6,7 @@ const News = require("../../schema/News");
 const cloudinary = require("../../config/cloudinary");
 const Student = require("../../schema/Student");
 const Notification = require("../../schema/Notification");
-const { sendNotificationToDevices } = require("../../Notifications");
+const { notifyNewsUpdated } = require("../../Notifications");
 
 /**
  * Update news item
@@ -29,7 +29,7 @@ exports.updateNews = async (req, res) => {
     }
     console.log("========================================");
 
-    const { title, content, description, author, category, tags } = req.body;
+    const { title, content, visibility } = req.body;
 
     const news = await News.findById(req.params.id);
 
@@ -75,28 +75,35 @@ exports.updateNews = async (req, res) => {
       news.content = content.trim();
     }
 
-    if (description) news.description = description.trim();
-    if (author) news.author = author;
-    if (category) news.category = category;
-    if (tags) news.tags = tags.split(",").map((t) => t.trim());
+    // Update visibility if provided
+    if (visibility && ['general', 'group'].includes(visibility)) {
+      news.visibility = visibility;
+    }
 
     // Handle images update
+    let newFiles = [];
     if (req.files && req.files.length > 0) {
-      try {
-        console.log(`📤 Updating with ${req.files.length} new images...`);
+      newFiles = req.files;
+    } else if (req.file) {
+      newFiles = [req.file];
+    }
 
-        // Delete old images from news folder in Cloudinary
+    if (newFiles.length > 0) {
+      try {
+        console.log(`📤 Updating with ${newFiles.length} new images...`);
+
+        // 1. Delete old images from Cloudinary
         if (news.images && news.images.length > 0) {
           console.log(`🗑️ Deleting ${news.images.length} old images...`);
-          
-          for (const img of news.images) {
+          // Use Promise.all for parallel deletion
+          await Promise.all(news.images.map(async (img) => {
             try {
               await cloudinary.uploader.destroy(img.publicId);
               console.log(`✅ Deleted old image: ${img.publicId}`);
             } catch (deleteError) {
-              console.warn("⚠️ Could not delete old image:", deleteError);
+              console.warn(`⚠️ Could not delete old image ${img.publicId}:`, deleteError);
             }
-          }
+          }));
         } else if (news.imagePublicId) {
           // Backward compatibility: delete single old image
           try {
@@ -107,8 +114,8 @@ exports.updateNews = async (req, res) => {
           }
         }
 
-        // Process all new uploaded images
-        const newImages = req.files.map((file) => {
+        // 2. Process new uploaded images
+        const newImages = newFiles.map((file) => {
           console.log("  - File path:", file.path);
           console.log("  - Filename:", file.filename);
           
@@ -118,7 +125,7 @@ exports.updateNews = async (req, res) => {
           };
         });
 
-        // Update images array
+        // 3. Update news document
         news.images = newImages;
         
         // Update backward compatibility fields
@@ -134,45 +141,6 @@ exports.updateNews = async (req, res) => {
           error: uploadError.message,
         });
       }
-    } else if (req.file) {
-      // Handle single file upload (backward compatibility)
-      try {
-        console.log("📤 Updating with single image...");
-
-        // Delete old images
-        if (news.images && news.images.length > 0) {
-          for (const img of news.images) {
-            try {
-              await cloudinary.uploader.destroy(img.publicId);
-            } catch (deleteError) {
-              console.warn("⚠️ Could not delete old image:", deleteError);
-            }
-          }
-        } else if (news.imagePublicId) {
-          try {
-            await cloudinary.uploader.destroy(news.imagePublicId);
-          } catch (deleteError) {
-            console.warn("⚠️ Could not delete old image:", deleteError);
-          }
-        }
-
-        // Update with single image
-        news.image = req.file.path;
-        news.imagePublicId = req.file.filename;
-        news.images = [{
-          url: req.file.path,
-          publicId: req.file.filename,
-        }];
-        
-        console.log("✅ Updated with single image");
-      } catch (uploadError) {
-        console.error("❌ Image update failed:", uploadError);
-        return res.status(400).json({
-          success: false,
-          message: "فشل تحديث الصورة",
-          error: uploadError.message,
-        });
-      }
     }
 
     news.updatedAt = new Date();
@@ -180,83 +148,13 @@ exports.updateNews = async (req, res) => {
 
     console.log("✅ News updated successfully");
 
-    // Send notification to all students about the update
+    // Send notification using centralized handler
     try {
-      const students = await Student.find({}).select('_id firstName lastName');
-      
-      if (students && students.length > 0) {
-        const trimmedTitle = news.title.length > 50 
-          ? news.title.substring(0, 50) + '...' 
-          : news.title;
-
-        const notificationPromises = students.map(async (student) => {
-          const notification = new Notification({
-            recipient: student._id,
-            recipientModel: 'Student',
-            title: '✏️ تم تعديل منشور',
-            message: `تم تحديث المنشور: ${trimmedTitle}`,
-            type: 'news',
-            data: {
-              newsId: news._id.toString(),
-              newsTitle: trimmedTitle,
-              relatedId: news._id,
-              relatedModel: 'News',
-              action: 'updated',
-            },
-            isRead: false,
-          });
-          return notification.save();
-        });
-
-        const savedNotifications = await Promise.all(notificationPromises);
-        
-        // Send real-time notifications via Socket.IO
-        if (global.io) {
-          savedNotifications.forEach((notification) => {
-            const recipientId = notification.recipient.toString();
-            const notificationPayload = {
-              id: notification._id,
-              type: notification.type,
-              title: notification.title,
-              message: notification.message,
-              data: notification.data,
-              createdAt: notification.createdAt,
-              isNew: true,
-            };
-            
-            // Send to user's room
-            global.io.to(recipientId).emit("newNotification", notificationPayload);
-            console.log(`📤 Socket notification sent to student: ${recipientId}`);
-          });
-        }
-        
-        // Send push notifications via FCM
-        await sendNotificationToDevices(
-          students.map(s => s._id),
-          '✏️ تم تعديل منشور',
-          `تم تحديث المنشور: ${trimmedTitle}`,
-          { 
-            newsId: news._id.toString(), 
-            type: 'news',
-            action: 'updated'
-          }
-        );
-        
-        console.log(`✅ Sent update notifications to ${students.length} students`);
-      }
+      const io = req.app.get("io");
+      await notifyNewsUpdated(news, io);
     } catch (notifError) {
       console.error("❌ Error sending update notifications:", notifError);
       // Don't fail the whole request if notifications fail
-    }
-
-    // Emit event for live updates
-    if (global.io) {
-      global.io.emit("newsUpdated", {
-        id: news._id,
-        title: news.title,
-        timestamp: news.updatedAt,
-      });
-      console.log('📡 Socket event emitted: newsUpdated');
     }
 
     res.json({

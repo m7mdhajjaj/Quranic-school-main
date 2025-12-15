@@ -50,14 +50,10 @@ const newsSchema = new mongoose.Schema(
       required: true,
       enum: ['Teacher', 'Admin'] // الطلاب لا يمكنهم نشر خبر
     },
-    authorName: {
-      type: String,
-      default: null,
-    },
     // News visibility type
     visibility: {
       type: String,
-      enum: ['general', 'group', 'administrative'],
+      enum: ['general', 'group'],
       default: 'group',
       required: true,
     },
@@ -89,7 +85,6 @@ const newsSchema = new mongoose.Schema(
 // Index for better query performance
 newsSchema.index({ title: "text", content: "text" });
 newsSchema.index({ isPublished: 1, createdAt: -1 });
-newsSchema.index({ category: 1 });
 newsSchema.index({ isArchived: 1 });
 newsSchema.index({ visibility: 1 });
 

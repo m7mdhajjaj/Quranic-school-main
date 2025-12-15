@@ -73,7 +73,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="absolute left-0 mt-2 w-64 z-50 transition-all duration-200 animate-fadeIn" dir="rtl">
+    <div className="absolute left-0 mt-1 sm:mt-2 w-56 sm:w-64 z-[200] transition-all duration-200 animate-fadeIn" dir="rtl">
       <Card 
         variant="elevated" 
         padding="none"

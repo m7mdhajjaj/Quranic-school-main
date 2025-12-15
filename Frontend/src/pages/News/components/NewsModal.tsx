@@ -1,7 +1,8 @@
-import type { NewsModalProps } from '../utils/types';
+import { useMemo } from 'react';
+import type { NewsModalProps } from '../Types/types';
 import { Input, Textarea, Button, DatePicker } from '@/components/UI';
 import MultiImageUpload from './MultiImageUpload';
-import { MessageSquare, X, Plus, Edit } from 'lucide-react';
+import { MessageSquare, X, Plus, Edit, Globe, Users } from 'lucide-react';
 
 const NewsModal = ({
   isOpen,
@@ -14,6 +15,14 @@ const NewsModal = ({
   onInputChange,
   onFileChange,
 }: NewsModalProps) => {
+  const existingImages = useMemo(() => {
+    return newNews.images && newNews.images.length > 0
+      ? newNews.images.map((img) => img.url)
+      : newNews.image
+      ? [newNews.image]
+      : [];
+  }, [newNews.images, newNews.image]);
+
   if (!isOpen) return null;
 
   return (
@@ -90,53 +99,64 @@ const NewsModal = ({
               disabled={isLoading}
               error={fieldErrors.date}
               required
-              minYear={2020}
+              minYear={new Date().getFullYear()}
               maxYear={new Date().getFullYear() + 5}
+              minDate={new Date().toISOString().split('T')[0]} // Minimum date is today
             />
 
-            {/* Visibility Type Field */}
+            {/* Visibility Selection */}
             <div className="space-y-2">
-              <label
-                htmlFor="visibility"
-                className="flex items-center gap-2 text-base font-semibold text-gray-700"
-              >
+              <label className="block text-base font-semibold text-gray-700">
                 نوع الخبر <span className="text-red-500">*</span>
               </label>
-              <select
-                id="visibility"
-                name="visibility"
-                value={newNews.visibility || 'group'}
-                onChange={(e) => onInputChange(e as any)}
-                disabled={isLoading}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all bg-white text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                title="اختر نوع الخبر"
-              >
-                <option value="general">📢 خبر عام (يظهر لجميع الطلاب)</option>
-                <option value="group">
-                  👥 خبر الحلقة (يظهر لطلاب المعلم فقط)
-                </option>
-                <option value="administrative">
-                  🏫 خبر إداري (من الإدارة)
-                </option>
-              </select>
-              {fieldErrors.visibility && (
-                <p className="text-sm text-red-600 mt-1">
-                  {fieldErrors.visibility}
-                </p>
-              )}
+              <div className="grid grid-cols-2 gap-4">
+                <label
+                  className={`relative flex flex-col items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                    newNews.visibility === 'general' || !newNews.visibility
+                      ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                      : 'border-gray-200 hover:border-emerald-200 hover:bg-gray-50'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="visibility"
+                    value="general"
+                    checked={newNews.visibility === 'general' || !newNews.visibility}
+                    onChange={onInputChange}
+                    className="absolute opacity-0 w-full h-full cursor-pointer"
+                  />
+                  <Globe size={24} className="mb-2" />
+                  <span className="font-bold">عام</span>
+                  <span className="text-xs text-center mt-1 opacity-80">يظهر لجميع الطلاب والمعلمين</span>
+                </label>
+
+                <label
+                  className={`relative flex flex-col items-center justify-center p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                    newNews.visibility === 'group'
+                      ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                      : 'border-gray-200 hover:border-emerald-200 hover:bg-gray-50'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="visibility"
+                    value="group"
+                    checked={newNews.visibility === 'group'}
+                    onChange={onInputChange}
+                    className="absolute opacity-0 w-full h-full cursor-pointer"
+                  />
+                  <Users size={24} className="mb-2" />
+                  <span className="font-bold">طلاب المعلم</span>
+                  <span className="text-xs text-center mt-1 opacity-80">يظهر لطلابك فقط</span>
+                </label>
+              </div>
             </div>
 
             {/* Multiple Images Upload */}
             <MultiImageUpload
               label="صور الخبر"
               mode="multiple"
-              existingImages={
-                newNews.images && newNews.images.length > 0
-                  ? newNews.images.map((img) => img.url)
-                  : newNews.image
-                    ? [newNews.image]
-                    : []
-              }
+              existingImages={existingImages}
               onImagesChange={(files) => {
                 console.log(
                   '📸 NewsModal: تمرير',

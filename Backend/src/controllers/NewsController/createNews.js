@@ -7,7 +7,7 @@ const cloudinary = require("../../config/cloudinary");
 const { validateNewsTitle, validateContent } = require("../../Validation/News/NewsValidation");
 const Student = require("../../schema/Student");
 const Notification = require("../../schema/Notification");
-const { sendNotificationToDevices } = require("../../Notifications");
+const { notifyNewsCreated } = require("../../Notifications");
 
 /**
  * Create new news item
@@ -30,15 +30,12 @@ exports.createNews = async (req, res) => {
     }
     console.log("========================================");
 
-    const { title, content, description, author, category, tags } = req.body;
+    const { title, content, author } = req.body;
     
 
     // Get author info from req.user (from auth middleware)
     const authorId = author || req.user?._id;
-    const authorRole = req.user?.role; // 'student', 'teacher', or 'admin'
-    const authorName = req.user?.firstName 
-      ? `${req.user.firstName} ${req.user.lastName || ''}`
-      : req.user?.name || 'غير معروف';
+    const authorRole = req.user?.role; // 'teacher', or 'admin'
 
     // Prevent students from creating news
     if (authorRole === 'student') {
@@ -53,10 +50,6 @@ exports.createNews = async (req, res) => {
     console.log("  - Content length:", content?.length);
     console.log("  - Author ID:", authorId);
     console.log("  - Author Role:", authorRole);
-    console.log("  - Author Name:", authorName);
-    console.log("  - Has file:", !!req.file);
-    console.log("  - Category:", category);
-    console.log("  - Tags:", tags);
 
 
     // Validation using NewsValidation.js
@@ -90,58 +83,47 @@ exports.createNews = async (req, res) => {
     let imagePublicId = null;
     let images = [];
 
-    // Handle multiple images from multer-cloudinary upload (already uploaded)
+    // Handle images (support both multiple and single upload)
+    let uploadedFiles = [];
     if (req.files && req.files.length > 0) {
-      console.log(`📤 ${req.files.length} images uploaded via multer-cloudinary`);
+      uploadedFiles = req.files;
+    } else if (req.file) {
+      uploadedFiles = [req.file];
+    }
+
+    if (uploadedFiles.length > 0) {
+      console.log(`📤 Processing ${uploadedFiles.length} uploaded images`);
       
-      // Process all uploaded images
-      images = req.files.map((file) => {
+      images = uploadedFiles.map((file) => {
         console.log("  - File path:", file.path);
         console.log("  - Filename:", file.filename);
-        
         return {
           url: file.path,
           publicId: file.filename,
         };
       });
-      
-      // For backward compatibility, set first image as main image
+
+      // Set main image for backward compatibility
       imageUrl = images[0].url;
       imagePublicId = images[0].publicId;
       
       console.log(`✅ Processed ${images.length} images`);
-    } else if (req.file) {
-      // Handle single file upload (backward compatibility)
-      console.log("📤 Single image uploaded via multer-cloudinary");
-      console.log("  - File path:", req.file.path);
-      console.log("  - Filename:", req.file.filename);
-      
-      imageUrl = req.file.path;
-      imagePublicId = req.file.filename;
-      
-      images = [{
-        url: req.file.path,
-        publicId: req.file.filename,
-      }];
-      
-      console.log("✅ Image URL:", imageUrl);
-      console.log("✅ Image Public ID:", imagePublicId);
     }
 
     // Determine author model based on role
     let authorModel = 'Admin'; // default
-    if (authorRole === 'student') authorModel = 'Student';
-    else if (authorRole === 'teacher') authorModel = 'Teacher';
+    if (authorRole === 'teacher') authorModel = 'Teacher';
     else if (authorRole === 'admin') authorModel = 'Admin';
 
     // Determine visibility based on request or default
+    // 'general' = للجميع, 'group' = فقط لطلاب حلقة المعلم
     const visibility = req.body.visibility || 'group'; // Default to 'group' if not specified
     
     // Validate visibility
-    if (!['general', 'group', 'administrative'].includes(visibility)) {
+    if (!['general', 'group'].includes(visibility)) {
       return res.status(400).json({
         success: false,
-        message: "نوع الظهور يجب أن يكون: general (عام), group (حلقة), أو administrative (إداري)",
+        message: "نوع الظهور يجب أن يكون: general (عام) أو group (حلقة)",
       });
     }
 
@@ -149,16 +131,12 @@ exports.createNews = async (req, res) => {
     const newNews = new News({
       title: trimmedTitle,
       content: trimmedContent,
-      description: description?.trim() || null,
       images: images, // Array of images
       image: imageUrl, // First image for backward compatibility
       imagePublicId: imagePublicId, // First image public ID for backward compatibility
       author: authorId,
       authorModel: authorModel,
-      authorName: authorName,
-      visibility: visibility, // Add visibility type
-      category: category || "عام",
-      tags: tags ? tags.split(",").map((t) => t.trim()) : [],
+      visibility: visibility,
       isPublished: false,
       views: 0,
     });
@@ -167,98 +145,13 @@ exports.createNews = async (req, res) => {
 
     console.log("✅ News created successfully:", newNews._id);
 
-    // Send notification to students based on visibility type
+    // Send notification using centralized handler
     try {
-      let students = [];
-      
-      if (visibility === 'general') {
-        // General news: send to ALL students
-        students = await Student.find({}).select('_id firstName lastName');
-        console.log(`📧 General news: Sending to all ${students.length} students`);
-      } else if (visibility === 'group') {
-        // Group news: send only to teacher's students
-        if (authorRole === 'teacher') {
-          const teacher = await require('../../schema/Teacher').findById(authorId);
-          if (teacher) {
-            const teacherName = `${teacher.firstName} ${teacher.lastName}`;
-            students = await Student.find({ teacher: teacherName }).select('_id firstName lastName');
-            console.log(`📧 Group news: Sending to ${students.length} students of teacher: ${teacherName}`);
-          }
-        } else if (authorRole === 'admin') {
-          // If admin chooses 'group', treat as general
-          students = await Student.find({}).select('_id firstName lastName');
-          console.log(`📧 Admin group news: Sending to all ${students.length} students`);
-        }
-      } else if (visibility === 'administrative') {
-        // Administrative news: send to ALL students (from admin only)
-        students = await Student.find({}).select('_id firstName lastName');
-        console.log(`📧 Administrative news: Sending to all ${students.length} students`);
-      }
-      
-      if (students && students.length > 0) {
-        const notificationPromises = students.map(async (student) => {
-          const notification = new Notification({
-            recipient: student._id,
-            recipientModel: 'Student',
-            title: '📰 تم إضافة منشور جديد',
-            message: `تم نشر خبر جديد: ${trimmedTitle}`,
-            type: 'news',
-            data: {
-              newsId: newNews._id.toString(),
-              newsTitle: trimmedTitle,
-              relatedId: newNews._id,
-              relatedModel: 'News',
-            },
-            isRead: false,
-          });
-          return notification.save();
-        });
-
-        const savedNotifications = await Promise.all(notificationPromises);
-        
-        // Send real-time notifications via Socket.IO
-        if (global.io) {
-          savedNotifications.forEach((notification) => {
-            const recipientId = notification.recipient.toString();
-            const notificationPayload = {
-              id: notification._id,
-              type: notification.type,
-              title: notification.title,
-              message: notification.message,
-              data: notification.data,
-              createdAt: notification.createdAt,
-              isNew: true,
-            };
-            
-            // Send to user's room
-            global.io.to(recipientId).emit("newNotification", notificationPayload);
-            console.log(`📤 Socket notification sent to student: ${recipientId}`);
-          });
-        }
-        
-        // Send push notifications via FCM
-        await sendNotificationToDevices(
-          students.map(s => s._id),
-          '📰 تم إضافة منشور جديد',
-          `تم نشر خبر جديد: ${trimmedTitle}`,
-          { newsId: newNews._id.toString(), type: 'news' }
-        );
-        
-        console.log(`✅ Sent notifications to ${students.length} students`);
-      }
+      const io = req.app.get("io");
+      await notifyNewsCreated(newNews, io);
     } catch (notifError) {
       console.error("❌ Error sending notifications:", notifError);
       // Don't fail the whole request if notifications fail
-    }
-
-    // Emit event to subscribers for live updates
-    if (global.io) {
-      global.io.emit("newsCreated", {
-        id: newNews._id,
-        title: newNews.title,
-        timestamp: newNews.createdAt,
-      });
-      console.log('📡 Socket event emitted: newsCreated');
     }
 
     res.status(201).json({

@@ -41,9 +41,9 @@ const StudentViewComponent = ({
   onYearChange,
 }: StudentViewProps) => {
   return (
-    <div className="grid grid-cols-1 gap-6">
+    <div className="grid grid-cols-1 gap-5 w-full">
       {/* Student Marks */}
-      <Card className="overflow-hidden p-0">
+      <Card className="overflow-hidden p-0 w-full">
         <StudentHeader sectionsCount={sections.length} />
 
         {/* Averages Section for Student View - Above Table */}

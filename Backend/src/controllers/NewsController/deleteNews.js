@@ -90,15 +90,6 @@ exports.deleteNews = async (req, res) => {
 
     console.log("✅ News deleted successfully");
 
-    // Emit event for live updates
-    if (global.io) {
-      global.io.emit("newsDeleted", {
-        id: req.params.id,
-        timestamp: new Date(),
-      });
-      console.log('📡 Socket event emitted: newsDeleted');
-    }
-
     res.json({
       success: true,
       message: "تم حذف الخبر بنجاح",

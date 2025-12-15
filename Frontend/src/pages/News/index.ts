@@ -1,4 +1,5 @@
 export * from "./components";
 export * from "./hooks/useNewsData";
-export * from "./utils/types";
+export * from "./hooks/useNewsFilter";
+export * from "./Types/types";
 export { default } from "./News";

@@ -57,6 +57,18 @@ class NotificationManager {
   }
 
   /**
+   * Send real-time notification directly
+   * @param {Object} notification - The notification object
+   */
+  async sendRealTimeNotification(notification) {
+    try {
+      await sendRealTimeNotification(this.io, notification);
+    } catch (err) {
+      console.error("❌ Error sending real-time notification:", err);
+    }
+  }
+
+  /**
    * Specific notification methods
    */
   async notifyNewGrade(studentId, subject, grade, teacherName, isUpdate = false, oldGrade = null) {

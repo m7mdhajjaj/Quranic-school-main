@@ -45,8 +45,10 @@ export interface NewsEmptyStateProps {
 export interface NewsFiltersProps {
   searchTerm: string;
   sortOrder: 'newest' | 'oldest';
+  filterType: 'all' | 'general' | 'group';
   onSearchChange: (value: string) => void;
   onSortChange: (value: string) => void;
+  onFilterTypeChange: (value: 'all' | 'general' | 'group') => void;
   onClearFilters: () => void;
   filteredCount: number;
   totalCount: number;
