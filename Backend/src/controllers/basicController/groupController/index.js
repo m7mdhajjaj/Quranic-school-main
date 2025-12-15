@@ -13,11 +13,13 @@ const {
   getGroupStudents,
   getGroupsStats,
 } = require('./getGroups');
+const { getActiveGroups } = require('./getActiveGroups');
 const { updateGroup, renameGroup } = require('./updateGroup');
 const { deleteGroup } = require('./deleteGroup');
 const { invalidateStudentCountsCache } = require('./cache');
 const { exportGroupsToCSV } = require('./ExportOperation');
 const { validateAndCheckGroupName } = require('../../../utils/validators/duplicateChecker');
+const { updateGroupActiveStatus, updateGroupsActiveStatusOnStudentMove } = require('./updateActiveStatus');
 
 /**
  * Controller wrapper لفحص تكرار اسم الحلقة
@@ -64,6 +66,7 @@ module.exports = {
   getGroupsByTeacherIdWithFilters,
   getGroupStudents,
   getGroupsStats,
+  getActiveGroups,
 
   // Update operations
   updateGroup,
@@ -77,6 +80,10 @@ module.exports = {
 
   // Validation operations
   checkDuplicateGroupName,
+
+  // Active Status utilities
+  updateGroupActiveStatus,
+  updateGroupsActiveStatusOnStudentMove,
 
   // Cache utilities
   invalidateStudentCountsCache,

@@ -24,6 +24,28 @@ const sectionSchema = new mongoose.Schema(
       type: String,
       required: false, // Optional for backward compatibility
     },
+    marksStatus: {
+      type: String,
+      enum: ["completed", "in_progress", "not_started"],
+      default: "not_started",
+      index: true, // Index for faster queries
+    },
+    marksProgress: {
+      totalStudents: {
+        type: Number,
+        default: 0,
+      },
+      studentsWithMarks: {
+        type: Number,
+        default: 0,
+      },
+      percentage: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 100,
+      },
+    },
   },
   { timestamps: true }
 );

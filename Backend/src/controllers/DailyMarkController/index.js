@@ -8,6 +8,7 @@ const getFilteredMarks = require("./getFilteredMarks");
 const setMarks = require("./setMarks");
 const updateMark = require("./updateMark");
 const deleteMark = require("./deleteMark");
+const getGroupStats = require("./getGroupStats");
 
 // Import Section controllers (part of DailyMark system)
 const sectionControllers = require("./SectionControllers");
@@ -20,6 +21,7 @@ module.exports = {
   ...setMarks,
   ...updateMark,
   ...deleteMark,
+  ...getGroupStats,
 
   // Section operations (part of DailyMark)
   ...sectionControllers,

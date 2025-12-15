@@ -2,11 +2,24 @@
 // setMarks.js - Add/Update Marks for Multiple Students (Bulk Operation)
 // ============================================================================
 
-const Mark = require("../../schema/DailyMark");
+const Mark = require("../../schema/DailyMark/DailyMark");
 const { notifyMarksAdded } = require("../../Notifications/handlers/DailyMarks/dailyMarkNotifications");
+
+// استيراد الدوال المساعدة
 const {
-  calculateAndUpdateMonthlyAverage,
-} = require("../../services/StudentAverageService");
+  updateMultipleStudentsMonthlyAverage,
+  updateMultipleSectionsStatus,
+  emitSocketEvent,
+  validateMarksArray,
+  collectMarkIds,
+} = require("./utils/markHelpers");
+
+const {
+  sendSuccess,
+  sendError,
+  sendValidationError,
+  sendCreated,
+} = require("./utils/responseHelpers");
 
 /**
  * Add or update marks for many students in one section
@@ -20,21 +33,18 @@ exports.setMarks = async (req, res) => {
     console.log("📝 Setting marks for multiple students...");
     console.log(`📊 Number of students: ${marks.length}`);
 
-    if (!Array.isArray(marks) || marks.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "marks يجب أن تكون قائمة غير فارغة",
-      });
+    // Validate marks array using helper
+    try {
+      validateMarksArray(marks);
+    } catch (validationError) {
+      return sendValidationError(res, validationError.message);
     }
 
     // Validate each mark
     const validatedMarks = [];
     for (const mark of marks) {
       if (!mark.studentId || !mark.sectionId) {
-        return res.status(400).json({
-          success: false,
-          message: "studentId و sectionId مطلوبة لكل علامة",
-        });
+        return sendValidationError(res, "studentId و sectionId مطلوبة لكل علامة");
       }
       validatedMarks.push(mark);
     }
@@ -57,53 +67,35 @@ exports.setMarks = async (req, res) => {
     await Mark.bulkWrite(operations);
     console.log("✅ Bulk write completed successfully");
 
+    // Collect IDs using helper
+    const { studentIds, sectionIds } = collectMarkIds(validatedMarks);
+    
     // Fetch updated marks
-    const sectionIds = [...new Set(validatedMarks.map((m) => m.sectionId))];
     const updatedMarks = await Mark.find({
-      sectionId: { $in: sectionIds },
+      sectionId: { $in: Array.from(sectionIds) },
     })
       .populate("studentId", "firstName fatherName lastName group")
       .populate("sectionId");
 
     // Update monthly averages for all affected students
-    console.log("🔄 Updating monthly averages...");
-    const studentIds = [...new Set(validatedMarks.map((m) => m.studentId))];
-    const updatePromises = studentIds.map(async (studentId) => {
-      try {
-        // نحسب متوسط الشهر الحالي
-        const now = new Date();
-        const month = now.getMonth() + 1;
-        const year = now.getFullYear();
-        await calculateAndUpdateMonthlyAverage(studentId, month, year);
-      } catch (error) {
-        console.error(`⚠️ Error updating average for student ${studentId}:`, error);
-      }
-    });
-    await Promise.all(updatePromises);
-    console.log("✅ Monthly averages updated");
+    await updateMultipleStudentsMonthlyAverage(Array.from(studentIds));
+
+    // Update marks status for all affected sections
+    await updateMultipleSectionsStatus(Array.from(sectionIds));
 
     // 🔔 Send notifications to students
-    console.log("🔔 Sending notifications...");
+    console.log("🔔 إرسال الإشعارات...");
     const io = req.app.get("io");
     await notifyMarksAdded(validatedMarks, io);
-    console.log("✅ Notifications sent");
+    console.log("✅ تم إرسال الإشعارات");
 
     // 🔌 Emit Socket.IO event
-    if (io) {
-      console.log("📡 Broadcasting markCreated event...");
-      io.emit("markCreated", {
-        marks: updatedMarks,
-        count: updatedMarks.length,
-        timestamp: Date.now(),
-      });
-      console.log("✅ Event emitted");
-    }
-
-    res.status(201).json({
-      success: true,
-      data: updatedMarks,
-      message: `تم إضافة/تحديث ${updatedMarks.length} علامة بنجاح`,
+    emitSocketEvent(io, "markCreated", {
+      marks: updatedMarks,
+      count: updatedMarks.length,
     });
+
+    sendCreated(res, updatedMarks, `تم إضافة/تحديث ${updatedMarks.length} علامة بنجاح`);
   } catch (error) {
     console.error("❌ Error in setMarks:", error);
 
@@ -111,17 +103,10 @@ exports.setMarks = async (req, res) => {
       const validationErrors = Object.keys(error.errors)
         .map((field) => `${field}: ${error.errors[field].message}`)
         .join(", ");
-
-      return res.status(400).json({
-        success: false,
-        message: `خطأ في التحقق من البيانات: ${validationErrors}`,
-      });
+      return sendValidationError(res, `خطأ في التحقق من البيانات: ${validationErrors}`);
     }
 
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    sendError(res, error.message, 500, error);
   }
 };
 

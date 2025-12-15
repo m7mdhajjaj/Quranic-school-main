@@ -2,7 +2,7 @@
 // ReportController/groupReport.js - Group Reports
 // ============================================================================
 
-const Mark = require("../../schema/DailyMark");
+const Mark = require("../../schema/DailyMark/DailyMark");
 const Student = require("../../schema/Student");
 const Group = require("../../schema/Group");
 const Attendance = require("../../schema/Attendance");

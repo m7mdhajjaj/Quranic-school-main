@@ -1,8 +1,7 @@
 import { Modal, Button, Input, DatePicker } from '@/components/UI';
-import { useCallback, useState, useEffect } from 'react';
-import type { EditSectionModalProps } from '../types/types';
-
 import { memo } from 'react';
+import type { EditSectionModalProps } from '../types/types';
+import { useEditSectionModal } from '../hooks/modals';
 
 /**
  * Modal for editing an existing section
@@ -15,42 +14,17 @@ const EditSectionModalComponent = ({
   onSubmit,
   onChange,
 }: EditSectionModalProps) => {
-  // استخدام local state لتجنب re-render المكون الأب
-  const [localSection, setLocalSection] = useState(editingSection);
+  const { localSection, handleDateChange, handleInputChange, syncWithParent } =
+    useEditSectionModal(editingSection);
 
-  // تحديث local state عند فتح المودل أو تغيير editingSection
-  useEffect(() => {
-    if (isOpen && editingSection) {
-      setLocalSection(editingSection);
-    }
-  }, [isOpen, editingSection]);
-
-  const handleDateChange = useCallback((date: string) => {
-    setLocalSection(prev => prev ? { ...prev, date } : null);
-  }, []);
-
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setLocalSection(prev => prev ? { ...prev, [name]: value } : null);
-  }, []);
-
-  const handleSubmit = useCallback((e: React.FormEvent) => {
+  const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!localSection) return;
-    
-    // تحديث الـ parent state قبل الإرسال
-    if (onChange && localSection) {
-      const fields: Array<'date' | 'reviewSection' | 'memorizationSection'> = ['date', 'reviewSection', 'memorizationSection'];
-      fields.forEach(field => {
-        const event = {
-          target: { name: field, value: localSection[field] },
-        } as React.ChangeEvent<HTMLInputElement>;
-        onChange(event);
-      });
-    }
-    
+
+    // Sync with parent before submit
+    syncWithParent(onChange);
     onSubmit(e);
-  }, [localSection, onChange, onSubmit]);
+  };
 
   if (!isOpen || !editingSection || !localSection) return null;
 
@@ -58,7 +32,7 @@ const EditSectionModalComponent = ({
     <Modal isOpen={isOpen} onClose={onClose} title="تعديل المقطع">
       
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleFormSubmit}>
         <div className="mb-6">
           <DatePicker
             label="التاريخ"

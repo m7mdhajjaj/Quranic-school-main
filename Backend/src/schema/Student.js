@@ -128,6 +128,95 @@ const studentSchema = new mongoose.Schema(
 // إضافة فهارس مركبة لتحسين أداء البحث
 studentSchema.index({ teacher: 1, group: 1 }); // فهرس مركب للمعلم والحلقة
 
+// ============================================================================
+// HOOKS - تحديث تلقائي لـ activeStatus في الحلقات
+// ============================================================================
+
+/**
+ * Hook: بعد حفظ طالب جديد → تحديث activeStatus للحلقة
+ */
+studentSchema.post("save", async function (doc) {
+  try {
+    if (doc.group && doc.group !== "غير محدد") {
+      const Group = mongoose.model("Group");
+      await Group.recalculateActiveStatusByName(doc.group);
+    }
+  } catch (error) {
+    console.error("❌ [Student post-save hook] Error:", error);
+  }
+});
+
+/**
+ * Hook: قبل تحديث طالب → حفظ الحلقة القديمة
+ */
+studentSchema.pre("findOneAndUpdate", async function (next) {
+  try {
+    // حفظ الحلقة القديمة قبل التحديث
+    const docToUpdate = await this.model.findOne(this.getQuery()).select("group");
+    this._oldGroup = docToUpdate?.group;
+    next();
+  } catch (error) {
+    console.error("❌ [Student pre-update hook] Error:", error);
+    next();
+  }
+});
+
+/**
+ * Hook: بعد تحديث طالب → تحديث activeStatus للحلقات (القديمة والجديدة)
+ */
+studentSchema.post("findOneAndUpdate", async function (doc) {
+  try {
+    if (!doc) return;
+
+    const Group = mongoose.model("Group");
+    
+    // الحصول على التحديث المطبق
+    const update = this.getUpdate() || {};
+    const newGroup = update.group || (update.$set && update.$set.group) || doc.group;
+    
+    // استخدام الحلقة القديمة المحفوظة من pre hook
+    const oldGroup = this._oldGroup;
+
+    // تحديث الحلقات المتأثرة فقط إذا تغيرت الحلقة
+    if (oldGroup !== newGroup) {
+      console.log(`🔄 [Student update hook] Updating groups: "${oldGroup}" → "${newGroup}"`);
+      await Group.recalculateActiveStatusOnStudentMove(oldGroup, newGroup);
+    }
+  } catch (error) {
+    console.error("❌ [Student post-update hook] Error:", error);
+  }
+});
+
+/**
+ * Hook: بعد حذف طالب → تحديث activeStatus للحلقة
+ */
+studentSchema.post("findOneAndDelete", async function (doc) {
+  try {
+    if (!doc) return;
+    
+    if (doc.group && doc.group !== "غير محدد") {
+      const Group = mongoose.model("Group");
+      await Group.recalculateActiveStatusByName(doc.group);
+    }
+  } catch (error) {
+    console.error("❌ [Student post-delete hook] Error:", error);
+  }
+});
+
+/**
+ * Hook: بعد حذف متعدد → تحديث activeStatus للحلقات المتأثرة
+ */
+studentSchema.post("deleteMany", async function () {
+  try {
+    // للأسف deleteMany لا تعطينا الوثائق المحذوفة
+    // لذلك نحتاج للحصول عليها قبل الحذف في middleware "pre"
+    // سنتعامل معها في Controllers مباشرة
+    console.log("⚠️ [Student deleteMany hook] Consider manual activeStatus update");
+  } catch (error) {
+    console.error("❌ [Student post-deleteMany hook] Error:", error);
+  }
+});
+
 // مثال Virtual لعمر محسوب (اختياري)
 studentSchema.virtual("computedAge").get(function () {
   if (!this.birthDate) return undefined;

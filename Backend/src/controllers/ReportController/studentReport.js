@@ -2,7 +2,7 @@
 // ReportController/studentReport.js - Detailed Student Reports
 // ============================================================================
 
-const Mark = require("../../schema/DailyMark");
+const Mark = require("../../schema/DailyMark/DailyMark");
 const ExamMark = require("../../schema/ExamMark");
 const Student = require("../../schema/Student");
 const Attendance = require("../../schema/Attendance");

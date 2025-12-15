@@ -1,8 +1,34 @@
 import { useState, useEffect } from "react";
 import { getStudentAverages } from "@/Api/dailyMarksApi";
 
+interface StudentAverages {
+  reviewAverage: number;
+  memorizationAverage: number;
+  overallAverage: number;
+  totalMarks: number;
+}
+
+interface UseStudentAveragesReturn {
+  averages: StudentAverages;
+  loading: boolean;
+  error: string | null;
+}
+
 /**
  * Custom hook for fetching student averages from backend
+ * 
+ * @description
+ * - Fetches review, memorization, and overall averages for a student
+ * - Filters by month, year, and group
+ * - Auto-updates when filters or student selection changes
+ * 
+ * @param {string | null} studentId - Student ID to fetch averages for
+ * @param {string} selectedGroup - Selected group name
+ * @param {number} selectedMonth - Selected month (1-12)
+ * @param {number} selectedYear - Selected year
+ * @param {boolean} enabled - Whether to fetch data (default: true)
+ * 
+ * @returns {UseStudentAveragesReturn} Student averages and loading state
  */
 export const useStudentAverages = (
   studentId: string | null,
@@ -10,7 +36,7 @@ export const useStudentAverages = (
   selectedMonth: number,
   selectedYear: number,
   enabled: boolean = true
-) => {
+): UseStudentAveragesReturn => {
   const [averages, setAverages] = useState({
     reviewAverage: 0,
     memorizationAverage: 0,

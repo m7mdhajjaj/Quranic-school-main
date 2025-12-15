@@ -1,7 +1,7 @@
 const Student = require("../../schema/Student");
 const Teacher = require("../../schema/Teacher");
 const Group = require("../../schema/Group");
-const DailyMark = require("../../schema/DailyMark");
+const DailyMark = require("../../schema/DailyMark/DailyMark");
 const Attendance = require("../../schema/Attendance");
 
 /**

@@ -16,8 +16,9 @@ const isRequired = (value) => {
 
 /**
  * Validate date field
+ * Ensures the date is not in the past (must be today or future) - only for new sections
  */
-const validateDate = (date) => {
+const validateDate = (date, isUpdate = false) => {
   if (!isRequired(date)) {
     return { isValid: false, message: "التاريخ مطلوب" };
   }
@@ -25,6 +26,25 @@ const validateDate = (date) => {
   const dateObj = new Date(date);
   if (isNaN(dateObj.getTime())) {
     return { isValid: false, message: "التاريخ غير صحيح" };
+  }
+
+  // Only check for past dates when creating new sections (not when updating)
+  if (!isUpdate) {
+    // Get today's date at midnight (00:00:00) for comparison
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Set the input date to midnight for fair comparison
+    const inputDate = new Date(dateObj);
+    inputDate.setHours(0, 0, 0, 0);
+    
+    // Check if the date is in the past
+    if (inputDate < today) {
+      return { 
+        isValid: false, 
+        message: "لا يمكن إضافة مقطع بتاريخ سابق. يجب أن يكون التاريخ من اليوم أو في المستقبل" 
+      };
+    }
   }
 
   return { isValid: true, value: dateObj };
@@ -129,7 +149,7 @@ const validateDailyMarksSectionData = async (req, res, next) => {
 
     // Validate date (required for creation)
     if (!isUpdate || data.date !== undefined) {
-      const dateValidation = validateDate(data.date);
+      const dateValidation = validateDate(data.date, isUpdate);
       if (!dateValidation.isValid) {
         errors.push(dateValidation.message);
       } else {

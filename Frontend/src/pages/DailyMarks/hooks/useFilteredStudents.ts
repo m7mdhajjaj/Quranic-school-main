@@ -8,8 +8,18 @@ interface UseFilteredStudentsProps {
 
 /**
  * Custom hook for filtering students by selected group
+ * 
+ * @description
+ * - Filters students based on selected group
+ * - Normalizes strings for case-insensitive comparison
+ * - Memoized for performance optimization
+ * 
+ * @param {Student[]} students - List of all students
+ * @param {string} selectedGroup - Selected group name
+ * 
+ * @returns {Student[]} Filtered students belonging to selected group
  */
-export const useFilteredStudents = ({ students, selectedGroup }: UseFilteredStudentsProps) => {
+export const useFilteredStudents = ({ students, selectedGroup }: UseFilteredStudentsProps): Student[] => {
   const filteredStudents = useMemo(() => {
     if (!selectedGroup) {
       return [];

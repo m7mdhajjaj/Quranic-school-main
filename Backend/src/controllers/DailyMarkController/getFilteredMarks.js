@@ -2,9 +2,19 @@
 // getFilteredMarks.js - Get Filtered Marks with Advanced Filters
 // ============================================================================
 
-const Mark = require("../../schema/DailyMark");
-const Section = require("../../schema/Section");
-const { getTeacherGroups } = require("../basicController/teacherController/utils.controller");
+const Mark = require("../../schema/DailyMark/DailyMark");
+const Section = require("../../schema/DailyMark/Section");
+const {
+  updateSectionMarksStatus,
+} = require("./SectionControllers/sectionMarksStatus");
+
+// استيراد الدوال المساعدة للفلترة من utils
+const {
+  getUserGroupsByRole,
+  buildGroupFilter,
+  buildDateFilter,
+  buildSectionSearchFilter,
+} = require("./utils/filterHelpers");
 
 /**
  * Get filtered marks with month, year, search, and group filters
@@ -25,6 +35,7 @@ exports.getFilteredMarks = async (req, res) => {
     const {
       month,
       year,
+      day,
       search,
       group,
       studentId,
@@ -35,6 +46,7 @@ exports.getFilteredMarks = async (req, res) => {
     console.log("📋 Filters received:", {
       month,
       year,
+      day,
       search,
       group,
       studentId,
@@ -42,76 +54,50 @@ exports.getFilteredMarks = async (req, res) => {
       limit,
     });
 
-    // Get user's group(s) based on role
-    let userGroup = group || null;
-    let teacherGroups = null;
-
-    if (req.user) {
-      if (req.user.role === "student") {
-        // Student: fetch current group from database
-        const Student = require("../../schema/Student");
-        const studentData = await Student.findById(req.user._id).select('group');
-        userGroup = studentData ? studentData.group : null;
-      } else if (req.user.role === "teacher") {
-        // Teacher: get assigned groups that have students
-        const allTeacherGroups = await getTeacherGroups(req.user._id);
-        
-        if (allTeacherGroups && allTeacherGroups.length > 0) {
-          // Get only groups that have students
-          const Student = require("../../schema/Student");
-          const groupsWithStudents = await Student.distinct('group', {
-            group: { $in: allTeacherGroups }
-          });
-          teacherGroups = groupsWithStudents;
-          
-          // If specific group requested, check if it has students
-          if (userGroup) {
-            if (!teacherGroups.includes(userGroup)) {
-              return res.status(403).json({
-                success: false,
-                message: "ليس لديك صلاحية للوصول إلى هذه الحلقة أو الحلقة لا تحتوي على طلاب",
-              });
-            }
-          } else if (teacherGroups.length > 0) {
-            // If no specific group requested, use first group with students
-            userGroup = teacherGroups[0];
-          }
-        }
-      }
-      // Admin can see all groups
+    // Get user's group(s) based on role using helper function
+    let userGroup, teacherGroups;
+    try {
+      const groupsData = await getUserGroupsByRole(req.user, group);
+      userGroup = groupsData.userGroup;
+      teacherGroups = groupsData.teacherGroups;
+    } catch (error) {
+      return res.status(403).json({
+        success: false,
+        message: error.message,
+      });
     }
 
-    // Build section filter
-    const sectionFilter = {};
+    // Build section filter using helper functions
+    const groupFilter = buildGroupFilter(req.user, userGroup, group);
+    const dateFilter = buildDateFilter(month, year);
+    const searchFilter = buildSectionSearchFilter(search);
+    
+    // Merge filters properly (handle date and $or from search)
+    const sectionFilter = {
+      ...groupFilter,
+      ...(Object.keys(dateFilter).length > 0 ? { date: dateFilter } : {}),
+      ...searchFilter,
+    };
 
-    // Filter by group
-    if (req.user && req.user.role === "student") {
-      // Student: only their group
-      sectionFilter.group = userGroup;
-    } else if (req.user && req.user.role === "teacher") {
-      // Teacher: specific group if selected
-      if (userGroup) {
-        sectionFilter.group = userGroup;
-      }
-    } else if (group) {
-      // Admin: specific group if requested
-      sectionFilter.group = group;
-    }
-
-    // Filter by month and year
-    if (month && year) {
+    // Log date filter if applied
+    if (day && month && year) {
+      const dayNum = parseInt(day);
       const monthNum = parseInt(month);
       const yearNum = parseInt(year);
-
-      // Create date range for the entire month
-      const startDate = new Date(yearNum, monthNum - 1, 1); // First day of month
-      const endDate = new Date(yearNum, monthNum, 0, 23, 59, 59, 999); // Last day of month
-
-      sectionFilter.date = {
-        $gte: startDate,
-        $lte: endDate,
-      };
-
+      const startDate = new Date(yearNum, monthNum - 1, dayNum, 0, 0, 0, 0);
+      const endDate = new Date(yearNum, monthNum - 1, dayNum, 23, 59, 59, 999);
+      console.log("📅 Date filter (day):", {
+        day: dayNum,
+        month: monthNum,
+        year: yearNum,
+        startDate,
+        endDate,
+      });
+    } else if (month && year) {
+      const monthNum = parseInt(month);
+      const yearNum = parseInt(year);
+      const startDate = new Date(yearNum, monthNum - 1, 1);
+      const endDate = new Date(yearNum, monthNum, 0, 23, 59, 59, 999);
       console.log("📅 Date filter:", {
         month: monthNum,
         year: yearNum,
@@ -119,26 +105,13 @@ exports.getFilteredMarks = async (req, res) => {
         endDate,
       });
     } else if (year) {
-      // Only year filter (all months of that year)
       const yearNum = parseInt(year);
-      const startDate = new Date(yearNum, 0, 1); // Jan 1st
-      const endDate = new Date(yearNum, 11, 31, 23, 59, 59, 999); // Dec 31st
-
-      sectionFilter.date = {
-        $gte: startDate,
-        $lte: endDate,
-      };
-
+      const startDate = new Date(yearNum, 0, 1);
+      const endDate = new Date(yearNum, 11, 31, 23, 59, 59, 999);
       console.log("📅 Year filter:", { year: yearNum, startDate, endDate });
     }
 
-    // Search in reviewSection or memorizationSection
     if (search && search.trim()) {
-      const searchRegex = new RegExp(search.trim(), "i"); // Case-insensitive search
-      sectionFilter.$or = [
-        { reviewSection: searchRegex },
-        { memorizationSection: searchRegex },
-      ];
       console.log("🔎 Search query:", search);
     }
 
@@ -161,7 +134,7 @@ exports.getFilteredMarks = async (req, res) => {
           limit: parseInt(limit),
           pages: 0,
         },
-        filters: { month, year, search, group, studentId },
+        filters: { month, year, day, search, group, studentId },
         message: "لا توجد علامات مطابقة للفلاتر المحددة",
       });
     }
@@ -218,6 +191,7 @@ exports.getFilteredMarks = async (req, res) => {
       filters: {
         month: month ? parseInt(month) : null,
         year: year ? parseInt(year) : null,
+        day: day ? parseInt(day) : null,
         search: search || null,
         group: userGroup || null,
         studentId: studentId || null,
@@ -247,97 +221,34 @@ exports.getFilteredSections = async (req, res) => {
     console.log("🔍 ========== FILTERED SECTIONS REQUEST ==========");
     const startTime = Date.now();
 
-    const { month, year, search, group } = req.query;
+    const { month, year, day, search, group } = req.query;
 
-    console.log("📋 Filters received:", { month, year, search, group });
+    console.log("📋 Filters received:", { month, year, day, search, group });
 
-    // Get user's group(s) based on role
-    let userGroup = group || null;
-    let teacherGroups = null;
-
-    if (req.user) {
-      if (req.user.role === "student") {
-        // Student: fetch current group from database
-        const Student = require("../../schema/Student");
-        const studentData = await Student.findById(req.user._id).select('group');
-        userGroup = studentData ? studentData.group : null;
-      } else if (req.user.role === "teacher") {
-        // Teacher: get assigned groups that have students
-        const allTeacherGroups = await getTeacherGroups(req.user._id);
-        
-        if (allTeacherGroups && allTeacherGroups.length > 0) {
-          // Get only groups that have students
-          const Student = require("../../schema/Student");
-          const groupsWithStudents = await Student.distinct('group', {
-            group: { $in: allTeacherGroups }
-          });
-          teacherGroups = groupsWithStudents;
-          
-          // If specific group requested, check if it has students
-          if (userGroup) {
-            if (!teacherGroups.includes(userGroup)) {
-              return res.status(403).json({
-                success: false,
-                message: "ليس لديك صلاحية للوصول إلى هذه الحلقة أو الحلقة لا تحتوي على طلاب",
-              });
-            }
-          } else if (teacherGroups.length > 0) {
-            // If no specific group requested, use first group with students
-            userGroup = teacherGroups[0];
-          }
-        }
-      }
-      // Admin can see all groups
+    // Get user's group(s) based on role using helper function
+    let userGroup, teacherGroups;
+    try {
+      const groupsData = await getUserGroupsByRole(req.user, group);
+      userGroup = groupsData.userGroup;
+      teacherGroups = groupsData.teacherGroups;
+    } catch (error) {
+      return res.status(403).json({
+        success: false,
+        message: error.message,
+      });
     }
 
-    // Build section filter
-    const sectionFilter = {};
-
-    // Filter by group
-    if (req.user && req.user.role === "student") {
-      // Student: only their group
-      sectionFilter.group = userGroup;
-    } else if (req.user && req.user.role === "teacher") {
-      // Teacher: specific group if selected
-      if (userGroup) {
-        sectionFilter.group = userGroup;
-      }
-    } else if (group) {
-      // Admin: specific group if requested
-      sectionFilter.group = group;
-    }
-
-    // Filter by month and year
-    if (month && year) {
-      const monthNum = parseInt(month);
-      const yearNum = parseInt(year);
-
-      const startDate = new Date(yearNum, monthNum - 1, 1);
-      const endDate = new Date(yearNum, monthNum, 0, 23, 59, 59, 999);
-
-      sectionFilter.date = {
-        $gte: startDate,
-        $lte: endDate,
-      };
-    } else if (year) {
-      const yearNum = parseInt(year);
-      const startDate = new Date(yearNum, 0, 1);
-      const endDate = new Date(yearNum, 11, 31, 23, 59, 59, 999);
-
-      sectionFilter.date = {
-        $gte: startDate,
-        $lte: endDate,
-      };
-    }
-
-    // Search in reviewSection or memorizationSection
-    if (search && search.trim()) {
-      const searchRegex = new RegExp(search.trim(), "i");
-      sectionFilter.$or = [
-        { reviewSection: searchRegex },
-        { memorizationSection: searchRegex },
-      ];
-    }
+    // Build section filter using helper functions
+    const groupFilter = buildGroupFilter(req.user, userGroup, group);
+    const dateFilter = buildDateFilter(month, year, day);
+    const searchFilter = buildSectionSearchFilter(search);
+    
+    // Merge filters properly (handle date and $or from search)
+    const sectionFilter = {
+      ...groupFilter,
+      ...(Object.keys(dateFilter).length > 0 ? { date: dateFilter } : {}),
+      ...searchFilter,
+    };
 
     console.log("🔧 Section filter:", sectionFilter);
 
@@ -347,22 +258,84 @@ exports.getFilteredSections = async (req, res) => {
       .sort({ date: -1 })
       .lean();
 
+    // Check if forceRefresh is requested (useful for debugging or fixing status)
+    const forceRefresh = req.query.refreshStatus === 'true';
+    
+    // Use marksStatus from Schema, update if missing (for old sections) or if forceRefresh is requested
+    const sectionsWithStatus = await Promise.all(
+      sections.map(async (section) => {
+        // If marksStatus doesn't exist or marksProgress is missing, or forceRefresh is requested, calculate and update it
+        if (!section.marksStatus || !section.marksProgress || forceRefresh) {
+          try {
+            await updateSectionMarksStatus(section._id.toString(), section.group || userGroup);
+            // Fetch updated section
+            const updatedSection = await Section.findById(section._id).lean();
+            return {
+              ...updatedSection,
+              marksStatus: updatedSection.marksStatus || "not_started",
+              marksProgress: updatedSection.marksProgress || {
+                totalStudents: 0,
+                studentsWithMarks: 0,
+                percentage: 0,
+              },
+            };
+          } catch (error) {
+            console.error(`⚠️ Error updating status for section ${section._id}:`, error);
+            // Return section with default values if update fails
+            return {
+              ...section,
+              marksStatus: section.marksStatus || "not_started",
+              marksProgress: section.marksProgress || {
+                totalStudents: 0,
+                studentsWithMarks: 0,
+                percentage: 0,
+              },
+            };
+          }
+        }
+
+        // Return section with existing marksStatus from Schema
+        return {
+          ...section,
+          marksStatus: section.marksStatus || "not_started",
+          marksProgress: section.marksProgress || {
+            totalStudents: 0,
+            studentsWithMarks: 0,
+            percentage: 0,
+          },
+        };
+      })
+    );
+
     const duration = Date.now() - startTime;
-    console.log(`✅ Fetched ${sections.length} sections in ${duration}ms`);
+    console.log(`✅ Fetched ${sectionsWithStatus.length} sections with marks status in ${duration}ms`);
+    
+    // Debug: Log first section structure to verify marksStatus and marksProgress
+    if (sectionsWithStatus.length > 0) {
+      console.log("📦 Sample section structure:", {
+        id: sectionsWithStatus[0]._id,
+        marksStatus: sectionsWithStatus[0].marksStatus,
+        marksProgress: sectionsWithStatus[0].marksProgress,
+        hasMarksStatus: !!sectionsWithStatus[0].marksStatus,
+        hasMarksProgress: !!sectionsWithStatus[0].marksProgress,
+      });
+    }
+    
     console.log("🔍 ========== FILTERED SECTIONS COMPLETE ==========\n");
 
     res.json({
       success: true,
-      data: sections,
-      count: sections.length,
+      data: sectionsWithStatus,
+      count: sectionsWithStatus.length,
       filters: {
         month: month ? parseInt(month) : null,
         year: year ? parseInt(year) : null,
+        day: day ? parseInt(day) : null,
         search: search || null,
         group: userGroup || null,
       },
       teacherGroups: teacherGroups || null,
-      message: `تم تحميل ${sections.length} مقطع بنجاح`,
+      message: `تم تحميل ${sectionsWithStatus.length} مقطع بنجاح`,
     });
   } catch (error) {
     console.error("❌ Error fetching filtered sections:", error);
@@ -390,68 +363,34 @@ exports.getStudentAverages = async (req, res) => {
 
     console.log("📋 Request:", { studentId, month, year, group });
 
-    // Get user's group(s) based on role
-    let userGroup = group || null;
-
-    if (req.user) {
-      if (req.user.role === "student") {
-        // Student: fetch current group from database
-        const Student = require("../../schema/Student");
-        const studentData = await Student.findById(req.user._id).select('group');
-        userGroup = studentData ? studentData.group : null;
-      } else if (req.user.role === "teacher") {
-        // Teacher: get assigned groups that have students
-        const allTeacherGroups = await getTeacherGroups(req.user._id);
-        
-        if (allTeacherGroups && allTeacherGroups.length > 0) {
-          // Get only groups that have students
-          const Student = require("../../schema/Student");
-          const groupsWithStudents = await Student.distinct('group', {
-            group: { $in: allTeacherGroups }
+    // Get user's group(s) based on role using helper function
+    let userGroup;
+    try {
+      const groupsData = await getUserGroupsByRole(req.user, group);
+      userGroup = groupsData.userGroup;
+      
+      // For teacher role, validate access
+      if (req.user && req.user.role === "teacher" && group && groupsData.teacherGroups) {
+        if (!groupsData.teacherGroups.includes(group)) {
+          return res.status(403).json({
+            success: false,
+            message: "ليس لديك صلاحية للوصول إلى هذه الحلقة",
           });
-          
-          if (!userGroup) {
-            userGroup = groupsWithStudents[0];
-          } else if (!groupsWithStudents.includes(userGroup)) {
-            return res.status(403).json({
-              success: false,
-              message: "ليس لديك صلاحية للوصول إلى هذه الحلقة",
-            });
-          }
         }
       }
-      // Admin can see all groups
+    } catch (error) {
+      return res.status(403).json({
+        success: false,
+        message: error.message,
+      });
     }
 
-    // Build section filter
-    const sectionFilter = {};
-
-    if (userGroup) {
-      sectionFilter.group = userGroup;
-    }
-
-    // Filter by month and year
-    if (month && year) {
-      const monthNum = parseInt(month);
-      const yearNum = parseInt(year);
-
-      const startDate = new Date(yearNum, monthNum - 1, 1);
-      const endDate = new Date(yearNum, monthNum, 0, 23, 59, 59, 999);
-
-      sectionFilter.date = {
-        $gte: startDate,
-        $lte: endDate,
-      };
-    } else if (year) {
-      const yearNum = parseInt(year);
-      const startDate = new Date(yearNum, 0, 1);
-      const endDate = new Date(yearNum, 11, 31, 23, 59, 59, 999);
-
-      sectionFilter.date = {
-        $gte: startDate,
-        $lte: endDate,
-      };
-    }
+    // Build section filter using helper functions
+    const dateFilter = buildDateFilter(month, year);
+    const sectionFilter = {
+      ...(userGroup ? { group: userGroup } : {}),
+      ...(Object.keys(dateFilter).length > 0 ? { date: dateFilter } : {}),
+    };
 
     console.log("🔧 Section filter:", sectionFilter);
 

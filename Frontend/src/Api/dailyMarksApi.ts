@@ -59,6 +59,12 @@ export interface Section {
   reviewSection: string;
   group?: string;
   teacher?: string;
+  marksStatus?: "completed" | "in_progress" | "not_started";
+  marksProgress?: {
+    totalStudents: number;
+    studentsWithMarks: number;
+    percentage: number;
+  };
   createdAt?: string;
   updatedAt?: string;
 }
@@ -82,145 +88,80 @@ export interface ApiResponse<T> {
 }
 
 // ============================================================================
-// STUDENT API FUNCTIONS
+// NOTE: Student and Teacher API functions are now imported from their
+// respective API files (studentApi.ts, teacherApi.ts) to avoid duplication
+// ============================================================================
+
+// ============================================================================
+// GROUP API FUNCTIONS
 // ============================================================================
 
 /**
- * Get all students (or filtered by teacher)
+ * Get active groups for daily marks filtering
+ * @param teacherId - معرف المعلم (إلزامي)
+ * @param type - نوع البيانات: 'basic' للبيانات الأساسية أو 'detailed' للبيانات الكاملة
  */
-export const getAllStudents = async (): Promise<ApiResponse<Student[]>> => {
+export const getActiveGroups = async (
+  teacherId: string,
+  type: "basic" | "detailed" = "basic"
+): Promise<ApiResponse<any[]>> => {
   try {
-    const response = await api.get("/students");
+    const response = await api.get(`/daily-marks/active-groups?teacherId=${teacherId}&type=${type}`);
     return {
       success: true,
-      data: response.data.data || response.data || [],
+      data: response.data.data || [],
+      message: response.data.message,
     };
   } catch (error) {
-    console.error("❌ Error fetching students:", error);
+    console.error("❌ Error fetching active groups:", error);
     const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب الطلاب",
+      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب الحلقات النشطة",
       error: String(error),
     };
   }
 };
 
 /**
- * Get student by ID
+ * Get group statistics (students count and sections count)
+ * @param groupName - اسم الحلقة
+ * @param month - الشهر (اختياري)
+ * @param year - السنة (اختياري)
  */
-export const getStudentById = async (
-  studentId: string
-): Promise<ApiResponse<Student>> => {
+export const getGroupStats = async (
+  groupName: string,
+  month?: number,
+  year?: number
+): Promise<ApiResponse<{
+  groupName: string;
+  studentsCount: number;
+  sectionsCount: number;
+  filters: { month: number | null; year: number | null };
+}>> => {
   try {
-    const response = await api.get(`/students/${studentId}`);
+    let url = `/daily-marks/group-stats/${encodeURIComponent(groupName)}`;
+    const params: string[] = [];
+    
+    if (month) params.push(`month=${month}`);
+    if (year) params.push(`year=${year}`);
+    
+    if (params.length > 0) {
+      url += `?${params.join('&')}`;
+    }
+
+    const response = await api.get(url);
     return {
       success: true,
-      data: response.data.data || response.data,
+      data: response.data.data,
+      message: response.data.message,
     };
   } catch (error) {
-    console.error("❌ Error fetching student:", error);
+    console.error("❌ Error fetching group stats:", error);
     const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب الطالب",
-      error: String(error),
-    };
-  }
-};
-
-/**
- * Get students by teacher
- * @param teacherId - Teacher ID or name
- */
-export const getStudentsByTeacher = async (
-  teacherId: string
-): Promise<ApiResponse<Student[]>> => {
-  try {
-    const response = await api.get(`/students/teacher/${encodeURIComponent(teacherId)}`);
-    return {
-      success: true,
-      data: response.data.data || response.data || [],
-    };
-  } catch (error) {
-    console.error("❌ Error fetching students by teacher:", error);
-    const axiosError = error as AxiosError<{ message?: string }>;
-    return {
-      success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب طلاب المعلم",
-      error: String(error),
-    };
-  }
-};
-
-/**
- * Get students by group
- */
-export const getStudentsByGroup = async (
-  groupName: string
-): Promise<ApiResponse<Student[]>> => {
-  try {
-    const response = await api.get(
-      `/students/group/${encodeURIComponent(groupName)}`
-    );
-    return {
-      success: true,
-      data: response.data.data || response.data || [],
-    };
-  } catch (error) {
-    console.error("❌ Error fetching students by group:", error);
-    const axiosError = error as AxiosError<{ message?: string }>;
-    return {
-      success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب طلاب الحلقة",
-      error: String(error),
-    };
-  }
-};
-
-// ============================================================================
-// TEACHER API FUNCTIONS
-// ============================================================================
-
-/**
- * Get teacher by ID
- */
-export const getTeacherById = async (
-  teacherId: string
-): Promise<ApiResponse<Teacher>> => {
-  try {
-    const response = await api.get(`/teachers/${teacherId}`);
-    return {
-      success: true,
-      data: response.data.data || response.data,
-    };
-  } catch (error) {
-    console.error("❌ Error fetching teacher:", error);
-    const axiosError = error as AxiosError<{ message?: string }>;
-    return {
-      success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب المعلم",
-      error: String(error),
-    };
-  }
-};
-
-/**
- * Get all teachers
- */
-export const getAllTeachers = async (): Promise<ApiResponse<Teacher[]>> => {
-  try {
-    const response = await api.get("/teachers");
-    return {
-      success: true,
-      data: response.data.data || response.data || [],
-    };
-  } catch (error) {
-    console.error("❌ Error fetching teachers:", error);
-    const axiosError = error as AxiosError<{ message?: string }>;
-    return {
-      success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب المعلمين",
+      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب إحصائيات الحلقة",
       error: String(error),
     };
   }
@@ -229,50 +170,6 @@ export const getAllTeachers = async (): Promise<ApiResponse<Teacher[]>> => {
 // ============================================================================
 // SECTION API FUNCTIONS
 // ============================================================================
-
-/**
- * Get all sections
- */
-export const getAllSections = async (): Promise<ApiResponse<Section[]>> => {
-  try {
-    const response = await api.get("/sections");
-    return {
-      success: true,
-      data: response.data.data || response.data || [],
-    };
-  } catch (error) {
-    console.error("❌ Error fetching sections:", error);
-    const axiosError = error as AxiosError<{ message?: string }>;
-    return {
-      success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب المقاطع",
-      error: String(error),
-    };
-  }
-};
-
-/**
- * Get sections by group
- */
-export const getSectionsByGroup = async (
-  groupName: string
-): Promise<ApiResponse<Section[]>> => {
-  try {
-    const response = await api.get(`/sections/group/${encodeURIComponent(groupName)}`);
-    return {
-      success: true,
-      data: response.data.data || response.data || [],
-    };
-  } catch (error) {
-    console.error("❌ Error fetching sections by group:", error);
-    const axiosError = error as AxiosError<{ message?: string }>;
-    return {
-      success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب مقاطع الحلقة",
-      error: String(error),
-    };
-  }
-};
 
 /**
  * Get section by ID
@@ -405,27 +302,6 @@ export const bulkDeleteSections = async (
 // ============================================================================
 
 /**
- * Get all marks (or filtered by student/section)
- */
-export const getAllMarks = async (): Promise<ApiResponse<Mark[]>> => {
-  try {
-    const response = await api.get("/daily-marks");
-    return {
-      success: true,
-      data: response.data.data || response.data || [],
-    };
-  } catch (error) {
-    console.error("❌ Error fetching marks:", error);
-    const axiosError = error as AxiosError<{ message?: string }>;
-    return {
-      success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب العلامات",
-      error: String(error),
-    };
-  }
-};
-
-/**
  * Get filtered marks with advanced filters
  * @param filters - Filter options
  * @param filters.month - Month (1-12)
@@ -439,6 +315,7 @@ export const getAllMarks = async (): Promise<ApiResponse<Mark[]>> => {
 export const getFilteredMarks = async (filters: {
   month?: number;
   year?: number;
+  day?: number;
   search?: string;
   group?: string;
   studentId?: string;
@@ -450,6 +327,7 @@ export const getFilteredMarks = async (filters: {
     
     if (filters.month) params.append("month", filters.month.toString());
     if (filters.year) params.append("year", filters.year.toString());
+    if (filters.day) params.append("day", filters.day.toString());
     if (filters.search) params.append("search", filters.search);
     if (filters.group) params.append("group", filters.group);
     if (filters.studentId) params.append("studentId", filters.studentId);
@@ -488,6 +366,7 @@ export const getFilteredMarks = async (filters: {
 export const getFilteredSections = async (filters: {
   month?: number;
   year?: number;
+  day?: number;
   search?: string;
   group?: string;
 }): Promise<ApiResponse<Section[]> & { count?: number; filters?: any }> => {
@@ -496,15 +375,28 @@ export const getFilteredSections = async (filters: {
     
     if (filters.month) params.append("month", filters.month.toString());
     if (filters.year) params.append("year", filters.year.toString());
+    if (filters.day) params.append("day", filters.day.toString());
     if (filters.search) params.append("search", filters.search);
     if (filters.group) params.append("group", filters.group);
 
     console.log("🔍 Fetching filtered sections:", filters);
     const response = await api.get(`/daily-marks/filtered-sections?${params.toString()}`);
     
+    const sections = response.data.data || response.data || [];
+    
+    // Debug: Log first section to verify structure
+    if (sections.length > 0 && process.env.NODE_ENV === 'development') {
+      console.log('📦 First section from API:', {
+        id: sections[0]._id,
+        marksStatus: sections[0].marksStatus,
+        marksProgress: sections[0].marksProgress,
+        fullSection: sections[0],
+      });
+    }
+    
     return {
       success: true,
-      data: response.data.data || response.data || [],
+      data: sections,
       count: response.data.count,
       filters: response.data.filters,
       message: response.data.message,
@@ -568,29 +460,6 @@ export const getStudentAverages = async (
     return {
       success: false,
       message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب المعدلات",
-      error: String(error),
-    };
-  }
-};
-
-/**
- * Get marks for a specific student
- */
-export const getStudentMarks = async (
-  studentId: string
-): Promise<ApiResponse<Mark[]>> => {
-  try {
-    const response = await api.get(`/daily-marks/student/${studentId}`);
-    return {
-      success: true,
-      data: response.data.data || response.data || [],
-    };
-  } catch (error) {
-    console.error("❌ Error fetching student marks:", error);
-    const axiosError = error as AxiosError<{ message?: string }>;
-    return {
-      success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب علامات الطالب",
       error: String(error),
     };
   }
@@ -773,81 +642,7 @@ export const bulkUpdateMarks = async (
   }
 };
 
-/**
- * Delete all marks for a student
- */
-export const deleteStudentMarks = async (
-  studentId: string
-): Promise<ApiResponse<{ deletedCount: number; studentId: string }>> => {
-  try {
-    console.log("🗑️ Deleting all marks for student:", studentId);
-    const response = await api.delete(`/daily-marks/student/${studentId}`);
-    return {
-      success: true,
-      data: response.data.data || { deletedCount: 0, studentId },
-      message: response.data.message || "تم حذف العلامات بنجاح",
-    };
-  } catch (error) {
-    console.error("❌ Error deleting student marks:", error);
-    const axiosError = error as AxiosError<{ message?: string }>;
-    return {
-      success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء حذف علامات الطالب",
-      error: String(error),
-    };
-  }
-};
 
-/**
- * Delete all marks for a section
- */
-export const deleteSectionMarks = async (
-  sectionId: string
-): Promise<ApiResponse<{ deletedCount: number; sectionId: string; affectedStudents: number }>> => {
-  try {
-    console.log("🗑️ Deleting all marks for section:", sectionId);
-    const response = await api.delete(`/daily-marks/section/${sectionId}`);
-    return {
-      success: true,
-      data: response.data.data || { deletedCount: 0, sectionId, affectedStudents: 0 },
-      message: response.data.message || "تم حذف العلامات بنجاح",
-    };
-  } catch (error) {
-    console.error("❌ Error deleting section marks:", error);
-    const axiosError = error as AxiosError<{ message?: string }>;
-    return {
-      success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء حذف علامات القسم",
-      error: String(error),
-    };
-  }
-};
-
-/**
- * Delete a mark for specific student in specific section
- */
-export const deleteStudentSectionMark = async (
-  studentId: string,
-  sectionId: string
-): Promise<ApiResponse<{ deletedId: string; studentId: string; sectionId: string }>> => {
-  try {
-    console.log(`🗑️ Deleting mark for student ${studentId} in section ${sectionId}`);
-    const response = await api.delete(`/daily-marks/student/${studentId}/section/${sectionId}`);
-    return {
-      success: true,
-      data: response.data.data || { deletedId: "", studentId, sectionId },
-      message: response.data.message || "تم حذف العلامة بنجاح",
-    };
-  } catch (error) {
-    console.error("❌ Error deleting student section mark:", error);
-    const axiosError = error as AxiosError<{ message?: string }>;
-    return {
-      success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء حذف العلامة",
-      error: String(error),
-    };
-  }
-};
 
 /**
  * Set marks for a specific section (bulk operation for one section)
@@ -881,6 +676,8 @@ export const setMarksForSection = async (
 
 /**
  * Get all data needed for DailyMarks initialization
+ * NOTE: This function is deprecated and not used anymore.
+ * Use the filtered APIs instead (getFilteredSections, getFilteredMarks, etc.)
  */
 export const getDailyMarksInitialData = async (
   teacherId?: string
@@ -890,60 +687,30 @@ export const getDailyMarksInitialData = async (
   marks: Mark[];
   teacher?: Teacher;
 }> => {
-  try {
-    console.log("📦 Fetching DailyMarks initial data...");
-
-    const [studentsRes, sectionsRes, marksRes, teacherRes] = await Promise.all([
-      teacherId
-        ? getStudentsByTeacher(teacherId)
-        : getAllStudents(),
-      getAllSections(),
-      getAllMarks(),
-      teacherId ? getTeacherById(teacherId) : Promise.resolve({ success: false } as ApiResponse<Teacher>),
-    ]);
-
-    const teacher = (teacherRes as ApiResponse<Teacher>).success && (teacherRes as ApiResponse<Teacher>).data 
-      ? (teacherRes as ApiResponse<Teacher>).data 
-      : undefined;
-
-    return {
-      students: studentsRes.data || [],
-      sections: sectionsRes.data || [],
-      marks: marksRes.data || [],
-      teacher,
-    };
-  } catch (error) {
-    console.error("❌ Error fetching initial data:", error);
-    throw error;
-  }
+  console.warn("⚠️ getDailyMarksInitialData is deprecated. Use filtered APIs instead.");
+  return {
+    students: [],
+    sections: [],
+    marks: [],
+  };
 };
 
 export default {
-  // Students
-  getAllStudents,
-  getStudentById,
-  getStudentsByTeacher,
-  getStudentsByGroup,
-
-  // Teachers
-  getTeacherById,
-  getAllTeachers,
+  // Groups
+  getActiveGroups,
+  getGroupStats,
 
   // Sections
-  getAllSections,
-  getSectionsByGroup,
   getSectionById,
   createSection,
   updateSection,
   deleteSection,
   bulkDeleteSections,
+  getFilteredSections,
 
   // Marks
-  getAllMarks,
   getFilteredMarks,
-  getFilteredSections,
   getStudentAverages,
-  getStudentMarks,
   getSectionMarks,
   getStudentMarkStats,
   createMark,
@@ -951,11 +718,5 @@ export default {
   deleteMark,
   bulkCreateMarks,
   bulkUpdateMarks,
-  deleteStudentMarks,
-  deleteSectionMarks,
-  deleteStudentSectionMark,
   setMarksForSection,
-
-  // Utility
-  getDailyMarksInitialData,
 };

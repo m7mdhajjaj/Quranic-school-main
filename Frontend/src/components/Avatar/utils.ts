@@ -77,6 +77,7 @@ export const getUserInfo = (
 
 /**
  * الحصول على URL الصورة من مصادر مختلفة حسب الأولوية
+ * مع التحقق من صحة URL
  */
 export const getAvatarUrl = (
   src?: string | null,
@@ -87,7 +88,31 @@ export const getAvatarUrl = (
   // 1. src مباشر
   // 2. user.avatar.url من Cloudinary
   // 3. fetchedAvatarUrl من API
-  return src || userAvatar?.url || fetchedAvatarUrl || null;
+  const url = src || userAvatar?.url || fetchedAvatarUrl || null;
+  
+  // التحقق من صحة URL
+  if (!url) return null;
+  
+  // التحقق من أن URL يبدأ بـ http أو https
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    console.warn('⚠️ Invalid avatar URL format:', url);
+    return null;
+  }
+  
+  return url;
+};
+
+/**
+ * التحقق من وجود الصورة (للاستخدام المستقبلي)
+ * يمكن استخدامها لاحقاً للتحقق من وجود الصورة قبل تحميلها
+ */
+export const checkImageExists = async (url: string): Promise<boolean> => {
+  try {
+    const response = await fetch(url, { method: 'HEAD' });
+    return response.ok;
+  } catch {
+    return false;
+  }
 };
 
 /**

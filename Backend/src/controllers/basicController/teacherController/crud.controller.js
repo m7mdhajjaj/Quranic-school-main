@@ -511,13 +511,24 @@ exports.updateTeacher = async (req, res) => {
       (id) => !newGroupIds.includes(id)
     );
     if (groupsToRemove.length > 0) {
+      const removedGroups = await Group.find({ _id: { $in: groupsToRemove } }).select('name');
+      
       await Group.updateMany(
         { _id: { $in: groupsToRemove } },
         { $unset: { teacher: "" } }
       );
+      
+      // تحديث activeStatus للحلقات التي تم إزالة المعلم منها
+      const removedGroupNames = removedGroups.map(g => g.name);
+      if (removedGroupNames.length > 0) {
+        await Group.recalculateMultipleActiveStatus(removedGroupNames).catch(err =>
+          console.error('⚠️ خطأ في تحديث activeStatus:', err)
+        );
+      }
     }
 
     // 4. التحقق من الحلقات الجديدة وتعيينها
+    const newGroupNames = [];
     if (Array.isArray(updates.groups)) {
       for (const groupItem of updates.groups) {
         const group = await Group.findById(groupItem.id);
@@ -538,6 +549,14 @@ exports.updateTeacher = async (req, res) => {
             teacher: currentTeacher._id,
             teacherName: teacherFullName,
           }
+        );
+        if (group) newGroupNames.push(group.name);
+      }
+      
+      // تحديث activeStatus للحلقات الجديدة
+      if (newGroupNames.length > 0) {
+        await Group.recalculateMultipleActiveStatus(newGroupNames).catch(err =>
+          console.error('⚠️ خطأ في تحديث activeStatus:', err)
         );
       }
     }
@@ -627,6 +646,12 @@ exports.deleteTeacher = async (req, res) => {
         }
       );
       console.log(`✅ تم إزالة المعلم من ${relatedGroups.length} حلقة`);
+      
+      // تحديث activeStatus للحلقات التي تم إزالة المعلم منها
+      const groupNames = relatedGroups.map(g => g.name);
+      await Group.recalculateMultipleActiveStatus(groupNames).catch(err =>
+        console.error('⚠️ خطأ في تحديث activeStatus:', err)
+      );
     }
 
     // 2. إزالة المعلم من الطلاب

@@ -42,13 +42,14 @@ const HeroSection = ({
       {/* Text Content */}
       <div
         className="w-full lg:w-1/2 p-6 sm:p-8 md:p-10 lg:p-12 flex flex-col justify-center"
-        data-aos="fade-right"
-        data-aos-delay="200"
       >
-        {/* Personalized Greeting inside hero section */}
+        {/* Personalized Greeting inside hero section - LCP Element (renders immediately) */}
         {currentUser && (
           <div className="text-center mb-6 lg:mb-8">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-emerald-700 mb-3 md:mb-4 leading-tight lg:leading-snug">
+            <h2 
+              className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-emerald-700 mb-3 md:mb-4 leading-tight lg:leading-snug lcp-element"
+              fetchPriority="high"
+            >
               {currentUser.role === 'student'
                 ? `أهلاً وسهلاً بك في أكاديمية المهاجرين، الطالب العزيز ${
                     currentUser.firstName || ''
@@ -59,7 +60,7 @@ const HeroSection = ({
                     currentUser.firstName || currentUser.name || ''
                   } ${currentUser.lastName || ''}`.trim()}
             </h2>
-            <div className="mx-auto max-w-2xl">
+            <div className="mx-auto max-w-2xl" data-aos="fade-up" data-aos-delay="100">
               <p className="text-lg sm:text-xl md:text-2xl text-gray-700 mb-2 md:mb-3 font-medium">
                 يسرنا انضمامك إلى أكاديمية المهاجرين، حيث نؤمن أنك جزء من رحلة
                 التميز في رحاب القرآن الكريم.
@@ -78,7 +79,7 @@ const HeroSection = ({
         )}
         <div
           data-aos="zoom-in"
-          data-aos-delay="1100"
+          data-aos-delay="300"
           className="flex justify-center"
         >
           <Button

@@ -236,49 +236,35 @@ export const isValidMark = (mark: number | null): boolean => {
   return typeof mark === "number" && mark >= 0 && mark <= 10;
 };
 
+// ============================================================================
+// ACTIVE GROUPS VALIDATION
+// ============================================================================
+
 /**
- * Calculate average marks
+ * Validate active groups query parameters
  */
-export const calculateMarkAverage = (
-  marks: (number | null)[]
-): number => {
-  const validMarks = marks.filter((m) => m !== null) as number[];
-  if (validMarks.length === 0) return 0;
-  const sum = validMarks.reduce((a, b) => a + b, 0);
-  return parseFloat((sum / validMarks.length).toFixed(2));
+export const validateActiveGroupsQuery = (
+  type?: "basic" | "detailed"
+): { isValid: boolean; errors?: string[] } => {
+  const errors: string[] = [];
+
+  if (type && !["basic", "detailed"].includes(type)) {
+    errors.push('نوع البيانات يجب أن يكون "basic" أو "detailed"');
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors: errors.length > 0 ? errors : undefined,
+  };
 };
 
 /**
- * Calculate overall score (review + memorization) / 2 * 5 = out of 100
+ * Type guard for active groups query type
  */
-export const calculateOverallScore = (
-  reviewMark: number | null,
-  memorizationMark: number | null
-): number => {
-  if (reviewMark === null || memorizationMark === null) return 0;
-  const average = (reviewMark + memorizationMark) / 2;
-  return parseFloat((average * 10).toFixed(2));
-};
-
-/**
- * Get mark color based on value
- */
-export const getMarkColor = (mark: number | null): "emerald" | "amber" | "red" => {
-  if (mark === null) return "red";
-  if (mark >= 9) return "emerald";
-  if (mark >= 7) return "amber";
-  return "red";
-};
-
-/**
- * Get mark status text
- */
-export const getMarkStatus = (mark: number | null): string => {
-  if (mark === null) return "لم تُضف علامة";
-  if (mark >= 9) return "ممتاز";
-  if (mark >= 7) return "جيد";
-  if (mark >= 5) return "مقبول";
-  return "ضعيف";
+export const isValidActiveGroupsType = (
+  value: any
+): value is "basic" | "detailed" => {
+  return value === "basic" || value === "detailed";
 };
 
 // ============================================================================
@@ -294,8 +280,6 @@ export default {
   validateMarksSliders,
   isValidDate,
   isValidMark,
-  calculateMarkAverage,
-  calculateOverallScore,
-  getMarkColor,
-  getMarkStatus,
+  validateActiveGroupsQuery,
+  isValidActiveGroupsType,
 };

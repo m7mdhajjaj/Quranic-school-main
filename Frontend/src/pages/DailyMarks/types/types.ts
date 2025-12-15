@@ -31,37 +31,36 @@ export interface LoggedInUser {
 // Component Props Interfaces
 // ============================================
 
-// StudentList Component Props
-export interface StudentListProps {
-  students: Student[];
-  teacherGroups: string[];
-  selectedGroup: string;
-  selectedStudentId: string | null;
-  onGroupChange: (group: string) => void;
-  onStudentSelect: (studentId: string) => void;
-  onAddSection: () => void;
-  onBulkUpdate: () => void;
-  onBulkDelete: () => void;
-}
-
 // SectionsTable Component Props
 export interface SectionsTableProps {
   sections: Section[];
   marks: Mark[];
   loadingMarks: boolean;
   isTeacher: boolean;
+  selectedGroup: string;
   onAddMark?: (section: Section) => void;
   onUpdateMark?: (mark: Mark, section: Section) => void;
   onEditSection?: (section: Section) => void;
   onDeleteSection?: (sectionId: string) => void;
+  onBulkMarks?: (section: Section) => void;
+  // Navigation props for month/year
+  selectedMonth?: number;
+  selectedYear?: number;
+  onMonthChange?: (month: number) => void;
+  onYearChange?: (year: number) => void;
+  onPreviousMonth?: () => void;
+  onCurrentMonth?: () => void;
+  onNextMonth?: () => void;
 }
 
 // MonthYearFilter Component Props
 export interface MonthYearFilterProps {
-  selectedMonth: number;
-  selectedYear: number;
-  onMonthChange: (month: number) => void;
-  onYearChange: (year: number) => void;
+  selectedMonth: number | null;
+  selectedYear: number | null;
+  selectedDay?: number | null;
+  onMonthChange: (month: number | null) => void;
+  onYearChange: (year: number | null) => void;
+  onDayChange?: (day: number | null) => void;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
 }
@@ -157,18 +156,13 @@ export interface UpdateMarkModalProps {
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-// BulkUpdateModal Props
-export interface BulkUpdateModalProps {
+// BulkMarksModal Props
+export interface BulkMarksModalProps {
   isOpen: boolean;
-  sections: Section[];
-  selectedSectionsForBulk: string[];
-  isLoading?: boolean;
+  section: Section | null;
+  group: string;
   onClose: () => void;
-  onToggleSection: (sectionId: string) => void;
-  onSubmit: (updateData: {
-    reviewSection?: string;
-    memorizationSection?: string;
-  }) => void;
+  onSuccess?: () => void;
 }
 
 // BulkDeleteModal Props
@@ -189,14 +183,30 @@ export interface BulkDeleteModalProps {
 // TeacherView Props
 export interface TeacherViewProps {
   students: Student[];
-  selectedStudentId: string | null;
+  selectedGroup: string;
+  teacherGroups: string[];
   sections: Section[];
   marks: Mark[];
   loadingMarks: boolean;
-  onAddMark: (section: Section) => void;
-  onUpdateMark: (mark: Mark, section: Section) => void;
-  onEditSection: (section: Section) => void;
-  onDeleteSection: (sectionId: string) => void;
+  onBulkMarks?: (section: Section) => void;
+  onGroupSelect?: (group: string) => void;
+  onAddSection?: () => void;
+  onEditSection?: (section: Section) => void;
+  onDeleteSection?: (sectionId: string) => void;
+  onBulkDelete?: () => void;
+  onAddMark?: (section: Section, student: Student) => void;
+  onUpdateMark?: (mark: Mark, section: Section, student: Student) => void;
+  onDeleteMark?: (markId: string) => void;
+  onMarkChange?: () => void;
+  // Filter props
+  selectedMonth: number | null;
+  selectedYear: number | null;
+  selectedDay?: number | null;
+  onMonthChange: (month: number | null) => void;
+  onYearChange: (year: number | null) => void;
+  onDayChange?: (day: number | null) => void;
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
 }
 
 // StudentView Props

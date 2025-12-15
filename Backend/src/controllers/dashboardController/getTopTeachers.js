@@ -7,7 +7,7 @@
 
 const Teacher = require("../../schema/Teacher");
 const Student = require("../../schema/Student");
-const DailyMark = require("../../schema/DailyMark");
+const DailyMark = require("../../schema/DailyMark/DailyMark");
 const ExamSchedule = require("../../schema/ExamSchedule");
 
 /**

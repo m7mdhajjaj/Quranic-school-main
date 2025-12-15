@@ -219,6 +219,13 @@
   content-visibility: auto;
 }
 
+/* ✨ LCP Element Optimization - Immediate rendering */
+.lcp-element {
+  contain: layout style paint;
+  will-change: contents;
+  transform: translateZ(0); /* Force GPU acceleration */
+}
+
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-out;
 }

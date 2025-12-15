@@ -5,7 +5,7 @@
 // ويعرض أعلى 5 طلاب بناءً على مجموع العلامات
 
 const Student = require("../../schema/Student");
-const DailyMark = require("../../schema/DailyMark");
+const DailyMark = require("../../schema/DailyMark/DailyMark");
 const ExamSchedule = require("../../schema/ExamSchedule");
 
 /**

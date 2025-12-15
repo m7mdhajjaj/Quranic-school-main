@@ -2,7 +2,12 @@
 // getMarks.js - Get Marks Operations
 // ============================================================================
 
-const Mark = require("../../schema/DailyMark");
+const Mark = require("../../schema/DailyMark/DailyMark");
+const {
+  sendSuccess,
+  sendError,
+  formatPagination,
+} = require("./utils/responseHelpers");
 
 /**
  * Get all marks with pagination and performance optimization
@@ -30,23 +35,12 @@ exports.getMarks = async (req, res) => {
     const duration = Date.now() - startTime;
     console.log(`✅ Fetched ${marks.length} marks in ${duration}ms`);
 
-    res.json({
-      success: true,
-      data: marks,
-      pagination: {
-        total,
-        page,
-        limit,
-        pages: Math.ceil(total / limit),
-      },
-      message: `تم تحميل ${marks.length} علامة بنجاح`,
+    sendSuccess(res, marks, `تم تحميل ${marks.length} علامة بنجاح`, 200, {
+      pagination: formatPagination(total, page, limit),
     });
   } catch (error) {
     console.error("❌ Error fetching marks:", error);
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    sendError(res, error.message, 500, error);
   }
 };
 
@@ -71,17 +65,10 @@ exports.getStudentMarks = async (req, res) => {
     const duration = Date.now() - startTime;
     console.log(`✅ Fetched ${marks.length} marks in ${duration}ms`);
 
-    res.json({
-      success: true,
-      data: marks,
-      message: `تم تحميل ${marks.length} علامة للطالب بنجاح`,
-    });
+    sendSuccess(res, marks, `تم تحميل ${marks.length} علامة للطالب بنجاح`);
   } catch (error) {
     console.error("❌ Error fetching student marks:", error);
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    sendError(res, error.message, 500, error);
   }
 };
 
@@ -103,17 +90,10 @@ exports.getSectionMarks = async (req, res) => {
     const duration = Date.now() - startTime;
     console.log(`✅ Fetched ${marks.length} marks in ${duration}ms`);
 
-    res.json({
-      success: true,
-      data: marks,
-      message: `تم تحميل ${marks.length} علامة للقسم بنجاح`,
-    });
+    sendSuccess(res, marks, `تم تحميل ${marks.length} علامة للقسم بنجاح`);
   } catch (error) {
     console.error("❌ Error fetching section marks:", error);
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    sendError(res, error.message, 500, error);
   }
 };
 
@@ -151,16 +131,9 @@ exports.getStudentMarkStats = async (req, res) => {
 
     console.log(`✅ Statistics calculated for student`);
 
-    res.json({
-      success: true,
-      data: stats,
-      message: "تم حساب إحصائيات الطالب بنجاح",
-    });
+    sendSuccess(res, stats, "تم حساب إحصائيات الطالب بنجاح");
   } catch (error) {
     console.error("❌ Error calculating statistics:", error);
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    sendError(res, error.message, 500, error);
   }
 };

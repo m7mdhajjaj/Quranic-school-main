@@ -1,8 +1,19 @@
-const Section = require("../../../schema/Section");
+const Section = require("../../../schema/DailyMark/Section");
 const { notifySectionAdded } = require("../../../Notifications/handlers/DailyMarks/sectionNotifications");
+const { updateSectionMarksStatus } = require("./sectionMarksStatus");
+const {
+  sendCreated,
+  sendError,
+  sendValidationError,
+} = require("../utils/responseHelpers");
 
 /**
  * Create a new section
+ * 
+ * Validation Rules:
+ * - Date must be today or in the future (cannot create sections with past dates)
+ * - Review section and memorization section are required
+ * - Group and teacher are optional
  */
 exports.createSection = async (req, res) => {
   try {
@@ -24,13 +35,24 @@ exports.createSection = async (req, res) => {
     const newSection = await section.save();
     console.log(" Section saved successfully:", newSection);
     
-    // ����� ������� ����� ���� ������
+    // تحديث حالة علامات المقطع (سيكون not_started لأنه جديد)
+    try {
+      await updateSectionMarksStatus(newSection._id.toString(), newSection.group);
+      console.log("✅ تم تحديث حالة علامات المقطع الجديد");
+    } catch (statusError) {
+      console.error("⚠️ خطأ في تحديث حالة علامات المقطع:", statusError);
+    }
+    
+    // إرسال إشعار للطلاب المعنيين
     const io = req.app.get("io");
     if (io && newSection.group) {
       await notifySectionAdded(newSection, io);
     }
     
-    res.status(201).json(newSection);
+    // إعادة جلب المقطع مع الحالة المحدثة
+    const sectionWithStatus = await Section.findById(newSection._id).lean();
+    
+    sendCreated(res, sectionWithStatus, "تم إنشاء المقطع بنجاح");
   } catch (error) {
     console.error(" Error creating section:", error);
 
@@ -40,12 +62,9 @@ exports.createSection = async (req, res) => {
         .map((field) => `${field}: ${error.errors[field].message}`)
         .join(", ");
 
-      return res.status(400).json({
-        message: `��� �� ������ �� ��������: ${validationErrors}`,
-        error: validationErrors,
-      });
+      return sendValidationError(res, `خطأ في التحقق من البيانات: ${validationErrors}`);
     }
 
-    res.status(400).json({ message: error.message, error: error.toString() });
+    sendError(res, error.message, 400, error);
   }
 };

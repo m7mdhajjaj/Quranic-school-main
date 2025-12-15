@@ -3,6 +3,7 @@ const Group = require("../../../schema/Group");
 const bcrypt = require("bcryptjs");
 const { checkDuplicateFields } = require("../../../utils/validators/duplicateChecker");
 const { invalidateCache } = require("../../../middleware/cacheMiddleware");
+const { updateGroupActiveStatus, updateGroupsActiveStatusOnStudentMove } = require("../groupController");
 const {
   validateTeacherGroupMatch,
   validateGroupCapacity,
@@ -225,6 +226,13 @@ exports.createStudent = async (req, res) => {
     await invalidateStudentCaches();
     emitStudentEvent('created', newStudent);
 
+    // تحديث activeStatus للحلقة
+    if (group && group !== "غير محدد") {
+      await updateGroupActiveStatus(group).catch(err => 
+        console.error("⚠️ Error updating group activeStatus:", err)
+      );
+    }
+
     return res.status(201).json({
       success: true,
       message: "تم إضافة الطالب بنجاح",
@@ -386,6 +394,11 @@ exports.updateStudent = async (req, res) => {
     await invalidateStudentCaches();
     emitStudentEvent('updated', updatedStudent);
     
+    // Update activeStatus if group changed
+    if (updatedData.group && currentStudent.group !== updatedData.group) {
+      await updateGroupsActiveStatusOnStudentMove(currentStudent.group, updatedData.group);
+    }
+    
     // Emit profile update event
     const io = req.app.get("io");
     if (io) {
@@ -426,6 +439,11 @@ exports.deleteStudent = async (req, res) => {
       student: deletedStudent,
     });
 
+    // Update group activeStatus after student deletion
+    if (deletedStudent.group) {
+      await updateGroupActiveStatus(deletedStudent.group);
+    }
+
     res.status(200).json({
       success: true,
       message: "تم حذف الطالب بنجاح",
@@ -456,6 +474,10 @@ exports.bulkDeleteStudents = async (req, res) => {
 
     console.log(`🗑️ محاولة حذف ${studentIds.length} طالب...`);
 
+    // جلب الطلاب المراد حذفهم للحصول على حلقاتهم
+    const studentsToDelete = await Student.find({ _id: { $in: studentIds } }).select('group');
+    const affectedGroups = [...new Set(studentsToDelete.map(s => s.group).filter(g => g && g !== 'غير محدد'))];
+
     const result = await Student.deleteMany({
       _id: { $in: studentIds },
     });
@@ -464,6 +486,14 @@ exports.bulkDeleteStudents = async (req, res) => {
 
     // Invalidate caches and emit events using helpers
     await invalidateStudentCaches();
+    
+    // تحديث activeStatus للحلقات المتأثرة
+    if (affectedGroups.length > 0) {
+      console.log(`🔄 تحديث activeStatus لـ ${affectedGroups.length} حلقة متأثرة...`);
+      await Group.recalculateMultipleActiveStatus(affectedGroups).catch(err =>
+        console.error('⚠️ خطأ في تحديث activeStatus:', err)
+      );
+    }
     
     // Emit delete events for each student
     if (global.io) {

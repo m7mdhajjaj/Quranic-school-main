@@ -1,5 +1,10 @@
-const Section = require("../../../schema/Section");
+const Section = require("../../../schema/DailyMark/Section");
 const { notifySectionUpdated } = require("../../../Notifications/handlers/DailyMarks/sectionNotifications");
+const {
+  sendSuccess,
+  sendError,
+  sendNotFound,
+} = require("../utils/responseHelpers");
 
 /**
  * Update a section
@@ -8,7 +13,7 @@ exports.updateSection = async (req, res) => {
   try {
     const section = await Section.findById(req.params.id);
     if (!section) {
-      return res.status(404).json({ message: "المقطع غير موجود" });
+      return sendNotFound(res, "المقطع");
     }
 
     // Use validated data from middleware
@@ -29,8 +34,8 @@ exports.updateSection = async (req, res) => {
       await notifySectionUpdated(updatedSection, oldSection, io);
     }
  
-    res.json(updatedSection);
+    sendSuccess(res, updatedSection, "تم تحديث المقطع بنجاح");
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    sendError(res, error.message, 400, error);
   }
 };

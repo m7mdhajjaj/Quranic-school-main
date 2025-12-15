@@ -225,9 +225,24 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
               }
             }}
             onError={(e) => {
-              // Handle error by removing src - will fallback to initials/icon
-              (e.target as HTMLImageElement).style.display = 'none';
+              const img = e.target as HTMLImageElement;
+              // Log informative message instead of 404 error
+              if (process.env.NODE_ENV === 'development') {
+                console.warn(
+                  '⚠️ Avatar image failed to load:', 
+                  displaySrc,
+                  '\nFalling back to initials/icon for user:',
+                  userName || alt || 'Unknown'
+                );
+              }
+              // Prevent default 404 error display
+              e.preventDefault();
+              // Hide the broken image
+              img.style.display = 'none';
+              // Remove src to prevent further requests
+              img.removeAttribute('src');
             }}
+            suppressHydrationWarning
           />
         ) : (
           <div className="relative w-full h-full flex items-center justify-center">

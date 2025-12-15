@@ -1,100 +1,141 @@
 import { memo, useMemo } from "react";
 import type { MonthYearFilterProps } from "../types/types";
-import { FilterSelect, FilterContainer, SearchInput } from "@/components/Filters";
-import type { FilterOption } from "@/components/Filters";
+import { FilterSelect, SearchInput } from "@/components/Filters";
+import { Calendar, Search, RotateCcw } from "lucide-react";
+import { MONTH_OPTIONS, generateYearOptions, generateDayOptions } from "../constants";
 
 /**
- * Month and Year filter component
- * Uses shared FilterContainer and FilterSelect components for consistent styling
+ * Month and Year filter component - Simplified Version
+ * Navigation buttons moved to table component
  */
 const MonthYearFilterComponent = ({
   selectedMonth,
   selectedYear,
+  selectedDay = null,
   onMonthChange,
   onYearChange,
+  onDayChange,
   searchQuery = "",
   onSearchChange,
 }: MonthYearFilterProps) => {
-  const monthOptions: FilterOption[] = useMemo(() => [
-    { value: "1", label: "يناير (1)" },
-    { value: "2", label: "فبراير (2)" },
-    { value: "3", label: "مارس (3)" },
-    { value: "4", label: "أبريل (4)" },
-    { value: "5", label: "مايو (5)" },
-    { value: "6", label: "يونيو (6)" },
-    { value: "7", label: "يوليو (7)" },
-    { value: "8", label: "أغسطس (8)" },
-    { value: "9", label: "سبتمبر (9)" },
-    { value: "10", label: "أكتوبر (10)" },
-    { value: "11", label: "نوفمبر (11)" },
-    { value: "12", label: "ديسمبر (12)" },
-  ], []);
+  const monthOptions = MONTH_OPTIONS;
 
-  const yearOptions: FilterOption[] = useMemo(() => [
-    { value: "2023", label: "2023" },
-    { value: "2024", label: "2024" },
-    { value: "2025", label: "2025" },
-    { value: "2026", label: "2026" },
-    { value: "2027", label: "2027" },
-  ], []);
+  // Generate years dynamically (current year ± 2 years)
+  const yearOptions = useMemo(() => generateYearOptions(2), []);
 
-  const selectedMonthLabel = useMemo(() => {
-    return monthOptions.find(
-      (m) => m.value === selectedMonth.toString()
-    )?.label;
-  }, [monthOptions, selectedMonth]);
+  // Generate days based on selected month and year
+  const dayOptions = useMemo(() => {
+    if (!selectedMonth || !selectedYear) {
+      return [{ value: "", label: "كل الأيام" }];
+    }
+    return generateDayOptions(selectedMonth, selectedYear);
+  }, [selectedMonth, selectedYear]);
+
+  // Handle reset filter
+  const handleReset = () => {
+    onMonthChange(null);
+    onYearChange(null);
+    if (onDayChange) {
+      onDayChange(null);
+    }
+    if (onSearchChange) {
+      onSearchChange("");
+    }
+  };
 
   return (
-    <FilterContainer
-      title="📅 فلترة العلامات حسب الشهر والسنة"
-      variant="gradient"
-      showClearButton={false}
-      className="mb-8 max-w-5xl mx-auto"
-    >
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        <FilterSelect
-          label="🗓️ اختر الشهر"
-          value={selectedMonth.toString()}
-          options={monthOptions}
-          onChange={(value) => onMonthChange(Number(value))}
-          showAllOption={false}
-        />
-        
-        <FilterSelect
-          label="📆 اختر السنة"
-          value={selectedYear.toString()}
-          options={yearOptions}
-          onChange={(value) => onYearChange(Number(value))}
-          showAllOption={false}
-        />
+    <div className="mb-0">
+      {/* Filter Header with Reset Button */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <h3 className="text-xl font-bold bg-gradient-to-r from-emerald-700 to-teal-700 bg-clip-text text-transparent">
+            📅 فلترة العلامات
+          </h3>
+        </div>
+        {/* Reset Button - على الشمال (آخر يسار) */}
+        <button
+          onClick={handleReset}
+          type="button"
+          className="flex items-center justify-center gap-1.5 px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors text-xs font-semibold border border-red-300 hover:border-red-400"
+          title="إعادة تعيين الفلتر"
+        >
+          <RotateCcw size={14} />
+          <span>إعادة تعيين</span>
+        </button>
       </div>
 
-      {/* Search Input */}
-      {onSearchChange && (
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            🔍 ابحث عن المقطع
+      {/* Filter Container */}
+      <div className="bg-gradient-to-br from-white via-emerald-50/30 to-teal-50/40 border border-emerald-100/50 rounded-2xl shadow-lg backdrop-blur-sm p-6">
+        {/* All Filters in One Row */}
+        <div className="flex flex-wrap items-end gap-3">
+        {/* Search Input - First on the right */}
+        {onSearchChange && (
+          <div className="flex-1 min-w-[280px] max-w-[400px]">
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
+              <Search size={14} className="text-emerald-600" />
+              <span>البحث</span>
+            </label>
+            <SearchInput
+              value={searchQuery}
+              onChange={onSearchChange}
+              placeholder="ابحث بمقطع المراجعة أو الحفظ..."
+              size="sm"
+              showClearButton={true}
+            />
+          </div>
+        )}
+
+        {/* Day Selector */}
+        {onDayChange && (
+          <div className="min-w-[130px]">
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
+              <Calendar size={13} className="text-emerald-600" />
+              <span>اليوم</span>
+            </label>
+            <FilterSelect
+              label=""
+              value={selectedDay?.toString() || ""}
+              options={dayOptions}
+              onChange={(value) => onDayChange(value === "" ? null : Number(value))}
+              showAllOption={false}
+            />
+          </div>
+        )}
+
+        {/* Month Selector */}
+        <div className="min-w-[120px]">
+          <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
+            <Calendar size={13} className="text-emerald-600" />
+            <span>الشهر</span>
           </label>
-          <SearchInput
-            value={searchQuery}
-            onChange={onSearchChange}
-            placeholder="ابحث بمقطع المراجعة أو الحفظ..."
-            size="md"
-            showClearButton={true}
+          <FilterSelect
+            label=""
+            value={selectedMonth?.toString() || ""}
+            options={monthOptions}
+            onChange={(value) => onMonthChange(value === "" ? null : Number(value))}
+            showAllOption={true}
+            allOptionLabel="كل الأشهر"
           />
         </div>
-      )}
-
-      {/* Current Selection Display */}
-      <div className="mt-5 pt-4 border-t border-emerald-200">
-        <div className="flex items-center justify-center gap-2 text-sm">
-          <span className="text-gray-600">العرض الحالي:</span>
-          <span className="bg-emerald-100 text-emerald-700 px-4 py-1.5 rounded-lg font-bold">
-            {selectedMonthLabel} {selectedYear}
-          </span>
+        
+        {/* Year Selector */}
+        <div className="min-w-[110px]">
+          <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
+            <Calendar size={13} className="text-emerald-600" />
+            <span>السنة</span>
+          </label>
+          <FilterSelect
+            label=""
+            value={selectedYear?.toString() || ""}
+            options={yearOptions}
+            onChange={(value) => onYearChange(value === "" ? null : Number(value))}
+            showAllOption={true}
+            allOptionLabel="كل السنوات"
+          />
+        </div>
         </div>
       </div>
-    </FilterContainer>
+    </div>
   );
 };
 

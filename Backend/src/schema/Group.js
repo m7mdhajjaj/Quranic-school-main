@@ -112,6 +112,104 @@ groupSchema.pre("save", async function (next) {
   next();
 });
 
+// ============================================================================
+// STATIC METHODS - مصدر الحقيقة الواحد لتحديث activeStatus
+// ============================================================================
+
+/**
+ * إعادة حساب وتحديث activeStatus لحلقة معينة
+ * القاعدة: الحلقة فعالة = لها معلم + فيها طالب واحد على الأقل
+ * @param {string} groupName - اسم الحلقة
+ * @returns {Promise<boolean>} الحالة الجديدة
+ */
+groupSchema.statics.recalculateActiveStatusByName = async function (groupName) {
+  if (!groupName || groupName === "غير محدد" || groupName === "") {
+    return false;
+  }
+
+  try {
+    const Student = mongoose.model("Student");
+
+    // عد الطلاب المرتبطين بالحلقة
+    const studentsCount = await Student.countDocuments({ group: groupName });
+
+    // جلب الحلقة
+    const group = await this.findOne({ name: groupName }).select("_id teacher activeStatus name");
+    if (!group) {
+      console.log(`⚠️ [recalculateActiveStatus] Group not found: ${groupName}`);
+      return false;
+    }
+
+    // حساب الحالة الجديدة
+    const shouldBeActive = Boolean(group.teacher) && studentsCount > 0;
+
+    // تحديث فقط إذا تغيرت الحالة
+    if (group.activeStatus !== shouldBeActive) {
+      await this.updateOne(
+        { _id: group._id },
+        { $set: { activeStatus: shouldBeActive } }
+      );
+      console.log(`♻️ [recalculateActiveStatus] "${groupName}": ${shouldBeActive ? 'فعالة ✅' : 'غير فعالة ❌'} (معلم: ${Boolean(group.teacher)}, طلاب: ${studentsCount})`);
+    }
+
+    return shouldBeActive;
+  } catch (error) {
+    console.error(`❌ [recalculateActiveStatus] Error for group "${groupName}":`, error);
+    return false;
+  }
+};
+
+/**
+ * تحديث activeStatus لحلقتين (عند نقل طالب من حلقة لأخرى)
+ * @param {string} oldGroupName - اسم الحلقة القديمة
+ * @param {string} newGroupName - اسم الحلقة الجديدة
+ */
+groupSchema.statics.recalculateActiveStatusOnStudentMove = async function (oldGroupName, newGroupName) {
+  try {
+    const tasks = [];
+
+    if (oldGroupName && oldGroupName !== "غير محدد") {
+      tasks.push(this.recalculateActiveStatusByName(oldGroupName));
+    }
+
+    if (newGroupName && newGroupName !== "غير محدد" && newGroupName !== oldGroupName) {
+      tasks.push(this.recalculateActiveStatusByName(newGroupName));
+    }
+
+    await Promise.all(tasks);
+  } catch (error) {
+    console.error("❌ [recalculateActiveStatusOnStudentMove] Error:", error);
+  }
+};
+
+/**
+ * تحديث activeStatus لعدة حلقات دفعة واحدة
+ * @param {Array<string>} groupNames - أسماء الحلقات
+ */
+groupSchema.statics.recalculateMultipleActiveStatus = async function (groupNames) {
+  if (!Array.isArray(groupNames) || groupNames.length === 0) {
+    return;
+  }
+
+  const validNames = [...new Set(groupNames)].filter(
+    name => name && name !== "غير محدد" && name !== ""
+  );
+
+  if (validNames.length === 0) {
+    return;
+  }
+
+  console.log(`🔄 [recalculateMultipleActiveStatus] Updating ${validNames.length} groups...`);
+
+  await Promise.all(
+    validNames.map(name => 
+      this.recalculateActiveStatusByName(name).catch(err =>
+        console.error(`❌ Error updating ${name}:`, err)
+      )
+    )
+  );
+};
+
 const Group = mongoose.model("Group", groupSchema);
 
 module.exports = Group;

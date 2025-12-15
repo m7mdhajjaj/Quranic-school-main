@@ -1,15 +1,13 @@
-import { memo, useCallback, useRef, useState, useEffect } from 'react';
+import { memo, useEffect } from 'react';
 import {
   Button,
   Input,
   Modal,
   DatePicker,
 } from '@/components/UI';
-
-// Performance constants
-const INPUT_DEBOUNCE = 300; // ms
 import { BookOpen, FileText } from 'lucide-react';
 import type { AddSectionModalProps } from '../types/types';
+import { useAddSectionModal } from '../hooks/modals';
 
 /**
  * Modal for adding a new section
@@ -23,57 +21,25 @@ const AddSectionModalComponent = ({
   onSubmit,
   onChange,
 }: AddSectionModalProps) => {
-  // Local controlled state for instant UI updates (no parent re-render)
-  const [localReviewSection, setLocalReviewSection] = useState('');
-  const [localMemorizationSection, setLocalMemorizationSection] = useState('');
-
-  // Debounce timer ref
-  const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+  const {
+    localReviewSection,
+    localMemorizationSection,
+    syncLocalState,
+    handleInputChange,
+  } = useAddSectionModal();
 
   // Sync with parent state when modal opens
   useEffect(() => {
     if (isOpen) {
-      setLocalReviewSection(newSection.reviewSection);
-      setLocalMemorizationSection(newSection.memorizationSection);
+      syncLocalState(newSection);
     }
   }, [isOpen, newSection.reviewSection, newSection.memorizationSection]);
 
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (debounceTimer.current) {
-        clearTimeout(debounceTimer.current);
-      }
-    };
-  }, []);
-
-  // Debounced onChange - updates parent ONLY after 300ms of no typing
-  const handleInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const { name, value } = e.target;
-
-      // Update local state immediately for 0ms input lag
-      if (name === 'reviewSection') {
-        setLocalReviewSection(value);
-      } else if (name === 'memorizationSection') {
-        setLocalMemorizationSection(value);
-      }
-
-      // Clear previous timer
-      if (debounceTimer.current) {
-        clearTimeout(debounceTimer.current);
-      }
-
-      // Debounce parent state update
-      debounceTimer.current = setTimeout(() => {
-        onChange(e); // Only trigger heavy parent re-render after user stops typing
-        debounceTimer.current = null;
-      }, INPUT_DEBOUNCE);
-    },
-    [onChange]
-  );
-
   if (!isOpen) return null;
+
+  // Get today's date in YYYY-MM-DD format for minDate
+  const today = new Date();
+  const minDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="إضافة مقطع جديد">
@@ -90,8 +56,12 @@ const AddSectionModalComponent = ({
                 target: { name: 'date', value: date },
               } as React.ChangeEvent<HTMLInputElement>)
             }
+            minDate={minDate}
             required
           />
+          <p className="mt-2 text-xs text-gray-500">
+            * يجب أن يكون التاريخ من اليوم أو في المستقبل
+          </p>
         </div>
 
         {/* Review Section */}
@@ -109,7 +79,7 @@ const AddSectionModalComponent = ({
             label="مقطع المراجعة"
             placeholder="مثال: البقرة (1-10)"
             value={localReviewSection}
-            onChange={handleInputChange}
+            onChange={(e) => handleInputChange(e.target.name, e.target.value, onChange)}
             autoComplete="off"
             spellCheck={false}
             inputMode="text"
@@ -130,7 +100,7 @@ const AddSectionModalComponent = ({
             label="مقطع الحفظ"
             placeholder="مثال: البقرة (11-15)"
             value={localMemorizationSection}
-            onChange={handleInputChange}
+            onChange={(e) => handleInputChange(e.target.name, e.target.value, onChange)}
             autoComplete="off"
             spellCheck={false}
             inputMode="text"

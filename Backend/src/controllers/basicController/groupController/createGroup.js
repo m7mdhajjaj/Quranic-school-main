@@ -36,13 +36,14 @@ exports.createGroup = async (req, res) => {
       return notFoundResponse(res, "المعلم المحدد غير موجود في النظام");
     }
 
-    // إنشاء الحلقة
+    // إنشاء الحلقة (activeStatus = false لأنه لا يوجد طلاب بعد)
     const group = await Group.create({
       name,
       teacher: teacherExists._id,
       description: description || '',
       capacity: capacity || 30,
       schedule: schedule || '',
+      activeStatus: false, // دائماً false عند الإنشاء
     });
 
     // تحديث قائمة حلقات المعلم

@@ -83,7 +83,7 @@ exports.notifyMarksAdded = async (marks, io) => {
 
     for (const markData of marks) {
       // Find the actual mark document
-      const Mark = require("../../../schema/DailyMark");
+      const Mark = require("../../../schema/DailyMark/DailyMark");
       const mark = await Mark.findOne({
         studentId: markData.studentId,
         sectionId: markData.sectionId,
@@ -299,7 +299,7 @@ exports.notifyMarkDeleted = async (mark, io) => {
  */
 exports.notifyStudentMarks = async (studentId, sectionId, mark, io) => {
   try {
-    const Mark = require("../../../schema/DailyMark");
+    const Mark = require("../../../schema/DailyMark/DailyMark");
     const markDoc = await Mark.findOne({
       studentId,
       sectionId,

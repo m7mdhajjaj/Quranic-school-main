@@ -1,4 +1,9 @@
-const Section = require("../../../schema/Section");
+const Section = require("../../../schema/DailyMark/Section");
+const {
+  sendSuccess,
+  sendError,
+  sendNotFound,
+} = require("../utils/responseHelpers");
 
 /**
  * Get all sections, sorted by date (newest first)
@@ -17,9 +22,9 @@ exports.getSections = async (req, res) => {
     }
 
     const sections = await Section.find(filter).sort({ date: -1 });
-    res.json(sections);
+    sendSuccess(res, sections, "تم جلب المقاطع بنجاح");
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error.message, 500, error);
   }
 };
 
@@ -30,10 +35,10 @@ exports.getSection = async (req, res) => {
   try {
     const section = await Section.findById(req.params.id);
     if (!section) {
-      return res.status(404).json({ message: "المقطع غير موجود" });
+      return sendNotFound(res, "المقطع");
     }
-    res.json(section);
+    sendSuccess(res, section, "تم جلب المقطع بنجاح");
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    sendError(res, error.message, 500, error);
   }
 };

@@ -1,15 +1,16 @@
 const express = require("express");
 const router = express.Router();
 const dailyMarkController = require("../../controllers/DailyMarkController");
+const groupController = require("../../controllers/basicController/groupController");
 const {
   validateDailyMarksData,
   validateBulkMarks,
   validateUpdateMark,
   validateBulkUpdateMarks,
   validateDeleteMark,
-  validateDeleteStudentMarks,
-  validateDeleteSectionMarks,
 } = require("../../Validation/DailyMark/DailyMarksValidation");
+const { validateActiveGroupsQuery } = require("../../Validation/Group/ActiveGroupsValidation");
+const { validateGroupStats } = require("../../Validation/DailyMark/GroupStatsValidation");
 
 // Import Section Routes (part of DailyMark system)
 const sectionRoutes = require("./SectionRoutes");
@@ -23,6 +24,14 @@ router.use("/sections", sectionRoutes);
 // ============================================================================
 // GET ROUTES - جلب العلامات
 // ============================================================================
+
+// Get active groups for daily marks filtering
+// GET /api/daily-marks/active-groups?type=basic|detailed
+router.get("/active-groups", validateActiveGroupsQuery, groupController.getActiveGroups);
+
+// Get group statistics (students count and sections count)
+// GET /api/daily-marks/group-stats/:groupName?month=11&year=2024
+router.get("/group-stats/:groupName", validateGroupStats, dailyMarkController.getGroupStats);
 
 // Get filtered marks with advanced filters (month, year, search, group)
 // GET /api/daily-marks/filtered?month=11&year=2024&search=الفاتحة&group=الحلقة الأولى&studentId=123
@@ -95,30 +104,5 @@ router.put("/bulk", validateBulkUpdateMarks, dailyMarkController.updateMultipleM
 // Delete a mark by ID
 // DELETE /api/daily-marks/:id
 router.delete("/:id", validateDeleteMark, dailyMarkController.deleteMark);
-
-// Delete all marks for a specific student
-// DELETE /api/daily-marks/student/:studentId
-router.delete(
-  "/student/:studentId",
-  validateDeleteStudentMarks,
-  dailyMarkController.deleteStudentMarks
-);
-
-// Delete all marks for a specific section
-// DELETE /api/daily-marks/section/:sectionId
-router.delete(
-  "/section/:sectionId",
-  validateDeleteSectionMarks,
-  dailyMarkController.deleteSectionMarks
-);
-
-// Delete a mark for a specific student in a specific section
-// DELETE /api/daily-marks/student/:studentId/section/:sectionId
-router.delete(
-  "/student/:studentId/section/:sectionId",
-  validateDeleteStudentMarks,
-  validateDeleteSectionMarks,
-  dailyMarkController.deleteStudentSectionMark
-);
 
 module.exports = router;

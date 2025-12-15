@@ -9,7 +9,8 @@
     "fix-groups": "node src/scripts/fixGroupNames.js",
     "move-students": "node src/scripts/moveStudents.js",
     "check-db": "node src/scripts/checkDatabase.js",
-    "reset-warnings": "node src/scripts/resetAllWarnings.js"
+    "reset-warnings": "node src/scripts/resetAllWarnings.js",
+    "recalculate-active-status": "node src/scripts/recalculateGroupsActiveStatus.js"
   },
   "keywords": [],
   "author": "",

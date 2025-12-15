@@ -1,5 +1,5 @@
 import { createSection, updateSection, deleteSection } from "@/Api/sectionApi";
-import { createMark } from "@/Api/dailyMarksApi";
+import { createMark, deleteMark } from "@/Api/dailyMarksApi";
 import {
   showCenteredSwal,
   showWarningMessage,
@@ -21,11 +21,66 @@ interface UseHandlersProps {
   setIsAddMarkModalOpen: (value: boolean) => void;
   setIsUpdateMarkModalOpen: (value: boolean) => void;
   setEditingMark: (mark: Mark | null) => void;
-  setIsBulkUpdateModalOpen: (value: boolean) => void;
   setIsBulkDeleteModalOpen: (value: boolean) => void;
   setSelectedSectionsForBulk: React.Dispatch<React.SetStateAction<string[]>>;
+  refetchMarks?: () => Promise<void>;
+  refetchSections?: () => Promise<void>;
 }
 
+interface UseDailyMarksHandlersReturn {
+  handleAddSection: (
+    e: React.FormEvent,
+    newSection: Omit<Section, "_id">,
+    setNewSection: (section: Omit<Section, "_id">) => void,
+    setIsAddingSectionLoading: (loading: boolean) => void
+  ) => Promise<void>;
+  handleEditSection: (
+    e: React.FormEvent,
+    editingSection: Section | null,
+    setIsEditingSectionLoading?: (loading: boolean) => void
+  ) => Promise<void>;
+  handleDeleteSection: (sectionId: string) => Promise<void>;
+  handleAddMark: (
+    e: React.FormEvent,
+    selectedStudentId: string | null,
+    selectedSection: Section | null,
+    newMark: { reviewMark: number; memorizationMark: number },
+    setIsAddingMarkLoading?: (loading: boolean) => void
+  ) => Promise<void>;
+  handleUpdateMark: (
+    e: React.FormEvent,
+    editingMark: Mark | null,
+    selectedStudentId: string | null,
+    selectedSection: Section | null,
+    newMark: { reviewMark: number; memorizationMark: number },
+    setIsUpdatingMarkLoading?: (loading: boolean) => void
+  ) => Promise<void>;
+  handleDeleteMark: (markId: string) => Promise<void>;
+  executeBulkUpdate: (
+    sections: Section[],
+    selectedSectionsForBulk: string[],
+    updateData: { reviewSection?: string; memorizationSection?: string },
+    setIsBulkUpdating?: (loading: boolean) => void
+  ) => Promise<void>;
+  executeBulkDelete: (
+    selectedSectionsForBulk: string[],
+    setIsBulkDeleting?: (loading: boolean) => void
+  ) => Promise<void>;
+}
+
+/**
+ * Custom hook for Daily Marks business logic handlers
+ * 
+ * @description
+ * - Handles all CRUD operations for sections and marks
+ * - Manages bulk operations (update, delete)
+ * - Shows appropriate feedback (toasts, alerts)
+ * - Integrates with API and updates local state
+ * 
+ * @param {UseHandlersProps} props - Dependencies and state setters
+ * 
+ * @returns {UseDailyMarksHandlersReturn} All handler functions
+ */
 export const useDailyMarksHandlers = ({
   selectedGroup,
   currentUser,
@@ -37,10 +92,11 @@ export const useDailyMarksHandlers = ({
   setIsAddMarkModalOpen,
   setIsUpdateMarkModalOpen,
   setEditingMark,
-  setIsBulkUpdateModalOpen,
   setIsBulkDeleteModalOpen,
   setSelectedSectionsForBulk,
-}: UseHandlersProps) => {
+  refetchMarks,
+  refetchSections,
+}: UseHandlersProps): UseDailyMarksHandlersReturn => {
   
   // Handler: Add Section
   const handleAddSection = async (
@@ -58,6 +114,17 @@ export const useDailyMarksHandlers = ({
 
     if (!newSection.reviewSection || !newSection.memorizationSection) {
       showWarningMessage("الرجاء ملء جميع الحقول المطلوبة", "تنبيه");
+      return;
+    }
+
+    // Validate date is not in the past
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const sectionDate = new Date(newSection.date);
+    sectionDate.setHours(0, 0, 0, 0);
+    
+    if (sectionDate < today) {
+      showWarningMessage("لا يمكن إضافة مقطع بتاريخ سابق. يجب أن يكون التاريخ من اليوم أو في المستقبل", "تنبيه");
       return;
     }
 
@@ -197,9 +264,28 @@ export const useDailyMarksHandlers = ({
         memorizationMark: newMark.memorizationMark,
       };
 
-      const createdMark = await createMark(markData as never);
+      const response = await createMark(markData as never);
 
-      setMarks((prev) => [createdMark as never, ...prev]);
+      if (response.success && response.data) {
+        const savedMark = response.data;
+        
+        // Update local state directly instead of refetching
+        setMarks((prev) => {
+          const existingIndex = prev.findIndex(m => m._id === savedMark._id);
+          if (existingIndex >= 0) {
+            const newMarks = [...prev];
+            newMarks[existingIndex] = savedMark;
+            return newMarks;
+          }
+          return [...prev, savedMark];
+        });
+
+        // We skip refetching all sections to improve performance
+        // If section status update is critical, we should fetch only the specific section
+      } else {
+        throw new Error(response.message || "Failed to create mark");
+      }
+      
       setIsAddMarkModalOpen(false);
 
       const totalMark =
@@ -236,13 +322,21 @@ export const useDailyMarksHandlers = ({
         memorizationMark: newMark.memorizationMark,
       };
 
-      const updatedMark = await createMark(markData as never);
+      const response = await createMark(markData as never);
 
-      setMarks((prev) =>
-        prev.map((mark) =>
-          mark._id === editingMark._id ? (updatedMark as never) : mark
-        )
-      );
+      if (response.success && response.data) {
+        const updatedMark = response.data;
+        
+        // Update local state directly instead of refetching
+        setMarks((prev) => 
+          prev.map((mark) => 
+            mark._id === updatedMark._id ? updatedMark : mark
+          )
+        );
+      } else {
+        throw new Error(response.message || "Failed to update mark");
+      }
+      
       setIsUpdateMarkModalOpen(false);
       setEditingMark(null);
 
@@ -254,6 +348,38 @@ export const useDailyMarksHandlers = ({
       showErrorToast("❌ حدث خطأ أثناء تحديث العلامة");
     } finally {
       setIsUpdatingMarkLoading?.(false);
+    }
+  };
+
+  // Handler: Delete Mark
+  const handleDeleteMark = async (markId: string) => {
+    const result = await showCenteredSwal({
+      title: "هل أنت متأكد؟",
+      text: "سيتم حذف العلامة نهائياً",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "نعم، احذف",
+      cancelButtonText: "إلغاء",
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      const result = await deleteMark(markId);
+      
+      if (result.success) {
+        // Update local state directly instead of refetching
+        setMarks((prev) => prev.filter((mark) => mark._id !== markId));
+        
+        showSuccessToast("✅ تم حذف العلامة بنجاح!");
+      } else {
+        showErrorToast(`❌ ${result.message || "حدث خطأ أثناء حذف العلامة"}`);
+      }
+    } catch (err) {
+      console.error("Error deleting mark:", err);
+      showErrorToast("❌ حدث خطأ أثناء حذف العلامة");
     }
   };
 
@@ -300,7 +426,6 @@ export const useDailyMarksHandlers = ({
         })
       );
 
-      setIsBulkUpdateModalOpen(false);
       setSelectedSectionsForBulk([]);
       showSuccessToast("✅ تم تحديث المقاطع بنجاح!");
     } catch (err) {
@@ -371,6 +496,7 @@ export const useDailyMarksHandlers = ({
     handleDeleteSection,
     handleAddMark,
     handleUpdateMark,
+    handleDeleteMark,
     executeBulkUpdate,
     executeBulkDelete,
   };

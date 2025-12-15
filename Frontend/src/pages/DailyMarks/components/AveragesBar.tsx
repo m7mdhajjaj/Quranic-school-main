@@ -2,6 +2,7 @@ import { memo } from "react";
 import type { AveragesBarProps } from "../types/types";
 import { StatCard } from "@/components/UI";
 import { Award, TrendingUp } from "lucide-react";
+import { getPerformanceLevel } from "../utils/performanceUtils";
 
 /**
  * Enhanced Averages bar component with visual indicators
@@ -13,19 +14,10 @@ const AveragesBarComponent = ({
   overallAverage,
   totalMarks,
 }: AveragesBarProps) => {
-  // Calculate performance level
-  const getPerformanceLevel = (average: number, max: number = 10) => {
-    const percentage = (average / max) * 100;
-    if (percentage >= 90) return { label: "ممتاز", color: "emerald", emoji: "🌟" };
-    if (percentage >= 80) return { label: "جيد جداً", color: "blue", emoji: "⭐" };
-    if (percentage >= 70) return { label: "جيد", color: "amber", emoji: "✨" };
-    return { label: "يحتاج تحسين", color: "red", emoji: "📚" };
-  };
-
   const overallPerformance = getPerformanceLevel(overallAverage, 100);
 
   return (
-    <div className="p-6 bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 border-t-2 border-emerald-200">
+    <div className="p-6 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 border-t-2 border-emerald-300 rounded-xl shadow-lg">
       {/* Header with performance badge */}
       <div className="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
         <div className="flex items-center gap-3">

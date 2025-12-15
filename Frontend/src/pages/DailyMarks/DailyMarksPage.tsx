@@ -5,11 +5,6 @@
 // React & Hooks
 import { lazy, Suspense } from 'react';
 
-// Socket Hooks
-import {
-  useNotificationsSocket,
-} from '../../Socket';
-
 // Custom Hooks - Data Management
 import { useDailyMarksData } from './hooks/useDailyMarksData';
 import { useFilteredMarksData } from './hooks/useFilteredMarksData';
@@ -20,27 +15,24 @@ import { useSectionsFilter } from './hooks/useSectionsFilter';
 
 // Custom Hooks - Business Logic
 import { useDailyMarksHandlers } from './hooks/useDailyMarksHandlers';
-import { useModalActions } from './hooks/useModalActions';
+import { useModalAndFormActions } from './hooks/useModalAndFormActions';
 import { useStudentSelection } from './hooks/useStudentSelection';
-import { useInputHandlers } from './hooks/useInputHandlers';
 import { useComputedValues } from './hooks/useComputedValues';
-import { useFilteredStudents } from './hooks/useFilteredStudents';
 
 // UI Components
 import PageHeader from '@/components/UI/PageHeader';
-import { LoadingSpinner } from '@/components/UI/LoadingSpinner';
 import { BookOpen } from 'lucide-react';
 
 // Page Components
 import { MonthYearFilter } from './components/MonthYearFilter';
-import { StudentList } from './components/StudentList';
 import { AveragesSection } from './components/AveragesSection';
-import { StudentView } from './components/StudentView';
-import { ModalsContainer } from './components/ModalsContainer';
+import { StudentView } from './Views/StudentView';
+import { ModalsContainer } from './modals/ModalsContainer';
+import { AveragesBarSkeleton } from '../../components/skeletons/AveragesBarSkeleton';
 
 // Lazy load heavy component
 const TeacherView = lazy(() =>
-  import('./components/TeacherView').then((m) => ({ default: m.TeacherView }))
+  import('./Views/TeacherView').then((m) => ({ default: m.TeacherView }))
 );
 
 // ============================================================================
@@ -51,7 +43,6 @@ const DailyMarksPage = () => {
   // ==========================================================================
   // SOCKET CONNECTIONS
   // ==========================================================================
-  const { lastNotification } = useNotificationsSocket();
 
   // ==========================================================================
   // DATA & STATE HOOKS
@@ -61,20 +52,21 @@ const DailyMarksPage = () => {
   const { currentUser, students, teacherGroups, loading } = useDailyMarksData();
 
   // Student Selection (with auto-select logic)
-  const {
-    selectedStudentId,
-    selectedGroup,
-    isPending,
-    handleStudentSelect,
-    setSelectedGroup,
-  } = useStudentSelection(currentUser, teacherGroups, loading);
+  const { selectedStudentId, selectedGroup, isPending, setSelectedGroup } =
+    useStudentSelection(currentUser, teacherGroups, loading);
 
   // Component State (Modals, Forms, etc.)
   const state = useDailyMarksState();
 
-  // Sections Filtering (month/year selection only)
-  const { selectedMonth, selectedYear, setSelectedMonth, setSelectedYear } =
-    useSectionsFilter();
+  // Sections Filtering (month/year/day selection)
+  const {
+    selectedMonth,
+    selectedYear,
+    selectedDay,
+    setSelectedMonth,
+    setSelectedYear,
+    setSelectedDay,
+  } = useSectionsFilter();
 
   // Filtered Data Fetching - Uses new filtered API (enabled for all roles)
   const {
@@ -90,13 +82,17 @@ const DailyMarksPage = () => {
     selectedGroup,
     selectedMonth,
     selectedYear,
+    selectedDay || null,
     state.searchQuery,
     !!currentUser && !!selectedGroup // Only fetch when user and group are ready
   );
 
   // Fetch averages from backend using custom hook for student ID resolution
-  const studentIdForAverages = useStudentIdForAverages(currentUser, selectedStudentId);
-    
+  const studentIdForAverages = useStudentIdForAverages(
+    currentUser,
+    selectedStudentId
+  );
+
   const { averages } = useStudentAverages(
     studentIdForAverages,
     selectedGroup,
@@ -106,7 +102,6 @@ const DailyMarksPage = () => {
   );
 
   // Filtered Students
-  const filteredStudents = useFilteredStudents({ students, selectedGroup });
 
   // ==========================================================================
   // BUSINESS LOGIC HOOKS
@@ -124,27 +119,31 @@ const DailyMarksPage = () => {
     setIsAddMarkModalOpen: state.setIsAddMarkModalOpen,
     setIsUpdateMarkModalOpen: state.setIsUpdateMarkModalOpen,
     setEditingMark: state.setEditingMark,
-    setIsBulkUpdateModalOpen: state.setIsBulkUpdateModalOpen,
     setIsBulkDeleteModalOpen: state.setIsBulkDeleteModalOpen,
     setSelectedSectionsForBulk: state.setSelectedSectionsForBulk,
+    refetchMarks,
+    refetchSections,
   });
 
-  // Modal Actions
-  const modalActions = useModalActions({
-    setSelectedSection: state.setSelectedSection,
-    setNewMark: state.setNewMark,
+  // Modal Actions & Input Handlers (merged)
+  const {
+    openAddMarkModal,
+    openUpdateMarkModal,
+    openEditSectionModal,
+    toggleSectionSelection,
+    handleSectionInputChange,
+    handleEditSectionInputChange,
+    handleMarkInputChange,
+  } = useModalAndFormActions({
     setIsAddMarkModalOpen: state.setIsAddMarkModalOpen,
-    setEditingMark: state.setEditingMark,
     setIsUpdateMarkModalOpen: state.setIsUpdateMarkModalOpen,
-    setEditingSection: state.setEditingSection,
     setIsEditSectionModalOpen: state.setIsEditSectionModalOpen,
-    setSelectedSectionsForBulk: state.setSelectedSectionsForBulk,
-  });
-
-  // Input Change Handlers
-  const inputHandlers = useInputHandlers({
-    setNewSection: state.setNewSection,
+    setSelectedSection: state.setSelectedSection,
+    setSelectedStudent: state.setSelectedStudent,
+    setEditingMark: state.setEditingMark,
     setEditingSection: state.setEditingSection,
+    setSelectedSectionsForBulk: state.setSelectedSectionsForBulk,
+    setNewSection: state.setNewSection,
     setNewMark: state.setNewMark,
   });
 
@@ -165,7 +164,7 @@ const DailyMarksPage = () => {
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 py-8 px-4 md:px-6 lg:px-8"
+      className="min-h-screen bg-gradient-to-b from-emerald-50 via-teal-50 to-green-50 py-8 px-4 md:px-6 lg:px-8"
       dir="rtl"
     >
       <div className="w-full max-w-full mx-auto">
@@ -192,15 +191,17 @@ const DailyMarksPage = () => {
           />
         )}
 
-        {/* Filters Row - Teacher Only */}
-        {currentUser?.role !== 'student' && (
+        {/* Filters Row - Only for students (teachers have filter in TeacherView) */}
+        {currentUser?.role === 'student' && (
           <div className="mb-8">
             {/* Month and Year Filter */}
             <MonthYearFilter
               selectedMonth={selectedMonth}
               selectedYear={selectedYear}
+              selectedDay={selectedDay}
               onMonthChange={setSelectedMonth}
               onYearChange={setSelectedYear}
+              onDayChange={setSelectedDay}
               searchQuery={state.searchQuery}
               onSearchChange={state.setSearchQuery}
             />
@@ -209,44 +210,44 @@ const DailyMarksPage = () => {
 
         {/* Main Content Area */}
         {loading ? (
-          <LoadingSpinner size="lg" text="جاري التحميل..." />
+          <div className="space-y-8">
+            {/* Averages Skeleton for Teachers */}
+            {(!currentUser || currentUser?.role !== 'student') && (
+              <AveragesBarSkeleton />
+            )}
+          </div>
         ) : (
           <>
             {currentUser?.role !== 'student' ? (
-              // Teacher View - Student List on Right, Table on Left
-              <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-                {/* Student List - 1 column on Right */}
-                <div className="xl:col-span-1">
-                  <StudentList
-                    students={filteredStudents}
-                    teacherGroups={teacherGroups}
-                    selectedGroup={selectedGroup}
-                    selectedStudentId={selectedStudentId}
-                    onGroupChange={setSelectedGroup}
-                    onStudentSelect={handleStudentSelect}
-                    onAddSection={() => state.setIsAddSectionModalOpen(true)}
-                    onBulkUpdate={() => state.setIsBulkUpdateModalOpen(true)}
-                    onBulkDelete={() => state.setIsBulkDeleteModalOpen(true)}
-                  />
-                </div>
-
-                {/* Marks Table - 3 columns */}
-                <div className="xl:col-span-3">
-                  <Suspense fallback={<LoadingSpinner size="md" />}>
-                    <TeacherView
-                      students={students}
-                      selectedStudentId={selectedStudentId}
-                      sections={sections}
-                      marks={marks}
-                      loadingMarks={loadingMarks || isPending}
-                      onAddMark={modalActions.openAddMarkModal}
-                      onUpdateMark={modalActions.openUpdateMarkModal}
-                      onEditSection={modalActions.openEditSectionModal}
-                      onDeleteSection={handlers.handleDeleteSection}
-                    />
-                  </Suspense>
-                </div>
-              </div>
+              // Teacher View - Full width
+              <Suspense fallback={<AveragesBarSkeleton />}>
+                <TeacherView
+                  students={students}
+                  selectedGroup={selectedGroup}
+                  teacherGroups={teacherGroups}
+                  sections={sections}
+                  marks={marks}
+                  loadingMarks={loadingMarks || isPending}
+                  onBulkMarks={() => {}}
+                  onGroupSelect={setSelectedGroup}
+                  onAddSection={() => state.setIsAddSectionModalOpen(true)}
+                  onEditSection={openEditSectionModal}
+                  onDeleteSection={handlers.handleDeleteSection}
+                  onBulkDelete={() => state.setIsBulkDeleteModalOpen(true)}
+                  onAddMark={openAddMarkModal}
+                  onUpdateMark={openUpdateMarkModal}
+                  onDeleteMark={handlers.handleDeleteMark}
+                  onMarkChange={refetchMarks}
+                  selectedMonth={selectedMonth}
+                  selectedYear={selectedYear}
+                  selectedDay={selectedDay}
+                  onMonthChange={setSelectedMonth}
+                  onYearChange={setSelectedYear}
+                  onDayChange={setSelectedDay}
+                  searchQuery={state.searchQuery}
+                  onSearchChange={state.setSearchQuery}
+                />
+              </Suspense>
             ) : (
               // Student View
               <StudentView
@@ -272,10 +273,21 @@ const DailyMarksPage = () => {
         selectedStudentId={selectedStudentId}
         selectedGroup={selectedGroup}
         sections={sections}
-        state={state}
+        refetchMarks={refetchMarks}
+        onMarkChange={refetchMarks}
+        state={{
+          ...state,
+          selectedStudent: state.selectedStudent,
+          setSelectedStudent: state.setSelectedStudent,
+        }}
         handlers={handlers}
-        inputHandlers={inputHandlers}
-        modalActions={modalActions}
+        handleSectionInputChange={handleSectionInputChange}
+        handleEditSectionInputChange={handleEditSectionInputChange}
+        handleMarkInputChange={handleMarkInputChange}
+        openAddMarkModal={openAddMarkModal}
+        openUpdateMarkModal={openUpdateMarkModal}
+        openEditSectionModal={openEditSectionModal}
+        toggleSectionSelection={toggleSectionSelection}
         getSelectedStudent={getSelectedStudent}
       />
     </div>

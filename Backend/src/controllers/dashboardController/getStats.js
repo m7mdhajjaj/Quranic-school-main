@@ -4,7 +4,7 @@ const ExamSchedule = require("../../schema/ExamSchedule");
 const Group = require("../../schema/Group");
 const Activity = require("../../schema/Activity");
 const News = require("../../schema/News");
-const DailyMark = require("../../schema/DailyMark");
+const DailyMark = require("../../schema/DailyMark/DailyMark");
 const ExamMark = require("../../schema/ExamMark");
 const Attendance = require("../../schema/Attendance");
 

@@ -3,31 +3,31 @@ import type { LoggedInUser, Section, Mark, Student } from '../types/types';
 
 // Lazy load modals
 const AddSectionModal = lazy(() =>
-  import('../modals/AddSectionModal').then((m) => ({
+  import('./AddSectionModal').then((m) => ({
     default: m.AddSectionModal,
   }))
 );
 const EditSectionModal = lazy(() =>
-  import('../modals/EditSectionModal').then((m) => ({
+  import('./EditSectionModal').then((m) => ({
     default: m.EditSectionModal,
   }))
 );
 const AddMarkModal = lazy(() =>
-  import('../modals/AddMarkModal').then((m) => ({ default: m.AddMarkModal }))
+  import('./AddMarkModal').then((m) => ({ default: m.AddMarkModal }))
 );
 const UpdateMarkModal = lazy(() =>
-  import('../modals/UpdateMarkModal').then((m) => ({
+  import('./UpdateMarkModal').then((m) => ({
     default: m.UpdateMarkModal,
   }))
 );
-const BulkUpdateModal = lazy(() =>
-  import('../modals/BulkUpdateModal').then((m) => ({
-    default: m.BulkUpdateModal,
+const BulkDeleteModal = lazy(() =>
+  import('./BulkDeleteModal').then((m) => ({
+    default: m.BulkDeleteModal,
   }))
 );
-const BulkDeleteModal = lazy(() =>
-  import('../modals/BulkDeleteModal').then((m) => ({
-    default: m.BulkDeleteModal,
+const BulkMarksModal = lazy(() =>
+  import('./BulkMarksModal').then((m) => ({
+    default: m.BulkMarksModal,
   }))
 );
 
@@ -36,6 +36,8 @@ interface ModalsContainerProps {
   selectedStudentId: string | null;
   selectedGroup: string;
   sections: Section[];
+  refetchMarks?: () => void;
+  onMarkChange?: () => void;
   state: {
     isAddSectionModalOpen: boolean;
     setIsAddSectionModalOpen: (open: boolean) => void;
@@ -64,18 +66,21 @@ interface ModalsContainerProps {
     setEditingMark: (mark: Mark | null) => void;
     isUpdatingMarkLoading: boolean;
     setIsUpdatingMarkLoading: React.Dispatch<React.SetStateAction<boolean>>;
+    selectedStudent: Student | null;
+    setSelectedStudent: (student: Student | null) => void;
     
-    isBulkUpdateModalOpen: boolean;
-    setIsBulkUpdateModalOpen: (open: boolean) => void;
     selectedSectionsForBulk: string[];
     setSelectedSectionsForBulk: (sections: string[]) => void;
-    isBulkUpdating: boolean;
-    setIsBulkUpdating: React.Dispatch<React.SetStateAction<boolean>>;
     
     isBulkDeleteModalOpen: boolean;
     setIsBulkDeleteModalOpen: (open: boolean) => void;
     isBulkDeleting: boolean;
     setIsBulkDeleting: React.Dispatch<React.SetStateAction<boolean>>;
+    
+    isBulkMarksModalOpen: boolean;
+    setIsBulkMarksModalOpen: (open: boolean) => void;
+    bulkMarksSection: Section | null;
+    setBulkMarksSection: (section: Section | null) => void;
   };
   handlers: {
     handleAddSection: (
@@ -115,14 +120,16 @@ interface ModalsContainerProps {
       setLoading: React.Dispatch<React.SetStateAction<boolean>>
     ) => void;
   };
-  inputHandlers: {
-    handleSectionInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-    handleEditSectionInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-    handleMarkInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  };
-  modalActions: {
-    toggleSectionSelection: (sectionId: string) => void;
-  };
+  // Form input handlers
+  handleSectionInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  handleEditSectionInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  handleMarkInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  // Modal actions
+  toggleSectionSelection: (sectionId: string) => void;
+  openAddMarkModal: (section: Section, student?: Student) => void;
+  openUpdateMarkModal: (mark: Mark, section: Section, student?: Student) => void;
+  openEditSectionModal: (section: Section) => void;
+  // Computed values
   getSelectedStudent: () => Student | null;
 }
 
@@ -135,10 +142,17 @@ const ModalsContainerComponent = ({
   selectedStudentId,
   selectedGroup,
   sections,
+  refetchMarks,
+  onMarkChange,
   state,
   handlers,
-  inputHandlers,
-  modalActions,
+  handleSectionInputChange,
+  handleEditSectionInputChange,
+  handleMarkInputChange,
+  toggleSectionSelection,
+  openAddMarkModal,
+  openUpdateMarkModal,
+  openEditSectionModal,
   getSelectedStudent,
 }: ModalsContainerProps) => {
   // Don't render modals for students
@@ -163,7 +177,7 @@ const ModalsContainerComponent = ({
             state.setIsAddingSectionLoading
           )
         }
-        onChange={inputHandlers.handleSectionInputChange}
+        onChange={handleSectionInputChange}
       />
 
       {/* Edit Section Modal */}
@@ -182,73 +196,68 @@ const ModalsContainerComponent = ({
             state.setIsEditingSectionLoading
           )
         }
-        onChange={inputHandlers.handleEditSectionInputChange}
+        onChange={handleEditSectionInputChange}
       />
 
       {/* Add Mark Modal */}
       <AddMarkModal
         isOpen={state.isAddMarkModalOpen}
         selectedSection={state.selectedSection}
-        selectedStudent={getSelectedStudent()}
+        selectedStudent={state.selectedStudent || getSelectedStudent()}
         newMark={state.newMark}
         isLoading={state.isAddingMarkLoading}
-        onClose={() => state.setIsAddMarkModalOpen(false)}
-        onSubmit={(e) =>
-          handlers.handleAddMark(
+        onClose={() => {
+          state.setIsAddMarkModalOpen(false);
+          state.setSelectedStudent(null);
+        }}
+        onSubmit={async (e) => {
+          await handlers.handleAddMark(
             e,
-            selectedStudentId,
+            state.selectedStudent?._id || selectedStudentId,
             state.selectedSection,
             state.newMark,
             state.setIsAddingMarkLoading
-          )
-        }
-        onChange={inputHandlers.handleMarkInputChange}
+          );
+          if (onMarkChange) {
+            onMarkChange();
+          }
+          if (refetchMarks) {
+            refetchMarks();
+          }
+        }}
+        onChange={handleMarkInputChange}
       />
 
       {/* Update Mark Modal */}
       <UpdateMarkModal
         isOpen={state.isUpdateMarkModalOpen}
         selectedSection={state.selectedSection}
-        selectedStudent={getSelectedStudent()}
+        selectedStudent={state.selectedStudent || getSelectedStudent()}
         editingMark={state.editingMark}
         newMark={state.newMark}
         isLoading={state.isUpdatingMarkLoading}
         onClose={() => {
           state.setIsUpdateMarkModalOpen(false);
           state.setEditingMark(null);
+          state.setSelectedStudent(null);
         }}
-        onSubmit={(e) =>
-          handlers.handleUpdateMark(
+        onSubmit={async (e) => {
+          await handlers.handleUpdateMark(
             e,
             state.editingMark,
-            selectedStudentId,
+            state.selectedStudent?._id || selectedStudentId,
             state.selectedSection,
             state.newMark,
             state.setIsUpdatingMarkLoading
-          )
-        }
-        onChange={inputHandlers.handleMarkInputChange}
-      />
-
-      {/* Bulk Update Modal */}
-      <BulkUpdateModal
-        isOpen={state.isBulkUpdateModalOpen}
-        sections={sections}
-        selectedSectionsForBulk={state.selectedSectionsForBulk}
-        isLoading={state.isBulkUpdating}
-        onClose={() => {
-          state.setIsBulkUpdateModalOpen(false);
-          state.setSelectedSectionsForBulk([]);
+          );
+          if (onMarkChange) {
+            onMarkChange();
+          }
+          if (refetchMarks) {
+            refetchMarks();
+          }
         }}
-        onToggleSection={modalActions.toggleSectionSelection}
-        onSubmit={(updateData) =>
-          handlers.executeBulkUpdate(
-            sections,
-            state.selectedSectionsForBulk,
-            updateData,
-            state.setIsBulkUpdating
-          )
-        }
+        onChange={handleMarkInputChange}
       />
 
       {/* Bulk Delete Modal */}
@@ -261,13 +270,28 @@ const ModalsContainerComponent = ({
           state.setIsBulkDeleteModalOpen(false);
           state.setSelectedSectionsForBulk([]);
         }}
-        onToggleSection={modalActions.toggleSectionSelection}
+        onToggleSection={toggleSectionSelection}
         onConfirm={() =>
           handlers.executeBulkDelete(
             state.selectedSectionsForBulk,
             state.setIsBulkDeleting
           )
         }
+      />
+
+      {/* Bulk Marks Modal */}
+      <BulkMarksModal
+        isOpen={state.isBulkMarksModalOpen}
+        section={state.bulkMarksSection}
+        group={selectedGroup}
+        onClose={() => {
+          state.setIsBulkMarksModalOpen(false);
+          state.setBulkMarksSection(null);
+        }}
+        onSuccess={() => {
+          // Refetch marks after successful bulk update
+          refetchMarks?.();
+        }}
       />
     </Suspense>
   );
