@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useContext } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ArrowRight, Plus, Edit, Trash2, Users, Search, Phone, Mail, GraduationCap, User, UserCheck, Cake, MapPin, Filter, X, CreditCard } from "lucide-react";
 import { useGroupStudents } from "../hooks";
 import type { Student } from "@/Api/studentApi";
@@ -6,9 +6,7 @@ import { EmptyState } from "@/components/UI/EmptyState";
 import { DropdownMenu } from "@/components/UI/DropdownMenu";
 import Avatar from "@/components/Avatar/Avatar";
 import { CardSkeleton } from "@/components/skeletons";
-import { UserStatusContext } from "@/Context/UserStatusContext";
 import { useUserStatusSocket } from "@/Socket/StatusSocket";
-import { useAuth } from "@/hooks/useAuth";
 
 interface StudentsListProps {
   groupId: string;
@@ -27,9 +25,7 @@ export const StudentsList: React.FC<StudentsListProps> = ({
   onEditStudent,
   onDeleteStudent,
 }) => {
-  const { user } = useAuth();
-  const canDelete = user?.role === 'admin' || user?.role === 'teacher';
-  const statusContext = useContext(UserStatusContext);
+
   const { joinRoom, leaveRoom } = useUserStatusSocket();
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");

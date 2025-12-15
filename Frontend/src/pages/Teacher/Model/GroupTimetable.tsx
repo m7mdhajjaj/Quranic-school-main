@@ -156,7 +156,7 @@ export const GroupTimetableModal: React.FC<GroupTimetableModalProps> = ({
               <p className="text-gray-500 text-base">لم يتم تحديد مواقيت لهذه الحلقة بعد</p>
             </div>
           ) : (
-            <div className="space-y-5">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {daysOrder.map((day) => {
                 const daySessions = groupedByDay[day];
                 if (!daySessions || daySessions.length === 0) return null;
@@ -164,57 +164,52 @@ export const GroupTimetableModal: React.FC<GroupTimetableModalProps> = ({
                 return (
                   <div
                     key={day}
-                    className="bg-white rounded-2xl border-2 border-emerald-100 overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
+                    className="bg-white rounded-xl border-2 border-emerald-100 overflow-hidden shadow-md hover:shadow-lg transition-all duration-200"
                   >
                     {/* Day Header */}
-                    <div className="relative bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 px-6 py-4 overflow-hidden">
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
+                    <div className="relative bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-3 overflow-hidden">
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-12 -mt-12"></div>
                       <div className="relative flex items-center justify-between">
-                        <h3 className="text-xl font-bold text-white drop-shadow-md">{day}</h3>
-                        <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-lg">
-                          <Clock className="w-4 h-4 text-white" />
-                          <span className="text-white text-sm font-semibold">
-                            {daySessions.length} {daySessions.length === 1 ? 'موعد' : 'مواعيد'}
+                        <h3 className="text-lg font-bold text-white drop-shadow-md">{day}</h3>
+                        <div className="flex items-center gap-1.5 bg-white/20 backdrop-blur-sm px-2.5 py-1 rounded-lg">
+                          <Clock className="w-3.5 h-3.5 text-white" />
+                          <span className="text-white text-xs font-semibold">
+                            {daySessions.length}
                           </span>
                         </div>
                       </div>
                     </div>
                     
                     {/* Sessions */}
-                    <div className="p-5 space-y-3">
+                    <div className="p-4 space-y-2.5">
                       {daySessions.map((session, index) => (
                         <div
                           key={session._id}
-                          className="group relative bg-gradient-to-br from-emerald-50/50 to-teal-50/30 rounded-xl p-5 border-2 border-emerald-100 hover:border-emerald-300 shadow-sm hover:shadow-lg transition-all duration-300 hover:scale-[1.02]"
+                          className="group relative bg-gradient-to-br from-emerald-50 to-teal-50/50 rounded-lg p-3 border border-emerald-200 hover:border-emerald-400 shadow-sm hover:shadow transition-all duration-200"
                         >
-                          {/* Decorative number */}
-                          <div className="absolute top-3 left-3 w-8 h-8 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-lg flex items-center justify-center shadow-md">
-                            <span className="text-white text-xs font-bold">{index + 1}</span>
-                          </div>
-                          
-                          <div className="flex items-center gap-4 pr-12">
-                            {/* Time Icon */}
-                            <div className="flex-shrink-0 p-3 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
-                              <Clock className="w-6 h-6 text-white" />
+                          <div className="flex items-center gap-3">
+                            {/* Number Badge */}
+                            <div className="flex-shrink-0 w-7 h-7 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center shadow-sm">
+                              <span className="text-white text-xs font-bold">{index + 1}</span>
                             </div>
                             
                             {/* Time Info */}
                             <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
-                                <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm border border-emerald-100">
-                                  <span className="text-2xl font-bold text-emerald-700">
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-emerald-100">
+                                  <span className="text-lg font-bold text-emerald-700">
                                     {session.startHour}
                                   </span>
-                                  <span className="text-emerald-400 text-lg font-semibold">→</span>
-                                  <span className="text-2xl font-bold text-teal-700">
+                                  <span className="text-emerald-400 text-sm font-semibold">←</span>
+                                  <span className="text-lg font-bold text-teal-700">
                                     {session.endHour}
                                   </span>
                                 </div>
                               </div>
                               {session.note && (
-                                <div className="flex items-center gap-2 mt-2">
-                                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
-                                  <p className="text-sm text-gray-600 font-medium">{session.note}</p>
+                                <div className="flex items-center gap-1.5 mt-1.5">
+                                  <div className="w-1 h-1 bg-emerald-500 rounded-full"></div>
+                                  <p className="text-xs text-gray-600 font-medium">{session.note}</p>
                                 </div>
                               )}
                             </div>
