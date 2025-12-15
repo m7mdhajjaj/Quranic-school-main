@@ -55,6 +55,7 @@ export const getNotificationIcon = (type: string, data?: any): string => {
     news: '📰',
     general: '🔔',
     daily_marks: '📊',
+    warning: '⚠️',
   };
   return icons[type] || '🔔';
 };
@@ -74,6 +75,7 @@ export const getNotificationColor = (type: string): string => {
     news: 'from-cyan-400 to-cyan-600',
     general: 'from-gray-400 to-gray-600',
     daily_marks: 'from-emerald-400 to-emerald-600',
+    warning: 'from-red-400 to-red-600',
   };
   return colors[type] || 'from-gray-400 to-gray-600';
 };

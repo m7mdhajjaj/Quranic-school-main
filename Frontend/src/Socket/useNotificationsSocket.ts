@@ -9,6 +9,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { socketManager } from './SocketManager';
 import { useAuth } from '../hooks/useAuth';
+import notificationSound from '../assets/sounds/notification.mp3';
 
 // ================== Types ==================
 interface NotificationData {
@@ -109,7 +110,7 @@ export const useNotificationsSocket = (): UseNotificationsSocketReturn => {
 
     // Connect if not already connected
     if (!socketManager.isConnected()) {
-      socketManager.connect();
+      socketManager.connect(user._id, user.role);
     } else {
       setIsConnected(true);
       setSocketId(socketManager.getSocketId() || null);
@@ -150,13 +151,28 @@ export const useNotificationsSocket = (): UseNotificationsSocketReturn => {
     }
 
     try {
+      // Play notification sound
+      const audio = new Audio(notificationSound);
+      audio.play().catch((err) => console.error('Error playing notification sound:', err));
+
       const notificationData = data as Record<string, unknown>;
+      const title = String(notificationData.title || 'إشعار جديد');
+      const message = String(notificationData.message || '');
+
+      // Show system notification if document is hidden or permission granted
+      if (document.hidden && Notification.permission === 'granted') {
+        new Notification(title, {
+          body: message,
+          icon: '/pwa-192x192.png', // Adjust path to your icon
+          tag: 'notification-sound', // Prevent duplicate notifications
+        });
+      }
       
       const notification: Notification = {
         _id: String(notificationData.id || notificationData._id || ''),
         type: (notificationData.type as Notification['type']) || 'general',
-        title: String(notificationData.title || 'إشعار جديد'),
-        message: String(notificationData.message || ''),
+        title: title,
+        message: message,
         createdAt: String(notificationData.createdAt || new Date().toISOString()),
         sentAt: String(notificationData.sentAt || notificationData.createdAt || new Date().toISOString()),
         isRead: false,

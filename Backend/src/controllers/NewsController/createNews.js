@@ -7,7 +7,7 @@ const cloudinary = require("../../config/cloudinary");
 const { validateNewsTitle, validateContent } = require("../../Validation/News/NewsValidation");
 const Student = require("../../schema/Student");
 const Notification = require("../../schema/Notification");
-const { sendNotificationToDevices } = require("../../Notifications/NotificationService");
+const { sendNotificationToDevices } = require("../../Notifications");
 
 /**
  * Create new news item

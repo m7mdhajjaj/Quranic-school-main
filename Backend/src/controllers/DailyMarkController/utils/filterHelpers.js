@@ -86,13 +86,31 @@ function buildGroupFilter(user, userGroup, requestedGroup = null) {
 // ============================================================================
 
 /**
- * Build date filter for month/year/day
+ * Build date filter for month/year/day or date range
  * @param {number|string} month - Month number (1-12)
  * @param {number|string} year - Year
  * @param {number|string} day - Day number (1-31)
+ * @param {string} startDate - Start date string
+ * @param {string} endDate - End date string
  * @returns {Object} MongoDB date filter object
  */
-function buildDateFilter(month, year, day) {
+function buildDateFilter(month, year, day, startDate, endDate) {
+  // Filter by date range
+  // If only startDate is provided, treat it as a single day filter
+  if (startDate) {
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    
+    // If endDate is provided, use it. Otherwise, use startDate as endDate (single day)
+    const end = endDate ? new Date(endDate) : new Date(startDate);
+    end.setHours(23, 59, 59, 999);
+    
+    return {
+      $gte: start,
+      $lte: end
+    };
+  }
+
   // Filter by specific day, month, and year
   if (day && month && year) {
     const dayNum = parseInt(day);

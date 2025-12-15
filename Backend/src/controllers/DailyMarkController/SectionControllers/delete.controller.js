@@ -3,7 +3,7 @@
 // ============================================================================
 const Section = require("../../../schema/DailyMark/Section");
 const DailyMark = require("../../../schema/DailyMark/DailyMark");
-const { notifySectionDeleted } = require("../../../Notifications/handlers/DailyMarks/sectionNotifications");
+const { notifySectionDeleted } = require("../../../Notifications");
 const {
   sendSuccess,
   sendError,

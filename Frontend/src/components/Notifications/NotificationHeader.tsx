@@ -114,13 +114,8 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
       // التأكد من إضافة الإشعار فوراً
       addNotification(socketNotification as Notification);
       
-      // تشغيل الصوت
-      try {
-        playSound();
-        console.log('🔊 Notification sound played');
-      } catch (soundError) {
-        console.warn('⚠️ Could not play notification sound:', soundError);
-      }
+      // الصوت يتم تشغيله الآن مركزياً في useNotificationsSocket
+      // playSound(); 
       
       console.log('✅ Socket notification processed in NotificationHeader');
     }

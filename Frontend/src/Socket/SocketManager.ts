@@ -18,9 +18,18 @@ class SocketManager {
    * إنشاء اتصال Socket جديد
    */
   connect(userId?: string, userRole?: string): Socket {
-    if (this.socket?.connected) {
-      console.log('✅ Socket already connected');
-      return this.socket;
+    // If socket exists, update auth and ensure connection
+    if (this.socket) {
+      if (userId && this.socket.auth) {
+        // Update auth data for reconnection
+        (this.socket.auth as any).userId = userId;
+        (this.socket.auth as any).userRole = userRole;
+      }
+      
+      if (this.socket.connected) {
+        console.log('✅ Socket already connected');
+        return this.socket;
+      }
     }
 
     if (this.isConnecting) {

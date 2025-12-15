@@ -21,11 +21,12 @@ interface UseStudentAveragesReturn {
  * - Fetches review, memorization, and overall averages for a student
  * - Filters by month, year, and group
  * - Auto-updates when filters or student selection changes
+ * - Defaults to current month/year when filters are null
  * 
  * @param {string | null} studentId - Student ID to fetch averages for
  * @param {string} selectedGroup - Selected group name
- * @param {number} selectedMonth - Selected month (1-12)
- * @param {number} selectedYear - Selected year
+ * @param {number | null} selectedMonth - Selected month (1-12) or null for current month
+ * @param {number | null} selectedYear - Selected year or null for current year
  * @param {boolean} enabled - Whether to fetch data (default: true)
  * 
  * @returns {UseStudentAveragesReturn} Student averages and loading state
@@ -33,8 +34,8 @@ interface UseStudentAveragesReturn {
 export const useStudentAverages = (
   studentId: string | null,
   selectedGroup: string,
-  selectedMonth: number,
-  selectedYear: number,
+  selectedMonth: number | null,
+  selectedYear: number | null,
   enabled: boolean = true
 ): UseStudentAveragesReturn => {
   const [averages, setAverages] = useState({
@@ -59,13 +60,18 @@ export const useStudentAverages = (
         return;
       }
 
+      // Use current month/year as defaults if not specified
+      const now = new Date();
+      const monthToUse = selectedMonth ?? now.getMonth() + 1; // getMonth() returns 0-11
+      const yearToUse = selectedYear ?? now.getFullYear();
+
       setLoading(true);
       setError(null);
 
       try {
         const response = await getStudentAverages(studentId, {
-          month: selectedMonth,
-          year: selectedYear,
+          month: monthToUse,
+          year: yearToUse,
           group: selectedGroup,
         });
 

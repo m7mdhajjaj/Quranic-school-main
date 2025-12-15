@@ -1,15 +1,13 @@
 import { memo, useMemo, useState, useEffect, useRef } from 'react';
-import type { TeacherViewProps } from '../types/types';
-import { Card } from '@/components/UI';
-import type { MarkStatus } from '../components/SectionStatusBadge';
-import { ListSkeleton } from '@/components/skeletons';
+import type { TeacherViewProps } from '../../types/types';
+import type { MarkStatus } from '../../components/SectionStatusBadge';
 
 // Import custom hooks
 import {
   useTeacherViewData,
   useAllGroupsStats,
   useBulkMarkDelete,
-} from './TeacherView/hooks';
+} from './hooks';
 
 // Import components
 import {
@@ -17,7 +15,7 @@ import {
   SectionDetailsView,
   SectionsGridView,
   StudentsMarksTable,
-} from './TeacherView/components';
+} from './components';
 
 /**
  * Teacher view component - Shows groups cards first, then sections table when group is selected
@@ -45,6 +43,10 @@ const TeacherViewComponent = ({
   onDayChange,
   searchQuery,
   onSearchChange,
+  startDate,
+  endDate,
+  onStartDateChange,
+  onEndDateChange,
 }: TeacherViewProps) => {
   // State for filter visibility
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -110,20 +112,15 @@ const TeacherViewComponent = ({
 
   // Track if a mark operation is in progress to avoid circular updates
   const isUpdatingRef = useRef(false);
-  const previousMarksLength = useRef(_marks?.length ?? 0);
 
-  // Refetch section marks when main marks change (debounced to avoid loops)
+  // Refetch section marks when main marks change
   useEffect(() => {
     if (!selectedSection || isUpdatingRef.current) return;
-    
-    // Only refetch if marks array length changed (new mark added/deleted)
-    const currentLength = _marks?.length ?? 0;
-    if (currentLength !== previousMarksLength.current) {
-      previousMarksLength.current = currentLength;
-      refetchSectionData();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [_marks?.length, selectedSection]);
+
+    // Refetch whenever marks change (add, update, delete)
+    // The parent component updates the marks reference on any change
+    refetchSectionData();
+  }, [_marks, selectedSection, refetchSectionData]);
 
   // Combined callback for mark changes
   const handleMarkChange = async (): Promise<void> => {
@@ -176,31 +173,26 @@ const TeacherViewComponent = ({
         onStudentSearchChange={setStudentSearchQuery}
         onBack={clearSectionSelection}
       >
-        {loadingSectionData ? (
-          <Card className="p-6">
-            <ListSkeleton count={8} showAvatar={false} />
-          </Card>
-        ) : (
-          <StudentsMarksTable
-            tableData={tableData}
-            section={selectedSection}
-            selectedMarkIds={selectedMarkIds}
-            isDeleting={isDeleting}
-            onAddMark={onAddMark}
-            onUpdateMark={onUpdateMark}
-            onDeleteMark={async (markId) => {
-              if (onDeleteMark) {
-                await onDeleteMark(markId);
-                await refetchSectionData();
-              }
-            }}
-            onToggleMarkSelection={toggleMarkSelection}
-            onToggleSelectAll={() => toggleSelectAll(allMarkIds)}
-            onBulkDelete={handleBulkDeleteMarks}
-            onClearSelection={clearSelection}
-            areAllSelected={areAllSelected(allMarkIds)}
-          />
-        )}
+        <StudentsMarksTable
+          tableData={tableData}
+          section={selectedSection}
+          selectedMarkIds={selectedMarkIds}
+          isDeleting={isDeleting}
+          loading={loadingSectionData}
+          onAddMark={onAddMark}
+          onUpdateMark={onUpdateMark}
+          onDeleteMark={async (markId) => {
+            if (onDeleteMark) {
+              await onDeleteMark(markId);
+              await refetchSectionData();
+            }
+          }}
+          onToggleMarkSelection={toggleMarkSelection}
+          onToggleSelectAll={() => toggleSelectAll(allMarkIds)}
+          onBulkDelete={handleBulkDeleteMarks}
+          onClearSelection={clearSelection}
+          areAllSelected={areAllSelected(allMarkIds)}
+        />
       </SectionDetailsView>
     );
   }
@@ -231,6 +223,10 @@ const TeacherViewComponent = ({
       onYearChange={(year) => year !== null && onYearChange(year)}
       onDayChange={onDayChange || (() => {})}
       onSearchChange={onSearchChange || (() => {})}
+      startDate={startDate}
+      endDate={endDate}
+      onStartDateChange={onStartDateChange}
+      onEndDateChange={onEndDateChange}
     />
   );
 };

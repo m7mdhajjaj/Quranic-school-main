@@ -11,6 +11,7 @@ interface StudentsMarksTableProps {
   section: Section;
   selectedMarkIds: string[];
   isDeleting: boolean;
+  loading?: boolean;
   onAddMark?: (section: Section, student: Student) => void;
   onUpdateMark?: (mark: Mark, section: Section, student: Student) => void;
   onDeleteMark?: (markId: string) => void;
@@ -29,6 +30,7 @@ export const StudentsMarksTable = ({
   section,
   selectedMarkIds,
   isDeleting,
+  loading = false,
   onAddMark,
   onUpdateMark,
   onDeleteMark,
@@ -233,7 +235,7 @@ export const StudentsMarksTable = ({
       <Table
         columns={columns}
         data={tableData}
-        loading={false}
+        loading={loading}
         emptyMessage="لا يوجد طلاب في هذه الحلقة"
         hoverable={true}
         bordered={false}

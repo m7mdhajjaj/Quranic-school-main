@@ -41,6 +41,8 @@ exports.getFilteredMarks = async (req, res) => {
       studentId,
       page = 1,
       limit = 100,
+      startDate,
+      endDate,
     } = req.query;
 
     console.log("📋 Filters received:", {
@@ -52,6 +54,8 @@ exports.getFilteredMarks = async (req, res) => {
       studentId,
       page,
       limit,
+      startDate,
+      endDate,
     });
 
     // Get user's group(s) based on role using helper function
@@ -69,7 +73,7 @@ exports.getFilteredMarks = async (req, res) => {
 
     // Build section filter using helper functions
     const groupFilter = buildGroupFilter(req.user, userGroup, group);
-    const dateFilter = buildDateFilter(month, year);
+    const dateFilter = buildDateFilter(month, year, day, startDate, endDate);
     const searchFilter = buildSectionSearchFilter(search);
     
     // Merge filters properly (handle date and $or from search)
@@ -221,9 +225,9 @@ exports.getFilteredSections = async (req, res) => {
     console.log("🔍 ========== FILTERED SECTIONS REQUEST ==========");
     const startTime = Date.now();
 
-    const { month, year, day, search, group } = req.query;
+    const { month, year, day, search, group, startDate, endDate } = req.query;
 
-    console.log("📋 Filters received:", { month, year, day, search, group });
+    console.log("📋 Filters received:", { month, year, day, search, group, startDate, endDate });
 
     // Get user's group(s) based on role using helper function
     let userGroup, teacherGroups;
@@ -240,7 +244,7 @@ exports.getFilteredSections = async (req, res) => {
 
     // Build section filter using helper functions
     const groupFilter = buildGroupFilter(req.user, userGroup, group);
-    const dateFilter = buildDateFilter(month, year, day);
+    const dateFilter = buildDateFilter(month, year, day, startDate, endDate);
     const searchFilter = buildSectionSearchFilter(search);
     
     // Merge filters properly (handle date and $or from search)

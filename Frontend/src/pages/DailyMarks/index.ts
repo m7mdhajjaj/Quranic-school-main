@@ -21,5 +21,5 @@ export { BulkMarksModal } from './modals/BulkMarksModal';
 export { BulkDeleteModal } from './modals/BulkDeleteModal';
 
 // Views
-export { TeacherView } from './Views/TeacherView';
+export { TeacherView } from './Views/TeacherView/TeacherView';
 export { StudentView } from './Views/StudentView';

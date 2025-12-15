@@ -3,7 +3,8 @@ import {
   Users, BookOpen, Calendar, ArrowLeft, RotateCcw, 
   Plus, Trash2, Filter, Edit, ChevronDown, ChevronUp 
 } from "lucide-react";
-import { MonthYearFilter } from "../../../components/MonthYearFilter";
+import { SearchInput } from "@/components/Filters";
+import { DateRangePicker } from "@/components/UI/DateRangePicker";
 import SectionStatusFilter from "../../../components/SectionStatusFilter";
 import type { MarkStatus } from "../../../components/SectionStatusBadge";
 import { DropdownMenu } from "@/components/UI/DropdownMenu";
@@ -39,6 +40,10 @@ interface SectionsGridViewProps {
   onYearChange: (year: number | null) => void;
   onDayChange: (day: number | null) => void;
   onSearchChange: (query: string) => void;
+  startDate?: string | null;
+  endDate?: string | null;
+  onStartDateChange?: (date: string | null) => void;
+  onEndDateChange?: (date: string | null) => void;
 }
 
 /**
@@ -68,6 +73,10 @@ export const SectionsGridView = ({
   onYearChange,
   onDayChange,
   onSearchChange,
+  startDate,
+  endDate,
+  onStartDateChange,
+  onEndDateChange,
 }: SectionsGridViewProps) => {
   return (
     <div className="animate-fade-in">
@@ -82,7 +91,7 @@ export const SectionsGridView = ({
       </button>
 
       {/* Header with Section Name and Action Buttons */}
-      <Card className="mb-6 bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 border-2 border-emerald-300 shadow-lg">
+      <Card className="mb-6 bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 border-2 border-emerald-300 shadow-lg relative z-[100]">
         <div className="p-5">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             {/* Section Name */}
@@ -132,47 +141,33 @@ export const SectionsGridView = ({
                   <Trash2 size={18} className="text-emerald-700" />
                 </Button>
               )}
-              
-              {/* الفلتر */}
-              <Button
-                onClick={onFilterToggle}
-                variant="secondary"
-                className={`border-2 shadow-md hover:shadow-lg transition-all font-semibold w-[140px] h-[42px] flex items-center justify-between px-3 outline-none focus:outline-none focus:ring-0 ${
-                  isFilterOpen
-                    ? 'border-blue-500 bg-blue-50 text-blue-700'
-                    : 'border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100 hover:border-gray-400'
-                }`}
-                type="button"
-                dir="rtl"
-              >
-                <Filter size={18} />
-                <span className="text-sm">الفلتر</span>
-                {isFilterOpen ? (
-                  <ChevronUp size={16} />
-                ) : (
-                  <ChevronDown size={16} />
-                )}
-              </Button>
+
+              {/* Date Range Picker */}
+              <div className="w-full md:w-auto">
+                <DateRangePicker
+                  startDate={startDate || null}
+                  endDate={endDate || null}
+                  onChange={(start, end) => {
+                    if (onStartDateChange) onStartDateChange(start);
+                    if (onEndDateChange) onEndDateChange(end);
+                  }}
+                  className="w-full md:w-auto"
+                />
+              </div>
+
+              {/* Search Input */}
+              <div className="w-full md:w-64">
+                <SearchInput 
+                  value={searchQuery}
+                  onChange={onSearchChange}
+                  placeholder="بحث..."
+                  className="w-full"
+                />
+              </div>
             </div>
           </div>
         </div>
       </Card>
-
-      {/* Filter Component - Collapsible */}
-      {isFilterOpen && (
-        <div className="mb-6 animate-fade-in">
-          <MonthYearFilter
-            selectedMonth={selectedMonth ?? new Date().getMonth() + 1}
-            selectedYear={selectedYear ?? new Date().getFullYear()}
-            selectedDay={selectedDay}
-            onMonthChange={onMonthChange}
-            onYearChange={onYearChange}
-            onDayChange={onDayChange}
-            searchQuery={searchQuery}
-            onSearchChange={onSearchChange}
-          />
-        </div>
-      )}
 
       {/* Status Filter - Always Visible when sections exist */}
       {sections.length > 0 && (
@@ -188,11 +183,8 @@ export const SectionsGridView = ({
       {/* Sections Cards */}
       {loadingMarks ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className={`${i >= 3 ? 'hidden md:block' : ''} ${i >= 4 ? 'lg:block' : ''}`}
-            >
+          {Array.from({ length: 9 }).map((_, i) => (
+            <div key={i}>
               <CardSkeleton 
                 hasImage={false} 
                 contentLines={4}

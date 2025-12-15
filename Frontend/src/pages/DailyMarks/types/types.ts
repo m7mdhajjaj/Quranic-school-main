@@ -63,6 +63,10 @@ export interface MonthYearFilterProps {
   onDayChange?: (day: number | null) => void;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
+  startDate?: string | null;
+  endDate?: string | null;
+  onStartDateChange?: (date: string | null) => void;
+  onEndDateChange?: (date: string | null) => void;
 }
 
 // AveragesBar Component Props
@@ -207,6 +211,10 @@ export interface TeacherViewProps {
   onDayChange?: (day: number | null) => void;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
+  startDate?: string | null;
+  endDate?: string | null;
+  onStartDateChange?: (date: string | null) => void;
+  onEndDateChange?: (date: string | null) => void;
 }
 
 // StudentView Props
@@ -219,6 +227,5 @@ export interface StudentViewProps {
   selectedYear: number;
   onMonthChange: (month: number) => void;
   onYearChange: (year: number) => void;
-  searchQuery?: string;
-  onSearchChange?: (query: string) => void;
+  // Note: searchQuery and onSearchChange removed - filtering happens in background via useFilteredMarksData
 }

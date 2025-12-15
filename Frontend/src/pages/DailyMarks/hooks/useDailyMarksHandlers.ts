@@ -366,20 +366,22 @@ export const useDailyMarksHandlers = ({
 
     if (!result.isConfirmed) return;
 
+    // Optimistic Update: Update UI immediately
+    setMarks((prev) => prev.filter((mark) => mark._id !== markId));
+    showSuccessToast("✅ تم حذف العلامة بنجاح!");
+
     try {
-      const result = await deleteMark(markId);
+      const apiResult = await deleteMark(markId);
       
-      if (result.success) {
-        // Update local state directly instead of refetching
-        setMarks((prev) => prev.filter((mark) => mark._id !== markId));
-        
-        showSuccessToast("✅ تم حذف العلامة بنجاح!");
-      } else {
-        showErrorToast(`❌ ${result.message || "حدث خطأ أثناء حذف العلامة"}`);
+      if (!apiResult.success) {
+        // If API fails, show error and revert (by refetching)
+        showErrorToast(`❌ ${apiResult.message || "حدث خطأ أثناء حذف العلامة"}`);
+        if (refetchMarks) await refetchMarks();
       }
     } catch (err) {
       console.error("Error deleting mark:", err);
       showErrorToast("❌ حدث خطأ أثناء حذف العلامة");
+      if (refetchMarks) await refetchMarks();
     }
   };
 

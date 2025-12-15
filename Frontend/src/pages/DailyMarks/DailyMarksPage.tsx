@@ -2,8 +2,12 @@
 // IMPORTS
 // ============================================================================
 
-// React & Hooks
 import { lazy, Suspense } from 'react';
+import { BookOpen } from 'lucide-react';
+
+// UI Components
+import PageHeader from '@/components/UI/PageHeader';
+import { AveragesBarSkeleton } from '../../components/skeletons/AveragesBarSkeleton';
 
 // Custom Hooks - Data Management
 import { useDailyMarksData } from './hooks/useDailyMarksData';
@@ -19,20 +23,14 @@ import { useModalAndFormActions } from './hooks/useModalAndFormActions';
 import { useStudentSelection } from './hooks/useStudentSelection';
 import { useComputedValues } from './hooks/useComputedValues';
 
-// UI Components
-import PageHeader from '@/components/UI/PageHeader';
-import { BookOpen } from 'lucide-react';
-
 // Page Components
-import { MonthYearFilter } from './components/MonthYearFilter';
 import { AveragesSection } from './components/AveragesSection';
 import { StudentView } from './Views/StudentView';
 import { ModalsContainer } from './modals/ModalsContainer';
-import { AveragesBarSkeleton } from '../../components/skeletons/AveragesBarSkeleton';
 
 // Lazy load heavy component
 const TeacherView = lazy(() =>
-  import('./Views/TeacherView').then((m) => ({ default: m.TeacherView }))
+  import('./Views/TeacherView/TeacherView').then((m) => ({ default: m.TeacherView }))
 );
 
 // ============================================================================
@@ -41,24 +39,20 @@ const TeacherView = lazy(() =>
 
 const DailyMarksPage = () => {
   // ==========================================================================
-  // SOCKET CONNECTIONS
-  // ==========================================================================
-
-  // ==========================================================================
   // DATA & STATE HOOKS
   // ==========================================================================
 
-  // Data Fetching & Management - Basic data (users, students, groups)
+  // Basic data (users, students, groups)
   const { currentUser, students, teacherGroups, loading } = useDailyMarksData();
 
-  // Student Selection (with auto-select logic)
+  // Student selection with auto-select logic
   const { selectedStudentId, selectedGroup, isPending, setSelectedGroup } =
     useStudentSelection(currentUser, teacherGroups, loading);
 
-  // Component State (Modals, Forms, etc.)
+  // Component state (modals, forms, etc.)
   const state = useDailyMarksState();
 
-  // Sections Filtering (month/year/day selection)
+  // Filter state (month/year/day/date range)
   const {
     selectedMonth,
     selectedYear,
@@ -66,9 +60,13 @@ const DailyMarksPage = () => {
     setSelectedMonth,
     setSelectedYear,
     setSelectedDay,
+    startDate,
+    endDate,
+    setStartDate,
+    setEndDate,
   } = useSectionsFilter();
 
-  // Filtered Data Fetching - Uses new filtered API (enabled for all roles)
+  // Fetch filtered sections and marks
   const {
     sections,
     marks,
@@ -84,15 +82,18 @@ const DailyMarksPage = () => {
     selectedYear,
     selectedDay || null,
     state.searchQuery,
-    !!currentUser && !!selectedGroup // Only fetch when user and group are ready
+    !!currentUser && !!selectedGroup,
+    startDate,
+    endDate
   );
 
-  // Fetch averages from backend using custom hook for student ID resolution
+  // Student ID for averages calculation
   const studentIdForAverages = useStudentIdForAverages(
     currentUser,
     selectedStudentId
   );
 
+  // Fetch student averages
   const { averages } = useStudentAverages(
     studentIdForAverages,
     selectedGroup,
@@ -101,13 +102,11 @@ const DailyMarksPage = () => {
     !!currentUser && !!selectedGroup && !!studentIdForAverages
   );
 
-  // Filtered Students
-
   // ==========================================================================
   // BUSINESS LOGIC HOOKS
   // ==========================================================================
 
-  // Event Handlers
+  // Event handlers (CRUD operations)
   const handlers = useDailyMarksHandlers({
     selectedGroup,
     currentUser,
@@ -125,7 +124,7 @@ const DailyMarksPage = () => {
     refetchSections,
   });
 
-  // Modal Actions & Input Handlers (merged)
+  // Modal actions & form handlers
   const {
     openAddMarkModal,
     openUpdateMarkModal,
@@ -147,7 +146,7 @@ const DailyMarksPage = () => {
     setNewMark: state.setNewMark,
   });
 
-  // Computed Values & Helpers
+  // Computed values & helpers
   const { getSelectedStudent, sectionsCount } = useComputedValues({
     students,
     selectedStudentId,
@@ -155,8 +154,16 @@ const DailyMarksPage = () => {
   });
 
   // ==========================================================================
-  // SIDE EFFECTS
+  // ROLE & DEFAULT VALUES
   // ==========================================================================
+
+  const isStudent = currentUser?.role === 'student';
+  const isTeacher = !isStudent;
+
+  // Default month/year for student view
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth() + 1;
+  const currentYear = currentDate.getFullYear();
 
   // ==========================================================================
   // RENDER
@@ -167,13 +174,13 @@ const DailyMarksPage = () => {
       className="min-h-screen bg-gradient-to-b from-emerald-50 via-teal-50 to-green-50 py-8 px-4 md:px-6 lg:px-8"
       dir="rtl"
     >
-      <div className="w-full max-w-full mx-auto">
+      <div className="w-full max-w-7xl mx-auto space-y-6">
         {/* Page Header */}
         <PageHeader
           title="نظام العلامات اليومية"
           subtitle={
             currentUser
-              ? currentUser.role === 'student'
+              ? isStudent
                 ? `${currentUser.firstName} ${currentUser.fatherName || ''} ${currentUser.lastName || ''} - ${currentUser.group || ''}`
                 : `المعلم: ${currentUser.firstName} ${currentUser.lastName || ''}`
               : 'متابعة وتسجيل علامات الحفظ والمراجعة اليومية للطلاب'
@@ -182,8 +189,8 @@ const DailyMarksPage = () => {
           showDivider={true}
         />
 
-        {/* Averages Section - Above All Content (Teacher Only) */}
-        {currentUser?.role !== 'student' && (
+        {/* Averages Section - Teacher Only */}
+        {isTeacher && !loading && (
           <AveragesSection
             selectedStudentId={selectedStudentId}
             sectionsCount={sectionsCount}
@@ -191,35 +198,25 @@ const DailyMarksPage = () => {
           />
         )}
 
-        {/* Filters Row - Only for students (teachers have filter in TeacherView) */}
-        {currentUser?.role === 'student' && (
-          <div className="mb-8">
-            {/* Month and Year Filter */}
-            <MonthYearFilter
-              selectedMonth={selectedMonth}
-              selectedYear={selectedYear}
-              selectedDay={selectedDay}
-              onMonthChange={setSelectedMonth}
-              onYearChange={setSelectedYear}
-              onDayChange={setSelectedDay}
-              searchQuery={state.searchQuery}
-              onSearchChange={state.setSearchQuery}
-            />
-          </div>
-        )}
-
         {/* Main Content Area */}
         {loading ? (
           <div className="space-y-8">
-            {/* Averages Skeleton for Teachers */}
-            {(!currentUser || currentUser?.role !== 'student') && (
-              <AveragesBarSkeleton />
-            )}
+            {isTeacher && <AveragesBarSkeleton />}
           </div>
         ) : (
           <>
-            {currentUser?.role !== 'student' ? (
-              // Teacher View - Full width
+            {isStudent ? (
+              <StudentView
+                sections={sections}
+                marks={marks}
+                loadingMarks={loadingMarks}
+                averages={averages}
+                selectedMonth={selectedMonth ?? currentMonth}
+                selectedYear={selectedYear ?? currentYear}
+                onMonthChange={(month: number) => setSelectedMonth(month)}
+                onYearChange={(year: number) => setSelectedYear(year)}
+              />
+            ) : (
               <Suspense fallback={<AveragesBarSkeleton />}>
                 <TeacherView
                   students={students}
@@ -246,31 +243,22 @@ const DailyMarksPage = () => {
                   onDayChange={setSelectedDay}
                   searchQuery={state.searchQuery}
                   onSearchChange={state.setSearchQuery}
+                  startDate={startDate}
+                  endDate={endDate}
+                  onStartDateChange={setStartDate}
+                  onEndDateChange={setEndDate}
                 />
               </Suspense>
-            ) : (
-              // Student View
-              <StudentView
-                sections={sections}
-                marks={marks}
-                loadingMarks={loadingMarks}
-                averages={averages}
-                selectedMonth={selectedMonth}
-                selectedYear={selectedYear}
-                onMonthChange={setSelectedMonth}
-                onYearChange={setSelectedYear}
-                searchQuery={state.searchQuery}
-                onSearchChange={state.setSearchQuery}
-              />
             )}
           </>
         )}
       </div>
 
-      {/* Modal Components - Teacher Only */}
-      <ModalsContainer
-        currentUser={currentUser}
-        selectedStudentId={selectedStudentId}
+      {/* Modals - Teacher Only */}
+      {isTeacher && (
+        <ModalsContainer
+          currentUser={currentUser}
+          selectedStudentId={selectedStudentId}
         selectedGroup={selectedGroup}
         sections={sections}
         refetchMarks={refetchMarks}
@@ -289,7 +277,8 @@ const DailyMarksPage = () => {
         openEditSectionModal={openEditSectionModal}
         toggleSectionSelection={toggleSectionSelection}
         getSelectedStudent={getSelectedStudent}
-      />
+        />
+      )}
     </div>
   );
 };

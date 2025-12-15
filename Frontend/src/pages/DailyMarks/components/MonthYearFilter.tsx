@@ -3,6 +3,7 @@ import type { MonthYearFilterProps } from "../types/types";
 import { FilterSelect, SearchInput } from "@/components/Filters";
 import { Calendar, Search, RotateCcw } from "lucide-react";
 import { MONTH_OPTIONS, generateYearOptions, generateDayOptions } from "../constants";
+import { DateRangePicker } from "@/components/UI/DateRangePicker";
 
 /**
  * Month and Year filter component - Simplified Version
@@ -17,6 +18,10 @@ const MonthYearFilterComponent = ({
   onDayChange,
   searchQuery = "",
   onSearchChange,
+  startDate,
+  endDate,
+  onStartDateChange,
+  onEndDateChange,
 }: MonthYearFilterProps) => {
   const monthOptions = MONTH_OPTIONS;
 
@@ -35,12 +40,10 @@ const MonthYearFilterComponent = ({
   const handleReset = () => {
     onMonthChange(null);
     onYearChange(null);
-    if (onDayChange) {
-      onDayChange(null);
-    }
-    if (onSearchChange) {
-      onSearchChange("");
-    }
+    if (onDayChange) onDayChange(null);
+    if (onSearchChange) onSearchChange("");
+    if (onStartDateChange) onStartDateChange(null);
+    if (onEndDateChange) onEndDateChange(null);
   };
 
   return (
@@ -85,54 +88,75 @@ const MonthYearFilterComponent = ({
           </div>
         )}
 
-        {/* Day Selector */}
-        {onDayChange && (
-          <div className="min-w-[130px]">
+        {/* Date Range Picker (New) */}
+        {onStartDateChange && onEndDateChange ? (
+          <div className="min-w-[240px]">
             <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
               <Calendar size={13} className="text-emerald-600" />
-              <span>اليوم</span>
+              <span>الفترة الزمنية</span>
             </label>
-            <FilterSelect
-              label=""
-              value={selectedDay?.toString() || ""}
-              options={dayOptions}
-              onChange={(value) => onDayChange(value === "" ? null : Number(value))}
-              showAllOption={false}
+            <DateRangePicker
+              startDate={startDate}
+              endDate={endDate}
+              onChange={(start, end) => {
+                onStartDateChange(start);
+                onEndDateChange(end);
+              }}
             />
           </div>
-        )}
+        ) : (
+          /* Fallback to old Month/Year/Day selectors if new props not provided */
+          <>
+            {/* Day Selector */}
+            {onDayChange && (
+              <div className="min-w-[130px]">
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
+                  <Calendar size={13} className="text-emerald-600" />
+                  <span>اليوم</span>
+                </label>
+                <FilterSelect
+                  label=""
+                  value={selectedDay?.toString() || ""}
+                  options={dayOptions}
+                  onChange={(value) => onDayChange(value === "" ? null : Number(value))}
+                  showAllOption={false}
+                />
+              </div>
+            )}
 
-        {/* Month Selector */}
-        <div className="min-w-[120px]">
-          <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
-            <Calendar size={13} className="text-emerald-600" />
-            <span>الشهر</span>
-          </label>
-          <FilterSelect
-            label=""
-            value={selectedMonth?.toString() || ""}
-            options={monthOptions}
-            onChange={(value) => onMonthChange(value === "" ? null : Number(value))}
-            showAllOption={true}
-            allOptionLabel="كل الأشهر"
-          />
-        </div>
-        
-        {/* Year Selector */}
-        <div className="min-w-[110px]">
-          <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
-            <Calendar size={13} className="text-emerald-600" />
-            <span>السنة</span>
-          </label>
-          <FilterSelect
-            label=""
-            value={selectedYear?.toString() || ""}
-            options={yearOptions}
-            onChange={(value) => onYearChange(value === "" ? null : Number(value))}
-            showAllOption={true}
-            allOptionLabel="كل السنوات"
-          />
-        </div>
+            {/* Month Selector */}
+            <div className="min-w-[120px]">
+              <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
+                <Calendar size={13} className="text-emerald-600" />
+                <span>الشهر</span>
+              </label>
+              <FilterSelect
+                label=""
+                value={selectedMonth?.toString() || ""}
+                options={monthOptions}
+                onChange={(value) => onMonthChange(value === "" ? null : Number(value))}
+                showAllOption={true}
+                allOptionLabel="كل الأشهر"
+              />
+            </div>
+            
+            {/* Year Selector */}
+            <div className="min-w-[110px]">
+              <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
+                <Calendar size={13} className="text-emerald-600" />
+                <span>السنة</span>
+              </label>
+              <FilterSelect
+                label=""
+                value={selectedYear?.toString() || ""}
+                options={yearOptions}
+                onChange={(value) => onYearChange(value === "" ? null : Number(value))}
+                showAllOption={true}
+                allOptionLabel="كل السنوات"
+              />
+            </div>
+          </>
+        )}
         </div>
       </div>
     </div>

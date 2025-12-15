@@ -321,6 +321,8 @@ export const getFilteredMarks = async (filters: {
   studentId?: string;
   page?: number;
   limit?: number;
+  startDate?: string;
+  endDate?: string;
 }): Promise<ApiResponse<Mark[]> & { pagination?: any; filters?: any }> => {
   try {
     const params = new URLSearchParams();
@@ -333,6 +335,8 @@ export const getFilteredMarks = async (filters: {
     if (filters.studentId) params.append("studentId", filters.studentId);
     if (filters.page) params.append("page", filters.page.toString());
     if (filters.limit) params.append("limit", filters.limit.toString());
+    if (filters.startDate) params.append("startDate", filters.startDate);
+    if (filters.endDate) params.append("endDate", filters.endDate);
 
     console.log("🔍 Fetching filtered marks:", filters);
     const response = await api.get(`/daily-marks/filtered?${params.toString()}`);
@@ -369,6 +373,8 @@ export const getFilteredSections = async (filters: {
   day?: number;
   search?: string;
   group?: string;
+  startDate?: string;
+  endDate?: string;
 }): Promise<ApiResponse<Section[]> & { count?: number; filters?: any }> => {
   try {
     const params = new URLSearchParams();
@@ -378,6 +384,8 @@ export const getFilteredSections = async (filters: {
     if (filters.day) params.append("day", filters.day.toString());
     if (filters.search) params.append("search", filters.search);
     if (filters.group) params.append("group", filters.group);
+    if (filters.startDate) params.append("startDate", filters.startDate);
+    if (filters.endDate) params.append("endDate", filters.endDate);
 
     console.log("🔍 Fetching filtered sections:", filters);
     const response = await api.get(`/daily-marks/filtered-sections?${params.toString()}`);

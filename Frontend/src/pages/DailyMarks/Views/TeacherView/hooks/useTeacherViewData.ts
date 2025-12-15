@@ -114,6 +114,19 @@ export const useTeacherViewData = (selectedGroup: string) => {
     });
   }, [filteredStudents, sectionMarks]);
 
+  /**
+   * تحديث علامة في الحالة المحلية
+   */
+  const updateMarkInState = useCallback((updatedMark: Mark) => {
+    setSectionMarks((prev) => {
+      const exists = prev.some((m) => m._id === updatedMark._id);
+      if (exists) {
+        return prev.map((m) => (m._id === updatedMark._id ? updatedMark : m));
+      }
+      return [...prev, updatedMark];
+    });
+  }, []);
+
   return {
     // Section Selection
     selectedSection,
@@ -123,6 +136,7 @@ export const useTeacherViewData = (selectedGroup: string) => {
     handleSectionSelect,
     refetchSectionData,
     clearSectionSelection,
+    updateMarkInState, // Export this
     
     // Student Filtering
     studentSearchQuery,

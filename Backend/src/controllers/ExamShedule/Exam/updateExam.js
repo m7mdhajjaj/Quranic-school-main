@@ -4,7 +4,7 @@
 
 const ExamSchedule = require("../../../schema/ExamSchedule");
 const { isTimeWithinAllowedRange, buildDuplicateQuery, checkTeacherTimeConflict, checkGroupDailyLimit, validateDuration } = require("./examHelpers");
-const { notifyExamUpdated } = require("../../../Notifications/handlers/examScheduleNotifications");
+const { notifyExamUpdated } = require("../../../Notifications");
 
 /**
  * Update exam

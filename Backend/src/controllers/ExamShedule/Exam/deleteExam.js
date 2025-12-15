@@ -4,7 +4,7 @@
 
 const ExamSchedule = require("../../../schema/ExamSchedule");
 const ExamMark = require("../../../schema/ExamMark");
-const { notifyExamDeleted } = require("../../../Notifications/handlers/examScheduleNotifications");
+const { notifyExamDeleted } = require("../../../Notifications");
 
 /**
  * Delete exam and related marks

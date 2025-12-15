@@ -4,8 +4,6 @@ import { Table } from "@/components/UI";
 import type { Column } from "@/components/UI/Table";
 import { memo } from "react";
 import { RefreshCw, Plus, Edit, Trash2, RotateCcw, BookOpen, Calendar, ChevronRight, ChevronLeft, Users, FileCheck, FileEdit } from "lucide-react";
-import SectionStatusBadge from "./SectionStatusBadge";
-import SectionProgressBar from "./SectionProgressBar";
 import { getMarkColor, formatDateWithDay } from "../utils";
 import { useMonthNavigation, useMarkFinder } from "../hooks";
 import { CardSkeleton } from "@/components/skeletons";
@@ -69,12 +67,26 @@ const SectionsTableComponent = ({
     );
   };
 
-  // Define table columns with enhanced styling
-  const columns: Column<SectionWithMark>[] = [
+  // Define table columns with responsive widths based on user role
+  // For students: 6 columns (with row number + no actions), widths are more flexible
+  // For teachers: 6 columns (with actions), widths adjust accordingly
+  const baseColumns: Column<SectionWithMark>[] = [
+    // Row number column - only for students, appears first (leftmost in RTL)
+    ...(isTeacher ? [] : [{
+      key: "rowNumber",
+      header: "#",
+      width: "8%",
+      align: "center" as const,
+      render: (_row: SectionWithMark, index: number) => (
+        <div className="text-center text-gray-600 font-semibold text-sm py-2">
+          {index + 1}
+        </div>
+      ),
+    }]),
     {
       key: "reviewSection",
       header: "مقطع المراجعة",
-      width: "200px",
+      width: isTeacher ? "18%" : "20%", // Adjusted for student row number column
       render: (row) => (
         <div className="text-emerald-700 font-medium text-sm bg-emerald-50/50 px-3 py-2 rounded-md">
           {row.reviewSection}
@@ -84,14 +96,14 @@ const SectionsTableComponent = ({
     {
       key: "reviewMark",
       header: "علامة المراجعة",
-      width: "120px",
+      width: isTeacher ? "12%" : "13%",
       align: "center",
       render: (row) => renderMarkCell(row.mark, "review"),
     },
     {
       key: "memorizationSection",
       header: "مقطع الحفظ",
-      width: "200px",
+      width: isTeacher ? "18%" : "20%",
       render: (row) => (
         <div className="text-teal-700 font-medium text-sm bg-teal-50/50 px-3 py-2 rounded-md">
           {row.memorizationSection}
@@ -101,45 +113,14 @@ const SectionsTableComponent = ({
     {
       key: "memorizationMark",
       header: "علامة الحفظ",
-      width: "120px",
+      width: isTeacher ? "12%" : "13%",
       align: "center",
       render: (row) => renderMarkCell(row.mark, "memorization"),
     },
     {
-      key: "marksStatus",
-      header: "حالة الرصد",
-      width: "180px",
-      align: "center",
-      render: (row) => (
-        <div className="flex justify-center">
-          <SectionStatusBadge 
-            status={row.marksStatus} 
-            progress={row.marksProgress}
-            size="sm"
-          />
-        </div>
-      ),
-    },
-    {
-      key: "marksProgress",
-      header: "التقدم",
-      width: "150px",
-      align: "center",
-      render: (row) => (
-        <div className="px-2">
-          <SectionProgressBar 
-            status={row.marksStatus} 
-            progress={row.marksProgress}
-            showLabel={false}
-            height="md"
-          />
-        </div>
-      ),
-    },
-    {
       key: "date",
       header: "التاريخ",
-      width: "150px",
+      width: isTeacher ? "13%" : "18%",
       render: (row) => {
         const { formattedDate, dayName } = formatDateWithDay(row.date);
         
@@ -152,6 +133,10 @@ const SectionsTableComponent = ({
       },
     },
   ];
+
+  // For teachers, columns width already account for actions column
+  // Actions column will be handled by Table component with actionsWidth prop
+  const columns = baseColumns;
 
   // Render action buttons for teachers with enhanced styling
   const renderActions = isTeacher
@@ -322,7 +307,7 @@ const SectionsTableComponent = ({
           </div>
         )}
 
-        {/* Table with Clean Design */}
+        {/* Table with Clean Design - Responsive to column count */}
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
           <Table
             columns={columns}
@@ -337,7 +322,7 @@ const SectionsTableComponent = ({
             stickyHeader={true}
             renderActions={renderActions}
             actionsHeader="الإجراءات"
-            actionsWidth="180px"
+            actionsWidth={isTeacher ? "180px" : undefined}
             className="shadow-none"
             headerClassName="bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-white"
           />
@@ -378,23 +363,6 @@ const SectionsTableComponent = ({
                     );
                   })()}
                 </div>
-              </div>
-
-              {/* Marks Status and Progress */}
-              <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <div className="flex items-center justify-between mb-2">
-                  <SectionStatusBadge 
-                    status={row.marksStatus} 
-                    progress={row.marksProgress}
-                    size="sm"
-                  />
-                </div>
-                <SectionProgressBar 
-                  status={row.marksStatus} 
-                  progress={row.marksProgress}
-                  showLabel={true}
-                  height="md"
-                />
               </div>
 
               {/* Review Section */}

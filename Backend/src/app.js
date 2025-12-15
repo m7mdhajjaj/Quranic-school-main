@@ -9,12 +9,12 @@ const http = require('http');
 const { Server } = require('socket.io');
 const Chat = require('./schema/Chat');
 const Student = require('./schema/Student');
-const NotificationService = require('./Notifications/NotificationService');
+const { NotificationService, FCMService } = require('./Notifications');
 const MonthlyChampionService = require('./services/ChampionService');
 const SuspensionService = require('./services/SuspensionService');
 const AttendanceService = require('./services/DashboardService/GetStudentAbsence');
 // Initialize FCM service (reads env FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_SERVICE_ACCOUNT_PATH)
-const FCMService = require('./Notifications/config/FCMService');
+// FCMService is now imported from ./Notifications above
 
 // Connect to MongoDB
 connectDB();
@@ -230,6 +230,28 @@ io.engine.on('connection_error', (err) => {
 // Socket.IO connection
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
+
+  // ✅ Auto-join room if auth data is present (Handles reconnection/initial connect)
+  const authUserId = socket.handshake.auth?.userId;
+  const authUserRole = socket.handshake.auth?.userRole;
+  
+  if (authUserId) {
+    console.log(`🔄 Auto-joining rooms for authenticated user: ${authUserId}`);
+    socket.join(authUserId);
+    socket.join('notifications');
+    
+    if (authUserRole === 'admin') {
+      socket.join('admin-room');
+    }
+    
+    // Add to online users map immediately
+    onlineUsers.set(authUserId, {
+      socketId: socket.id,
+      role: authUserRole || 'unknown',
+      firstName: 'User', // Will be updated on 'login' event
+      loginTime: new Date().toISOString(),
+    });
+  }
 
   // Handle socket errors
   socket.on('error', (error) => {

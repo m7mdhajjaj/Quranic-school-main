@@ -3,7 +3,7 @@
 // ============================================================================
 
 const Mark = require("../../schema/DailyMark/DailyMark");
-const { notifyMarkDeleted } = require("../../Notifications/handlers/DailyMarks/dailyMarkNotifications");
+const { notifyMarkDeleted } = require("../../Notifications");
 
 // استيراد الدوال المساعدة
 const {
@@ -60,23 +60,32 @@ exports.deleteMark = async (req, res) => {
     await Mark.findByIdAndDelete(id);
     console.log("✅ تم حذف العلامة بنجاح");
 
-    // Update monthly average and section status
-    await updateStudentMonthlyAverage(studentId, sectionId);
-    
-    if (sectionId && sectionId._id) {
-      await updateSingleSectionStatus(sectionId._id.toString());
-    }
-
-    // Emit Socket.IO event
-    emitSocketEvent(io, "markDeleted", {
-      markId: id,
-      studentId,
-    });
-
+    // Send success response immediately to make UI faster
     sendSuccess(res, { deletedId: id, studentId }, "تم حذف العلامة بنجاح");
+
+    // Perform background updates
+    try {
+      // Update monthly average and section status
+      await updateStudentMonthlyAverage(studentId, sectionId);
+      
+      if (sectionId && sectionId._id) {
+        await updateSingleSectionStatus(sectionId._id.toString());
+      }
+
+      // Emit Socket.IO event
+      emitSocketEvent(io, "markDeleted", {
+        markId: id,
+        studentId,
+      });
+    } catch (bgError) {
+      console.error("⚠️ Error in background updates after delete:", bgError);
+    }
   } catch (error) {
     console.error("❌ Error in deleteMark:", error);
-    sendError(res, error.message, 500, error);
+    // Only send error if response hasn't been sent yet
+    if (!res.headersSent) {
+      sendError(res, error.message, 500, error);
+    }
   }
 };
 

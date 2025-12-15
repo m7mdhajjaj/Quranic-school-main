@@ -3,7 +3,7 @@
 // ============================================================================
 
 const Mark = require("../../schema/DailyMark/DailyMark");
-const { notifyMarkUpdated } = require("../../Notifications/handlers/DailyMarks/dailyMarkNotifications");
+const { notifyMarkUpdated } = require("../../Notifications");
 
 // استيراد الدوال المساعدة
 const {

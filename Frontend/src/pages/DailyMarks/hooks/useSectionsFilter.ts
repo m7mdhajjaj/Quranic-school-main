@@ -7,6 +7,10 @@ interface UseSectionsFilterReturn {
   setSelectedMonth: React.Dispatch<React.SetStateAction<number | null>>;
   setSelectedYear: React.Dispatch<React.SetStateAction<number | null>>;
   setSelectedDay: React.Dispatch<React.SetStateAction<number | null>>;
+  startDate: string | null;
+  endDate: string | null;
+  setStartDate: React.Dispatch<React.SetStateAction<string | null>>;
+  setEndDate: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
 /**
@@ -23,6 +27,8 @@ export const useSectionsFilter = (): UseSectionsFilterReturn => {
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null); // null = all months
   const [selectedYear, setSelectedYear] = useState<number | null>(null); // null = all years
   const [selectedDay, setSelectedDay] = useState<number | null>(null); // null = all days
+  const [startDate, setStartDate] = useState<string | null>(null);
+  const [endDate, setEndDate] = useState<string | null>(null);
 
   return {
     selectedMonth,
@@ -31,5 +37,9 @@ export const useSectionsFilter = (): UseSectionsFilterReturn => {
     setSelectedMonth,
     setSelectedYear,
     setSelectedDay,
+    startDate,
+    endDate,
+    setStartDate,
+    setEndDate,
   };
 };

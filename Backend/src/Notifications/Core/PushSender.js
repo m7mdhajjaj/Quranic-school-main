@@ -1,5 +1,5 @@
-const FCMService = require("../../config/FCMService");
-const DeviceToken = require("../../../schema/DeviceToken");
+const FCMService = require("./FCMService");
+const DeviceToken = require("../../schema/DeviceToken");
 
 /**
  * Push Notifications Module
@@ -99,25 +99,11 @@ async function sendNotificationToDevices(userIds, title, message, data = {}) {
 
     // Send notification via FCM
     const response = await FCMService.sendToTokens(tokens, payload);
-
-    if (response) {
-      console.log(
-        `✅ Push notification sent to ${tokens.length} devices for ${userIds.length} users`
-      );
-      console.log(`   📊 Success: ${response.successCount}, Failed: ${response.failureCount}`);
-
-      return {
-        success: true,
-        successCount: response.successCount,
-        failureCount: response.failureCount,
-        totalTokens: tokens.length,
-      };
-    }
-
-    return { success: false, message: "FCM sendToTokens returned null" };
+    console.log(`📣 Push notification sent to ${tokens.length} devices`);
+    return { success: true, response };
   } catch (error) {
-    console.error("❌ Error sending notification to devices:", error);
-    throw error;
+    console.error("❌ Error sending push to devices:", error);
+    return { success: false, message: error.message };
   }
 }
 

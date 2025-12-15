@@ -1,5 +1,5 @@
 const Section = require("../../../schema/DailyMark/Section");
-const { notifySectionAdded } = require("../../../Notifications/handlers/DailyMarks/sectionNotifications");
+const { notifySectionAdded } = require("../../../Notifications");
 const { updateSectionMarksStatus } = require("./sectionMarksStatus");
 const {
   sendCreated,

@@ -20,7 +20,8 @@ export type NotificationType =
   | 'assignment'      // مقطع/واجب
   | 'news'            // خبر/منشور
   | 'general'         // عام
-  | 'daily_marks';    // العلامات اليومية
+  | 'daily_marks'     // العلامات اليومية
+  | 'warning';        // إنذار/تنبيه
 
 /**
  * أولوية الإشعار
