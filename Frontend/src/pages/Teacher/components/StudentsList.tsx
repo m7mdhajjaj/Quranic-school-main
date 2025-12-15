@@ -307,16 +307,6 @@ export const StudentsList: React.FC<StudentsListProps> = ({
                             <GraduationCap className="w-3 h-3 mr-1" />
                             #{student.studentId}
                           </span>
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${
-                              student.isActive
-                                ? "bg-emerald-100 text-emerald-700 border border-emerald-300 shadow-sm"
-                                : "bg-gray-100 text-gray-600 border border-gray-300"
-                            }`}
-                          >
-                            <div className={`w-2 h-2 rounded-full ${student.isActive ? "bg-emerald-500" : "bg-gray-400"}`}></div>
-                            {student.isActive ? "نشط" : "غير نشط"}
-                          </span>
                         </div>
                         {student.fatherName && (
                           <p className="text-xs text-gray-600 truncate">{student.fatherName}</p>
