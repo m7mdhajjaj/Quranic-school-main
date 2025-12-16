@@ -19,19 +19,20 @@ export interface INews {
   image: string;
   imagePublicId?: string;
   isPublished?: boolean;
-  author?: {
-    _id: string;
-    firstName?: string;
-    lastName?: string;
-    name?: string;
-    email?: string;
-  } | string;
+  author?:
+    | {
+        _id: string;
+        firstName?: string;
+        lastName?: string;
+        name?: string;
+        email?: string;
+      }
+    | string;
   authorModel?: string;
-  visibility?: 'general' | 'group';
+  visibility?: "general" | "group";
   createdAt?: string;
   updatedAt?: string;
 }
-
 
 // Get all news
 export const getAllNews = async (): Promise<INews[]> => {
@@ -55,7 +56,7 @@ export const createNews = async (
   // The data will be properly formatted by the multipart/form-data handler
 
   console.log("🚀 Sending POST request to /news...");
-  
+
   try {
     const response = await api.post("/news", data, {
       headers: isFormData
@@ -64,7 +65,7 @@ export const createNews = async (
           }
         : undefined, // Let axios set default headers for JSON
     });
-    
+
     console.log("✅ Response received:", response.data);
     return response.data.data; // Extract the nested data property
   } catch (error) {
@@ -97,4 +98,3 @@ export const updateNews = async (
 export const deleteNews = async (id: string): Promise<void> => {
   await api.delete(`/news/${id}`);
 };
-
