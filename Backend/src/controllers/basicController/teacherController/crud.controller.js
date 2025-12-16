@@ -2,7 +2,12 @@ const Teacher = require("../../../schema/Teacher");
 const Group = require("../../../schema/Group");
 const Student = require("../../../schema/Student");
 const bcrypt = require("bcryptjs");
-const { calculateAge, generateTeacherId } = require("./utils.controller");
+const { 
+  calculateAge, 
+  generateTeacherId, 
+  detectTeacherChanges, 
+  buildNotificationMessage 
+} = require("./utils.controller");
 const { checkDuplicateFields } = require("../../../utils/validators/duplicateChecker");
 
 /**
@@ -419,11 +424,18 @@ exports.updateTeacher = async (req, res) => {
     const id = req.params.id;
     const updates = { ...req.body };
 
+    // 1. جلب النسخة القديمة (قبل التعديل)
+    const currentTeacher = await Teacher.findById(id);
+    if (!currentTeacher) {
+      return res.status(404).json({ success: false, message: "المعلم غير موجود" });
+    }
+
     // Check if birthDate is being changed - apply edit limits
     if (updates.birthDate) {
-      const currentTeacher = await Teacher.findById(id).select(
-        "birthDate birthDateEditHistory"
-      );
+      // We already fetched currentTeacher, so we can use it directly
+      // const currentTeacher = await Teacher.findById(id).select(
+      //   "birthDate birthDateEditHistory"
+      // );
 
       if (currentTeacher) {
         // Check if birthDate is actually changing
@@ -490,50 +502,47 @@ exports.updateTeacher = async (req, res) => {
     }
 
     // --- إدارة الحلقات ---
-    const currentTeacher = await Teacher.findById(id);
-    if (!currentTeacher) {
-      return res
-        .status(404)
-        .json({ success: false, message: "المعلم غير موجود" });
-    }
+    // Note: currentTeacher is already fetched at the top
     const teacherFullName = `${currentTeacher.firstName} ${currentTeacher.lastName}`;
 
-    // 1. جلب الحلقات الحالية للمعلم
-    const currentGroupIds = currentTeacher.groups.map((g) => g.id);
-
-    // 2. جلب الحلقات الجديدة من الطلب
-    const newGroupIds = Array.isArray(updates.groups)
-      ? updates.groups.map((g) => g.id)
-      : [];
-
-    // 3. تحديد الحلقات التي يجب إزالة المعلم منها
-    const groupsToRemove = currentGroupIds.filter(
-      (id) => !newGroupIds.includes(id)
-    );
-    if (groupsToRemove.length > 0) {
-      const removedGroups = await Group.find({ _id: { $in: groupsToRemove } }).select('name');
-      
-      await Group.updateMany(
-        { _id: { $in: groupsToRemove } },
-        { $unset: { teacher: "" } }
-      );
-      
-      // تحديث activeStatus للحلقات التي تم إزالة المعلم منها
-      const removedGroupNames = removedGroups.map(g => g.name);
-      if (removedGroupNames.length > 0) {
-        await Group.recalculateMultipleActiveStatus(removedGroupNames).catch(err =>
-          console.error('⚠️ خطأ في تحديث activeStatus:', err)
-        );
-      }
-    }
-
-    // 4. التحقق من الحلقات الجديدة وتعيينها
-    const newGroupNames = [];
     if (Array.isArray(updates.groups)) {
+      // 1. جلب الحلقات الحالية للمعلم
+      const currentGroupIds = currentTeacher.groups.map((g) => g.id);
+
+      // 2. جلب الحلقات الجديدة من الطلب
+      const newGroupIds = updates.groups.map((g) => g.id);
+
+      // 3. تحديد الحلقات التي يجب إزالة المعلم منها
+      const groupsToRemove = currentGroupIds.filter(
+        (id) => !newGroupIds.includes(id)
+      );
+      if (groupsToRemove.length > 0) {
+        const removedGroups = await Group.find({ _id: { $in: groupsToRemove } }).select('name');
+        
+        await Group.updateMany(
+          { _id: { $in: groupsToRemove } },
+          { $unset: { teacher: "" } }
+        );
+        
+        // تحديث activeStatus للحلقات التي تم إزالة المعلم منها
+        const removedGroupNames = removedGroups.map(g => g.name);
+        if (removedGroupNames.length > 0) {
+          await Group.recalculateMultipleActiveStatus(removedGroupNames).catch(err =>
+            console.error('⚠️ خطأ في تحديث activeStatus:', err)
+          );
+        }
+      }
+
+      // 4. التحقق من الحلقات الجديدة وتعيينها
+      const processedGroups = [];
+      const newGroupNames = [];
+      
       for (const groupItem of updates.groups) {
         const group = await Group.findById(groupItem.id);
+        
+        if (!group) continue;
+
         if (
-          group &&
           group.teacher &&
           group.teacher.toString() !== currentTeacher._id.toString()
         ) {
@@ -543,6 +552,7 @@ exports.updateTeacher = async (req, res) => {
             field: "groups",
           });
         }
+        
         await Group.updateOne(
           { _id: groupItem.id },
           {
@@ -550,8 +560,16 @@ exports.updateTeacher = async (req, res) => {
             teacherName: teacherFullName,
           }
         );
-        if (group) newGroupNames.push(group.name);
+        
+        newGroupNames.push(group.name);
+        processedGroups.push({
+          id: group._id,
+          name: group.name
+        });
       }
+      
+      // تحديث القائمة بالبيانات الكاملة (لتجنب مشاكل الـ Schema والـ Notifications)
+      updates.groups = processedGroups;
       
       // تحديث activeStatus للحلقات الجديدة
       if (newGroupNames.length > 0) {
@@ -561,13 +579,13 @@ exports.updateTeacher = async (req, res) => {
       }
     }
 
-    const updated = await Teacher.findByIdAndUpdate(
+    const updatedTeacher = await Teacher.findByIdAndUpdate(
       id,
       { ...updates, updatedAt: new Date() },
       { new: true, runValidators: true }
     ).select("-password");
 
-    if (!updated) {
+    if (!updatedTeacher) {
       return res
         .status(404)
         .json({ success: false, message: "المعلم غير موجود" });
@@ -575,43 +593,61 @@ exports.updateTeacher = async (req, res) => {
 
     // Cleanup old edit history entries (older than 2 months) for birthDate
     if (
-      updated.birthDateEditHistory &&
-      updated.birthDateEditHistory.length > 0
+      updatedTeacher.birthDateEditHistory &&
+      updatedTeacher.birthDateEditHistory.length > 0
     ) {
       const twoMonthsAgo = new Date();
       twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
 
-      const cleanedHistory = updated.birthDateEditHistory.filter(
+      const cleanedHistory = updatedTeacher.birthDateEditHistory.filter(
         (edit) => new Date(edit.editDate) >= twoMonthsAgo
       );
 
       // Only update if we removed old entries
-      if (cleanedHistory.length !== updated.birthDateEditHistory.length) {
+      if (cleanedHistory.length !== updatedTeacher.birthDateEditHistory.length) {
         await Teacher.findByIdAndUpdate(id, {
           birthDateEditHistory: cleanedHistory,
         });
-        updated.birthDateEditHistory = cleanedHistory;
+        updatedTeacher.birthDateEditHistory = cleanedHistory;
       }
     }
 
-    // 🔔 إرسال إشعار للمعلم بتحديث بياناته
+    // 🔔 إرسال إشعارات بالتغييرات (فقط للحلقات)
     try {
       const notificationService = req.app.get('notificationService');
       if (notificationService) {
+        const changes = detectTeacherChanges(currentTeacher, updates, updatedTeacher);
         const adminName = req.user ? `${req.user.firstName} ${req.user.lastName}` : "الإدارة";
-        await notificationService.notifyTeacherInfoUpdated(
-          updated._id,
-          adminName
-        );
+
+        for (const change of changes) {
+          const notificationData = buildNotificationMessage(change);
+          if (notificationData) {
+            await notificationService.createNotification({
+              recipient: updatedTeacher._id,
+              recipientModel: 'Teacher',
+              title: notificationData.title,
+              message: notificationData.message,
+              type: notificationData.type,
+              link: notificationData.link,
+              data: {
+                groupId: change.meta?.groupId,
+                groupName: change.meta?.groupName,
+                action: change.type === 'GROUP_ADDED' ? 'group_assigned' : 'group_removed',
+                senderName: adminName,
+                createdBy: req.user ? req.user._id : null
+              }
+            });
+          }
+        }
       }
     } catch (notifyError) {
-      console.error("❌ فشل إرسال إشعار تحديث بيانات المعلم:", notifyError);
+      console.error("❌ فشل إرسال إشعارات تحديث المعلم:", notifyError);
     }
 
     return res.status(200).json({
       success: true,
       message: "تم تحديث بيانات المعلم بنجاح",
-      data: updated,
+      data: updatedTeacher,
     });
   } catch (error) {
     console.error("Error updating teacher:", error);

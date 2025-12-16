@@ -19,7 +19,7 @@ const {
   notifyGroupTransferredTo,
   notifyGroupDeleted,
   notifyTeacherInfoUpdated,
-} = require("../Handlers/TeacherHandler");
+} = require("../Handlers/AdminHandler");
 
 /**
  * NotificationManager - خدمة الإشعارات المركزية

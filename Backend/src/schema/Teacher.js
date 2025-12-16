@@ -121,8 +121,8 @@ const teacherSchema = new mongoose.Schema(
       default: [],
       validate: [
         {
-          validator: arr => Array.isArray(arr) && arr.every(g => g && g.name && g.number && g.id),
-          message: 'كل حلقة يجب أن تحتوي على اسم ورقم ومعرف صالح.',
+          validator: arr => Array.isArray(arr) && arr.every(g => g && g.name && g.id),
+          message: 'كل حلقة يجب أن تحتوي على اسم ومعرف صالح.',
         }
       ]
     },

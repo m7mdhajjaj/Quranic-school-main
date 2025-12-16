@@ -218,7 +218,7 @@ export const StudentsList: React.FC<StudentsListProps> = ({
               return (
                 <div
                   key={student._id}
-                  className={`group relative bg-gradient-to-br ${colors.bg} rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 border-2 ${colors.border} ${colors.hoverBorder} overflow-hidden`}
+                  className={`group relative bg-gradient-to-br ${colors.bg} rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 border-2 ${colors.border} ${colors.hoverBorder}`}
                   dir="rtl"
                 >
                   {/* شريط علوي ملون */}

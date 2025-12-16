@@ -48,8 +48,78 @@ const getTeacherGroups = async (teacherId) => {
   }
 };
 
+const CHANGE_TYPES = {
+  GROUP_ADDED: "GROUP_ADDED",
+  GROUP_REMOVED: "GROUP_REMOVED",
+};
+
+/**
+ * كشف التغييرات بين نسخة المعلم القديمة والجديدة (الحلقات فقط)
+ * @param {Object} oldTeacher - بيانات المعلم قبل التحديث
+ * @param {Object} payload - البيانات المرسلة في الطلب
+ * @param {Object} updatedTeacher - بيانات المعلم بعد التحديث
+ * @returns {Array} - قائمة التغييرات
+ */
+const detectTeacherChanges = (oldTeacher, payload, updatedTeacher) => {
+  const changes = [];
+
+  // 1. كشف تغييرات الحلقات
+  const oldGroups = oldTeacher.groups ? oldTeacher.groups.map(g => g.id.toString()) : [];
+  const newGroups = updatedTeacher.groups ? updatedTeacher.groups.map(g => g.id.toString()) : [];
+
+  // حلقات مضافة
+  updatedTeacher.groups.forEach(group => {
+    if (!oldGroups.includes(group.id.toString())) {
+      changes.push({
+        type: CHANGE_TYPES.GROUP_ADDED,
+        meta: { groupName: group.name, groupId: group.id }
+      });
+    }
+  });
+
+  // حلقات محذوفة
+  oldTeacher.groups.forEach(group => {
+    if (!newGroups.includes(group.id.toString())) {
+      changes.push({
+        type: CHANGE_TYPES.GROUP_REMOVED,
+        meta: { groupName: group.name, groupId: group.id }
+      });
+    }
+  });
+
+  return changes;
+};
+
+/**
+ * بناء رسالة الإشعار بناءً على نوع التغيير
+ * @param {Object} change - كائن التغيير
+ * @returns {Object} - { title, message, type }
+ */
+const buildNotificationMessage = (change) => {
+  switch (change.type) {
+    case CHANGE_TYPES.GROUP_ADDED:
+      return {
+        title: "تم تعيين حلقة جديدة",
+        message: `تم تعيينك معلماً للحلقة: ${change.meta.groupName}`,
+        type: "success",
+        link: "/my-groups"
+      };
+    case CHANGE_TYPES.GROUP_REMOVED:
+      return {
+        title: "إلغاء تعيين حلقة",
+        message: `تم إلغاء تعيينك من الحلقة: ${change.meta.groupName}`,
+        type: "alert",
+        link: "/my-groups"
+      };
+    default:
+      return null;
+  }
+};
+
 module.exports = {
   calculateAge,
   generateTeacherId,
   getTeacherGroups,
+  detectTeacherChanges,
+  buildNotificationMessage
 };
