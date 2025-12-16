@@ -48,7 +48,7 @@ class AttendanceService {
         if (this.io) {
           try {
             // جلب البيانات مباشرة باستخدام نفس منطق getAbsentStudentsToday
-            const Attendance = require("../../../schema/Attendance");
+            const Attendance = require("../../schema/Attendance");
             const today = new Date();
             today.setHours(0, 0, 0, 0);
             const nextDay = new Date(today);

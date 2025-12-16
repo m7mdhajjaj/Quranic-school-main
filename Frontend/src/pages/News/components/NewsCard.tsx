@@ -63,6 +63,8 @@ const NewsCard = ({
         <img
             src={images[currentImageIndex] || 'https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+الخبر'}
             alt={`${news.title} - صورة ${currentImageIndex + 1}`}
+            width="600"
+            height="400"
             loading={index < 2 ? 'eager' : 'lazy'}
             decoding="async"
             fetchPriority={index === 0 ? 'high' : 'auto'}

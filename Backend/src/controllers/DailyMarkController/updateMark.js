@@ -77,26 +77,44 @@ exports.createOrUpdateMark = async (req, res) => {
 
     console.log("✅ تم حفظ العلامة بنجاح");
 
-    // Update monthly average & section status
-    await updateStudentMonthlyAverage(mark.studentId._id, mark.sectionId);
-    if (mark.sectionId && mark.sectionId._id) {
-      await updateSingleSectionStatus(mark.sectionId._id.toString());
-    }
-
-    // Send notification and Socket event
-    const newTotalMark = (mark.reviewMark || 0) + (mark.memorizationMark || 0);
-    console.log("🔔 إرسال الإشعار...");
-    const io = req.app.get("io");
-    await notifyMarkUpdated(mark, io, isNewMark, oldTotalMark, newTotalMark);
-
-    const eventName = isNewMark ? "markCreated" : "markUpdated";
-    emitSocketEvent(io, eventName, {
-      mark,
-      isNew: isNewMark,
-    });
-
+    // Send response immediately
     const statusCode = isNewMark ? 201 : 200;
     const message = isNewMark ? "تم إضافة العلامة بنجاح" : "تم تحديث العلامة بنجاح";
+    
+    if (isNewMark) {
+      sendCreated(res, mark, message);
+    } else {
+      sendSuccess(res, mark, message);
+    }
+
+    // Perform background tasks (Non-blocking)
+    (async () => {
+      try {
+        // Update monthly average & section status in parallel
+        await Promise.all([
+          updateStudentMonthlyAverage(mark.studentId._id, mark.sectionId),
+          mark.sectionId && mark.sectionId._id ? updateSingleSectionStatus(mark.sectionId._id.toString()) : Promise.resolve()
+        ]);
+
+        // Send notification and Socket event
+        const newTotalMark = (mark.reviewMark || 0) + (mark.memorizationMark || 0);
+        console.log("🔔 إرسال الإشعار...");
+        const io = req.app.get("io");
+        
+        // Send notification in background
+        notifyMarkUpdated(mark, io, isNewMark, oldTotalMark, newTotalMark).catch(err => 
+          console.error("⚠️ Error sending notification:", err)
+        );
+
+        const eventName = isNewMark ? "markCreated" : "markUpdated";
+        emitSocketEvent(io, eventName, {
+          mark,
+          isNew: isNewMark,
+        });
+      } catch (bgError) {
+        console.error("⚠️ Error in background tasks for mark update:", bgError);
+      }
+    })();
 
     sendSuccess(res, mark, message, statusCode, { isNew: isNewMark });
   } catch (error) {

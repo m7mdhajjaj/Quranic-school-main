@@ -51,6 +51,8 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
           <img
             src={activity.image}
             alt={activity.title}
+            width="600"
+            height="400"
             loading="lazy"
             decoding="async"
             className="w-full h-full object-cover rounded-t-3xl transition-transform duration-500 shadow-sm group-hover:brightness-105 group-hover:scale-100"
