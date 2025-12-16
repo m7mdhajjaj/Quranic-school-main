@@ -5,6 +5,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   Platform,
+  Modal,
+  Pressable,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "@/hooks/useAuth";
@@ -103,32 +105,44 @@ export const Header: React.FC<HeaderProps> = ({
         </TouchableOpacity>
       </View>
 
-      {/* Profile Menu Overlay */}
-      {profileMenuOpen && (
-        <ProfileMenu
-          userName={
-            currentUser?.firstName && currentUser?.lastName
-              ? `${currentUser.firstName} ${currentUser.lastName}`
-              : currentUser?.firstName || "المستخدم"
-          }
-          userRole={
-            currentUser?.role === "teacher"
-              ? "معلم"
-              : currentUser?.role === "admin"
-                ? "مدير"
-                : "طالب"
-          }
-          onProfilePress={() => {
-            setProfileMenuOpen(false);
-            // Navigate to profile when available
-          }}
-          onSettingsPress={() => {}}
-          onLogoutPress={async () => {
-            setProfileMenuOpen(false);
-            // Add logout logic here
-          }}
-        />
-      )}
+      {/* Profile Menu Modal */}
+      <Modal
+        visible={profileMenuOpen}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setProfileMenuOpen(false)}>
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setProfileMenuOpen(false)}>
+          <View style={styles.profileMenuContainer}>
+            <ProfileMenu
+              userName={
+                currentUser?.firstName && currentUser?.lastName
+                  ? `${currentUser.firstName} ${currentUser.lastName}`
+                  : currentUser?.firstName || "المستخدم"
+              }
+              userRole={
+                currentUser?.role === "teacher"
+                  ? "معلم"
+                  : currentUser?.role === "admin"
+                    ? "مدير"
+                    : "طالب"
+              }
+              onProfilePress={() => {
+                setProfileMenuOpen(false);
+                // Navigate to profile when available
+              }}
+              onSettingsPress={() => {
+                setProfileMenuOpen(false);
+              }}
+              onLogoutPress={async () => {
+                setProfileMenuOpen(false);
+                // Add logout logic here
+              }}
+            />
+          </View>
+        </Pressable>
+      </Modal>
 
       {/* Drawer Menu */}
       <DrawerMenu isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
@@ -148,6 +162,31 @@ const styles = StyleSheet.create({
       },
       android: {
         elevation: 5,
+      },
+    }),
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-start",
+  },
+  profileMenuContainer: {
+    position: "absolute",
+    top: Platform.OS === "ios" ? 85 : 60,
+    left: 16,
+    right: 16,
+    backgroundColor: "#ffffff",
+    borderRadius: 12,
+    padding: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 8,
       },
     }),
   },
