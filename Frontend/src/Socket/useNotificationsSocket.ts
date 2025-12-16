@@ -20,7 +20,7 @@ interface NotificationData {
 interface Notification {
   _id: string;
   id?: string;
-  type: 'grade' | 'message' | 'prayer_time' | 'activity' | 'attendance' | 'exam' | 'assignment' | 'news' | 'general' | 'daily_marks';
+  type: 'grade' | 'message' | 'prayer_time' | 'activity' | 'attendance' | 'exam' | 'assignment' | 'news' | 'general' | 'daily_marks' | 'warning' | 'system' | 'success' | 'alert';
   title: string;
   message: string;
   data?: NotificationData;

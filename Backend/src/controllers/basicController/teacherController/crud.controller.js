@@ -594,6 +594,20 @@ exports.updateTeacher = async (req, res) => {
       }
     }
 
+    // 🔔 إرسال إشعار للمعلم بتحديث بياناته
+    try {
+      const notificationService = req.app.get('notificationService');
+      if (notificationService) {
+        const adminName = req.user ? `${req.user.firstName} ${req.user.lastName}` : "الإدارة";
+        await notificationService.notifyTeacherInfoUpdated(
+          updated._id,
+          adminName
+        );
+      }
+    } catch (notifyError) {
+      console.error("❌ فشل إرسال إشعار تحديث بيانات المعلم:", notifyError);
+    }
+
     return res.status(200).json({
       success: true,
       message: "تم تحديث بيانات المعلم بنجاح",

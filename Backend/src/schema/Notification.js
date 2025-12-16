@@ -26,6 +26,9 @@ const notificationSchema = new mongoose.Schema(
         "general",
         "daily_marks",
         "warning",
+        "system",
+        "success",
+        "alert",
       ],
     },
     title: {
@@ -39,6 +42,15 @@ const notificationSchema = new mongoose.Schema(
       required: [true, "نص الإشعار مطلوب"],
       trim: true,
       maxlength: [500, "نص الإشعار لا يمكن أن يزيد عن 500 حرف"],
+    },
+    link: {
+      type: String,
+      trim: true,
+    },
+    priority: {
+      type: String,
+      enum: ["low", "medium", "high", "urgent"],
+      default: "medium",
     },
     data: {
       type: Object,

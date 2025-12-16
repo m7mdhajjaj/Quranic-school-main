@@ -32,11 +32,11 @@ const TeacherStudentManagement: React.FC = () => {
     handleDeleteStudent,
     handleFormSuccess,
     closeForm,
-  } = useStudentManag() => {
+  } = useStudentManagement({
+    onRefetchGroups: () => {
       refetchGroups();
       setRefreshTrigger(prev => prev + 1);
-    }
-    onRefetchGroups: refetchGroups,
+    },
     selectedGroupId,
     groups: groups?.groups,
   });

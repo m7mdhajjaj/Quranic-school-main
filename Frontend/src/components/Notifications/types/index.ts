@@ -21,7 +21,10 @@ export type NotificationType =
   | 'news'            // خبر/منشور
   | 'general'         // عام
   | 'daily_marks'     // العلامات اليومية
-  | 'warning';        // إنذار/تنبيه
+  | 'warning'         // إنذار/تنبيه
+  | 'system'          // إشعار نظام
+  | 'success'         // نجاح/إنجاز
+  | 'alert';          // تنبيه هام/حذف
 
 /**
  * أولوية الإشعار
@@ -72,6 +75,7 @@ export interface Notification {
   isRead: boolean;
   priority: NotificationPriority;
   isNew?: boolean;
+  link?: string;
   data?: DailyMarkNotificationData | Record<string, unknown>;
 }
 

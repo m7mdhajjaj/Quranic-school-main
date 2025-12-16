@@ -48,6 +48,15 @@ module.exports = {
   notifyNewsCreated: NewsHandler.notifyNewsCreated,
   notifyNewsUpdated: NewsHandler.notifyNewsUpdated,
   notifyNewsDeleted: NewsHandler.notifyNewsDeleted,
+
+  // Teacher Notifications
+  notifyGroupAssigned: require("./Handlers/TeacherHandler").notifyGroupAssigned,
+  notifyGroupUpdated: require("./Handlers/TeacherHandler").notifyGroupUpdated,
+  notifyGroupTransferredFrom: require("./Handlers/TeacherHandler").notifyGroupTransferredFrom,
+  notifyGroupTransferredTo: require("./Handlers/TeacherHandler").notifyGroupTransferredTo,
+  notifyGroupDeleted: require("./Handlers/TeacherHandler").notifyGroupDeleted,
+  notifyTeacherInfoUpdated: require("./Handlers/TeacherHandler").notifyTeacherInfoUpdated,
+
   notifyNewsPublished: NewsHandler.notifyNewsPublished,
   notifyNewsArchived: NewsHandler.notifyNewsArchived,
   notifyBulkNewsCreated: NewsHandler.notifyBulkNewsCreated,

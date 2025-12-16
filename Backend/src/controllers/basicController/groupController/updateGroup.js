@@ -18,6 +18,12 @@ exports.updateGroup = async (req, res) => {
     const { id } = req.params;
     const updates = req.body;
 
+    // جلب الحلقة القديمة للتحقق من التغييرات (مثل تغيير المعلم)
+    const oldGroup = await Group.findById(id);
+    if (!oldGroup) {
+      return notFoundResponse(res, "الحلقة غير موجودة");
+    }
+
     // التحقق من تفرد اسم الحلقة إذا تم تغييره
     if (updates.name) {
       const duplicateError = await checkDuplicateGroupName(updates.name, id);
@@ -40,11 +46,42 @@ exports.updateGroup = async (req, res) => {
 
     const group = await Group.findByIdAndUpdate(id, updates, { new: true, runValidators: true });
 
-    if (!group) {
-      return notFoundResponse(res, "الحلقة غير موجودة");
+    emitSocketEvent("groupUpdated", group);
+
+    // 🔔 إرسال إشعار للمعلم
+    try {
+      const notificationService = req.app.get('notificationService');
+      if (notificationService) {
+        const adminName = req.user ? `${req.user.firstName} ${req.user.lastName}` : "الإدارة";
+        
+        // التحقق مما إذا تم تغيير المعلم
+        if (updates.teacher && oldGroup.teacher.toString() !== updates.teacher.toString()) {
+          // إشعار للمعلم القديم (تم نقل الحلقة منه)
+          await notificationService.notifyGroupTransferredFrom(
+            oldGroup.teacher,
+            oldGroup.name,
+            adminName
+          );
+          
+          // إشعار للمعلم الجديد (تم نقل الحلقة إليه)
+          await notificationService.notifyGroupTransferredTo(
+            group.teacher,
+            group.name,
+            adminName
+          );
+        } else {
+          // إشعار تحديث عادي للمعلم الحالي
+          await notificationService.notifyGroupUpdated(
+            group.teacher,
+            group.name,
+            adminName
+          );
+        }
+      }
+    } catch (notifyError) {
+      console.error("❌ فشل إرسال إشعار تحديث الحلقة:", notifyError);
     }
 
-    emitSocketEvent("groupUpdated", group);
     return successResponse(res, group, "تم تحديث الحلقة بنجاح");
   } catch (error) {
     return handleError(res, error, "تحديث الحلقة");

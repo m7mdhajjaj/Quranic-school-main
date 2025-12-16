@@ -67,7 +67,8 @@ export const useNotificationData = ({
           sentAt: apiNotification.sentAt || apiNotification.createdAt || new Date().toISOString(),
           isRead: apiNotification.isRead,
           priority: apiNotification.priority || 'medium',
-          isNew: false,
+          // نعتبر الإشعار "جديداً" إذا كان غير مقروء، ليتم تمييزه في القائمة
+          isNew: !apiNotification.isRead,
           data: apiNotification.data || apiNotification.metadata,
         }));
 

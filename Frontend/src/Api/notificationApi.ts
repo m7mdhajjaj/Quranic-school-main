@@ -23,6 +23,7 @@ export interface Notification {
   color?: string;
   time?: string;
   unread?: boolean;
+  link?: string;
 }
 
 export interface NotificationResponse {

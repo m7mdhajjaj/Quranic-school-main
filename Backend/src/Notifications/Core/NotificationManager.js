@@ -12,6 +12,15 @@ const {
   notifyWarning,
 } = require("../Handlers/GeneralHandler");
 
+const {
+  notifyGroupAssigned,
+  notifyGroupUpdated,
+  notifyGroupTransferredFrom,
+  notifyGroupTransferredTo,
+  notifyGroupDeleted,
+  notifyTeacherInfoUpdated,
+} = require("../Handlers/TeacherHandler");
+
 /**
  * NotificationManager - خدمة الإشعارات المركزية
  */
@@ -119,6 +128,62 @@ class NotificationManager {
       recipientModel,
       title,
       message
+    );
+  }
+
+  /**
+   * Teacher Notifications
+   */
+  async notifyGroupAssigned(teacherId, groupName, adminName) {
+    return notifyGroupAssigned(
+      this.createNotification.bind(this),
+      teacherId,
+      groupName,
+      adminName
+    );
+  }
+
+  async notifyGroupUpdated(teacherId, groupName, adminName) {
+    return notifyGroupUpdated(
+      this.createNotification.bind(this),
+      teacherId,
+      groupName,
+      adminName
+    );
+  }
+
+  async notifyGroupTransferredFrom(teacherId, groupName, adminName) {
+    return notifyGroupTransferredFrom(
+      this.createNotification.bind(this),
+      teacherId,
+      groupName,
+      adminName
+    );
+  }
+
+  async notifyGroupTransferredTo(teacherId, groupName, adminName) {
+    return notifyGroupTransferredTo(
+      this.createNotification.bind(this),
+      teacherId,
+      groupName,
+      adminName
+    );
+  }
+
+  async notifyGroupDeleted(teacherId, groupName, adminName) {
+    return notifyGroupDeleted(
+      this.createNotification.bind(this),
+      teacherId,
+      groupName,
+      adminName
+    );
+  }
+
+  async notifyTeacherInfoUpdated(teacherId, adminName) {
+    return notifyTeacherInfoUpdated(
+      this.createNotification.bind(this),
+      teacherId,
+      adminName
     );
   }
 

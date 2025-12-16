@@ -60,6 +60,21 @@ exports.createGroup = async (req, res) => {
     // Socket event
     emitSocketEvent("groupCreated", group);
 
+    // 🔔 إرسال إشعار للمعلم
+    try {
+      const notificationService = req.app.get('notificationService');
+      if (notificationService) {
+        const adminName = req.user ? `${req.user.firstName} ${req.user.lastName}` : "الإدارة";
+        await notificationService.notifyGroupAssigned(
+          teacherExists._id,
+          group.name,
+          adminName
+        );
+      }
+    } catch (notifyError) {
+      console.error("❌ فشل إرسال إشعار تعيين الحلقة:", notifyError);
+    }
+
     return successResponse(res, group, "تم إنشاء الحلقة بنجاح", 201);
   } catch (error) {
     return handleError(res, error, "إنشاء الحلقة");
