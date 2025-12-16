@@ -258,25 +258,47 @@ exports.notifyAdminAddedStudent = async (createNotification, teacherId, student,
   console.log("🎯 الحلقة:", groupName);
   console.log("🎯 الأدمن:", adminName);
   
-  const notificationData = {
-    recipient: teacherId,
-    recipientModel: 'Teacher',
-    title: 'إضافة طالب جديد',
-    message: `تم إضافة الطالب ${student.firstName} ${student.lastName} إلى حلقتك ${groupName} بواسطة ${adminName}`,
-    type: 'success',
-    data: { 
-      action: 'student_added_by_admin',
-      studentId: student._id,
-      studentName: `${student.firstName} ${student.lastName}`,
-      groupName: groupName,
-      adminName: adminName
-    },
-    link: '/teacher/groups'
-  };
+  const promises = [];
+
+  // إشعار المعلم
+  if (teacherId) {
+    promises.push(createNotification({
+      recipient: teacherId,
+      recipientModel: 'Teacher',
+      title: 'إضافة طالب جديد',
+      message: `تم إضافة الطالب ${student.firstName} ${student.lastName} إلى حلقتك ${groupName} بواسطة ${adminName}`,
+      type: 'success',
+      data: { 
+        action: 'student_added_by_admin',
+        studentId: student._id,
+        studentName: `${student.firstName} ${student.lastName}`,
+        groupName: groupName,
+        adminName: adminName
+      },
+      link: '/teacher/groups'
+    }));
+  }
+
+  // إشعار الطالب
+  if (student && student._id) {
+    promises.push(createNotification({
+      recipient: student._id,
+      recipientModel: 'Student',
+      title: 'تم اضافتك للحلقة',
+      message: `تم اضافتك للحلقة ${groupName}`,
+      type: 'success',
+      data: { 
+        action: 'student_added_to_group',
+        groupName: groupName,
+        adminName: adminName
+      },
+      link: '/student/group'
+    }));
+  }
   
-  console.log("🎯 بيانات الإشعار:", JSON.stringify(notificationData, null, 2));
+  console.log("🎯 إرسال إشعارات للمعلم والطالب");
   
-  return createNotification(notificationData);
+  return Promise.all(promises);
 };
 
 /**
@@ -292,7 +314,7 @@ exports.notifyAdminRemovedStudent = async (createNotification, teacherId, studen
     recipient: teacherId,
     recipientModel: 'Teacher',
     title: 'حذف طالب من الحلقة',
-    message: `تم إزالة الطالب ${student.firstName} ${student.lastName} من حلقتك ${groupName} بواسطة ${adminName}`,
+    message: `تم ازالة الطالب ${student.firstName} ${student.lastName} من حلقتك ${groupName} بواسطة ${adminName}`,
     type: 'warning',
     data: { 
       action: 'student_removed_by_admin',

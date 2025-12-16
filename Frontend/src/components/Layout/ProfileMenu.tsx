@@ -84,8 +84,19 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
         const screenHeight = window.innerHeight;
         const menuWidth = screenWidth >= 640 ? 256 : 224; // w-56 = 224px, w-64 = 256px
         
-        // محاذاة الحافة اليمنى للقائمة مع الحافة اليمنى للزر مباشرة
-        const rightPosition = screenWidth - buttonRect.right;
+        // تحديد المحاذاة بناءً على موقع الزر في الشاشة
+        // إذا كان الزر في النصف الأيسر (كما في RTL)، نحاذي الحافة اليسرى
+        // إذا كان في النصف الأيمن، نحاذي الحافة اليمنى
+        let rightPosition;
+        
+        if (buttonRect.left < screenWidth / 2) {
+          // محاذاة الحافة اليسرى للقائمة مع الحافة اليسرى للزر
+          // right = screenWidth - (buttonRect.left + menuWidth)
+          rightPosition = screenWidth - (buttonRect.left + menuWidth);
+        } else {
+          // محاذاة الحافة اليمنى للقائمة مع الحافة اليمنى للزر
+          rightPosition = screenWidth - buttonRect.right;
+        }
         
         // حساب الموضع العمودي - مباشرة تحت الزر مع مسافة صغيرة
         let topPosition = buttonRect.bottom + 6;
@@ -101,7 +112,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({
         
         setMenuPosition({
           top: Math.max(16, topPosition),
-          right: Math.max(16, rightPosition),
+          right: rightPosition,
         });
       };
       
