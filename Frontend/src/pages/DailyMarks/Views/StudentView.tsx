@@ -37,6 +37,7 @@ const StudentViewComponent = ({
   averages,
   selectedMonth,
   selectedYear,
+  studentId,
   onMonthChange,
   onYearChange,
 }: StudentViewProps) => {
@@ -69,6 +70,7 @@ const StudentViewComponent = ({
             onMonthChange={onMonthChange}
             onYearChange={onYearChange}
             selectedGroup={''}
+            studentId={studentId}
           />
         </div>
       </Card>

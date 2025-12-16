@@ -21,6 +21,7 @@ const SectionsTableComponent = ({
   loadingMarks,
   isTeacher,
   selectedGroup,
+  studentId,
   onAddMark,
   onUpdateMark,
   onEditSection,
@@ -46,7 +47,8 @@ const SectionsTableComponent = ({
   });
 
   // Use custom hook to attach marks to sections
-  const tableData = useMarkFinder({ sections, marks });
+  // Pass studentId to filter marks by student (prevents cross-student display)
+  const tableData = useMarkFinder({ sections, marks, studentId });
   
   // Render mark cell - plain text only
   const renderMarkCell = (mark: Mark | undefined, type: "review" | "memorization") => {

@@ -322,7 +322,13 @@ export const useDailyMarksHandlers = ({
   ) => {
     e.preventDefault();
 
-    if (!editingMark || !selectedStudentId || !selectedSection) return;
+    if (!editingMark || !selectedSection) return;
+
+    // CRITICAL FIX: Extract studentId from editingMark, not selectedStudentId
+    // This prevents updating the wrong student's mark
+    const actualStudentId = typeof editingMark.studentId === 'string' 
+      ? editingMark.studentId 
+      : editingMark.studentId._id;
 
     const originalMark = { ...editingMark };
     const totalMark = (newMark.reviewMark || 0) + (newMark.memorizationMark || 0);
@@ -344,7 +350,7 @@ export const useDailyMarksHandlers = ({
       showSuccessToast(`🔄 تم تحديث العلامة بنجاح! العلامة الجديدة: ${totalMark}/20`);
 
       const markData = {
-        studentId: selectedStudentId,
+        studentId: actualStudentId, // Use actualStudentId from editingMark
         sectionId: selectedSection._id,
         reviewMark: newMark.reviewMark,
         memorizationMark: newMark.memorizationMark,

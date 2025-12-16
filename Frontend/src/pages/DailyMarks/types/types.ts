@@ -38,6 +38,7 @@ export interface SectionsTableProps {
   loadingMarks: boolean;
   isTeacher: boolean;
   selectedGroup: string;
+  studentId?: string | null; // Filter marks by student to prevent cross-student display
   onAddMark?: (section: Section) => void;
   onUpdateMark?: (mark: Mark, section: Section) => void;
   onEditSection?: (section: Section) => void;
@@ -225,6 +226,7 @@ export interface StudentViewProps {
   averages: AverageResults;
   selectedMonth: number;
   selectedYear: number;
+  studentId?: string | null; // Student ID to filter marks (prevents cross-student display)
   onMonthChange: (month: number) => void;
   onYearChange: (year: number) => void;
   // Note: searchQuery and onSearchChange removed - filtering happens in background via useFilteredMarksData

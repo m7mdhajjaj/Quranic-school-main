@@ -70,9 +70,11 @@ exports.setMarks = async (req, res) => {
     // Collect IDs using helper
     const { studentIds, sectionIds } = collectMarkIds(validatedMarks);
     
-    // Fetch updated marks
+    // Fetch updated marks - FILTER BY BOTH sectionIds AND studentIds
+    // This prevents returning marks for all students in the section
     const updatedMarks = await Mark.find({
       sectionId: { $in: Array.from(sectionIds) },
+      studentId: { $in: Array.from(studentIds) },
     })
       .populate("studentId", "firstName fatherName lastName group")
       .populate("sectionId");

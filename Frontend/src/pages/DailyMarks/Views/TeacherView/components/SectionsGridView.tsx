@@ -1,7 +1,7 @@
 import { Card, Button } from "@/components/UI";
 import { 
   Users, BookOpen, Calendar, ArrowLeft, RotateCcw, 
-  Plus, Trash2, Filter, Edit, ChevronDown, ChevronUp 
+  Plus, Trash2, Filter, Edit 
 } from "lucide-react";
 import { SearchInput } from "@/components/Filters";
 import { DateRangePicker } from "@/components/UI/DateRangePicker";

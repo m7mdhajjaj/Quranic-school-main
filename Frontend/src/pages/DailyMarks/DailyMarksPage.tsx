@@ -68,6 +68,11 @@ const DailyMarksPage = () => {
     setEndDate,
   } = useSectionsFilter();
 
+  // Determine student ID for filtering marks
+  // For students: use their own ID (currentUser._id)
+  // For teachers: use selectedStudentId (null to see all marks)
+  const studentIdForMarksFilter = currentUser?.role === "student" ? currentUser._id : selectedStudentId;
+
   // Fetch filtered sections and marks
   const {
     sections,
@@ -78,7 +83,7 @@ const DailyMarksPage = () => {
     refetch: refetchMarks,
     refetchSections,
   } = useFilteredMarksData(
-    selectedStudentId,
+    studentIdForMarksFilter,
     selectedGroup,
     selectedMonth,
     selectedYear,
@@ -232,6 +237,7 @@ const DailyMarksPage = () => {
                 averages={averages}
                 selectedMonth={selectedMonth ?? currentMonth}
                 selectedYear={selectedYear ?? currentYear}
+                studentId={selectedStudentId}
                 onMonthChange={(month: number) => setSelectedMonth(month)}
                 onYearChange={(year: number) => setSelectedYear(year)}
               />

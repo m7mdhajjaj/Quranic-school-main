@@ -97,13 +97,24 @@ export const useTeacherViewData = (selectedGroup: string) => {
 
   /**
    * تحضير بيانات الجدول (طلاب + علامات)
+   * CRITICAL: Uses String() comparison to handle both string IDs and populated objects
    */
   const tableData = useMemo(() => {
+    // Helper to safely extract student ID
+    const getStudentId = (studentId: string | { _id: string } | null | undefined): string | null => {
+      if (!studentId) return null;
+      return typeof studentId === "string" ? studentId : studentId._id;
+    };
+
     return filteredStudents.map((student) => {
       const mark = sectionMarks.find((m) => {
         if (!m || !m.studentId) return false;
-        const studentId = typeof m.studentId === "string" ? m.studentId : m.studentId._id;
-        return studentId === student._id;
+        
+        const markStudentId = getStudentId(m.studentId);
+        const targetStudentId = student._id;
+        
+        // Use String() comparison for safety and log mismatches
+        return String(markStudentId) === String(targetStudentId);
       });
 
       return {
