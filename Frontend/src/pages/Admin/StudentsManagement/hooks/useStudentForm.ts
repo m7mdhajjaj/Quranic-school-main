@@ -227,9 +227,16 @@ export const useStudentForm = ({
   ]);
 
   // التحقق من صحة الخطوة الثانية (optimized)
+  // عند التعديل: الحلقة اختيارية (يمكن أن يكون الطالب بدون حلقة)
+  // عند الإضافة: الحلقة مطلوبة
   const isStep2Valid = useMemo(() => {
+    // عند التعديل، النموذج صالح حتى لو لم تكن هناك حلقة
+    if (student?._id) {
+      return true; // عند التعديل، النموذج صالح دائماً (الحلقة اختيارية)
+    }
+    // عند الإضافة، الحلقة مطلوبة
     return Boolean(formData.group?.trim());
-  }, [formData.group]);
+  }, [formData.group, student?._id]);
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
