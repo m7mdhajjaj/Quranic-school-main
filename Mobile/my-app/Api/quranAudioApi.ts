@@ -1,4 +1,4 @@
-import api from './api';
+import api from "./api";
 
 // ============================================================================
 // Quran Audio API
@@ -72,23 +72,23 @@ export const getReciters = (): Reciter[] => [
     code: "ar.alafasy",
     name: "مشاري بن راشد العفاسي",
     baseUrls: [
-      "https://download.quranicaudio.com/quran/mishary_rashid_alafasy/",
       "https://server8.mp3quran.net/afs/",
+      "https://download.quranicaudio.com/quran/mishary_rashid_alafasy/",
     ],
   },
   {
     code: "ar.abdulbasit",
     name: "عبد الباسط عبد الصمد",
     baseUrls: [
+      "https://server7.mp3quran.net/basit/",
       "https://download.quranicaudio.com/quran/abdul_basit_murattal/",
-      "https://server8.mp3quran.net/basit/",
     ],
   },
   {
     code: "ar.sudais",
     name: "عبد الرحمن السديس",
     baseUrls: [
-      "https://server7.mp3quran.net/sudais/",
+      "https://server11.mp3quran.net/sds/",
       "https://download.quranicaudio.com/quran/abdurrahmaan_as-sudays/",
     ],
   },
@@ -130,28 +130,28 @@ export const getReciters = (): Reciter[] => [
 export const getAllSurahs = async (): Promise<Surah[]> => {
   try {
     // Try backend first
-    const backendResponse = await api.get('/quran/surahs');
+    const backendResponse = await api.get("/quran/surahs");
     return backendResponse.data?.data || backendResponse.data;
   } catch (backendError) {
-    console.log('Backend not available, using external API:', backendError);
-    
+    console.log("Backend not available, using external API:", backendError);
+
     // Fallback to external API
     try {
       const response = await fetch("https://api.alquran.cloud/v1/surah");
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data: QuranResponse<Surah[]> = await response.json();
-      
+
       if (data.code !== 200) {
         throw new Error(`API error: ${data.status}`);
       }
-      
+
       return data.data;
     } catch (externalError) {
-      console.error('External API also failed:', externalError);
-      throw new Error('فشل في تحميل قائمة السور. يرجى المحاولة مرة أخرى.');
+      console.error("External API also failed:", externalError);
+      throw new Error("فشل في تحميل قائمة السور. يرجى المحاولة مرة أخرى.");
     }
   }
 };
@@ -163,28 +163,28 @@ export const getSurah = async (surahNumber: number): Promise<SurahData> => {
     const backendResponse = await api.get(`/quran/surah/${surahNumber}`);
     return backendResponse.data?.data || backendResponse.data;
   } catch (backendError) {
-    console.log('Backend not available, using external API:', backendError);
-    
+    console.log("Backend not available, using external API:", backendError);
+
     // Fallback to external API
     try {
       const response = await fetch(
         `https://api.alquran.cloud/v1/surah/${surahNumber}`
       );
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data: QuranResponse<SurahData> = await response.json();
-      
+
       if (data.code !== 200) {
         throw new Error(`API error: ${data.status}`);
       }
-      
+
       return data.data;
     } catch (externalError) {
-      console.error('External API also failed:', externalError);
-      throw new Error('فشل في تحميل السورة. يرجى المحاولة مرة أخرى.');
+      console.error("External API also failed:", externalError);
+      throw new Error("فشل في تحميل السورة. يرجى المحاولة مرة أخرى.");
     }
   }
 };
@@ -194,28 +194,33 @@ export const processAyahs = (ayahs: Ayah[], surahNumber: number): Ayah[] => {
   return ayahs.map((ayah) => ({
     number: ayah.number,
     numberInSurah: ayah.numberInSurah,
-    text: surahNumber === 1 ? ayah.text : ayah.text.replace(
-      /^بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِیمِ\s*/,
-      ""
-    ), // Remove bismillah except from Al-Fatiha
+    text:
+      surahNumber === 1
+        ? ayah.text
+        : ayah.text.replace(/^بِسۡمِ ٱللَّهِ ٱلرَّحۡمَـٰنِ ٱلرَّحِیمِ\s*/, ""), // Remove bismillah except from Al-Fatiha
   }));
 };
 
 // Get audio URL for a specific Surah and Reciter
-export const getAudioUrls = (surahNumber: number, reciterCode: string): string[] => {
+export const getAudioUrls = (
+  surahNumber: number,
+  reciterCode: string
+): string[] => {
   const reciter = getReciters().find((r) => r.code === reciterCode);
   if (!reciter) {
     throw new Error(`لا يمكن العثور على القارئ: ${reciterCode}`);
   }
 
   const surahNumberFormatted = surahNumber.toString().padStart(3, "0");
-  return reciter.baseUrls.map(baseUrl => `${baseUrl}${surahNumberFormatted}.mp3`);
+  return reciter.baseUrls.map(
+    (baseUrl) => `${baseUrl}${surahNumberFormatted}.mp3`
+  );
 };
 
 // Test audio URL to check if it's available
 export const testAudioUrl = async (url: string): Promise<boolean> => {
   try {
-    const response = await fetch(url, { method: 'HEAD' });
+    const response = await fetch(url, { method: "HEAD" });
     return response.ok;
   } catch (error) {
     console.error(`Audio URL test failed for ${url}:`, error);
@@ -225,57 +230,61 @@ export const testAudioUrl = async (url: string): Promise<boolean> => {
 
 // Get working audio URL with fallback
 export const getWorkingAudioUrl = async (
-  surahNumber: number, 
+  surahNumber: number,
   reciterCode: string
 ): Promise<string> => {
   const urls = getAudioUrls(surahNumber, reciterCode);
-  
+
   for (const url of urls) {
     const isWorking = await testAudioUrl(url);
     if (isWorking) {
       return url;
     }
   }
-  
+
   const reciter = getReciters().find((r) => r.code === reciterCode);
-  throw new Error(`لا يمكن العثور على تسجيل صوتي صالح للسورة رقم ${surahNumber} للقارئ ${reciter?.name || reciterCode}`);
+  throw new Error(
+    `لا يمكن العثور على تسجيل صوتي صالح للسورة رقم ${surahNumber} للقارئ ${reciter?.name || reciterCode}`
+  );
 };
 
 // Save user's favorite reciter to backend (optional)
-export const saveFavoriteReciter = async (reciterCode: string): Promise<void> => {
+export const saveFavoriteReciter = async (
+  reciterCode: string
+): Promise<void> => {
   try {
-    await api.post('/quran/favorite-reciter', { reciter: reciterCode });
+    await api.post("/quran/favorite-reciter", { reciter: reciterCode });
   } catch (error) {
-    console.log('Could not save favorite reciter to backend:', error);
+    console.log("Could not save favorite reciter to backend:", error);
     // Save to localStorage as fallback
-    localStorage.setItem('favoriteReciter', reciterCode);
+    localStorage.setItem("favoriteReciter", reciterCode);
   }
 };
 
 // Get user's favorite reciter
 export const getFavoriteReciter = async (): Promise<string> => {
   try {
-    const response = await api.get('/quran/favorite-reciter');
-    return response.data?.reciter || 'ar.alafasy';
+    const response = await api.get("/quran/favorite-reciter");
+    return response.data?.reciter || "ar.alafasy";
   } catch (error) {
-    console.log('Could not get favorite reciter from backend:', error);
+    console.log("Could not get favorite reciter from backend:", error);
     // Get from localStorage as fallback
-    return localStorage.getItem('favoriteReciter') || 'ar.alafasy';
+    return localStorage.getItem("favoriteReciter") || "ar.alafasy";
   }
 };
 
 // Save listening progress (optional)
 export const saveListeningProgress = async (
-  surahNumber: number, 
+  surahNumber: number,
   progress: number
 ): Promise<void> => {
   try {
-    await api.post('/quran/listening-progress', {
+    await api.post("/quran/listening-progress", {
       surahNumber: surahNumber,
-      progress: progress
+      progress: progress,
     });
   } catch (error) {
-    console.log('Could not save listening progress to backend:', error);
+    console.log("Could not save listening progress to backend:", error);
     // Save to localStorage as fallback
     const key = `listeningProgress_${surahNumber}`;
     localStorage.setItem(key, progress.toString());
@@ -283,49 +292,59 @@ export const saveListeningProgress = async (
 };
 
 // Get listening progress
-export const getListeningProgress = async (surahNumber: number): Promise<number> => {
+export const getListeningProgress = async (
+  surahNumber: number
+): Promise<number> => {
   try {
     const response = await api.get(`/quran/listening-progress/${surahNumber}`);
     return response.data?.progress || 0;
   } catch (error) {
-    console.log('Could not get listening progress from backend:', error);
+    console.log("Could not get listening progress from backend:", error);
     // Get from localStorage as fallback
     const key = `listeningProgress_${surahNumber}`;
-    return parseFloat(localStorage.getItem(key) || '0');
+    return parseFloat(localStorage.getItem(key) || "0");
   }
 };
 
 // Search in Quran text
-export const searchInQuran = async (query: string): Promise<{
-  surah: number;
-  ayah: number;
-  text: string;
-  surahName: string;
-}[]> => {
+export const searchInQuran = async (
+  query: string
+): Promise<
+  {
+    surah: number;
+    ayah: number;
+    text: string;
+    surahName: string;
+  }[]
+> => {
   try {
     // Try backend first
-    const response = await api.get(`/quran/search?q=${encodeURIComponent(query)}`);
+    const response = await api.get(
+      `/quran/search?q=${encodeURIComponent(query)}`
+    );
     return response.data?.results || [];
   } catch (error) {
-    console.log('Backend search not available:', error);
+    console.log("Backend search not available:", error);
     // For now, return empty array - could implement client-side search
     return [];
   }
 };
 
 // Get reading bookmarks
-export const getReadingBookmarks = async (): Promise<{
-  surah: number;
-  ayah: number;
-  timestamp: string;
-}[]> => {
+export const getReadingBookmarks = async (): Promise<
+  {
+    surah: number;
+    ayah: number;
+    timestamp: string;
+  }[]
+> => {
   try {
-    const response = await api.get('/quran/bookmarks');
+    const response = await api.get("/quran/bookmarks");
     return response.data?.bookmarks || [];
   } catch (error) {
-    console.log('Could not get bookmarks from backend:', error);
+    console.log("Could not get bookmarks from backend:", error);
     // Get from localStorage as fallback
-    const bookmarks = localStorage.getItem('quranBookmarks');
+    const bookmarks = localStorage.getItem("quranBookmarks");
     return bookmarks ? JSON.parse(bookmarks) : [];
   }
 };
@@ -336,50 +355,58 @@ export const saveReadingBookmark = async (
   ayah: number
 ): Promise<void> => {
   try {
-    await api.post('/quran/bookmarks', { surah, ayah });
+    await api.post("/quran/bookmarks", { surah, ayah });
   } catch (error) {
-    console.log('Could not save bookmark to backend:', error);
+    console.log("Could not save bookmark to backend:", error);
     // Save to localStorage as fallback
     const bookmarks = await getReadingBookmarks();
     const newBookmark = {
       surah,
       ayah,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
     const updatedBookmarks = [newBookmark, ...bookmarks.slice(0, 9)]; // Keep last 10
-    localStorage.setItem('quranBookmarks', JSON.stringify(updatedBookmarks));
+    localStorage.setItem("quranBookmarks", JSON.stringify(updatedBookmarks));
   }
 };
 
 // Get reading settings (font size, theme, etc.)
 export const getReadingSettings = async (): Promise<{
   fontSize: number;
-  theme: 'light' | 'dark';
+  theme: "light" | "dark";
   ayahsPerPage: number;
 }> => {
   try {
-    const response = await api.get('/quran/reading-settings');
-    return response.data?.settings || { fontSize: 18, theme: 'light', ayahsPerPage: 10 };
+    const response = await api.get("/quran/reading-settings");
+    return (
+      response.data?.settings || {
+        fontSize: 18,
+        theme: "light",
+        ayahsPerPage: 10,
+      }
+    );
   } catch (error) {
-    console.log('Could not get reading settings from backend:', error);
+    console.log("Could not get reading settings from backend:", error);
     // Get from localStorage as fallback
-    const settings = localStorage.getItem('quranReadingSettings');
-    return settings ? JSON.parse(settings) : { fontSize: 18, theme: 'light', ayahsPerPage: 10 };
+    const settings = localStorage.getItem("quranReadingSettings");
+    return settings
+      ? JSON.parse(settings)
+      : { fontSize: 18, theme: "light", ayahsPerPage: 10 };
   }
 };
 
 // Save reading settings
 export const saveReadingSettings = async (settings: {
   fontSize: number;
-  theme: 'light' | 'dark';
+  theme: "light" | "dark";
   ayahsPerPage: number;
 }): Promise<void> => {
   try {
-    await api.post('/quran/reading-settings', { settings });
+    await api.post("/quran/reading-settings", { settings });
   } catch (error) {
-    console.log('Could not save reading settings to backend:', error);
+    console.log("Could not save reading settings to backend:", error);
     // Save to localStorage as fallback
-    localStorage.setItem('quranReadingSettings', JSON.stringify(settings));
+    localStorage.setItem("quranReadingSettings", JSON.stringify(settings));
   }
 };
 
@@ -395,7 +422,7 @@ export const getSurahTiming = async (
     );
     return response.data;
   } catch (error) {
-    console.log('Backend timing not available, using estimation:', error);
+    console.log("Backend timing not available, using estimation:", error);
     return null;
   }
 };
@@ -429,5 +456,7 @@ export const getCurrentAyahFromTime = (
       return timing.ayahNumber;
     }
   }
-  return ayahTimings.length > 0 ? ayahTimings[ayahTimings.length - 1].ayahNumber : null;
+  return ayahTimings.length > 0
+    ? ayahTimings[ayahTimings.length - 1].ayahNumber
+    : null;
 };
