@@ -1,6 +1,7 @@
 import axios from "axios";
+import { API_URL as BASE_API_URL } from "@/config/config";
 
-const API_URL = "http://localhost:5005/api/upload";
+const API_URL = `${BASE_API_URL}/upload`;
 
 export interface UploadResponse {
   success: boolean;

@@ -10,3 +10,5 @@
  */
 
 export { ProfileMenu } from "./ProfileMenu";
+export { Header } from "./Header";
+export { Footer } from "./Footer";
