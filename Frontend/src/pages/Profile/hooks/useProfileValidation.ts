@@ -6,12 +6,19 @@ import type { UserProfile } from "../types/profile.types";
 export const useProfileValidation = (user: UserProfile | null) => {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const validationTimeouts = useRef<Record<string, NodeJS.Timeout>>({});
+  const lastValidatedValues = useRef<Record<string, string>>({});
 
   const validateFieldValue = async (
     fieldName: string,
     value: string | undefined
   ) => {
     if (!user) return;
+
+    // Prevent validation if value hasn't changed
+    const valueStr = value ?? "";
+    if (lastValidatedValues.current[fieldName] === valueStr) {
+      return;
+    }
 
     // Clear previous timeout for this field (debouncing)
     if (validationTimeouts.current[fieldName]) {
@@ -20,6 +27,8 @@ export const useProfileValidation = (user: UserProfile | null) => {
 
     // Debounce validation by 300ms to prevent excessive calls
     validationTimeouts.current[fieldName] = setTimeout(async () => {
+      // Store the validated value to prevent re-validation
+      lastValidatedValues.current[fieldName] = valueStr;
 
       // Skip duplicate check for phoneNumber (handled separately)
       if (fieldName === "phoneNumber") {

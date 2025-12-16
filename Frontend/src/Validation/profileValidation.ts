@@ -59,25 +59,19 @@ export const validateProfileData = async (data: ProfileData, isUpdate: boolean =
 }> => {
   const role = data.role || 'student';
   
-  console.log('🔍 Validating profile data for role:', role);
-  console.log('🔍 isUpdate:', isUpdate);
-  
   try {
     // Choose validation based on role
     if (role === 'teacher') {
       // validateTeacherWithYup uses isNewTeacher parameter (opposite of isUpdate)
       const validation = await validateTeacherWithYup(data as TeacherFormData, !isUpdate);
-      console.log('📚 Teacher validation result:', validation);
       return validation;
     } else if (role === 'student') {
       // validateStudentWithYup uses isNewStudent parameter (opposite of isUpdate)
       const validation = await validateStudentWithYup(data as StudentFormData, !isUpdate);
-      console.log('📚 Student validation result:', validation);
       return validation;
     } else if (role === 'admin') {
       // validateAdminWithYup uses isUpdate parameter directly
       const validation = await validateAdminWithYup(data as AdminFormData, isUpdate);
-      console.log('📚 Admin validation result:', validation);
       return validation;
     }
     

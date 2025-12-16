@@ -52,7 +52,7 @@ const uploadAvatarById = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: "لم يتم استلام ملف صورة",
+        message: "الرجاء اختيار صورة للرفع",
       });
     }
 
@@ -93,14 +93,27 @@ const uploadAvatarById = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "تم رفع الصورة بنجاح",
+      message: "تم رفع الصورة الشخصية بنجاح",
+      avatar: {
+        url: req.file.path,
+        publicId: req.file.filename,
+      },
       avatarUrl: req.file.path,
     });
   } catch (error) {
     console.error("❌ Error uploading avatar:", error);
+    
+    // Handle specific Cloudinary errors
+    if (error.message && error.message.includes('Cloudinary')) {
+      return res.status(500).json({
+        success: false,
+        message: "خطأ في رفع الصورة إلى السيرفر. الرجاء المحاولة مرة أخرى",
+      });
+    }
+    
     res.status(500).json({
       success: false,
-      message: "خطأ في رفع الصورة",
+      message: error.message || "حدث خطأ أثناء رفع الصورة",
     });
   }
 };
@@ -130,12 +143,16 @@ const getAvatarById = async (req, res) => {
     }
 
     const avatarUrl = user.avatar?.url || null;
-    res.json({ success: true, avatarUrl });
+    res.json({ 
+      success: true, 
+      avatarUrl,
+      hasAvatar: !!avatarUrl 
+    });
   } catch (error) {
     console.error("❌ Error getting avatar:", error);
     res.status(500).json({
       success: false,
-      message: "خطأ في عرض الصورة",
+      message: error.message || "حدث خطأ أثناء جلب الصورة",
     });
   }
 };
@@ -186,18 +203,18 @@ const deleteAvatarById = async (req, res) => {
         console.log(`📡 Avatar deleted event emitted (${userRole})`);
       }
 
-      res.json({ success: true, message: "تم حذف الصورة بنجاح" });
+      res.json({ success: true, message: "تم حذف الصورة الشخصية بنجاح" });
     } else {
       res.status(404).json({
         success: false,
-        message: "لا توجد صورة لحذفها",
+        message: "لا توجد صورة شخصية محفوظة",
       });
     }
   } catch (error) {
     console.error("❌ Error deleting avatar:", error);
     res.status(500).json({
       success: false,
-      message: "خطأ في حذف الصورة",
+      message: error.message || "حدث خطأ أثناء حذف الصورة",
     });
   }
 };

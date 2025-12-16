@@ -165,9 +165,46 @@ app.use('/api/quran', require('./routes/QuranRoutes/quranRoutes'));
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Global error handler caught:', err);
-  res.status(500).json({
-    message: 'خطأ في الخادم',
-    error: err.message,
+  
+  // Handle Multer errors
+  if (err.name === 'MulterError') {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({
+        success: false,
+        message: 'حجم الملف كبير جداً. الحد الأقصى المسموح 2 ميجابايت',
+      });
+    }
+    if (err.code === 'LIMIT_FILE_COUNT') {
+      return res.status(400).json({
+        success: false,
+        message: 'عدد الملفات كبير جداً',
+      });
+    }
+    if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+      return res.status(400).json({
+        success: false,
+        message: 'حقل الملف غير متوقع',
+      });
+    }
+    return res.status(400).json({
+      success: false,
+      message: 'خطأ في رفع الملف',
+    });
+  }
+  
+  // Handle file type errors from fileFilter
+  if (err.message && err.message.includes('يُسمح فقط بملفات الصور')) {
+    return res.status(400).json({
+      success: false,
+      message: err.message,
+    });
+  }
+  
+  // Handle other errors
+  res.status(err.statusCode || 500).json({
+    success: false,
+    message: err.message || 'خطأ في الخادم',
+    error: process.env.NODE_ENV === 'production' ? undefined : err.message,
     stack: process.env.NODE_ENV === 'production' ? '🥞' : err.stack,
   });
 });

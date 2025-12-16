@@ -100,7 +100,7 @@ const uploadActivity = multer({
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
-      cb(new Error('يجب أن يكون الملف صورة فقط!'), false);
+      cb(new Error('يُسمح فقط بملفات الصور (JPG, PNG, GIF, WEBP)'), false);
     }
   },
 });
@@ -116,7 +116,7 @@ const uploadNews = multer({
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
-      cb(new Error('يجب أن يكون الملف صورة فقط!'), false);
+      cb(new Error('يُسمح فقط بملفات الصور (JPG, PNG, GIF, WEBP)'), false);
     }
   },
 });
@@ -171,7 +171,7 @@ const uploadAvatar = multer({
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
-      cb(new Error('يُسمح فقط بملفات الصور!'), false);
+      cb(new Error('يُسمح فقط بملفات الصور (JPG, PNG, GIF, WEBP). حجم الملف لا يتجاوز 2 ميجابايت'), false);
     }
   },
 });
@@ -207,7 +207,7 @@ const uploadHero = multer({
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
-      cb(new Error('يجب أن يكون الملف صورة فقط!'), false);
+      cb(new Error('يُسمح فقط بملفات الصور (JPG, PNG, GIF, WEBP)'), false);
     }
   },
 });
@@ -243,7 +243,7 @@ const uploadLogo = multer({
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
-      cb(new Error('يجب أن يكون الملف صورة فقط!'), false);
+      cb(new Error('يُسمح فقط بملفات الصور (JPG, PNG, GIF, WEBP, SVG)'), false);
     }
   },
 });
