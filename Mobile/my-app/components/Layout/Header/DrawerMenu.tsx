@@ -28,6 +28,12 @@ import {
   Users,
   BarChart,
   UserPlus,
+  AlertTriangle,
+  Trophy,
+  FileText,
+  Calendar,
+  Activity,
+  BookMarked,
 } from "lucide-react-native";
 
 interface MenuItem {
@@ -74,8 +80,16 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({ isOpen, onClose }) => {
       { to: "/news", label: "الأخبار", icon: Newspaper },
       { to: "/goals", label: "الأهداف", icon: Target },
       { to: "/daily-marks", label: "العلامات اليومية", icon: Award },
-      { to: "/points-game", label: "لعبة النقاط", icon: Award },
-      { to: "/absence", label: "الحضور والغياب", icon: UserCheck },
+      { to: "/ranking", label: "التصنيف", icon: BarChart },
+      { to: "/exam-schedule", label: "جدول الامتحانات", icon: Calendar },
+      { to: "/reports", label: "التقارير", icon: FileText },
+      { to: "/timetable", label: "المواعيد", icon: Clock },
+      { to: "/chat", label: "المحادثة", icon: MessageSquare },
+      { to: "/activities", label: "الأنشطة", icon: Activity },
+      { to: "/attendance", label: "الحضور والغياب", icon: UserCheck },
+      { to: "/warnings", label: "الإنذارات", icon: AlertTriangle },
+      { to: "/points-game", label: "لعبة النقاط", icon: Trophy },
+      { to: "/prayer-times", label: "مواقيت الصلاة", icon: Clock },
       {
         to: "/quran",
         label: "القرآن الكريم",
@@ -85,7 +99,7 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({ isOpen, onClose }) => {
           { to: "/quran-audio", label: "قرآن صوتي", icon: BookOpen },
         ],
       },
-      { to: "/prayer-times", label: "مواقيت الصلاة", icon: Clock },
+      { to: "/azkar", label: "الأذكار", icon: BookMarked },
     ];
 
     return studentTeacherItems;
