@@ -3,6 +3,7 @@ import { ScrollView, View, StyleSheet, RefreshControl } from "react-native";
 import { useAuth } from "@/hooks/useAuth";
 import { getHeroImage } from "@/Api/uploadApi";
 import { HeroSection, VisionSection, ValuesSection } from "./components";
+import { Footer } from "@/components/Layout";
 
 const Home = () => {
   const { user: currentUser } = useAuth();
@@ -66,6 +67,9 @@ const Home = () => {
         {/* Values Section */}
         <ValuesSection />
       </View>
+
+      {/* Footer */}
+      <Footer />
     </ScrollView>
   );
 };
