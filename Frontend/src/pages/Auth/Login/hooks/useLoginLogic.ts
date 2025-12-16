@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from "@/hooks/useAuth";
@@ -22,6 +22,9 @@ export const useLoginLogic = () => {
   const [failedAttempts, setFailedAttempts] = useState(0);
   const { logoUrl, logoLoading } = useLogo();
   const [isInitialized, setIsInitialized] = useState(false);
+  
+  // Prevent concurrent login attempts
+  const isSubmittingRef = useRef(false);
 
   // Navigation and saved credentials
   useEffect(() => {
@@ -93,10 +96,24 @@ export const useLoginLogic = () => {
     
     // Prevent submission if not initialized yet
     if (!isInitialized) {
-      console.log('Waiting for initialization...');
+      console.log('⏳ Waiting for initialization...');
       return;
     }
     
+    // Prevent multiple submissions using ref
+    if (isSubmittingRef.current) {
+      console.log('⚠️ Login already in progress, ignoring duplicate submission');
+      return;
+    }
+    
+    // Prevent multiple submissions using state
+    if (isLoading) {
+      console.log('⚠️ Login state already true, ignoring duplicate submission');
+      return;
+    }
+    
+    // Mark as submitting
+    isSubmittingRef.current = true;
     setError('');
     setIsLoading(true);
 
@@ -214,6 +231,8 @@ export const useLoginLogic = () => {
         setError('فشل تسجيل الدخول. رجاءً تأكد من بيانات الدخول.');
       }
     } finally {
+      // Reset submitting flag
+      isSubmittingRef.current = false;
       setIsLoading(false);
     }
   };
