@@ -79,7 +79,7 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({ isOpen, onClose }) => {
       { to: "/(tabs)", label: "الرئيسية", icon: Home },
       { to: "/news", label: "الأخبار", icon: Newspaper },
       { to: "/goals", label: "الأهداف", icon: Target },
-      { to: "/daily-marks", label: "العلامات اليومية", icon: Award },
+      { to: "/dailyMarks", label: "العلامات اليومية", icon: Award },
       { to: "/ranking", label: "التصنيف", icon: BarChart },
       { to: "/exam-schedule", label: "جدول الامتحانات", icon: Calendar },
       { to: "/reports", label: "التقارير", icon: FileText },

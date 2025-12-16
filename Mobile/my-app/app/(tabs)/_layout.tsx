@@ -46,6 +46,48 @@ export default function TabLayout() {
             href: null, // Hide from tabs
           }}
         />
+        <Tabs.Screen
+          name="news"
+          options={{
+            href: null, // Hide from tabs - accessible from drawer
+          }}
+        />
+        <Tabs.Screen
+          name="goals"
+          options={{
+            href: null, // Hide from tabs - accessible from drawer
+          }}
+        />
+        <Tabs.Screen
+          name="prayer-times"
+          options={{
+            href: null, // Hide from tabs - accessible from drawer
+          }}
+        />
+        <Tabs.Screen
+          name="quran"
+          options={{
+            href: null, // Hide from tabs - accessible from drawer
+          }}
+        />
+        <Tabs.Screen
+          name="quran-audio"
+          options={{
+            href: null, // Hide from tabs - accessible from drawer
+          }}
+        />
+        <Tabs.Screen
+          name="azkar"
+          options={{
+            href: null, // Hide from tabs - accessible from drawer
+          }}
+        />
+        <Tabs.Screen
+          name="dailyMarks"
+          options={{
+            href: null, // Hide from tabs - accessible from drawer
+          }}
+        />
       </Tabs>
     </>
   );

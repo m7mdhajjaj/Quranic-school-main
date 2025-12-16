@@ -1,0 +1,382 @@
+import React, { useState, useEffect } from "react";
+import {
+  Modal,
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+  Platform,
+} from "react-native";
+import { X, Calendar, BookOpen, RotateCcw } from "lucide-react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import type { Section } from "@/Api/dailyMarksApi";
+import { createSection, updateSection } from "@/Api/dailyMarksApi";
+
+interface AddEditSectionModalProps {
+  visible: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  section?: Section | null;
+  group: string;
+  teacherId: string;
+}
+
+export const AddEditSectionModal: React.FC<AddEditSectionModalProps> = ({
+  visible,
+  onClose,
+  onSuccess,
+  section,
+  group,
+  teacherId,
+}) => {
+  const [date, setDate] = useState<Date>(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [reviewSection, setReviewSection] = useState("");
+  const [memorizationSection, setMemorizationSection] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (section) {
+      setDate(new Date(section.date));
+      setReviewSection(section.reviewSection);
+      setMemorizationSection(section.memorizationSection);
+    } else {
+      // Reset for new section
+      setDate(new Date());
+      setReviewSection("");
+      setMemorizationSection("");
+    }
+    setError("");
+  }, [section, visible]);
+
+  const handleSubmit = async () => {
+    if (!reviewSection.trim() || !memorizationSection.trim()) {
+      setError("جميع الحقول مطلوبة");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const sectionData = {
+        date: date.toISOString(),
+        reviewSection: reviewSection.trim(),
+        memorizationSection: memorizationSection.trim(),
+        group,
+        teacher: teacherId,
+      };
+
+      let response;
+      if (section?._id) {
+        response = await updateSection(section._id, sectionData);
+      } else {
+        response = await createSection(sectionData);
+      }
+
+      if (response.success) {
+        onSuccess();
+        onClose();
+      } else {
+        setError(response.message || "حدث خطأ");
+      }
+    } catch (err) {
+      setError("حدث خطأ غير متوقع");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(Platform.OS === "ios");
+    if (selectedDate) {
+      setDate(selectedDate);
+    }
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={onClose}>
+      <View style={styles.overlay}>
+        <View style={styles.modalContainer}>
+          <ScrollView
+            style={styles.scrollView}
+            showsVerticalScrollIndicator={false}>
+            {/* Header */}
+            <View style={styles.header}>
+              <Text style={styles.title}>
+                {section ? "تعديل المقطع" : "إضافة مقطع جديد"}
+              </Text>
+              <TouchableOpacity
+                onPress={onClose}
+                style={styles.closeButton}
+                disabled={loading}>
+                <X size={24} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Error Message */}
+            {error ? (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            ) : null}
+
+            {/* Date Field */}
+            <View style={styles.fieldContainer}>
+              <Text style={styles.label}>التاريخ</Text>
+              <TouchableOpacity
+                style={styles.dateButton}
+                onPress={() => setShowDatePicker(true)}
+                disabled={loading}>
+                <Calendar size={20} color="#10b981" />
+                <Text style={styles.dateText}>
+                  {date.toLocaleDateString("ar-EG", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </Text>
+              </TouchableOpacity>
+
+              {showDatePicker && (
+                <DateTimePicker
+                  value={date}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
+                  onChange={onDateChange}
+                />
+              )}
+            </View>
+
+            {/* Review Section Field */}
+            <View style={styles.fieldContainer}>
+              <View style={styles.labelRow}>
+                <RotateCcw size={18} color="#10b981" />
+                <Text style={styles.label}>مقطع المراجعة</Text>
+              </View>
+              <TextInput
+                style={styles.input}
+                value={reviewSection}
+                onChangeText={setReviewSection}
+                placeholder="مثال: الأنعام 1-10"
+                placeholderTextColor="#9ca3af"
+                editable={!loading}
+                multiline
+                numberOfLines={2}
+              />
+            </View>
+
+            {/* Memorization Section Field */}
+            <View style={styles.fieldContainer}>
+              <View style={styles.labelRow}>
+                <BookOpen size={18} color="#14b8a6" />
+                <Text style={styles.label}>مقطع الحفظ</Text>
+              </View>
+              <TextInput
+                style={styles.input}
+                value={memorizationSection}
+                onChangeText={setMemorizationSection}
+                placeholder="مثال: البقرة 1-5"
+                placeholderTextColor="#9ca3af"
+                editable={!loading}
+                multiline
+                numberOfLines={2}
+              />
+            </View>
+
+            {/* Group Info */}
+            <View style={styles.infoContainer}>
+              <Text style={styles.infoLabel}>الحلقة:</Text>
+              <Text style={styles.infoValue}>{group}</Text>
+            </View>
+
+            {/* Action Buttons */}
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={[styles.button, styles.cancelButton]}
+                onPress={onClose}
+                disabled={loading}>
+                <Text style={styles.cancelButtonText}>إلغاء</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.button,
+                  styles.submitButton,
+                  loading && styles.buttonDisabled,
+                ]}
+                onPress={handleSubmit}
+                disabled={loading}>
+                {loading ? (
+                  <ActivityIndicator size="small" color="#ffffff" />
+                ) : (
+                  <Text style={styles.submitButtonText}>
+                    {section ? "حفظ التعديلات" : "إضافة المقطع"}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  modalContainer: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    width: "100%",
+    maxWidth: 500,
+    maxHeight: "90%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  scrollView: {
+    padding: 20,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e5e7eb",
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#1f2937",
+  },
+  closeButton: {
+    padding: 4,
+  },
+  errorContainer: {
+    backgroundColor: "#fee2e2",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#fecaca",
+  },
+  errorText: {
+    color: "#991b1b",
+    fontSize: 14,
+    textAlign: "center",
+  },
+  fieldContainer: {
+    marginBottom: 20,
+  },
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+  },
+  label: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#374151",
+  },
+  dateButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: "#f9fafb",
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 8,
+    padding: 14,
+  },
+  dateText: {
+    fontSize: 15,
+    color: "#1f2937",
+    fontWeight: "500",
+  },
+  input: {
+    backgroundColor: "#f9fafb",
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 8,
+    padding: 14,
+    fontSize: 15,
+    color: "#1f2937",
+    textAlign: "right",
+    minHeight: 50,
+  },
+  infoContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#ecfdf5",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "#a7f3d0",
+  },
+  infoLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#047857",
+  },
+  infoValue: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#065f46",
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 8,
+  },
+  button: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 48,
+  },
+  cancelButton: {
+    backgroundColor: "#f3f4f6",
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#6b7280",
+  },
+  submitButton: {
+    backgroundColor: "#10b981",
+  },
+  submitButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#ffffff",
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+});

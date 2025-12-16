@@ -5,7 +5,7 @@ import { AxiosError } from "axios";
  * ============================================================================
  * DailyMarks API - Complete API Layer for DailyMarks Module
  * ============================================================================
- * 
+ *
  * This API module provides all functions needed for the refactored DailyMarks
  * component. It handles:
  * - Student data fetching
@@ -13,7 +13,7 @@ import { AxiosError } from "axios";
  * - Mark (grades) management
  * - Teacher data fetching
  * - Group filtering
- * 
+ *
  * All functions return standardized response format with error handling
  */
 
@@ -106,7 +106,9 @@ export const getActiveGroups = async (
   type: "basic" | "detailed" = "basic"
 ): Promise<ApiResponse<any[]>> => {
   try {
-    const response = await api.get(`/daily-marks/active-groups?teacherId=${teacherId}&type=${type}`);
+    const response = await api.get(
+      `/daily-marks/active-groups?teacherId=${teacherId}&type=${type}`
+    );
     return {
       success: true,
       data: response.data.data || [],
@@ -117,7 +119,9 @@ export const getActiveGroups = async (
     const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب الحلقات النشطة",
+      message:
+        axiosError.response?.data?.message ||
+        "حدث خطأ أثناء جلب الحلقات النشطة",
       error: String(error),
     };
   }
@@ -133,21 +137,23 @@ export const getGroupStats = async (
   groupName: string,
   month?: number,
   year?: number
-): Promise<ApiResponse<{
-  groupName: string;
-  studentsCount: number;
-  sectionsCount: number;
-  filters: { month: number | null; year: number | null };
-}>> => {
+): Promise<
+  ApiResponse<{
+    groupName: string;
+    studentsCount: number;
+    sectionsCount: number;
+    filters: { month: number | null; year: number | null };
+  }>
+> => {
   try {
     let url = `/daily-marks/group-stats/${encodeURIComponent(groupName)}`;
     const params: string[] = [];
-    
+
     if (month) params.push(`month=${month}`);
     if (year) params.push(`year=${year}`);
-    
+
     if (params.length > 0) {
-      url += `?${params.join('&')}`;
+      url += `?${params.join("&")}`;
     }
 
     const response = await api.get(url);
@@ -161,7 +167,9 @@ export const getGroupStats = async (
     const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب إحصائيات الحلقة",
+      message:
+        axiosError.response?.data?.message ||
+        "حدث خطأ أثناء جلب إحصائيات الحلقة",
       error: String(error),
     };
   }
@@ -202,7 +210,7 @@ export const createSection = async (
 ): Promise<ApiResponse<Section>> => {
   try {
     console.log("📤 Creating section:", sectionData);
-    const response = await api.post("/sections", sectionData);
+    const response = await api.post("/daily-marks/sections", sectionData);
     return {
       success: true,
       data: response.data.data || response.data,
@@ -213,7 +221,8 @@ export const createSection = async (
     const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء إنشاء المقطع",
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء إنشاء المقطع",
       error: String(error),
     };
   }
@@ -228,7 +237,10 @@ export const updateSection = async (
 ): Promise<ApiResponse<Section>> => {
   try {
     console.log("📝 Updating section:", sectionId, sectionData);
-    const response = await api.put(`/sections/${sectionId}`, sectionData);
+    const response = await api.put(
+      `/daily-marks/sections/${sectionId}`,
+      sectionData
+    );
     return {
       success: true,
       data: response.data.data || response.data,
@@ -239,7 +251,8 @@ export const updateSection = async (
     const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء تحديث المقطع",
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء تحديث المقطع",
       error: String(error),
     };
   }
@@ -253,7 +266,7 @@ export const deleteSection = async (
 ): Promise<ApiResponse<{ deletedId: string }>> => {
   try {
     console.log("🗑️ Deleting section:", sectionId);
-    await api.delete(`/sections/${sectionId}`);
+    await api.delete(`/daily-marks/sections/${sectionId}`);
     return {
       success: true,
       data: { deletedId: sectionId },
@@ -278,7 +291,7 @@ export const bulkDeleteSections = async (
 ): Promise<ApiResponse<{ deletedCount: number }>> => {
   try {
     console.log("🗑️ Bulk deleting sections:", sectionIds);
-    await api.delete("/sections/bulk", {
+    await api.delete("/daily-marks/sections/bulk", {
       data: { sectionIds },
     });
     return {
@@ -291,7 +304,8 @@ export const bulkDeleteSections = async (
     const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء حذف المقاطع",
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء حذف المقاطع",
       error: String(error),
     };
   }
@@ -326,7 +340,7 @@ export const getFilteredMarks = async (filters: {
 }): Promise<ApiResponse<Mark[]> & { pagination?: any; filters?: any }> => {
   try {
     const params = new URLSearchParams();
-    
+
     if (filters.month) params.append("month", filters.month.toString());
     if (filters.year) params.append("year", filters.year.toString());
     if (filters.day) params.append("day", filters.day.toString());
@@ -339,8 +353,10 @@ export const getFilteredMarks = async (filters: {
     if (filters.endDate) params.append("endDate", filters.endDate);
 
     console.log("🔍 Fetching filtered marks:", filters);
-    const response = await api.get(`/daily-marks/filtered?${params.toString()}`);
-    
+    const response = await api.get(
+      `/daily-marks/filtered?${params.toString()}`
+    );
+
     return {
       success: true,
       data: response.data.data || response.data || [],
@@ -353,7 +369,9 @@ export const getFilteredMarks = async (filters: {
     const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب العلامات المفلترة",
+      message:
+        axiosError.response?.data?.message ||
+        "حدث خطأ أثناء جلب العلامات المفلترة",
       error: String(error),
     };
   }
@@ -378,7 +396,7 @@ export const getFilteredSections = async (filters: {
 }): Promise<ApiResponse<Section[]> & { count?: number; filters?: any }> => {
   try {
     const params = new URLSearchParams();
-    
+
     if (filters.month) params.append("month", filters.month.toString());
     if (filters.year) params.append("year", filters.year.toString());
     if (filters.day) params.append("day", filters.day.toString());
@@ -388,20 +406,22 @@ export const getFilteredSections = async (filters: {
     if (filters.endDate) params.append("endDate", filters.endDate);
 
     console.log("🔍 Fetching filtered sections:", filters);
-    const response = await api.get(`/daily-marks/filtered-sections?${params.toString()}`);
-    
+    const response = await api.get(
+      `/daily-marks/filtered-sections?${params.toString()}`
+    );
+
     const sections = response.data.data || response.data || [];
-    
+
     // Debug: Log first section to verify structure
-    if (sections.length > 0 && process.env.NODE_ENV === 'development') {
-      console.log('📦 First section from API:', {
+    if (sections.length > 0 && process.env.NODE_ENV === "development") {
+      console.log("📦 First section from API:", {
         id: sections[0]._id,
         marksStatus: sections[0].marksStatus,
         marksProgress: sections[0].marksProgress,
         fullSection: sections[0],
       });
     }
-    
+
     return {
       success: true,
       data: sections,
@@ -414,7 +434,9 @@ export const getFilteredSections = async (filters: {
     const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب المقاطع المفلترة",
+      message:
+        axiosError.response?.data?.message ||
+        "حدث خطأ أثناء جلب المقاطع المفلترة",
       error: String(error),
     };
   }
@@ -435,27 +457,31 @@ export const getStudentAverages = async (
     year?: number;
     group?: string;
   }
-): Promise<ApiResponse<{
-  reviewAverage: number;
-  memorizationAverage: number;
-  overallAverage: number;
-  totalMarks: number;
-  studentId: string;
-  breakdown?: {
-    reviewMarksCount: number;
-    memorizationMarksCount: number;
-  };
-}> & { filters?: any }> => {
+): Promise<
+  ApiResponse<{
+    reviewAverage: number;
+    memorizationAverage: number;
+    overallAverage: number;
+    totalMarks: number;
+    studentId: string;
+    breakdown?: {
+      reviewMarksCount: number;
+      memorizationMarksCount: number;
+    };
+  }> & { filters?: any }
+> => {
   try {
     const params = new URLSearchParams();
-    
+
     if (filters.month) params.append("month", filters.month.toString());
     if (filters.year) params.append("year", filters.year.toString());
     if (filters.group) params.append("group", filters.group);
 
     console.log("📊 Fetching student averages:", { studentId, ...filters });
-    const response = await api.get(`/daily-marks/student/${studentId}/averages?${params.toString()}`);
-    
+    const response = await api.get(
+      `/daily-marks/student/${studentId}/averages?${params.toString()}`
+    );
+
     return {
       success: true,
       data: response.data.data,
@@ -467,7 +493,8 @@ export const getStudentAverages = async (
     const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب المعدلات",
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء جلب المعدلات",
       error: String(error),
     };
   }
@@ -490,7 +517,8 @@ export const getSectionMarks = async (
     const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب علامات المقطع",
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء جلب علامات المقطع",
       error: String(error),
     };
   }
@@ -501,14 +529,16 @@ export const getSectionMarks = async (
  */
 export const getStudentMarkStats = async (
   studentId: string
-): Promise<ApiResponse<{
-  totalMarks: number;
-  reviewMarkAverage: number;
-  memorizationMarkAverage: number;
-  overallAverage: number;
-  reviewMarksCount: number;
-  memorizationMarksCount: number;
-}>> => {
+): Promise<
+  ApiResponse<{
+    totalMarks: number;
+    reviewMarkAverage: number;
+    memorizationMarkAverage: number;
+    overallAverage: number;
+    reviewMarksCount: number;
+    memorizationMarksCount: number;
+  }>
+> => {
   try {
     const response = await api.get(`/daily-marks/student/${studentId}/stats`);
     return {
@@ -520,7 +550,9 @@ export const getStudentMarkStats = async (
     const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء جلب إحصائيات الطالب",
+      message:
+        axiosError.response?.data?.message ||
+        "حدث خطأ أثناء جلب إحصائيات الطالب",
       error: String(error),
     };
   }
@@ -545,7 +577,8 @@ export const createMark = async (
     const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء حفظ العلامة",
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء حفظ العلامة",
       error: String(error),
     };
   }
@@ -571,7 +604,8 @@ export const updateMark = async (
     const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء تحديث العلامة",
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء تحديث العلامة",
       error: String(error),
     };
   }
@@ -580,7 +614,9 @@ export const updateMark = async (
 /**
  * Delete mark by ID
  */
-export const deleteMark = async (markId: string): Promise<ApiResponse<{ deletedId: string }>> => {
+export const deleteMark = async (
+  markId: string
+): Promise<ApiResponse<{ deletedId: string }>> => {
   try {
     console.log("🗑️ Deleting mark:", markId);
     const response = await api.delete(`/daily-marks/${markId}`);
@@ -594,7 +630,8 @@ export const deleteMark = async (markId: string): Promise<ApiResponse<{ deletedI
     const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء حذف العلامة",
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء حذف العلامة",
       error: String(error),
     };
   }
@@ -612,14 +649,16 @@ export const bulkCreateMarks = async (
     return {
       success: true,
       data: response.data.data || response.data || [],
-      message: response.data.message || `تم إضافة ${marksData.length} علامة بنجاح`,
+      message:
+        response.data.message || `تم إضافة ${marksData.length} علامة بنجاح`,
     };
   } catch (error) {
     console.error("❌ Error bulk creating marks:", error);
     const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء إضافة العلامات",
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء إضافة العلامات",
       error: String(error),
     };
   }
@@ -629,7 +668,11 @@ export const bulkCreateMarks = async (
  * Bulk update marks
  */
 export const bulkUpdateMarks = async (
-  marksData: Array<{ id: string; reviewMark?: number | null; memorizationMark?: number | null }>
+  marksData: Array<{
+    id: string;
+    reviewMark?: number | null;
+    memorizationMark?: number | null;
+  }>
 ): Promise<ApiResponse<Mark[]>> => {
   try {
     console.log("📝 Bulk updating marks:", marksData);
@@ -637,42 +680,50 @@ export const bulkUpdateMarks = async (
     return {
       success: true,
       data: response.data.data || response.data || [],
-      message: response.data.message || `تم تحديث ${marksData.length} علامة بنجاح`,
+      message:
+        response.data.message || `تم تحديث ${marksData.length} علامة بنجاح`,
     };
   } catch (error) {
     console.error("❌ Error bulk updating marks:", error);
     const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء تحديث العلامات",
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء تحديث العلامات",
       error: String(error),
     };
   }
 };
-
-
 
 /**
  * Set marks for a specific section (bulk operation for one section)
  */
 export const setMarksForSection = async (
   sectionId: string,
-  marksData: Array<{ studentId: string; reviewMark?: number | null; memorizationMark?: number | null }>
+  marksData: Array<{
+    studentId: string;
+    reviewMark?: number | null;
+    memorizationMark?: number | null;
+  }>
 ): Promise<ApiResponse<Mark[]>> => {
   try {
     console.log(`📤 Setting marks for section ${sectionId}:`, marksData);
-    const response = await api.post(`/daily-marks/section/${sectionId}`, { marks: marksData });
+    const response = await api.post(`/daily-marks/section/${sectionId}`, {
+      marks: marksData,
+    });
     return {
       success: true,
       data: response.data.data || response.data || [],
-      message: response.data.message || `تم حفظ ${marksData.length} علامة بنجاح`,
+      message:
+        response.data.message || `تم حفظ ${marksData.length} علامة بنجاح`,
     };
   } catch (error) {
     console.error("❌ Error setting marks for section:", error);
     const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || "حدث خطأ أثناء حفظ العلامات",
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء حفظ العلامات",
       error: String(error),
     };
   }
@@ -695,7 +746,9 @@ export const getDailyMarksInitialData = async (
   marks: Mark[];
   teacher?: Teacher;
 }> => {
-  console.warn("⚠️ getDailyMarksInitialData is deprecated. Use filtered APIs instead.");
+  console.warn(
+    "⚠️ getDailyMarksInitialData is deprecated. Use filtered APIs instead."
+  );
   return {
     students: [],
     sections: [],
