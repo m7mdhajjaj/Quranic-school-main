@@ -1,7 +1,7 @@
 // Admin API functions
-import api from './api';
-import type { AdminFormData, Admin } from '../Validation/AdminValdation';
-import { AxiosError } from 'axios';
+import api from "./api";
+import type { AdminFormData, Admin } from "../Validation/AdminValdation";
+import { AxiosError } from "axios";
 
 // API Response Types
 export interface AdminApiResponse {
@@ -23,20 +23,24 @@ export interface AdminStats {
  */
 export const getAllAdmins = async (): Promise<AdminApiResponse> => {
   try {
-    console.log('📊 جلب قائمة الإداريين...');
-    const response = await api.get<AdminApiResponse>('/admins');
-    
+    console.log("📊 جلب قائمة الإداريين...");
+    const response = await api.get<AdminApiResponse>("/admins");
+
     if (response.data.success) {
-      console.log('✅ تم جلب قائمة الإداريين بنجاح:', (response.data.data as Admin[])?.length || 0);
+      console.log(
+        "✅ تم جلب قائمة الإداريين بنجاح:",
+        (response.data.data as Admin[])?.length || 0
+      );
     }
-    
+
     return response.data;
   } catch (error) {
-    console.error('❌ خطأ في جلب الإداريين:', error);
+    console.error("❌ خطأ في جلب الإداريين:", error);
     const axiosError = error as AxiosError<AdminApiResponse>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || 'حدث خطأ أثناء جلب الإداريين'
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء جلب الإداريين",
     };
   }
 };
@@ -46,20 +50,20 @@ export const getAllAdmins = async (): Promise<AdminApiResponse> => {
  */
 export const getAdminById = async (id: string): Promise<AdminApiResponse> => {
   try {
-    console.log('👤 جلب بيانات الإداري:', id);
+    console.log("👤 جلب بيانات الإداري:", id);
     const response = await api.get<AdminApiResponse>(`/admins/${id}`);
-    
+
     if (response.data.success) {
-      console.log('✅ تم جلب بيانات الإداري بنجاح');
+      console.log("✅ تم جلب بيانات الإداري بنجاح");
     }
-    
+
     return response.data;
   } catch (error) {
-    console.error('❌ خطأ في جلب بيانات الإداري:', error);
+    console.error("❌ خطأ في جلب بيانات الإداري:", error);
     const axiosError = error as AxiosError<AdminApiResponse>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || 'الإداري غير موجود'
+      message: axiosError.response?.data?.message || "الإداري غير موجود",
     };
   }
 };
@@ -67,10 +71,12 @@ export const getAdminById = async (id: string): Promise<AdminApiResponse> => {
 /**
  * Create new admin
  */
-export const createAdmin = async (adminData: AdminFormData): Promise<AdminApiResponse> => {
+export const createAdmin = async (
+  adminData: AdminFormData
+): Promise<AdminApiResponse> => {
   try {
-    console.log('➕ إنشاء إداري جديد...');
-    
+    console.log("➕ إنشاء إداري جديد...");
+
     // تنظيف البيانات قبل الإرسال
     const cleanData = {
       ...adminData,
@@ -81,20 +87,24 @@ export const createAdmin = async (adminData: AdminFormData): Promise<AdminApiRes
       idNumber: adminData.idNumber?.trim() || undefined,
       residence: adminData.residence?.trim() || undefined,
     };
-    
-    const response = await api.post<AdminApiResponse>('/admins', cleanData);
-    
+
+    const response = await api.post<AdminApiResponse>("/admins", cleanData);
+
     if (response.data.success) {
-      console.log('✅ تم إنشاء الإداري بنجاح:', (response.data.data as Admin)?._id);
+      console.log(
+        "✅ تم إنشاء الإداري بنجاح:",
+        (response.data.data as Admin)?._id
+      );
     }
-    
+
     return response.data;
   } catch (error) {
-    console.error('❌ خطأ في إنشاء الإداري:', error);
+    console.error("❌ خطأ في إنشاء الإداري:", error);
     const axiosError = error as AxiosError<AdminApiResponse>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || 'حدث خطأ أثناء إنشاء الإداري'
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء إنشاء الإداري",
     };
   }
 };
@@ -102,36 +112,47 @@ export const createAdmin = async (adminData: AdminFormData): Promise<AdminApiRes
 /**
  * Update admin
  */
-export const updateAdmin = async (id: string, adminData: Partial<AdminFormData>): Promise<AdminApiResponse> => {
+export const updateAdmin = async (
+  id: string,
+  adminData: Partial<AdminFormData>
+): Promise<AdminApiResponse> => {
   try {
-    console.log('📝 تحديث بيانات الإداري:', id);
-    
+    console.log("📝 تحديث بيانات الإداري:", id);
+
     // تنظيف البيانات وإزالة الحقول الفارغة
-    const cleanData = Object.entries(adminData).reduce((acc, [key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        acc[key] = value;
-      }
-      return acc;
-    }, {} as Record<string, unknown>);
-    
+    const cleanData = Object.entries(adminData).reduce(
+      (acc, [key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+          acc[key] = value;
+        }
+        return acc;
+      },
+      {} as Record<string, unknown>
+    );
+
     // إزالة كلمة المرور إذا كانت فارغة
     if (!cleanData.password) {
       delete cleanData.password;
     }
-    
-    const response = await api.put<AdminApiResponse>(`/admins/${id}`, cleanData);
-    
+
+    const response = await api.put<AdminApiResponse>(
+      `/admins/${id}`,
+      cleanData
+    );
+
     if (response.data.success) {
-      console.log('✅ تم تحديث بيانات الإداري بنجاح');
+      console.log("✅ تم تحديث بيانات الإداري بنجاح");
     }
-    
+
     return response.data;
   } catch (error) {
-    console.error('❌ خطأ في تحديث بيانات الإداري:', error);
+    console.error("❌ خطأ في تحديث بيانات الإداري:", error);
     const axiosError = error as AxiosError<AdminApiResponse>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || 'حدث خطأ أثناء تحديث بيانات الإداري'
+      message:
+        axiosError.response?.data?.message ||
+        "حدث خطأ أثناء تحديث بيانات الإداري",
     };
   }
 };
@@ -141,20 +162,21 @@ export const updateAdmin = async (id: string, adminData: Partial<AdminFormData>)
  */
 export const deleteAdmin = async (id: string): Promise<AdminApiResponse> => {
   try {
-    console.log('🗑️ حذف الإداري:', id);
+    console.log("🗑️ حذف الإداري:", id);
     const response = await api.delete<AdminApiResponse>(`/admins/${id}`);
-    
+
     if (response.data.success) {
-      console.log('✅ تم حذف الإداري بنجاح');
+      console.log("✅ تم حذف الإداري بنجاح");
     }
-    
+
     return response.data;
   } catch (error) {
-    console.error('❌ خطأ في حذف الإداري:', error);
+    console.error("❌ خطأ في حذف الإداري:", error);
     const axiosError = error as AxiosError<AdminApiResponse>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || 'حدث خطأ أثناء حذف الإداري'
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء حذف الإداري",
     };
   }
 };
@@ -162,22 +184,29 @@ export const deleteAdmin = async (id: string): Promise<AdminApiResponse> => {
 /**
  * Get admin statistics
  */
-export const getAdminStats = async (): Promise<{ success: boolean; data?: AdminStats; message?: string }> => {
+export const getAdminStats = async (): Promise<{
+  success: boolean;
+  data?: AdminStats;
+  message?: string;
+}> => {
   try {
-    console.log('📈 جلب إحصائيات الإداريين...');
-    const response = await api.get<{ success: boolean; data: AdminStats }>('/admins/stats');
-    
+    console.log("📈 جلب إحصائيات الإداريين...");
+    const response = await api.get<{ success: boolean; data: AdminStats }>(
+      "/admins/stats"
+    );
+
     if (response.data.success) {
-      console.log('✅ تم جلب إحصائيات الإداريين بنجاح');
+      console.log("✅ تم جلب إحصائيات الإداريين بنجاح");
     }
-    
+
     return response.data;
   } catch (error) {
-    console.error('❌ خطأ في جلب إحصائيات الإداريين:', error);
+    console.error("❌ خطأ في جلب إحصائيات الإداريين:", error);
     const axiosError = error as AxiosError<{ message?: string }>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || 'حدث خطأ أثناء جلب الإحصائيات'
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء جلب الإحصائيات",
     };
   }
 };
@@ -185,34 +214,37 @@ export const getAdminStats = async (): Promise<{ success: boolean; data?: AdminS
 /**
  * Upload admin avatar
  */
-export const uploadAdminAvatar = async (id: string, file: File): Promise<AdminApiResponse> => {
+export const uploadAdminAvatar = async (
+  id: string,
+  file: File
+): Promise<AdminApiResponse> => {
   try {
-    console.log('📸 رفع صورة الإداري:', id);
-    
+    console.log("📸 رفع صورة الإداري:", id);
+
     const formData = new FormData();
-    formData.append('avatar', file);
-    
+    formData.append("avatar", file);
+
     const response = await api.post<AdminApiResponse>(
       `/admins/${id}/avatar`,
       formData,
       {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          "Content-Type": "multipart/form-data",
         },
       }
     );
-    
+
     if (response.data.success) {
-      console.log('✅ تم رفع صورة الإداري بنجاح');
+      console.log("✅ تم رفع صورة الإداري بنجاح");
     }
-    
+
     return response.data;
   } catch (error) {
-    console.error('❌ خطأ في رفع صورة الإداري:', error);
+    console.error("❌ خطأ في رفع صورة الإداري:", error);
     const axiosError = error as AxiosError<AdminApiResponse>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || 'حدث خطأ أثناء رفع الصورة'
+      message: axiosError.response?.data?.message || "حدث خطأ أثناء رفع الصورة",
     };
   }
 };
@@ -228,29 +260,30 @@ export const getAdminAvatar = (id: string): string => {
  * Change admin password
  */
 export const changeAdminPassword = async (
-  id: string, 
-  currentPassword: string, 
+  id: string,
+  currentPassword: string,
   newPassword: string
 ): Promise<AdminApiResponse> => {
   try {
-    console.log('🔑 تغيير كلمة مرور الإداري:', id);
-    
+    console.log("🔑 تغيير كلمة مرور الإداري:", id);
+
     const response = await api.put<AdminApiResponse>(`/admins/${id}/password`, {
       currentPassword,
       newPassword,
     });
-    
+
     if (response.data.success) {
-      console.log('✅ تم تغيير كلمة المرور بنجاح');
+      console.log("✅ تم تغيير كلمة المرور بنجاح");
     }
-    
+
     return response.data;
   } catch (error) {
-    console.error('❌ خطأ في تغيير كلمة المرور:', error);
+    console.error("❌ خطأ في تغيير كلمة المرور:", error);
     const axiosError = error as AxiosError<AdminApiResponse>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || 'حدث خطأ أثناء تغيير كلمة المرور'
+      message:
+        axiosError.response?.data?.message || "حدث خطأ أثناء تغيير كلمة المرور",
     };
   }
 };
@@ -258,25 +291,33 @@ export const changeAdminPassword = async (
 /**
  * Toggle admin active status
  */
-export const toggleAdminStatus = async (id: string, isActive: boolean): Promise<AdminApiResponse> => {
+export const toggleAdminStatus = async (
+  id: string,
+  isActive: boolean
+): Promise<AdminApiResponse> => {
   try {
-    console.log(`${isActive ? '✅' : '❌'} ${isActive ? 'تفعيل' : 'إلغاء تفعيل'} الإداري:`, id);
-    
+    console.log(
+      `${isActive ? "✅" : "❌"} ${isActive ? "تفعيل" : "إلغاء تفعيل"} الإداري:`,
+      id
+    );
+
     const response = await api.put<AdminApiResponse>(`/admins/${id}/status`, {
       isActive,
     });
-    
+
     if (response.data.success) {
-      console.log(`✅ تم ${isActive ? 'تفعيل' : 'إلغاء تفعيل'} الإداري بنجاح`);
+      console.log(`✅ تم ${isActive ? "تفعيل" : "إلغاء تفعيل"} الإداري بنجاح`);
     }
-    
+
     return response.data;
   } catch (error) {
-    console.error('❌ خطأ في تغيير حالة الإداري:', error);
+    console.error("❌ خطأ في تغيير حالة الإداري:", error);
     const axiosError = error as AxiosError<AdminApiResponse>;
     return {
       success: false,
-      message: axiosError.response?.data?.message || 'حدث خطأ أثناء تغيير حالة الإداري'
+      message:
+        axiosError.response?.data?.message ||
+        "حدث خطأ أثناء تغيير حالة الإداري",
     };
   }
 };
