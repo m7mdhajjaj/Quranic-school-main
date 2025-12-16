@@ -51,12 +51,8 @@ export const createNews = async (
   console.log("📤 Creating news with data:", data);
   console.log("📦 Is FormData?", isFormData);
 
-  if (isFormData) {
-    console.log("📋 FormData contents:");
-    for (const [key, value] of (data as FormData).entries()) {
-      console.log(`  - ${key}:`, value instanceof File ? `File(${value.name}, ${value.size} bytes)` : value);
-    }
-  }
+  // Note: FormData.entries() is not available in React Native
+  // The data will be properly formatted by the multipart/form-data handler
 
   console.log("🚀 Sending POST request to /news...");
   
