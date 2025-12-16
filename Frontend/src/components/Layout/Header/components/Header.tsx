@@ -120,8 +120,8 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
               </div>
             </Link>
 
-            {/* التنقل الرئيسي - Tabs */}
-            <div className="flex-1 flex justify-center min-w-0 max-w-[40%] sm:max-w-[45%] md:max-w-[50%] mx-0.5 sm:mx-1 md:mx-2 lg:mx-4 overflow-hidden">
+            {/* التنقل الرئيسي - Tabs - يظهر فقط في الشاشات المتوسطة والكبيرة */}
+            <div className="hidden sm:flex flex-1 justify-center min-w-0 max-w-[40%] sm:max-w-[45%] md:max-w-[50%] mx-0.5 sm:mx-1 md:mx-2 lg:mx-4 overflow-hidden">
               <TabNavigation items={primaryNavItems} secondaryItems={secondaryNavItems} />
             </div>
 

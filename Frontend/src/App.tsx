@@ -147,7 +147,7 @@ const AdminRoutes: React.FC = () => {
         {/* ============================================
             صفحات التواصل - Communication Pages
             ============================================ */}
-        <Route path="/chat" element={<NotFound />} />
+        <Route path="/chat" element={<Soon />} />
 
         {/* ============================================
             الإعدادات الشخصية - User Settings
@@ -250,7 +250,8 @@ const TeacherRoutes: React.FC = () => {
             </React.Suspense>
           } 
         />
-        <Route path="/chat" element={<NotFound />} />
+        {/* <Route path="/chat" element={<NotFound />} /> */}
+        <Route path="/chat" element={<Soon />} />
         <Route path="/activities" element={<Activities />} />
 
         {/* ============================================
@@ -413,7 +414,7 @@ const StudentRoutes: React.FC = () => {
             </React.Suspense>
           } 
         />
-        <Route path="/chat" element={<NotFound />} />
+        <Route path="/chat" element={<Soon />} />
         <Route path="/activities" element={<Activities />} />
 
         {/* ============================================

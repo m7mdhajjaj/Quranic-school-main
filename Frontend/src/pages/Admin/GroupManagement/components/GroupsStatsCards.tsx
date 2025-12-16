@@ -12,48 +12,48 @@ export const GroupsStatsCards: React.FC<GroupsStatsCardsProps> = ({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
       {/* إجمالي الحلقات */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
+      <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow">
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <p className="text-xs font-medium text-gray-500 mb-1">إجمالي الحلقات</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.totalGroups}</p>
-            <p className="text-xs text-gray-400 mt-1">جميع الحلقات</p>
+            <p className="text-xs font-medium text-white/90 mb-1">إجمالي الحلقات</p>
+            <p className="text-2xl font-bold text-white">{stats.totalGroups}</p>
+            <p className="text-xs text-white/80 mt-1">جميع الحلقات</p>
           </div>
-          <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-            <FaUsers className="w-6 h-6 text-blue-600" />
+          <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+            <FaUsers className="w-6 h-6 text-white" />
           </div>
         </div>
       </div>
 
       {/* إجمالي الطلاب */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
+      <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow">
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <p className="text-xs font-medium text-gray-500 mb-1">إجمالي الطلاب</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.totalStudents}</p>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs font-medium text-white/90 mb-1">إجمالي الطلاب</p>
+            <p className="text-2xl font-bold text-white">{stats.totalStudents}</p>
+            <p className="text-xs text-white/80 mt-1">
               {stats.totalCapacity > 0 ? Math.round((stats.totalStudents / stats.totalCapacity) * 100) : 0}% من السعة
             </p>
           </div>
-          <div className="w-12 h-12 bg-amber-50 rounded-lg flex items-center justify-center">
-            <FaUserGraduate className="w-6 h-6 text-amber-600" />
+          <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+            <FaUserGraduate className="w-6 h-6 text-white" />
           </div>
         </div>
       </div>
 
       {/* الحلقات الممتلئة */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
+      <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow">
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <p className="text-xs font-medium text-gray-500 mb-1">حلقات ممتلئة</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.fullGroups}</p>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs font-medium text-white/90 mb-1">حلقات ممتلئة</p>
+            <p className="text-2xl font-bold text-white">{stats.fullGroups}</p>
+            <p className="text-xs text-white/80 mt-1">
               {stats.totalGroups > 0 ? Math.round((stats.fullGroups / stats.totalGroups) * 100) : 0}% من الإجمالي
             </p>
           </div>
-          <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
+          <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
             <svg
-              className="w-6 h-6 text-green-600"
+              className="w-6 h-6 text-white"
               fill="currentColor"
               viewBox="0 0 20 20">
               <path
@@ -67,18 +67,18 @@ export const GroupsStatsCards: React.FC<GroupsStatsCardsProps> = ({
       </div>
 
       {/* حلقات فارغة */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
+      <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow">
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <p className="text-xs font-medium text-gray-500 mb-1">حلقات فارغة</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.emptyGroups}</p>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs font-medium text-white/90 mb-1">حلقات فارغة</p>
+            <p className="text-2xl font-bold text-white">{stats.emptyGroups}</p>
+            <p className="text-xs text-white/80 mt-1">
               {stats.totalGroups > 0 ? Math.round((stats.emptyGroups / stats.totalGroups) * 100) : 0}% من الإجمالي
             </p>
           </div>
-          <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
+          <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
             <svg
-              className="w-6 h-6 text-purple-600"
+              className="w-6 h-6 text-white"
               fill="currentColor"
               viewBox="0 0 20 20">
               <path
@@ -92,16 +92,16 @@ export const GroupsStatsCards: React.FC<GroupsStatsCardsProps> = ({
       </div>
 
       {/* السعة الإجمالية */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
+      <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow">
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <p className="text-xs font-medium text-gray-500 mb-1">السعة الإجمالية</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.totalCapacity}</p>
-            <p className="text-xs text-gray-400 mt-1">إجمالي المقاعد</p>
+            <p className="text-xs font-medium text-white/90 mb-1">السعة الإجمالية</p>
+            <p className="text-2xl font-bold text-white">{stats.totalCapacity}</p>
+            <p className="text-xs text-white/80 mt-1">إجمالي المقاعد</p>
           </div>
-          <div className="w-12 h-12 bg-orange-50 rounded-lg flex items-center justify-center">
+          <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
             <svg
-              className="w-6 h-6 text-orange-600"
+              className="w-6 h-6 text-white"
               fill="currentColor"
               viewBox="0 0 20 20">
               <path
@@ -115,18 +115,18 @@ export const GroupsStatsCards: React.FC<GroupsStatsCardsProps> = ({
       </div>
 
       {/* المقاعد المتاحة */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
+      <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow">
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <p className="text-xs font-medium text-gray-500 mb-1">مقاعد متاحة</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.availableSeats}</p>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs font-medium text-white/90 mb-1">مقاعد متاحة</p>
+            <p className="text-2xl font-bold text-white">{stats.availableSeats}</p>
+            <p className="text-xs text-white/80 mt-1">
               {stats.totalCapacity > 0 ? Math.round((stats.availableSeats / stats.totalCapacity) * 100) : 0}% من السعة
             </p>
           </div>
-          <div className="w-12 h-12 bg-cyan-50 rounded-lg flex items-center justify-center">
+          <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
             <svg
-              className="w-6 h-6 text-cyan-600"
+              className="w-6 h-6 text-white"
               fill="currentColor"
               viewBox="0 0 20 20">
               <path

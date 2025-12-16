@@ -16,61 +16,61 @@ export const StudentStatsCards: React.FC<StudentStatsCardsProps> = ({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       {/* Total Students */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
+      <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow">
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <p className="text-xs font-medium text-gray-500 mb-1">إجمالي الطلاب</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-            <p className="text-xs text-gray-400 mt-1">جميع الطلاب المسجلين</p>
+            <p className="text-xs font-medium text-white/90 mb-1">إجمالي الطلاب</p>
+            <p className="text-2xl font-bold text-white">{stats.total}</p>
+            <p className="text-xs text-white/80 mt-1">جميع الطلاب المسجلين</p>
           </div>
-          <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-            <GraduationCap className="w-6 h-6 text-blue-600" />
+          <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+            <GraduationCap className="w-6 h-6 text-white" />
           </div>
         </div>
       </div>
 
       {/* Male Students */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
+      <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow">
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <p className="text-xs font-medium text-gray-500 mb-1">طلاب ذكور</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.male}</p>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs font-medium text-white/90 mb-1">طلاب ذكور</p>
+            <p className="text-2xl font-bold text-white">{stats.male}</p>
+            <p className="text-xs text-white/80 mt-1">
               {stats.total > 0 ? Math.round((stats.male / stats.total) * 100) : 0}% من الإجمالي
             </p>
           </div>
-          <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-            <User className="w-6 h-6 text-blue-600" />
+          <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+            <User className="w-6 h-6 text-white" />
           </div>
         </div>
       </div>
 
       {/* Female Students */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
+      <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow">
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <p className="text-xs font-medium text-gray-500 mb-1">طالبات إناث</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.female}</p>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs font-medium text-white/90 mb-1">طالبات إناث</p>
+            <p className="text-2xl font-bold text-white">{stats.female}</p>
+            <p className="text-xs text-white/80 mt-1">
               {stats.total > 0 ? Math.round((stats.female / stats.total) * 100) : 0}% من الإجمالي
             </p>
           </div>
-          <div className="w-12 h-12 bg-pink-50 rounded-lg flex items-center justify-center">
-            <UserCheck className="w-6 h-6 text-pink-600" />
+          <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+            <UserCheck className="w-6 h-6 text-white" />
           </div>
         </div>
       </div>
 
       {/* Average Age */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
+      <div className="bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl shadow-md p-4 hover:shadow-lg transition-shadow">
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <p className="text-xs font-medium text-gray-500 mb-1">متوسط العمر</p>
-            <p className="text-2xl font-bold text-gray-900">{stats.avgAge}</p>
-            <p className="text-xs text-gray-400 mt-1">متوسط أعمار الطلاب</p>
+            <p className="text-xs font-medium text-white/90 mb-1">متوسط العمر</p>
+            <p className="text-2xl font-bold text-white">{stats.avgAge}</p>
+            <p className="text-xs text-white/80 mt-1">متوسط أعمار الطلاب</p>
           </div>
-          <div className="w-12 h-12 bg-amber-50 rounded-lg flex items-center justify-center">
-            <Cake className="w-6 h-6 text-amber-600" />
+          <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+            <Cake className="w-6 h-6 text-white" />
           </div>
         </div>
       </div>
