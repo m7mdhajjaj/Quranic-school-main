@@ -18,13 +18,13 @@ export const NotificationList: React.FC<NotificationListProps> = ({
   onDelete,
   onNotificationClick,
 }) => {
-  // حالة التحميل الأولي
-  if (isLoading && notifications.length === 0) {
-    return <LoadingSpinner size="lg" text="جاري التحميل..." />;
-  }
+  // حالة التحميل الأولي - تم إزالة السبنر حسب الطلب
+  // if (isLoading && notifications.length === 0) {
+  //   return <LoadingSpinner size="lg" text="جاري التحميل..." />;
+  // }
 
   // حالة الفراغ
-  if (notifications.length === 0) {
+  if (notifications.length === 0 && !isLoading) {
     return (
       <EmptyState
         icon="🔕"
@@ -61,10 +61,10 @@ export const NotificationList: React.FC<NotificationListProps> = ({
         </div>
       )}
 
-      {/* حالة التحميل للمزيد */}
-      {isLoading && notifications.length > 0 && (
+      {/* حالة التحميل للمزيد - تم إزالتها حسب الطلب */}
+      {/* {isLoading && notifications.length > 0 && (
         <LoadingSpinner size="md" text="جاري التحميل..." />
-      )}
+      )} */}
     </>
   );
 };

@@ -142,7 +142,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
     }
   }, [firebaseNotification, userId]);
 
-  // حساب موضع القائمة المنسدلة - محاذاة مباشرة تحت الزر
+  // حساب موضع القائمة المنسدلة - محاذاة ذكية (RTL/LTR)
   useEffect(() => {
     if (showDropdown && buttonRef.current) {
       const updatePosition = () => {
@@ -153,8 +153,19 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
         const screenHeight = window.innerHeight;
         const dropdownWidth = screenWidth >= 640 ? 380 : 320;
         
-        // محاذاة الحافة اليمنى للقائمة مع الحافة اليمنى للزر مباشرة
-        const rightPosition = screenWidth - buttonRect.right;
+        // تحديد المحاذاة بناءً على موقع الزر في الشاشة
+        // إذا كان الزر في النصف الأيسر (كما في RTL)، نحاذي الحافة اليسرى
+        // إذا كان في النصف الأيمن، نحاذي الحافة اليمنى
+        let rightPosition;
+        
+        if (buttonRect.left < screenWidth / 2) {
+          // محاذاة الحافة اليسرى للقائمة مع الحافة اليسرى للزر
+          // right = screenWidth - (buttonRect.left + dropdownWidth)
+          rightPosition = screenWidth - (buttonRect.left + dropdownWidth);
+        } else {
+          // محاذاة الحافة اليمنى للقائمة مع الحافة اليمنى للزر
+          rightPosition = screenWidth - buttonRect.right;
+        }
         
         // حساب الموضع العمودي - مباشرة تحت الزر مع مسافة صغيرة
         let topPosition = buttonRect.bottom + 6;
@@ -170,7 +181,7 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
         
         setDropdownPosition({
           top: Math.max(16, topPosition),
-          right: Math.max(16, rightPosition),
+          right: rightPosition,
         });
       };
       
