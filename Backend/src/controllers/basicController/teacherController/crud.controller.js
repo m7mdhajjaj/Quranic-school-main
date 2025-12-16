@@ -620,6 +620,7 @@ exports.updateTeacher = async (req, res) => {
         const adminName = req.user ? `${req.user.firstName} ${req.user.lastName}` : "الإدارة";
 
         for (const change of changes) {
+          // 1. إشعار للمعلم
           const notificationData = buildNotificationMessage(change);
           if (notificationData) {
             await notificationService.createNotification({
@@ -637,6 +638,23 @@ exports.updateTeacher = async (req, res) => {
                 createdBy: req.user ? req.user._id : null
               }
             });
+          }
+
+          // 2. إشعار لطلاب الحلقة
+          if (change.meta?.groupName) {
+            const students = await Student.find({ group: change.meta.groupName }).select('_id');
+            if (students.length > 0) {
+              const studentIds = students.map(s => s._id);
+              const actionType = change.type === 'GROUP_ADDED' ? 'assigned' : 'removed';
+              const teacherName = `${updatedTeacher.firstName} ${updatedTeacher.lastName}`;
+              
+              await notificationService.notifyGroupStudentsTeacherChanged(
+                studentIds,
+                change.meta.groupName,
+                teacherName,
+                actionType
+              );
+            }
           }
         }
       }

@@ -17,7 +17,7 @@ exports.notifyGroupAssigned = async (createNotification, teacherId, groupName, a
     recipientModel: 'Teacher',
     title: 'تم تعيين حلقة جديدة لك',
     message: `قام ${adminName} بتعيين حلقة "${groupName}" لك.`,
-    type: 'system',
+    type: 'success',
     data: { 
       groupName,
       action: 'group_assigned'
@@ -132,4 +132,62 @@ exports.notifyTeacherInfoUpdated = async (createNotification, teacherId, adminNa
     },
     link: '/teacher/profile'
   });
+};
+
+/**
+ * إشعار لطلاب الحلقة بتغيير المعلم
+ * @param {Function} createNotification - دالة إنشاء الإشعار
+ * @param {Array} studentIds - قائمة معرفات الطلاب
+ * @param {string} groupName - اسم الحلقة
+ * @param {string} teacherName - اسم المعلم
+ * @param {string} actionType - نوع العملية ('assigned' | 'removed')
+ */
+exports.notifyGroupStudentsTeacherChanged = async (createNotification, studentIds, groupName, teacherName, actionType) => {
+  const title = actionType === 'assigned' ? 'معلم جديد للحلقة' : 'تغيير في كادر الحلقة';
+  const message = actionType === 'assigned' 
+    ? `تم تعيين الأستاذ ${teacherName} معلماً لحلقتكم "${groupName}".`
+    : `تم إلغاء تعيين الأستاذ ${teacherName} من حلقة "${groupName}".`;
+  
+  const type = actionType === 'assigned' ? 'success' : 'alert';
+
+  const notifications = studentIds.map(studentId => ({
+    recipient: studentId,
+    recipientModel: 'Student',
+    title,
+    message,
+    type,
+    data: {
+      groupName,
+      teacherName,
+      action: actionType === 'assigned' ? 'teacher_assigned_to_group' : 'teacher_removed_from_group'
+    },
+    link: '/student/group'
+  }));
+
+  // نستخدم Promise.all لإرسال الإشعارات بشكل متوازي
+  return Promise.all(notifications.map(n => createNotification(n)));
+};
+
+/**
+ * إشعار لطلاب الحلقة بحذف الحلقة
+ * @param {Function} createNotification - دالة إنشاء الإشعار
+ * @param {Array} studentIds - قائمة معرفات الطلاب
+ * @param {string} groupName - اسم الحلقة
+ * @param {string} adminName - اسم المدير (اختياري)
+ */
+exports.notifyGroupDeletedForStudents = async (createNotification, studentIds, groupName, adminName = "الإدارة") => {
+  const notifications = studentIds.map(studentId => ({
+    recipient: studentId,
+    recipientModel: 'Student',
+    title: 'تم حذف الحلقة',
+    message: `قام ${adminName} بحذف حلقة "${groupName}".`,
+    type: 'alert',
+    data: { 
+      groupName,
+      action: 'group_deleted'
+    },
+    link: '/student/group'
+  }));
+
+  return Promise.all(notifications.map(n => createNotification(n)));
 };

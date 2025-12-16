@@ -36,16 +36,28 @@ exports.deleteGroup = async (req, res) => {
 
     emitSocketEvent("groupDeleted", { groupId: id, groupName: group.name });
 
-    // 🔔 إرسال إشعار للمعلم
+    // 🔔 إرسال إشعار للمعلم والطلاب
     try {
       const notificationService = req.app.get('notificationService');
       if (notificationService) {
         const adminName = req.user ? `${req.user.firstName} ${req.user.lastName}` : "الإدارة";
+        
+        // 1. إشعار للمعلم
         await notificationService.notifyGroupDeleted(
           group.teacher,
           group.name,
           adminName
         );
+
+        // 2. إشعار للطلاب
+        if (relatedStudents.length > 0) {
+          const studentIds = relatedStudents.map(s => s._id);
+          await notificationService.notifyGroupDeletedForStudents(
+            studentIds,
+            group.name,
+            adminName
+          );
+        }
       }
     } catch (notifyError) {
       console.error("❌ فشل إرسال إشعار حذف الحلقة:", notifyError);

@@ -70,7 +70,7 @@ exports.updateGroup = async (req, res) => {
             adminName
           );
         } else {
-          // إشعار تحديث عادي للمعلم الحالي
+          // إشعار تحديث عادي للمعلم الحالي (عند تغيير الاسم أو الوصف مثلاً)
           await notificationService.notifyGroupUpdated(
             group.teacher,
             group.name,
