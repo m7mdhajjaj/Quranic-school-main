@@ -1,98 +1,59 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { View, Text, ScrollView } from "react-native";
 
 export default function HomeScreen() {
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <ScrollView className="flex-1 bg-gray-50">
+      <View className="p-6">
+        {/* Header */}
+        <View className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-8 mb-6 shadow-lg">
+          <Text className="text-4xl font-bold text-white mb-2">مرحباً! 👋</Text>
+          <Text className="text-lg text-white opacity-90">
+            تطبيق المدرسة القرآنية
+          </Text>
+        </View>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+        {/* Cards */}
+        <View className="space-y-4">
+          <View className="bg-white rounded-xl p-6 shadow-md border border-gray-200">
+            <Text className="text-2xl font-bold text-gray-800 mb-2">
+              📚 الدروس
+            </Text>
+            <Text className="text-base text-gray-600">
+              تصفح الدروس والحصص المتاحة
+            </Text>
+          </View>
+
+          <View className="bg-white rounded-xl p-6 shadow-md border border-gray-200">
+            <Text className="text-2xl font-bold text-gray-800 mb-2">
+              ✅ الحضور
+            </Text>
+            <Text className="text-base text-gray-600">سجل حضورك اليومي</Text>
+          </View>
+
+          <View className="bg-white rounded-xl p-6 shadow-md border border-gray-200">
+            <Text className="text-2xl font-bold text-gray-800 mb-2">
+              ⭐ النقاط
+            </Text>
+            <Text className="text-base text-gray-600">شاهد نقاطك وترتيبك</Text>
+          </View>
+        </View>
+
+        {/* Stats */}
+        <View className="flex-row gap-4 mt-6">
+          <View className="flex-1 bg-green-500 rounded-xl p-4 items-center">
+            <Text className="text-3xl font-bold text-white">25</Text>
+            <Text className="text-sm text-white mt-1">درس</Text>
+          </View>
+          <View className="flex-1 bg-blue-500 rounded-xl p-4 items-center">
+            <Text className="text-3xl font-bold text-white">100</Text>
+            <Text className="text-sm text-white mt-1">نقطة</Text>
+          </View>
+          <View className="flex-1 bg-purple-500 rounded-xl p-4 items-center">
+            <Text className="text-3xl font-bold text-white">5</Text>
+            <Text className="text-sm text-white mt-1">مركز</Text>
+          </View>
+        </View>
+      </View>
+    </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-});
