@@ -5,6 +5,11 @@ const { checkDuplicateFields } = require("../../../utils/validators/duplicateChe
 const { invalidateCache } = require("../../../middleware/cacheMiddleware");
 const { updateGroupActiveStatus, updateGroupsActiveStatusOnStudentMove } = require("../groupController");
 const {
+  notifyStudentAddedToGroup,
+  notifyStudentRemovedFromGroup,
+  notifyStudentMovedGroup
+} = require("../../../Notifications");
+const {
   validateTeacherGroupMatch,
   validateGroupCapacity,
   buildStudentQuery,
@@ -232,39 +237,8 @@ exports.createStudent = async (req, res) => {
 
     // Notify Teacher if added to group
     if (group && group !== "غير محدد") {
-      try {
-        console.log("🔔 محاولة إرسال إشعار إضافة طالب...");
-        const notificationService = req.app.get('notificationService');
-        console.log("🔔 notificationService موجود:", !!notificationService);
-        console.log("🔔 req.user موجود:", !!req.user);
-        
-        if (notificationService && req.user) {
-          const adminName = `${req.user.firstName} ${req.user.lastName}`;
-          console.log("🔔 اسم الأدمن:", adminName);
-          
-          const groupData = await Group.findOne({ name: group });
-          console.log("🔔 بيانات الحلقة:", groupData ? `الحلقة: ${groupData.name}, المعلم: ${groupData.teacher}` : "لا توجد بيانات");
-          
-          if (groupData && groupData.teacher) {
-            console.log("🔔 إرسال الإشعار للمعلم:", groupData.teacher);
-            await notificationService.notifyAdminAddedStudent(
-              groupData.teacher,
-              newStudent,
-              group,
-              adminName
-            );
-            console.log("✅ تم إرسال إشعار إضافة طالب بنجاح");
-          } else {
-            console.log("⚠️ لم يتم إرسال الإشعار: الحلقة ليس لها معلم");
-          }
-        } else {
-          console.log("⚠️ لم يتم إرسال الإشعار: notificationService أو req.user غير موجود");
-        }
-      } catch (notifyError) {
-        console.error("❌ فشل إرسال إشعار إضافة طالب:", notifyError);
-      }
-    } else {
-      console.log("⚠️ لم يتم إرسال الإشعار: الطالب ليس في حلقة أو الحلقة 'غير محدد'");
+      const io = req.app.get("io");
+      notifyStudentAddedToGroup(newStudent, group, io);
     }
 
     // Invalidate caches and emit events using helpers
@@ -297,18 +271,11 @@ exports.updateStudent = async (req, res) => {
     console.log("Request body:", req.body);
     const updatedData = { ...req.body };
 
-    // Fetch current student data first
-    const currentStudent = await Student.findById(req.params.id);
-    if (!currentStudent) {
-      return res.status(404).json({
-        success: false,
-        message: "الطالب غير موجود",
-      });
-    }
-
     // Check if birthDate is being changed - apply edit limits
     if (updatedData.birthDate) {
-      // const currentStudent = ... (removed)
+      const currentStudent = await Student.findById(req.params.id).select(
+        "birthDate birthDateEditHistory"
+      );
 
       if (currentStudent) {
         // Check if birthDate is actually changing
@@ -388,6 +355,7 @@ exports.updateStudent = async (req, res) => {
       updatedData.teacher = teacherData.name || groupData.teacherName || updatedData.teacher;
 
       // التحقق من سعة الحلقة الجديدة (فقط إذا تم تغيير الحلقة)
+      const currentStudent = await Student.findById(req.params.id);
       if (currentStudent && currentStudent.group !== group) {
         const capacityValidation = await validateGroupCapacity(
           group,
@@ -451,71 +419,19 @@ exports.updateStudent = async (req, res) => {
     }
 
     // Notification Logic
+    const io = req.app.get("io");
     const oldGroup = currentStudent.group;
     const newGroup = updatedStudent.group;
     
     const wasInGroup = oldGroup && oldGroup !== "غير محدد";
     const isInGroup = newGroup && newGroup !== "غير محدد";
 
-    if (wasInGroup && isInGroup && oldGroup !== newGroup) {
-      // نقل طالب بين حلقات
-      try {
-        const notificationService = req.app.get('notificationService');
-        if (notificationService && req.user) {
-          const adminName = `${req.user.firstName} ${req.user.lastName}`;
-          const oldGroupData = await Group.findOne({ name: oldGroup });
-          const newGroupData = await Group.findOne({ name: newGroup });
-          
-          await notificationService.notifyAdminMovedStudent(
-            oldGroupData?.teacher,
-            newGroupData?.teacher,
-            updatedStudent,
-            oldGroup,
-            newGroup,
-            adminName
-          );
-        }
-      } catch (notifyError) {
-        console.error("❌ فشل إرسال إشعار نقل طالب:", notifyError);
-      }
-    } else if (!wasInGroup && isInGroup) {
-      // إضافة طالب إلى حلقة
-      try {
-        const notificationService = req.app.get('notificationService');
-        if (notificationService && req.user) {
-          const adminName = `${req.user.firstName} ${req.user.lastName}`;
-          const groupData = await Group.findOne({ name: newGroup });
-          if (groupData && groupData.teacher) {
-            await notificationService.notifyAdminAddedStudent(
-              groupData.teacher,
-              updatedStudent,
-              newGroup,
-              adminName
-            );
-          }
-        }
-      } catch (notifyError) {
-        console.error("❌ فشل إرسال إشعار إضافة طالب:", notifyError);
-      }
+    if (!wasInGroup && isInGroup) {
+       notifyStudentAddedToGroup(updatedStudent, newGroup, io);
     } else if (wasInGroup && !isInGroup) {
-      // إزالة طالب من حلقة
-      try {
-        const notificationService = req.app.get('notificationService');
-        if (notificationService && req.user) {
-          const adminName = `${req.user.firstName} ${req.user.lastName}`;
-          const groupData = await Group.findOne({ name: oldGroup });
-          if (groupData && groupData.teacher) {
-            await notificationService.notifyAdminRemovedStudent(
-              groupData.teacher,
-              updatedStudent,
-              oldGroup,
-              adminName
-            );
-          }
-        }
-      } catch (notifyError) {
-        console.error("❌ فشل إرسال إشعار إزالة طالب:", notifyError);
-      }
+       notifyStudentRemovedFromGroup(updatedStudent, oldGroup, io);
+    } else if (wasInGroup && isInGroup && oldGroup !== newGroup) {
+       notifyStudentMovedGroup(updatedStudent, oldGroup, newGroup, io);
     }
     
     // Emit profile update event
@@ -559,23 +475,8 @@ exports.deleteStudent = async (req, res) => {
 
     // Notify Teacher if removed from group
     if (deletedStudent.group && deletedStudent.group !== "غير محدد") {
-      try {
-        const notificationService = req.app.get('notificationService');
-        if (notificationService && req.user) {
-          const adminName = `${req.user.firstName} ${req.user.lastName}`;
-          const groupData = await Group.findOne({ name: deletedStudent.group });
-          if (groupData && groupData.teacher) {
-            await notificationService.notifyAdminRemovedStudent(
-              groupData.teacher,
-              deletedStudent,
-              deletedStudent.group,
-              adminName
-            );
-          }
-        }
-      } catch (notifyError) {
-        console.error("❌ فشل إرسال إشعار حذف طالب:", notifyError);
-      }
+      const io = req.app.get("io");
+      notifyStudentRemovedFromGroup(deletedStudent, deletedStudent.group, io);
     }
 
     // Update group activeStatus after student deletion

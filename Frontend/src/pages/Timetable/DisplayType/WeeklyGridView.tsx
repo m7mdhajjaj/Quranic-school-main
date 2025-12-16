@@ -38,14 +38,25 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
       });
     });
 
+    // ترتيب الحصص حسب وقت البداية لضمان عرض صحيح
+    const sortedSessions = [...sessions].sort((a, b) => {
+      const aIndex = hours.indexOf(a.startHour);
+      const bIndex = hours.indexOf(b.startHour);
+      if (aIndex !== bIndex) return aIndex - bIndex;
+      // إذا كانت نفس وقت البداية، رتب حسب وقت النهاية
+      const aEndIndex = hours.indexOf(a.endHour);
+      const bEndIndex = hours.indexOf(b.endHour);
+      return aEndIndex - bEndIndex;
+    });
+
     // ملء الشبكة - الحصة تظهر في سلوت البداية فقط
-    sessions.forEach(session => {
+    sortedSessions.forEach(session => {
       if (!grid[session.day]) return;
       
       const startIndex = hours.indexOf(session.startHour);
       const endIndex = hours.indexOf(session.endHour);
       
-      if (startIndex !== -1 && endIndex !== -1 && grid[session.day][session.startHour]) {
+      if (startIndex !== -1 && endIndex !== -1 && startIndex <= endIndex && grid[session.day][session.startHour]) {
         // حساب عدد السلوتات (rowSpan) - يشمل سلوت البداية وسلوت النهاية
         // مثلا: من 12:00 لـ 12:30 = 2 سلوت (12:00 و 12:30)
         const rowSpan = endIndex - startIndex + 1;
@@ -61,17 +72,21 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
     const currentIndex = hours.indexOf(currentHour);
     if (currentIndex === -1) return false;
 
-    // البحث في السلوتات السابقة عن حصص ممتدة لهذا السلوت
+    // البحث في جميع السلوتات السابقة عن حصص ممتدة لهذا السلوت
     for (let i = 0; i < currentIndex; i++) {
       const prevHour = hours[i];
       const sessionsInPrevSlot = sessionGrid[day]?.[prevHour] || [];
       
       for (const { session, rowSpan } of sessionsInPrevSlot) {
         const sessionStartIndex = hours.indexOf(session.startHour);
+        const sessionEndIndex = hours.indexOf(session.endHour);
         
-        // التحقق إذا كان السلوت الحالي ضمن نطاق الحصة (يشمل البداية والنهاية)
-        if (currentIndex > sessionStartIndex && currentIndex <= sessionStartIndex + rowSpan) {
-          return true;
+        // التحقق إذا كان السلوت الحالي ضمن نطاق الحصة (بين البداية والنهاية، غير شامل البداية)
+        // السلوت الحالي يجب أن يكون بعد البداية وقبل أو يساوي النهاية
+        if (sessionStartIndex !== -1 && sessionEndIndex !== -1) {
+          if (currentIndex > sessionStartIndex && currentIndex <= sessionEndIndex) {
+            return true;
+          }
         }
       }
     }
