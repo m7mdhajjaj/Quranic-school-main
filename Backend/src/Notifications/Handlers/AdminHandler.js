@@ -243,3 +243,139 @@ exports.notifyGroupRenamed = async (createNotification, teacherId, studentIds, o
   return Promise.all(promises);
 };
 
+/**
+ * إشعار بإضافة طالب إلى حلقة (بواسطة الأدمن)
+ * @param {Function} createNotification - دالة إنشاء الإشعار
+ * @param {string} teacherId - معرف المعلم
+ * @param {Object} student - بيانات الطالب
+ * @param {string} groupName - اسم الحلقة
+ * @param {string} adminName - اسم المدير (اختياري)
+ */
+exports.notifyAdminAddedStudent = async (createNotification, teacherId, student, groupName, adminName = "الإدارة") => {
+  console.log("🎯 AdminHandler.notifyAdminAddedStudent استُدعي");
+  console.log("🎯 المعلم ID:", teacherId);
+  console.log("🎯 الطالب:", student.firstName, student.lastName);
+  console.log("🎯 الحلقة:", groupName);
+  console.log("🎯 الأدمن:", adminName);
+  
+  const notificationData = {
+    recipient: teacherId,
+    recipientModel: 'Teacher',
+    title: 'إضافة طالب جديد',
+    message: `تم إضافة الطالب ${student.firstName} ${student.lastName} إلى حلقتك ${groupName} بواسطة ${adminName}`,
+    type: 'success',
+    data: { 
+      action: 'student_added_by_admin',
+      studentId: student._id,
+      studentName: `${student.firstName} ${student.lastName}`,
+      groupName: groupName,
+      adminName: adminName
+    },
+    link: '/teacher/groups'
+  };
+  
+  console.log("🎯 بيانات الإشعار:", JSON.stringify(notificationData, null, 2));
+  
+  return createNotification(notificationData);
+};
+
+/**
+ * إشعار بإزالة طالب من حلقة (بواسطة الأدمن)
+ * @param {Function} createNotification - دالة إنشاء الإشعار
+ * @param {string} teacherId - معرف المعلم
+ * @param {Object} student - بيانات الطالب
+ * @param {string} groupName - اسم الحلقة
+ * @param {string} adminName - اسم المدير (اختياري)
+ */
+exports.notifyAdminRemovedStudent = async (createNotification, teacherId, student, groupName, adminName = "الإدارة") => {
+  return createNotification({
+    recipient: teacherId,
+    recipientModel: 'Teacher',
+    title: 'حذف طالب من الحلقة',
+    message: `تم إزالة الطالب ${student.firstName} ${student.lastName} من حلقتك ${groupName} بواسطة ${adminName}`,
+    type: 'warning',
+    data: { 
+      action: 'student_removed_by_admin',
+      studentId: student._id,
+      studentName: `${student.firstName} ${student.lastName}`,
+      groupName: groupName,
+      adminName: adminName
+    },
+    link: '/teacher/groups'
+  });
+};
+
+/**
+ * إشعار بنقل طالب بين حلقات (بواسطة الأدمن)
+ * @param {Function} createNotification - دالة إنشاء الإشعار
+ * @param {string} oldTeacherId - معرف المعلم القديم
+ * @param {string} newTeacherId - معرف المعلم الجديد
+ * @param {Object} student - بيانات الطالب
+ * @param {string} oldGroupName - اسم الحلقة القديمة
+ * @param {string} newGroupName - اسم الحلقة الجديدة
+ * @param {string} adminName - اسم المدير (اختياري)
+ */
+exports.notifyAdminMovedStudent = async (createNotification, oldTeacherId, newTeacherId, student, oldGroupName, newGroupName, adminName = "الإدارة") => {
+  const promises = [];
+
+  // إشعار المعلم القديم
+  if (oldTeacherId) {
+    promises.push(createNotification({
+      recipient: oldTeacherId,
+      recipientModel: 'Teacher',
+      title: 'نقل طالب من الحلقة',
+      message: `تم نقل الطالب ${student.firstName} ${student.lastName} من حلقتك ${oldGroupName} إلى حلقة ${newGroupName} بواسطة ${adminName}`,
+      type: 'warning',
+      data: { 
+        action: 'student_moved_out_by_admin',
+        studentId: student._id,
+        studentName: `${student.firstName} ${student.lastName}`,
+        oldGroup: oldGroupName,
+        newGroup: newGroupName,
+        adminName: adminName
+      },
+      link: '/teacher/groups'
+    }));
+  }
+
+  // إشعار المعلم الجديد
+  if (newTeacherId) {
+    promises.push(createNotification({
+      recipient: newTeacherId,
+      recipientModel: 'Teacher',
+      title: 'نقل طالب إلى الحلقة',
+      message: `تم نقل الطالب ${student.firstName} ${student.lastName} إلى حلقتك ${newGroupName} من حلقة ${oldGroupName} بواسطة ${adminName}`,
+      type: 'success',
+      data: { 
+        action: 'student_moved_in_by_admin',
+        studentId: student._id,
+        studentName: `${student.firstName} ${student.lastName}`,
+        oldGroup: oldGroupName,
+        newGroup: newGroupName,
+        adminName: adminName
+      },
+      link: '/teacher/groups'
+    }));
+  }
+
+  // إشعار الطالب
+  if (student && student._id) {
+    promises.push(createNotification({
+      recipient: student._id,
+      recipientModel: 'Student',
+      title: 'تغيير الحلقة',
+      message: `تم نقل حلقتك من ${oldGroupName} إلى ${newGroupName} بواسطة ${adminName}`,
+      type: 'system',
+      data: { 
+        action: 'student_group_changed_by_admin',
+        oldGroup: oldGroupName,
+        newGroup: newGroupName,
+        adminName: adminName
+      },
+      link: '/student/group'
+    }));
+  }
+
+  return Promise.all(promises);
+};
+

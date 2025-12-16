@@ -1,5 +1,6 @@
 const Student = require("../../../schema/Student");
 const Attendance = require("../../../schema/Attendance");
+const { populateTeacherFullName } = require("./studentHelpers");
 
 /**
  * جلب الطلاب مع إحصائيات الغياب (محسّن للأداء)
@@ -80,7 +81,7 @@ exports.getStudentsWithAbsenceStats = async (req, res) => {
       absenceStats.map((stat) => [stat._id.toString(), stat])
     );
 
-    const result = students.map((student) => {
+    let result = students.map((student) => {
       const stat = statsMap.get(student._id.toString());
       return {
         _id: student._id,
@@ -94,6 +95,9 @@ exports.getStudentsWithAbsenceStats = async (req, res) => {
         absenceDates: stat?.absenceDates || [],
       };
     });
+
+    // إضافة اسم المعلم الثلاثي للطلاب
+    result = await populateTeacherFullName(result);
 
     const duration = Date.now() - startTime;
     console.log(

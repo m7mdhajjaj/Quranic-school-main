@@ -18,6 +18,7 @@ export interface Student {
   gender: string;
   residence: string;
   teacher: string;
+  teacherFullName?: string; // اسم المعلم الثلاثي من الحلقة
   group: string;
   email?: string;
   phoneNumber: string;

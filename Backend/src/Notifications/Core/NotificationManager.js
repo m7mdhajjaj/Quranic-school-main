@@ -22,6 +22,9 @@ const {
   notifyGroupStudentsTeacherChanged,
   notifyGroupDeletedForStudents,
   notifyGroupRenamed,
+  notifyAdminAddedStudent,
+  notifyAdminRemovedStudent,
+  notifyAdminMovedStudent,
 } = require("../Handlers/AdminHandler");
 
 /**
@@ -216,6 +219,44 @@ class NotificationManager {
       studentIds,
       oldName,
       newName,
+      adminName
+    );
+  }
+
+  async notifyAdminAddedStudent(teacherId, student, groupName, adminName) {
+    console.log("📣 NotificationManager.notifyAdminAddedStudent استُدعي");
+    console.log("📣 المعلم:", teacherId);
+    console.log("📣 الطالب:", student.firstName, student.lastName);
+    console.log("📣 الحلقة:", groupName);
+    console.log("📣 الأدمن:", adminName);
+    
+    return notifyAdminAddedStudent(
+      this.createNotification.bind(this),
+      teacherId,
+      student,
+      groupName,
+      adminName
+    );
+  }
+
+  async notifyAdminRemovedStudent(teacherId, student, groupName, adminName) {
+    return notifyAdminRemovedStudent(
+      this.createNotification.bind(this),
+      teacherId,
+      student,
+      groupName,
+      adminName
+    );
+  }
+
+  async notifyAdminMovedStudent(oldTeacherId, newTeacherId, student, oldGroupName, newGroupName, adminName) {
+    return notifyAdminMovedStudent(
+      this.createNotification.bind(this),
+      oldTeacherId,
+      newTeacherId,
+      student,
+      oldGroupName,
+      newGroupName,
       adminName
     );
   }

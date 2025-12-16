@@ -158,21 +158,25 @@ export const StudentGridView: React.FC<StudentGridViewProps> = ({
                 </div>
               )}
 
-              {student.teacher ? (
-                <div className="flex flex-col items-center gap-1.5 bg-violet-50 rounded-lg px-3 py-2.5 border border-violet-200">
-                  <GraduationCap className="w-4 h-4 text-violet-600" />
-                  <span className="text-xs font-bold text-violet-700 text-center truncate w-full">
-                    {getTeacherDisplayName(student.teacher)}
-                  </span>
-                  <span className="text-[10px] text-violet-600">المعلم</span>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-1.5 bg-gray-50 rounded-lg px-3 py-2.5 border border-gray-200">
-                  <GraduationCap className="w-4 h-4 text-gray-400" />
-                  <span className="text-xs text-gray-500">غير محدد</span>
-                  <span className="text-[10px] text-gray-400">المعلم</span>
-                </div>
-              )}
+              {(() => {
+                // استخدام teacherFullName إذا كان متوفراً، وإلا استخدام teacher
+                const teacherName = student.teacherFullName || student.teacher;
+                return teacherName && teacherName !== 'غير محدد' ? (
+                  <div className="flex flex-col items-center gap-1.5 bg-violet-50 rounded-lg px-3 py-2.5 border border-violet-200">
+                    <GraduationCap className="w-4 h-4 text-violet-600" />
+                    <span className="text-xs font-bold text-violet-700 text-center truncate w-full" title={teacherName}>
+                      {teacherName}
+                    </span>
+                    <span className="text-[10px] text-violet-600">المعلم</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-1.5 bg-gray-50 rounded-lg px-3 py-2.5 border border-gray-200">
+                    <GraduationCap className="w-4 h-4 text-gray-400" />
+                    <span className="text-xs text-gray-500">غير محدد</span>
+                    <span className="text-[10px] text-gray-400">المعلم</span>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>

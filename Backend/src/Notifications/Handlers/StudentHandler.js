@@ -11,7 +11,7 @@ async function getTeacherIdByGroupName(groupName) {
   return group ? group.teacher : null;
 }
 
-exports.notifyStudentAddedToGroup = async (student, groupName, io) => {
+exports.notifyStudentAddedToGroup = async (student, groupName, io, adminName = null) => {
   try {
     console.log(`🔔 notifyStudentAddedToGroup called: ${student.firstName} to ${groupName}`);
     const teacherId = await getTeacherIdByGroupName(groupName);
@@ -21,17 +21,22 @@ exports.notifyStudentAddedToGroup = async (student, groupName, io) => {
       return;
     }
 
+    const message = adminName 
+      ? `قام ${adminName} بإضافة الطالب ${student.firstName} ${student.lastName} إلى حلقتك (${groupName})`
+      : `تم إضافة الطالب ${student.firstName} ${student.lastName} إلى حلقتك (${groupName})`;
+
     const notificationData = {
       recipient: teacherId,
       recipientModel: "Teacher",
       type: "general",
       title: "إضافة طالب جديد",
-      message: `تم إضافة الطالب ${student.firstName} ${student.lastName} إلى حلقتك (${groupName})`,
+      message: message,
       data: {
         action: "student_added",
         studentId: student._id,
         studentName: `${student.firstName} ${student.lastName}`,
-        groupName: groupName
+        groupName: groupName,
+        adminName: adminName
       }
     };
 
@@ -53,7 +58,7 @@ exports.notifyStudentAddedToGroup = async (student, groupName, io) => {
   }
 };
 
-exports.notifyStudentRemovedFromGroup = async (student, groupName, io) => {
+exports.notifyStudentRemovedFromGroup = async (student, groupName, io, adminName = null) => {
   try {
     console.log(`🔔 notifyStudentRemovedFromGroup called: ${student.firstName} from ${groupName}`);
     const teacherId = await getTeacherIdByGroupName(groupName);
@@ -63,17 +68,22 @@ exports.notifyStudentRemovedFromGroup = async (student, groupName, io) => {
       return;
     }
 
+    const message = adminName 
+      ? `قام ${adminName} بإزالة الطالب ${student.firstName} ${student.lastName} من حلقتك (${groupName})`
+      : `تم حذف الطالب ${student.firstName} ${student.lastName} من حلقتك (${groupName})`;
+
     const notificationData = {
       recipient: teacherId,
       recipientModel: "Teacher",
       type: "general",
       title: "حذف طالب من الحلقة",
-      message: `تم حذف الطالب ${student.firstName} ${student.lastName} من حلقتك (${groupName})`,
+      message: message,
       data: {
         action: "student_removed",
         studentId: student._id,
         studentName: `${student.firstName} ${student.lastName}`,
-        groupName: groupName
+        groupName: groupName,
+        adminName: adminName
       }
     };
 
@@ -95,23 +105,28 @@ exports.notifyStudentRemovedFromGroup = async (student, groupName, io) => {
   }
 };
 
-exports.notifyStudentMovedGroup = async (student, oldGroupName, newGroupName, io) => {
+exports.notifyStudentMovedGroup = async (student, oldGroupName, newGroupName, io, adminName = null) => {
   try {
     // Notify Old Teacher
     const oldTeacherId = await getTeacherIdByGroupName(oldGroupName);
     if (oldTeacherId) {
+      const message = adminName 
+        ? `قام ${adminName} بنقل الطالب ${student.firstName} ${student.lastName} من حلقتك (${oldGroupName}) إلى حلقة (${newGroupName})`
+        : `تم نقل الطالب ${student.firstName} ${student.lastName} من حلقتك (${oldGroupName}) إلى حلقة (${newGroupName})`;
+
       const notificationData = {
         recipient: oldTeacherId,
         recipientModel: "Teacher",
         type: "general",
         title: "نقل طالب من الحلقة",
-        message: `تم نقل الطالب ${student.firstName} ${student.lastName} من حلقتك (${oldGroupName}) إلى حلقة (${newGroupName})`,
+        message: message,
         data: {
           action: "student_moved_out",
           studentId: student._id,
           studentName: `${student.firstName} ${student.lastName}`,
           oldGroup: oldGroupName,
-          newGroup: newGroupName
+          newGroup: newGroupName,
+          adminName: adminName
         }
       };
       const notification = new Notification(notificationData);
@@ -123,18 +138,23 @@ exports.notifyStudentMovedGroup = async (student, oldGroupName, newGroupName, io
     // Notify New Teacher
     const newTeacherId = await getTeacherIdByGroupName(newGroupName);
     if (newTeacherId) {
+      const message = adminName 
+        ? `قام ${adminName} بنقل الطالب ${student.firstName} ${student.lastName} إلى حلقتك (${newGroupName}) من حلقة (${oldGroupName})`
+        : `تم نقل الطالب ${student.firstName} ${student.lastName} إلى حلقتك (${newGroupName}) قادماً من (${oldGroupName})`;
+
       const notificationData = {
         recipient: newTeacherId,
         recipientModel: "Teacher",
         type: "general",
         title: "نقل طالب إلى الحلقة",
-        message: `تم نقل الطالب ${student.firstName} ${student.lastName} إلى حلقتك (${newGroupName}) قادماً من (${oldGroupName})`,
+        message: message,
         data: {
           action: "student_moved_in",
           studentId: student._id,
           studentName: `${student.firstName} ${student.lastName}`,
           oldGroup: oldGroupName,
-          newGroup: newGroupName
+          newGroup: newGroupName,
+          adminName: adminName
         }
       };
       const notification = new Notification(notificationData);

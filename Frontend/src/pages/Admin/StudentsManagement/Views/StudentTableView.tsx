@@ -188,13 +188,15 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
       width: '130px',
       align: 'center' as const,
       render: (student: Student) => {
-        if (student.teacher) {
+        // استخدام teacherFullName إذا كان متوفراً، وإلا استخدام teacher
+        const teacherName = student.teacherFullName || student.teacher;
+        if (teacherName && teacherName !== 'غير محدد') {
           return (
             <div className="flex items-center justify-center py-1.5">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-100 text-violet-700 rounded-lg text-xs font-bold border border-violet-300">
                 <GraduationCap className="w-3 h-3 text-violet-600" />
-                <span className="truncate max-w-[90px]">
-                  {getTeacherDisplayName(student.teacher)}
+                <span className="truncate max-w-[90px]" title={teacherName}>
+                  {teacherName}
                 </span>
               </div>
             </div>

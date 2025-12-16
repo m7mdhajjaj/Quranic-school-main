@@ -322,6 +322,125 @@ const handleStudentError = (error, res, operation) => {
   });
 };
 
+/**
+ * إضافة اسم المعلم الثلاثي للطلاب
+ * @param {Array|Object} students - طالب واحد أو مصفوفة من الطلاب
+ * @returns {Promise<Array|Object>} - الطلاب مع إضافة حقل teacherFullName
+ */
+const populateTeacherFullName = async (students) => {
+  try {
+    const isArray = Array.isArray(students);
+    const studentsList = isArray ? students : [students];
+    
+    if (studentsList.length === 0) {
+      return isArray ? [] : null;
+    }
+
+    // جمع أسماء الحلقات الفريدة
+    const groupNames = [...new Set(
+      studentsList
+        .map(s => s && s.group ? s.group : null)
+        .filter(g => g && g !== 'غير محدد' && g !== '' && typeof g === 'string')
+    )];
+
+    // جلب بيانات الحلقات والمعلمين دفعة واحدة
+    const groupsMap = new Map();
+    if (groupNames.length > 0) {
+      try {
+        const groups = await Group.find({ name: { $in: groupNames } })
+          .select('name teacher')
+          .lean();
+        
+        // جمع معرفات المعلمين الفريدة (مع الحفاظ على المرجع الأصلي)
+        const teacherIdMap = new Map(); // Map from teacherId string to original teacherId
+        for (const group of groups) {
+          if (group && group.teacher) {
+            try {
+              const teacherIdStr = group.teacher.toString ? group.teacher.toString() : String(group.teacher);
+              if (teacherIdStr && !teacherIdMap.has(teacherIdStr)) {
+                teacherIdMap.set(teacherIdStr, group.teacher);
+              }
+            } catch (err) {
+              console.error(`❌ خطأ في معالجة معرف المعلم للحلقة ${group.name}:`, err);
+            }
+          }
+        }
+        
+        // جلب معلومات المعلمين دفعة واحدة
+        const teachersMap = new Map();
+        if (teacherIdMap.size > 0) {
+          const teacherPromises = Array.from(teacherIdMap.entries()).map(async ([teacherIdStr, teacherId]) => {
+            try {
+              const teacherData = await getTeacherInfo(teacherId);
+              return { teacherIdStr, name: teacherData && teacherData.name ? teacherData.name : 'غير محدد' };
+            } catch (err) {
+              console.error(`❌ خطأ في جلب معلومات المعلم ${teacherIdStr}:`, err);
+              return { teacherIdStr, name: 'غير محدد' };
+            }
+          });
+          const teacherResults = await Promise.all(teacherPromises);
+          teacherResults.forEach(({ teacherIdStr, name }) => {
+            if (teacherIdStr && name) {
+              teachersMap.set(teacherIdStr, name);
+            }
+          });
+        }
+        
+        // ربط الحلقات بأسماء المعلمين
+        for (const group of groups) {
+          if (group && group.name && group.teacher) {
+            try {
+              const teacherIdStr = group.teacher.toString ? group.teacher.toString() : String(group.teacher);
+              const teacherName = teachersMap.get(teacherIdStr);
+              if (teacherName) {
+                groupsMap.set(group.name, teacherName);
+              }
+            } catch (err) {
+              console.error(`❌ خطأ في ربط الحلقة ${group.name} بالمعلم:`, err);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('❌ خطأ في جلب بيانات الحلقات:', err);
+      }
+    }
+
+    // إضافة teacherFullName لكل طالب
+    const result = studentsList.map(student => {
+      if (!student) return student;
+      
+      const studentObj = { ...student };
+      const studentGroup = studentObj.group;
+      
+      if (studentGroup && studentGroup !== 'غير محدد' && studentGroup !== '' && groupsMap.has(studentGroup)) {
+        studentObj.teacherFullName = groupsMap.get(studentGroup);
+      } else if (studentObj.teacher && studentObj.teacher !== 'غير محدد' && studentObj.teacher !== '') {
+        // إذا لم يكن هناك حلقة أو لم نجد المعلم من الحلقة، استخدم اسم المعلم الموجود في الطالب
+        studentObj.teacherFullName = studentObj.teacher;
+      } else {
+        studentObj.teacherFullName = 'غير محدد';
+      }
+      
+      return studentObj;
+    });
+
+    return isArray ? result : result[0];
+  } catch (error) {
+    console.error('❌ خطأ في populateTeacherFullName:', error);
+    // في حالة الخطأ، نعيد البيانات الأصلية مع teacherFullName = teacher
+    const isArray = Array.isArray(students);
+    const studentsList = isArray ? students : [students];
+    const result = studentsList.map(student => {
+      if (!student) return student;
+      return {
+        ...student,
+        teacherFullName: student.teacher || 'غير محدد'
+      };
+    });
+    return isArray ? result : result[0];
+  }
+};
+
 module.exports = {
   normalizeTeacherName,
   validateTeacherGroupMatch,
@@ -332,4 +451,5 @@ module.exports = {
   notifyStudentUpdate,
   handleStudentError,
   getTeacherInfo,
+  populateTeacherFullName,
 };

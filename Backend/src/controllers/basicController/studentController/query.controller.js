@@ -1,4 +1,5 @@
 const Student = require("../../../schema/Student");
+const { populateTeacherFullName } = require("./studentHelpers");
 
 /**
  * جلب الطلاب حسب الحلقة
@@ -8,9 +9,13 @@ exports.getStudentsByGroup = async (req, res) => {
     const students = await Student.find({ group: req.params.group })
       .select("-avatar")
       .lean();
+    
+    // إضافة اسم المعلم الثلاثي للطلاب
+    const studentsWithTeacherName = await populateTeacherFullName(students);
+    
     res.json({
       success: true,
-      data: students,
+      data: studentsWithTeacherName,
       message: `تم تحميل ${students.length} طالب من المجموعة ${req.params.group}`,
     });
   } catch (error) {
@@ -31,9 +36,13 @@ exports.getStudentsByTeacher = async (req, res) => {
       .select("-avatar")
       .lean()
       .sort({ group: 1, firstName: 1 }); // Sort by group then by first name
+    
+    // إضافة اسم المعلم الثلاثي للطلاب
+    const studentsWithTeacherName = await populateTeacherFullName(students);
+    
     res.json({
       success: true,
-      data: students,
+      data: studentsWithTeacherName,
       message: `تم تحميل ${students.length} طالب للمعلم ${teacherName}`,
     });
   } catch (error) {

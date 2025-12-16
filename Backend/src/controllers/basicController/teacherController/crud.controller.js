@@ -332,19 +332,21 @@ exports.createTeacher = async (req, res) => {
     // age
     const age = calculateAge(birthDate);
 
-    // التحقق من أن الحلقات المضافة للمعلم الجديد لا تحتوي على معلمين آخرين
+    // التحقق من أن الحلقات المضافة للمعلم الجديد لا تحتوي على معلمين آخرين (محسّن)
     if (Array.isArray(groups) && groups.length > 0) {
-      for (const groupItem of groups) {
-        const groupName =
-          typeof groupItem === "string" ? groupItem : groupItem.name;
-
-        // التحقق من وجود الحلقة مع معلم آخر
-        const existingGroup = await Group.findOne({
-          name: groupName,
+      const groupIds = groups
+        .map(groupItem => typeof groupItem === "object" ? groupItem.id : null)
+        .filter(Boolean);
+      
+      if (groupIds.length > 0) {
+        // جلب جميع الحلقات دفعة واحدة
+        const existingGroups = await Group.find({
+          _id: { $in: groupIds },
           teacher: { $exists: true, $ne: null, $ne: "" },
-        });
-
-        if (existingGroup) {
+        }).select('name teacher');
+        
+        if (existingGroups.length > 0) {
+          const groupName = existingGroups[0].name;
           return res.status(400).json({
             success: false,
             message: `الحلقة "${groupName}" مرتبطة بالفعل بمعلم آخر. لا يمكن للحلقة الواحدة أن يكون لها أكثر من معلم.`,
@@ -387,22 +389,36 @@ exports.createTeacher = async (req, res) => {
 
     console.log("Teacher created successfully:", doc._id);
 
-    // تحديث الحلقات لربطها بالمعلم الجديد
+    // تحديث الحلقات لربطها بالمعلم الجديد (محسّن - عمليات متوازية)
     if (Array.isArray(groups) && groups.length > 0) {
       const teacherFullName = `${firstName} ${lastName}`;
+      const groupIds = groups
+        .map(groupItem => typeof groupItem === "object" ? groupItem.id : null)
+        .filter(Boolean);
 
-      for (const groupItem of groups) {
-        const groupId = typeof groupItem === "object" ? groupItem.id : null;
-
-        if (groupId) {
-          await Group.findByIdAndUpdate(groupId, {
+      if (groupIds.length > 0) {
+        // تحديث جميع الحلقات بشكل متوازي
+        const updatePromises = groupIds.map(groupId =>
+          Group.findByIdAndUpdate(groupId, {
             teacher: doc._id,
             teacherName: teacherFullName,
-          });
-          console.log(
-            `✅ تم ربط الحلقة ${groupId} بالمعلم ${doc._id} (${teacherFullName})`
+          })
+        );
+        
+        await Promise.all(updatePromises);
+        
+        // تحديث activeStatus للحلقات الجديدة
+        const updatedGroups = await Group.find({ _id: { $in: groupIds } }).select('name');
+        const groupNames = updatedGroups.map(g => g.name);
+        if (groupNames.length > 0) {
+          await Group.recalculateMultipleActiveStatus(groupNames).catch(err =>
+            console.error('⚠️ خطأ في تحديث activeStatus:', err)
           );
         }
+        
+        console.log(
+          `✅ تم ربط ${groupIds.length} حلقة بالمعلم ${doc._id} (${teacherFullName})`
+        );
       }
     }
 
@@ -506,16 +522,21 @@ exports.updateTeacher = async (req, res) => {
     const teacherFullName = `${currentTeacher.firstName} ${currentTeacher.lastName}`;
 
     if (Array.isArray(updates.groups)) {
-      // 1. جلب الحلقات الحالية للمعلم
-      const currentGroupIds = currentTeacher.groups.map((g) => g.id);
+      try {
+        // 1. جلب الحلقات الحالية للمعلم (مع التحقق من وجودها)
+        const currentGroupIds = (currentTeacher.groups || [])
+          .map((g) => g && g.id ? g.id : null)
+          .filter(Boolean);
 
-      // 2. جلب الحلقات الجديدة من الطلب
-      const newGroupIds = updates.groups.map((g) => g.id);
+        // 2. جلب الحلقات الجديدة من الطلب (مع التحقق من وجودها)
+        const newGroupIds = updates.groups
+          .map((g) => g && g.id ? g.id : null)
+          .filter(Boolean);
 
-      // 3. تحديد الحلقات التي يجب إزالة المعلم منها
-      const groupsToRemove = currentGroupIds.filter(
-        (id) => !newGroupIds.includes(id)
-      );
+        // 3. تحديد الحلقات التي يجب إزالة المعلم منها
+        const groupsToRemove = currentGroupIds.filter(
+          (id) => id && !newGroupIds.some(newId => newId && newId.toString() === id.toString())
+        );
       if (groupsToRemove.length > 0) {
         const removedGroups = await Group.find({ _id: { $in: groupsToRemove } }).select('name');
         
@@ -533,50 +554,81 @@ exports.updateTeacher = async (req, res) => {
         }
       }
 
-      // 4. التحقق من الحلقات الجديدة وتعيينها
-      const processedGroups = [];
-      const newGroupNames = [];
-      
-      for (const groupItem of updates.groups) {
-        const group = await Group.findById(groupItem.id);
+        // 4. التحقق من الحلقات الجديدة وتعيينها (محسّن - عمليات متوازية)
+        const groupIds = updates.groups
+          .map(g => g && g.id ? g.id : null)
+          .filter(Boolean);
         
-        if (!group) continue;
-
-        if (
-          group.teacher &&
-          group.teacher.toString() !== currentTeacher._id.toString()
-        ) {
-          return res.status(400).json({
-            success: false,
-            message: `الحلقة "${group.name}" مرتبطة بالفعل بمعلم آخر.`,
-            field: "groups",
-          });
-        }
-        
-        await Group.updateOne(
-          { _id: groupItem.id },
-          {
-            teacher: currentTeacher._id,
-            teacherName: teacherFullName,
+        if (groupIds.length > 0) {
+          // جلب جميع الحلقات دفعة واحدة
+          const groups = await Group.find({ _id: { $in: groupIds } });
+          
+          if (groups.length === 0) {
+            // إذا لم يتم العثور على أي حلقة، إرجاع خطأ
+            return res.status(400).json({
+              success: false,
+              message: 'لم يتم العثور على الحلقات المحددة',
+              field: "groups",
+            });
           }
-        );
-        
-        newGroupNames.push(group.name);
-        processedGroups.push({
-          id: group._id,
-          name: group.name
+          
+          // التحقق من أن الحلقات غير مرتبطة بمعلمين آخرين
+          for (const group of groups) {
+            if (
+              group.teacher &&
+              group.teacher.toString() !== currentTeacher._id.toString()
+            ) {
+              return res.status(400).json({
+                success: false,
+                message: `الحلقة "${group.name}" مرتبطة بالفعل بمعلم آخر.`,
+                field: "groups",
+              });
+            }
+          }
+          
+          // تحديث جميع الحلقات بشكل متوازي
+          const updatePromises = groups.map(group =>
+            Group.updateOne(
+              { _id: group._id },
+              {
+                teacher: currentTeacher._id,
+                teacherName: teacherFullName,
+              }
+            )
+          );
+          
+          await Promise.all(updatePromises);
+          
+          const processedGroups = groups.map(group => ({
+            id: group._id,
+            name: group.name
+          }));
+          const newGroupNames = groups.map(g => g.name).filter(Boolean);
+          
+          // تحديث القائمة بالبيانات الكاملة (لتجنب مشاكل الـ Schema والـ Notifications)
+          updates.groups = processedGroups;
+          
+          // تحديث activeStatus للحلقات الجديدة
+          if (newGroupNames.length > 0) {
+            await Group.recalculateMultipleActiveStatus(newGroupNames).catch(err =>
+              console.error('⚠️ خطأ في تحديث activeStatus:', err)
+            );
+          }
+        } else {
+          // إذا لم تكن هناك حلقات، تأكد من أن القائمة فارغة
+          updates.groups = [];
+        }
+      } catch (groupsError) {
+        console.error('❌ خطأ في معالجة الحلقات:', groupsError);
+        return res.status(500).json({
+          success: false,
+          message: 'حدث خطأ أثناء معالجة الحلقات',
+          error: process.env.NODE_ENV === 'development' ? groupsError.message : undefined,
         });
       }
-      
-      // تحديث القائمة بالبيانات الكاملة (لتجنب مشاكل الـ Schema والـ Notifications)
-      updates.groups = processedGroups;
-      
-      // تحديث activeStatus للحلقات الجديدة
-      if (newGroupNames.length > 0) {
-        await Group.recalculateMultipleActiveStatus(newGroupNames).catch(err =>
-          console.error('⚠️ خطأ في تحديث activeStatus:', err)
-        );
-      }
+    } else {
+      // إذا لم تكن groups مصفوفة، تأكد من أنها مصفوفة فارغة
+      updates.groups = [];
     }
 
     const updatedTeacher = await Teacher.findByIdAndUpdate(

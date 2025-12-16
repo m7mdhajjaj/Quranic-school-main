@@ -11,6 +11,7 @@ const {
   emitStudentEvent,
   notifyStudentUpdate,
   handleStudentError,
+  populateTeacherFullName,
 } = require("./studentHelpers");
 
 /**
@@ -49,12 +50,15 @@ exports.getStudents = async (req, res) => {
     // Get total count for pagination
     const total = await Student.countDocuments(query);
 
+    // إضافة اسم المعلم الثلاثي للطلاب
+    const studentsWithTeacherName = await populateTeacherFullName(students);
+
     const endTime = Date.now();
     const duration = endTime - startTime;
 
     res.json({
       success: true,
-      data: students,
+      data: studentsWithTeacherName,
       pagination: {
         total,
         page: pageNum,
@@ -85,12 +89,16 @@ exports.getStudentById = async (req, res) => {
       });
     }
     const studentObj = student.toObject();
+    
+    // إضافة اسم المعلم الثلاثي
+    const studentWithTeacherName = await populateTeacherFullName(studentObj);
+    
     res.status(200).json({
       success: true,
       data: {
-        ...studentObj,
-        email: studentObj.email || "",
-        phoneNumber: studentObj.phoneNumber || "",
+        ...studentWithTeacherName,
+        email: studentWithTeacherName.email || "",
+        phoneNumber: studentWithTeacherName.phoneNumber || "",
       },
     });
   } catch (error) {
@@ -551,8 +559,11 @@ exports.exportStudentsToCSV = async (req, res) => {
       return d.toLocaleDateString("ar-EG");
     };
 
+    // إضافة اسم المعلم الثلاثي للطلاب
+    const studentsWithTeacherName = await populateTeacherFullName(students);
+
     // Build CSV rows
-    const rows = students.map((student) => [
+    const rows = studentsWithTeacherName.map((student) => [
       student.studentId || "",
       student.firstName || "",
       student.fatherName || "",
@@ -564,7 +575,7 @@ exports.exportStudentsToCSV = async (req, res) => {
       student.age || "",
       student.gender || "",
       student.residence || "",
-      student.teacher || "غير محدد",
+      student.teacherFullName || student.teacher || "غير محدد",
       student.group || "غير محدد",
       student.email || "",
       formatAsText(student.phoneNumber), // Format as text
