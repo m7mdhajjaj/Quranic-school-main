@@ -327,6 +327,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     color: "#1f2937",
+    textAlign: "right",
   },
   closeButton: {
     padding: 4,
@@ -342,7 +343,7 @@ const styles = StyleSheet.create({
   errorText: {
     color: "#991b1b",
     fontSize: 14,
-    textAlign: "center",
+    textAlign: "right",
   },
   infoCard: {
     backgroundColor: "#f0fdf4",
@@ -361,12 +362,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#166534",
+    textAlign: "right",
   },
   infoValue: {
     fontSize: 14,
     fontWeight: "bold",
     color: "#14532d",
     flex: 1,
+    textAlign: "right",
   },
   sectionInfo: {
     backgroundColor: "#f9fafb",
@@ -386,11 +389,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
     color: "#6b7280",
+    textAlign: "right",
   },
   sectionValue: {
     fontSize: 13,
     color: "#1f2937",
     flex: 1,
+    textAlign: "right",
   },
   fieldContainer: {
     marginBottom: 20,
@@ -405,6 +410,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     color: "#374151",
+    textAlign: "right",
   },
   markInputContainer: {
     flexDirection: "row",
@@ -430,6 +436,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#6b7280",
     marginTop: 6,
+    textAlign: "right",
   },
   noteInput: {
     backgroundColor: "#f9fafb",
@@ -465,6 +472,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#6b7280",
+    textAlign: "center",
   },
   submitButton: {
     backgroundColor: "#10b981",
@@ -473,6 +481,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#ffffff",
+    textAlign: "center",
   },
   buttonDisabled: {
     opacity: 0.6,

@@ -173,6 +173,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#6b7280",
     fontWeight: "600",
+    textAlign: "right",
   },
   filterContainer: {
     padding: 16,

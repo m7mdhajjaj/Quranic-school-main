@@ -210,6 +210,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#6b7280",
     fontWeight: "600",
+    textAlign: "right",
   },
   emptyCard: {
     padding: 40,
@@ -223,11 +224,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     color: "#1f2937",
+    textAlign: "right",
   },
   emptyDescription: {
     fontSize: 14,
     color: "#6b7280",
-    textAlign: "center",
+    textAlign: "right",
   },
   tableHeader: {
     flexDirection: "row",
@@ -261,8 +263,8 @@ const styles = StyleSheet.create({
   },
   nameCell: {
     width: 180,
-    alignItems: "flex-start",
-    paddingLeft: 8,
+    alignItems: "flex-end",
+    paddingRight: 8,
   },
   markCell: {
     width: 90,
@@ -279,6 +281,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#1f2937",
+    textAlign: "right",
   },
   markBadge: {
     paddingHorizontal: 10,

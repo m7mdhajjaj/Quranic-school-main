@@ -6,12 +6,19 @@ import {
 import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
+import { I18nManager, Platform } from "react-native";
 import "react-native-reanimated";
 import "./global.css";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { AuthProvider } from "@/Context/AuthContext";
 import { useAuth } from "@/hooks/useAuth";
+
+// Force RTL layout for Arabic
+if (!I18nManager.isRTL) {
+  I18nManager.forceRTL(true);
+  I18nManager.allowRTL(true);
+}
 
 function RootLayoutNav() {
   const { isAuthenticated, isLoading } = useAuth();

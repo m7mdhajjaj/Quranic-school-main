@@ -162,11 +162,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     color: "#1f2937",
+    textAlign: "right",
   },
   headerSubtitle: {
     fontSize: 14,
     color: "#6b7280",
     marginTop: 2,
+    textAlign: "right",
   },
   performanceBadge: {
     flexDirection: "row",
@@ -185,6 +187,7 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 14,
     fontWeight: "bold",
+    textAlign: "center",
   },
   statsContainer: {
     flexDirection: "row",
@@ -264,5 +267,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "bold",
     color: "#374151",
+    textAlign: "center",
   },
 });

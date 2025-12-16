@@ -267,6 +267,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     color: "#1f2937",
+    textAlign: "right",
   },
   closeButton: {
     padding: 4,
@@ -282,7 +283,7 @@ const styles = StyleSheet.create({
   errorText: {
     color: "#991b1b",
     fontSize: 14,
-    textAlign: "center",
+    textAlign: "right",
   },
   fieldContainer: {
     marginBottom: 20,
@@ -297,6 +298,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     color: "#374151",
+    textAlign: "right",
   },
   dateButton: {
     flexDirection: "row",
@@ -312,6 +314,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#1f2937",
     fontWeight: "500",
+    textAlign: "right",
   },
   input: {
     backgroundColor: "#f9fafb",
@@ -339,11 +342,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#047857",
+    textAlign: "right",
   },
   infoValue: {
     fontSize: 14,
     fontWeight: "bold",
     color: "#065f46",
+    textAlign: "right",
   },
   buttonContainer: {
     flexDirection: "row",
@@ -367,6 +372,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#6b7280",
+    textAlign: "center",
   },
   submitButton: {
     backgroundColor: "#10b981",
@@ -375,6 +381,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#ffffff",
+    textAlign: "center",
   },
   buttonDisabled: {
     opacity: 0.6,

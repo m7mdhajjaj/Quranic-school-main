@@ -154,6 +154,7 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 16,
     fontWeight: "bold",
+    textAlign: "center",
   },
   newsGrid: {
     gap: 8,

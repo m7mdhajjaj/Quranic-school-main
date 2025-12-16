@@ -62,11 +62,13 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     color: "#ffffff",
+    textAlign: "right",
   },
   subtitle: {
     fontSize: 14,
     color: "rgba(255, 255, 255, 0.9)",
     marginTop: 4,
+    textAlign: "right",
   },
   badge: {
     backgroundColor: "rgba(255, 255, 255, 0.2)",
@@ -81,10 +83,12 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     color: "#ffffff",
+    textAlign: "center",
   },
   badgeLabel: {
     fontSize: 12,
     color: "#ffffff",
     marginTop: 2,
+    textAlign: "center",
   },
 });

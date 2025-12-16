@@ -190,11 +190,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     color: "#1f2937",
+    textAlign: "right",
   },
   emptyDescription: {
     fontSize: 14,
     color: "#6b7280",
-    textAlign: "center",
+    textAlign: "right",
   },
   table: {
     backgroundColor: "#ffffff",
@@ -282,11 +283,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#1f2937",
+    textAlign: "center",
   },
   dayText: {
     fontSize: 12,
     color: "#6b7280",
     marginTop: 2,
+    textAlign: "center",
   },
   markExcellentReview: {
     backgroundColor: "#d1fae5",

@@ -631,10 +631,12 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     color: "#1f2937",
+    textAlign: "right",
   },
   headerSubtitle: {
     fontSize: 16,
     color: "#6b7280",
+    textAlign: "right",
   },
   gridContainer: {
     padding: 16,
@@ -665,6 +667,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#1f2937",
     marginBottom: 16,
+    textAlign: "right",
   },
   statsContainer: {
     flexDirection: "row",
@@ -690,11 +693,13 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: "#059669",
     marginBottom: 2,
+    textAlign: "right",
   },
   statValue: {
     fontSize: 18,
     fontWeight: "bold",
     color: "#047857",
+    textAlign: "right",
   },
   groupFooter: {
     flexDirection: "row",
@@ -708,6 +713,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#10b981",
+    textAlign: "right",
   },
   backButton: {
     flexDirection: "row",
@@ -719,6 +725,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#10b981",
+    textAlign: "right",
   },
   sectionsHeader: {
     backgroundColor: "#10b981",
@@ -740,11 +747,13 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     color: "#ffffff",
+    textAlign: "right",
   },
   sectionsHeaderSubtitle: {
     fontSize: 14,
     color: "rgba(255, 255, 255, 0.9)",
     marginTop: 4,
+    textAlign: "right",
   },
   loadingContainer: {
     padding: 40,
@@ -755,6 +764,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#6b7280",
     fontWeight: "600",
+    textAlign: "right",
   },
   emptyCard: {
     margin: 16,
@@ -769,11 +779,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     color: "#1f2937",
+    textAlign: "right",
   },
   emptyDescription: {
     fontSize: 14,
     color: "#6b7280",
-    textAlign: "center",
+    textAlign: "right",
   },
   sectionsContainer: {
     padding: 16,
@@ -796,6 +807,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#6b7280",
+    textAlign: "right",
   },
   sectionContent: {
     gap: 12,
@@ -810,14 +822,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#6b7280",
     fontWeight: "600",
+    textAlign: "right",
   },
   sectionValue: {
     fontSize: 14,
     color: "#1f2937",
     fontWeight: "600",
     flex: 1,
-    textAlign: "left",
-    marginLeft: 8,
+    textAlign: "right",
+    marginRight: 8,
   },
   sectionFooter: {
     paddingTop: 12,
@@ -843,6 +856,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     color: "#1f2937",
+    textAlign: "right",
   },
   addSectionButton: {
     backgroundColor: "rgba(255, 255, 255, 0.2)",
@@ -889,11 +903,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     color: "#ffffff",
+    textAlign: "right",
   },
   studentsSectionSubtitle: {
     fontSize: 13,
     color: "rgba(255, 255, 255, 0.9)",
     marginTop: 4,
+    textAlign: "right",
   },
   tableContainer: {
     padding: 16,
