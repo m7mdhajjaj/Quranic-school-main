@@ -191,3 +191,55 @@ exports.notifyGroupDeletedForStudents = async (createNotification, studentIds, g
 
   return Promise.all(notifications.map(n => createNotification(n)));
 };
+
+/**
+ * إشعار بتغيير اسم الحلقة
+ * @param {Function} createNotification - دالة إنشاء الإشعار
+ * @param {string} teacherId - معرف المعلم
+ * @param {Array} studentIds - قائمة معرفات الطلاب
+ * @param {string} oldName - الاسم القديم
+ * @param {string} newName - الاسم الجديد
+ * @param {string} adminName - اسم المدير (اختياري)
+ */
+exports.notifyGroupRenamed = async (createNotification, teacherId, studentIds, oldName, newName, adminName = "الإدارة") => {
+  const promises = [];
+
+  // إشعار المعلم
+  if (teacherId) {
+    promises.push(createNotification({
+      recipient: teacherId,
+      recipientModel: 'Teacher',
+      title: 'تغيير اسم الحلقة',
+      message: `تم تغيير اسم حلقتك من "${oldName}" إلى "${newName}".`,
+      type: 'system',
+      data: { 
+        oldName,
+        newName,
+        action: 'group_renamed'
+      },
+      link: '/teacher/groups'
+    }));
+  }
+
+  // إشعار الطلاب
+  if (studentIds && studentIds.length > 0) {
+    studentIds.forEach(studentId => {
+      promises.push(createNotification({
+        recipient: studentId,
+        recipientModel: 'Student',
+        title: 'تغيير اسم الحلقة',
+        message: `تم تغيير اسم حلقتك من "${oldName}" إلى "${newName}".`,
+        type: 'system',
+        data: { 
+          oldName,
+          newName,
+          action: 'group_renamed'
+        },
+        link: '/student/group'
+      }));
+    });
+  }
+
+  return Promise.all(promises);
+};
+

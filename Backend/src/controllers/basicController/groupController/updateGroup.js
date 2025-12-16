@@ -127,6 +127,28 @@ exports.renameGroup = async (req, res) => {
 
     invalidateStudentCountsCache();
 
+    // 🔔 إرسال إشعار بتغيير اسم الحلقة
+    try {
+      const notificationService = req.app.get('notificationService');
+      if (notificationService) {
+        const adminName = req.user ? `${req.user.firstName} ${req.user.lastName}` : "الإدارة";
+        
+        // جلب الطلاب لإشعارهم
+        const students = await Student.find({ group: newName }).select('_id');
+        const studentIds = students.map(s => s._id);
+
+        await notificationService.notifyGroupRenamed(
+          group.teacher,
+          studentIds,
+          oldName,
+          newName,
+          adminName
+        );
+      }
+    } catch (notifyError) {
+      console.error("❌ فشل إرسال إشعار تغيير اسم الحلقة:", notifyError);
+    }
+
     return successResponse(res, { updatedStudents: updateResult.modifiedCount, updatedTeachers: teacherUpdateResult.modifiedCount }, `تم تحديث اسم المجموعة من "${oldName}" إلى "${newName}"`);
   } catch (error) {
     return handleError(res, error, "إعادة تسمية المجموعة");

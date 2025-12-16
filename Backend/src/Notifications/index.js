@@ -56,6 +56,7 @@ module.exports = {
   notifyGroupTransferredTo: require("./Handlers/AdminHandler").notifyGroupTransferredTo,
   notifyGroupDeleted: require("./Handlers/AdminHandler").notifyGroupDeleted,
   notifyTeacherInfoUpdated: require("./Handlers/AdminHandler").notifyTeacherInfoUpdated,
+  notifyGroupRenamed: require("./Handlers/AdminHandler").notifyGroupRenamed,
 
   notifyNewsPublished: NewsHandler.notifyNewsPublished,
   notifyNewsArchived: NewsHandler.notifyNewsArchived,

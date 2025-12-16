@@ -21,6 +21,7 @@ const {
   notifyTeacherInfoUpdated,
   notifyGroupStudentsTeacherChanged,
   notifyGroupDeletedForStudents,
+  notifyGroupRenamed,
 } = require("../Handlers/AdminHandler");
 
 /**
@@ -204,6 +205,17 @@ class NotificationManager {
       this.createNotification.bind(this),
       studentIds,
       groupName,
+      adminName
+    );
+  }
+
+  async notifyGroupRenamed(teacherId, studentIds, oldName, newName, adminName) {
+    return notifyGroupRenamed(
+      this.createNotification.bind(this),
+      teacherId,
+      studentIds,
+      oldName,
+      newName,
       adminName
     );
   }
