@@ -217,28 +217,28 @@ export const useDailyMarksHandlers = ({
 
     if (!result.isConfirmed) return;
 
+    // 1. Optimistic Update: Remove from UI immediately
+    setSections((prev) => prev.filter((section) => section._id !== sectionId));
+    setMarks((prev) =>
+      prev.filter((mark) => {
+        if (!mark || !mark.sectionId) return false;
+        const mSectionId = typeof mark.sectionId === "string" ? mark.sectionId : mark.sectionId._id;
+        return mSectionId !== sectionId;
+      })
+    );
+    
+    showSuccessToast("✅ تم حذف المقطع بنجاح!");
+
     try {
+      // 2. Call API in background
       await deleteSection(sectionId);
-
-      setSections((prev) => prev.filter((section) => section._id !== sectionId));
-      setMarks((prev) =>
-        prev.filter((mark) => {
-          if (!mark || !mark.sectionId) {
-            return false;
-          }
-          
-          if (typeof mark.sectionId === "string") {
-            return mark.sectionId !== sectionId;
-          } else {
-            return mark.sectionId._id !== sectionId;
-          }
-        })
-      );
-
-      showSuccessToast("✅ تم حذف المقطع بنجاح!");
     } catch (err) {
       console.error("Error deleting section:", err);
-      showErrorToast("❌ حدث خطأ أثناء حذف المقطع");
+      showErrorToast("❌ حدث خطأ أثناء حذف المقطع، سيتم استعادة البيانات...");
+      
+      // 3. Rollback on error
+      if (refetchSections) await refetchSections();
+      if (refetchMarks) await refetchMarks();
     }
   };
 
@@ -254,9 +254,29 @@ export const useDailyMarksHandlers = ({
 
     if (!selectedStudentId || !selectedSection) return;
 
+    // Generate a temporary ID for optimistic update
+    const tempId = `temp-${Date.now()}`;
+    const totalMark = (newMark.reviewMark || 0) + (newMark.memorizationMark || 0);
+
+    // Optimistic UI Update
+    const optimisticMark = {
+      _id: tempId,
+      studentId: selectedStudentId, // Note: In real app this might need to be an object if populated
+      sectionId: selectedSection._id,
+      reviewMark: newMark.reviewMark,
+      memorizationMark: newMark.memorizationMark,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } as unknown as Mark; // Casting because studentId might be expected as object
+
     try {
       setIsAddingMarkLoading?.(true);
       
+      // 1. Update UI Immediately
+      setMarks((prev) => [...prev, optimisticMark]);
+      setIsAddMarkModalOpen(false);
+      showSuccessToast(`✅ تم رصد العلامة بنجاح! العلامة: ${totalMark}/20`);
+
       const markData = {
         studentId: selectedStudentId,
         sectionId: selectedSection._id,
@@ -264,36 +284,28 @@ export const useDailyMarksHandlers = ({
         memorizationMark: newMark.memorizationMark,
       };
 
+      // 2. Call API in background
       const response = await createMark(markData as never);
 
       if (response.success && response.data) {
         const savedMark = response.data;
         
-        // Update local state directly instead of refetching
-        setMarks((prev) => {
-          const existingIndex = prev.findIndex(m => m._id === savedMark._id);
-          if (existingIndex >= 0) {
-            const newMarks = [...prev];
-            newMarks[existingIndex] = savedMark;
-            return newMarks;
-          }
-          return [...prev, savedMark];
-        });
-
-        // We skip refetching all sections to improve performance
-        // If section status update is critical, we should fetch only the specific section
+        // 3. Replace temp mark with real mark
+        setMarks((prev) => 
+          prev.map(m => m._id === tempId ? savedMark : m)
+        );
       } else {
         throw new Error(response.message || "Failed to create mark");
       }
-      
-      setIsAddMarkModalOpen(false);
-
-      const totalMark =
-        (newMark.reviewMark || 0) + (newMark.memorizationMark || 0);
-      showSuccessToast(`✅ تم رصد العلامة بنجاح! العلامة: ${totalMark}/20`);
     } catch (err) {
       console.error("Error adding mark:", err);
+      
+      // 4. Revert on error
+      setMarks((prev) => prev.filter(m => m._id !== tempId));
       showErrorToast("❌ حدث خطأ أثناء إضافة العلامة");
+      
+      // Re-open modal if needed, or just let user try again (data is lost from form though if modal closed)
+      // Ideally we might want to keep modal open, but for speed we closed it.
     } finally {
       setIsAddingMarkLoading?.(false);
     }
@@ -312,9 +324,25 @@ export const useDailyMarksHandlers = ({
 
     if (!editingMark || !selectedStudentId || !selectedSection) return;
 
-    setIsUpdatingMarkLoading?.(true);
+    const originalMark = { ...editingMark };
+    const totalMark = (newMark.reviewMark || 0) + (newMark.memorizationMark || 0);
 
     try {
+      setIsUpdatingMarkLoading?.(true);
+
+      // 1. Optimistic UI Update
+      setMarks((prev) => 
+        prev.map((mark) => 
+          mark._id === editingMark._id 
+            ? { ...mark, ...newMark, reviewMark: newMark.reviewMark, memorizationMark: newMark.memorizationMark } 
+            : mark
+        )
+      );
+      
+      setIsUpdateMarkModalOpen(false);
+      setEditingMark(null);
+      showSuccessToast(`🔄 تم تحديث العلامة بنجاح! العلامة الجديدة: ${totalMark}/20`);
+
       const markData = {
         studentId: selectedStudentId,
         sectionId: selectedSection._id,
@@ -322,12 +350,12 @@ export const useDailyMarksHandlers = ({
         memorizationMark: newMark.memorizationMark,
       };
 
+      // 2. Call API in background
       const response = await createMark(markData as never);
 
       if (response.success && response.data) {
         const updatedMark = response.data;
-        
-        // Update local state directly instead of refetching
+        // Update with server data (to ensure consistency)
         setMarks((prev) => 
           prev.map((mark) => 
             mark._id === updatedMark._id ? updatedMark : mark
@@ -336,15 +364,15 @@ export const useDailyMarksHandlers = ({
       } else {
         throw new Error(response.message || "Failed to update mark");
       }
-      
-      setIsUpdateMarkModalOpen(false);
-      setEditingMark(null);
-
-      const totalMark =
-        (newMark.reviewMark || 0) + (newMark.memorizationMark || 0);
-      showSuccessToast(`🔄 تم تحديث العلامة بنجاح! العلامة الجديدة: ${totalMark}/20`);
     } catch (err) {
       console.error("Error updating mark:", err);
+      
+      // 3. Revert on error
+      setMarks((prev) => 
+        prev.map((mark) => 
+          mark._id === editingMark._id ? originalMark : mark
+        )
+      );
       showErrorToast("❌ حدث خطأ أثناء تحديث العلامة");
     } finally {
       setIsUpdatingMarkLoading?.(false);

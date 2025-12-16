@@ -104,6 +104,8 @@ const HeroSection = ({
               <img
                 src={heroImage}
                 alt="مدرسة القرآن"
+                width="1200"
+                height="800"
                 className={`w-full h-full object-cover brightness-110 contrast-105 transition-opacity duration-500 ${
                   imageLoaded ? 'opacity-100' : 'opacity-0'
                 }`}

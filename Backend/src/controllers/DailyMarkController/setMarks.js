@@ -86,7 +86,8 @@ exports.setMarks = async (req, res) => {
     // 🔔 Send notifications to students
     console.log("🔔 إرسال الإشعارات...");
     const io = req.app.get("io");
-    await notifyMarksAdded(validatedMarks, io);
+    // Use updatedMarks because it has populated sectionId and studentId
+    await notifyMarksAdded(updatedMarks, io);
     console.log("✅ تم إرسال الإشعارات");
 
     // 🔌 Emit Socket.IO event

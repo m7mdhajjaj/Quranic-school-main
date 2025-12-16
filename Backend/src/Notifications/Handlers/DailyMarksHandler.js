@@ -17,6 +17,15 @@ exports.notifySectionAdded = async (section, io) => {
 
     let students = [];
     const groupIdentifier = section.group;
+    let groupName = section.group;
+
+    // Resolve Group Name if it is an ID
+    if (mongoose.Types.ObjectId.isValid(groupIdentifier)) {
+        const groupDoc = await Group.findById(groupIdentifier);
+        if (groupDoc) {
+            groupName = groupDoc.name;
+        }
+    }
 
     // 1. Try direct match (Name or ID)
     students = await Student.find({ group: groupIdentifier });
@@ -27,6 +36,7 @@ exports.notifySectionAdded = async (section, io) => {
       if (groupDoc) {
         console.log(`🔄 Found group name '${groupDoc.name}' for ID ${groupIdentifier}, searching students...`);
         students = await Student.find({ group: groupDoc.name });
+        // groupName is already set above
       }
     }
 
@@ -37,6 +47,7 @@ exports.notifySectionAdded = async (section, io) => {
           // Maybe some students have the ID stored?
           const studentsById = await Student.find({ group: groupDoc._id.toString() });
           students = [...students, ...studentsById];
+          groupName = groupDoc.name;
        }
     }
 
@@ -44,12 +55,14 @@ exports.notifySectionAdded = async (section, io) => {
 
     if (!students.length) return;
 
+    const dateStr = new Date(section.date).toLocaleDateString("ar-EG");
+
     const notifications = students.map((student) => ({
       recipient: student._id,
       recipientModel: "Student",
       type: "daily_marks", // or 'activity'
       title: "مقطع جديد",
-      message: `تم إضافة مقطع جديد لحلقة ${section.group}: حفظ ${section.memorizationSection}، مراجعة ${section.reviewSection}`,
+      message: `تم إضافة مقطع جديد لحلقة ${groupName} بتاريخ ${dateStr}: حفظ ${section.memorizationSection}، مراجعة ${section.reviewSection}`,
       data: {
         sectionId: section._id,
         action: "section_added",
@@ -89,6 +102,15 @@ exports.notifySectionUpdated = async (section, oldSection, io) => {
 
     let students = [];
     const groupIdentifier = section.group;
+    let groupName = section.group;
+
+    // Resolve Group Name if it is an ID
+    if (mongoose.Types.ObjectId.isValid(groupIdentifier)) {
+        const groupDoc = await Group.findById(groupIdentifier);
+        if (groupDoc) {
+            groupName = groupDoc.name;
+        }
+    }
 
     // 1. Try direct match (Name or ID)
     students = await Student.find({ group: groupIdentifier });
@@ -107,17 +129,20 @@ exports.notifySectionUpdated = async (section, oldSection, io) => {
        if (groupDoc) {
           const studentsById = await Student.find({ group: groupDoc._id.toString() });
           students = [...students, ...studentsById];
+          groupName = groupDoc.name;
        }
     }
 
     if (!students.length) return;
+
+    const dateStr = new Date(section.date).toLocaleDateString("ar-EG");
 
     const notifications = students.map((student) => ({
       recipient: student._id,
       recipientModel: "Student",
       type: "daily_marks",
       title: "تحديث مقطع",
-      message: `تم تحديث مقطع بتاريخ ${new Date(section.date).toLocaleDateString("ar-EG")}: حفظ ${section.memorizationSection}، مراجعة ${section.reviewSection}`,
+      message: `تم تحديث مقطع حلقة ${groupName} بتاريخ ${dateStr}: حفظ ${section.memorizationSection}، مراجعة ${section.reviewSection}`,
       data: {
         sectionId: section._id,
         action: "section_updated",
@@ -142,7 +167,73 @@ exports.notifySectionUpdated = async (section, oldSection, io) => {
 };
 
 exports.notifySectionDeleted = async (section, io) => {
-  // Implementation if needed
+  try {
+    if (!section || !section.group) return;
+
+    let students = [];
+    const groupIdentifier = section.group;
+    let groupName = section.group;
+
+    // Resolve Group Name if it is an ID
+    if (mongoose.Types.ObjectId.isValid(groupIdentifier)) {
+        const groupDoc = await Group.findById(groupIdentifier);
+        if (groupDoc) {
+            groupName = groupDoc.name;
+        }
+    }
+
+    // 1. Try direct match (Name or ID)
+    students = await Student.find({ group: groupIdentifier });
+
+    // 2. If no students found and it looks like an ObjectId, try finding by Name
+    if (students.length === 0 && mongoose.Types.ObjectId.isValid(groupIdentifier)) {
+      const groupDoc = await Group.findById(groupIdentifier);
+      if (groupDoc) {
+        students = await Student.find({ group: groupDoc.name });
+      }
+    }
+
+    // 3. If still no students and it looks like a Name, try finding by ID
+    if (students.length === 0 && !mongoose.Types.ObjectId.isValid(groupIdentifier)) {
+       const groupDoc = await Group.findOne({ name: groupIdentifier });
+       if (groupDoc) {
+          const studentsById = await Student.find({ group: groupDoc._id.toString() });
+          students = [...students, ...studentsById];
+          groupName = groupDoc.name;
+       }
+    }
+
+    if (!students.length) return;
+
+    const dateStr = new Date(section.date).toLocaleDateString("ar-EG");
+
+    const notifications = students.map((student) => ({
+      recipient: student._id,
+      recipientModel: "Student",
+      type: "daily_marks",
+      title: "حذف مقطع",
+      message: `تم حذف مقطع حلقة ${groupName} بتاريخ ${dateStr}: حفظ ${section.memorizationSection}، مراجعة ${section.reviewSection}`,
+      data: {
+        sectionId: section._id,
+        action: "section_deleted",
+      },
+    }));
+
+    for (const noteData of notifications) {
+      const notification = new Notification(noteData);
+      await notification.save();
+
+      if (io) {
+        await sendRealTimeNotification(io, notification);
+      }
+
+      await sendPushNotification(noteData.recipient, notification);
+    }
+    
+    console.log(`🔔 Sent section deleted notifications to ${students.length} students`);
+  } catch (error) {
+    console.error("❌ Error in notifySectionDeleted:", error);
+  }
 };
 
 exports.notifyStudentAboutSection = async (studentId, section, io) => {
@@ -161,15 +252,24 @@ exports.notifyMarkAdded = async (mark, io) => {
     // Ensure we use the ID string, not the populated object
     const recipientId = mark.studentId._id ? mark.studentId._id.toString() : mark.studentId.toString();
 
+    // Extract section details if available
+    let dateStr = "";
+    let sectionInfo = "";
+    
+    if (mark.sectionId && mark.sectionId.date) {
+        dateStr = new Date(mark.sectionId.date).toLocaleDateString("ar-EG");
+        sectionInfo = ` (مقطع: ${mark.sectionId.memorizationSection} / ${mark.sectionId.reviewSection})`;
+    }
+
     const notification = new Notification({
       recipient: recipientId,
       recipientModel: "Student",
       type: "daily_marks", // or 'grade'
       title: "علامة جديدة",
-      message: `تم رصد علامة جديدة: حفظ ${mark.memorizationMark || '-'}، مراجعة ${mark.reviewMark || '-'}`,
+      message: `تم رصد علامة جديدة بتاريخ ${dateStr}: حفظ ${mark.memorizationMark || '-'}، مراجعة ${mark.reviewMark || '-'}${sectionInfo}`,
       data: {
         markId: mark._id,
-        sectionId: mark.sectionId,
+        sectionId: mark.sectionId._id || mark.sectionId,
         action: "mark_added",
       },
     });
@@ -219,15 +319,22 @@ exports.notifyMarkUpdated = async (mark, io) => {
     // Ensure we use the ID string, not the populated object
     const recipientId = mark.studentId._id ? mark.studentId._id.toString() : mark.studentId.toString();
 
+    // Extract section details if available
+    let dateStr = "";
+    
+    if (mark.sectionId && mark.sectionId.date) {
+        dateStr = new Date(mark.sectionId.date).toLocaleDateString("ar-EG");
+    }
+
     const notification = new Notification({
       recipient: recipientId,
       recipientModel: "Student",
       type: "daily_marks",
       title: "تحديث علامة",
-      message: `تم تعديل علامتك: حفظ ${mark.memorizationMark || '-'}، مراجعة ${mark.reviewMark || '-'}`,
+      message: `تم تعديل علامتك بتاريخ ${dateStr}: حفظ ${mark.memorizationMark || '-'}، مراجعة ${mark.reviewMark || '-'}`,
       data: {
         markId: mark._id,
-        sectionId: mark.sectionId,
+        sectionId: mark.sectionId._id || mark.sectionId,
         action: "mark_updated",
       },
     });
@@ -247,7 +354,46 @@ exports.notifyMarkUpdated = async (mark, io) => {
 };
 
 exports.notifyMarkDeleted = async (mark, io) => {
-  // Implementation if needed
+  try {
+    if (!mark || !mark.studentId) return;
+
+    // Ensure we use the ID string, not the populated object
+    const recipientId = mark.studentId._id ? mark.studentId._id.toString() : mark.studentId.toString();
+
+    // Extract section details if available
+    let dateStr = "";
+    let sectionInfo = "";
+    
+    if (mark.sectionId && mark.sectionId.date) {
+        dateStr = new Date(mark.sectionId.date).toLocaleDateString("ar-EG");
+        sectionInfo = ` (مقطع: ${mark.sectionId.memorizationSection} / ${mark.sectionId.reviewSection})`;
+    }
+
+    const notification = new Notification({
+      recipient: recipientId,
+      recipientModel: "Student",
+      type: "daily_marks",
+      title: "حذف علامة",
+      message: `تم حذف علامتك بتاريخ ${dateStr}${sectionInfo}`,
+      data: {
+        markId: mark._id,
+        sectionId: mark.sectionId._id || mark.sectionId,
+        action: "mark_deleted",
+      },
+    });
+
+    await notification.save();
+
+    if (io) {
+      await sendRealTimeNotification(io, notification);
+    }
+
+    await sendPushNotification(recipientId, notification);
+    
+    console.log(`🔔 Sent mark deleted notification to student ${recipientId}`);
+  } catch (error) {
+    console.error("❌ Error in notifyMarkDeleted:", error);
+  }
 };
 
 exports.notifyStudentMarks = async (studentId, marks, io) => {

@@ -20,17 +20,19 @@ exports.deleteSection = async (req, res) => {
       return sendNotFound(res, "المقطع");
     }
 
-    // إرسال إشعارات قبل الحذف
+    // إرسال إشعارات في الخلفية (بدون انتظار)
     const io = req.app.get("io");
     if (io && section.group) {
-      await notifySectionDeleted(section, io);
+      notifySectionDeleted(section, io).catch(err => 
+        console.error("⚠️ Error sending delete notification:", err)
+      );
     }
 
-    // Delete all marks for this section
-    await DailyMark.deleteMany({ sectionId: req.params.id });
-
-    // Delete the section
-    await Section.findByIdAndDelete(req.params.id);
+    // تنفيذ عمليات الحذف بشكل متوازي لتحسين الأداء
+    await Promise.all([
+      DailyMark.deleteMany({ sectionId: req.params.id }),
+      Section.findByIdAndDelete(req.params.id)
+    ]);
 
     sendSuccess(res, { deletedId: req.params.id }, "تم حذف المقطع وجميع علاماته بنجاح");
   } catch (error) {

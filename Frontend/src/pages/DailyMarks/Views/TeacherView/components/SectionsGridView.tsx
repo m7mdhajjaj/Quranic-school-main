@@ -8,7 +8,7 @@ import { DateRangePicker } from "@/components/UI/DateRangePicker";
 import SectionStatusFilter from "../../../components/SectionStatusFilter";
 import type { MarkStatus } from "../../../components/SectionStatusBadge";
 import { DropdownMenu } from "@/components/UI/DropdownMenu";
-import { CardSkeleton } from "@/components/skeletons";
+import { SectionCardSkeleton } from "../../../components/SectionCardSkeleton";
 import type { Section } from "../../../types/types";
 
 interface SectionsGridViewProps {
@@ -184,12 +184,7 @@ export const SectionsGridView = ({
       {loadingMarks ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: 9 }).map((_, i) => (
-            <div key={i}>
-              <CardSkeleton 
-                hasImage={false} 
-                contentLines={4}
-              />
-            </div>
+            <SectionCardSkeleton key={i} />
           ))}
         </div>
       ) : sections.length === 0 ? (
