@@ -44,8 +44,7 @@ const Goals = () => {
       icon: Heart,
       bgColor: "#115e59",
       title: "غرس القيم",
-      description:
-        "غرس القيم والأخلاق الإسلامية المستمدة من القرآن الكريم.",
+      description: "غرس القيم والأخلاق الإسلامية المستمدة من القرآن الكريم.",
     },
   ];
 
@@ -54,7 +53,8 @@ const Goals = () => {
       id: 1,
       icon: Clock,
       title: "ربط الطلاب بالسلف",
-      description: "ربط الطلاب بسير السلف الصالح من أهل القرآن وأثرهم في الأمة.",
+      description:
+        "ربط الطلاب بسير السلف الصالح من أهل القرآن وأثرهم في الأمة.",
     },
     {
       id: 2,
@@ -89,7 +89,11 @@ const Goals = () => {
         {mainGoals.map((goal) => (
           <Card key={goal.id} style={styles.goalCard}>
             <View style={styles.goalCardContent}>
-              <View style={[styles.iconContainer, { backgroundColor: goal.bgColor }]}>
+              <View
+                style={[
+                  styles.iconContainer,
+                  { backgroundColor: goal.bgColor },
+                ]}>
                 <View style={styles.iconCircle}>
                   <goal.icon size={32} color={goal.bgColor} />
                 </View>
