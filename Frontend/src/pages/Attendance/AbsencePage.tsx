@@ -1,34 +1,53 @@
 // AbsencePage.tsx
 import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAbsenceData, useAttendanceStats, useUnsavedChanges, useStudentFilters, useStudentSelection, useAttendanceSave } from "./hooks";
-import { TeacherToolbar, StudentView, StudentsTable } from "./components";
-import { isDateTooOld, getDaysAgo } from "./utils/dateHelpers";
+import { StudentView } from "./components";
+import { TeacherGroupsGrid } from "./components/TeacherGroupsGrid";
+import { TeacherAttendanceView } from "./components/TeacherAttendanceView";
+import { isDateTooOld, getDaysAgo, todayISO } from "./utils/dateHelpers";
 import { Card } from "@/components/UI/Card";
 import PageHeader from "@/components/UI/PageHeader";
-import ResponsivePagination from "@/components/UI/ResponsivePagination";
-import { LoadingSpinner } from "@/components/UI/LoadingSpinner";
 
 const AbsencePage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
     currentUser,
     error,
     students,
     setStudents,
     date,
-    setDate,
+    startDate,
+    endDate,
+    setDateRange,
     monthlyStats,
     teacherGroups,
     fetchStudentsForTeacher,
     fetchStudentAbsenceStats,
   } = useAbsenceData();
 
-  const [isLoadingDate, setIsLoadingDate] = useState(true); // Start with true for initial load
+  const [isLoadingDate, setIsLoadingDate] = useState(true);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  
+  // استخراج الحلقة المختارة من الرابط
+  const selectedGroupId = searchParams.get('groupId');
+  const selectedGroup = useMemo(() => 
+    teacherGroups.find(g => g._id === selectedGroupId) || null
+  , [teacherGroups, selectedGroupId]);
 
   // استخدام hook للتحذير من التغييرات غير المحفوظة
-  useUnsavedChanges({ hasUnsavedChanges});
+  useUnsavedChanges({ hasUnsavedChanges });
 
-  // Initial load and re-fetch on date change
+  // Reset date when leaving group view (returning to groups list)
+  useEffect(() => {
+    if (!selectedGroupId) {
+      const today = todayISO();
+      setDateRange(today, today);
+      setHasUnsavedChanges(false);
+    }
+  }, [selectedGroupId]);
+
+  // Initial load
   useEffect(() => {
     if (!currentUser) return;
     
@@ -49,103 +68,24 @@ const AbsencePage = () => {
     loadData();
   }, [date, currentUser, fetchStudentsForTeacher, fetchStudentAbsenceStats]);
 
-  // TODO: Re-fetch on socket update when attendance socket hook is implemented
-  // useEffect(() => {
-  //   if (!socketLastUpdate || !currentUser || isLoadingDate) return;
-  //   
-  //   // منع re-fetch إذا كان آخر تحديث قبل أقل من 2 ثانية
-  //   const timeSinceLastUpdate = Date.now() - socketLastUpdate.getTime();
-  //   if (timeSinceLastUpdate < 2000) return;
-  //   
-  //   const refetchData = async () => {
-  //     try {
-  //       console.log('🔄 Re-fetching data due to socket update...');
-  //       if (currentUser.role === "teacher" || currentUser.role === "admin") {
-  //         await fetchStudentsForTeacher(date);
-  //       } else if (currentUser.role === "student") {
-  //         await fetchStudentAbsenceStats(currentUser._id);
-  //       }
-  //     } catch (err) {
-  //       console.error("Error refetching attendance after socket update:", err);
-  //     }
-  //   };
-  //   
-  //   refetchData();
-  // }, [socketLastUpdate, currentUser, isLoadingDate, date, fetchStudentsForTeacher, fetchStudentAbsenceStats]);
-
-  // Groups available - استخدام حلقات المعلم (بدون خيار "جميع الحلقات")
-  const groupsAvailable = useMemo(() => {
-    // إذا كان المعلم لديه حلقات محددة من API، استخدمها
-    if (currentUser?.role === 'teacher' && teacherGroups.length > 0) {
-      const groupNames = teacherGroups.map(g => g.name).sort((a, b) => a.localeCompare(b, "ar"));
-      
-      // تحقق من وجود طلاب بدون حلقة
-      const hasStudentsWithoutGroup = students.some(s => !s.group);
-      
-      // فقط الحلقات (بدون "all")
-      const result = [...groupNames];
-      
-      // إضافة "بدون حلقة" إذا وُجد طلاب بدون حلقة
-      if (hasStudentsWithoutGroup) {
-        result.push("");
-      }
-      
-      console.log(`📋 الحلقات المتاحة في الفلتر:`);
-      teacherGroups.forEach(g => {
-        console.log(`   • ${g.name}: ${g.totalStudents || 0} طالب`);
-      });
-      
-      return result;
-    }
-    
-    // في حالة الأدمن أو عدم وجود حلقات من API، احسبها من الطلاب الموجودين
-    const set = new Set<string>();
-    let hasStudentsWithoutGroup = false;
-    
-    students.forEach((s) => {
-      if (s.group) {
-        set.add(s.group);
-      } else {
-        hasStudentsWithoutGroup = true;
-      }
-    });
-    
-    const groups = Array.from(set).sort((a, b) => a.localeCompare(b, "ar"));
-    
-    // فقط الحلقات (بدون "all")
-    const result = [...groups];
-    
-    // إضافة "بدون حلقة" في النهاية إذا وُجد طلاب بدون حلقة
-    if (hasStudentsWithoutGroup) {
-      result.push("");
-    }
-    
-    return result;
-  }, [students, teacherGroups, currentUser]);
-
-
-
-
-
-
-
   // استخدام hook للفلترة والبحث والصفحات
   const {
-    groupFilter,
     setGroupFilter,
     nameQuery,
     setNameQuery,
-    currentPage,
-    setCurrentPage,
     visibleStudents,
-    paginatedStudents,
-    totalPages,
-    itemsPerPage,
   } = useStudentFilters({
     students,
-    groupsAvailable,
-    itemsPerPage: 10,
   });
+
+  // Sync group filter with selected group
+  useEffect(() => {
+    if (selectedGroup) {
+      setGroupFilter(selectedGroup.name);
+    } else {
+      setGroupFilter('');
+    }
+  }, [selectedGroup, setGroupFilter]);
 
   // استخدام hook لإدارة اختيار الطلاب
   const { selectedAll, toggleStudentPresence, toggleAllStudents } =
@@ -196,7 +136,7 @@ const AbsencePage = () => {
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 py-8 px-4"
+      className="min-h-screen py-8 px-4 bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100"
       dir="rtl">
       <div className="container mx-auto max-w-[1800px]">
         {/* العنوان */}
@@ -205,7 +145,9 @@ const AbsencePage = () => {
           subtitle={
             currentUser?.role === "student"
               ? "اطّلع على سجل غيابك الشهري وإجمالي السنة"
-              : "سجّل حضور الطلاب يومياً مع أدوات فلترة وبحث"
+              : selectedGroup 
+                ? `تسجيل الحضور لحلقة: ${selectedGroup.name}`
+                : "اختر الحلقة للبدء بتسجيل الحضور"
           }
           icon={
             <div className="text-6xl">
@@ -217,90 +159,36 @@ const AbsencePage = () => {
         {currentUser?.role === "student" ? (
           <StudentView monthlyStats={monthlyStats} />
         ) : (
-          <div className="space-y-6">
-            <TeacherToolbar
-                  date={date}
-                  onDateChange={setDate}
-                  groupFilter={groupFilter}
-                  onGroupFilterChange={setGroupFilter}
-                  groupsAvailable={groupsAvailable}
-                  teacherGroups={teacherGroups}
-                  nameQuery={nameQuery}
-                  onNameQueryChange={setNameQuery}
-                  totalStudents={displayStats.totalStudents}
-                  presentCount={displayStats.presentCount}
-                  absentCount={displayStats.absentCount}
-                  attendanceRate={displayStats.attendanceRate}
-                  isDateTooOld={dateTooOld}
-                  daysAgo={daysAgo}
-                  onSave={handleSave}
-                  isSaving={isSaving}
-                  isLoading={isLoadingDate}
-                />
-
-                {/* جدول الطلاب */}
-                {isLoadingDate || isSaving ? (
-                  <Card variant="elevated" className="overflow-hidden">
-                    <div className="flex flex-col items-center justify-center min-h-[300px] gap-4">
-                      <LoadingSpinner size="lg" />
-                      <p className="text-lg text-gray-600 font-semibold">
-                        {isSaving ? "جاري حفظ الحضور..." : "جاري تحميل البيانات..."}
-                      </p>
-                    </div>
-                  </Card>
-                ) : (
-                  <>
-                    <StudentsTable
-                      students={paginatedStudents}
-                      selectedAll={selectedAll}
-                      onToggleAll={toggleAllStudents}
-                      onTogglePresence={toggleStudentPresence}
-                    />
-
-                    {/* Pagination */}
-                    {visibleStudents.length > itemsPerPage && (
-                      <div className="px-6">
-                        <ResponsivePagination
-                          currentPage={currentPage}
-                          totalPages={totalPages}
-                          totalItems={visibleStudents.length}
-                          itemsPerPage={itemsPerPage}
-                          onPageChange={setCurrentPage}
-                          itemName="طالب"
-                          showQuickJump={true}
-                        />
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {/* تعليمات سريعة */}
-                <Card className="min-h-[200px]">
-                  <h3 className="font-bold text-gray-700 mb-2 flex items-center">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5 ml-1 text-amber-500"
-                      viewBox="0 0 20 20"
-                      fill="currentColor">
-                      <path
-                        fillRule="evenodd"
-                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    تعليمات:
-                  </h3>
-                  <ul className="text-gray-600 text-sm mr-6 list-disc space-y-1">
-                    <li>انقر على صفّ الطالب لقلب حالته (حاضر/غائب).</li>
-                    <li>خانة التحديد العلوية لاختيار الكل بسرعة.</li>
-                    <li>اضغط "حفظ السجل" لحفظ التغييرات.</li>
-                    <li>
-                      سيتم تحذيرك عند وجود تغييرات غير محفوظة قبل الخروج.
-                    </li>
-                    <li>استخدم البحث والفلترة حسب الحلقة لتسريع العمل.</li>
-                  </ul>
-                </Card>
-          </div>
+          <>
+            {!selectedGroup ? (
+              <TeacherGroupsGrid 
+                groups={teacherGroups} 
+                onSelectGroup={(group) => setSearchParams({ groupId: group._id })}
+                isLoading={isLoadingDate}
+              />
+            ) : (
+              <TeacherAttendanceView
+                group={selectedGroup}
+                onBack={() => setSearchParams({})}
+                startDate={startDate}
+                endDate={endDate}
+                setDateRange={setDateRange}
+                nameQuery={nameQuery}
+                setNameQuery={setNameQuery}
+                displayStats={displayStats}
+                isDateTooOld={dateTooOld}
+                daysAgo={daysAgo}
+                handleSave={handleSave}
+                isSaving={isSaving}
+                isLoadingDate={isLoadingDate}
+                students={visibleStudents}
+                selectedAll={selectedAll}
+                toggleAllStudents={toggleAllStudents}
+                toggleStudentPresence={toggleStudentPresence}
+                hasUnsavedChanges={hasUnsavedChanges}
+              />
+            )}
+          </>
         )}
       </div>
     </div>

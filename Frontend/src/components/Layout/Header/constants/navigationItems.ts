@@ -110,7 +110,7 @@ export const getPrimaryNavItems = (rolePermissions: RolePermissions): Navigation
         color: "from-yellow-500 to-orange-500",
       },
       {
-        to: "/absence",
+        to: "/attendance",
         label: "الحضور والغياب",
         icon: UserCheck,
         color: "from-red-500 to-pink-500",
@@ -146,7 +146,7 @@ export const getPrimaryNavItems = (rolePermissions: RolePermissions): Navigation
       color: "from-yellow-500 to-orange-500",
     },
     {
-      to: "/absence",
+      to: "/attendance",
       label: "الحضور والغياب",
       icon: UserCheck,
       color: "from-red-500 to-pink-500",

@@ -96,9 +96,9 @@ export const StudentView = ({ monthlyStats }: StudentViewProps) => {
           </Card>
           <Card
             variant="elevated"
-            className="text-center border-r-4 border-blue-500">
+            className="text-center border-r-4 border-teal-500">
             <div className="text-sm text-gray-600 mb-1">إجمالي الأيام</div>
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-2xl font-bold text-teal-600">
               {yearTotals.totalDays}
             </div>
           </Card>
@@ -191,10 +191,10 @@ export const StudentView = ({ monthlyStats }: StudentViewProps) => {
 
         {/* ملاحظة للطالب */}
         <div className="p-4 bg-gray-50">
-          <div className="flex items-start p-3 bg-blue-50 rounded-lg">
+          <div className="flex items-start p-3 bg-teal-50 rounded-lg">
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 ml-2 text-blue-500 mt-0.5 flex-shrink-0"
+              className="h-5 w-5 ml-2 text-teal-500 mt-0.5 flex-shrink-0"
               viewBox="0 0 20 20"
               fill="currentColor">
               <path
@@ -204,10 +204,10 @@ export const StudentView = ({ monthlyStats }: StudentViewProps) => {
               />
             </svg>
             <div>
-              <p className="text-sm text-blue-800 font-medium mb-1">
+              <p className="text-sm text-teal-800 font-medium mb-1">
                 ملاحظة مهمة
               </p>
-              <p className="text-xs text-blue-700">
+              <p className="text-xs text-teal-700">
                 الحد المسموح للغياب هو 10% من أيام الدراسة. تجاوز هذه النسبة قد
                 يؤثر على التقييم النهائي.
               </p>

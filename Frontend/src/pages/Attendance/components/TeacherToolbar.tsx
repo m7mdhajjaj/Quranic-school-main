@@ -1,20 +1,15 @@
 // components/TeacherToolbar.tsx
-import { Card } from '@/components/UI/Card';
-import { Input } from '@/components/UI/Input';
-import { Select } from '@/components/UI/Select';
-import { Alert } from '@/components/UI/Alert';
-import { DatePicker } from '@/components/UI/DatePicker';
-import { Users, Check, X } from 'lucide-react';
-import { StatCardSkeleton, FiltersSkeleton } from '@/components/skeletons';
+import { DateRangePicker } from '@/components/UI/DateRangePicker';
+import { Users, Check, X, ArrowRight, Search, Save } from 'lucide-react';
+import { StatCardSkeleton } from '@/components/skeletons';
 import type { TeacherToolbarProps } from '../types/absence.types';
 
 export const TeacherToolbar = ({
-  date,
-  onDateChange,
-  groupFilter,
-  onGroupFilterChange,
-  groupsAvailable,
-  teacherGroups = [],
+  startDate,
+  endDate,
+  onDateRangeChange,
+  currentGroupName,
+  onBackToGroups,
   nameQuery,
   onNameQueryChange,
   totalStudents,
@@ -26,289 +21,151 @@ export const TeacherToolbar = ({
   onSave,
   isSaving,
   isLoading = false,
+  hasUnsavedChanges = false,
 }: TeacherToolbarProps) => {
-  // إنشاء map لعدد الطلاب في كل حلقة
-  const groupStudentCountMap = new Map(
-    teacherGroups.map(g => [g.name, g.totalStudents || 0])
-  );
-
-  // حساب إجمالي الطلاب حسب الحلقة المختارة
-  const getGroupTotalStudents = () => {
-    if (groupFilter === '') {
-      // إذا كان "بدون حلقة"، أرجع عدد الطلاب المعروضين
-      return totalStudents;
-    } else {
-      // إذا كانت حلقة محددة، أرجع عدد طلاب تلك الحلقة
-      return groupStudentCountMap.get(groupFilter) || totalStudents;
-    }
-  };
-
-  const displayTotalStudents = getGroupTotalStudents();
-
   return (
-    <div className="space-y-4">
-      {/* Stats Cards - استخدام Card من UI Library */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {isLoading ? (
-          <>
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-          </>
-        ) : (
-          <>
-            <Card variant="elevated" className="border-r-4 border-blue-500">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm mb-1">
-                    إجمالي الطلاب
-                    {groupFilter !== '' && (
-                      <span className="text-xs mr-1 text-blue-500">
-                        ({groupFilter})
-                      </span>
-                    )}
-                  </p>
-                  <p className="text-3xl font-bold text-blue-600">
-                    {displayTotalStudents}
-                  </p>
-                </div>
-                <Users className="w-12 h-12 text-blue-500 opacity-30" />
-              </div>
-            </Card>
-
-            <Card variant="elevated" className="border-r-4 border-emerald-500">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm mb-1">الحاضرون</p>
-                  <p className="text-3xl font-bold text-emerald-600">
-                    {presentCount}
-                  </p>
-                </div>
-                <Check className="w-12 h-12 text-emerald-500 opacity-30" />
-              </div>
-            </Card>
-
-            <Card variant="elevated" className="border-r-4 border-red-500">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm mb-1">الغائبون</p>
-                  <p className="text-3xl font-bold text-red-600">
-                    {absentCount}
-                  </p>
-                </div>
-                <X className="w-12 h-12 text-red-500 opacity-30" />
-              </div>
-            </Card>
-
-            <Card variant="elevated" className="border-r-4 border-purple-500">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600 text-sm mb-1">نسبة الحضور</p>
-                  <p className="text-3xl font-bold text-purple-600">
-                    {attendanceRate}%
-                  </p>
-                </div>
-                <svg
-                  className="w-12 h-12 text-purple-500 opacity-30"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                  />
-                </svg>
-              </div>
-            </Card>
-          </>
-        )}
-      </div>
-
-      {/* Filters Card - استخدام Card من UI Library */}
-      <Card>
-        <div className="space-y-4">
-          {/* عنوان القسم */}
-          <div className="border-b border-gray-200 pb-3">
-            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-              <Users className="w-6 h-6 text-emerald-600" />
-              أدوات الفلترة والبحث
-            </h3>
-            <p className="text-sm text-gray-600 mt-1">
-              اختر الحلقة وابحث عن الطلاب
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {isLoading ? (
-              <FiltersSkeleton count={2} />
-            ) : (
-              <>
-                {/* الحلقة - استخدام Select من UI Library */}
-                <div>
-                  <label className="flex items-center gap-2 text-base font-semibold text-gray-700 mb-3">
-                    <Users className="h-5 w-5 text-emerald-600" />
-                    الحلقة
-                  </label>
-                  <Select
-                    value={groupFilter}
-                    onChange={(e) => onGroupFilterChange(e.target.value)}
-                    options={groupsAvailable.length === 0 
-                      ? [{ value: '', label: 'جاري تحميل الحلقات...' }]
-                      : groupsAvailable.map((g) => {
-                          const studentCount = groupStudentCountMap.get(g) || 0;
-                          let label = '';
-                          
-                          if (g === '') {
-                            label = 'بدون حلقة';
-                          } else {
-                            // إضافة عدد الطلاب بجانب اسم الحلقة
-                            label = `${g} (${studentCount} طالب)`;
-                          }
-                          
-                          return {
-                            value: g,
-                            label,
-                          };
-                        })
-                    }
-                  />
-                </div>
-
-                {/* بحث */}
-                <div>
-                  <label className="flex items-center gap-2 text-base font-semibold text-gray-700 mb-3">
-                    <svg
-                      className="h-5 w-5 text-emerald-600"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      />
-                    </svg>
-                    بحث بالاسم
-                  </label>
-                  <Input
-                    type="text"
-                    placeholder="ابحث عن طالب..."
-                    value={nameQuery}
-                    onChange={(e) => onNameQueryChange(e.target.value)}
-                  />
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      </Card>
-
-      {/* Date and Save Card */}
-      <Card>
-        <div className="space-y-4">
-          {/* عنوان القسم */}
-          <div className="border-b border-gray-200 pb-3">
-            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6 text-emerald-600"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              التاريخ وحفظ السجل
-            </h3>
-            <p className="text-sm text-gray-600 mt-1">
-              اختر التاريخ واحفظ بيانات الحضور
-            </p>
-          </div>
-
-          {/* تحذير - استخدام Alert من UI Library */}
-          {isDateTooOld && (
-            <Alert variant="warning">
-              ⚠️ تحذير: هذا التاريخ قديم (مضى عليه {daysAgo} يوم). لا يمكن تعديل
-              الحضور بعد مرور أسبوع.
-            </Alert>
+    <>
+      {/* Sticky Header Section */}
+      <div className="sticky top-0 z-30 bg-gradient-to-r from-emerald-500/95 to-teal-500/95 backdrop-blur-sm border-b border-emerald-600 shadow-sm py-4 px-4 sm:px-6 -mx-4 sm:mx-0 sm:rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all">
+        <div className="flex items-center gap-4 w-full md:w-auto">
+          {onBackToGroups && (
+            <button 
+              onClick={onBackToGroups}
+              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all shadow-sm border border-white/10"
+              title="العودة للحلقات"
+            >
+              <ArrowRight className="w-5 h-5" />
+            </button>
           )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
-            {/* التاريخ */}
-            <DatePicker label="التاريخ" value={date} onChange={onDateChange} />
-
-            {/* زر الحفظ */}
-            <div>
-              <button
-                onClick={onSave}
-                disabled={isDateTooOld || isSaving}
-                className={`w-full px-8 py-3 text-lg rounded-xl shadow-lg flex items-center justify-center gap-3 font-bold transition-all min-h-[52px] ${
-                  isDateTooOld || isSaving
-                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed opacity-60'
-                    : 'bg-emerald-600 text-white hover:bg-emerald-700'
-                }`}
-                title={
-                  isDateTooOld
-                    ? 'لا يمكن الحفظ - التاريخ أقدم من أسبوع'
-                    : isSaving
-                      ? 'جاري الحفظ...'
-                      : 'حفظ السجل'
-                }
-              >
-                {isSaving ? (
-                  <svg
-                    className="animate-spin h-6 w-6"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                ) : (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                )}
-                {isDateTooOld
-                  ? 'لا يمكن الحفظ (التاريخ قديم)'
-                  : isSaving
-                    ? 'جاري الحفظ...'
-                    : 'حفظ السجل'}
-              </button>
+          <div>
+            <h2 className="text-lg font-bold text-white">تسجيل الحضور</h2>
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-white"></span>
+              <p className="text-xs text-emerald-50 font-medium">حلقة: <span className="text-white font-bold">{currentGroupName}</span></p>
             </div>
           </div>
         </div>
-      </Card>
-    </div>
+        <div className="w-full md:w-auto min-w-[280px]">
+          <DateRangePicker 
+            startDate={startDate} 
+            endDate={endDate} 
+            onChange={onDateRangeChange} 
+            className="w-full"
+            singleDate={true}
+            maxDate={new Date().toISOString().split('T')[0]}
+          />
+        </div>
+      </div>
+
+      {/* Body Section (Stats & Actions) */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6">
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          {isLoading ? (
+            <>
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+              <StatCardSkeleton />
+            </>
+          ) : (
+            <>
+              <div className="rounded-2xl p-5 border border-[rgba(0,179,128,0.18)] bg-[rgba(0,179,128,0.06)] flex items-center justify-between hover:bg-[rgba(0,179,128,0.08)] transition-colors">
+                <div className="p-3 bg-white rounded-xl shadow-sm border border-gray-100 text-[rgba(0,179,128,1)]">
+                  <Users size={22} />
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-[rgba(0,179,128,1)] mb-1">إجمالي الطلاب</p>
+                  <p className="text-3xl font-extrabold text-[rgba(0,179,128,1)] leading-none">{totalStudents}</p>
+                </div>
+              </div>
+
+              <div className="rounded-2xl p-5 border border-[rgba(34,197,94,0.18)] bg-[rgba(34,197,94,0.06)] flex items-center justify-between hover:bg-[rgba(34,197,94,0.08)] transition-colors">
+                <div className="p-3 bg-white rounded-xl shadow-sm border border-gray-100 text-[rgba(34,197,94,1)]">
+                  <Check size={22} />
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-[rgba(34,197,94,1)] mb-1">الحاضرون</p>
+                  <p className="text-3xl font-extrabold text-[rgba(34,197,94,1)] leading-none">{presentCount}</p>
+                </div>
+              </div>
+
+              <div className="rounded-2xl p-5 border border-[rgba(239,68,68,0.18)] bg-[rgba(239,68,68,0.06)] flex items-center justify-between hover:bg-[rgba(239,68,68,0.08)] transition-colors">
+                <div className="p-3 bg-white rounded-xl shadow-sm border border-gray-100 text-[rgba(239,68,68,1)]">
+                  <X size={22} />
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-[rgba(239,68,68,1)] mb-1">الغائبون</p>
+                  <p className="text-3xl font-extrabold text-[rgba(239,68,68,1)] leading-none">{absentCount}</p>
+                </div>
+              </div>
+
+              <div className="rounded-2xl p-5 border border-[rgba(168,85,247,0.18)] bg-[rgba(168,85,247,0.06)] flex items-center justify-between hover:bg-[rgba(168,85,247,0.08)] transition-colors">
+                <div className="p-3 bg-white rounded-xl shadow-sm border border-gray-100 text-[rgba(168,85,247,1)]">
+                  <svg className="w-[22px] h-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-[rgba(168,85,247,1)] mb-1">نسبة الحضور</p>
+                  <p className="text-3xl font-extrabold text-[rgba(168,85,247,1)] leading-none">{attendanceRate}%</p>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-col lg:flex-row gap-4 justify-between items-end lg:items-center pt-4 border-t border-gray-100">
+          <div className="w-full lg:w-1/3 relative">
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+              <Search size={18} />
+            </div>
+            <input
+              type="text"
+              placeholder="بحث عن طالب..."
+              value={nameQuery}
+              onChange={(e) => onNameQueryChange(e.target.value)}
+              className="w-full pl-4 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all outline-none text-sm"
+            />
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
+            {isDateTooOld && (
+              <div className="flex items-center gap-2 text-amber-600 bg-amber-50 px-3 py-2 rounded-lg text-xs font-medium w-full sm:w-auto justify-center">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span>تاريخ قديم ({daysAgo} يوم)</span>
+              </div>
+            )}
+            
+            <button
+              onClick={onSave}
+              disabled={isDateTooOld || isSaving || !hasUnsavedChanges}
+              className={`
+                w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold text-white shadow-sm flex items-center justify-center gap-2 transition-all
+                ${isDateTooOld || isSaving || !hasUnsavedChanges
+                  ? 'bg-gray-300 cursor-not-allowed'
+                  : 'bg-emerald-600 hover:bg-emerald-700 hover:shadow-md active:scale-95'
+                }
+              `}
+            >
+              {isSaving ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>جاري الحفظ...</span>
+                </>
+              ) : (
+                <>
+                  <Save size={18} />
+                  <span>حفظ السجل</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
   );
 };

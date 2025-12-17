@@ -28,19 +28,6 @@ export interface MonthlyAbsence {
   rate: number;
 }
 
-export interface MonthlyAttendanceStats {
-  presentDays: number;
-  absentDays: number;
-  totalDays: number;
-  attendanceRate: number;
-}
-
-export interface AttendanceRecordPayload {
-  studentId: string;
-  date: string;
-  isPresent: boolean;
-}
-
 export interface YearTotals {
   absenceCount: number;
   totalDays: number;
@@ -76,14 +63,20 @@ export interface UseStudentStatsProps {
 // Component Props Interfaces
 // ============================================
 
+export interface TeacherGroup {
+  _id: string;
+  name: string;
+  status?: string; // active, inactive, etc.
+  totalStudents?: number;
+}
+
 // TeacherToolbar Component
 export interface TeacherToolbarProps {
-  date: string;
-  onDateChange: (date: string) => void;
-  groupFilter: string;
-  onGroupFilterChange: (group: string) => void;
-  groupsAvailable: string[];
-  teacherGroups?: Array<{ _id: string; name: string; totalStudents?: number }>;
+  startDate: string | null;
+  endDate: string | null;
+  onDateRangeChange: (start: string | null, end: string | null) => void;
+  currentGroupName?: string; // New prop for display only
+  onBackToGroups?: () => void; // New prop for navigation
   nameQuery: string;
   onNameQueryChange: (query: string) => void;
   totalStudents: number;
@@ -95,6 +88,7 @@ export interface TeacherToolbarProps {
   onSave: () => void;
   isSaving: boolean;
   isLoading?: boolean;
+  hasUnsavedChanges?: boolean;
 }
 
 // StudentsTable Component

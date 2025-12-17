@@ -6,4 +6,3 @@ export { useUnsavedChanges } from "./useUnsavedChanges";
 export { useStudentFilters } from "./useStudentFilters";
 export { useStudentSelection } from "./useStudentSelection";
 export { useAttendanceSave } from "./useAttendanceSave";
-export { useAdvancedAttendanceStats } from "./useAdvancedAttendanceStats";

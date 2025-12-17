@@ -53,6 +53,13 @@ export const useAttendanceSave = ({
           isPresent: s.isPresent,
         }));
 
+      console.log("📤 Sending attendance data:", {
+        date,
+        recordsCount: payload.length,
+        sampleRecord: payload[0],
+        allStudentsCount: visibleStudents.length,
+      });
+
       // إرسال البيانات للـ API
       await bulkSaveAttendance({ date, records: payload });
 

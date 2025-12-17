@@ -1,50 +1,18 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo } from "react";
 import type { AttendanceStudent } from "../types/absence.types";
 
 interface UseStudentFiltersProps {
   students: AttendanceStudent[];
-  groupsAvailable: string[];
-  itemsPerPage?: number;
 }
 
 /**
- * Hook لإدارة الفلترة والبحث والـ pagination للطلاب
+ * Hook لإدارة الفلترة والبحث للطلاب
  */
 export const useStudentFilters = ({
   students,
-  groupsAvailable,
-  itemsPerPage = 10,
 }: UseStudentFiltersProps) => {
   const [groupFilter, setGroupFilter] = useState<string>("");
   const [nameQuery, setNameQuery] = useState<string>("");
-  const [currentPage, setCurrentPage] = useState(1);
-
-  // Auto-select first group if current filter is not available
-  // استخدام ref لتجنب re-renders غير ضرورية
-  const prevGroupsAvailable = useRef<string[]>([]);
-  const hasInitialized = useRef(false);
-  
-  useEffect(() => {
-    // فقط إذا تغيرت المجموعات فعلياً
-    const groupsChanged = 
-      prevGroupsAvailable.current.length !== groupsAvailable.length ||
-      !prevGroupsAvailable.current.every((g: string, i: number) => g === groupsAvailable[i]);
-    
-    if (groupsChanged) {
-      prevGroupsAvailable.current = groupsAvailable;
-      
-      // اختيار أول حلقة تلقائياً في الحالات التالية:
-      // 1. أول مرة يتم تحميل الحلقات (hasInitialized = false)
-      // 2. الحلقة المختارة الحالية غير موجودة في القائمة الجديدة
-      if (groupsAvailable.length > 0) {
-        if (!hasInitialized.current || !groupsAvailable.includes(groupFilter)) {
-          console.log(`🔄 اختيار أول حلقة تلقائياً: ${groupsAvailable[0]}`);
-          setGroupFilter(groupsAvailable[0]);
-          hasInitialized.current = true;
-        }
-      }
-    }
-  }, [groupsAvailable, groupFilter]);
 
   // Visible students (filtered)
   const visibleStudents = useMemo(() => {
@@ -62,33 +30,11 @@ export const useStudentFilters = ({
     return list.sort((a, b) => a.name.localeCompare(b.name, "ar"));
   }, [students, groupFilter, nameQuery]);
 
-  // Paginated students
-  const paginatedStudents = useMemo(() => {
-    if (visibleStudents.length <= itemsPerPage) {
-      return visibleStudents;
-    }
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return visibleStudents.slice(startIndex, endIndex);
-  }, [visibleStudents, currentPage, itemsPerPage]);
-
-  const totalPages = Math.ceil(visibleStudents.length / itemsPerPage);
-
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [groupFilter, nameQuery]);
-
   return {
     groupFilter,
     setGroupFilter,
     nameQuery,
     setNameQuery,
-    currentPage,
-    setCurrentPage,
     visibleStudents,
-    paginatedStudents,
-    totalPages,
-    itemsPerPage,
   };
 };

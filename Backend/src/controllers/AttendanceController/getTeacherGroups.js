@@ -1,212 +1,225 @@
-const { getGroupsByTeacherIdWithFilters } = require('../basicController/groupController');
+const mongoose = require('mongoose');
+const Group = require('../../schema/Group');
+const Student = require('../../schema/Student');
+const Teacher = require('../../schema/Teacher');
 const Attendance = require('../../schema/Attendance');
 
 /**
  * Get all groups for a teacher with full attendance data
  * GET /api/attendance/teacher/:teacherId/groups
  * 
- * This endpoint is specifically designed for the attendance page.
- * It combines 3 data sources into one response:
- * 1. Teacher groups with students (from groupController)
- * 2. Absence statistics for each student (aggregated)
- * 3. Attendance records for specific date (if provided)
- * 
- * Query params:
- * - filter: 'all' | 'withStudents' | 'withoutStudents' (default: 'all')
- * - includeStudents: 'true' | 'false' (default: 'true')
- * - date: ISO date string (default: today) - to get attendance for specific date
- * - includeAbsenceStats: 'true' | 'false' (default: 'true') - include absence statistics
- * 
- * Returns:
- * - teacher: معلومات المعلم
- * - groups: الحلقات مع عدد الطلاب
- * - students: الطلاب مع الحضور والإحصائيات (مدموجة وجاهزة)
- * - summary: ملخص الإحصائيات
- * 
- * Note: Validation is handled by validateGetTeacherGroups middleware
+ * Optimized version using MongoDB Aggregation Pipeline
  */
 exports.getTeacherGroupsForAttendance = async (req, res) => {
   try {
     const startTime = Date.now();
     const { teacherId } = req.params;
     const { 
-      filter = 'all', 
-      includeStudents = 'true',
       date,
       includeAbsenceStats = 'true'
     } = req.query;
 
-    console.log(`📚 [Attendance Full Data] Teacher: ${teacherId}, Date: ${date || 'today'}`);
+    console.log(`⚡ [Attendance Optimized] Teacher: ${teacherId}, Date: ${date || 'today'}`);
 
-    // 1️⃣ Get groups with students from groupController
-    req.query.filter = filter;
-    req.query.includeStudents = includeStudents;
-
-    // Create mock response to capture data from groupController
-    const groupData = await new Promise((resolve, reject) => {
-      const mockRes = {
-        json: (data) => resolve(data),
-        status: (code) => ({
-          json: (data) => reject({ code, data })
-        })
-      };
-      getGroupsByTeacherIdWithFilters(req, mockRes);
-    });
-
-    if (!groupData.success || !groupData.data) {
-      return res.status(404).json(groupData);
+    // 1. Validate Teacher ID
+    if (!mongoose.Types.ObjectId.isValid(teacherId)) {
+      return res.status(400).json({ success: false, message: 'معرف المعلم غير صالح' });
     }
 
-    const { teacher, groups, summary } = groupData.data;
-
-    // If includeStudents is false, return early
-    if (includeStudents === 'false') {
-      const duration = Date.now() - startTime;
-      console.log(`✅ [Attendance] Returned ${groups.length} groups in ${duration}ms`);
-      return res.json(groupData);
+    // 2. Get Teacher Info (Parallel with Aggregation if possible, but await here is fine)
+    const teacher = await Teacher.findById(teacherId).select('firstName lastName fatherName');
+    if (!teacher) {
+      return res.status(404).json({ success: false, message: 'المعلم غير موجود' });
     }
+    const teacherName = `${teacher.firstName} ${teacher.lastName}`;
 
-    // Extract all students from groups
-    const allStudents = groups.flatMap(group => 
-      (group.students || []).map(student => ({
-        ...student,
-        group: group.name
-      }))
-    );
-
-    if (allStudents.length === 0) {
-      const duration = Date.now() - startTime;
-      console.log(`⚠️ [Attendance] No students found - ${duration}ms`);
-      return res.json({
-        success: true,
-        data: {
-          teacher,
-          groups,
-          students: [],
-          summary: { ...summary, presentToday: 0, absentToday: 0 }
-        }
-      });
-    }
-
-    const studentIds = allStudents.map(s => s._id);
-
-    // 2️⃣ Get absence statistics (if requested)
-    let absenceStatsMap = new Map();
-    if (includeAbsenceStats === 'true') {
-      const absenceStats = await Attendance.aggregate([
-        {
-          $match: {
-            studentId: { $in: studentIds },
-            isPresent: false
-          }
-        },
-        {
-          $group: {
-            _id: '$studentId',
-            totalAbsences: { $sum: 1 },
-            absenceDates: { $push: '$date' }
-          }
-        }
-      ]);
-
-      absenceStatsMap = new Map(
-        absenceStats.map(stat => [
-          stat._id.toString(),
-          {
-            totalAbsences: stat.totalAbsences,
-            absenceDates: stat.absenceDates
-              .map(d => {
-                const date = new Date(d);
-                const day = String(date.getDate()).padStart(2, '0');
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const year = date.getFullYear();
-                return `${day}/${month}/${year}`;
-              })
-              .sort((a, b) => {
-                const [dayA, monthA, yearA] = a.split('/').map(Number);
-                const [dayB, monthB, yearB] = b.split('/').map(Number);
-                const dateA = new Date(yearA, monthA - 1, dayA);
-                const dateB = new Date(yearB, monthB - 1, dayB);
-                return dateB.getTime() - dateA.getTime();
-              })
-          }
-        ])
-      );
-      console.log(`📊 [Attendance] Got absence stats for ${absenceStatsMap.size} students`);
-    }
-
-    // 3️⃣ Get attendance for specific date (if provided)
-    let attendanceMap = new Map();
+    // 3. Prepare Date Range for "Today's" Attendance
+    let targetDateStart, targetDateEnd;
     if (date) {
-      const targetDate = new Date(date);
-      targetDate.setHours(0, 0, 0, 0);
-      const nextDay = new Date(targetDate);
-      nextDay.setDate(targetDate.getDate() + 1);
+      targetDateStart = new Date(date);
+      targetDateStart.setHours(0, 0, 0, 0);
+    } else {
+      targetDateStart = new Date();
+      targetDateStart.setHours(0, 0, 0, 0);
+    }
+    targetDateEnd = new Date(targetDateStart);
+    targetDateEnd.setDate(targetDateStart.getDate() + 1);
 
-      const attendanceRecords = await Attendance.find({
-        studentId: { $in: studentIds },
-        date: { $gte: targetDate, $lt: nextDay }
-      });
+    // 4. Aggregation Pipeline
+    const pipeline = [
+      // Match Groups for this Teacher (Active Only)
+      { 
+        $match: { 
+          teacher: new mongoose.Types.ObjectId(teacherId),
+          activeStatus: true
+        } 
+      },
+      
+      // Lookup Students for each Group
+      {
+        $lookup: {
+          from: 'students',
+          localField: 'name',
+          foreignField: 'group',
+          as: 'students'
+        }
+      },
+      
+      // Unwind Students to process each one (remove empty groups)
+      { $unwind: { path: '$students', preserveNullAndEmptyArrays: false } },
+      
+      // Lookup Today's Attendance for each student
+      {
+        $lookup: {
+          from: 'attendances',
+          let: { studentId: '$students._id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$studentId', '$$studentId'] },
+                    { $gte: ['$date', targetDateStart] },
+                    { $lt: ['$date', targetDateEnd] }
+                  ]
+                }
+              }
+            },
+            { $project: { isPresent: 1 } }
+          ],
+          as: 'todayAttendance'
+        }
+      },
 
-      attendanceMap = new Map(
-        attendanceRecords.map(record => [
-          record.studentId.toString(),
-          record.isPresent
-        ])
-      );
-      console.log(`📅 [Attendance] Got attendance for ${attendanceMap.size} students on ${date}`);
+      // Lookup Absence Stats (Only if requested)
+      ...(includeAbsenceStats === 'true' ? [{
+        $lookup: {
+          from: 'attendances',
+          let: { studentId: '$students._id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$studentId', '$$studentId'] },
+                    { $eq: ['$isPresent', false] }
+                  ]
+                }
+              }
+            },
+            {
+              $group: {
+                _id: null,
+                totalAbsences: { $sum: 1 },
+                absenceDates: { $push: '$date' }
+              }
+            }
+          ],
+          as: 'absenceStats'
+        }
+      }] : []),
+
+      // Project final shape for this row
+      {
+        $project: {
+          groupId: '$_id',
+          groupName: '$name',
+          groupStatus: '$activeStatus',
+          student: '$students',
+          todayAttendance: { $arrayElemAt: ['$todayAttendance', 0] },
+          absenceStats: { $arrayElemAt: ['$absenceStats', 0] }
+        }
+      }
+    ];
+
+    const results = await Group.aggregate(pipeline);
+
+    // 5. Process Results
+    const groupsMap = new Map();
+    const studentsList = [];
+    let presentToday = 0;
+    let absentToday = 0;
+
+    for (const row of results) {
+      // Process Group
+      if (!groupsMap.has(row.groupId.toString())) {
+        groupsMap.set(row.groupId.toString(), {
+          _id: row.groupId,
+          name: row.groupName,
+          status: row.groupStatus ? 'active' : 'inactive', // Map boolean to string if needed
+          totalStudents: 0
+        });
+      }
+
+      // Process Student (if exists)
+      if (row.student) {
+        const group = groupsMap.get(row.groupId.toString());
+        group.totalStudents++;
+
+        const isPresent = row.todayAttendance ? row.todayAttendance.isPresent : true; // Default to present
+        
+        if (isPresent) presentToday++;
+        else absentToday++;
+
+        // Format Absence Dates
+        let formattedAbsenceDates = [];
+        if (row.absenceStats && row.absenceStats.absenceDates) {
+          formattedAbsenceDates = row.absenceStats.absenceDates
+            .map(d => {
+              const dateObj = new Date(d);
+              return dateObj.toLocaleDateString('en-GB'); // DD/MM/YYYY
+            })
+            .sort((a, b) => {
+               // Sort descending
+               const [da, ma, ya] = a.split('/').map(Number);
+               const [db, mb, yb] = b.split('/').map(Number);
+               return new Date(yb, mb-1, db) - new Date(ya, ma-1, da);
+            });
+        }
+
+        studentsList.push({
+          _id: row.student._id,
+          studentId: row.student.studentId,
+          name: `${row.student.firstName} ${row.student.lastName}`, // Full name
+          group: row.groupName,
+          teacher: teacherName,
+          isPresent: isPresent,
+          totalAbsences: row.absenceStats ? row.absenceStats.totalAbsences : 0,
+          absenceDates: formattedAbsenceDates
+        });
+      }
     }
 
-    // 4️⃣ Merge all data
-    const studentsWithFullData = allStudents.map(student => {
-      const studentIdStr = student._id.toString();
-      const absenceData = absenceStatsMap.get(studentIdStr);
-      const isPresent = attendanceMap.has(studentIdStr) 
-        ? attendanceMap.get(studentIdStr) 
-        : true; // default to present if no record
-
-      return {
-        _id: student._id,
-        studentId: parseInt(student.studentId) || 0,
-        name: student.name,
-        group: student.group || 'بدون حلقة',
-        teacher: teacher.name,
-        isPresent,
-        totalAbsences: absenceData?.totalAbsences || 0,
-        absenceDates: absenceData?.absenceDates || []
-      };
-    });
-
-    // Calculate summary for today
-    const presentToday = studentsWithFullData.filter(s => s.isPresent).length;
-    const absentToday = studentsWithFullData.length - presentToday;
+    const groups = Array.from(groupsMap.values());
+    
+    // Sort groups by name
+    groups.sort((a, b) => a.name.localeCompare(b.name, 'ar'));
 
     const duration = Date.now() - startTime;
-    console.log(`✅ [Attendance Full Data] ${studentsWithFullData.length} students with full data in ${duration}ms`);
+    console.log(`✅ [Attendance Optimized] Processed ${groups.length} groups and ${studentsList.length} students in ${duration}ms`);
 
     return res.json({
       success: true,
       data: {
-        teacher,
-        groups: groups.map(g => ({
-          _id: g._id,
-          name: g.name,
-          totalStudents: g.totalStudents || 0
-        })),
-        students: studentsWithFullData,
+        teacher: {
+          _id: teacher._id,
+          name: teacherName
+        },
+        groups,
+        students: studentsList,
         summary: {
-          ...summary,
+          totalStudents: studentsList.length,
           presentToday,
           absentToday,
-          attendanceRateToday: studentsWithFullData.length > 0 
-            ? Math.round((presentToday / studentsWithFullData.length) * 100)
+          attendanceRateToday: studentsList.length > 0 
+            ? Math.round((presentToday / studentsList.length) * 100)
             : 0
         }
       }
     });
 
   } catch (error) {
-    console.error('❌ [Attendance Full Data] Error:', error);
+    console.error('❌ [Attendance Optimized] Error:', error);
     return res.status(500).json({
       success: false,
       message: 'حدث خطأ أثناء جلب البيانات',

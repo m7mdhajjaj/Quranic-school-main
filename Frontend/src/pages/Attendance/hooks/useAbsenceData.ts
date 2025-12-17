@@ -14,10 +14,22 @@ export const useAbsenceData = () => {
   const [error, setError] = useState<string | null>(null);
   const [students, setStudents] = useState<AttendanceStudent[]>([]);
   const [date, setDate] = useState<string>(todayISO());
+  const [startDate, setStartDate] = useState<string | null>(todayISO());
+  const [endDate, setEndDate] = useState<string | null>(todayISO());
+
+  const setDateRange = (start: string | null, end: string | null) => {
+    setStartDate(start);
+    setEndDate(end);
+    // Use end date as the primary date for fetching/displaying current status
+    if (end) setDate(end);
+    else if (start) setDate(start);
+  };
+
   const [monthlyStats, setMonthlyStats] = useState<MonthlyAbsence[]>([]);
   const [teacherGroups, setTeacherGroups] = useState<Array<{ 
     _id: string; 
     name: string; 
+    status?: string;
     totalStudents?: number;
   }>>([]);
 
@@ -25,8 +37,6 @@ export const useAbsenceData = () => {
   const fetchStudentsForTeacher = useCallback(async (forDate: string) => {
     try {
       setError(null);
-      console.log('⚡ [OPTIMIZED V4] بدء جلب البيانات الكاملة من API واحد...');
-      const startTime = Date.now();
 
       if (!currentUser?._id) {
         console.error('❌ معرف المعلم غير موجود');
@@ -53,18 +63,13 @@ export const useAbsenceData = () => {
         return;
       }
 
-      const { teacher, groups, students, summary } = result.data;
+      const { groups, students } = result.data;
       
-      console.log(`📊 تم استلام بيانات المعلم: ${teacher.name}`);
-      console.log(`📚 ملخص:`, summary);
-      console.log(`👥 إجمالي الطلاب: ${students.length}`);
-      console.log(`✅ حاضرين اليوم: ${summary.presentToday}`);
-      console.log(`❌ غائبين اليوم: ${summary.absentToday}`);
-
       // حفظ الحلقات
       setTeacherGroups(groups.map(g => ({ 
         _id: g._id, 
         name: g.name,
+        status: g.status || 'active', // Default to active if not provided
         totalStudents: g.totalStudents || 0
       })));
 
@@ -84,11 +89,6 @@ export const useAbsenceData = () => {
         totalAbsences: s.totalAbsences,
         absenceDates: s.absenceDates
       }));
-
-      const duration = Date.now() - startTime;
-      console.log(
-        `✅ [OPTIMIZED V4] تم جلب ${formatted.length} طالب بكل البيانات في ${duration}ms (طلب واحد فقط!)`
-      );
 
       setStudents(formatted);
     } catch (e) {
@@ -177,7 +177,9 @@ export const useAbsenceData = () => {
     students,
     setStudents,
     date,
-    setDate,
+    startDate,
+    endDate,
+    setDateRange,
     monthlyStats,
     teacherGroups,
     fetchStudentsForTeacher,

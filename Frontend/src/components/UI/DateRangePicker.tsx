@@ -12,6 +12,8 @@ interface DateRangePickerProps {
   endDate: string | null;
   onChange: (start: string | null, end: string | null) => void;
   className?: string;
+  singleDate?: boolean;
+  maxDate?: string;
 }
 
 type PresetRange = {
@@ -24,6 +26,8 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
   endDate,
   onChange,
   className = '',
+  singleDate = false,
+  maxDate,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [viewDate, setViewDate] = useState(dayjs()); // Current month view
@@ -126,19 +130,29 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
 
   // Handle window resize/scroll to update position
   useEffect(() => {
+    if (!isOpen) return;
+
     // Initial update
     updatePosition();
     
     // Update after a short delay to ensure rendering is complete and ref is available
     const timer = setTimeout(updatePosition, 0);
 
-    window.addEventListener('resize', updatePosition);
-    window.addEventListener('scroll', updatePosition, true);
+    let animationFrameId: number;
+
+    const handleScrollOrResize = () => {
+      cancelAnimationFrame(animationFrameId);
+      animationFrameId = requestAnimationFrame(updatePosition);
+    };
+
+    window.addEventListener('resize', handleScrollOrResize);
+    window.addEventListener('scroll', handleScrollOrResize, true);
     
     return () => {
       clearTimeout(timer);
-      window.removeEventListener('resize', updatePosition);
-      window.removeEventListener('scroll', updatePosition, true);
+      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener('resize', handleScrollOrResize);
+      window.removeEventListener('scroll', handleScrollOrResize, true);
     };
   }, [isOpen]);
 
@@ -207,6 +221,12 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
 
   // Handlers
   const handleDateClick = (dateStr: string) => {
+    if (singleDate) {
+      onChange(dateStr, dateStr);
+      setIsOpen(false);
+      return;
+    }
+
     if (!startDate || (startDate && endDate)) {
       // Start new selection
       onChange(dateStr, null);
@@ -263,30 +283,32 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
       dir="rtl"
     >
       {/* Sidebar - Presets */}
-      <div className="w-full md:w-48 bg-gray-50/80 border-b md:border-b-0 md:border-l border-gray-100 p-3 flex flex-col gap-1">
-        <p className="text-xs font-semibold text-gray-400 px-2 py-1 mb-1">فترات جاهزة</p>
-        {presets.map((preset, index) => (
-          <button
-            key={index}
-            type="button"
-            onClick={() => handlePresetClick(preset)}
-            className="text-right px-3 py-2 text-sm text-gray-600 hover:bg-white hover:text-emerald-700 hover:shadow-sm rounded-lg transition-all"
-          >
-            {preset.label}
-          </button>
-        ))}
-        
-        <div className="mt-auto pt-3 border-t border-gray-200/50">
-          <button
-            type="button"
-            onClick={handleReset}
-            className="flex items-center gap-2 text-right px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-all w-full"
-          >
-            <RotateCcw size={14} />
-            <span>إعادة تعيين</span>
-          </button>
+      {!singleDate && (
+        <div className="w-full md:w-48 bg-gray-50/80 border-b md:border-b-0 md:border-l border-gray-100 p-3 flex flex-col gap-1">
+          <p className="text-xs font-semibold text-gray-400 px-2 py-1 mb-1">فترات جاهزة</p>
+          {presets.map((preset, index) => (
+            <button
+              key={index}
+              type="button"
+              onClick={() => handlePresetClick(preset)}
+              className="text-right px-3 py-2 text-sm text-gray-600 hover:bg-white hover:text-emerald-700 hover:shadow-sm rounded-lg transition-all"
+            >
+              {preset.label}
+            </button>
+          ))}
+          
+          <div className="mt-auto pt-3 border-t border-gray-200/50">
+            <button
+              type="button"
+              onClick={handleReset}
+              className="flex items-center gap-2 text-right px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-all w-full"
+            >
+              <RotateCcw size={14} />
+              <span>إعادة تعيين</span>
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Calendar Area */}
       <div className="flex-1 p-4">
@@ -332,22 +354,26 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
             const isSelectedEnd = isEnd(date);
             const isSelectedRange = isInRange(date);
             const isToday = date.isSame(dayjs(), 'day');
+            const isDisabled = maxDate ? date.isAfter(dayjs(maxDate), 'day') : false;
             
             return (
               <button
                 key={index}
                 type="button"
-                onClick={() => handleDateClick(date.format('YYYY-MM-DD'))}
-                onMouseEnter={() => setHoverDate(date.format('YYYY-MM-DD'))}
-                onMouseLeave={() => setHoverDate(null)}
+                onClick={() => !isDisabled && handleDateClick(date.format('YYYY-MM-DD'))}
+                onMouseEnter={() => !isDisabled && setHoverDate(date.format('YYYY-MM-DD'))}
+                onMouseLeave={() => !isDisabled && setHoverDate(null)}
+                disabled={isDisabled}
                 className={`
                   relative h-9 w-full flex items-center justify-center text-sm transition-all
-                  ${!isCurrentMonth ? 'text-gray-300' : 'text-gray-700'}
-                  ${isSelectedRange ? 'bg-emerald-50 text-emerald-700' : ''}
-                  ${isSelectedStart ? 'bg-emerald-600 text-white rounded-r-lg z-10' : ''}
-                  ${isSelectedEnd ? 'bg-emerald-600 text-white rounded-l-lg z-10' : ''}
-                  ${!isSelectedStart && !isSelectedEnd && !isSelectedRange && isToday ? 'font-bold text-emerald-600' : ''}
-                  ${!isSelectedStart && !isSelectedEnd && !isSelectedRange ? 'hover:bg-gray-100 rounded-lg' : ''}
+                  ${isDisabled ? 'text-gray-300 cursor-not-allowed opacity-50' : ''}
+                  ${!isDisabled && !isCurrentMonth ? 'text-gray-300' : ''}
+                  ${!isDisabled && isCurrentMonth ? 'text-gray-700' : ''}
+                  ${!isDisabled && isSelectedRange ? 'bg-emerald-50 text-emerald-700' : ''}
+                  ${!isDisabled && isSelectedStart ? 'bg-emerald-600 text-white rounded-r-lg z-10' : ''}
+                  ${!isDisabled && isSelectedEnd ? 'bg-emerald-600 text-white rounded-l-lg z-10' : ''}
+                  ${!isDisabled && !isSelectedStart && !isSelectedEnd && !isSelectedRange && isToday ? 'font-bold text-emerald-600' : ''}
+                  ${!isDisabled && !isSelectedStart && !isSelectedEnd && !isSelectedRange ? 'hover:bg-gray-100 rounded-lg' : ''}
                 `}
               >
                 {date.format('D')}
@@ -406,11 +432,14 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
             <CalendarIcon size={18} />
           </div>
           <span className={`text-sm font-medium ${startDate ? 'text-emerald-700' : 'text-gray-600'}`}>
-            {startDate && endDate 
-              ? `${formatDateDisplay(startDate)} - ${formatDateDisplay(endDate)}`
-              : startDate 
-                ? `${formatDateDisplay(startDate)} - ...`
-                : 'اختر الفترة الزمنية'
+            {singleDate 
+              ? (startDate ? formatDateDisplay(startDate) : 'اختر التاريخ')
+              : (startDate && endDate 
+                  ? `${formatDateDisplay(startDate)} - ${formatDateDisplay(endDate)}`
+                  : startDate 
+                    ? `${formatDateDisplay(startDate)} - ...`
+                    : 'اختر الفترة الزمنية'
+                )
             }
           </span>
         </div>

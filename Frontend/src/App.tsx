@@ -258,13 +258,14 @@ const TeacherRoutes: React.FC = () => {
             الحضور والإدارة - Attendance & Management
             ============================================ */}
         <Route 
-          path="/absence" 
+          path="/attendance" 
           element={
             <React.Suspense fallback={<LoadingFallback message="جاري تحميل الحضور والغياب..." />}>
               <Absence />
             </React.Suspense>
           } 
         />
+        <Route path="/absence" element={<Navigate to="/attendance" replace />} />
         <Route path="/warnings" element={<Warnings />} />
         <Route 
           path="/students-management" 
@@ -417,13 +418,14 @@ const StudentRoutes: React.FC = () => {
             الحضور والغياب - Attendance (View Only)
             ============================================ */}
         <Route 
-          path="/absence" 
+          path="/attendance" 
           element={
             <React.Suspense fallback={<LoadingFallback message="جاري تحميل الحضور والغياب..." />}>
               <Absence />
             </React.Suspense>
           } 
         />
+        <Route path="/absence" element={<Navigate to="/attendance" replace />} />
         <Route path="/warnings" element={<Warnings />} />
 
         {/* ============================================

@@ -30,6 +30,10 @@ async function updateMonthlyPoints(studentId, dailyPoints, student) {
         teacher: student.teacher,
         group: student.group,
       });
+    } else {
+      // ✅ حافظ على توافق بيانات المعلم/الحلقة دائماً (حتى لو تغيّرت بيانات الطالب)
+      monthlyPoints.teacher = student.teacher;
+      monthlyPoints.group = student.group;
     }
 
     // حساب مجموع نقاط الشهر الحالي
