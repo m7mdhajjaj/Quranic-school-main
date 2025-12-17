@@ -46,7 +46,7 @@ const getTargetRecipients = async (news) => {
     // - Primary: via groups owned by that teacher (Group.teacher -> group names -> Student.group)
     // - Fallback: by matching Student.teacher full-name (case/whitespace-insensitive)
     // This ignores "الحلقات" as a restriction; it uses them only as a reliable linkage source.
-    if (news.authorModel === 'Teacher' || news.author) {
+    if (news.authorModel === 'Teacher') {
        try {
          const teacher = await Teacher.findById(news.author);
          if (teacher) {
@@ -82,7 +82,7 @@ const getTargetRecipients = async (news) => {
            console.error("❌ Error resolving teacher for group news:", err);
        }
     } else {
-        console.log("⚠️ Group news posted by non-teacher, skipping automatic recipient resolution.");
+        console.log(`⚠️ Group news posted by non-teacher (authorModel=${news.authorModel}), skipping recipient resolution.`);
     }
   }
 
