@@ -30,12 +30,17 @@ const NewsGalleryModal = ({
     clamp(initialIndex, 0, Math.max(0, safeImages.length - 1))
   );
   const [showDetails, setShowDetails] = useState(true);
+  const [animateIn, setAnimateIn] = useState(false);
 
   // Reset index when opening / list changes
   useEffect(() => {
     if (!isOpen) return;
     setActiveIndex(clamp(initialIndex, 0, Math.max(0, safeImages.length - 1)));
     setShowDetails(true);
+    // trigger enter animation after mount
+    setAnimateIn(false);
+    const t = window.setTimeout(() => setAnimateIn(true), 10);
+    return () => window.clearTimeout(t);
   }, [isOpen, initialIndex, safeImages.length]);
 
   // Keyboard controls
@@ -72,7 +77,9 @@ const NewsGalleryModal = ({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9999] h-screen w-screen bg-black"
+      className={`fixed inset-0 z-[9999] h-screen w-screen bg-black transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none ${
+        animateIn ? 'opacity-100' : 'opacity-0'
+      }`}
       role="dialog"
       aria-modal="true"
     >
@@ -81,12 +88,16 @@ const NewsGalleryModal = ({
         type="button"
         aria-label="إغلاق"
         onClick={onClose}
-        className="absolute inset-0 bg-gradient-to-b from-black/90 via-black/80 to-black/90"
+        className={`absolute inset-0 bg-gradient-to-b from-black/95 via-black/85 to-black/95 transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none ${
+          animateIn ? 'backdrop-blur-sm' : 'backdrop-blur-none'
+        }`}
       />
 
       {/* Foreground layout: full screen */}
       <div
-        className="relative z-10 flex h-full w-full flex-col"
+        className={`relative z-10 flex h-full w-full flex-col transition-transform duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none ${
+          animateIn ? 'scale-100 translate-y-0' : 'scale-[0.985] translate-y-1'
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top bar */}
@@ -100,7 +111,7 @@ const NewsGalleryModal = ({
             <button
               type="button"
               onClick={() => setShowDetails((v) => !v)}
-              className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/20"
+              className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/20 transition"
               aria-label={showDetails ? 'إخفاء التفاصيل' : 'إظهار التفاصيل'}
             >
               <Info size={16} />
@@ -109,7 +120,7 @@ const NewsGalleryModal = ({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+              className="rounded-full bg-white/10 p-2 text-white hover:bg-white/20 transition"
               aria-label="إغلاق"
             >
               <X size={22} />
@@ -122,12 +133,12 @@ const NewsGalleryModal = ({
           {/* subtle vignette */}
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.06),rgba(0,0,0,0)_55%)]" />
 
-          <div className="absolute inset-0 flex items-center justify-center px-2 sm:px-8">
+          <div className="absolute inset-0 flex items-center justify-center px-2 sm:px-10">
             {currentSrc ? (
               <img
                 src={currentSrc}
                 alt={`صورة ${activeIndex + 1}`}
-                className="h-full w-full object-contain select-none drop-shadow-[0_20px_40px_rgba(0,0,0,0.45)]"
+                className="h-full w-full object-contain select-none drop-shadow-[0_22px_55px_rgba(0,0,0,0.55)] transition-opacity duration-200"
                 loading="eager"
                 decoding="async"
                 draggable={false}
@@ -147,18 +158,18 @@ const NewsGalleryModal = ({
               <button
                 type="button"
                 onClick={() => setActiveIndex((i) => (i === 0 ? safeImages.length - 1 : i - 1))}
-                className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white hover:bg-white/20 backdrop-blur-md"
+                className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-3.5 text-white hover:bg-white/20 backdrop-blur-md shadow-lg transition-transform hover:scale-105 active:scale-95"
                 aria-label="الصورة السابقة"
               >
-                <ChevronLeft size={26} strokeWidth={3} />
+                <ChevronLeft size={28} strokeWidth={3} />
               </button>
               <button
                 type="button"
                 onClick={() => setActiveIndex((i) => (i === safeImages.length - 1 ? 0 : i + 1))}
-                className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-3 text-white hover:bg-white/20 backdrop-blur-md"
+                className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-3.5 text-white hover:bg-white/20 backdrop-blur-md shadow-lg transition-transform hover:scale-105 active:scale-95"
                 aria-label="الصورة التالية"
               >
-                <ChevronRight size={26} strokeWidth={3} />
+                <ChevronRight size={28} strokeWidth={3} />
               </button>
 
               <div className="absolute left-3 sm:left-6 top-4 rounded-md bg-black/55 px-2 py-1 text-xs font-semibold text-white backdrop-blur-md">
@@ -171,7 +182,7 @@ const NewsGalleryModal = ({
         {/* Bottom strip */}
         <div
           className={`border-t border-white/10 bg-black/45 backdrop-blur-md transition-all duration-200 ${
-            showDetails ? 'opacity-100' : 'opacity-0 pointer-events-none h-0'
+            showDetails ? 'opacity-100 translate-y-0' : 'opacity-0 pointer-events-none translate-y-2 h-0'
           }`}
         >
           {hasMultiple && (
@@ -181,7 +192,7 @@ const NewsGalleryModal = ({
                   key={`${src}-${idx}`}
                   type="button"
                   onClick={() => setActiveIndex(idx)}
-                  className={`relative h-14 w-20 shrink-0 overflow-hidden rounded-xl border transition ${
+                  className={`relative h-16 w-24 shrink-0 overflow-hidden rounded-2xl border transition ${
                     idx === activeIndex
                       ? 'border-emerald-400 ring-2 ring-emerald-400/30'
                       : 'border-white/20 hover:border-white/35'
@@ -194,7 +205,7 @@ const NewsGalleryModal = ({
             </div>
           )}
 
-          <div className="max-h-40 overflow-auto px-3 pb-4 text-sm text-white/85 sm:px-5" dir="rtl">
+          <div className="max-h-44 overflow-auto px-3 pb-4 text-sm text-white/85 sm:px-5" dir="rtl">
             <p className="whitespace-pre-wrap leading-relaxed">{content}</p>
           </div>
         </div>
