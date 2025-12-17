@@ -1,4 +1,5 @@
 // components/StudentView.tsx
+import { memo } from 'react';
 import {
   PointsSummaryCard,
   PrayersSection,
@@ -10,7 +11,7 @@ import {
 } from './';
 import type { StudentViewProps } from '../types/pointsGame.types';
 
-export const StudentView = ({
+export const StudentView = memo(({
   totalPoints,
   stats,
   earnedBadgesCount,
@@ -119,14 +120,14 @@ export const StudentView = ({
         </div>
 
         {/* تنبيه: املأ البيانات مرة واحدة */}
-        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border-r-4 border-blue-400 rounded-lg p-3 sm:p-4 shadow-md">
+        <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border-r-4 border-emerald-400 rounded-lg p-3 sm:p-4 shadow-md">
           <div className="flex items-start gap-2 sm:gap-3">
             <div className="text-xl sm:text-2xl mt-0.5">💡</div>
             <div className="flex-1">
-              <h3 className="font-bold text-blue-800 mb-1 text-base sm:text-lg">
+              <h3 className="font-bold text-emerald-800 mb-1 text-base sm:text-lg">
                 نصيحة مهمة
               </h3>
-              <p className="text-blue-700 text-xs sm:text-sm leading-relaxed">
+              <p className="text-emerald-700 text-xs sm:text-sm leading-relaxed">
                 يُفضل أن تملأ جميع البيانات{' '}
                 <span className="font-semibold">مرة واحدة في نهاية اليوم</span>{' '}
                 لضمان دقة التسجيل والحصول على النقاط بشكل صحيح.
@@ -137,4 +138,6 @@ export const StudentView = ({
       </div>
     </div>
   );
-};
+});
+
+StudentView.displayName = 'StudentView';

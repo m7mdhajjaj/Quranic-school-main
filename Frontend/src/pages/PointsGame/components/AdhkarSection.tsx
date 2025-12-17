@@ -4,41 +4,28 @@ import { Button } from "@/components/UI/Button";
 import type { AdhkarSectionProps, Adhkar } from "../types/pointsGame.types";
 import { CircleDot, Sun, Sunset, Moon, Hand } from "lucide-react";
 
-export const AdhkarSection = ({ adhkar, onToggle }: AdhkarSectionProps) => {
-  const adhkarItems = [
-    {
-      key: "morning" as keyof Adhkar,
-      IconComponent: Sun,
-      name: "أذكار الصباح",
-      points: 5,
-    },
-    {
-      key: "evening" as keyof Adhkar,
-      IconComponent: Sunset,
-      name: "أذكار المساء",
-      points: 5,
-    },
-    {
-      key: "sleep" as keyof Adhkar,
-      IconComponent: Moon,
-      name: "أذكار النوم",
-      points: 3,
-    },
-    {
-      key: "afterPrayer" as keyof Adhkar,
-      IconComponent: Hand,
-      name: "بعد الصلاة",
-      points: 5,
-    },
-  ];
+const ADHKAR_ITEMS: Array<{
+  key: keyof Adhkar;
+  IconComponent: typeof Sun;
+  name: string;
+  points: number;
+}> = [
+  { key: "morning", IconComponent: Sun, name: "أذكار الصباح", points: 5 },
+  { key: "evening", IconComponent: Sunset, name: "أذكار المساء", points: 5 },
+  { key: "sleep", IconComponent: Moon, name: "أذكار النوم", points: 3 },
+  { key: "afterPrayer", IconComponent: Hand, name: "بعد الصلاة", points: 5 },
+];
 
+const ACTIVE_GRADIENTS = [
+  "from-emerald-500 to-teal-600",
+  "from-teal-500 to-cyan-600",
+  "from-emerald-600 to-cyan-600",
+  "from-teal-600 to-emerald-600",
+] as const;
+
+export const AdhkarSection = ({ adhkar, onToggle }: AdhkarSectionProps) => {
   const getGradientClass = (index: number, isActive: boolean) => {
-    const gradients = [
-      "from-yellow-300 to-orange-400",
-      "from-orange-400 to-red-500",
-      "from-indigo-400 to-purple-600",
-      "from-green-400 to-teal-600",
-    ];
+    const gradients = ACTIVE_GRADIENTS;
     return isActive
       ? `bg-gradient-to-br ${gradients[index]} text-white`
       : "bg-gray-100 text-gray-600";
@@ -52,7 +39,7 @@ export const AdhkarSection = ({ adhkar, onToggle }: AdhkarSectionProps) => {
         <span className="text-sm text-gray-500">(اضغط لتفعيل/إلغاء)</span>
       </div>
       <div className="grid md:grid-cols-4 gap-4">
-        {adhkarItems.map((item, index) => (
+        {ADHKAR_ITEMS.map((item, index) => (
           <Button
             key={item.key}
             onClick={() => onToggle(item.key)}

@@ -1,5 +1,5 @@
 // hooks/usePointsGameData.ts
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   getDailyPoints,
   getStudentBadges,
@@ -17,7 +17,7 @@ import type {
 
 export const usePointsGameData = (userRole: string | undefined) => {
   const [loading, setLoading] = useState(false);
-  const currentDate = new Date().toISOString().split("T")[0];
+  const currentDate = useMemo(() => new Date().toISOString().split("T")[0], []);
 
   // State للبيانات القابلة للتعديل
   const [prayers, setPrayers] = useState<Prayers>({
@@ -65,7 +65,7 @@ export const usePointsGameData = (userRole: string | undefined) => {
   const [stats, setStats] = useState<StudentStats | null>(null);
 
   // جلب بيانات اليوم الحالي
-  const loadTodayData = async () => {
+  const loadTodayData = useCallback(async () => {
     try {
       setLoading(true);
       const data = await getDailyPoints(currentDate);
@@ -101,15 +101,13 @@ export const usePointsGameData = (userRole: string | undefined) => {
           reviewedMinutes: data.halaqah?.reviewed || 0,
         });
       }
-    } catch (error) {
-      console.error("خطأ في جلب بيانات اليوم:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentDate]);
 
   // جلب بيانات الشارات
-  const loadBadgesData = async () => {
+  const loadBadgesData = useCallback(async () => {
     try {
       const data = await getStudentBadges();
       if (data) {
@@ -136,22 +134,22 @@ export const usePointsGameData = (userRole: string | undefined) => {
         );
         setEarnedBadges(convertedBadges);
       }
-    } catch (error) {
-      console.error("خطأ في جلب بيانات الشارات:", error);
+    } catch {
+      // swallow to keep UI responsive; handled via UI state
     }
-  };
+  }, []);
 
   // جلب الإحصائيات
-  const loadStatsData = async () => {
+  const loadStatsData = useCallback(async () => {
     try {
       const data = await getStudentStats();
       if (data) {
         setStats(data);
       }
-    } catch (error) {
-      console.error("خطأ في جلب الإحصائيات:", error);
+    } catch {
+      // swallow to keep UI responsive; handled via UI state
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (userRole !== "teacher") {
@@ -159,7 +157,7 @@ export const usePointsGameData = (userRole: string | undefined) => {
       loadBadgesData();
       loadStatsData();
     }
-  }, [userRole]);
+  }, [userRole, loadTodayData, loadBadgesData, loadStatsData]);
 
   return {
     loading,

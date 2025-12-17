@@ -4,26 +4,28 @@ import { Button } from "@/components/UI/Button";
 import type { NawafelSectionProps, Nawafel } from "../types/pointsGame.types";
 import { Sparkles, Sun, Moon, HandHeart, Star } from "lucide-react";
 
-export const NawafelSection = ({ nawafel, onToggle }: NawafelSectionProps) => {
-  const nawafelItems = [
-    { key: "duha" as keyof Nawafel, IconComponent: Sun, name: "صلاة الضحى", points: 5 },
-    {
-      key: "qiyamAlayl" as keyof Nawafel,
-      IconComponent: Moon,
-      name: "قيام الليل",
-      points: 10,
-    },
-    { key: "rawatib" as keyof Nawafel, IconComponent: HandHeart, name: "الرواتب", points: 5 },
-    { key: "witr" as keyof Nawafel, IconComponent: Star, name: "الوتر", points: 5 },
-  ];
+const NAWAFEL_ITEMS: Array<{
+  key: keyof Nawafel;
+  IconComponent: typeof Sun;
+  name: string;
+  points: number;
+}> = [
+  { key: "duha", IconComponent: Sun, name: "صلاة الضحى", points: 5 },
+  { key: "qiyamAlayl", IconComponent: Moon, name: "قيام الليل", points: 10 },
+  { key: "rawatib", IconComponent: HandHeart, name: "الرواتب", points: 5 },
+  { key: "witr", IconComponent: Star, name: "الوتر", points: 5 },
+];
 
+const ACTIVE_GRADIENTS = [
+  "from-emerald-500 to-teal-600",
+  "from-emerald-600 to-cyan-600",
+  "from-teal-500 to-emerald-600",
+  "from-teal-600 to-cyan-600",
+] as const;
+
+export const NawafelSection = ({ nawafel, onToggle }: NawafelSectionProps) => {
   const getGradientClass = (index: number, isActive: boolean) => {
-    const gradients = [
-      "from-yellow-400 to-orange-400",
-      "from-purple-500 to-indigo-600",
-      "from-green-400 to-teal-500",
-      "from-blue-400 to-cyan-500",
-    ];
+    const gradients = ACTIVE_GRADIENTS;
     return isActive
       ? `bg-gradient-to-br ${gradients[index]} text-white`
       : "bg-gray-100 text-gray-600";
@@ -37,7 +39,7 @@ export const NawafelSection = ({ nawafel, onToggle }: NawafelSectionProps) => {
         <span className="text-sm text-gray-500">(اضغط لتفعيل/إلغاء)</span>
       </div>
       <div className="grid md:grid-cols-4 gap-4">
-        {nawafelItems.map((item, index) => (
+        {NAWAFEL_ITEMS.map((item, index) => (
           <Button
             key={item.key}
             onClick={() => onToggle(item.key)}

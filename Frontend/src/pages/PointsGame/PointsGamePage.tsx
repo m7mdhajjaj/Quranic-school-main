@@ -1,5 +1,5 @@
 // PointsGamePage.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { usePointsGameData } from './hooks/usePointsGameData';
 import { usePointsGameActions } from './hooks/usePointsGameActions';
@@ -58,18 +58,22 @@ const PointsGamePage = () => {
   } = useRankings();
 
   // حساب النقاط
-  const totalPoints = calculateTotalPoints(
-    prayers,
-    nawafel,
-    parentRespect,
-    schoolAttendance,
-    dailyStudy,
-    adhkar,
-    halaqah
+  const totalPoints = useMemo(
+    () =>
+      calculateTotalPoints(
+        prayers,
+        nawafel,
+        parentRespect,
+        schoolAttendance,
+        dailyStudy,
+        adhkar,
+        halaqah
+      ),
+    [prayers, nawafel, parentRespect, schoolAttendance, dailyStudy, adhkar, halaqah]
   );
 
   // دالة لتحديث حالة الصلاة
-  const updatePrayerStatus = (
+  const updatePrayerStatus = useCallback((
     prayerName: keyof Prayers,
     status: PrayerStatus
   ) => {
@@ -77,10 +81,35 @@ const PointsGamePage = () => {
       ...prev,
       [prayerName]: { status },
     }));
-  };
+  }, [setPrayers]);
+
+  const handleToggleNawafel = useCallback(
+    (key: keyof typeof nawafel) => {
+      setNawafel((prev) => ({ ...prev, [key]: !prev[key] }));
+    },
+    [setNawafel]
+  );
+
+  const handleToggleAdhkar = useCallback(
+    (key: keyof typeof adhkar) => {
+      setAdhkar((prev) => ({ ...prev, [key]: !prev[key] }));
+    },
+    [setAdhkar]
+  );
+
+  const handleUpdateHalaqah = useCallback(
+    (key: keyof typeof halaqah, value: number) => {
+      setHalaqah((prev) => ({ ...prev, [key]: value }));
+    },
+    [setHalaqah]
+  );
+
+  const handleSchoolAttendanceToggle = useCallback(() => {
+    setSchoolAttendance((prev) => !prev);
+  }, [setSchoolAttendance]);
 
   // دالة لحفظ النقاط اليومية
-  const handleSavePoints = async () => {
+  const handleSavePoints = useCallback(async () => {
     const dailyData = {
       date: currentDate,
       prayers: {
@@ -102,26 +131,25 @@ const PointsGamePage = () => {
     };
 
     await saveDailyData(dailyData, totalPoints);
-  };
+  }, [currentDate, prayers, nawafel, parentRespect, schoolAttendance, dailyStudy, adhkar, halaqah, saveDailyData, totalPoints]);
 
   // دالة لفتح لوحة الترتيب
-  const handleShowRankings = async () => {
+  const handleShowRankings = useCallback(async () => {
     await loadRankings();
     setShowRankings(true);
-  };
+  }, [loadRankings]);
 
   // تحميل البيانات تلقائياً للمعلم
   useEffect(() => {
     if (user?.role === 'teacher') {
       loadRankings();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.role]);
+  }, [user?.role, loadRankings]);
 
   return (
     <>
       <div
-        className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 p-3 sm:p-4 md:p-6 lg:p-8"
+        className="min-h-screen bg-gradient-to-br from-emerald-50/40 via-teal-50/30 to-cyan-50/40 p-3 sm:p-4 md:p-6 lg:p-8"
         dir="rtl"
       >
         <div className="max-w-7xl mx-auto px-2 sm:px-0">
@@ -159,27 +187,19 @@ const PointsGamePage = () => {
               prayers={prayers}
               onUpdatePrayer={updatePrayerStatus}
               nawafel={nawafel}
-              onToggleNawafel={(key) =>
-                setNawafel({ ...nawafel, [key]: !nawafel[key] })
-              }
+            onToggleNawafel={handleToggleNawafel}
               parentRespect={parentRespect}
               schoolAttendance={schoolAttendance}
               dailyStudy={dailyStudy}
               onParentRespectChange={setParentRespect}
-              onSchoolAttendanceToggle={() =>
-                setSchoolAttendance(!schoolAttendance)
-              }
+            onSchoolAttendanceToggle={handleSchoolAttendanceToggle}
               onDailyStudyChange={setDailyStudy}
               adhkar={adhkar}
-              onToggleAdhkar={(key) =>
-                setAdhkar({ ...adhkar, [key]: !adhkar[key] })
-              }
+            onToggleAdhkar={handleToggleAdhkar}
               halaqah={halaqah}
-              onUpdateHalaqah={(key, value) =>
-                setHalaqah({ ...halaqah, [key]: value })
-              }
+            onUpdateHalaqah={handleUpdateHalaqah}
               onShowRankings={handleShowRankings}
-              onShowBadges={() => setShowBadges(true)}
+            onShowBadges={() => setShowBadges(true)}
               onSavePoints={handleSavePoints}
             />
           )}

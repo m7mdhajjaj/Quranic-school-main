@@ -42,7 +42,7 @@ export const PrayersSection = ({
                   variant={prayer.status === "home" ? "primary" : "ghost"}
                   className={`p-3 rounded-lg text-center transition-all ${
                     prayer.status === "home"
-                      ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg scale-105"
+                      ? "bg-gradient-to-br from-emerald-600 to-teal-600 text-white shadow-lg scale-105"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}>
                   <Home className="w-8 h-8 mx-auto" />
@@ -72,7 +72,7 @@ export const PrayersSection = ({
                 </Button>
               </div>
               <div className="text-center">
-                <span className="inline-block bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-bold">
+                <span className="inline-block bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-sm font-bold">
                   {getPrayerPoints(prayer.status)} نقطة
                 </span>
               </div>

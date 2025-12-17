@@ -60,7 +60,7 @@ export const BadgesModal = ({
     <Modal isOpen={show} onClose={onClose} title="شاراتي" size="xl">
       <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden animate-fadeIn">
         {/* Header */}
-        <div className="bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 text-white p-6">
+        <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="text-5xl">🏆</div>
@@ -111,7 +111,7 @@ export const BadgesModal = ({
                   key={badge.id}
                   className={`rounded-2xl p-6 transition-all duration-300 ${
                     isEarned
-                      ? 'bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-400 shadow-lg hover:shadow-xl'
+                      ? 'bg-gradient-to-br from-emerald-50 via-teal-50/50 to-cyan-50/40 border-2 border-emerald-300 shadow-lg hover:shadow-xl'
                       : 'bg-gray-100 border-2 border-gray-300 opacity-60'
                   }`}
                 >
@@ -151,7 +151,7 @@ export const BadgesModal = ({
                       <div
                         className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
                           isEarned
-                            ? 'bg-green-100 text-green-700'
+                            ? 'bg-emerald-100 text-emerald-700'
                             : 'bg-gray-200 text-gray-500'
                         }`}
                       >
@@ -159,7 +159,7 @@ export const BadgesModal = ({
                       </div>
 
                       {isEarned && count > 1 && (
-                        <div className="mt-2 text-xs font-bold text-orange-600">
+                        <div className="mt-2 text-xs font-bold text-emerald-700">
                           🔥 حصلت عليها {count} مرات!
                         </div>
                       )}
@@ -174,7 +174,7 @@ export const BadgesModal = ({
                         <span>{getBadgeProgressText(badge.id)}</span>
                       </div>
                       <div className="w-full bg-gray-300 rounded-full h-2">
-                        <div className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-500"></div>
+                        <div className="bg-gradient-to-r from-emerald-600 to-teal-600 h-2 rounded-full transition-all duration-500"></div>
                       </div>
                     </div>
                   )}
@@ -185,7 +185,7 @@ export const BadgesModal = ({
 
           {/* رسالة تحفيزية */}
           {earnedBadges.length < allBadges.length && (
-            <div className="mt-6 bg-gradient-to-r from-blue-100 to-purple-100 rounded-2xl p-6 text-center border-2 border-blue-300">
+            <div className="mt-6 bg-gradient-to-r from-emerald-100 to-teal-100 rounded-2xl p-6 text-center border-2 border-emerald-200">
               <div className="text-4xl mb-3">💪</div>
               <h3 className="font-bold text-gray-800 text-lg mb-2">
                 استمر في التقدم!
@@ -199,7 +199,7 @@ export const BadgesModal = ({
 
           {/* رسالة البطل الشامل */}
           {earnedBadges.length === allBadges.length && (
-            <div className="mt-6 bg-gradient-to-r from-yellow-100 via-orange-100 to-red-100 rounded-2xl p-6 text-center border-2 border-yellow-400">
+            <div className="mt-6 bg-gradient-to-r from-emerald-100 via-teal-100 to-cyan-100 rounded-2xl p-6 text-center border-2 border-emerald-300">
               <div className="text-6xl mb-3 animate-bounce">👑</div>
               <h3 className="font-bold text-gray-800 text-2xl mb-2">
                 مبروك! أنت البطل الشامل! 🎉
@@ -215,8 +215,8 @@ export const BadgesModal = ({
         <div className="bg-gray-50 p-4 text-center border-t">
           <Button
             onClick={onClose}
-            variant="warning"
-            className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-8 py-3 rounded-full font-bold hover:scale-105 transition-transform shadow-lg"
+            variant="primary"
+            className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-3 rounded-full font-bold hover:scale-105 transition-transform shadow-lg"
           >
             إغلاق
           </Button>

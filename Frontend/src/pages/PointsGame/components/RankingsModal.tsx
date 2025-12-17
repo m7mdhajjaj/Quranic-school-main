@@ -28,7 +28,7 @@ export const RankingsModal = ({
     >
       <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 p-6 text-white relative">
+        <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 p-6 text-white relative">
           <div className="text-center">
             <div className="text-6xl mb-3">
               {rankingType === 'points' ? '🏆' : '🎖️'}
@@ -50,8 +50,8 @@ export const RankingsModal = ({
               variant={rankingType === 'points' ? 'primary' : 'ghost'}
               className={`px-6 py-2 rounded-full font-bold text-sm transition-all ${
                 rankingType === 'points'
-                  ? 'bg-white text-orange-600 shadow-lg scale-105'
-                  : 'bg-white/20 text-white hover:bg-white/30'
+                  ? 'bg-white text-emerald-700 shadow-lg scale-105'
+                  : 'bg-white/15 text-white hover:bg-white/25'
               }`}
             >
               <span className="ml-2">📊</span>
@@ -62,8 +62,8 @@ export const RankingsModal = ({
               variant={rankingType === 'badges' ? 'primary' : 'ghost'}
               className={`px-6 py-2 rounded-full font-bold text-sm transition-all ${
                 rankingType === 'badges'
-                  ? 'bg-white text-orange-600 shadow-lg scale-105'
-                  : 'bg-white/20 text-white hover:bg-white/30'
+                  ? 'bg-white text-emerald-700 shadow-lg scale-105'
+                  : 'bg-white/15 text-white hover:bg-white/25'
               }`}
             >
               <span className="ml-2">🏆</span>
@@ -105,7 +105,7 @@ export const RankingsModal = ({
                     key={student.studentId || index}
                     className={`flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 ${
                       isCurrentUser
-                        ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-xl scale-105'
+                        ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-xl scale-105'
                         : student.rank <= 3
                           ? 'bg-gradient-to-r from-yellow-100 to-orange-100 hover:shadow-lg'
                           : 'bg-gray-50 hover:bg-gray-100 hover:shadow-md'
@@ -165,7 +165,7 @@ export const RankingsModal = ({
                         <>
                           <div
                             className={`text-3xl font-black ${
-                              isCurrentUser ? 'text-white' : 'text-orange-600'
+                              isCurrentUser ? 'text-white' : 'text-emerald-700'
                             }`}
                           >
                             {student.points}
@@ -182,7 +182,7 @@ export const RankingsModal = ({
                         <>
                           <div
                             className={`text-3xl font-black ${
-                              isCurrentUser ? 'text-white' : 'text-purple-600'
+                              isCurrentUser ? 'text-white' : 'text-emerald-700'
                             }`}
                           >
                             {student.totalBadgeRepeats || 0}
@@ -216,7 +216,7 @@ export const RankingsModal = ({
           <Button
             onClick={onClose}
             variant="primary"
-            className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-3 rounded-full font-bold hover:scale-105 transition-transform shadow-lg"
+            className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-3 rounded-full font-bold hover:scale-105 transition-transform shadow-lg"
           >
             إغلاق
           </Button>

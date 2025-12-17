@@ -72,7 +72,7 @@ export const useMultiImageUpload = ({
     const updatedFiles = hasExistingImages ? validFiles : [...currentFiles, ...validFiles];
     setFiles(updatedFiles);
     setHasExistingImages(false);
-
+    
     onImagesChange(updatedFiles);
 
     const newPreviews: string[] = [];

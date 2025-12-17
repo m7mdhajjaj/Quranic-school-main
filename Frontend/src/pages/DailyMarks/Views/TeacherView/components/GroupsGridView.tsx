@@ -63,7 +63,7 @@ export const GroupsGridView = ({
       {isLoading ? (
         <GroupsGridCardsSkeleton count={groupsWithStats.length || 6} />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {groupsWithStats.map((group) => (
           <Card
             key={group.name}
@@ -110,7 +110,7 @@ export const GroupsGridView = ({
             </div>
           </Card>
         ))}
-        </div>
+      </div>
       )}
     </div>
   );

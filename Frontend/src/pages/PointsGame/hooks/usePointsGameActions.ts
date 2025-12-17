@@ -1,5 +1,5 @@
 // hooks/usePointsGameActions.ts
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import Swal from "sweetalert2";
 import { saveDailyPoints } from "@/Api/pointsGameApi";
 import type { DailyPointsData } from "../types/pointsGame.types";
@@ -10,7 +10,7 @@ export const usePointsGameActions = (
 ) => {
   const [saving, setSaving] = useState(false);
 
-  const saveDailyData = async (
+  const saveDailyData = useCallback(async (
     dailyData: DailyPointsData,
     totalPoints: number
   ) => {
@@ -22,7 +22,7 @@ export const usePointsGameActions = (
           <p style="font-size: 1.2rem; color: #4b5563;">
             سيتم حفظ نقاطك اليومية
           </p>
-          <div style="background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%); 
+          <div style="background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%); 
                       padding: 1rem; 
                       border-radius: 1rem; 
                       color: white;
@@ -61,9 +61,9 @@ export const usePointsGameActions = (
                 تم حفظ نقاطك بنجاح!
               </h3>
               <p style="font-size: 1.2rem; color: #4b5563; margin-bottom: 1rem;">
-                حصلت على <strong style="color: #f59e0b;">${totalPoints}</strong> نقطة اليوم
+                حصلت على <strong style="color: #10b981;">${totalPoints}</strong> نقطة اليوم
               </p>
-              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+              <div style="background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%); 
                           padding: 1rem; 
                           border-radius: 1rem; 
                           color: white;
@@ -80,7 +80,6 @@ export const usePointsGameActions = (
         });
       }
     } catch (error) {
-      console.error("خطأ في حفظ النقاط:", error);
       await Swal.fire({
         icon: "error",
         title: "عذراً! 😞",
@@ -100,7 +99,7 @@ export const usePointsGameActions = (
     } finally {
       setSaving(false);
     }
-  };
+  }, [loadBadgesData, loadStatsData]);
 
   return { saving, saveDailyData };
 };

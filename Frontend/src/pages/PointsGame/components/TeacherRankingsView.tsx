@@ -1,15 +1,19 @@
 // components/TeacherRankingsView.tsx
+import { memo, useMemo } from 'react';
 import type { TeacherRankingsViewProps } from '../types/pointsGame.types';
 import { LoadingSpinner } from '@/components/UI/LoadingSpinner';
 
-export const TeacherRankingsView = ({
+export const TeacherRankingsView = memo(({
   loading,
   rankingType,
   realRankings,
   realBadgeRankings,
   onChangeType,
 }: TeacherRankingsViewProps) => {
-  const rankings = rankingType === 'points' ? realRankings : realBadgeRankings;
+  const rankings = useMemo(
+    () => (rankingType === 'points' ? realRankings : realBadgeRankings),
+    [rankingType, realRankings, realBadgeRankings]
+  );
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -35,7 +39,7 @@ export const TeacherRankingsView = ({
             onClick={() => onChangeType('points')}
             className={`px-4 sm:px-6 py-2 sm:py-3 rounded-full font-bold text-xs sm:text-sm transition-all ${
               rankingType === 'points'
-                ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-lg scale-105'
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg scale-105'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
@@ -46,7 +50,7 @@ export const TeacherRankingsView = ({
             onClick={() => onChangeType('badges')}
             className={`px-6 py-3 rounded-full font-bold text-sm transition-all ${
               rankingType === 'badges'
-                ? 'bg-gradient-to-r from-purple-400 to-pink-500 text-white shadow-lg scale-105'
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg scale-105'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
@@ -124,14 +128,14 @@ export const TeacherRankingsView = ({
                   <div className="text-left flex-shrink-0">
                     {rankingType === 'points' ? (
                       <>
-                        <div className="text-2xl sm:text-3xl font-black text-orange-600">
+                        <div className="text-2xl sm:text-3xl font-black text-emerald-600">
                           {student.points}
                         </div>
                         <div className="text-xs text-gray-500">نقطة</div>
                       </>
                     ) : (
                       <>
-                        <div className="text-3xl font-black text-purple-600">
+                        <div className="text-3xl font-black text-emerald-600">
                           {student.totalBadgeRepeats || 0}
                         </div>
                         <div className="text-xs text-gray-500">تكرار</div>
@@ -149,4 +153,6 @@ export const TeacherRankingsView = ({
       </div>
     </div>
   );
-};
+});
+
+TeacherRankingsView.displayName = 'TeacherRankingsView';

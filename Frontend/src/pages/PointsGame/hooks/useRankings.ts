@@ -1,5 +1,5 @@
 // hooks/useRankings.ts
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   getPointsRankings,
   getBadgesRankings,
@@ -13,7 +13,7 @@ export const useRankings = () => {
     []
   );
 
-  const loadRankings = async () => {
+  const loadRankings = useCallback(async () => {
     try {
       setLoading(true);
       const [pointsData, badgesData] = await Promise.all([
@@ -22,12 +22,10 @@ export const useRankings = () => {
       ]);
       setRealRankings(pointsData || []);
       setRealBadgeRankings(badgesData || []);
-    } catch (error) {
-      console.error("خطأ في جلب الترتيبات:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   return {
     loading,
