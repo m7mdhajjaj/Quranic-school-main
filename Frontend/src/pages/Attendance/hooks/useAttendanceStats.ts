@@ -11,8 +11,6 @@ import type { UseAttendanceStatsProps, AttendanceStats } from '../types/absence.
  * - presentCount: عدد الحاضرين (من الطلاب المرئيين بعد الفلترة)
  * - absentCount: عدد الغائبين (من الطلاب المرئيين بعد الفلترة)
  * - attendanceRate: نسبة الحضور (للطلاب المرئيين)
- * 
- * للحصول على إحصائيات متقدمة من Backend، استخدم useAdvancedAttendanceStats
  */
 export const useAttendanceStats = ({
   allStudents,

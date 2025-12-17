@@ -4,13 +4,14 @@ const PrayerJob = require("../Jobs/PrayerJob");
 const { sendRealTimeNotification } = require("../Core/SocketSender");
 const { sendPushNotification, sendNotificationToDevices } = require("../Core/PushSender");
 const {
-  notifyNewGrade,
-  notifyNewMessage,
-  notifyAbsence,
-  notifyAbsenceRemoved,
   notifySystemMessage,
   notifyWarning,
 } = require("../Handlers/GeneralHandler");
+const {
+  notifyAbsence,
+  notifyAbsenceRemoved,
+  notifyBulkAbsences,
+} = require("../Handlers/AttendanceHandler");
 
 const {
   notifyGroupAssigned,
@@ -86,27 +87,10 @@ class NotificationManager {
   /**
    * Specific notification methods
    */
-  async notifyNewGrade(studentId, subject, grade, teacherName, isUpdate = false, oldGrade = null) {
-    return notifyNewGrade(
-      this.createNotification.bind(this),
-      studentId,
-      subject,
-      grade,
-      teacherName,
-      isUpdate,
-      oldGrade
-    );
-  }
 
-  async notifyNewMessage(recipientId, recipientModel, senderName, messageText) {
-    return notifyNewMessage(
-      this.createNotification.bind(this),
-      recipientId,
-      recipientModel,
-      senderName,
-      messageText
-    );
-  }
+  // ============================================================================
+  // Attendance Notifications
+  // ============================================================================
 
   async notifyAbsence(studentId, date, teacherName) {
     return notifyAbsence(this.createNotification.bind(this), studentId, date, teacherName);
@@ -116,24 +100,33 @@ class NotificationManager {
     return notifyAbsenceRemoved(this.createNotification.bind(this), studentId, date, teacherName);
   }
 
-  async notifyWarning(studentId, warningType, reason, teacherName, penalties = {}) {
+  async notifyBulkAbsences(absentStudents, date, teacherName) {
+    return notifyBulkAbsences(this.createNotification.bind(this), absentStudents, date, teacherName);
+  }
+
+  // ============================================================================
+  // General Notifications
+  // ============================================================================
+
+  async notifyWarning(userId, userModel, title, message, data = {}) {
     return notifyWarning(
       this.createNotification.bind(this),
-      studentId,
-      warningType,
-      reason,
-      teacherName,
-      penalties
+      userId,
+      userModel,
+      title,
+      message,
+      data
     );
   }
 
-  async notifySystemMessage(recipientId, recipientModel, title, message) {
+  async notifySystemMessage(userId, userModel, title, message, data = {}) {
     return notifySystemMessage(
       this.createNotification.bind(this),
-      recipientId,
-      recipientModel,
+      userId,
+      userModel,
       title,
-      message
+      message,
+      data
     );
   }
 

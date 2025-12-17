@@ -8,32 +8,6 @@ const Notification = require("../../schema/Notification");
 const { protect } = require("../../middleware/authMiddleware");
 
 // ============================================================================
-// Test Routes
-// ============================================================================
-
-// Test authentication
-router.get("/auth-test", protect, async (req, res) => {
-  try {
-    res.json({
-      success: true,
-      message: 'المصادقة تعمل بشكل صحيح',
-      user: {
-        id: req.user._id,
-        role: req.user.role,
-        name: req.user.firstName || req.user.name || 'غير محدد'
-      }
-    });
-  } catch (error) {
-    console.error("Error in auth test:", error);
-    res.status(500).json({
-      success: false,
-      message: "خطأ في اختبار المصادقة",
-      error: error.message,
-    });
-  }
-});
-
-// ============================================================================
 // Get Routes (Protected - Current User)
 // ============================================================================
 
@@ -191,7 +165,7 @@ router.get("/:userId/stats", async (req, res) => {
     const mongoose = require("mongoose");
 
     const stats = await Notification.aggregate([
-      { $match: { recipient: mongoose.Types.ObjectId(userId) } },
+      { $match: { recipient: new mongoose.Types.ObjectId(userId) } },
       {
         $group: {
           _id: "$type",
@@ -216,7 +190,7 @@ router.get("/:userId/stats", async (req, res) => {
     ]);
 
     const totalStats = await Notification.aggregate([
-      { $match: { recipient: mongoose.Types.ObjectId(userId) } },
+      { $match: { recipient: new mongoose.Types.ObjectId(userId) } },
       {
         $group: {
           _id: null,

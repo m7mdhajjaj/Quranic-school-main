@@ -23,8 +23,6 @@ exports.getTeacherGroupsForMarks = async (req, res) => {
   req.query.filter = req.query.filter || 'all';
   req.query.includeStudents = req.query.includeStudents || 'false'; // لا نحتاج تفاصيل الطلاب
   
-  console.log(`📝 [DailyMarks API] Fetching groups for teacher: ${req.params.teacherId}`);
-  
   // Delegate to the existing group controller function
   // This function already handles:
   // ✅ Fetching teacher groups

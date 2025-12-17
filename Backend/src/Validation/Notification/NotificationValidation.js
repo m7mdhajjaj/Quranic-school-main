@@ -553,17 +553,5 @@ const validateNotificationFormData = async (req, res, next) => {
 };
 
 module.exports = {
-  validateNotificationFormData,
-  sanitizeNotificationData,
-  validateNotificationTitle,
-  validateNotificationMessage,
-  validateNotificationType,
-  validateNotificationPriority,
-  validateSenderId,
-  validateSenderType,
-  validateRecipients,
-  validateScheduledTime,
-  validateExpiryTime,
-  validateNotificationData,
-  validateNotificationStatus
+  validateNotificationFormData
 };

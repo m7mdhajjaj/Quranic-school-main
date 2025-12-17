@@ -15,6 +15,7 @@ const DailyMarksHandler = require("./Handlers/DailyMarksHandler");
 const ExamHandler = require("./Handlers/ExamHandler");
 const NewsHandler = require("./Handlers/NewsHandler");
 const StudentHandler = require("./Handlers/StudentHandler");
+const AttendanceHandler = require("./Handlers/AttendanceHandler");
 
 module.exports = {
   // Main Services
@@ -25,6 +26,11 @@ module.exports = {
   notifyStudentAddedToGroup: StudentHandler.notifyStudentAddedToGroup,
   notifyStudentRemovedFromGroup: StudentHandler.notifyStudentRemovedFromGroup,
   notifyStudentMovedGroup: StudentHandler.notifyStudentMovedGroup,
+  
+  // Attendance Notifications
+  notifyAbsence: AttendanceHandler.notifyAbsence,
+  notifyAbsenceRemoved: AttendanceHandler.notifyAbsenceRemoved,
+  notifyBulkAbsences: AttendanceHandler.notifyBulkAbsences,
   
   // Section Notifications
   notifySectionAdded: DailyMarksHandler.notifySectionAdded,

@@ -1,45 +1,22 @@
 const Attendance = require("../../schema/Attendance");
 const Student = require("../../schema/Student");
 
-// Get attendance records for a specific date
-// Removed unused getAttendanceByDate function
-
 // Get all attendance records for a specific student
 exports.getStudentAttendance = async (req, res) => {
   try {
     const studentId = req.params.studentId;
-    console.log(`Getting attendance records for student ID: ${studentId}`);
 
     // Verify that the student exists - but don't fail if not found
-    try {
-      const student = await Student.findById(studentId);
-      if (!student) {
-        console.log(
-          `Student with ID ${studentId} not found, returning empty records`
-        );
-        // Instead of failing, just return empty records
-        return res.json([]);
-      }
-    } catch (studentError) {
-      console.log(`Error finding student: ${studentError.message}`);
-      // Don't fail here, continue and try to get records
-    }
-
-    // Try to find attendance records for the student
-    try {
-      const records = await Attendance.find({ studentId }).sort({ date: -1 });
-      console.log(
-        `Found ${records.length} attendance records for student ID: ${studentId}`
-      );
-      return res.json(records);
-    } catch (recordError) {
-      console.log(`Error finding attendance records: ${recordError.message}`);
-      // If we can't find records, return empty array instead of error
+    const student = await Student.findById(studentId);
+    if (!student) {
       return res.json([]);
     }
+
+    // Find attendance records for the student
+    const records = await Attendance.find({ studentId }).sort({ date: -1 });
+    return res.json(records);
   } catch (error) {
-    console.error(`General error in getStudentAttendance: ${error.message}`);
-    // Return empty array instead of error to prevent frontend issues
+    console.error(`Error in getStudentAttendance: ${error.message}`);
     return res.json([]);
   }
 };
@@ -47,9 +24,6 @@ exports.getStudentAttendance = async (req, res) => {
 // Get absent students for today with full name, teacher, and group
 exports.getAbsentStudentsToday = async (req, res) => {
   try {
-    console.log("📋 جلب الطلاب الغائبين لهذا اليوم...");
-    const startTime = Date.now();
-
     // الحصول على اليوم الحالي
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -160,11 +134,6 @@ exports.getAbsentStudentsToday = async (req, res) => {
         $sort: { fullName: 1 },
       },
     ]);
-
-    const duration = Date.now() - startTime;
-    console.log(
-      `✅ تم جلب ${absentStudents.length} طالب غائب في ${duration}ms`
-    );
 
     return res.json({
       success: true,

@@ -12,14 +12,11 @@ const Attendance = require('../../schema/Attendance');
  */
 exports.getTeacherGroupsForAttendance = async (req, res) => {
   try {
-    const startTime = Date.now();
     const { teacherId } = req.params;
     const { 
       date,
       includeAbsenceStats = 'true'
     } = req.query;
-
-    console.log(`⚡ [Attendance Optimized] Teacher: ${teacherId}, Date: ${date || 'today'}`);
 
     // 1. Validate Teacher ID
     if (!mongoose.Types.ObjectId.isValid(teacherId)) {
@@ -194,9 +191,6 @@ exports.getTeacherGroupsForAttendance = async (req, res) => {
     
     // Sort groups by name
     groups.sort((a, b) => a.name.localeCompare(b.name, 'ar'));
-
-    const duration = Date.now() - startTime;
-    console.log(`✅ [Attendance Optimized] Processed ${groups.length} groups and ${studentsList.length} students in ${duration}ms`);
 
     return res.json({
       success: true,
