@@ -88,7 +88,6 @@ const NewsCard = ({
             onError={(e) => {
               const imgElement = e.target as HTMLImageElement;
               const originalSrc = images[currentImageIndex];
-              console.warn('⚠️ فشل تحميل الصورة:', originalSrc);
               setImageLoading(false);
               setImageError(true);
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { ChangeEvent } from 'react';
 import { showCenteredSwal } from '@/utils/sweetalertUtils';
 import {
@@ -8,7 +8,7 @@ import {
   deleteNews,
   type INews,
 } from '@/Api/newsApi';
-import { validateNewsForm } from '@/Validation/NewsValidation';
+import { validateField, validateNewsForm } from '@/Validation/NewsValidation';
 import {
   showSuccessToast,
   showErrorToast,
@@ -48,6 +48,9 @@ export const useNewsData = () => {
   // Get current user for author field
   const { user } = useAuth();
 
+  // Debounce timers for per-field validation
+  const validateTimersRef = useRef<Record<string, number>>({});
+
   // ✅ تحميل الأخبار عند فتح الصفحة أول مرة فقط
   useEffect(() => {
     loadNews();
@@ -59,11 +62,9 @@ export const useNewsData = () => {
     setError(null);
     try {
       const response = await getAllNews();
-      console.log('Fetched news data:', response);
 
       if (response && Array.isArray(response)) {
         setNewsItems(response);
-        console.log('Formatted news items:', response);
       }
     } catch (err) {
       console.error('Failed to fetch news:', err);
@@ -103,7 +104,7 @@ export const useNewsData = () => {
     });
   };
 
-  const handleInputChange = async (
+  const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
@@ -119,11 +120,14 @@ export const useNewsData = () => {
       return newErrors;
     });
 
-    // Validate field after user stops typing (debounce)
-    if (value.trim()) {
-      const { validateField } = await import(
-        '../../../Validation/NewsValidation'
-      );
+    // Validate field after user stops typing (debounced)
+    const existing = validateTimersRef.current[name];
+    if (existing) {
+      window.clearTimeout(existing);
+    }
+
+    validateTimersRef.current[name] = window.setTimeout(async () => {
+      if (!value.trim()) return;
       const validation = await validateField(name, value);
       if (!validation.isValid && validation.message) {
         setFieldErrors((prev) => ({
@@ -131,7 +135,7 @@ export const useNewsData = () => {
           [name]: validation.message!,
         }));
       }
-    }
+    }, 300);
   };
 
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement> | File[]) => {
@@ -141,13 +145,11 @@ export const useNewsData = () => {
     if (Array.isArray(e)) {
       // Array من Files من MultiImageUpload (تم التحقق منها مسبقاً)
       filesArray = e;
-      console.log('📸 استلام ملفات من MultiImageUpload:', filesArray.length);
     } else {
       // Event عادي من input (احتياطي)
       const files = e.target.files;
       if (!files || files.length === 0) return;
       filesArray = Array.from(files);
-      console.log('📸 استلام ملفات من input:', filesArray.length);
       
       // التحقق فقط في حالة الإدخال المباشر (ليس من MultiImageUpload)
       const invalidFiles = filesArray.filter(file => !file.type.startsWith('image/'));
@@ -168,19 +170,10 @@ export const useNewsData = () => {
 
     // حفظ الملفات
     setSelectedFile(filesArray as any);
-    console.log('✅ تم حفظ', filesArray.length, 'صور');
   };
 
   const handleAddNews = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('🚀 handleAddNews called');
-    console.log('📝 Form data:', {
-      title: newNews.title,
-      content: newNews.content,
-      date: newNews.date,
-      image: newNews.image,
-      selectedFile: selectedFile,
-    });
 
     // Clear previous errors
     setFieldErrors({});
@@ -194,10 +187,7 @@ export const useNewsData = () => {
       selectedFile: Array.isArray(selectedFile) ? selectedFile[0] : selectedFile,
     });
 
-    // Check if there are any errors
-    console.log('✅ Validation errors:', validationErrors);
     if (Object.keys(validationErrors).length > 0) {
-      console.log('❌ Validation failed, showing errors under fields');
       setFieldErrors(validationErrors);
 
       // Scroll to first error with a small delay to ensure DOM is updated
@@ -214,11 +204,8 @@ export const useNewsData = () => {
       return;
     }
 
-    console.log('✅ Validation passed, proceeding to save...');
-    console.log('🔄 Setting isLoading to true...');
     // ✅ loading واحد لكل العمليات
     setIsLoading(true);
-    console.log('Adding/updating news with image:', selectedFile);
 
     try {
       // Create FormData to send to backend (backend will handle Cloudinary upload)
@@ -230,42 +217,25 @@ export const useNewsData = () => {
       const defaultVisibility = user?.role === 'admin' ? 'general' : 'group';
       formData.append('visibility', (newNews.visibility as string) || defaultVisibility);
 
-      // Log what we're sending
-      console.log('📤 Sending news data:');
-      console.log('  - Title:', newNews.title);
-      console.log('  - Content length:', newNews.content?.length || 0);
-      console.log('  - Author:', user?._id);
-      console.log('  - User Name:', user?.firstName || user?.name);
-      console.log('  - Has images:', !!selectedFile);
-
       // Add the image files if selected (support multiple files)
       if (selectedFile) {
         if (Array.isArray(selectedFile)) {
           // Multiple images
-          console.log('📤 إضافة صور متعددة إلى FormData...');
-          selectedFile.forEach((file, index) => {
+          selectedFile.forEach((file) => {
             formData.append('images', file);
-            console.log(`  ✅ صورة ${index + 1}: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
           });
-          console.log(`📸 إجمالي الصور: ${selectedFile.length}`);
         } else {
           // Single image (backward compatibility)
           formData.append('images', selectedFile);
-          console.log('📤 إضافة صورة واحدة:', selectedFile.name);
         }
-      } else {
-        console.log('⚠️ لا توجد صور محددة!');
       }
 
       if (isEditMode && editingNewsId !== null) {
         const response = await updateNews(editingNewsId, formData);
-        console.log('News updated successfully:', response);
 
         if (response) {
-          setNewsItems(
-            newsItems.map((item) =>
-              item._id === editingNewsId ? response : item
-            )
+          setNewsItems((prev) =>
+            prev.map((item) => (item._id === editingNewsId ? response : item))
           );
 
           // عرض Toast مع صوت النجاح
@@ -273,10 +243,9 @@ export const useNewsData = () => {
         }
       } else {
         const response = await createNews(formData);
-        console.log('News created successfully:', response);
 
         if (response) {
-          setNewsItems([response, ...newsItems]);
+          setNewsItems((prev) => [response, ...prev]);
 
           // عرض Toast مع صوت النجاح
           showSuccessToast('تم إضافة الخبر بنجاح ✅');
@@ -287,7 +256,6 @@ export const useNewsData = () => {
       const error = err as {
         response?: { data?: { message?: string; errors?: string[] } };
       };
-      console.error('Error details:', error.response?.data);
 
       // إذا كانت هناك أخطاء تحقق من الخادم، اعرضها في النموذج
       if (
@@ -341,7 +309,6 @@ export const useNewsData = () => {
           formattedDate = dateObj.toISOString().split('T')[0];
         }
       } catch (error) {
-        console.warn('Invalid date format, using current date:', error);
       }
     }
 
@@ -378,7 +345,7 @@ export const useNewsData = () => {
     setIsLoading(true);
     try {
       await deleteNews(_id);
-      setNewsItems(newsItems.filter((item) => item._id !== _id));
+      setNewsItems((prev) => prev.filter((item) => item._id !== _id));
       // عرض Toast مع صوت النجاح
       showSuccessToast('تم حذف الخبر بنجاح ✅');
     } catch (err) {

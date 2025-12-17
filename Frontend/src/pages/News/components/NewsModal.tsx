@@ -36,11 +36,7 @@ const NewsModal = ({
       >
         {/* Header */}
         <div
-          className={`px-6 py-4 flex items-center justify-between flex-shrink-0 ${
-            isEditMode
-              ? 'bg-gradient-to-r from-blue-600 to-indigo-600'
-              : 'bg-gradient-to-r from-emerald-600 to-teal-600'
-          }`}
+          className="px-6 py-4 flex items-center justify-between flex-shrink-0 bg-gradient-to-r from-emerald-600 to-teal-600"
         >
           <h2 className="text-2xl font-bold text-white flex items-center gap-3">
             {isEditMode ? <Edit size={32} /> : <Plus size={32} />}
@@ -60,7 +56,6 @@ const NewsModal = ({
         <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
           <form
             onSubmit={(e) => {
-              console.log('📋 NewsModal form submitted');
               onSubmit(e);
             }}
             className="space-y-6"
@@ -70,7 +65,7 @@ const NewsModal = ({
               <label className="flex items-center gap-2 text-base font-semibold text-gray-700">
                 <MessageSquare
                   size={20}
-                  className={isEditMode ? 'text-blue-600' : 'text-emerald-600'}
+                  className="text-emerald-600"
                 />
                 عنوان الخبر <span className="text-red-500">*</span>
               </label>
@@ -158,11 +153,6 @@ const NewsModal = ({
               mode="multiple"
               existingImages={existingImages}
               onImagesChange={(files) => {
-                console.log(
-                  '📸 NewsModal: تمرير',
-                  files.length,
-                  'صور إلى handleFileChange'
-                );
                 onFileChange(files as any);
               }}
               maxImages={10}
@@ -204,11 +194,7 @@ const NewsModal = ({
                 loading={isLoading}
                 variant="primary"
                 size="md"
-                className={`px-6 py-2 min-w-[160px] shadow-lg hover:shadow-xl transition-all ${
-                  isEditMode
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
-                    : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700'
-                }`}
+                className="px-6 py-2 min-w-[160px] shadow-lg hover:shadow-xl transition-all bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
                 leftIcon={isEditMode ? <Edit size={20} /> : <Plus size={20} />}
               >
                 {isEditMode ? 'تحديث الخبر' : 'إضافة الخبر'}

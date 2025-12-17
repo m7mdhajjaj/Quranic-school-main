@@ -26,7 +26,6 @@ export const useMultiImageUpload = ({
       setPreviews(existingImages);
       setHasExistingImages(true);
       setFiles([]);
-      console.log('📸 useMultiImageUpload: عرض صور موجودة:', existingImages.length);
     } else {
       setPreviews([]);
       setHasExistingImages(false);
@@ -73,9 +72,7 @@ export const useMultiImageUpload = ({
     const updatedFiles = hasExistingImages ? validFiles : [...currentFiles, ...validFiles];
     setFiles(updatedFiles);
     setHasExistingImages(false);
-    
-    console.log('📸 useMultiImageUpload: تم اختيار', updatedFiles.length, 'صورة');
-    
+
     onImagesChange(updatedFiles);
 
     const newPreviews: string[] = [];
@@ -107,8 +104,6 @@ export const useMultiImageUpload = ({
     setFiles(newFiles);
     setHasExistingImages(false);
     onImagesChange(newFiles);
-    
-    console.log('🗑️ تم حذف صورة، المتبقي:', newFiles.length);
   };
 
   const handleUploadClick = () => {
