@@ -50,7 +50,7 @@ const AveragesBarComponent = ({
             title="📖 معدل الحفظ"
             value={`${memorizationAverage}/10`}
             description={`من ${totalMarks} علامة`}
-            color="amber"
+            color="teal"
             icon={
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -75,7 +75,7 @@ const AveragesBarComponent = ({
                   cx="40"
                   cy="40"
                   r="32"
-                  stroke="#fbbf24"
+                  stroke="#14b8a6"
                   strokeWidth="6"
                   fill="transparent"
                   className="opacity-20"
@@ -84,7 +84,7 @@ const AveragesBarComponent = ({
                   cx="40"
                   cy="40"
                   r="32"
-                  stroke="#f59e0b"
+                  stroke="#0d9488"
                   strokeWidth="6"
                   fill="transparent"
                   strokeDasharray={`${(memorizationAverage / 10) * 201} 201`}
@@ -92,7 +92,7 @@ const AveragesBarComponent = ({
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-amber-600 font-bold text-base">{Math.round((memorizationAverage / 10) * 100)}%</span>
+                <span className="text-teal-700 font-bold text-base">{Math.round((memorizationAverage / 10) * 100)}%</span>
               </div>
             </div>
           </div>
@@ -158,7 +158,7 @@ const AveragesBarComponent = ({
             title="⭐ المعدل الإجمالي"
             value={`${overallAverage}/100`}
             description="الحفظ + المراجعة"
-            color="blue"
+            color="teal"
             icon={
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -183,7 +183,7 @@ const AveragesBarComponent = ({
                   cx="40"
                   cy="40"
                   r="32"
-                  stroke="#3b82f6"
+                  stroke="#14b8a6"
                   strokeWidth="6"
                   fill="transparent"
                   className="opacity-20"
@@ -192,7 +192,7 @@ const AveragesBarComponent = ({
                   cx="40"
                   cy="40"
                   r="32"
-                  stroke="#2563eb"
+                  stroke="#0d9488"
                   strokeWidth="6"
                   fill="transparent"
                   strokeDasharray={`${(overallAverage / 100) * 201} 201`}
@@ -200,7 +200,7 @@ const AveragesBarComponent = ({
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-blue-600 font-bold text-base">{Math.round(overallAverage)}%</span>
+                <span className="text-teal-700 font-bold text-base">{Math.round(overallAverage)}%</span>
               </div>
             </div>
           </div>

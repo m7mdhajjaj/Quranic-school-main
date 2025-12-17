@@ -182,7 +182,9 @@ const PointsGamePage = () => {
               totalPoints={totalPoints}
               stats={stats}
               earnedBadgesCount={earnedBadges.length}
-              loading={dataLoading || rankingsLoading}
+              // avoid double loaders on first render (Suspense fallback already shown)
+              // this flag is used mainly for the rankings button spinner
+              loading={rankingsLoading}
               saving={saving}
               prayers={prayers}
               onUpdatePrayer={updatePrayerStatus}

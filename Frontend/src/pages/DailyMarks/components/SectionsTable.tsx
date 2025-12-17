@@ -275,14 +275,14 @@ const SectionsTableComponent = ({
                   className={`group relative flex flex-col items-center justify-center gap-3 p-6 rounded-xl border-2 transition-all duration-200 hover:scale-105 active:scale-95 ${
                     hasMarks
                       ? 'bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-300 hover:border-emerald-500 hover:shadow-lg'
-                      : 'bg-gradient-to-br from-cyan-50 to-blue-50 border-cyan-300 hover:border-cyan-500 hover:shadow-lg'
+                      : 'bg-gradient-to-br from-cyan-50 to-teal-50 border-cyan-300 hover:border-cyan-500 hover:shadow-lg'
                   }`}
                   type="button"
                 >
                   <div className={`p-3 rounded-lg ${
                     hasMarks
                       ? 'bg-gradient-to-br from-emerald-500 to-teal-600'
-                      : 'bg-gradient-to-br from-cyan-500 to-blue-600'
+                      : 'bg-gradient-to-br from-cyan-500 to-teal-600'
                   }`}>
                     {hasMarks ? (
                       <FileEdit className="text-white" size={24} />
@@ -310,7 +310,7 @@ const SectionsTableComponent = ({
         )}
 
         {/* Table with Clean Design - Responsive to column count */}
-        <div className="bg-white rounded-xl shadow-md overflow-hidden w-full">
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-md overflow-hidden w-full border border-emerald-100">
           <Table
             columns={columns}
             data={tableData}
@@ -349,7 +349,7 @@ const SectionsTableComponent = ({
           tableData.map((row, index) => (
             <div
               key={row._id || index}
-              className="bg-white rounded-xl p-5 border-2 border-emerald-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-emerald-400"
+              className="bg-white/85 backdrop-blur-sm rounded-xl p-5 border-2 border-emerald-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-emerald-400"
             >
               {/* Date */}
               <div className="flex items-center gap-2 mb-3 pb-3 border-b border-gray-200">

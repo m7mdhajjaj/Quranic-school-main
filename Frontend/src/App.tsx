@@ -87,7 +87,7 @@ const TeacherStudentManagement = lazy(() => import("./pages/Teacher"));
 // ============================================================================
 // Page Components - Points Game
 // ============================================================================
-const PointsGame = lazy(() => import("./pages/PointsGame/PointsGamePage"));
+import PointsGame from "./pages/PointsGame/PointsGamePage";
 
 // ============================================================================
 // Page Components - Admin
@@ -280,11 +280,7 @@ const TeacherRoutes: React.FC = () => {
             ============================================ */}
         <Route 
           path="/points-game" 
-          element={
-            <React.Suspense fallback={<LoadingFallback message="جاري تحميل لعبة النقاط..." />}>
-              <PointsGame />
-            </React.Suspense>
-          } 
+          element={<PointsGame />} 
         />
 
         {/* ============================================
@@ -435,11 +431,7 @@ const StudentRoutes: React.FC = () => {
             ============================================ */}
         <Route 
           path="/points-game" 
-          element={
-            <React.Suspense fallback={<LoadingFallback message="جاري تحميل لعبة النقاط..." />}>
-              <PointsGame />
-            </React.Suspense>
-          } 
+          element={<PointsGame />} 
         />
 
         {/* ============================================
