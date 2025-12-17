@@ -2,7 +2,7 @@
 // Notification Hooks - Export Index
 // ============================================================================
 
-export { useNotificationData } from './useNotificationData';
+export { useNotificationDataOptimized } from './useNotificationDataOptimized';
 export { usePrayerAlerts } from './usePrayerAlerts';
 
 // Re-export types from types folder

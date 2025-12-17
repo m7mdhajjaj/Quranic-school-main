@@ -8,7 +8,7 @@ export { default as NotificationPermissionPrompt } from './NotificationPermissio
 
 // Hooks
 export {
-  useNotificationData,
+  useNotificationDataOptimized,
   usePrayerAlerts,
 } from './hooks';
 

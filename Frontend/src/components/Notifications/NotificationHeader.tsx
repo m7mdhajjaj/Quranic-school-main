@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useNotificationsSocket } from '../../Socket';
 import { useFirebaseMessaging } from '@/hooks/useFirebaseMessaging';
 import { useSound } from '@/components/Hooks/useSounds';
-import { useNotificationData, usePrayerAlerts } from './hooks';
+import { useNotificationDataOptimized as useNotificationData, usePrayerAlerts } from './hooks';
 import type { Notification, NotificationHeaderProps } from './types';
 import {
   NotificationBell,
