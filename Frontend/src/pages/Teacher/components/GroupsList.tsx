@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useDeferredValue, useMemo } from "react";
 import { Users, Search, X } from "lucide-react";
 import { GroupCard } from "./GroupCard";
 import { GroupTimetableModal } from "../Model/GroupTimetable";
@@ -32,10 +32,6 @@ export const GroupsList: React.FC<GroupsListProps> = ({
   refetch,
   onGroupClick,
 }) => {
-  console.log('🔍 GroupsList - groups:', groups);
-  console.log('🔍 GroupsList - isLoading:', isLoading);
-  console.log('🔍 GroupsList - error:', error);
-  
   // استخدام الـ hook لفصل المنطق
   const {
     searchTerm,
@@ -46,10 +42,18 @@ export const GroupsList: React.FC<GroupsListProps> = ({
     handleCloseTimetableModal,
   } = useGroupsListLogic({ onGroupClick });
 
-  // Filter groups based on search term only
-  const filteredGroups = groups?.groups.filter((group) =>
-    group.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Make typing smooth even with large lists
+  const deferredSearchTerm = useDeferredValue(searchTerm);
+  const normalizedSearch = deferredSearchTerm.trim().toLowerCase();
+
+  // Filter groups based on search term only (memoized)
+  const filteredGroups = useMemo(() => {
+    const list = groups?.groups ?? [];
+    if (!normalizedSearch) return list;
+    return list.filter((group) =>
+      group.name.toLowerCase().includes(normalizedSearch)
+    );
+  }, [groups?.groups, normalizedSearch]);
 
   return (
     <div className="min-h-screen p-4 md:p-6 bg-gradient-to-br from-emerald-50/50 via-teal-50/40 to-cyan-50/50" dir="rtl">
@@ -198,7 +202,7 @@ export const GroupsList: React.FC<GroupsListProps> = ({
             ) : (
               <>
                 {/* Groups Cards */}
-                {filteredGroups && filteredGroups.length > 0 ? (
+                {filteredGroups.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredGroups.map((group) => (
                       <GroupCard

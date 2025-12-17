@@ -8,7 +8,7 @@ interface GroupCardProps {
   onTimetableClick?: (e: React.MouseEvent) => void;
 }
 
-export const GroupCard: React.FC<GroupCardProps> = ({ group, onClick, onTimetableClick }) => {
+export const GroupCard: React.FC<GroupCardProps> = React.memo(({ group, onClick, onTimetableClick }) => {
   const studentCount = group.currentStudents || group.totalStudents || 0;
   const capacity = group.capacity || 30;
   const activeStatus = group.activeStatus === true;
@@ -152,4 +152,6 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group, onClick, onTimetabl
       <div className={`absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none`}></div>
     </div>
   );
-};
+});
+
+GroupCard.displayName = "GroupCard";

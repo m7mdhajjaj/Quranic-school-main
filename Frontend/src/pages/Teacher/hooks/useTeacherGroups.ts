@@ -5,12 +5,14 @@ import { useAuth } from "@/hooks/useAuth";
 
 export const useTeacherGroups = () => {
   const { user } = useAuth();
+  const teacherId = user?._id;
+  const role = user?.role;
   const [groups, setGroups] = useState<GroupsByTeacherResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchGroups = useCallback(async (filter: GroupFilter = 'all') => {
-    if (!user?._id || user.role !== 'teacher') {
+    if (!teacherId || role !== 'teacher') {
       setError("المستخدم غير مصرح له بالوصول");
       return;
     }
@@ -20,7 +22,7 @@ export const useTeacherGroups = () => {
 
     try {
       const result = await getGroupsByTeacherIdWithFilters(
-        user._id,
+        teacherId,
         filter,
         false // لا نحتاج بيانات الطلاب في القائمة الرئيسية
       );
@@ -39,13 +41,13 @@ export const useTeacherGroups = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [teacherId, role]);
 
   useEffect(() => {
-    if (user?._id && user.role === 'teacher') {
+    if (teacherId && role === 'teacher') {
       fetchGroups('all'); // جلب كل الحلقات (نشطة وغير نشطة)
     }
-  }, [user, fetchGroups]);
+  }, [teacherId, role, fetchGroups]);
 
   return {
     groups,
