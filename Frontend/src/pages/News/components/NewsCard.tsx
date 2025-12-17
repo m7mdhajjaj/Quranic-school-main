@@ -4,6 +4,7 @@ import AddedAgo from '@/components/UI/AddedAgo';
 import { Button, Card, DropdownMenu } from '@/components/UI';
 import { ArrowLeft, Edit, Trash2, ChevronLeft, ChevronRight, Globe, Users } from 'lucide-react';
 import ImageSkeleton from '@/components/skeletons/ImageSkeleton';
+import NewsGalleryModal from './NewsGalleryModal';
 
 const NewsCard = ({
   news,
@@ -17,6 +18,7 @@ const NewsCard = ({
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const displayDate = news.createdAt || news.date;
 
   // استخراج الصور - دعم الصور المتعددة أو الصورة الواحدة
@@ -45,6 +47,14 @@ const NewsCard = ({
 
   return (
     <div data-aos="fade-up" data-aos-delay={index * 100}>
+      <NewsGalleryModal
+        isOpen={isGalleryOpen}
+        title={news.title}
+        content={news.content}
+        images={images}
+        initialIndex={currentImageIndex}
+        onClose={() => setIsGalleryOpen(false)}
+      />
       <Card
         variant="gradient"
         padding="none"
@@ -222,6 +232,7 @@ const NewsCard = ({
               variant="primary"
               size="md"
               className="rounded-xl shadow-md hover:shadow-lg group/btn px-6 py-2.5 text-sm"
+              onClick={() => setIsGalleryOpen(true)}
             >
               <span>اقرأ المزيد</span>
               <ArrowLeft

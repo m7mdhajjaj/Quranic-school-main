@@ -143,7 +143,7 @@ exports.resetPassword = async (req, res) => {
       idNumber,
       birthDate,
       newPassword,
-    } = req.body;
+    } = req.validatedData || req.body;
 
     // التحقق أولاً من الهوية مرة أخرى للأمان
     let user = null;
@@ -160,13 +160,13 @@ exports.resetPassword = async (req, res) => {
         : false;
 
       if (
-        student.firstName.toLowerCase() === firstName.toLowerCase() &&
-        student.fatherName.toLowerCase() === fatherName.toLowerCase() &&
-        student.grandFatherName.toLowerCase() ===
+        student.firstName.trim().toLowerCase() === firstName.toLowerCase() &&
+        student.fatherName.trim().toLowerCase() === fatherName.toLowerCase() &&
+        student.grandFatherName.trim().toLowerCase() ===
           grandFatherName.toLowerCase() &&
-        student.lastName.toLowerCase() === lastName.toLowerCase() &&
+        student.lastName.trim().toLowerCase() === lastName.toLowerCase() &&
         student.motherName &&
-        student.motherName.toLowerCase() === motherName.toLowerCase() &&
+        student.motherName.trim().toLowerCase() === motherName.toLowerCase() &&
         student.idNumber === idNumber &&
         birthDateMatch
       ) {
@@ -188,15 +188,15 @@ exports.resetPassword = async (req, res) => {
           : false;
 
         if (
-          teacher.firstName.toLowerCase() === firstName.toLowerCase() &&
+          teacher.firstName.trim().toLowerCase() === firstName.toLowerCase() &&
           teacher.fatherName &&
-          teacher.fatherName.toLowerCase() === fatherName.toLowerCase() &&
+          teacher.fatherName.trim().toLowerCase() === fatherName.toLowerCase() &&
           teacher.grandFatherName &&
-          teacher.grandFatherName.toLowerCase() ===
+          teacher.grandFatherName.trim().toLowerCase() ===
             grandFatherName.toLowerCase() &&
-          teacher.lastName.toLowerCase() === lastName.toLowerCase() &&
+          teacher.lastName.trim().toLowerCase() === lastName.toLowerCase() &&
           teacher.motherName &&
-          teacher.motherName.toLowerCase() === motherName.toLowerCase() &&
+          teacher.motherName.trim().toLowerCase() === motherName.toLowerCase() &&
           (teacher.idNumber === idNumber || teacher.teacherId === idNumber) &&
           birthDateMatch
         ) {
@@ -218,15 +218,15 @@ exports.resetPassword = async (req, res) => {
           : false;
 
         if (
-          admin.firstName.toLowerCase() === firstName.toLowerCase() &&
+          admin.firstName.trim().toLowerCase() === firstName.toLowerCase() &&
           admin.fatherName &&
-          admin.fatherName.toLowerCase() === fatherName.toLowerCase() &&
+          admin.fatherName.trim().toLowerCase() === fatherName.toLowerCase() &&
           admin.grandFatherName &&
-          admin.grandFatherName.toLowerCase() ===
+          admin.grandFatherName.trim().toLowerCase() ===
             grandFatherName.toLowerCase() &&
-          admin.lastName.toLowerCase() === lastName.toLowerCase() &&
+          admin.lastName.trim().toLowerCase() === lastName.toLowerCase() &&
           admin.motherName &&
-          admin.motherName.toLowerCase() === motherName.toLowerCase() &&
+          admin.motherName.trim().toLowerCase() === motherName.toLowerCase() &&
           (admin.idNumber === idNumber || admin.adminId === idNumber) &&
           birthDateMatch
         ) {

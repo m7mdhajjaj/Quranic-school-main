@@ -5,6 +5,23 @@ const Group = require("../../schema/Group");
 const { sendRealTimeNotification } = require("../Core/SocketSender");
 const { sendPushNotification } = require("../Core/PushSender");
 
+// ----------------------------------------------------------------------------
+// Helpers (teacher-name based student targeting; ignores groups completely)
+// ----------------------------------------------------------------------------
+const normalizeName = (value) => (value || "").toString().trim().replace(/\s+/g, " ");
+const escapeRegex = (value) =>
+  (value || "").toString().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const uniqueById = (items) => {
+  const seen = new Set();
+  return items.filter((x) => {
+    const key = x?.id?.toString();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
 /**
  * Helper to get target recipients based on news visibility
  */
@@ -25,18 +42,44 @@ const getTargetRecipients = async (news) => {
   } else if (news.visibility === 'group') {
     // Group news: send only to teacher's students
     
-    // If the author is a Teacher, find their students via Groups
-    if (news.authorModel === 'Teacher') {
-       // Find groups taught by this teacher
-       const groups = await Group.find({ teacher: news.author }).select('name');
-       const groupNames = groups.map(g => g.name);
-       
-       if (groupNames.length > 0) {
-         const students = await Student.find({ group: { $in: groupNames } }).select('_id');
-         recipients = students.map(s => ({ id: s._id, model: 'Student' }));
-         console.log(`📧 Group news: Sending to ${students.length} students in groups: ${groupNames.join(', ')}`);
-       } else {
-         console.log(`⚠️ Teacher ${news.author} has no groups.`);
+    // If the author is a Teacher, get ALL of their students:
+    // - Primary: via groups owned by that teacher (Group.teacher -> group names -> Student.group)
+    // - Fallback: by matching Student.teacher full-name (case/whitespace-insensitive)
+    // This ignores "الحلقات" as a restriction; it uses them only as a reliable linkage source.
+    if (news.authorModel === 'Teacher' || news.author) {
+       try {
+         const teacher = await Teacher.findById(news.author);
+         if (teacher) {
+             const teacherName = normalizeName(`${teacher.firstName} ${teacher.lastName}`);
+             const teacherNameRegex = `^${escapeRegex(teacherName).replace(/\s+/g, "\\s+")}$`;
+
+             // 1) Via groups
+             const groups = await Group.find({ teacher: teacher._id }).select("name").lean();
+             const groupNames = groups.map((g) => g.name).filter(Boolean);
+
+             const studentsViaGroups = groupNames.length
+               ? await Student.find({ group: { $in: groupNames } }).select("_id").lean()
+               : [];
+
+             // 2) Fallback via Student.teacher string (helps if group field isn't set)
+             const studentsViaTeacherName = await Student.find({
+               teacher: { $regex: teacherNameRegex, $options: "i" },
+             }).select("_id").lean();
+
+             const merged = uniqueById([
+               ...studentsViaGroups.map((s) => ({ id: s._id, model: "Student" })),
+               ...studentsViaTeacherName.map((s) => ({ id: s._id, model: "Student" })),
+             ]);
+             
+             recipients = merged;
+             console.log(
+               `📧 Group news: Sending to ${recipients.length} students of teacher "${teacherName}" (groups: ${groupNames.length})`
+             );
+         } else {
+             console.log(`⚠️ Teacher not found for ID: ${news.author}`);
+         }
+       } catch (err) {
+           console.error("❌ Error resolving teacher for group news:", err);
        }
     } else {
         console.log("⚠️ Group news posted by non-teacher, skipping automatic recipient resolution.");

@@ -39,15 +39,14 @@ exports.deleteNews = async (req, res) => {
       try {
         console.log(`🗑️ Deleting ${news.images.length} images from Cloudinary...`);
         
-        // Delete all images in the array
-        for (const img of news.images) {
-          try {
-            await cloudinary.uploader.destroy(img.publicId);
-            console.log(`✅ Deleted image: ${img.publicId}`);
-          } catch (deleteError) {
-            console.warn(`⚠️ Could not delete image ${img.publicId}:`, deleteError);
-          }
-        }
+        // Optimize: Delete all images in parallel
+        const deletePromises = news.images.map(img => 
+          cloudinary.uploader.destroy(img.publicId)
+            .then(() => console.log(`✅ Deleted image: ${img.publicId}`))
+            .catch(err => console.warn(`⚠️ Could not delete image ${img.publicId}:`, err))
+        );
+
+        await Promise.all(deletePromises);
         
         // Try to delete the entire news folder
         // Extract folder path from first image public ID
@@ -56,14 +55,11 @@ exports.deleteNews = async (req, res) => {
           const publicId = news.images[0].publicId;
           const folderPath = publicId.substring(0, publicId.lastIndexOf('/'));
           
-          try {
-            // Delete folder and all its contents
-            await cloudinary.api.delete_resources_by_prefix(folderPath);
-            await cloudinary.api.delete_folder(folderPath);
-            console.log(`✅ Deleted news folder: ${folderPath}`);
-          } catch (folderError) {
-            console.warn("⚠️ Could not delete news folder:", folderError);
-          }
+          // Run folder deletion in background to not block response
+          cloudinary.api.delete_resources_by_prefix(folderPath)
+            .then(() => cloudinary.api.delete_folder(folderPath))
+            .then(() => console.log(`✅ Deleted news folder: ${folderPath}`))
+            .catch(err => console.warn("⚠️ Could not delete news folder:", err));
         }
         
         console.log("✅ All images deleted successfully from Cloudinary");
@@ -130,45 +126,51 @@ exports.deleteBulkNews = async (req, res) => {
 
     const newsItems = await News.find({ _id: { $in: ids } });
 
-    // Delete images from Cloudinary
-    let deletedImages = 0;
+    // Optimize: Collect all public IDs and folders first
+    const publicIdsToDelete = [];
+    const foldersToDelete = new Set();
+
     for (let news of newsItems) {
       if (news.images && news.images.length > 0) {
-        // Delete all images in the array
-        for (const img of news.images) {
-          try {
-            await cloudinary.uploader.destroy(img.publicId);
-            deletedImages++;
-          } catch (deleteError) {
-            console.warn("⚠️ Could not delete image:", deleteError);
-          }
-        }
+        news.images.forEach(img => {
+          if (img.publicId) publicIdsToDelete.push(img.publicId);
+        });
         
-        // Try to delete the entire news folder
+        // Identify folder to delete
         if (news.images[0]?.publicId) {
           const publicId = news.images[0].publicId;
           const folderPath = publicId.substring(0, publicId.lastIndexOf('/'));
-          
-          try {
-            await cloudinary.api.delete_resources_by_prefix(folderPath);
-            await cloudinary.api.delete_folder(folderPath);
-            console.log(`✅ Deleted news folder: ${folderPath}`);
-          } catch (folderError) {
-            console.warn("⚠️ Could not delete news folder:", folderError);
-          }
+          foldersToDelete.add(folderPath);
         }
       } else if (news.image && news.imagePublicId) {
-        // Backward compatibility
-        try {
-          await cloudinary.uploader.destroy(news.imagePublicId);
-          deletedImages++;
-        } catch (deleteError) {
-          console.warn("⚠️ Could not delete image:", deleteError);
-        }
+        publicIdsToDelete.push(news.imagePublicId);
       }
     }
 
-    console.log(`✅ Deleted ${deletedImages} images from Cloudinary`);
+    // Delete images in parallel (batches of 20)
+    if (publicIdsToDelete.length > 0) {
+      console.log(`🗑️ Deleting ${publicIdsToDelete.length} images from Cloudinary...`);
+      const batchSize = 20;
+      for (let i = 0; i < publicIdsToDelete.length; i += batchSize) {
+        const batch = publicIdsToDelete.slice(i, i + batchSize);
+        await Promise.all(batch.map(id => 
+          cloudinary.uploader.destroy(id).catch(err => console.warn(`⚠️ Failed to delete ${id}:`, err))
+        ));
+      }
+    }
+
+    // Delete folders in background (fire and forget)
+    if (foldersToDelete.size > 0) {
+      const folderPromises = Array.from(foldersToDelete).map(folderPath => 
+        cloudinary.api.delete_resources_by_prefix(folderPath)
+          .then(() => cloudinary.api.delete_folder(folderPath))
+          .catch(err => console.warn(`⚠️ Failed to delete folder ${folderPath}:`, err))
+      );
+      // We don't await this to speed up response
+      Promise.all(folderPromises).then(() => console.log("✅ Background folder deletion complete"));
+    }
+
+    console.log(`✅ Processed deletion for ${newsItems.length} items`);
 
     // Delete news items
     const result = await News.deleteMany({ _id: { $in: ids } });

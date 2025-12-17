@@ -40,6 +40,23 @@ declare global {
 }
 
 /**
+ * Register Service Worker explicitly
+ */
+const registerServiceWorker = async () => {
+  if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+    try {
+      const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+      console.log('✅ Service Worker registered with scope:', registration.scope);
+      return registration;
+    } catch (error) {
+      console.error('❌ Service Worker registration failed:', error);
+      return null;
+    }
+  }
+  return null;
+};
+
+/**
  * Get FCM token without requesting permission (if already granted)
  * @returns FCM token string or null if failed
  */
@@ -55,8 +72,15 @@ export const getExistingToken = async (): Promise<string | null> => {
       return null;
     }
 
+    const registration = await registerServiceWorker();
+    if (!registration) {
+      console.warn('⚠️ Could not register Service Worker');
+      return null;
+    }
+
     const token = await getToken(messaging, {
-      vapidKey: VAPID_KEY
+      vapidKey: VAPID_KEY,
+      serviceWorkerRegistration: registration
     });
     
     if (token) {
@@ -93,9 +117,16 @@ export const requestNotificationPermission = async (): Promise<string | null> =>
     if (permission === 'granted') {
       console.log('✅ Notification permission granted');
       
+      const registration = await registerServiceWorker();
+      if (!registration) {
+        console.warn('⚠️ Could not register Service Worker');
+        return null;
+      }
+
       // Get FCM token
       const token = await getToken(messaging, {
-        vapidKey: VAPID_KEY
+        vapidKey: VAPID_KEY,
+        serviceWorkerRegistration: registration
       });
       
       if (token) {

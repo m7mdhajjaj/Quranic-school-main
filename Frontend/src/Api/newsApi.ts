@@ -1,5 +1,4 @@
 import api from "./api";
-import { API_BASE_URL } from "../config/config";
 
 // ============================================================================
 // News API
@@ -35,7 +34,9 @@ export interface INews {
 
 // Get all news
 export const getAllNews = async (): Promise<INews[]> => {
-  const response = await api.get("/news");
+  const response = await api.get("/news", {
+    params: { limit: 1000 } // Fetch more items to ensure client-side filtering works correctly
+  });
   const newsData = response.data.data; // Access the nested data array
 
   // Return raw data; formatting and image URL logic should be handled in components/utils
