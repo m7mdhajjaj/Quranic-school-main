@@ -96,7 +96,7 @@ export const AddMarkModal = ({
             variant="primary"
             disabled={isLoading}
             loading={isLoading}
-            className="flex-1 bg-emerald-600 hover:bg-emerald-700 py-3 px-8 rounded-xl min-h-[52px]"
+            className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 py-3 px-8 rounded-xl min-h-[52px] shadow-md hover:shadow-lg"
           >
             {isLoading ? 'جاري الإضافة...' : 'إضافة العلامات'}
           </Button>

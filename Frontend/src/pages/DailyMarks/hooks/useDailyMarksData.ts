@@ -74,17 +74,13 @@ export const useDailyMarksData = (): UseDailyMarksDataReturn => {
           const teacherName = `${user.firstName} ${user.lastName}`;
 
           // 🆕 استخدام API الحلقات النشطة فقط من daily-marks endpoint
-          console.log("🔄 [DailyMarks] Fetching active groups for teacher:", user._id);
           const groupsResponse = await getActiveGroups(user._id, "basic");
-          console.log("📥 [DailyMarks] Groups response:", groupsResponse);
 
           if (!isMounted) return;
 
           if (groupsResponse.success && groupsResponse.data) {
             const groups = groupsResponse.data.map((g: any) => g.name);
             setTeacherGroups(groups);
-            console.log("✅ [DailyMarks] Active groups loaded:", groups);
-            console.log("📊 Total active groups:", groupsResponse.data.length);
           } else {
             console.error("❌ [DailyMarks] Failed to load groups:", groupsResponse.message || groupsResponse.error);
             setTeacherGroups([]);
@@ -100,7 +96,6 @@ export const useDailyMarksData = (): UseDailyMarksDataReturn => {
               ? studentsResponse.data
               : [];
           setStudents(students);
-          console.log("👥 Loaded students:", students);
         }
       } catch (err) {
         console.error("Error fetching data:", err);

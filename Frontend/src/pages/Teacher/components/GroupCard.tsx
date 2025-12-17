@@ -93,21 +93,22 @@ export const GroupCard: React.FC<GroupCardProps> = React.memo(({ group, onClick,
             <span className="font-medium">نسبة الإشغال</span>
             <span className="font-bold text-gray-900">{occupancyPercentage}%</span>
           </div>
-          <div className="relative w-full bg-gray-200/80 rounded-full h-2.5 overflow-hidden shadow-inner">
-            <div
-              className={`h-full rounded-full transition-all duration-500 shadow-sm ${
+          <div className="relative">
+            <progress
+              value={Math.min(occupancyPercentage, 100)}
+              max={100}
+              aria-label="نسبة الإشغال"
+              className={`w-full h-2.5 overflow-hidden rounded-full shadow-inner [&::-webkit-progress-bar]:bg-gray-200/80 [&::-webkit-progress-bar]:rounded-full ${
                 occupancyPercentage >= 90
-                  ? "bg-gradient-to-r from-red-500 to-rose-600"
+                  ? "[&::-webkit-progress-value]:bg-gradient-to-r [&::-webkit-progress-value]:from-red-500 [&::-webkit-progress-value]:to-rose-600 [&::-webkit-progress-value]:rounded-full"
                   : occupancyPercentage >= 70
-                  ? "bg-gradient-to-r from-amber-500 to-orange-500"
+                  ? "[&::-webkit-progress-value]:bg-gradient-to-r [&::-webkit-progress-value]:from-amber-500 [&::-webkit-progress-value]:to-orange-500 [&::-webkit-progress-value]:rounded-full"
                   : activeStatus
-                  ? "bg-gradient-to-r from-emerald-500 to-teal-500"
-                  : "bg-gradient-to-r from-gray-400 to-gray-500"
+                  ? "[&::-webkit-progress-value]:bg-gradient-to-r [&::-webkit-progress-value]:from-emerald-500 [&::-webkit-progress-value]:to-teal-500 [&::-webkit-progress-value]:rounded-full"
+                  : "[&::-webkit-progress-value]:bg-gradient-to-r [&::-webkit-progress-value]:from-gray-400 [&::-webkit-progress-value]:to-gray-500 [&::-webkit-progress-value]:rounded-full"
               }`}
-              style={{ width: `${Math.min(occupancyPercentage, 100)}%` }}
-            >
-              <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
-            </div>
+            />
+            <div className="pointer-events-none absolute inset-0 rounded-full bg-white/10 animate-pulse" />
           </div>
         </div>
 

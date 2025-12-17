@@ -2,8 +2,9 @@
 // IMPORTS
 // ============================================================================
 
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef } from 'react';
 import { BookOpen } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 
 // UI Components
 import PageHeader from '@/components/UI/PageHeader';
@@ -29,6 +30,7 @@ import { AveragesSection } from './components/AveragesSection';
 import { StudentView } from './Views/StudentView';
 import { ModalsContainer } from './modals/ModalsContainer';
 import { GroupsGridView } from './Views/TeacherView/components/GroupsGridView';
+import { GroupsGridSkeleton } from './Views/TeacherView/components/GroupsGridView';
 
 // Lazy load heavy component
 const TeacherView = lazy(() =>
@@ -40,6 +42,9 @@ const TeacherView = lazy(() =>
 // ============================================================================
 
 const DailyMarksPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const syncingUrlRef = useRef(false);
+
   // ==========================================================================
   // DATA & STATE HOOKS
   // ==========================================================================
@@ -50,6 +55,36 @@ const DailyMarksPage = () => {
   // Student selection with auto-select logic
   const { selectedStudentId, selectedGroup, isPending, setSelectedGroup } =
     useStudentSelection(currentUser, teacherGroups, loading);
+
+  // URL <-> state sync for navigation (browser back/forward)
+  const setGroupWithUrl = useCallback((group: string, replace = false) => {
+    // prevent re-entry loops
+    syncingUrlRef.current = true;
+
+    const next = new URLSearchParams(searchParams);
+    if (group) next.set('group', group);
+    else next.delete('group');
+    // when leaving group, also clear section
+    if (!group) next.delete('sectionId');
+
+    setSearchParams(next, { replace });
+    setSelectedGroup(group);
+
+    // release in microtask
+    queueMicrotask(() => {
+      syncingUrlRef.current = false;
+    });
+  }, [searchParams, setSearchParams, setSelectedGroup]);
+
+  // when URL changes (back/forward), update state
+  useEffect(() => {
+    if (syncingUrlRef.current) return;
+    const urlGroup = searchParams.get('group') || '';
+    if (urlGroup !== selectedGroup) {
+      setSelectedGroup(urlGroup);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   // Component state (modals, forms, etc.)
   const state = useDailyMarksState();
@@ -82,6 +117,8 @@ const DailyMarksPage = () => {
     setMarks,
     refetch: refetchMarks,
     refetchSections,
+    refetchMarksOnly,
+    refetchSectionsOnly,
   } = useFilteredMarksData(
     studentIdForMarksFilter,
     selectedGroup,
@@ -127,8 +164,8 @@ const DailyMarksPage = () => {
     setEditingMark: state.setEditingMark,
     setIsBulkDeleteModalOpen: state.setIsBulkDeleteModalOpen,
     setSelectedSectionsForBulk: state.setSelectedSectionsForBulk,
-    refetchMarks,
-    refetchSections,
+    refetchMarks: refetchMarksOnly,
+    refetchSections: refetchSectionsOnly,
   });
 
   // Modal actions & form handlers
@@ -208,9 +245,14 @@ const DailyMarksPage = () => {
         {isTeacher && !loading && (!selectedGroup || selectedGroup === 'all') && (
           <GroupsGridView
             groupsWithStats={groupsWithStats}
-            onGroupSelect={setSelectedGroup}
+            onGroupSelect={(g) => setGroupWithUrl(g, false)}
             isLoading={isAnyGroupLoading}
           />
+        )}
+
+        {/* Groups Grid Skeleton - Teacher Only while basic data loads */}
+        {isTeacher && loading && (!selectedGroup || selectedGroup === 'all') && (
+          <GroupsGridSkeleton count={teacherGroups?.length || 6} />
         )}
 
         {/* Averages Section - Teacher Only */}
@@ -251,7 +293,7 @@ const DailyMarksPage = () => {
                   marks={marks}
                   loadingMarks={loadingMarks || isPending}
                   onBulkMarks={() => {}}
-                  onGroupSelect={setSelectedGroup}
+                  onGroupSelect={(g) => setGroupWithUrl(g, false)}
                   onAddSection={() => state.setIsAddSectionModalOpen(true)}
                   onEditSection={openEditSectionModal}
                   onDeleteSection={handlers.handleDeleteSection}
@@ -259,7 +301,7 @@ const DailyMarksPage = () => {
                   onAddMark={openAddMarkModal}
                   onUpdateMark={openUpdateMarkModal}
                   onDeleteMark={handlers.handleDeleteMark}
-                  onMarkChange={refetchMarks}
+                  onMarkChange={refetchMarksOnly}
                   selectedMonth={selectedMonth}
                   selectedYear={selectedYear}
                   selectedDay={selectedDay}
@@ -286,8 +328,8 @@ const DailyMarksPage = () => {
           selectedStudentId={selectedStudentId}
         selectedGroup={selectedGroup}
         sections={sections}
-        refetchMarks={refetchMarks}
-        onMarkChange={refetchMarks}
+        refetchMarks={refetchMarksOnly}
+        onMarkChange={refetchSectionsOnly}
         state={{
           ...state,
           selectedStudent: state.selectedStudent,

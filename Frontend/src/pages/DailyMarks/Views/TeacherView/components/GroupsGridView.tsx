@@ -14,7 +14,7 @@ interface GroupsGridViewProps {
   isLoading?: boolean;
 }
 
-export const GroupsGridSkeleton = () => {
+export const GroupsGridSkeleton = ({ count = 6 }: { count?: number }) => {
   return (
     <div className="animate-fade-in">
       <div className="mb-6">
@@ -23,10 +23,20 @@ export const GroupsGridSkeleton = () => {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {Array.from({ length: 6 }).map((_, i) => (
+        {Array.from({ length: Math.max(1, count) }).map((_, i) => (
           <CardSkeleton key={i} hasImage={false} contentLines={3} />
         ))}
       </div>
+    </div>
+  );
+};
+
+export const GroupsGridCardsSkeleton = ({ count = 6 }: { count?: number }) => {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {Array.from({ length: Math.max(1, count) }).map((_, i) => (
+        <CardSkeleton key={i} hasImage={false} contentLines={3} />
+      ))}
     </div>
   );
 };
@@ -40,7 +50,7 @@ export const GroupsGridView = ({
   isLoading = false 
 }: GroupsGridViewProps) => {
   if (isLoading && groupsWithStats.length === 0) {
-    return <GroupsGridSkeleton />;
+    return <GroupsGridSkeleton count={6} />;
   }
 
   return (
@@ -50,7 +60,10 @@ export const GroupsGridView = ({
         <p className="text-gray-600">اختر حلقة لعرض مقاطعها وعلاماتها</p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {isLoading ? (
+        <GroupsGridCardsSkeleton count={groupsWithStats.length || 6} />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {groupsWithStats.map((group) => (
           <Card
             key={group.name}
@@ -97,7 +110,8 @@ export const GroupsGridView = ({
             </div>
           </Card>
         ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

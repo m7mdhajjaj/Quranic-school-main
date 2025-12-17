@@ -37,7 +37,6 @@ export const useStudentSelection = (
   // Auto-select group for students
   useEffect(() => {
     if (currentUser?.role === 'student' && currentUser.group && !selectedGroup) {
-      console.log('🎓 Setting student group:', currentUser.group);
       setSelectedGroup(currentUser.group);
     }
   }, [currentUser, selectedGroup]);
@@ -45,7 +44,6 @@ export const useStudentSelection = (
   // Don't auto-select group - let user choose
   // useEffect(() => {
   //   if (teacherGroups.length > 0 && !selectedGroup && !loading) {
-  //     console.log('🎯 Auto-selecting first group:', teacherGroups[0]);
   //     setSelectedGroup(teacherGroups[0]);
   //   }
   // }, [teacherGroups, selectedGroup, loading]);

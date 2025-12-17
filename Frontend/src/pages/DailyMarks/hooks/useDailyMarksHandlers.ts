@@ -1,5 +1,5 @@
 import { createSection, updateSection, deleteSection } from "@/Api/sectionApi";
-import { createMark, deleteMark } from "@/Api/dailyMarksApi";
+import { createMark, deleteMark, updateMark } from "@/Api/dailyMarksApi";
 import {
   showCenteredSwal,
   showWarningMessage,
@@ -294,6 +294,8 @@ export const useDailyMarksHandlers = ({
         setMarks((prev) => 
           prev.map(m => m._id === tempId ? savedMark : m)
         );
+        // Refresh sections status/progress (non-blocking)
+        refetchSections?.();
       } else {
         throw new Error(response.message || "Failed to create mark");
       }
@@ -315,7 +317,7 @@ export const useDailyMarksHandlers = ({
   const handleUpdateMark = async (
     e: React.FormEvent,
     editingMark: Mark | null,
-    selectedStudentId: string | null,
+    _selectedStudentId: string | null,
     selectedSection: Section | null,
     newMark: { reviewMark: number; memorizationMark: number },
     setIsUpdatingMarkLoading?: (loading: boolean) => void
@@ -356,8 +358,8 @@ export const useDailyMarksHandlers = ({
         memorizationMark: newMark.memorizationMark,
       };
 
-      // 2. Call API in background
-      const response = await createMark(markData as never);
+      // 2. Call API in background (update by ID)
+      const response = await updateMark(editingMark._id, markData as never);
 
       if (response.success && response.data) {
         const updatedMark = response.data;
@@ -367,6 +369,8 @@ export const useDailyMarksHandlers = ({
             mark._id === updatedMark._id ? updatedMark : mark
           )
         );
+        // Refresh sections status/progress (non-blocking)
+        refetchSections?.();
       } else {
         throw new Error(response.message || "Failed to update mark");
       }
@@ -412,6 +416,8 @@ export const useDailyMarksHandlers = ({
         showErrorToast(`❌ ${apiResult.message || "حدث خطأ أثناء حذف العلامة"}`);
         if (refetchMarks) await refetchMarks();
       }
+      // Refresh sections status/progress (non-blocking)
+      refetchSections?.();
     } catch (err) {
       console.error("Error deleting mark:", err);
       showErrorToast("❌ حدث خطأ أثناء حذف العلامة");
@@ -493,6 +499,7 @@ export const useDailyMarksHandlers = ({
     if (!result.isConfirmed) return;
 
     try {
+      setIsBulkDeleting?.(true);
       await Promise.all(
         selectedSectionsForBulk.map((sectionId) => deleteSection(sectionId))
       );

@@ -95,19 +95,45 @@ function buildGroupFilter(user, userGroup, requestedGroup = null) {
  * @returns {Object} MongoDB date filter object
  */
 function buildDateFilter(month, year, day, startDate, endDate) {
+  // Helper: parse date-only strings as LOCAL dates (avoids UTC shift)
+  const parseLocalDateOnly = (dateStr, endOfDay = false) => {
+    if (!dateStr) return null;
+    // If it's exactly YYYY-MM-DD, build a local Date at start/end of day
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateStr));
+    if (m) {
+      const y = Number(m[1]);
+      const mo = Number(m[2]);
+      const d = Number(m[3]);
+      return endOfDay
+        ? new Date(y, mo - 1, d, 23, 59, 59, 999)
+        : new Date(y, mo - 1, d, 0, 0, 0, 0);
+    }
+    // Fallback: full ISO string / timestamp etc.
+    const dt = new Date(dateStr);
+    if (Number.isNaN(dt.getTime())) return null;
+    if (endOfDay) dt.setHours(23, 59, 59, 999);
+    else dt.setHours(0, 0, 0, 0);
+    return dt;
+  };
+
   // Filter by date range
   // If only startDate is provided, treat it as a single day filter
   if (startDate) {
-    const start = new Date(startDate);
-    start.setHours(0, 0, 0, 0);
-    
+    const start = parseLocalDateOnly(startDate, false);
     // If endDate is provided, use it. Otherwise, use startDate as endDate (single day)
-    const end = endDate ? new Date(endDate) : new Date(startDate);
-    end.setHours(23, 59, 59, 999);
+    const end = parseLocalDateOnly(endDate || startDate, true);
+
+    if (!start || !end) return {};
+
+    // Ensure correct order
+    const startTime = start.getTime();
+    const endTime = end.getTime();
+    const gte = startTime <= endTime ? start : end;
+    const lte = startTime <= endTime ? end : start;
     
     return {
-      $gte: start,
-      $lte: end
+      $gte: gte,
+      $lte: lte
     };
   }
 

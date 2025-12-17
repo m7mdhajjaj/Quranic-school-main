@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Table } from "@/components/UI";
 import { Trash2, Plus, RefreshCw } from "lucide-react";
 import type { Column } from "@/components/UI/Table";
@@ -40,7 +41,7 @@ export const StudentsMarksTable = ({
   onClearSelection,
   areAllSelected,
 }: StudentsMarksTableProps) => {
-  const columns: Column<typeof tableData[0]>[] = [
+  const columns: Column<typeof tableData[0]>[] = useMemo(() => [
     {
       key: "select",
       header: (
@@ -198,7 +199,7 @@ export const StudentsMarksTable = ({
         </div>
       ),
     },
-  ];
+  ], [areAllSelected, onToggleSelectAll, selectedMarkIds, onToggleMarkSelection, onUpdateMark, onDeleteMark, onAddMark, section]);
 
   return (
     <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">

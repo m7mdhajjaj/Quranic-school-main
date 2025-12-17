@@ -61,7 +61,7 @@ export const StudentsList: React.FC<StudentsListProps> = ({
   }
 
   return (
-    <div className="min-h-screen p-4 md:p-6 bg-gray-50" dir="rtl">
+    <div className="min-h-screen p-4 md:p-6 bg-gradient-to-br from-emerald-50/40 via-teal-50/30 to-cyan-50/40" dir="rtl">
       <div className="w-full mx-auto">
         {/* Header */}
         <div className="relative bg-gradient-to-br from-emerald-50 via-teal-50/50 to-cyan-50 rounded-2xl shadow-lg border-2 border-emerald-100 overflow-hidden p-6 mb-6">
@@ -146,7 +146,7 @@ export const StudentsList: React.FC<StudentsListProps> = ({
                   className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm ${
                     genderFilter === 'all'
                       ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg scale-105'
-                      : 'bg-white/80 text-gray-700 hover:bg-emerald-50 border-2 border-emerald-100'
+                      : 'bg-white/80 text-emerald-800 hover:bg-emerald-50 border-2 border-emerald-100 hover:border-emerald-200'
                   }`}
                 >
                   الكل
@@ -155,8 +155,8 @@ export const StudentsList: React.FC<StudentsListProps> = ({
                   onClick={() => setGenderFilter('ذكر')}
                   className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm ${
                     genderFilter === 'ذكر'
-                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg scale-105'
-                      : 'bg-white/80 text-gray-700 hover:bg-blue-50 border-2 border-blue-100'
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg scale-105'
+                      : 'bg-white/80 text-emerald-800 hover:bg-emerald-50 border-2 border-emerald-100 hover:border-emerald-200'
                   }`}
                 >
                   ذكر
@@ -165,8 +165,8 @@ export const StudentsList: React.FC<StudentsListProps> = ({
                   onClick={() => setGenderFilter('أنثى')}
                   className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-sm ${
                     genderFilter === 'أنثى'
-                      ? 'bg-gradient-to-r from-pink-500 to-rose-600 text-white shadow-lg scale-105'
-                      : 'bg-white/80 text-gray-700 hover:bg-pink-50 border-2 border-pink-100'
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg scale-105'
+                      : 'bg-white/80 text-emerald-800 hover:bg-emerald-50 border-2 border-emerald-100 hover:border-emerald-200'
                   }`}
                 >
                   أنثى

@@ -78,6 +78,11 @@ export const SectionsGridView = ({
   onStartDateChange,
   onEndDateChange,
 }: SectionsGridViewProps) => {
+  const skeletonCount = Math.min(
+    9,
+    Math.max(3, (sections?.length || 0) > 0 ? sections.length : 9)
+  );
+
   return (
     <div className="animate-fade-in">
       {/* Back Button */}
@@ -183,7 +188,7 @@ export const SectionsGridView = ({
       {/* Sections Cards */}
       {loadingMarks ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: 9 }).map((_, i) => (
+          {Array.from({ length: skeletonCount }).map((_, i) => (
             <SectionCardSkeleton key={i} />
           ))}
         </div>
@@ -319,12 +324,12 @@ export const SectionsGridView = ({
                           <span>التقدم</span>
                           <span className="font-semibold">{marksProgress.percentage}%</span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2.5">
-                          <div
-                            className="h-2.5 rounded-full transition-all duration-300 bg-amber-500"
-                            style={{ width: `${marksProgress.percentage}%` }}
-                          ></div>
-                        </div>
+                        <progress
+                          value={Math.min(marksProgress.percentage, 100)}
+                          max={100}
+                          aria-label="تقدم رصد العلامات"
+                          className="w-full h-2.5 overflow-hidden rounded-full shadow-inner [&::-webkit-progress-bar]:bg-gray-200 [&::-webkit-progress-bar]:rounded-full [&::-webkit-progress-value]:bg-amber-500 [&::-webkit-progress-value]:rounded-full"
+                        />
                         <p className="text-xs text-gray-500 mt-1.5">
                           {marksProgress.studentsWithMarks} من {marksProgress.totalStudents} طالب
                         </p>

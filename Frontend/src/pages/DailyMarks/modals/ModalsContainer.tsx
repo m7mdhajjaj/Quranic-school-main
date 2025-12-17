@@ -218,12 +218,9 @@ const ModalsContainerComponent = ({
             state.newMark,
             state.setIsAddingMarkLoading
           );
-          if (onMarkChange) {
-            onMarkChange();
-          }
-          if (refetchMarks) {
-            refetchMarks();
-          }
+          // Avoid double refetch: prefer onMarkChange, fallback to refetchMarks
+          if (onMarkChange) onMarkChange();
+          else refetchMarks?.();
         }}
         onChange={handleMarkInputChange}
       />
@@ -250,12 +247,9 @@ const ModalsContainerComponent = ({
             state.newMark,
             state.setIsUpdatingMarkLoading
           );
-          if (onMarkChange) {
-            onMarkChange();
-          }
-          if (refetchMarks) {
-            refetchMarks();
-          }
+          // Avoid double refetch: prefer onMarkChange, fallback to refetchMarks
+          if (onMarkChange) onMarkChange();
+          else refetchMarks?.();
         }}
         onChange={handleMarkInputChange}
       />

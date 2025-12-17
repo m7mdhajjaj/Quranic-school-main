@@ -66,7 +66,7 @@ export const UpdateMarkModal = ({
             value={newMark.reviewMark}
             onChange={handleReviewMarkChange}
             showValue={true}
-            color="blue"
+            color="emerald"
           />
         </div>
 
@@ -79,7 +79,7 @@ export const UpdateMarkModal = ({
             value={newMark.memorizationMark}
             onChange={handleMemorizationMarkChange}
             showValue={true}
-            color="blue"
+            color="emerald"
           />
         </div>
 
@@ -96,7 +96,7 @@ export const UpdateMarkModal = ({
           <Button
             type="submit"
             variant="primary"
-            className="bg-blue-600 hover:bg-blue-700 py-2 px-8"
+            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 py-2 px-8 shadow-md hover:shadow-lg"
             disabled={isLoading}
           >
             {isLoading ? (

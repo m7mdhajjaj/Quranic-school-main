@@ -1,6 +1,7 @@
 import { memo, useMemo, useState, useEffect, useRef } from 'react';
 import type { TeacherViewProps } from '../../types/types';
 import type { MarkStatus } from '../../components/SectionStatusBadge';
+import { useSearchParams } from 'react-router-dom';
 
 // Import custom hooks
 import {
@@ -46,6 +47,8 @@ const TeacherViewComponent = ({
   onStartDateChange,
   onEndDateChange,
 }: TeacherViewProps) => {
+  const [searchParams, setSearchParams] = useSearchParams();
+
   // State for filter visibility
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
@@ -90,6 +93,40 @@ const TeacherViewComponent = ({
     setStudentSearchQuery,
     tableData,
   } = useTeacherViewData(selectedGroup);
+
+  const sectionIdParam = searchParams.get('sectionId');
+
+  const setSectionIdInUrl = (sectionId: string | null, replace = false) => {
+    const next = new URLSearchParams(searchParams);
+    if (sectionId) next.set('sectionId', sectionId);
+    else next.delete('sectionId');
+    setSearchParams(next, { replace });
+  };
+
+  // Sync section selection with URL (back/forward)
+  useEffect(() => {
+    if (!selectedGroup || selectedGroup === 'all') {
+      // clear section when no group selected
+      if (sectionIdParam) setSectionIdInUrl(null, true);
+      if (selectedSection) clearSectionSelection();
+      return;
+    }
+
+    // If URL has sectionId but local doesn't, auto-select
+    if (sectionIdParam && !selectedSection) {
+      const found = sections.find((s) => s._id === sectionIdParam);
+      if (found) {
+        handleSectionSelect(found);
+      }
+      return;
+    }
+
+    // If URL removed sectionId, clear local selection (browser back)
+    if (!sectionIdParam && selectedSection) {
+      clearSectionSelection();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedGroup, sectionIdParam, sections]);
 
   // Use custom hook for bulk mark delete
   const {
@@ -158,7 +195,7 @@ const TeacherViewComponent = ({
         selectedGroup={selectedGroup}
         studentSearchQuery={studentSearchQuery}
         onStudentSearchChange={setStudentSearchQuery}
-        onBack={clearSectionSelection}
+        onBack={() => setSectionIdInUrl(null, false)}
       >
         <StudentsMarksTable
           tableData={tableData}
@@ -203,7 +240,10 @@ const TeacherViewComponent = ({
       onBulkDelete={onBulkDelete}
       onEditSection={onEditSection}
       onDeleteSection={onDeleteSection}
-      onSectionSelect={handleSectionSelect}
+      onSectionSelect={(section) => {
+        setSectionIdInUrl(section._id, false);
+        handleSectionSelect(section);
+      }}
       onFilterToggle={() => setIsFilterOpen(!isFilterOpen)}
       onStatusChange={setSelectedStatus}
       onMonthChange={(month) => month !== null && onMonthChange(month)}

@@ -533,7 +533,6 @@ export const createMark = async (
   markData: Omit<Mark, "_id" | "createdAt" | "updatedAt">
 ): Promise<ApiResponse<Mark>> => {
   try {
-    console.log("📤 Creating/Updating mark:", markData);
     const response = await api.post("/daily-marks", markData);
     return {
       success: true,
@@ -559,7 +558,6 @@ export const updateMark = async (
   markData: Partial<Omit<Mark, "_id" | "createdAt" | "updatedAt">>
 ): Promise<ApiResponse<Mark>> => {
   try {
-    console.log("📝 Updating mark:", markId, markData);
     const response = await api.put(`/daily-marks/${markId}`, markData);
     return {
       success: true,
@@ -582,7 +580,6 @@ export const updateMark = async (
  */
 export const deleteMark = async (markId: string): Promise<ApiResponse<{ deletedId: string }>> => {
   try {
-    console.log("🗑️ Deleting mark:", markId);
     const response = await api.delete(`/daily-marks/${markId}`);
     return {
       success: true,
