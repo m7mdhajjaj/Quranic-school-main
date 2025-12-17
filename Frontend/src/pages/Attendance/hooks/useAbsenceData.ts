@@ -106,14 +106,17 @@ export const useAbsenceData = () => {
       );
       const data = await getStudentAttendance(studentId);
 
-      const grouped: Record<string, { absences: number; total: number }> = {};
+      const grouped: Record<string, { absences: number; total: number; dates: string[] }> = {};
       data.forEach((r: any) => {
         const d = new Date(r.date);
         if (isNaN(d.getTime())) return;
         const key = `${d.getFullYear()}-${d.getMonth()}`;
-        if (!grouped[key]) grouped[key] = { absences: 0, total: 0 };
+        if (!grouped[key]) grouped[key] = { absences: 0, total: 0, dates: [] };
         grouped[key].total++;
-        if (!r.isPresent) grouped[key].absences++;
+        if (!r.isPresent) {
+          grouped[key].absences++;
+          grouped[key].dates.push(r.date); // Store the date string
+        }
       });
 
       const { AR_MONTHS } = await import('../utils/dateHelpers');
@@ -127,6 +130,7 @@ export const useAbsenceData = () => {
           absenceCount: v.absences,
           totalDays: v.total,
           rate,
+          absenceDates: v.dates.sort((a, b) => new Date(a).getTime() - new Date(b).getTime()),
         };
       });
 

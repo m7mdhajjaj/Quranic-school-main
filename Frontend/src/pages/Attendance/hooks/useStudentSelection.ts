@@ -30,9 +30,19 @@ export const useStudentSelection = ({
   // Toggle student presence
   const toggleStudentPresence = useCallback((studentId: string) => {
     setStudents((prev) =>
-      prev.map((s) =>
-        s._id === studentId ? { ...s, isPresent: !s.isPresent } : s
-      )
+      prev.map((s) => {
+        if (s._id === studentId) {
+          const newIsPresent = !s.isPresent;
+          // تحديث عدد الغيابات: إذا أصبح غائباً نزيد 1، وإذا أصبح حاضراً ننقص 1
+          const newTotalAbsences = (s.totalAbsences || 0) + (newIsPresent ? -1 : 1);
+          return { 
+            ...s, 
+            isPresent: newIsPresent,
+            totalAbsences: Math.max(0, newTotalAbsences)
+          };
+        }
+        return s;
+      })
     );
     onChangeDetected();
   }, [setStudents, onChangeDetected]);
@@ -43,9 +53,20 @@ export const useStudentSelection = ({
       const newState = !prev;
       const visibleIds = visibleStudents.map((s) => s._id);
       setStudents((prevStudents) =>
-        prevStudents.map((s) =>
-          visibleIds.includes(s._id) ? { ...s, isPresent: newState } : s
-        )
+        prevStudents.map((s) => {
+          if (visibleIds.includes(s._id)) {
+            // تحديث فقط إذا تغيرت الحالة
+            if (s.isPresent !== newState) {
+              const newTotalAbsences = (s.totalAbsences || 0) + (newState ? -1 : 1);
+              return { 
+                ...s, 
+                isPresent: newState,
+                totalAbsences: Math.max(0, newTotalAbsences)
+              };
+            }
+          }
+          return s;
+        })
       );
       onChangeDetected();
       return newState;

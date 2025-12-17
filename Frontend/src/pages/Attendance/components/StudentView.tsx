@@ -10,7 +10,6 @@ export const StudentView = ({ monthlyStats }: StudentViewProps) => {
   const [yearMonth, setYearMonth] = useState<string>(
     new Date().toISOString().substring(0, 7)
   );
-  const [showYearSummary, setShowYearSummary] = useState<boolean>(false);
 
   const selectedYear = useMemo(
     () => parseInt(yearMonth.split("-")[0], 10),
@@ -58,34 +57,11 @@ export const StudentView = ({ monthlyStats }: StudentViewProps) => {
               </select>
             </div>
           </div>
-
-          <div className="flex items-center gap-4">
-            <label className="inline-flex items-center">
-              <input
-                type="checkbox"
-                className="ml-2"
-                checked={showYearSummary}
-                onChange={() => setShowYearSummary((v) => !v)}
-              />
-              عرض إجمالي السنة {selectedYear}
-            </label>
-          </div>
         </div>
       </Card>
 
-      {/* نص توضيحي فوق بطاقات إجمالي السنة */}
-      {showYearSummary && (
-        <Card variant="outlined">
-          <p className="text-sm text-gray-700 font-medium">
-            هذا عدد الغيابات في السنة المحددة ({selectedYear})، مع إجمالي أيام
-            الدراسة ونسبة الغياب العامة.
-          </p>
-        </Card>
-      )}
-
-      {/* إجمالي السنة (اختياري) */}
-      {showYearSummary && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* إجمالي السنة */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card
             variant="elevated"
             className="text-center border-r-4 border-emerald-500">
@@ -111,7 +87,6 @@ export const StudentView = ({ monthlyStats }: StudentViewProps) => {
             </div>
           </Card>
         </div>
-      )}
 
       {/* جدول السجل (الشهر المحدد فقط) */}
       <Card variant="elevated" className="overflow-hidden">
@@ -148,41 +123,59 @@ export const StudentView = ({ monthlyStats }: StudentViewProps) => {
                 </tr>
               ) : (
                 filteredMonthlyStats.map((m) => (
-                  <tr key={m.month} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium text-gray-900">
-                      {m.month}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                          m.absenceCount === 0
-                            ? "bg-green-100 text-green-800"
-                            : m.absenceCount <= 2
-                            ? "bg-amber-100 text-amber-800"
-                            : "bg-red-100 text-red-800"
-                        }`}>
-                        {m.absenceCount}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-center text-sm text-gray-500">
-                      {m.totalDays}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <div className="w-full bg-gray-200 rounded-full h-2.5 mb-1 mx-auto max-w-[150px]">
-                        <div
-                          className={`h-2.5 rounded-full ${
-                            m.rate === 0
-                              ? "bg-green-500"
-                              : m.rate <= 10
-                              ? "bg-amber-500"
-                              : "bg-red-500"
-                          }`}
-                          style={{ width: `${m.rate}%` }}
-                        />
-                      </div>
-                      <span className="text-xs text-gray-500">{m.rate}%</span>
-                    </td>
-                  </tr>
+                  <>
+                    <tr key={m.month} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 font-medium text-gray-900">
+                        {m.month}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                            m.absenceCount === 0
+                              ? "bg-green-100 text-green-800"
+                              : m.absenceCount <= 2
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-red-100 text-red-800"
+                          }`}>
+                          {m.absenceCount}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-center text-sm text-gray-500">
+                        {m.totalDays}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <div className="w-full bg-gray-200 rounded-full h-2.5 mb-1 mx-auto max-w-[150px]">
+                          <div
+                            className={`h-2.5 rounded-full ${
+                              m.rate === 0
+                                ? "bg-green-500"
+                                : m.rate <= 10
+                                ? "bg-amber-500"
+                                : "bg-red-500"
+                            }`}
+                            style={{ width: `${m.rate}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-gray-500">{m.rate}%</span>
+                      </td>
+                    </tr>
+                    {m.absenceDates && m.absenceDates.length > 0 && (
+                      <tr className="bg-red-50/30">
+                        <td colSpan={4} className="px-4 py-3">
+                          <div className="flex flex-col gap-2">
+                            <span className="text-xs font-bold text-red-800">تواريخ الغياب:</span>
+                            <div className="flex flex-wrap gap-2">
+                              {m.absenceDates.map((date, idx) => (
+                                <span key={idx} className="px-2 py-1 bg-white border border-red-200 rounded text-xs text-red-600 font-mono">
+                                  {new Date(date).toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 ))
               )}
             </tbody>

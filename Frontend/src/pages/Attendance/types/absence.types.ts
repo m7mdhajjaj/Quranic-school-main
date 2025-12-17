@@ -26,6 +26,7 @@ export interface MonthlyAbsence {
   absenceCount: number;
   totalDays: number;
   rate: number;
+  absenceDates: string[]; // قائمة بتواريخ الغياب
 }
 
 export interface YearTotals {
