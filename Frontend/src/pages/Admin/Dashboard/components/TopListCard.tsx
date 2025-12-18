@@ -96,7 +96,7 @@ const defaultRenderItem = (item: TopListItem, index: number, getMedalColor: (ind
   </div>
 );
 
-export const TopListCard: React.FC<TopListCardProps> = ({
+export const TopListCard: React.FC<TopListCardProps> = React.memo(({
   title,
   icon,
   items,
@@ -128,6 +128,6 @@ export const TopListCard: React.FC<TopListCardProps> = ({
       </div>
     </Card>
   );
-};
+});
 
 export default TopListCard;

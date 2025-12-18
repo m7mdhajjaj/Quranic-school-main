@@ -1,9 +1,9 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, memo } from "react";
 import type { PieChartProps } from "../Types/types";
 import { COLOR_MAP, DEFAULT_DONUT_COLORS } from "../Types/constants";
 import { calculateChartSegments } from "../utils/chartUtils";
 
-export const DonutChart: React.FC<PieChartProps> = ({ data, labels, colors }) => {
+export const DonutChart: React.FC<PieChartProps> = memo(({ data, labels, colors }) => {
   // useState للتفاعل مع UI فقط (hover state) - ليس منطق بيانات
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
@@ -152,4 +152,4 @@ export const DonutChart: React.FC<PieChartProps> = ({ data, labels, colors }) =>
       </div>
     </div>
   );
-};
+});

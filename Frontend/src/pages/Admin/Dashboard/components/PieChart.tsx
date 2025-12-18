@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, memo } from "react";
 import type { PieChartProps } from "../Types/types";
 import { COLOR_MAP, DEFAULT_PIE_COLORS } from "../Types/constants";
 import { calculateChartSegments } from "../utils/chartUtils";
 
-export const PieChart: React.FC<PieChartProps> = ({ data, labels, colors }) => {
+export const PieChart: React.FC<PieChartProps> = memo(({ data, labels, colors }) => {
   // useState للتفاعل مع UI فقط (hover state) - ليس منطق بيانات
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
@@ -169,4 +169,4 @@ export const PieChart: React.FC<PieChartProps> = ({ data, labels, colors }) => {
       </div>
     </div>
   );
-};
+});

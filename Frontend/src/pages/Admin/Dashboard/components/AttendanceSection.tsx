@@ -1,10 +1,10 @@
-import React from "react";
+import React, { memo } from "react";
 import { Card } from "@/components/UI/Card";
 import { FaTimesCircle, FaUser, FaChalkboardTeacher, FaUsers } from "react-icons/fa";
 import { AbsentStudentCardSkeleton } from "@/components/skeletons";
 import { useAbsentStudents } from "../hooks/useAbsentStudents";
 
-export const AttendanceSection: React.FC = () => {
+export const AttendanceSection: React.FC = memo(() => {
   const { absentStudents, isLoading, lastUpdate } = useAbsentStudents();
 
 
@@ -88,4 +88,4 @@ export const AttendanceSection: React.FC = () => {
       )}
     </Card>
   );
-};
+});

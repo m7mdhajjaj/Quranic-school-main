@@ -64,21 +64,38 @@ export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   }, [token, user]);
 
+  // Batch updates ref
+  const pendingUpdates = React.useRef<Record<string, UserStatusState>>({});
+  const updateTimeout = React.useRef<NodeJS.Timeout | null>(null);
+
   // معالج تحديث حالة المستخدم من Socket
   const handleUserStatusChange = useCallback((data: { 
       userId: string; 
       isActive: boolean; 
     lastSeen: string;
     }) => {
-    console.log('🔄 [UserStatusContext] Status updated via socket:', data);
-      setUserStatuses(prev => ({
-        ...prev,
-        [data.userId]: {
-          isActive: data.isActive,
-          lastSeen: data.lastSeen ? new Date(data.lastSeen) : undefined,
-          isLoading: false,
-        },
-      }));
+    // console.log('🔄 [UserStatusContext] Status updated via socket:', data);
+      
+      const status: UserStatusState = {
+        isActive: data.isActive,
+        lastSeen: data.lastSeen ? new Date(data.lastSeen) : undefined,
+        isLoading: false,
+      };
+
+      // Add to pending updates
+      pendingUpdates.current[data.userId] = status;
+
+      // Schedule batch update if not already scheduled
+      if (!updateTimeout.current) {
+        updateTimeout.current = setTimeout(() => {
+          setUserStatuses(prev => ({
+            ...prev,
+            ...pendingUpdates.current,
+          }));
+          pendingUpdates.current = {};
+          updateTimeout.current = null;
+        }, 200); // Batch updates every 200ms
+      }
   }, []);
 
   // الاستماع لتحديثات Socket مباشرة
