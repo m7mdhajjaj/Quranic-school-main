@@ -6,45 +6,40 @@ interface NewsResourceHintsProps {
 }
 
 /**
- * Component to add resource hints for better image loading performance
- * Preconnects to image CDNs and preloads first few images
+ * Optimized resource hints component
+ * Only preconnects to CDN, no image preloading (to avoid unused preload warnings)
  */
 const NewsResourceHints = ({ newsItems }: NewsResourceHintsProps) => {
   useEffect(() => {
-    // Only preload first 2-3 images to avoid excessive bandwidth
-    const imagesToPreload = newsItems.slice(0, 3).flatMap(item => {
-      if (item.images && item.images.length > 0) {
-        return item.images[0]?.url || '';
-      }
-      return item.image || '';
-    }).filter(url => url && !url.includes('placehold.co'));
+    if (!newsItems.length) return;
 
-    // Create link elements for preloading
+    // Only preconnect to CDNs (no preloading to avoid "not used" warnings)
     const linkElements: HTMLLinkElement[] = [];
 
-    // Add preconnect for common image CDNs
-    const preconnectDomains = [
-      'https://res.cloudinary.com',
-      'https://images.unsplash.com',
-    ];
-
-    preconnectDomains.forEach(domain => {
-      const link = document.createElement('link');
-      link.rel = 'preconnect';
-      link.href = domain;
-      link.crossOrigin = 'anonymous';
-      document.head.appendChild(link);
-      linkElements.push(link);
+    // Extract unique domains from news images
+    const uniqueDomains = new Set<string>();
+    
+    newsItems.slice(0, 5).forEach(item => {
+      const imageUrl = item.images?.[0]?.url || item.image;
+      if (imageUrl && !imageUrl.includes('placehold.co')) {
+        try {
+          const url = new URL(imageUrl);
+          uniqueDomains.add(`${url.protocol}//${url.hostname}`);
+        } catch {
+          // Invalid URL, skip
+        }
+      }
     });
 
-    // Preload first few images
-    imagesToPreload.forEach((url, index) => {
-      if (index < 2) { // Only preload first 2 images
+    // Add preconnect for discovered domains (max 2 to avoid overhead)
+    Array.from(uniqueDomains).slice(0, 2).forEach(domain => {
+      // Check if preconnect already exists
+      const existing = document.querySelector(`link[rel="preconnect"][href="${domain}"]`);
+      if (!existing) {
         const link = document.createElement('link');
-        link.rel = 'preload';
-        link.as = 'image';
-        link.href = url;
-        link.fetchPriority = index === 0 ? 'high' : 'low';
+        link.rel = 'preconnect';
+        link.href = domain;
+        link.crossOrigin = 'anonymous';
         document.head.appendChild(link);
         linkElements.push(link);
       }

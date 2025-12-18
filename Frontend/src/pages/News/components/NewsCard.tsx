@@ -1,10 +1,23 @@
-import { useState, memo } from 'react';
+import { useState, memo, lazy, Suspense, useCallback } from 'react';
 import type { NewsCardProps } from '../Types/types';
 import AddedAgo from '@/components/UI/AddedAgo';
 import { Button, Card, DropdownMenu } from '@/components/UI';
 import { ArrowLeft, Edit, Trash2, ChevronLeft, ChevronRight, Globe, Users } from 'lucide-react';
 import ImageSkeleton from '@/components/skeletons/ImageSkeleton';
-import NewsGalleryModal from './NewsGalleryModal';
+import { useFadeInOnScroll } from '../hooks/useFadeInOnScroll';
+import {
+  extractNewsImages,
+  getImageLoadingStrategy,
+  getSafeImageUrl,
+  getFallbackImage,
+  isPlaceholder,
+  fixLocalImagePath,
+  extractAuthorInfo,
+  canUserModifyNews,
+} from '../utils/imageHelpers';
+
+// Lazy load gallery modal - only loads when user clicks to view
+const NewsGalleryModal = lazy(() => import('./NewsGalleryModal'));
 
 const NewsCard = memo(({
   news,
@@ -19,45 +32,95 @@ const NewsCard = memo(({
   const [imageError, setImageError] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  
+  // Use lightweight fade-in animation (replaces AOS for better performance)
+  const fadeInRef = useFadeInOnScroll({ 
+    threshold: 0.1, 
+    triggerOnce: true 
+  });
+
+  // Extract data using helper functions (DRY principle)
   const displayDate = news.createdAt || news.date;
-
-  // استخراج الصور - دعم الصور المتعددة أو الصورة الواحدة
-  const images = news.images && news.images.length > 0
-    ? news.images.map(img => img.url).filter(url => url && url.trim() !== '')
-    : news.image && news.image.trim() !== ''
-    ? [news.image]
-    : [];
-
+  const images = extractNewsImages(news);
   const hasMultipleImages = images.length > 1;
+  const { authorId: newsAuthorId, authorName } = extractAuthorInfo(news.author);
+  const canEditOrDelete = canUserModifyNews(isTeacherOrAdmin, currentUserRole, newsAuthorId, currentUserId);
+  const loadingStrategy = getImageLoadingStrategy(index);
 
-  // استخراج author ID بشكل صحيح (قد يكون string أو object)
-  const newsAuthorId = typeof news.author === 'string' 
-    ? news.author 
-    : news.author?._id;
+  // Memoized handlers for better performance
+  const handleImageLoad = useCallback(() => {
+    queueMicrotask(() => {
+      setImageLoading(false);
+      setImageError(false);
+    });
+  }, []);
 
-  // استخراج اسم الناشر
-  const authorName = typeof news.author === 'object' && news.author !== null
-    ? (news.author.name || `${news.author.firstName || ''} ${news.author.lastName || ''}`.trim())
-    : '';
+  const handleImageError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    const imgElement = e.target as HTMLImageElement;
+    const originalSrc = images[currentImageIndex];
+    
+    queueMicrotask(() => {
+      setImageLoading(false);
+      setImageError(true);
+    });
 
-  // التحقق من صلاحيات التعديل/الحذف
-  const canEditOrDelete = 
-    isTeacherOrAdmin && 
-    (currentUserRole === 'admin' || newsAuthorId === currentUserId);
+    if (isPlaceholder(originalSrc)) return;
+    
+    const fixedPath = fixLocalImagePath(originalSrc);
+    if (fixedPath) {
+      imgElement.src = fixedPath;
+      queueMicrotask(() => setImageError(false));
+      return;
+    }
+    
+    imgElement.src = getFallbackImage();
+    queueMicrotask(() => setImageError(false));
+  }, [images, currentImageIndex]);
+
+  const handlePrevImage = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    queueMicrotask(() => {
+      setCurrentImageIndex((prev) => prev === 0 ? images.length - 1 : prev - 1);
+      setImageLoading(true);
+    });
+  }, [images.length]);
+
+  const handleNextImage = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    queueMicrotask(() => {
+      setCurrentImageIndex((prev) => prev === images.length - 1 ? 0 : prev + 1);
+      setImageLoading(true);
+    });
+  }, [images.length]);
+
+  const handleImageIndicatorClick = useCallback((e: React.MouseEvent, idx: number) => {
+    e.stopPropagation();
+    queueMicrotask(() => {
+      setCurrentImageIndex(idx);
+      setImageLoading(true);
+    });
+  }, []);
+
+  const handleOpenGallery = useCallback(() => {
+    setIsGalleryOpen(true);
+  }, []);
+
+  const handleCloseGallery = useCallback(() => {
+    setIsGalleryOpen(false);
+  }, []);
 
   return (
-    <div 
-      data-aos={index < 8 ? "fade-up" : undefined} 
-      data-aos-delay={index < 8 ? Math.min(index * 80, 640) : undefined}
-    >
-      <NewsGalleryModal
-        isOpen={isGalleryOpen}
-        title={news.title}
-        content={news.content}
-        images={images}
-        initialIndex={currentImageIndex}
-        onClose={() => setIsGalleryOpen(false)}
-      />
+    <div ref={fadeInRef}>
+      <Suspense fallback={null}>
+        <NewsGalleryModal
+          isOpen={isGalleryOpen}
+          title={news.title}
+          content={news.content}
+          images={images}
+          initialIndex={currentImageIndex}
+          onClose={handleCloseGallery}
+        />
+      </Suspense>
       <Card
         variant="gradient"
         padding="none"
@@ -74,87 +137,33 @@ const NewsCard = memo(({
         
         {/* Main Image */}
         <img
-            src={images[currentImageIndex] || 'https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+الخبر'}
+            src={getSafeImageUrl(images[currentImageIndex], 'صورة+الخبر')}
             alt={`${news.title} - صورة ${currentImageIndex + 1}`}
             width="600"
             height="400"
-            loading={index < 4 ? 'eager' : 'lazy'}
-            decoding={index < 4 ? 'sync' : 'async'}
-            fetchPriority={index < 2 ? 'high' : 'auto'}
+            loading={loadingStrategy.loading}
+            decoding={loadingStrategy.decoding}
+            fetchPriority={loadingStrategy.fetchPriority}
             className={`w-full h-full object-cover rounded-t-xl transition-all duration-300 ${
               imageLoading ? 'opacity-0' : 'opacity-100'
             }`}
             style={{ contentVisibility: 'auto' }}
-            onLoad={() => {
-              // Use microtask to avoid blocking main thread
-              queueMicrotask(() => {
-                setImageLoading(false);
-                setImageError(false);
-              });
-            }}
-            onError={(e) => {
-              const imgElement = e.target as HTMLImageElement;
-              const originalSrc = images[currentImageIndex];
-              
-              // Use microtask to avoid blocking main thread
-              queueMicrotask(() => {
-                setImageLoading(false);
-                setImageError(true);
-              });
-
-              // إذا كان placeholder، لا تفعل شيء
-              if (originalSrc?.includes('placehold.co')) return;
-              
-              // محاولة إصلاح المسار للصور المحلية
-              if (originalSrc?.includes('uploads/news/')) {
-                if (originalSrc.includes('/api/uploads/')) {
-                  imgElement.src = originalSrc.replace('/api/uploads/', '/uploads/');
-                  queueMicrotask(() => setImageError(false));
-                  return;
-                }
-                if (originalSrc.startsWith('uploads/')) {
-                  imgElement.src = originalSrc;
-                  queueMicrotask(() => setImageError(false));
-                  return;
-                }
-              }
-              
-              // استخدام صورة بديلة
-              imgElement.src = 'https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+غير+متوفرة';
-              queueMicrotask(() => setImageError(false));
-            }}
+            onLoad={handleImageLoad}
+            onError={handleImageError}
           />
           
           {/* Navigation Arrows for Multiple Images */}
           {hasMultipleImages && (
             <>
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // Use microtask for state updates to avoid blocking
-                  queueMicrotask(() => {
-                    setCurrentImageIndex((prev) => 
-                      prev === 0 ? images.length - 1 : prev - 1
-                    );
-                    setImageLoading(true);
-                  });
-                }}
+                onClick={handlePrevImage}
                 className="absolute left-3 top-1/2 -translate-y-1/2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full p-2.5 transition-all z-30 backdrop-blur-sm shadow-xl hover:scale-110 opacity-90 hover:opacity-100"
                 aria-label="الصورة السابقة"
               >
                 <ChevronLeft size={24} strokeWidth={3} />
               </button>
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // Use microtask for state updates to avoid blocking
-                  queueMicrotask(() => {
-                    setCurrentImageIndex((prev) => 
-                      prev === images.length - 1 ? 0 : prev + 1
-                    );
-                    setImageLoading(true);
-                  });
-                }}
+                onClick={handleNextImage}
                 className="absolute right-3 top-1/2 -translate-y-1/2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full p-2.5 transition-all z-30 backdrop-blur-sm shadow-xl hover:scale-110 opacity-90 hover:opacity-100"
                 aria-label="الصورة التالية"
               >
@@ -173,14 +182,7 @@ const NewsCard = memo(({
                 {images.map((_, idx) => (
                   <button
                     key={idx}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // Use microtask for state updates to avoid blocking
-                      queueMicrotask(() => {
-                        setCurrentImageIndex(idx);
-                        setImageLoading(true);
-                      });
-                    }}
+                    onClick={(e) => handleImageIndicatorClick(e, idx)}
                     className={`h-1.5 rounded-full transition-all ${
                       idx === currentImageIndex
                         ? 'bg-white w-6'
@@ -251,7 +253,7 @@ const NewsCard = memo(({
               variant="primary"
               size="md"
               className="rounded-xl shadow-md hover:shadow-lg group/btn px-6 py-2.5 text-sm"
-              onClick={() => setIsGalleryOpen(true)}
+              onClick={handleOpenGallery}
             >
               <span>اقرأ المزيد</span>
               <ArrowLeft
@@ -266,17 +268,45 @@ const NewsCard = memo(({
   );
 }, (prevProps, nextProps) => {
   // Custom comparison function to prevent unnecessary re-renders
-  return (
-    prevProps.news._id === nextProps.news._id &&
-    prevProps.news.title === nextProps.news.title &&
-    prevProps.news.content === nextProps.news.content &&
-    prevProps.news.image === nextProps.news.image &&
-    prevProps.index === nextProps.index &&
-    prevProps.isTeacherOrAdmin === nextProps.isTeacherOrAdmin &&
-    prevProps.currentUserId === nextProps.currentUserId &&
-    prevProps.currentUserRole === nextProps.currentUserRole &&
-    JSON.stringify(prevProps.news.images) === JSON.stringify(nextProps.news.images)
-  );
+  // Compare primitive values first (faster)
+  if (
+    prevProps.news._id !== nextProps.news._id ||
+    prevProps.index !== nextProps.index ||
+    prevProps.isTeacherOrAdmin !== nextProps.isTeacherOrAdmin ||
+    prevProps.currentUserId !== nextProps.currentUserId ||
+    prevProps.currentUserRole !== nextProps.currentUserRole
+  ) {
+    return false;
+  }
+
+  // Compare news content (only if primitives match)
+  if (
+    prevProps.news.title !== nextProps.news.title ||
+    prevProps.news.content !== nextProps.news.content ||
+    prevProps.news.image !== nextProps.news.image
+  ) {
+    return false;
+  }
+
+  // Compare images array (most expensive, do last)
+  const prevImages = prevProps.news.images || [];
+  const nextImages = nextProps.news.images || [];
+  
+  if (prevImages.length !== nextImages.length) {
+    return false;
+  }
+
+  // Quick check: compare first and last image URLs (usually sufficient)
+  if (prevImages.length > 0) {
+    if (
+      prevImages[0]?.url !== nextImages[0]?.url ||
+      prevImages[prevImages.length - 1]?.url !== nextImages[nextImages.length - 1]?.url
+    ) {
+      return false;
+    }
+  }
+
+  return true; // Props are equal, skip re-render
 });
 
 NewsCard.displayName = 'NewsCard';

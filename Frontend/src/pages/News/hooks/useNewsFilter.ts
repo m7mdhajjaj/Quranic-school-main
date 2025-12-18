@@ -6,12 +6,18 @@ export const useNewsFilter = (newsItems: INews[]) => {
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
   const [filterType, setFilterType] = useState<'all' | 'general' | 'group'>('all');
 
+  // Memoize search term processing
+  const searchLower = useMemo(
+    () => searchTerm.trim().toLowerCase(),
+    [searchTerm]
+  );
+
+  // Memoize filtering and sorting logic
   const filteredNews = useMemo(() => {
     let filtered = newsItems;
 
-    // Apply search filter
-    if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase();
+    // Apply search filter (optimized)
+    if (searchLower) {
       filtered = filtered.filter((item) => {
         const titleMatch = item.title?.toLowerCase().includes(searchLower);
         const contentMatch = item.content?.toLowerCase().includes(searchLower);
@@ -24,15 +30,18 @@ export const useNewsFilter = (newsItems: INews[]) => {
       filtered = filtered.filter((item) => item.visibility === filterType);
     }
 
-    // Apply sorting
-    filtered = [...filtered].sort((a, b) => {
+    // Apply sorting (avoid unnecessary array copy if no filtering applied)
+    if (filtered === newsItems && sortOrder === 'newest') {
+      // Already sorted newest first from API, no need to sort
+      return filtered;
+    }
+
+    return [...filtered].sort((a, b) => {
       const dateA = new Date(a.createdAt || 0).getTime();
       const dateB = new Date(b.createdAt || 0).getTime();
       return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
     });
-
-    return filtered;
-  }, [newsItems, searchTerm, sortOrder, filterType]);
+  }, [newsItems, searchLower, sortOrder, filterType]);
 
   const handleSearchChange = useCallback((value: string) => {
     setSearchTerm(value);

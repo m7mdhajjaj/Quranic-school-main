@@ -1,6 +1,4 @@
-import { useEffect, useMemo } from 'react';
-import AOS from 'aos';
-import 'aos/dist/aos.css';
+import { lazy, Suspense, useMemo, startTransition } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useDisableBodyScroll } from '@/hooks/useDisableBodyScroll';
 import { useNewsData } from './hooks/useNewsData';
@@ -8,12 +6,14 @@ import { useNewsFilter } from './hooks/useNewsFilter';
 import {
   NewsHeader,
   NewsCard,
-  NewsModal,
   NewsFilters,
   NewsEmptyState,
 } from './components';
-import NewsResourceHints from './components/NewsResourceHints';
 import CardSkeleton from '@/components/skeletons/CardSkeleton';
+
+// Lazy load modal and resource hints for better performance
+const NewsModal = lazy(() => import('./components/NewsModal'));
+const NewsResourceHints = lazy(() => import('./components/NewsResourceHints'));
 
 const News = () => {
   const { user: currentUser } = useAuth();
@@ -57,33 +57,6 @@ const News = () => {
   // تعطيل scroll الصفحة عند فتح الـ Modal
   useDisableBodyScroll(isModalOpen);
 
-  // Initialize AOS - deferred to idle time for better performance
-  useEffect(() => {
-    // Defer AOS initialization to avoid blocking main thread
-    const initAOS = () => {
-      AOS.init({ 
-        duration: 800, 
-        once: true,
-        // Performance optimizations
-        disable: 'mobile', // Disable on mobile for better performance
-        startEvent: 'DOMContentLoaded',
-        useClassNames: false,
-        disableMutationObserver: true, // Reduce overhead
-        throttleDelay: 99, // Throttle scroll events
-        debounceDelay: 50, // Debounce resize events
-      });
-    };
-
-    // Use requestIdleCallback to defer initialization
-    if ('requestIdleCallback' in window) {
-      requestIdleCallback(initAOS, { timeout: 2000 });
-    } else {
-      // Fallback: defer with setTimeout
-      const timer = setTimeout(initAOS, 100);
-      return () => clearTimeout(timer);
-    }
-  }, []);
-
   // ترتيب العرض حسب المطلوب:
   // 1. عند mount: يبدأ التحميل ويظهر Skeleton فقط
   // 2. بعد التحميل: تظهر البيانات أو رسالة فارغة
@@ -108,7 +81,9 @@ const News = () => {
   // بعد التحميل: تظهر الصفحة كاملة
   return (
     <main className="container mx-auto px-4 py-6" dir="rtl">
-      <NewsResourceHints newsItems={newsItems} />
+      <Suspense fallback={null}>
+        <NewsResourceHints newsItems={newsItems} />
+      </Suspense>
       <NewsHeader />
       <div className="space-y-4">
         <NewsFilters
@@ -151,17 +126,19 @@ const News = () => {
           ))
         )}
       </div>
-      <NewsModal
-        isOpen={isModalOpen}
-        isEditMode={isEditMode}
-        isLoading={isLoading}
-        newNews={newNews}
-        fieldErrors={fieldErrors}
-        onClose={handleCloseModal}
-        onSubmit={handleAddNews}
-        onInputChange={handleInputChange}
-        onFileChange={handleFileChange}
-      />
+      <Suspense fallback={null}>
+        <NewsModal
+          isOpen={isModalOpen}
+          isEditMode={isEditMode}
+          isLoading={isLoading}
+          newNews={newNews}
+          fieldErrors={fieldErrors}
+          onClose={handleCloseModal}
+          onSubmit={handleAddNews}
+          onInputChange={handleInputChange}
+          onFileChange={handleFileChange}
+        />
+      </Suspense>
     </main>
   );
 };

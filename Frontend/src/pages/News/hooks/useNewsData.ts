@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { ChangeEvent } from 'react';
 import { showCenteredSwal } from '@/utils/sweetalertUtils';
 import {
@@ -14,6 +14,7 @@ import {
   showErrorToast,
 } from '@/utils/toastUtils';
 import { useAuth } from '@/hooks/useAuth';
+import { scheduleIdleTask, scheduleAnimationTask, getLocalDate, formatDate } from '../utils/performanceHelpers';
 
 export const useNewsData = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -26,21 +27,15 @@ export const useNewsData = () => {
   const [error, setError] = useState<string | null>(null);
   const [newsItems, setNewsItems] = useState<INews[]>([]);
 
-  // دالة للحصول على التاريخ المحلي الصحيح
-  const getLocalDate = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  const [newNews, setNewNews] = useState<Partial<INews>>({
+  // Memoize initial news state to prevent recreation
+  const initialNewsState = useMemo(() => ({
     title: '',
     content: '',
     date: getLocalDate(),
-    visibility: 'general',
-  });
+    visibility: 'general' as const,
+  }), []);
+
+  const [newNews, setNewNews] = useState<Partial<INews>>(initialNewsState);
 
   const [selectedFile, setSelectedFile] = useState<File | File[] | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -53,7 +48,12 @@ export const useNewsData = () => {
 
   // ✅ تحميل الأخبار عند فتح الصفحة أول مرة فقط
   useEffect(() => {
-    loadNews();
+    // Defer news loading slightly to allow critical resources to load first
+    const timer = setTimeout(() => {
+      loadNews();
+    }, 0);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   const loadNews = async () => {
@@ -126,33 +126,18 @@ export const useNewsData = () => {
       window.clearTimeout(existing);
     }
 
-    // Use requestIdleCallback for non-critical validation to avoid blocking
+    // Use performance helper for idle validation
     validateTimersRef.current[name] = window.setTimeout(() => {
-      // Schedule validation in idle time to avoid blocking main thread
-      if ('requestIdleCallback' in window) {
-        requestIdleCallback(async () => {
-          if (!value.trim()) return;
-          const validation = await validateField(name, value);
-          if (!validation.isValid && validation.message) {
-            setFieldErrors((prev) => ({
-              ...prev,
-              [name]: validation.message!,
-            }));
-          }
-        }, { timeout: 500 });
-      } else {
-        // Fallback for browsers without requestIdleCallback
-        Promise.resolve().then(async () => {
-          if (!value.trim()) return;
-          const validation = await validateField(name, value);
-          if (!validation.isValid && validation.message) {
-            setFieldErrors((prev) => ({
-              ...prev,
-              [name]: validation.message!,
-            }));
-          }
-        });
-      }
+      scheduleIdleTask(async () => {
+        if (!value.trim()) return;
+        const validation = await validateField(name, value);
+        if (!validation.isValid && validation.message) {
+          setFieldErrors((prev) => ({
+            ...prev,
+            [name]: validation.message!,
+          }));
+        }
+      });
     }, 300);
   };
 
@@ -208,18 +193,15 @@ export const useNewsData = () => {
     if (Object.keys(validationErrors).length > 0) {
       setFieldErrors(validationErrors);
 
-      // Scroll to first error with a small delay to ensure DOM is updated
-      // Use requestAnimationFrame for better performance
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          const firstErrorField = document.querySelector('.border-red-500');
-          if (firstErrorField) {
-            firstErrorField.scrollIntoView({
-              behavior: 'smooth',
-              block: 'center',
-            });
-          }
-        });
+      // Scroll to first error using performance helper
+      scheduleAnimationTask(() => {
+        const firstErrorField = document.querySelector('.border-red-500');
+        if (firstErrorField) {
+          firstErrorField.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          });
+        }
       });
 
       return;
@@ -320,18 +302,7 @@ export const useNewsData = () => {
   };
 
   const handleEditNews = useCallback((news: INews) => {
-    // Convert date to yyyy-MM-dd format if needed
-    let formattedDate = new Date().toISOString().split('T')[0];
-
-    if (news.date) {
-      try {
-        const dateObj = new Date(news.date);
-        if (!isNaN(dateObj.getTime())) {
-          formattedDate = dateObj.toISOString().split('T')[0];
-        }
-      } catch (error) {
-      }
-    }
+    const formattedDate = formatDate(news.date);
 
     setNewNews({
       title: news.title,
