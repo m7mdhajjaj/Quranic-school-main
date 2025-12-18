@@ -22,7 +22,8 @@ const Warning = require("../../schema/Warning");
  * 🔄 يُستخدم من: deleteWarning Controller & SuspensionService
  */
 async function restoreStudentToGroup(warning) {
-  if (!["first", "second", "third", "expulsion"].includes(warning.type)) {
+  // تعديل: الاستعادة تتم فقط إذا كان الإنذار من النوع الذي يسبب الفصل
+  if (!["third", "expulsion"].includes(warning.type)) {
     return false;
   }
 
@@ -71,6 +72,7 @@ async function suspendStudentFromGroup(student, group, type, originalGroup) {
   if (student.group) {
     console.log(`⚠️ Removing student from group: ${student.group}`);
     student.group = null;
+    student.teacher = null; // ✅ إزالة المعلم أيضاً عند الفصل
     await student.save();
 
     // إزالة الطالب من قائمة طلاب الحلقة إذا كانت موجودة

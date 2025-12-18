@@ -12,6 +12,7 @@ const Student = require('./schema/Student');
 const { NotificationService, FCMService } = require('./Notifications');
 const MonthlyChampionService = require('./services/ChampionService');
 const AttendanceService = require('./services/DashboardService/GetStudentAbsence');
+const WarningJob = require('./Notifications/Jobs/WarningJob');
 // Initialize FCM service (reads env FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_SERVICE_ACCOUNT_PATH)
 // FCMService is now imported from ./Notifications above
 
@@ -254,6 +255,9 @@ console.log('🏆 خدمة تتويج الأبطال الشهرية تم تفع�
 AttendanceService.setIO(io); // ربط Socket.IO بخدمة الحضور
 AttendanceService.start();
 console.log('📋 خدمة تحديث قائمة الطلاب الغائبين اليومية تم تفعيلها');
+
+// تشغيل Cron Job لإنفاذ قرارات الفصل
+WarningJob.setupWarningJobs();
 
 // Socket.IO error handling
 io.engine.on('connection_error', (err) => {

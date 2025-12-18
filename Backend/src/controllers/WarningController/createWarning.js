@@ -3,6 +3,7 @@
 // ============================================================================
 
 const Warning = require("../../schema/Warning");
+const { notifyStudentWarning } = require("../../Notifications");
 const {
   validateBasicInput,
   findGroup,
@@ -108,7 +109,8 @@ exports.createWarning = async (req, res) => {
     }
 
     // إذا كان فصل (مؤقت أو دائم)، قم بإزالة الطالب من الحلقة
-    if (["first", "second", "third", "expulsion"].includes(type)) {
+    // تعديل: الفصل يتم فقط في حالة الإنذار الثالث (فصل) أو الطرد
+    if (["third", "expulsion"].includes(type)) {
       await suspendStudentFromGroup(student, group, type, studentOriginalGroup);
     }
 
@@ -123,6 +125,9 @@ exports.createWarning = async (req, res) => {
       global.io.emit('warningCreated', populatedWarning);
       global.io.emit('warningStatisticsUpdated', { timestamp: new Date() });
       console.log('📡 Socket.IO: Warning created event emitted');
+      
+      // 🔔 إرسال إشعار خاص للطالب (Socket + FCM)
+      await notifyStudentWarning(student, populatedWarning, global.io);
     }
 
     res.status(201).json(populatedWarning);

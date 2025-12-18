@@ -338,7 +338,12 @@ exports.updateStudent = async (req, res) => {
 
     // التحقق من الحلقة وتحديث المعلم تلقائياً
     const { group } = updatedData;
-    if (group) {
+    
+    // إذا تم تعيين الحلقة إلى "غير محدد" أو null، قم بإزالة المعلم أيضاً
+    if (group === "غير محدد" || group === null || group === "") {
+      updatedData.teacher = "غير محدد";
+      updatedData.group = "غير محدد";
+    } else if (group) {
       // جلب بيانات الحلقة
       const groupData = await Group.findOne({ name: group });
       

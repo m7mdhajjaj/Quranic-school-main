@@ -16,11 +16,15 @@ const ExamHandler = require("./Handlers/ExamHandler");
 const NewsHandler = require("./Handlers/NewsHandler");
 const StudentHandler = require("./Handlers/StudentHandler");
 const AttendanceHandler = require("./Handlers/AttendanceHandler");
+const WarningHandler = require("./Handlers/WarningHandler");
 
 module.exports = {
   // Main Services
   NotificationService: NotificationManager, // Export as NotificationService for backward compatibility
   FCMService,
+  
+  // Warning Notifications
+  notifyStudentWarning: WarningHandler.notifyStudentWarning,
   
   // Student Notifications
   notifyStudentAddedToGroup: StudentHandler.notifyStudentAddedToGroup,
