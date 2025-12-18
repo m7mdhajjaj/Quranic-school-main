@@ -2,9 +2,16 @@
 import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAbsenceData, useAttendanceStats, useUnsavedChanges, useStudentFilters, useStudentSelection, useAttendanceSave } from "./hooks";
-import { StudentView } from "./components";
-import { TeacherGroupsGrid } from "./components/TeacherGroupsGrid";
-import { TeacherAttendanceView } from "./components/TeacherAttendanceView";
+import { 
+  StudentView, 
+  TeacherGroupsGrid, 
+  TeacherAttendanceView,
+  AdminView,
+  StudentViewSkeleton,
+  GroupsGridSkeleton,
+  TeacherViewSkeleton,
+  AdminViewSkeleton
+} from "./components";
 import { isDateTooOld, getDaysAgo, todayISO } from "./utils/dateHelpers";
 import { Card } from "@/components/UI/Card";
 import PageHeader from "@/components/UI/PageHeader";
@@ -26,8 +33,9 @@ const AbsencePage = () => {
     fetchStudentAbsenceStats,
   } = useAbsenceData();
 
-  const [isLoadingDate, setIsLoadingDate] = useState(true);
+  const [isLoadingDate, setIsLoadingDate] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   
   // استخراج الحلقة المختارة من الرابط
   const selectedGroupId = searchParams.get('groupId');
@@ -45,11 +53,12 @@ const AbsencePage = () => {
       setDateRange(today, today);
       setHasUnsavedChanges(false);
     }
-  }, [selectedGroupId]);
+  }, [selectedGroupId, setDateRange]);
 
   // Initial load
   useEffect(() => {
     if (!currentUser) return;
+    if (!isInitialLoad) return; // تجنب التحميل المتكرر
     
     const loadData = async () => {
       if (currentUser.role === "teacher" || currentUser.role === "admin") {
@@ -59,14 +68,36 @@ const AbsencePage = () => {
           setHasUnsavedChanges(false);
         } finally {
           setIsLoadingDate(false);
+          setIsInitialLoad(false);
         }
       } else if (currentUser.role === "student") {
-        await fetchStudentAbsenceStats(currentUser._id);
+        try {
+          await fetchStudentAbsenceStats(currentUser._id);
+        } finally {
+          setIsInitialLoad(false);
+        }
       }
     };
     
     loadData();
-  }, [date, currentUser, fetchStudentsForTeacher, fetchStudentAbsenceStats]);
+  }, [currentUser]); // eslint-disable-line react-hooks/exhaustive-deps
+  
+  // Date change effect (بدون initial load)
+  useEffect(() => {
+    if (!currentUser || isInitialLoad) return;
+    if (currentUser.role !== "teacher" && currentUser.role !== "admin") return;
+    
+    const loadData = async () => {
+      setIsLoadingDate(true);
+      try {
+        await fetchStudentsForTeacher(date);
+      } finally {
+        setIsLoadingDate(false);
+      }
+    };
+    
+    loadData();
+  }, [date]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // استخدام hook للفلترة والبحث والصفحات
   const {
@@ -145,19 +176,34 @@ const AbsencePage = () => {
           subtitle={
             currentUser?.role === "student"
               ? "اطّلع على سجل غيابك الشهري وإجمالي السنة"
+              : currentUser?.role === "admin"
+              ? "لوحة مراقبة شاملة لحضور جميع الطلاب والإحصائيات"
               : selectedGroup 
                 ? `تسجيل الحضور لحلقة: ${selectedGroup.name}`
                 : "اختر الحلقة للبدء بتسجيل الحضور"
           }
           icon={
             <div className="text-6xl">
-              {currentUser?.role === "student" ? "📊" : "📝"}
+              {currentUser?.role === "student" ? "📊" : currentUser?.role === "admin" ? "👔" : "📝"}
             </div>
           }
         />
 
-        {currentUser?.role === "student" ? (
+        {isInitialLoad ? (
+          // Initial Loading State
+          currentUser?.role === "student" ? (
+            <StudentViewSkeleton />
+          ) : currentUser?.role === "admin" ? (
+            <AdminViewSkeleton />
+          ) : !selectedGroup ? (
+            <GroupsGridSkeleton />
+          ) : (
+            <TeacherViewSkeleton />
+          )
+        ) : currentUser?.role === "student" ? (
           <StudentView monthlyStats={monthlyStats} />
+        ) : currentUser?.role === "admin" ? (
+          <AdminView />
         ) : (
           <>
             {!selectedGroup ? (

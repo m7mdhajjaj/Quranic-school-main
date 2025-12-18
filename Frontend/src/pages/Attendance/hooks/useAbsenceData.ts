@@ -97,58 +97,23 @@ export const useAbsenceData = () => {
     }
   }, [currentUser]);
 
-  // Fetch student absence stats
+  // Fetch student absence stats (Backend يحسب كل شي!)
   const fetchStudentAbsenceStats = useCallback(async (studentId: string) => {
     try {
       setError(null);
-      const { getStudentAttendance } = await import(
+      const { getStudentAttendanceStats } = await import(
         '../../../Api/attendanceApi'
       );
-      const data = await getStudentAttendance(studentId);
-
-      const grouped: Record<string, { absences: number; total: number; dates: string[] }> = {};
-      data.forEach((r: any) => {
-        const d = new Date(r.date);
-        if (isNaN(d.getTime())) return;
-        const key = `${d.getFullYear()}-${d.getMonth()}`;
-        if (!grouped[key]) grouped[key] = { absences: 0, total: 0, dates: [] };
-        grouped[key].total++;
-        if (!r.isPresent) {
-          grouped[key].absences++;
-          grouped[key].dates.push(r.date); // Store the date string
-        }
-      });
-
-      const { AR_MONTHS } = await import('../utils/dateHelpers');
-      const stats: MonthlyAbsence[] = Object.entries(grouped).map(([k, v]) => {
-        const [yy, m] = k.split('-').map(Number);
-        const label = AR_MONTHS[m];
-        const rate =
-          v.total > 0 ? Math.round((v.absences / v.total) * 1000) / 10 : 0;
-        return {
-          month: `${label} ${yy}`,
-          absenceCount: v.absences,
-          totalDays: v.total,
-          rate,
-          absenceDates: v.dates.sort((a, b) => new Date(a).getTime() - new Date(b).getTime()),
-        };
-      });
-
-      stats.sort((a, b) => {
-        const aLastSpace = a.month.lastIndexOf(' ');
-        const bLastSpace = b.month.lastIndexOf(' ');
-        const aLabel = a.month.substring(0, aLastSpace);
-        const bLabel = b.month.substring(0, bLastSpace);
-        const aYear = parseInt(a.month.substring(aLastSpace + 1), 10);
-        const bYear = parseInt(b.month.substring(bLastSpace + 1), 10);
-
-        if (aYear !== bYear) return aYear - bYear;
-        const aIdx = AR_MONTHS.findIndex((x) => x === aLabel);
-        const bIdx = AR_MONTHS.findIndex((x) => x === bLabel);
-        return aIdx - bIdx;
-      });
-
-      setMonthlyStats(stats);
+      
+      // Backend يرجع البيانات جاهزة! 🚀
+      const result = await getStudentAttendanceStats(studentId);
+      
+      if (result.success && result.data) {
+        setMonthlyStats(result.data);
+      } else {
+        setMonthlyStats([]);
+        setError('تعذر جلب إحصائيات الغياب');
+      }
     } catch (e) {
       console.error(e);
       setMonthlyStats([]);

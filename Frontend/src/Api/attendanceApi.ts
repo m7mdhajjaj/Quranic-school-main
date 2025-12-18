@@ -32,6 +32,23 @@ export const getStudentAttendance = async (studentId: string): Promise<any[]> =>
   return response.data;
 };
 
+// Get student attendance statistics (monthly breakdown with absence dates)
+export interface MonthlyAttendanceStats {
+  month: string;          // "محرم 2025"
+  absenceCount: number;   // عدد أيام الغياب
+  totalDays: number;      // إجمالي أيام الدراسة
+  rate: number;           // نسبة الغياب
+  absenceDates: string[]; // تواريخ الغياب مرتبة
+}
+
+export const getStudentAttendanceStats = async (studentId: string): Promise<{
+  success: boolean;
+  data: MonthlyAttendanceStats[];
+}> => {
+  const response = await api.get(`/attendance/student/${studentId}/stats`);
+  return response.data;
+};
+
 // Get absent students for today
 export interface AbsentStudentToday {
   _id: string;

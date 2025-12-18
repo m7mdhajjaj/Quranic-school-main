@@ -3,7 +3,6 @@
 // ============================================================================
 
 const ExamSchedule = require("../../../schema/ExamSchedule");
-// const { notifyMarkDeleted } = require("./examMarkNotifications"); // TODO: Create notification handler
 
 /**
  * Delete student mark
@@ -18,11 +17,6 @@ exports.deleteStudentMark = async (req, res) => {
     if (!exam) {
       return res.status(404).json({ error: "Exam not found" });
     }
-
-    // 🔔 Send notification before deletion
-    const io = req.app.get("io");
-    // TODO: Implement notification handler
-    // await notifyMarkDeleted(examId, studentId, io);
 
     // Remove the mark from the marks array
     exam.marks = exam.marks.filter(

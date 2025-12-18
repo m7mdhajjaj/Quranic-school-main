@@ -1,7 +1,13 @@
 const Attendance = require("../../schema/Attendance");
 const Student = require("../../schema/Student");
 
-// Get attendance statistics for a specific student
+// Arabic months array (ميلادي)
+const AR_MONTHS = [
+  'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+  'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+];
+
+// Get attendance statistics for a specific student (Optimized for Frontend)
 exports.getStudentAttendanceStats = async (req, res) => {
   try {
     const studentId = req.params.studentId;
@@ -16,7 +22,7 @@ exports.getStudentAttendanceStats = async (req, res) => {
     const records = await Attendance.find({ studentId }).sort({ date: 1 });
 
     // Group records by month
-    const months = {};
+    const grouped = {};
 
     records.forEach((record) => {
       const date = new Date(record.date);
@@ -24,38 +30,62 @@ exports.getStudentAttendanceStats = async (req, res) => {
       const year = date.getFullYear();
       const key = `${year}-${month}`;
 
-      if (!months[key]) {
-        months[key] = {
+      if (!grouped[key]) {
+        grouped[key] = {
           year,
           month,
-          present: 0,
-          absent: 0,
+          absences: 0,
           total: 0,
+          dates: []
         };
       }
 
-      months[key].total++;
-      if (record.isPresent) {
-        months[key].present++;
-      } else {
-        months[key].absent++;
+      grouped[key].total++;
+      if (!record.isPresent) {
+        grouped[key].absences++;
+        grouped[key].dates.push(record.date);
       }
     });
 
-    // Convert to array and calculate rates
-    const stats = Object.values(months).map((month) => ({
-      year: month.year,
-      month: month.month,
-      presentDays: month.present,
-      absentDays: month.absent,
-      totalDays: month.total,
-      attendanceRate: Math.round((month.present / month.total) * 100 * 10) / 10,
-      absenceRate: Math.round((month.absent / month.total) * 100 * 10) / 10,
-    }));
+    // Convert to array with Arabic month names
+    const stats = Object.entries(grouped).map(([k, v]) => {
+      const label = AR_MONTHS[v.month];
+      const rate = v.total > 0 ? Math.round((v.absences / v.total) * 1000) / 10 : 0;
+      
+      return {
+        month: `${label} ${v.year}`,
+        absenceCount: v.absences,
+        totalDays: v.total,
+        rate,
+        absenceDates: v.dates.sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
+      };
+    });
 
-    res.json(stats);
+    // Sort by year and month
+    stats.sort((a, b) => {
+      const aLastSpace = a.month.lastIndexOf(' ');
+      const bLastSpace = b.month.lastIndexOf(' ');
+      const aLabel = a.month.substring(0, aLastSpace);
+      const bLabel = b.month.substring(0, bLastSpace);
+      const aYear = parseInt(a.month.substring(aLastSpace + 1), 10);
+      const bYear = parseInt(b.month.substring(bLastSpace + 1), 10);
+
+      if (aYear !== bYear) return aYear - bYear;
+      const aIdx = AR_MONTHS.findIndex(x => x === aLabel);
+      const bIdx = AR_MONTHS.findIndex(x => x === bLabel);
+      return aIdx - bIdx;
+    });
+
+    res.json({
+      success: true,
+      data: stats
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Error in getStudentAttendanceStats:", error);
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
   }
 };
 

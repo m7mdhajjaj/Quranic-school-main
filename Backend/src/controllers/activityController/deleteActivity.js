@@ -7,8 +7,6 @@ const cloudinary = require("../../config/cloudinary");
  */
 exports.deleteActivity = async (req, res) => {
   try {
-    console.log("🗑️ Deleting activity:", req.params.id);
-    
     const activity = await Activity.findById(req.params.id);
 
     if (!activity) {
@@ -21,23 +19,17 @@ exports.deleteActivity = async (req, res) => {
     // Delete image from Cloudinary if it exists
     if (activity.imagePublicId) {
       try {
-        console.log("🗑️ Deleting activity image from Cloudinary:", activity.imagePublicId);
         await cloudinary.uploader.destroy(activity.imagePublicId);
-        console.log("✅ Activity image deleted from Cloudinary");
       } catch (cloudinaryError) {
         console.error("⚠️ Failed to delete image from Cloudinary:", cloudinaryError);
-        // Continue with activity deletion even if image deletion fails
       }
     }
 
     // Delete the activity from database
     await Activity.findByIdAndDelete(req.params.id);
 
-    console.log("✅ Activity deleted successfully:", req.params.id);
-
     // Emit Socket.IO event for activity deletion
     if (global.io) {
-      console.log("📡 Broadcasting activity deleted event");
       global.io.to("activities").emit("activityDeleted", {
         _id: req.params.id,
         title: activity.title,

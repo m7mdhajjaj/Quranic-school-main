@@ -7,14 +7,14 @@ exports.getStudentAttendance = async (req, res) => {
     const studentId = req.params.studentId;
 
     // Verify that the student exists - but don't fail if not found
-    const student = await Student.findById(studentId);
-    if (!student) {
-      return res.json([]);
+      const student = await Student.findById(studentId);
+      if (!student) {
+        return res.json([]);
     }
 
     // Find attendance records for the student
-    const records = await Attendance.find({ studentId }).sort({ date: -1 });
-    return res.json(records);
+      const records = await Attendance.find({ studentId }).sort({ date: -1 });
+      return res.json(records);
   } catch (error) {
     console.error(`Error in getStudentAttendance: ${error.message}`);
     return res.json([]);

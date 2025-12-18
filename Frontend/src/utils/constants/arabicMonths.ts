@@ -47,8 +47,7 @@ export const getMonthOptions = () => {
 };
 
 /**
- * أسماء الأشهر بالتنسيق العربي مع الأرقام (للاستخدام في arrays)
+ * أسماء الأشهر بالتنسيق العربي (للاستخدام في arrays)
+ * يجب أن يطابق Backend format: "يناير", "فبراير", ...
  */
-export const AR_MONTHS = ARABIC_MONTHS.map(
-  (month) => `${month.label} (${month.value.toString().padStart(2, '0')})`
-);
+export const AR_MONTHS = ARABIC_MONTHS.map((month) => month.label);

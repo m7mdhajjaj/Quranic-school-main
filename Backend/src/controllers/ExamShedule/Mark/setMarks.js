@@ -3,7 +3,6 @@
 // ============================================================================
 
 const ExamSchedule = require("../../../schema/ExamSchedule");
-// const { notifyMarksAdded } = require("./examMarkNotifications"); // TODO: Create notification handler
 const { updateExamAverage } = require("../Exam/examAverage");
 
 /**
@@ -57,12 +56,8 @@ exports.setExamMarks = async (req, res) => {
     // Populate student details
     await exam.populate("marks.student");
 
-    // 🔔 Send notifications to students
-    const io = req.app.get("io");
-    // TODO: Implement notification handler
-    // await notifyMarksAdded(examId, marks, io);
-
     // 🔌 Emit Socket.IO event to exams room
+    const io = req.app.get("io");
     if (io) {
       io.to("exams").emit("examMarkCreated", {
         examId: examId,

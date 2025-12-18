@@ -14,8 +14,6 @@ const Attendance = require("../../schema/Attendance");
  */
 const getDashboardStats = async (req, res) => {
   try {
-    console.log("📊 جلب إحصائيات لوحة التحكم...");
-
     // Use Promise.all for parallel execution of all database queries
     const [
       studentsCount,
@@ -143,8 +141,6 @@ const getDashboardStats = async (req, res) => {
       upcomingExams: upcomingExamsCount,
       recentMarksCount: recentMarks.length,
     };
-
-    console.log("✅ تم جلب الإحصائيات بنجاح:", stats);
 
     res.status(200).json({
       success: true,

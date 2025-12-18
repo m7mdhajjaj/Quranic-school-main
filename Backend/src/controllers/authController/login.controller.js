@@ -12,10 +12,6 @@ const JWT_SECRET = process.env.JWT_SECRET;
  */
 exports.login = async (req, res) => {
   try {
-    console.log("=== Unified Login called ===");
-    console.log("Request body:", req.body);
-    console.log("Validated data:", req.validatedData);
-
     // استخدام البيانات من req.validatedData إذا كانت موجودة، وإلا من req.body
     const identifier =
       req.validatedData?.identifier ||
@@ -28,11 +24,6 @@ exports.login = async (req, res) => {
     const rememberMe =
       req.body.rememberMe === true || req.body.rememberMe === "true";
 
-    console.log("Parsed values:", {
-      identifier,
-      password: password ? "***" : "none",
-    });
-
     // التحقق من إدخال المعرف وكلمة المرور
     if (!identifier || !password) {
       return res.status(400).json({
@@ -42,49 +33,38 @@ exports.login = async (req, res) => {
     }
 
     // البحث التلقائي في جميع الأنواع
-    console.log("🔍 البحث التلقائي عن المستخدم في جميع الأنواع...");
     
     // 1. محاولة البحث كطالب (studentId)
     const studentIdNumber = parseInt(identifier);
     if (!isNaN(studentIdNumber)) {
-      console.log("🎒 محاولة البحث كطالب برقم:", studentIdNumber);
       const student = await Student.findOne({ studentId: studentIdNumber });
       
       if (student) {
-        console.log("✅ تم العثور على طالب:", student.firstName, student.lastName);
         return await authenticateStudent(student, password, rememberMe, res);
       }
     }
 
     // 2. محاولة البحث كمعلم (teacherId)
-    console.log("🎓 محاولة البحث كمعلم برقم:", identifier);
     const teacher = await Teacher.findOne({ teacherId: identifier });
     
     if (teacher) {
-      console.log("✅ تم العثور على معلم:", teacher.firstName, teacher.lastName);
       return await authenticateTeacher(teacher, password, rememberMe, res);
     }
 
     // 3. محاولة البحث كإداري (adminId)
-    console.log("👔 محاولة البحث كإداري برقم:", identifier);
     const admin = await Admin.findOne({ adminId: identifier });
     
     if (admin) {
-      console.log("✅ تم العثور على إداري:", admin.firstName, admin.lastName);
       return await authenticateAdmin(admin, password, rememberMe, res);
     }
 
     // لم يتم العثور على المستخدم في أي نوع
-    console.log("❌ لم يتم العثور على المستخدم");
     return res.status(401).json({
       success: false,
       message: "المعرف غير صحيح أو غير موجود",
     });
   } catch (error) {
-    console.error("=== Login Error Details ===");
-    console.error("Error name:", error.name);
-    console.error("Error message:", error.message);
-    console.error("Error stack:", error.stack);
+    console.error("❌ Login error:", error);
 
     res.status(500).json({
       success: false,

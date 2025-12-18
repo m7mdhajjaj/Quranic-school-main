@@ -3,7 +3,6 @@
 // ============================================================================
 
 const ExamSchedule = require("../../../schema/ExamSchedule");
-// const { notifyMarkUpdated } = require("./examMarkNotifications"); // TODO: Create notification handler
 
 /**
  * Update single student mark
@@ -52,12 +51,8 @@ exports.updateStudentMark = async (req, res) => {
       (m) => m.student._id.toString() === studentId
     );
 
-    // 🔔 Send notification to student
-    const io = req.app.get("io");
-    // TODO: Implement notification handler
-    // await notifyMarkUpdated(updatedMark, io);
-
     // 🔌 Emit Socket.IO event to exams room
+    const io = req.app.get("io");
     if (io) {
       io.to("exams").emit("examMarkUpdated", {
         examId: examId,

@@ -1,5 +1,5 @@
-import { TeacherToolbar } from './TeacherToolbar';
-import { StudentsTable } from './StudentsTable';
+import { TeacherToolbar } from '../components/TeacherToolbar';
+import { StudentsTable } from '../components/StudentsTable';
 import { Card } from '@/components/UI/Card';
 import type { TeacherGroup, AttendanceStudent, AttendanceStats } from '../types/absence.types';
 

@@ -10,8 +10,6 @@ const Attendance = require("../../schema/Attendance");
  */
 const getDashboardCharts = async (req, res) => {
   try {
-    console.log("📈 جلب بيانات الرسوم البيانية...");
-
     const [
       groupDistribution,
       genderDistribution,
@@ -475,22 +473,6 @@ const getDashboardCharts = async (req, res) => {
       topStudents: topStudentsData,
       topTeachers: topTeachersData,
     };
-
-    console.log("✅ تم جلب بيانات الرسوم البيانية بنجاح");
-    console.log(
-      "📊 Group Distribution:",
-      JSON.stringify(groupDistribution, null, 2)
-    );
-    console.log(
-      "📊 Gender Distribution:",
-      JSON.stringify(genderDistribution, null, 2)
-    );
-    console.log(
-      "📊 Monthly Attendance:",
-      JSON.stringify(attendanceStats, null, 2)
-    );
-    console.log("🏆 Top Students:", JSON.stringify(topStudentsData, null, 2));
-    console.log("👨‍🏫 Top Teachers:", JSON.stringify(topTeachersData, null, 2));
 
     res.status(200).json({
       success: true,
