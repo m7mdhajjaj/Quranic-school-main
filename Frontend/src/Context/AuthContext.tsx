@@ -96,21 +96,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           verifyToken()
             .then((response) => {
               if (response && response.success) {
-                // Connect socket and emit login with delay
+                // Connect socket and emit login
                 if (!socketManager.isConnected()) {
                   socketManager.connect(parsedUser._id, parsedUser.role);
                 }
                 
-                // تأخير قصير لضمان استقرار الاتصال
-                setTimeout(() => {
-                  if (socketManager.isConnected()) {
+                // ✅ استخدام onConnectionChange بدلاً من setTimeout  
+                const unsub = socketManager.onConnectionChange((connected) => {
+                  if (connected) {
+                    console.log('📡 [AuthContext] Socket connected on init, emitting login event');
                     socketManager.emit('login', {
                       userId: parsedUser._id,
                       role: parsedUser.role,
                       firstName: parsedUser.firstName || parsedUser.name
                     });
+                    unsub();
                   }
-                }, 500);
+                });
+                
+                // Fallback: إذا متصل بالفعل
+                if (socketManager.isConnected()) {
+                  console.log('📡 [AuthContext] Socket already connected on init');
+                  socketManager.emit('login', {
+                    userId: parsedUser._id,
+                    role: parsedUser.role,
+                    firstName: parsedUser.firstName || parsedUser.name
+                  });
+                  unsub();
+                }
               } else {
                 // Token غير صالح - تسجيل خروج
                 console.warn('⚠️ التوكن غير صالح - تسجيل خروج');
@@ -180,15 +193,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // وظيفة تسجيل الدخول
   const login = (userData: User, authToken: string) => {
     try {
-      // حفظ البيانات في الحالة المحلية مع تعيين isActive=true
-      const userWithActiveStatus = { ...userData, isActive: true };
-      setUser(userWithActiveStatus);
+      // حفظ البيانات في الحالة المحلية
+      // ⚠️ Note: isActive is now managed by UserStatusContext (Presence System)
+      setUser(userData);
       setToken(authToken);
 
       // Token will be handled automatically by api interceptor
 
       // حفظ البيانات في localStorage
-      localStorage.setItem('user', JSON.stringify(userWithActiveStatus));
+      localStorage.setItem('user', JSON.stringify(userData));
       localStorage.setItem('token', authToken);
       localStorage.setItem('userId', userData._id);
       localStorage.setItem('loginTime', Date.now().toString());
@@ -198,16 +211,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         socketManager.connect(userData._id, userData.role);
       }
       
-      // تأخير قصير لضمان الاتصال
-      setTimeout(() => {
-        if (socketManager.isConnected()) {
+      // ✅ استخدام onConnectionChange بدلاً من setTimeout
+      const unsubscribe = socketManager.onConnectionChange((connected) => {
+        if (connected) {
+          console.log('📡 [AuthContext] Socket connected, emitting login event');
           socketManager.emit('login', {
             userId: userData._id,
             role: userData.role,
             firstName: userData.firstName || userData.name
           });
+          unsubscribe(); // إلغاء الاشتراك بعد الإرسال
         }
-      }, 300);
+      });
+      
+      // Fallback: إذا Socket متصل بالفعل، أرسل فوراً
+      if (socketManager.isConnected()) {
+        console.log('📡 [AuthContext] Socket already connected, emitting login immediately');
+        socketManager.emit('login', {
+          userId: userData._id,
+          role: userData.role,
+          firstName: userData.firstName || userData.name
+        });
+        unsubscribe();
+      }
 
       // console.log('✅ تم تسجيل الدخول بنجاح:', userData.firstName || userData.name);
     } catch (error) {

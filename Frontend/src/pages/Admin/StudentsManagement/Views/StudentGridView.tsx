@@ -49,7 +49,18 @@ export const StudentGridView: React.FC<StudentGridViewProps> = ({
           
           <div className="p-5">
             {/* Student Name & ID */}
-            <div className="flex items-start justify-between mb-4">
+            <div className="flex items-start gap-3 mb-4">
+              <Avatar
+                userId={student._id}
+                userName={`${student.firstName} ${student.lastName}`}
+                gender={student.gender as any}
+                size="md"
+                showStatus={true}
+                autoFetch={true}
+                userRole="student"
+                border="ring"
+                user={student}
+              />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="text-lg font-bold text-gray-900 truncate">

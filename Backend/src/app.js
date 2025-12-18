@@ -291,6 +291,16 @@ io.on('connection', (socket) => {
       isActive: true,
       timestamp: new Date().toISOString(),
     });
+
+    // ✅ إرسال قائمة المستخدمين المتصلين حالياً للمستخدم الجديد
+    const onlineUsers = {};
+    onlineUsersManager.onlineUsers.forEach((data, userId) => {
+      onlineUsers[userId] = {
+        isActive: true,
+        timestamp: data.connectedAt
+      };
+    });
+    socket.emit('initial-online-users', onlineUsers);
   }
 
   // Handle socket errors
@@ -305,6 +315,7 @@ io.on('connection', (socket) => {
 
   // User login - store their user ID and socket ID with improved handling
   socket.on('login', async (userData) => {
+    console.log('📥 [Backend] Login event received:', userData);
     const { userId, role, firstName } = userData;
 
     // ✅ تسجيل المستخدم كـ Online في PresenceService
@@ -357,11 +368,13 @@ io.on('connection', (socket) => {
         );
 
         // ✅ بث حالة Online للجميع
-        io.emit('user-status', {
+        const statusEvent = {
           userId: userId,
           isActive: true,
           timestamp: new Date().toISOString(),
-        });
+        };
+        console.log('📡 [Backend] Emitting user-status event:', statusEvent);
+        io.emit('user-status', statusEvent);
       } else {
         console.warn(`⚠️  User ${userId} not found in ${role} collection`);
       }

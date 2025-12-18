@@ -1,14 +1,14 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Edit2, Trash2 } from "lucide-react";
 import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import type { Teacher } from '@/Api/teacherApi';
 import { useExpandableRows } from '../hooks/useExpandableRows';
+import { UserStatusContext } from '@/Context/UserStatusContext';
 import {
   getGroupDisplayName,
   getTeacherFullName,
   formatDateArabic,
   formatDateTimeArabic,
-  getActivityStatus,
 } from '../utils/teacherHelpers';
 
 interface TeacherTableViewProps {
@@ -34,6 +34,9 @@ export const TeacherTableView: React.FC<TeacherTableViewProps> = ({
   onToggleAll,
 }) => {
   const { toggleRow, isRowExpanded } = useExpandableRows();
+  const userStatusContext = useContext(UserStatusContext);
+  const isUserOnline = userStatusContext?.isUserOnline || (() => false);
+
   const allSelected = selectedTeachers && teachers.length > 0 && teachers.every(t => selectedTeachers.has(t._id || ""));
 
   if (isLoading) {
@@ -387,10 +390,14 @@ export const TeacherTableView: React.FC<TeacherTableViewProps> = ({
                                 </span>
                                 <span className="text-sm">
                                   {(() => {
-                                    const status = getActivityStatus(teacher.isActive);
+                                    const isOnline = isUserOnline(teacher._id || '');
                                     return (
-                                      <span className={`inline-flex items-center px-3 py-1 rounded-full font-semibold ${status.className}`}>
-                                        {status.label}
+                                      <span className={`inline-flex items-center px-3 py-1 rounded-full font-semibold ${
+                                        isOnline 
+                                          ? 'bg-green-100 text-green-800' 
+                                          : 'bg-gray-100 text-gray-800'
+                                      }`}>
+                                        {isOnline ? 'متصل' : 'غير متصل'}
                                       </span>
                                     );
                                   })()}

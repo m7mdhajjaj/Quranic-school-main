@@ -8,7 +8,7 @@
  * @description نقطة خضراء/حمراء تعرض حالة المستخدم لحظياً
  */
 
-import React, { useContext, useMemo, memo } from 'react';
+import React, { useContext, useMemo } from 'react';
 import { UserStatusContext } from '@/Context/UserStatusContext';
 
 interface OnlineStatusProps {
@@ -39,7 +39,7 @@ const OnlineStatusComponent: React.FC<OnlineStatusProps> = ({
   
   /**
    * ✅ تحديد حالة المستخدم من Context
-   * الأولوية: externalIsOnline > Context > user.isActive (fallback)
+   * الأولوية: externalIsOnline > Context
    * 
    * ⚠️ Important: لا نستخدم useMemo هنا لأننا نريد re-render عند كل تغيير في userStatuses
    */
@@ -48,21 +48,15 @@ const OnlineStatusComponent: React.FC<OnlineStatusProps> = ({
   // الأولوية 1: من prop مباشر (force)
   if (externalIsOnline !== undefined) {
     isOnline = externalIsOnline;
-    console.log(`🔵 [OnlineStatus] Using external prop for user ${user?._id}:`, isOnline);
   }
   // الأولوية 2: من Context (Real-time من Socket)
   else if (user?._id && context) {
     const status = context.getUserStatus(user._id);
     isOnline = status?.isActive || false;
-    console.log(`🟢 [OnlineStatus] Using Context for user ${user._id}:`, { status, isOnline });
-  }
-  // الأولوية 3: من user.isActive (fallback فقط)
-  else if (user?.isActive !== undefined) {
-    isOnline = user.isActive;
-    console.log(`🟡 [OnlineStatus] Using user.isActive for user ${user?._id}:`, isOnline);
   }
   else {
-    console.log(`⚪ [OnlineStatus] No status found for user ${user?._id}, defaulting to false`);
+    // Default to false if no context or user ID
+    isOnline = false;
   }
 
   // Size classes - محسّنة مع useMemo

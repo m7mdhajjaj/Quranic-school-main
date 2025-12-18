@@ -71,39 +71,70 @@ export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, []);
 
   /**
-   * ✅ الاستماع لتحديثات Socket
-   * Event: 'user-status' - يتم بثه من الباك إند عند connect/disconnect
-   * 
-   * ⚠️ Important: نضيف listener حتى لو Socket غير متصل لضمان استقبال جميع events
+   * ✅ معالج استقبال القائمة الأولية للمستخدمين المتصلين
    */
-  useEffect(() => {
-    console.log('👂 [Presence] Setting up listener for user-status events');
-    console.log('🔌 [Presence] Socket connected:', socketManager.isConnected());
-    
-    // الاشتراك في event واحد فقط: user-status
-    socketManager.on('user-status', handleUserStatus);
-
-    return () => {
-      console.log('🧹 [Presence] Cleaning up listener');
-      socketManager.off('user-status', handleUserStatus);
-    };
-  }, [handleUserStatus]);
+  const handleInitialOnlineUsers = useCallback((data: Record<string, UserStatusState>) => {
+    console.log('📥 [Presence] Initial online users received:', Object.keys(data).length);
+    setUserStatuses(prev => ({
+      ...prev,
+      ...data
+    }));
+  }, []);
 
   /**
-   * ✅ تحديث حالة المستخدم الحالي عند الاتصال
+   * ✅ الاستماع لتحديثات Socket
    */
   useEffect(() => {
-    if (user?._id && socketManager.isConnected()) {
-      // تعيين المستخدم الحالي كـ Online محلياً (تحديث فوري)
+    console.log('👂 [Presence] Setting up listeners for presence events');
+    
+    const handleConnect = () => {
+      if (user?._id) {
+        console.log('🔌 [Presence] Socket connected, setting self as online');
+        setUserStatuses(prev => ({
+          ...prev,
+          [user._id]: {
+            isActive: true,
+            timestamp: new Date().toISOString()
+          }
+        }));
+      }
+    };
+
+    // الاشتراك في Events
+    socketManager.on('user-status', handleUserStatus);
+    socketManager.on('initial-online-users', handleInitialOnlineUsers);
+    socketManager.on('connect', handleConnect);
+
+    // إذا كان متصلاً بالفعل
+    if (socketManager.isConnected() && user?._id) {
+      handleConnect();
+    }
+
+    return () => {
+      console.log('🧹 [Presence] Cleaning up listeners');
+      socketManager.off('user-status', handleUserStatus);
+      socketManager.off('initial-online-users', handleInitialOnlineUsers);
+      socketManager.off('connect', handleConnect);
+    };
+  }, [handleUserStatus, handleInitialOnlineUsers, user?._id]);
+
+  /**
+   * ✅ تحديث تفاؤلي (Optimistic Update) للمستخدم الحالي
+   * بمجرد تسجيل الدخول، نعتبر المستخدم Online محلياً
+   */
+  useEffect(() => {
+    if (user?._id) {
+      console.log('👤 [Presence] Current user detected, setting optimistic online status');
       setUserStatuses(prev => ({
         ...prev,
         [user._id]: {
           isActive: true,
-          timestamp: new Date().toISOString(),
-        },
+          timestamp: new Date().toISOString()
+        }
       }));
     }
   }, [user?._id]);
+
 
   /**
    * الحصول على حالة مستخدم معين

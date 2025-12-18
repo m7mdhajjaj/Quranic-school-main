@@ -13,6 +13,8 @@ import type { Teacher } from "@/Api/teacherApi";
 import Avatar from "@/components/Avatar/Avatar";
 import { getGroupDisplayName } from '../utils/teacherHelpers';
 
+import { OnlineStatus } from "@/components/Avatar/OnlineStatus";
+
 interface TeacherGridViewProps {
   teachers: Teacher[];
   onEdit: (teacher: Teacher) => void;
@@ -47,8 +49,10 @@ export const TeacherGridView: React.FC<TeacherGridViewProps> = ({
                 }
                 size="md"
                 border="ring"
-                fallbackIcon={<FaUserTie className="w-5 h-5" />}
-                autoFetch={false}
+                autoFetch={true}
+                userRole="teacher"
+                showStatus={true}
+                user={teacher}
               />
               <div className="flex-1 min-w-0">
                 <h3 className="text-gray-900 text-sm font-bold truncate">
@@ -68,9 +72,6 @@ export const TeacherGridView: React.FC<TeacherGridViewProps> = ({
                 #{teacher.teacherId}
               </span>
               <div className="flex items-center gap-1.5">
-                {teacher.isActive && (
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                )}
                 <span
                   className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
                     teacher.gender === "ذكر"
