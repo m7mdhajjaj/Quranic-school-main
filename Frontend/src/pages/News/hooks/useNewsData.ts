@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type { ChangeEvent } from 'react';
 import { showCenteredSwal } from '@/utils/sweetalertUtils';
 import {
@@ -74,7 +74,7 @@ export const useNewsData = () => {
     }
   };
 
-  const handleOpenModal = () => {
+  const handleOpenModal = useCallback(() => {
     // تعيين التاريخ الحالي تلقائياً عند فتح المودال
     setNewNews({
       title: '',
@@ -87,9 +87,9 @@ export const useNewsData = () => {
     setSelectedFile(null);
     setIsModalOpen(true);
     setIsEditMode(false);
-  };
+  }, []);
 
-  const handleCloseModal = () => {
+  const handleCloseModal = useCallback(() => {
     setIsModalOpen(false);
     setIsEditMode(false);
     setEditingNewsId(null);
@@ -102,7 +102,7 @@ export const useNewsData = () => {
       image: undefined, // لا صورة افتراضية
       visibility: 'general',
     });
-  };
+  }, []);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -298,7 +298,7 @@ export const useNewsData = () => {
     }
   };
 
-  const handleEditNews = (news: INews) => {
+  const handleEditNews = useCallback((news: INews) => {
     // Convert date to yyyy-MM-dd format if needed
     let formattedDate = new Date().toISOString().split('T')[0];
 
@@ -325,9 +325,9 @@ export const useNewsData = () => {
     setIsEditMode(true);
     setEditingNewsId(news._id);
     setIsModalOpen(true);
-  };
+  }, []);
 
-  const handleDeleteNews = async (_id: string) => {
+  const handleDeleteNews = useCallback(async (_id: string) => {
     const result = await showCenteredSwal({
       title: 'هل أنت متأكد؟',
       text: 'سيتم حذف هذا الخبر نهائياً ولا يمكن التراجع عن هذا الإجراء!',
@@ -355,7 +355,7 @@ export const useNewsData = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   return {
     // State

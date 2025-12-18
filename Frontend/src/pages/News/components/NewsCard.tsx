@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import type { NewsCardProps } from '../Types/types';
 import AddedAgo from '@/components/UI/AddedAgo';
 import { Button, Card, DropdownMenu } from '@/components/UI';
@@ -6,7 +6,7 @@ import { ArrowLeft, Edit, Trash2, ChevronLeft, ChevronRight, Globe, Users } from
 import ImageSkeleton from '@/components/skeletons/ImageSkeleton';
 import NewsGalleryModal from './NewsGalleryModal';
 
-const NewsCard = ({
+const NewsCard = memo(({
   news,
   index,
   isTeacherOrAdmin,
@@ -75,9 +75,9 @@ const NewsCard = ({
             alt={`${news.title} - صورة ${currentImageIndex + 1}`}
             width="600"
             height="400"
-            loading={index < 2 ? 'eager' : 'lazy'}
+            loading={index < 6 ? 'eager' : 'lazy'}
             decoding="async"
-            fetchPriority={index === 0 ? 'high' : 'auto'}
+            fetchPriority={index < 2 ? 'high' : 'auto'}
             className={`w-full h-full object-cover rounded-t-xl transition-all duration-300 ${
               imageLoading ? 'opacity-0' : 'opacity-100'
             }`}
@@ -244,6 +244,6 @@ const NewsCard = ({
       </Card>
     </div>
   );
-};
+});
 
 export default NewsCard;

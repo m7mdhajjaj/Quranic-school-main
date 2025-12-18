@@ -67,10 +67,12 @@ export interface AvatarProps {
   statusSize?: 'sm' | 'md' | 'lg';
   /** Force status (overrides useAuth) */
   forceStatus?: 'online' | 'offline' | 'active' | 'inactive';
-  /** Show status as circular ring/arc around avatar */
+  /** Status as ring */
   statusAsRing?: boolean;
-  /** Status ring progress (0-100) - for partial circle */
+  /** Status ring progress */
   statusRingProgress?: number;
+  /** Image loading strategy */
+  imageLoading?: 'eager' | 'lazy';
 }
 
 const sizeClasses = {
@@ -138,13 +140,15 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
   showStatusText = false,
   statusSize = 'md',
   forceStatus,
+  imageLoading = 'lazy',
 }) => {
   // استخدام hook لجلب الصورة من Cloudinary إذا لزم الأمر
+  // Disable fetching if src is provided to avoid unnecessary requests
   const { avatarUrl: fetchedAvatarUrl, isLoading: isFetchingAvatar } = useAvatar({
     userId: userId || user?._id,
     userRole: userRole || user?.role,
     avatarData: user?.avatar,
-    enabled: autoFetch && !!(userId || user?._id) && !!(userRole || user?.role),
+    enabled: !src && autoFetch && !!(userId || user?._id) && !!(userRole || user?.role),
   });
 
   // الحصول على URL الصورة من مصادر مختلفة
@@ -209,6 +213,8 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
       >
         {displaySrc ? (
           <img
+            loading={imageLoading}
+            decoding="async"
             src={displaySrc}
             alt={alt}
             className={`
