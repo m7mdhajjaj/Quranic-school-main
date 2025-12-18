@@ -51,6 +51,7 @@ export interface Group {
   currentStudents?: number; // عدد الطلاب من API
   totalStudents?: number; // إجمالي عدد الطلاب
   students: Student[];
+  suspendedStudents?: Student[];
 }
 
 export interface TeacherStatistics {

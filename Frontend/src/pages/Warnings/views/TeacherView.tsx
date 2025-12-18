@@ -14,6 +14,7 @@ import { GroupStatisticsModal } from '../components/statistics/GroupStatisticsMo
 import { DraggableSearchButton } from '../components/shared/DraggableSearchButton';
 import { useGroupStatistics, type GroupStatistics } from '../hooks/useGroupStatistics';
 import { ArrowRight, Users } from 'lucide-react';
+import { SuspendedStudentsSidebar } from '../components/shared';
 
 // ✅ Constants extracted outside component for performance
 const ANIMATION_DELAYS = [
@@ -40,6 +41,7 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
 }) => {
   const selectedGroup = selectedGroupProp;
   const [showGroupStats, setShowGroupStats] = useState(false);
+  const [showSuspendedSidebar, setShowSuspendedSidebar] = useState(false);
   
   const [selectedGroupForStats, setSelectedGroupForStats] =
     useState<Group | null>(null);
@@ -52,7 +54,10 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
 
   // ✅ محسّن بـ useCallback
   const handleGroupSelect = useCallback((group: Group) => {
+    console.log('Selected Group:', group);
+    console.log('Suspended Students:', group.suspendedStudents);
     onGroupSelect(group);
+    setShowSuspendedSidebar(false); // Reset sidebar state when changing groups
   }, [onGroupSelect]);
 
   const handleBack = useCallback(() => {
@@ -217,7 +222,7 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
         {/* Layout: Students List + Suspended Students Side by Side */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left: Students List (2/3 width) */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-3 space-y-4">
             <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-4 border border-blue-200">
               <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">
                 <Users className="w-6 h-6 text-blue-600" />
@@ -276,6 +281,13 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
             </div>
           </div>
         </div>
+
+        {/* Suspended Students Sidebar */}
+        <SuspendedStudentsSidebar
+          suspendedStudents={selectedGroup.suspendedStudents || []}
+          isOpen={showSuspendedSidebar}
+          onToggle={() => setShowSuspendedSidebar(!showSuspendedSidebar)}
+        />
 
         {/* Modal الإحصائيات */}
         <GroupStatisticsModal

@@ -5,6 +5,7 @@
 import React, { useMemo } from 'react';
 import { X, Users, AlertTriangle, TrendingUp } from 'lucide-react';
 import { getWarningLabel, getWarningIcon } from '../../types/Constans';
+import { useDisableBodyScroll } from '@/hooks/useDisableBodyScroll';
 
 interface StudentDetail {
   _id: string;
@@ -54,6 +55,9 @@ export const GroupStatisticsModal: React.FC<GroupStatisticsModalProps> = React.m
   statistics,
   loading = false,
 }) => {
+  // ✅ تعطيل سكرول الصفحة الخلفية عند فتح المودال
+  useDisableBodyScroll(isOpen);
+
   // ✅ Memoize check for top students
   const hasTopStudents = useMemo(() => 
     statistics?.topStudents && statistics.topStudents.length > 0,

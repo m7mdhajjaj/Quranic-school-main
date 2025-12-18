@@ -147,13 +147,17 @@ export const useNotificationsSocket = (): UseNotificationsSocketReturn => {
   // Handler for new notification
   const handleNewNotification = useCallback((data: unknown) => {
     if (import.meta.env.DEV) {
-      console.log('📬 [NotificationsSocket] New notification received');
+      console.log('📬 [NotificationsSocket] New notification received', data);
+      console.log('🎵 Sound path:', notificationSound);
     }
 
     try {
       // Play notification sound
       const audio = new Audio(notificationSound);
-      audio.play().catch((err) => console.error('Error playing notification sound:', err));
+      audio.volume = 1.0;
+      audio.play()
+        .then(() => console.log('🔊 Notification sound played successfully'))
+        .catch((err) => console.error('❌ Error playing notification sound (Check Autoplay Policy):', err));
 
       const notificationData = data as Record<string, unknown>;
       const title = String(notificationData.title || 'إشعار جديد');

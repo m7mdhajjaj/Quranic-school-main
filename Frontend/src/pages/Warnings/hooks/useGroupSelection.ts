@@ -74,6 +74,25 @@ export const useGroupSelection = ({
     }
   }, [fetchGroupStudentsWarnings, setSearchParams]);
 
+  // ✅ تحديث بيانات الحلقة الحالية بدون إظهار Loading (Silent Refresh)
+  const refreshCurrentGroup = useCallback(async () => {
+    if (!selectedGroup) return;
+
+    try {
+      // لا نضع setLoadingStudents(true) هنا لمنع الوميض
+      const updatedGroup = await fetchGroupStudentsWarnings(selectedGroup);
+      if (updatedGroup) {
+        setSelectedGroup(prev => {
+          // الحفاظ على نفس الكائن إذا لم يتغير لتجنب إعادة الرندر غير الضروري
+          if (JSON.stringify(prev) === JSON.stringify(updatedGroup)) return prev;
+          return updatedGroup;
+        });
+      }
+    } catch (error) {
+      console.error("Error refreshing group data:", error);
+    }
+  }, [selectedGroup, fetchGroupStudentsWarnings]);
+
   // ✅ العودة للحلقات - محسّن بـ useCallback
   const handleBack = useCallback(() => {
     // ✅ امسح الحالة والـ ref فوراً قبل تحديث URL
@@ -90,6 +109,7 @@ export const useGroupSelection = ({
     selectedGroup,
     loadingStudents,
     handleGroupSelect,
+    refreshCurrentGroup,
     handleBack,
   };
 };

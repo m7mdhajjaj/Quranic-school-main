@@ -30,7 +30,7 @@ exports.createWarning = async (req, res) => {
       reason: req.body.reason ? req.body.reason.substring(0, 50) + "..." : "N/A"
     });
 
-    const { studentId, teacherId, groupId, groupName, type, reason } = req.body;
+    let { studentId, teacherId, groupId, groupName, type, reason } = req.body;
 
     // 🔒 التحقق من أن المعلم المُسجّل الدخول هو نفسه (إلا إذا كان مدير)
     if (req.user.role !== 'admin' && req.user._id.toString() !== teacherId) {
@@ -47,8 +47,13 @@ exports.createWarning = async (req, res) => {
       return res.status(400).json(inputError);
     }
 
-    // البحث عن الحلقة
-    const groupResult = await findGroup(groupId, groupName);
+    // ⚡️ تحسين الأداء: تنفيذ التحققات المستقلة بشكل متوازي
+    const [groupResult, verifyResult] = await Promise.all([
+      findGroup(groupId, groupName),
+      verifyStudentAndTeacher(studentId, teacherId)
+    ]);
+
+    // التحقق من نتيجة البحث عن الحلقة
     if (groupResult.error) {
       return res.status(groupResult.error.includes("قاعدة البيانات") ? 500 : 404).json({ 
         message: groupResult.error,
@@ -58,8 +63,7 @@ exports.createWarning = async (req, res) => {
     }
     const { group } = groupResult;
 
-    // التحقق من وجود الطالب والمعلم
-    const verifyResult = await verifyStudentAndTeacher(studentId, teacherId);
+    // التحقق من نتيجة الطالب والمعلم
     if (verifyResult.error) {
       return res.status(404).json({ message: verifyResult.error });
     }
@@ -76,6 +80,47 @@ exports.createWarning = async (req, res) => {
         expectedGroup: group.name,
       });
     }
+
+    // ============================================================
+    // 🔄 منطق الترقية التلقائية (3 تنبيهات -> إنذار أول -> ...)
+    // ============================================================
+    if (type === 'warning') {
+      const existingAlerts = await Warning.find({ studentId, type: 'warning' });
+      
+      // إذا كان لديه تنبيهين سابقين (وهذا الثالث)
+      if (existingAlerts.length >= 2) {
+        console.log(`🔄 Auto-upgrading alerts for student ${studentId}`);
+        
+        // 1. حذف التنبيهات السابقة
+        await Warning.deleteMany({ studentId, type: 'warning' });
+        
+        // 2. ترقية النوع إلى "إنذار أول"
+        type = 'first';
+        reason = `${reason} (تلقائي: تراكم 3 تنبيهات)`;
+        
+        // 3. التحقق التسلسلي للترقية للأعلى
+        const existingFirst = await Warning.findOne({ studentId, type: 'first' });
+        if (existingFirst) {
+          type = 'second';
+          reason = `${reason} -> ترقية لإنذار ثاني`;
+          
+          const existingSecond = await Warning.findOne({ studentId, type: 'second' });
+          if (existingSecond) {
+            type = 'third'; // إنذار نهائي (فصل)
+            reason = `${reason} -> ترقية لإنذار ثالث`;
+            
+            const existingThird = await Warning.findOne({ studentId, type: 'third' });
+            if (existingThird) {
+              type = 'expulsion'; // فصل نهائي
+              reason = `${reason} -> ترقية لفصل نهائي`;
+            }
+          }
+        }
+        
+        console.log(`🔄 New warning type after upgrade: ${type}`);
+      }
+    }
+    // ============================================================
 
     // التحقق من عدم وجود إنذار سابق من نفس النوع
     const duplicateError = await checkDuplicateWarning(studentId, type);
@@ -127,7 +172,10 @@ exports.createWarning = async (req, res) => {
       console.log('📡 Socket.IO: Warning created event emitted');
       
       // 🔔 إرسال إشعار خاص للطالب (Socket + FCM)
-      await notifyStudentWarning(student, populatedWarning, global.io);
+      // ⚡️ تحسين الأداء: عدم انتظار الإشعار (Fire and Forget) لتسريع الاستجابة
+      notifyStudentWarning(student, populatedWarning, global.io).catch(err => 
+        console.error("❌ Background notification error:", err)
+      );
     }
 
     res.status(201).json(populatedWarning);

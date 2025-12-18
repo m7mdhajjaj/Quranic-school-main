@@ -35,7 +35,7 @@ const WarningsPage: React.FC = () => {
     deleteWarningById,
   } = useWarningsActions(refetchData);
 
-  const { selectedGroup, loadingStudents, handleGroupSelect, handleBack } = useGroupSelection({
+  const { selectedGroup, loadingStudents, handleGroupSelect, refreshCurrentGroup, handleBack } = useGroupSelection({
     fetchGroupStudentsWarnings,
     groups,
   });
@@ -48,10 +48,9 @@ const WarningsPage: React.FC = () => {
     // - statisticsUpdated → يحدث الإحصائيات
     
     // تحديث قائمة طلاب الحلقة فقط (باقي التحديثات عبر Socket)
-    if (selectedGroup) {
-      handleGroupSelect(selectedGroup);
-    }
-  }, [selectedGroup, handleGroupSelect]);
+    // ✅ استخدام refreshCurrentGroup بدلاً من handleGroupSelect لمنع الوميض
+    refreshCurrentGroup();
+  }, [refreshCurrentGroup]);
 
   const { showGiveWarningModal, showDeleteWarningModal, showDeleteWarningByIdModal } =
     useWarningsModals({
@@ -79,9 +78,10 @@ const WarningsPage: React.FC = () => {
       selectedGroup &&
       newWarning.groupId._id === selectedGroup._id
     ) {
-      handleGroupSelect(selectedGroup);
+      // ✅ استخدام refreshCurrentGroup بدلاً من handleGroupSelect لمنع الوميض
+      refreshCurrentGroup();
     }
-  }, [isStudent, isTeacher, user?._id, selectedGroup, setWarnings, handleGroupSelect]);
+  }, [isStudent, isTeacher, user?._id, selectedGroup, setWarnings, refreshCurrentGroup]);
 
   const handleWarningDeleted = useCallback((deletedWarningId: string) => {
     setWarnings((prev) => prev.filter((w) => w._id !== deletedWarningId));

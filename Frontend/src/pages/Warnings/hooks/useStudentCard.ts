@@ -76,6 +76,8 @@ export const useStudentCard = ({ student }: UseStudentCardProps) => {
       if (type === 'warning') return true;
       if (hasWarningType(type)) return false;
 
+      // ✅ السماح بإعطاء أي إنذار يدوياً إذا كان التسلسل صحيحاً
+      // (المنطق التلقائي في الباك إند سيتعامل مع التنبيهات)
       switch (type) {
         case 'first':
           return true;

@@ -57,6 +57,16 @@ const validateTeacherGroupMatch = async (teacher, group) => {
   const normalizedStudentTeacher = normalizeTeacherName(teacher);
   const normalizedGroupTeacher = normalizeTeacherName(groupTeacherName);
 
+  // ✅ FIX: السماح إذا كان المعلم "غير محدد" (سيقوم الكنترولر بتعيينه تلقائياً)
+  if (normalizedStudentTeacher === 'غير محدد' || !normalizedStudentTeacher) {
+    return { valid: true, groupData };
+  }
+
+  // ✅ FIX: السماح إذا كانت الحلقة ليس لها معلم
+  if (normalizedGroupTeacher === 'undefined' || !normalizedGroupTeacher || normalizedGroupTeacher === 'غير محدد') {
+    return { valid: true, groupData };
+  }
+
   const teacherMatches =
     normalizedStudentTeacher === normalizedGroupTeacher ||
     normalizedGroupTeacher.includes(normalizedStudentTeacher) ||

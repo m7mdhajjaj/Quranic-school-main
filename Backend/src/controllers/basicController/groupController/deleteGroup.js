@@ -23,8 +23,16 @@ exports.deleteGroup = async (req, res) => {
     // إزالة الحلقة من الطلاب
     const relatedStudents = await Student.find({ group: group.name });
     if (relatedStudents.length > 0) {
-      await Student.updateMany({ group: group.name }, { $unset: { group: "" } });
-      console.log(`✅ تم إزالة الحلقة من ${relatedStudents.length} طالب`);
+      // ✅ إزالة الحلقة والمعلم من الطلاب كما طلب المستخدم
+      await Student.updateMany(
+        { group: group.name }, 
+        { 
+          $unset: { group: "", teacher: "" },
+          // أو يمكن تعيينها للقيم الافتراضية إذا كان ذلك مفضلاً
+          // $set: { group: "غير محدد", teacher: "غير محدد" }
+        }
+      );
+      console.log(`✅ تم إزالة الحلقة والمعلم من ${relatedStudents.length} طالب`);
     }
 
     // إزالة الحلقة من المعلمين

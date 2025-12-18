@@ -2,9 +2,9 @@ import { useState, useCallback, useMemo } from "react";
 import { deleteGroup, type Group } from "@/Api/groupApi";
 import {
   showCenteredSwal,
-  showSuccessMessage,
   showErrorMessage,
 } from "@/utils/sweetalertUtils";
+import { showSuccessToast } from "@/utils/toastUtils";
 
 export const useGroupsActions = (
   setGroups: React.Dispatch<React.SetStateAction<Group[]>>,
@@ -39,7 +39,7 @@ export const useGroupsActions = (
 
         setGroups((prevGroups) => prevGroups.filter((g) => g._id !== groupId));
 
-        await showSuccessMessage("تم الحذف!", "تم حذف الحلقة بنجاح");
+        showSuccessToast("تم حذف الحلقة بنجاح");
       } catch (deleteError: unknown) {
         console.error("❌ فشل في حذف الحلقة:", deleteError);
 
@@ -139,11 +139,7 @@ export const useGroupsActions = (
         );
         setSelectedGroups(new Set());
 
-        await showSuccessMessage(
-          "تم الحذف!",
-          "تم حذف الحلقات بنجاح",
-          `${selectedGroups.size} حلقة`
-        );
+        showSuccessToast(`تم حذف ${selectedGroups.size} حلقة بنجاح`);
       } catch (bulkDeleteError) {
         console.error("❌ فشل في حذف الحلقات:", bulkDeleteError);
         await showErrorMessage("خطأ!", "حدث خطأ أثناء حذف الحلقات");
