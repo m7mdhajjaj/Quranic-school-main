@@ -98,7 +98,7 @@ const studentSchema = new mongoose.Schema(
       url: { type: String },
       publicId: { type: String },
     },
-    isActive: { type: Boolean, default: false },
+    // ✅ isActive removed - use PresenceService for Online/Offline
     lastSeen: { type: Date, default: Date.now },
 
     // تاريخ تعديلات birthDate (للتحكم بعدد التعديلات)

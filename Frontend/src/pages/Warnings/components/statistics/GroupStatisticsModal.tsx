@@ -24,7 +24,6 @@ interface GroupStatistics {
     first: number;
     second: number;
     third: number;
-    expulsion: number;
   };
   topStudents: {
     name: string;
@@ -37,6 +36,7 @@ interface GroupStatisticsModalProps {
   isOpen: boolean;
   onClose: () => void;
   statistics: GroupStatistics | null;
+  loading?: boolean;
 }
 
 // ✅ Constants extracted outside for performance
@@ -46,12 +46,13 @@ const MEDAL_COLORS = [
   'from-orange-400 to-amber-600',
 ] as const;
 
-const WARNING_TYPE_KEYS = ['warning', 'first', 'second', 'third', 'expulsion'] as const;
+const WARNING_TYPE_KEYS = ['warning', 'first', 'second', 'third'] as const;
 
 export const GroupStatisticsModal: React.FC<GroupStatisticsModalProps> = React.memo(({
   isOpen,
   onClose,
   statistics,
+  loading = false,
 }) => {
   // ✅ Memoize check for top students
   const hasTopStudents = useMemo(() => 
@@ -65,7 +66,22 @@ export const GroupStatisticsModal: React.FC<GroupStatisticsModalProps> = React.m
     [statistics?.studentsDetails]
   );
 
-  if (!isOpen || !statistics) return null;
+  if (!isOpen) return null;
+  
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-fade-in">
+        <div className="bg-white rounded-[2rem] shadow-2xl border-4 border-emerald-500/20 p-8">
+          <div className="flex flex-col items-center gap-4">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-emerald-500 border-t-transparent"></div>
+            <p className="text-gray-700 font-medium">جاري تحميل الإحصائيات...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!statistics) return null;
 
   return (
     <div

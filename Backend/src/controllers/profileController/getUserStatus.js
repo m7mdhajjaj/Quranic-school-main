@@ -1,11 +1,14 @@
 /**
  * Get User Status Controller
  * Handles fetching user online status and last seen
+ * 
+ * ✅ Updated to use PresenceService (Real-time Socket.io)
  */
 
 const Student = require("../../schema/Student");
 const Teacher = require("../../schema/Teacher");
 const Admin = require("../../schema/Admin");
+const { isUserOnline } = require("../../services/PresenceService");
 
 /**
  * @desc    Get user status by ID
@@ -33,14 +36,15 @@ const getUserStatus = async (req, res) => {
     }
 
     // Try to find in students first, then teachers, then admins
-    let user = await Student.findById(userId).select("isActive lastSeen").lean();
+    // Only get lastSeen from DB - isActive comes from PresenceService
+    let user = await Student.findById(userId).select("lastSeen").lean();
 
     if (!user) {
-      user = await Teacher.findById(userId).select("isActive lastSeen").lean();
+      user = await Teacher.findById(userId).select("lastSeen").lean();
     }
 
     if (!user) {
-      user = await Admin.findById(userId).select("isActive lastSeen").lean();
+      user = await Admin.findById(userId).select("lastSeen").lean();
     }
 
     if (!user) {
@@ -50,9 +54,12 @@ const getUserStatus = async (req, res) => {
       });
     }
 
+    // ✅ Get real-time status from PresenceService (Socket.io)
+    const isActive = isUserOnline(userId);
+
     res.json({
       success: true,
-      isActive: user.isActive !== undefined ? user.isActive : true,
+      isActive, // Real-time from Socket.io
       lastSeen: user.lastSeen || null,
     });
   } catch (error) {

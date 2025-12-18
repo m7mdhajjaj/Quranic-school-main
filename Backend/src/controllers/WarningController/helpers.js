@@ -35,10 +35,7 @@ async function restoreStudentToGroup(warning) {
   // إعادة الطالب للحلقة الأصلية
   student.group = warning.originalGroup;
   
-  // إعادة تفعيل الحساب إذا كان فصل دائم
-  if (warning.type === "expulsion") {
-    student.isActive = true;
-  }
+  // ✅ isActive removed - no longer used for account ban
   
   await student.save();
 
@@ -88,12 +85,8 @@ async function suspendStudentFromGroup(student, group, type, originalGroup) {
     console.log(`ℹ️ Student already removed from group (suspended)`);
   }
   
-  // إذا كان فصل دائم، عطل حساب الطالب
-  if (type === "expulsion") {
-    student.isActive = false;
-    await student.save();
-    console.log(`⚠️ Student account deactivated (permanent expulsion)`);
-  }
+  // ✅ isActive removed - account ban/unban no longer supported
+  // If you need account ban, create a separate 'accountStatus' field
 }
 
 /**

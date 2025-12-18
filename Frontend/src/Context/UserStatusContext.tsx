@@ -1,21 +1,29 @@
-// contexts/UserStatusContext.tsx
+/**
+ * 🟢 User Status Context - Real-time Presence System
+ * ==================================================
+ * نظام مركزي لإدارة حالة المستخدمين (Online/Offline) في الوقت الفعلي
+ * يعتمد 100% على Socket.io - لا يعتمد على API calls
+ * 
+ * @module UserStatusContext
+ * @description المصدر الوحيد للحقيقة لحالة المستخدمين على الفرونت إند
+ */
+
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { socketManager } from '../Socket/SocketManager';
-import api from '../Api/api';
 
 // تعريف الواجهات والأنواع
 export interface UserStatusState {
   isActive: boolean;
-  lastSeen?: Date;
-  isLoading: boolean;
+  timestamp?: string;
 }
 
 export interface UserStatusContextType {
   userStatus: UserStatusState;
   userStatuses: Record<string, UserStatusState>;
   getUserStatus: (userId?: string) => UserStatusState;
-  refreshStatus: () => void;
+  isUserOnline: (userId: string) => boolean;
+  getOnlineUsers: () => string[];
   joinRoom: (roomType: 'teachers' | 'students' | 'admin') => void;
   leaveRoom: (roomType: 'teachers' | 'students' | 'admin') => void;
 }
@@ -25,93 +33,103 @@ export interface UserStatusContextType {
 export const UserStatusContext = createContext<UserStatusContextType | undefined>(undefined);
 
 export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
+  
+  /**
+   * خريطة حالات المستخدمين - المصدر الوحيد للحقيقة
+   * يتم تحديثها فقط من Socket.io events
+   */
   const [userStatuses, setUserStatuses] = useState<Record<string, UserStatusState>>({});
 
-  // الحالة الافتراضية - مستقرة
+  // الحالة الافتراضية
   const defaultStatus: UserStatusState = React.useMemo(() => ({
     isActive: false,
-    isLoading: false,
   }), []);
 
-  // جلب حالة مستخدم معين
-  const fetchUserStatus = useCallback(async (userId: string) => {
-    if (!token || !userId) return;
-
-    try {
-      const response = await api.get(`/users/${userId}/status`);
-      const data = response.data;
-      
-      const status: UserStatusState = {
-        isActive: data.isActive !== false,
-        lastSeen: data.lastSeen ? new Date(data.lastSeen) : undefined,
-        isLoading: false,
+  /**
+   * ✅ معالج تحديث حالة المستخدم من Socket (user-status event)
+   * هذا هو المصدر الوحيد لتحديث الحالات
+   */
+  const handleUserStatus = useCallback((data: { 
+    userId: string; 
+    isActive: boolean; 
+    timestamp: string;
+  }) => {
+    console.log('🟢 [Presence] Status update received:', data);
+    
+    setUserStatuses(prev => {
+      const updated = {
+        ...prev,
+        [data.userId]: {
+          isActive: data.isActive,
+          timestamp: data.timestamp,
+        },
       };
+      console.log('📊 [Presence] Updated userStatuses:', updated);
+      return updated;
+    });
+  }, []);
 
+  /**
+   * ✅ الاستماع لتحديثات Socket
+   * Event: 'user-status' - يتم بثه من الباك إند عند connect/disconnect
+   * 
+   * ⚠️ Important: نضيف listener حتى لو Socket غير متصل لضمان استقبال جميع events
+   */
+  useEffect(() => {
+    console.log('👂 [Presence] Setting up listener for user-status events');
+    console.log('🔌 [Presence] Socket connected:', socketManager.isConnected());
+    
+    // الاشتراك في event واحد فقط: user-status
+    socketManager.on('user-status', handleUserStatus);
+
+    return () => {
+      console.log('🧹 [Presence] Cleaning up listener');
+      socketManager.off('user-status', handleUserStatus);
+    };
+  }, [handleUserStatus]);
+
+  /**
+   * ✅ تحديث حالة المستخدم الحالي عند الاتصال
+   */
+  useEffect(() => {
+    if (user?._id && socketManager.isConnected()) {
+      // تعيين المستخدم الحالي كـ Online محلياً (تحديث فوري)
       setUserStatuses(prev => ({
         ...prev,
-        [userId]: status,
-      }));
-    } catch {
-      // Silently fail if backend is not running, don't spam console
-      setUserStatuses(prev => ({
-        ...prev,
-        [userId]: {
-          isActive: !!user && !!token,
-          isLoading: false,
+        [user._id]: {
+          isActive: true,
+          timestamp: new Date().toISOString(),
         },
       }));
     }
-  }, [token, user]);
+  }, [user?._id]);
 
-  // Batch updates ref
-  const pendingUpdates = React.useRef<Record<string, UserStatusState>>({});
-  const updateTimeout = React.useRef<NodeJS.Timeout | null>(null);
+  /**
+   * الحصول على حالة مستخدم معين
+   */
+  const getUserStatus = useCallback((userId?: string): UserStatusState => {
+    const targetUserId = userId || user?._id;
+    if (!targetUserId) return defaultStatus;
 
-  // معالج تحديث حالة المستخدم من Socket
-  const handleUserStatusChange = useCallback((data: { 
-      userId: string; 
-      isActive: boolean; 
-    lastSeen: string;
-    }) => {
-    // console.log('🔄 [UserStatusContext] Status updated via socket:', data);
-      
-      const status: UserStatusState = {
-        isActive: data.isActive,
-        lastSeen: data.lastSeen ? new Date(data.lastSeen) : undefined,
-        isLoading: false,
-      };
+    return userStatuses[targetUserId] || defaultStatus;
+  }, [user?._id, userStatuses, defaultStatus]);
 
-      // Add to pending updates
-      pendingUpdates.current[data.userId] = status;
+  /**
+   * التحقق من حالة مستخدم معين (دالة مساعدة)
+   */
+  const isUserOnline = useCallback((userId: string): boolean => {
+    return userStatuses[userId]?.isActive || false;
+  }, [userStatuses]);
 
-      // Schedule batch update if not already scheduled
-      if (!updateTimeout.current) {
-        updateTimeout.current = setTimeout(() => {
-          setUserStatuses(prev => ({
-            ...prev,
-            ...pendingUpdates.current,
-          }));
-          pendingUpdates.current = {};
-          updateTimeout.current = null;
-        }, 200); // Batch updates every 200ms
-      }
-  }, []);
-
-  // الاستماع لتحديثات Socket مباشرة
-  useEffect(() => {
-    if (!socketManager.isConnected()) return;
-
-    console.log('👂 [UserStatusContext] Setting up status listener...');
-    
-    // الاشتراك في الحدث
-    socketManager.on('userStatusChange', handleUserStatusChange);
-
-    return () => {
-      console.log('🧹 [UserStatusContext] Cleaning up status listener...');
-      socketManager.off('userStatusChange', handleUserStatusChange);
-    };
-  }, [handleUserStatusChange]);
+  /**
+   * الحصول على قائمة المستخدمين Online
+   */
+  const getOnlineUsers = useCallback((): string[] => {
+    return Object.entries(userStatuses)
+      .filter(([_, status]) => status.isActive)
+      .map(([userId, _]) => userId);
+  }, [userStatuses]);
 
   /**
    * الانضمام لغرفة حسب نوع المستخدم
@@ -125,16 +143,13 @@ export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       admin: 'joinAdmin',
     };
     
-    const emojiMap = {
-      teachers: '👨‍🏫',
-      students: '👨‍🎓',
-      admin: '👨‍💼',
-    };
-    
     socketManager.emit(eventMap[roomType], {
       timestamp: Date.now(),
     });
-    console.log(`${emojiMap[roomType]} Joined ${roomType} room`);
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`✅ Joined ${roomType} room`);
+    }
   }, []);
 
   /**
@@ -149,80 +164,24 @@ export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       admin: 'leaveAdmin',
     };
     
-    const emojiMap = {
-      teachers: '👨‍🏫',
-      students: '👨‍🎓',
-      admin: '👨‍💼',
-    };
-    
     socketManager.emit(eventMap[roomType], {
       timestamp: Date.now(),
     });
-    console.log(`${emojiMap[roomType]} Left ${roomType} room`);
-  }, []);
-
-  // جلب الحالة الأولية للمستخدم الحالي
-  useEffect(() => {
-    if (!token || !user?._id) {
-      return;
-    }
-
-    // جلب الحالة الأولية
-    fetchUserStatus(user._id);
-  }, [token, user?._id, fetchUserStatus]);
-
-  // ❌ تم إزالة التحديث الدوري - نعتمد على socket للتحديثات الفورية
-  // التحديث التلقائي غير ضروري لأن socket يرسل userStatusChange event
-  // فقط نجلب الحالة عند الحاجة الأولى من خلال getUserStatus
-
-  // دالة للحصول على حالة مستخدم معين - محسّنة لتجنب setState في render
-  const getUserStatus = useCallback((userId?: string): UserStatusState => {
-    const targetUserId = userId || user?._id;
-    if (!targetUserId) return defaultStatus;
-
-    const status = userStatuses[targetUserId];
     
-    // إذا لم تكن الحالة محملة، جدولة الـ fetch في المرة القادمة
-    if (!status && token) {
-      // استخدام queueMicrotask بدلاً من setState مباشرة
-      queueMicrotask(() => {
-        setUserStatuses(prev => {
-          // تحقق مزدوج: لو تم التحديث بالفعل، لا تفعل شيء
-          if (prev[targetUserId]) return prev;
-          
-          return {
-            ...prev,
-            [targetUserId]: { ...defaultStatus, isLoading: true },
-          };
-        });
-        
-        // جدولة الـ fetch بعد الـ render
-        requestAnimationFrame(() => {
-          fetchUserStatus(targetUserId);
-        });
-      });
-      
-      return { ...defaultStatus, isLoading: true };
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`👋 Left ${roomType} room`);
     }
-
-    return status || defaultStatus;
-  }, [user?._id, userStatuses, token, fetchUserStatus, defaultStatus]);
-
-  // دالة لتحديث الحالة يدوياً
-  const refreshStatus = useCallback(() => {
-    if (user?._id && token) {
-      fetchUserStatus(user._id);
-    }
-  }, [user?._id, token, fetchUserStatus]);
+  }, []);
 
   // حالة المستخدم الحالي
   const userStatus = getUserStatus();
 
   const contextValue: UserStatusContextType = {
     userStatus,
-    userStatuses, // إضافة userStatuses للسماح للمكونات بمراقبة التغييرات
+    userStatuses,
     getUserStatus,
-    refreshStatus,
+    isUserOnline,
+    getOnlineUsers,
     joinRoom,
     leaveRoom,
   };

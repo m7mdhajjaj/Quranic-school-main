@@ -1,7 +1,10 @@
 const Teacher = require("../../../schema/Teacher");
+const { getUsersByRole } = require("../../../services/PresenceService");
 
 /**
  * جلب إحصائيات المعلمين (محسّنة مع Aggregation)
+ * 
+ * ✅ Updated: Uses PresenceService for real-time online/offline counts
  */
 exports.getTeacherStats = async (req, res) => {
   try {
@@ -12,16 +15,18 @@ exports.getTeacherStats = async (req, res) => {
           // إجمالي المعلمين
           total: [{ $count: "count" }],
           
-          // المعلمين النشطين
+          // ✅ Real-time online/offline من PresenceService (لا نستخدم isActive من DB)
+          // active: سيتم حسابها من PresenceService
+          // inactive: سيتم حسابها من الفرق
+          
+          // المعلمين النشطين - Placeholder (سيتم استبدالها)
           active: [
-            { $match: { isActive: true } },
-            { $count: "count" }
+            { $limit: 0 } // Dummy - سيتم استبدالها بـ PresenceService
           ],
           
-          // المعلمين غير النشطين
+          // المعلمين غير النشطين - Placeholder
           inactive: [
-            { $match: { isActive: false } },
-            { $count: "count" }
+            { $limit: 0 } // Dummy - سيتم استبدالها
           ],
           
           // التوزيع حسب الجنس
@@ -89,8 +94,11 @@ exports.getTeacherStats = async (req, res) => {
     const result = stats[0];
     
     const totalCount = result.total[0]?.count || 0;
-    const activeCount = result.active[0]?.count || 0;
-    const inactiveCount = result.inactive[0]?.count || 0;
+    
+    // ✅ Get real-time online/offline counts from PresenceService
+    const onlineTeachers = getUsersByRole('teacher');
+    const activeCount = onlineTeachers.length; // Real-time online
+    const inactiveCount = totalCount - activeCount; // Offline
     
     // معالجة الجنس
     const genderStats = result.byGender.reduce((acc, item) => {

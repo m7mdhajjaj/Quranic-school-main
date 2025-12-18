@@ -121,8 +121,8 @@ exports.logout = async (req, res) => {
     }
 
     // إرسال إشعار Socket بتغيير حالة المستخدم (إذا كان هناك Socket.IO متاح)
-    if (req.app && req.app.get("io")) {
-      req.app.get("io").emit("userStatusChange", {
+    if (global.io) {
+      global.io.emit("userStatusChange", {
         userId: userId,
         isActive: false,
         lastSeen:

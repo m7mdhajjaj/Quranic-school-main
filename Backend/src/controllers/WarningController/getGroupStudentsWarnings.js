@@ -20,9 +20,21 @@ exports.getGroupWithStudentsWarnings = async (req, res) => {
       return res.status(404).json({ message: "الحلقة غير موجودة" });
     }
 
+    // 🔒 التحقق من أن المعلم يملك هذه الحلقة (إلا إذا كان مدير)
+    if (req.user.role !== 'admin') {
+      const isTeacherOfGroup = group.teacher.toString() === req.user._id.toString();
+      
+      if (!isTeacherOfGroup) {
+        console.warn(`⚠️ Unauthorized access attempt - User: ${req.user._id}, Group: ${groupId}`);
+        return res.status(403).json({ 
+          message: "غير مصرح لك بالوصول لهذه الحلقة" 
+        });
+      }
+    }
+
     // جلب طلاب الحلقة
     const students = await Student.find({ group: group.name })
-      .select("_id firstName lastName isActive avatar")
+      .select("_id firstName lastName avatar")
       .lean();
 
     if (students.length === 0) {
@@ -65,7 +77,7 @@ exports.getGroupWithStudentsWarnings = async (req, res) => {
         _id: student._id,
         firstName: student.firstName,
         lastName: student.lastName,
-        isActive: student.isActive || false, // حالة الطالب (أونلاين/أوفلاين)
+        // ✅ isActive removed - use PresenceService on frontend for online status
         avatar: student.avatar, // صورة الطالب
         warningsCount: studentWarnings.length, // إجمالي كل الإنذارات
         warningsOnlyCount, // عدد التنبيهات فقط

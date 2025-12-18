@@ -9,8 +9,8 @@ import { useWarningsData } from "./hooks/useWarningsData";
 import { useWarningsActions } from "./hooks/useWarningsActions";
 import { useGroupSelection } from "./hooks/useGroupSelection";
 import { useWarningsModals } from "./hooks/useWarningsModals";
-import { TeacherView } from "./components/views/TeacherView";
-import { StudentView } from "./components/views/StudentView";
+import { TeacherView } from "./views/TeacherView";
+import { StudentView } from "./views/StudentView";
 
 const WarningsPage: React.FC = () => {
 
@@ -37,6 +37,7 @@ const WarningsPage: React.FC = () => {
 
   const { selectedGroup, loadingStudents, handleGroupSelect, handleBack } = useGroupSelection({
     fetchGroupStudentsWarnings,
+    groups,
   });
 
   // ✅ Memoize onSuccess callback - Optimized
@@ -96,73 +97,12 @@ const WarningsPage: React.FC = () => {
     // No action needed - updates handled by other events
   }, []);
 
-  // معالجة انتهاء الفصل المؤقت
-  const handleSuspensionExpired = useCallback((data: any) => {
-    console.log("⏰ Suspension expired notification:", data);
-    
-    // إعادة تحميل الإحصائيات
-    if (isTeacher) {
-      fetchTeacherStatistics();
-    }
-    
-    // إعادة تحميل الحلقة المحددة
-    if (selectedGroup) {
-      handleGroupSelect(selectedGroup);
-    }
-
-    // إظهار إشعار
-    import('@/utils/toastUtils').then(({ showSuccessToast }) => {
-      showSuccessToast(data.message || 'تم إعادة طالب إلى حلقته');
-    });
-  }, [isTeacher, selectedGroup, fetchTeacherStatistics, handleGroupSelect]);
-
-  // معالجة استعادة الطالب
-  const handleSuspensionRestored = useCallback((data: any) => {
-    console.log("✅ Suspension restored notification:", data);
-    
-    // إظهار إشعار للطالب
-    import('@/utils/toastUtils').then(({ showSuccessToast }) => {
-      showSuccessToast(data.message || 'تمت إعادتك إلى حلقتك');
-    });
-    
-    // إعادة تحميل بيانات الطالب
-    if (isStudent) {
-      refetchData();
-    }
-  }, [isStudent, refetchData]);
-
   // Socket للتحديثات الفورية - مباشرة من مجلد Socket
 
-
-  // Real-time user status updates (للطلاب في الحلقة)
-  useEffect(() => {
-    if (!isTeacher) return;
-
-    const handleUserStatusChange = (data: {
-      userId: string;
-      isActive: boolean;
-      lastSeen?: string;
-    }) => {
-      console.log("👤 User status changed in warnings:", data);
-      
-      // إذا كانت الحلقة محددة، تحديث حالة الطالب
-      if (selectedGroup) {
-        handleGroupSelect(selectedGroup);
-      }
-    };
-
-    const socket = socketManager.getSocket();
-    if (socket) {
-      socket.on("userStatusChange", handleUserStatusChange);
-    }
-
-    return () => {
-      const socket = socketManager.getSocket();
-      if (socket) {
-        socket.off("userStatusChange", handleUserStatusChange);
-      }
-    };
-  }, [isTeacher, selectedGroup, handleGroupSelect]);
+  // ❌ REMOVED: Real-time user status updates
+  // المشكلة: كان يسبب استدعاءات API متكررة بشكل مفرط
+  // الحل: تحديث حالة المستخدم يتم التعامل معه في مكان آخر (Avatar component)
+  // لا حاجة لإعادة تحميل كل بيانات الحلقة عند كل تغيير في حالة المستخدم
 
   // ✅ عرض واجهة المعلم
   if (isTeacher) {
@@ -185,7 +125,7 @@ const WarningsPage: React.FC = () => {
 
   // ✅ عرض واجهة الطالب
   if (isStudent) {
-    return <StudentView warnings={warnings} />;
+    return <StudentView warnings={warnings} loading={loading} />;
   }
 
   // غير مصرح

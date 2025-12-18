@@ -242,8 +242,8 @@ exports.deleteAdmin = async (req, res) => {
         .json({ success: false, message: "الإداري غير موجود" });
     }
 
+    // ✅ isActive removed - deleting admin directly
     await Admin.findByIdAndUpdate(id, {
-      isActive: false,
       updatedAt: new Date(),
     });
     

@@ -162,14 +162,15 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
   // حالة التحميل
   const loading = externalLoading || isFetchingAvatar;
 
-  // تحديد حالة المستخدم - الآن OnlineStatus يتولى المنطق من Context
-  // نستخدم forceStatus فقط إذا كان محدداً، وإلا OnlineStatus سيجلب الحالة من Context
-  const userIsOnline = (() => {
+  /**
+   * ✅ تحديد حالة المستخدم من forceStatus prop
+   * OnlineStatus component سيجلب الحالة من Context تلقائياً إذا لم يكن forceStatus محدداً
+   */
+  const userIsOnline = useMemo(() => {
     if (forceStatus === 'online' || forceStatus === 'active') return true;
     if (forceStatus === 'offline' || forceStatus === 'inactive') return false;
-    // إذا لم يكن forceStatus محدداً، OnlineStatus سيتولى المنطق من Context
-    return undefined;
-  })();
+    return undefined; // OnlineStatus سيجلب من Context
+  }, [forceStatus]);
 
   const genderColorClass = getGenderColor(gender);
   const textColorClass = getTextColor();
@@ -294,10 +295,9 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
       {/* Status indicator - استخدام OnlineStatus مع المنطق الجديد من Context */}
       {showStatus && (
           <OnlineStatus 
-            isOnline={userIsOnline !== undefined ? userIsOnline : undefined}
+            isOnline={userIsOnline}
             size={statusSize}
             position="absolute"
-            showPing={true}
             user={user || (userId ? { _id: userId } : undefined)}
           />
       )}
@@ -333,11 +333,14 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
     </div>
   );
 
-  // إرجاع المحتوى مع النص الاختياري - استخدام OnlineStatus مع showStatusText
+  /**
+   * ✅ عرض النص مع الحالة (showStatusText)
+   */
   if (showStatusText) {
-    // جلب الحالة من Context للعرض مع النص
+    // جلب الحالة من Context
     const context = useContext(UserStatusContext);
     const targetUserId = userId || user?._id;
+    
     const userStatusFromContext = useMemo(() => {
       if (!targetUserId || !context?.getUserStatus) return null;
       try {
@@ -345,17 +348,16 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
       } catch {
         return null;
       }
-    }, [targetUserId, context?.getUserStatus, context?.userStatuses?.[targetUserId || '']]);
+    }, [targetUserId, context, context?.userStatuses]);
 
+    // تحديد النص بناءً على الحالة
     const statusText = useMemo(() => {
       if (userIsOnline === true) return 'نشط الآن';
       if (userIsOnline === false) return 'غير نشط';
       if (userStatusFromContext?.isActive === true) return 'نشط الآن';
       if (userStatusFromContext?.isActive === false) return 'غير نشط';
-      if (user?.isActive === true) return 'نشط الآن';
-      if (user?.isActive === false) return 'غير نشط';
-      return 'جاري التحميل...';
-    }, [userIsOnline, userStatusFromContext?.isActive, user?.isActive]);
+      return 'غير نشط';
+    }, [userIsOnline, userStatusFromContext?.isActive]);
 
     return (
       <div className="flex items-center gap-2">
@@ -363,10 +365,9 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
         {showStatus && (
           <div className="flex items-center gap-1">
             <OnlineStatus 
-              isOnline={userIsOnline !== undefined ? userIsOnline : undefined}
+              isOnline={userIsOnline}
               size={statusSize}
               position="relative"
-              showPing={false}
               user={user || (userId ? { _id: userId } : undefined)}
             />
             <span className="text-xs text-gray-600">

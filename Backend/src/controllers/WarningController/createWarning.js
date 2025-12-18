@@ -31,6 +31,14 @@ exports.createWarning = async (req, res) => {
 
     const { studentId, teacherId, groupId, groupName, type, reason } = req.body;
 
+    // 🔒 التحقق من أن المعلم المُسجّل الدخول هو نفسه (إلا إذا كان مدير)
+    if (req.user.role !== 'admin' && req.user._id.toString() !== teacherId) {
+      console.warn(`⚠️ Unauthorized warning creation attempt - Logged in: ${req.user._id}, Attempted as: ${teacherId}`);
+      return res.status(403).json({
+        message: "غير مصرح لك بإنشاء إنذارات باسم معلم آخر"
+      });
+    }
+
     // التحقق من المدخلات الأساسية
     const inputError = validateBasicInput(studentId, teacherId, type, reason);
     if (inputError) {

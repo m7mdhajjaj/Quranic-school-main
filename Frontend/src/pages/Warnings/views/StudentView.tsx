@@ -3,7 +3,7 @@
 // ============================================================================
 
 import React, { useMemo } from 'react';
-import type { StudentViewProps } from '../../types/warnings';
+import type { StudentViewProps } from '../types/warnings';
 import { EmptyState } from '@/components/UI/EmptyState';
 import { Card } from '@/components/UI/Card';
 import {
@@ -12,7 +12,7 @@ import {
   getWarningLabel,
   getWarningDescription,
   formatArabicDate,
-} from '../../types/Constans';
+} from '../types/Constans';
 
 // ✅ Constants extracted outside component for performance
 const ANIMATION_DELAYS = [
@@ -23,7 +23,7 @@ const ANIMATION_DELAYS = [
   'animate-delay-400',
 ] as const;
 
-export const StudentView: React.FC<StudentViewProps> = React.memo(({ warnings }) => {
+export const StudentView: React.FC<StudentViewProps> = React.memo(({ warnings, loading }) => {
   // ✅ Memoize has warnings check
   const hasWarnings = useMemo(() => warnings.length > 0, [warnings.length]);
   return (
@@ -46,7 +46,22 @@ export const StudentView: React.FC<StudentViewProps> = React.memo(({ warnings })
         </div>
 
         {/* Warnings List */}
-        {hasWarnings ? (
+        {loading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 h-48 flex flex-col justify-between animate-pulse">
+                <div className="flex gap-4">
+                  <div className="w-12 h-12 bg-gray-200 rounded-full" />
+                  <div className="flex-1 space-y-3">
+                    <div className="h-6 w-1/3 bg-gray-200 rounded" />
+                    <div className="h-4 w-2/3 bg-gray-200 rounded" />
+                  </div>
+                </div>
+                <div className="h-16 bg-gray-200 rounded-lg mt-4" />
+              </div>
+            ))}
+          </div>
+        ) : hasWarnings ? (
           <div className="space-y-4">
             {warnings.map((warning, index) => {
               const delayClass = ANIMATION_DELAYS[index % ANIMATION_DELAYS.length];

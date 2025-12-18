@@ -13,7 +13,6 @@ export const getWarningTitle = (type: WarningType): string => {
     first: "🔴 الإنذار الأول",
     second: "🔴🔴 الإنذار الثاني",
     third: "🔴🔴🔴 الإنذار الثالث",
-    expulsion: "❌ فصل نهائي",
   };
   return titles[type];
 };
@@ -27,7 +26,6 @@ export const getWarningLabel = (type: string): string => {
     first: "الإنذار الأول",
     second: "الإنذار الثاني",
     third: "الإنذار الثالث",
-    expulsion: "فصل نهائي",
   };
   return labels[type] || type;
 };
@@ -38,10 +36,9 @@ export const getWarningLabel = (type: string): string => {
 export const getWarningDescription = (type: WarningType): string => {
   const descriptions: Record<WarningType, string> = {
     warning: "⚠️ تنبيه فقط - تحذير من الإنذار في المرة القادمة",
-    first: "🚫 يُفصل من الحلقة لمدة 3 ساعات",
-    second: "🚫 يُفصل من الحلقة لمدة يوم واحد",
-    third: "🚫 يُفصل من الحلقة لمدة أسبوعين",
-    expulsion: "❌ يُفصل من الحلقة ولا يعود نهائياً",
+    first: "� الإنذار الأول",
+    second: "🔴 الإنذار الثاني",
+    third: "🔴 الإنذار الثالث",
   };
   return descriptions[type];
 };
@@ -55,7 +52,6 @@ export const getWarningColor = (type: string): string => {
     first: "from-orange-500 to-red-500",
     second: "from-red-500 to-red-600",
     third: "from-red-600 to-red-700",
-    expulsion: "from-gray-800 to-black",
   };
   return colors[type] || "from-gray-400 to-gray-600";
 };
@@ -69,7 +65,6 @@ export const getWarningIcon = (type: string): string => {
     first: "🔴",
     second: "🔴🔴",
     third: "🔴🔴🔴",
-    expulsion: "❌",
   };
   return icons[type] || "⚠️";
 };
@@ -79,12 +74,10 @@ export const getWarningIcon = (type: string): string => {
  */
 export const getWarningVariant = (
   type: string
-): "warning" | "danger" | "dark" => {
+): "warning" | "danger" => {
   switch (type) {
     case "warning":
       return "warning";
-    case "expulsion":
-      return "dark";
     default:
       return "danger";
   }

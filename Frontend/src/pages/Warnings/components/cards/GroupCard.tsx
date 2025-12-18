@@ -28,7 +28,7 @@ export const GroupCard: React.FC<GroupCardProps> = React.memo(({ group, onClick 
         <div className="flex items-center justify-center gap-2 mb-4">
           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
           <p className="text-gray-600 font-medium">
-            {group.students?.length || 0} طالب
+            {group.currentStudents || group.students?.length || 0} طالب
           </p>
         </div>
       </div>
@@ -38,6 +38,7 @@ export const GroupCard: React.FC<GroupCardProps> = React.memo(({ group, onClick 
   // ✅ مقارنة مخصصة
   return (
     prevProps.group._id === nextProps.group._id &&
+    prevProps.group.currentStudents === nextProps.group.currentStudents &&
     prevProps.group.students?.length === nextProps.group.students?.length
   );
 });

@@ -116,7 +116,7 @@ exports.exportTeachersToCSV = async (req, res) => {
       teacher.gender || "",
       teacher.residence || "",
       teacher.role || "",
-      teacher.isActive ? "نشط" : "غير نشط",
+      // ✅ isActive removed
     ]);
 
     // Generate CSV content

@@ -123,11 +123,13 @@ const authenticateStudent = async (student, password, rememberMe, res) => {
 
     console.log("✅ تم التحقق من كلمة المرور بنجاح!");
 
-    // تحديث حالة النشاط
+    // ✅ تحديث lastSeen فقط (isActive يتم عبر Socket.io)
     await Student.findByIdAndUpdate(student._id, {
-      isActive: true,
       lastSeen: new Date(),
     });
+
+    // ℹ️ Note: Status update (online/offline) يتم تلقائياً عبر Socket.io
+    // عند اتصال المستخدم في app.js socket handlers
 
     // تحديد مدة الجلسة
     const tokenExpiry = rememberMe ? "7d" : "30m";
@@ -160,7 +162,7 @@ const authenticateStudent = async (student, password, rememberMe, res) => {
         gender: student.gender,
         avatar: student.avatar,
         role: "student",
-        isActive: true,
+        // ℹ️ isActive will be managed by Socket.io - Frontend will get it from UserStatusContext
       },
     });
   } catch (error) {
@@ -184,10 +186,12 @@ const authenticateTeacher = async (teacher, password, rememberMe, res) => {
       });
     }
 
+    // ✅ تحديث lastSeen فقط (isActive يتم عبر Socket.io)
     await Teacher.findByIdAndUpdate(teacher._id, {
-      isActive: true,
       lastSeen: new Date(),
     });
+
+    // ℹ️ Note: Status update (online/offline) يتم تلقائياً عبر Socket.io
 
     const tokenExpiry = rememberMe ? "7d" : "30m";
 
@@ -216,7 +220,7 @@ const authenticateTeacher = async (teacher, password, rememberMe, res) => {
         avatar: teacher.avatar,
         groups: teacher.groups,
         role: teacher.role,
-        isActive: true,
+        // ℹ️ isActive managed by Socket.io
       },
     });
   } catch (error) {
@@ -240,10 +244,12 @@ const authenticateAdmin = async (admin, password, rememberMe, res) => {
       });
     }
 
+    // ✅ تحديث lastSeen فقط (isActive يتم عبر Socket.io)
     await Admin.findByIdAndUpdate(admin._id, {
-      isActive: true,
       lastSeen: new Date(),
     });
+
+    // ℹ️ Note: Status update (online/offline) يتم تلقائياً عبر Socket.io
 
     const tokenExpiry = rememberMe ? "7d" : "30m";
 
@@ -270,7 +276,7 @@ const authenticateAdmin = async (admin, password, rememberMe, res) => {
         gender: admin.gender,
         avatar: admin.avatar,
         role: "admin",
-        isActive: true,
+        // ℹ️ isActive managed by Socket.io
       },
     });
   } catch (error) {
@@ -324,8 +330,8 @@ const loginTeacher = async (
       });
     }
 
+    // ✅ تحديث lastSeen فقط (isActive يتم عبر Socket.io)
     await Teacher.findByIdAndUpdate(teacher._id, {
-      isActive: true,
       lastSeen: new Date(),
     });
 
@@ -356,7 +362,7 @@ const loginTeacher = async (
         avatar: teacher.avatar,
         groups: teacher.groups,
         role: teacher.role,
-        isActive: true,
+        // ℹ️ isActive managed by Socket.io
       },
     });
   } catch (error) {
@@ -413,8 +419,8 @@ const loginAdmin = async (
       });
     }
 
+    // ✅ تحديث lastSeen فقط (isActive يتم عبر Socket.io)
     await Admin.findByIdAndUpdate(admin._id, {
-      isActive: true,
       lastSeen: new Date(),
     });
 
@@ -443,7 +449,7 @@ const loginAdmin = async (
         gender: admin.gender,
         avatar: admin.avatar,
         role: "admin",
-        isActive: true,
+        // ℹ️ isActive managed by Socket.io
       },
     });
   } catch (error) {

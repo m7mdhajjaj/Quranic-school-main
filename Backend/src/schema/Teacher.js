@@ -136,7 +136,7 @@ const teacherSchema = new mongoose.Schema(
       publicId: { type: String },
     },
 
-    isActive: { type: Boolean, default: false },
+    // ✅ isActive removed - use PresenceService for Online/Offline
     lastSeen: { type: Date, default: Date.now },
 
     // تاريخ تعديلات birthDate (للتحكم بعدد التعديلات)
@@ -160,11 +160,10 @@ teacherSchema.index({ firstName: 1, lastName: 1 });
 // Index للفلترة
 teacherSchema.index({ gender: 1 });
 teacherSchema.index({ age: 1 });
-teacherSchema.index({ isActive: 1 });
+// ✅ isActive index removed
 
 // Compound index للترتيب والفلترة معاً
 teacherSchema.index({ gender: 1, age: 1 });
-teacherSchema.index({ isActive: 1, teacherId: 1 });
 
 // Index للحلقات - للبحث السريع عن المعلمين حسب الحلقة
 teacherSchema.index({ 'groups.name': 1 });

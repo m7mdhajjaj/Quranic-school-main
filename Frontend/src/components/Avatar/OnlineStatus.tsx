@@ -1,17 +1,30 @@
-import React, { useRef, useState, useEffect, useContext, useMemo, memo } from 'react';
+/**
+ * 🟢 Online Status Indicator - Real-time Component
+ * ================================================
+ * مؤشر حالة المستخدم (Online/Offline) في الوقت الفعلي
+ * يعتمد 100% على UserStatusContext الذي يستمع لـ Socket.io
+ * 
+ * @module OnlineStatus
+ * @description نقطة خضراء/حمراء تعرض حالة المستخدم لحظياً
+ */
+
+import React, { useContext, useMemo, memo } from 'react';
 import { UserStatusContext } from '@/Context/UserStatusContext';
 
 interface OnlineStatusProps {
+  /** Force status - يتجاوز Context */
   isOnline?: boolean;
+  /** حجم المؤشر */
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl';
+  /** CSS classes إضافية */
   className?: string;
+  /** موضع المؤشر */
   position?: 'absolute' | 'relative';
-  showPing?: boolean;
+  /** بيانات المستخدم (يُستخدم _id لجلب الحالة من Context) */
   user?: {
     isActive?: boolean;
     _id?: string;
   };
-  lazyLoad?: boolean;
 }
 
 const OnlineStatusComponent: React.FC<OnlineStatusProps> = ({ 
@@ -20,82 +33,39 @@ const OnlineStatusComponent: React.FC<OnlineStatusProps> = ({
   className = '',
   position = 'absolute',
   user,
-  lazyLoad = true
 }) => {
-  const elementRef = useRef<HTMLDivElement>(null);
-  const observerRef = useRef<IntersectionObserver | null>(null);
-  const [isVisible, setIsVisible] = useState(!lazyLoad);
-  const [statusFetched, setStatusFetched] = useState(false);
-
-  // Intersection Observer للـ lazy loading - محسّن
-  useEffect(() => {
-    if (!lazyLoad || isVisible) return;
-
-    // إعادة استخدام Observer بدلاً من إنشاء واحد جديد في كل مرة
-    if (!observerRef.current) {
-      observerRef.current = new IntersectionObserver(
-        (entries) => {
-          if (entries[0]?.isIntersecting) {
-            setIsVisible(true);
-            observerRef.current?.disconnect();
-            observerRef.current = null;
-          }
-        },
-        {
-          root: null,
-          rootMargin: '50px',
-          threshold: 0.1,
-        }
-      );
-    }
-
-    const currentElement = elementRef.current;
-    if (currentElement && observerRef.current) {
-      observerRef.current.observe(currentElement);
-    }
-
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-        observerRef.current = null;
-      }
-    };
-  }, [lazyLoad, isVisible]);
-
-  // الحصول على Context
+  // ✅ الحصول على Context
   const context = useContext(UserStatusContext);
   
-  // جلب الحالة من Context مباشرة - بدون useMemo عشان يتحدث فوراً
-  const userStatusFromContext = user?._id && context?.userStatuses 
-    ? context.userStatuses[user._id] 
-    : null;
+  /**
+   * ✅ تحديد حالة المستخدم من Context
+   * الأولوية: externalIsOnline > Context > user.isActive (fallback)
+   * 
+   * ⚠️ Important: لا نستخدم useMemo هنا لأننا نريد re-render عند كل تغيير في userStatuses
+   */
+  let isOnline = false;
   
-  // جلب الحالة عند الظهور لأول مرة
-  useEffect(() => {
-    if (!isVisible || !user?._id || !context?.getUserStatus || statusFetched) return;
-    // استدعاء getUserStatus لجلب الحالة إذا ما كانت موجودة
-    if (!userStatusFromContext) {
-      context.getUserStatus(user._id);
-    }
-    setStatusFetched(true);
-  }, [isVisible, user?._id, context, statusFetched, userStatusFromContext]);
+  // الأولوية 1: من prop مباشر (force)
+  if (externalIsOnline !== undefined) {
+    isOnline = externalIsOnline;
+    console.log(`🔵 [OnlineStatus] Using external prop for user ${user?._id}:`, isOnline);
+  }
+  // الأولوية 2: من Context (Real-time من Socket)
+  else if (user?._id && context) {
+    const status = context.getUserStatus(user._id);
+    isOnline = status?.isActive || false;
+    console.log(`🟢 [OnlineStatus] Using Context for user ${user._id}:`, { status, isOnline });
+  }
+  // الأولوية 3: من user.isActive (fallback فقط)
+  else if (user?.isActive !== undefined) {
+    isOnline = user.isActive;
+    console.log(`🟡 [OnlineStatus] Using user.isActive for user ${user?._id}:`, isOnline);
+  }
+  else {
+    console.log(`⚪ [OnlineStatus] No status found for user ${user?._id}, defaulting to false`);
+  }
 
-  // تحديد الحالة - بدون useMemo عشان يتحدث فوراً مع كل تغيير في Context
-  const isOnline = (() => {
-    // الأولوية 1: من userStatusFromContext (من Context/Socket) - Real-time
-    if (userStatusFromContext?.isActive !== undefined) return userStatusFromContext.isActive;
-    
-    // الأولوية 2: من externalIsOnline prop
-    if (externalIsOnline !== undefined) return externalIsOnline;
-    
-    // الأولوية 3: من user.isActive (من Backend) - Initial value فقط
-    if (user?.isActive !== undefined) return user.isActive;
-    
-    // افتراضي
-    return false;
-  })();
-
-  // استخدام useMemo للـ static classes - تجنب إعادة الحساب
+  // Size classes - محسّنة مع useMemo
   const sizeClass = useMemo(() => {
     const sizes = {
       xs: 'w-2 h-2',
@@ -110,6 +80,7 @@ const OnlineStatusComponent: React.FC<OnlineStatusProps> = ({
     return sizes[size];
   }, [size]);
 
+  // Position classes
   const positionClass = useMemo(() => {
     if (position === 'relative') return 'relative';
     
@@ -126,52 +97,45 @@ const OnlineStatusComponent: React.FC<OnlineStatusProps> = ({
     return positions[size];
   }, [size, position]);
 
+  // Status color
   const statusColor = useMemo(() => 
-    isOnline ? 'bg-green-500' : 'bg-red-500',
+    isOnline ? 'bg-green-500' : 'bg-gray-400',
     [isOnline]
   );
 
-
-
+  // Aria label
   const ariaLabel = useMemo(() => 
     isOnline ? 'المستخدم متصل' : 'المستخدم غير متصل',
     [isOnline]
   );
 
-  // تجميع classes مرة واحدة بدلاً من concatenation في كل render
+  // Final container classes
   const containerClass = useMemo(() => {
     return [
       sizeClass,
       positionClass,
       statusColor,
       'rounded-full border-2 border-white transition-all duration-300',
+      // إضافة تأثير النبض للـ online فقط
+      isOnline && 'shadow-[0_0_8px_rgba(34,197,94,0.6)]',
       className
     ].filter(Boolean).join(' ');
-  }, [sizeClass, positionClass, statusColor, className]);
+  }, [sizeClass, positionClass, statusColor, isOnline, className]);
 
   return (
     <div
-      ref={elementRef}
       className={containerClass}
       aria-label={ariaLabel}
+      title={ariaLabel}
     />
   );
 };
 
-// استخدام React.memo لمنع re-renders غير ضرورية
-export const OnlineStatus = memo(OnlineStatusComponent, (prevProps, nextProps) => {
-  // Custom comparison function للتحكم في متى يتم re-render
-  return (
-    prevProps.isOnline === nextProps.isOnline &&
-    prevProps.size === nextProps.size &&
-    prevProps.className === nextProps.className &&
-    prevProps.position === nextProps.position &&
-    prevProps.showPing === nextProps.showPing &&
-    prevProps.lazyLoad === nextProps.lazyLoad &&
-    prevProps.user?.isActive === nextProps.user?.isActive &&
-    prevProps.user?._id === nextProps.user?._id
-  );
-});
+/**
+ * ⚠️ تم إزالة React.memo لضمان re-render عند تحديث Context
+ * React.memo كان يمنع التحديثات لأن props لا تتغير، لكن Context يتغير
+ */
+export const OnlineStatus = OnlineStatusComponent;
 
 OnlineStatus.displayName = 'OnlineStatus';
 

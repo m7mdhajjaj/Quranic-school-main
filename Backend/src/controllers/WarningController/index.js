@@ -10,8 +10,7 @@ const warningStatistics = require("./warningStatistics");
 const studentStatus = require("./studentStatus");
 const getGroupStudentsWarnings = require("./getGroupStudentsWarnings");
 const deleteWarningByType = require("./deleteWarningByType");
-const getSuspendedStudents = require("./getSuspendedStudents");
-const getTeacherSuspendedStudents = require("./getTeacherSuspendedStudents");
+const getGroupStatistics = require("./getGroupStatistics");
 
 // Export all functions
 module.exports = {
@@ -21,8 +20,7 @@ module.exports = {
   // Get operations
   ...getWarnings,
   ...getGroupStudentsWarnings,
-  ...getSuspendedStudents,
-  ...getTeacherSuspendedStudents,
+  ...getGroupStatistics,
 
   // Delete operations
   ...deleteWarning,

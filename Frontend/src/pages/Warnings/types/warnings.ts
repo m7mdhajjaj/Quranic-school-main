@@ -6,8 +6,7 @@ export type WarningType =
   | "warning"
   | "first"
   | "second"
-  | "third"
-  | "expulsion";
+  | "third";
 
 export interface Warning {
   _id: string;
@@ -49,6 +48,8 @@ export interface Student {
 export interface Group {
   _id: string;
   name: string;
+  currentStudents?: number; // عدد الطلاب من API
+  totalStudents?: number; // إجمالي عدد الطلاب
   students: Student[];
 }
 
@@ -85,6 +86,7 @@ export interface TeacherViewProps {
 
 export interface StudentViewProps {
   warnings: Warning[];
+  loading?: boolean;
 }
 
 export interface GroupCardProps {

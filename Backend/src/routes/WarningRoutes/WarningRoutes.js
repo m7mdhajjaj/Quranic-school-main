@@ -44,17 +44,16 @@ router.get(
   warningController.getStudentWarnings
 );
 
-// جلب قائمة الطلاب المفصولين (مؤقت أو دائم)
-// GET /api/warnings/suspended-students
-router.get('/suspended-students', protect, warningController.getSuspendedStudents);
 
-// جلب قائمة الطلاب المفصولين من حلقات المعلم (للمعلم فقط)
-// GET /api/warnings/teacher/suspended-students
-router.get('/teacher/suspended-students', protect, warningController.getTeacherSuspendedStudents);
 
-// جلب حالة الفصل لطالب معين
-// GET /api/warnings/student-suspension/:studentId
-router.get('/student-suspension/:studentId', protect, warningController.getStudentSuspensionStatus);
+// جلب إحصائيات حلقة معينة
+// GET /api/warnings/group/:groupId/statistics
+router.get(
+  '/group/:groupId/statistics',
+  protect,
+  validateGetGroupWarnings,
+  warningController.getGroupStatistics
+);
 
 // جلب طلاب الحلقة مع تفاصيل الإنذارات الكاملة
 // GET /api/warnings/group/:groupId/students-with-warnings

@@ -1,9 +1,9 @@
 // ============================================================================
-// useGroupStatistics Hook - حساب إحصائيات الحلقة
+// useGroupStatistics Hook - جلب إحصائيات الحلقة من Backend
 // ============================================================================
 
-import { useCallback } from 'react';
-import type { Group } from '../types/warnings';
+import { useState, useCallback } from 'react';
+import * as warningApi from '@/Api/warningApi';
 
 export interface GroupStatistics {
   groupName: string;
@@ -30,81 +30,25 @@ export interface GroupStatistics {
   }>;
 }
 
-// ✅ Constants extracted outside for performance
-const INITIAL_WARNINGS_BY_TYPE = {
-  warning: 0,
-  first: 0,
-  second: 0,
-  third: 0,
-  expulsion: 0,
-} as const;
-
-const TOP_STUDENTS_LIMIT = 5;
-
 export const useGroupStatistics = () => {
-  // ✅ Optimized with useCallback for stable reference
-  const calculateGroupStatistics = useCallback((group: Group): GroupStatistics => {
-    const students = group.students || [];
-    
-    // ✅ Initialize with spread to avoid mutation
-    const warningsByType = { ...INITIAL_WARNINGS_BY_TYPE };
-    let totalWarnings = 0;
-    let studentsWithWarningsCount = 0;
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    // ✅ Single loop optimization - process all data in one pass
-    const studentsDetails = students.map((student) => {
-      const warningsCount = student.warningsCount || 0;
-      const warningsOnlyCount = student.warningsOnlyCount || 0;
-      const existingWarningTypes = student.existingWarningTypes || [];
-      
-      // Count total warnings
-      totalWarnings += warningsCount;
-      
-      // Count students with warnings
-      if (warningsCount > 0) {
-        studentsWithWarningsCount++;
-      }
-      
-      // Count warnings by type
-      existingWarningTypes.forEach((type) => {
-        if (type in warningsByType) {
-          warningsByType[type as keyof typeof warningsByType]++;
-        }
-      });
-      
-      // Add warning-only count
-      warningsByType.warning += warningsOnlyCount;
-      
-      // Return student details for table
-      return {
-        _id: student._id,
-        name: `${student.firstName} ${student.lastName}`,
-        warningsCount,
-        warningsOnlyCount,
-        existingWarningTypes,
-      };
-    });
-
-    // ✅ Calculate top students from already processed data
-    const topStudents = studentsDetails
-      .filter((s) => s.warningsCount > 0)
-      .sort((a, b) => b.warningsCount - a.warningsCount)
-      .slice(0, TOP_STUDENTS_LIMIT)
-      .map((s) => ({
-        name: s.name,
-        warningsCount: s.warningsCount,
-      }));
-
-    return {
-      groupName: group.name,
-      totalStudents: students.length,
-      studentsWithWarnings: studentsWithWarningsCount,
-      totalWarnings,
-      warningsByType,
-      topStudents,
-      studentsDetails,
-    };
+  // ✅ جلب إحصائيات الحلقة من Backend
+  const fetchGroupStatistics = useCallback(async (groupId: string): Promise<GroupStatistics | null> => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await warningApi.getGroupStatistics(groupId);
+      return data;
+    } catch (err: any) {
+      console.error('Error fetching group statistics:', err);
+      setError(err?.response?.data?.message || 'حدث خطأ أثناء جلب الإحصائيات');
+      return null;
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  return { calculateGroupStatistics };
+  return { fetchGroupStatistics, loading, error };
 };

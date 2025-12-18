@@ -24,9 +24,9 @@ export const useWarningsData = (): UseWarningsDataReturn => {
       setLoading(true);
 
       if (isTeacher) {
-        // جلب حلقات المعلم مع الطلاب من Backend مباشرة
+        // جلب حلقات المعلم النشطة فقط بدون طلاب (lazy loading)
         const response = await api.get(
-          `/groups/teacher-id/${user?._id}/filtered?filter=all&includeStudents=true`
+          `/groups/teacher-id/${user?._id}/filtered?filter=active`
         );
 
         const groupsData = response.data?.data?.groups || [];
@@ -35,12 +35,9 @@ export const useWarningsData = (): UseWarningsDataReturn => {
         const groupsList = groupsData.map((group: any) => ({
           _id: group._id,
           name: group.name,
-          students: (group.students || []).map((student: any) => ({
-            _id: student._id,
-            firstName: student.name?.split(' ')[0] || '',
-            lastName: student.name?.split(' ').slice(1).join(' ') || '',
-            warningsCount: 0,
-          })),
+          currentStudents: group.currentStudents || 0, // ✅ عدد الطلاب من API
+          totalStudents: group.totalStudents || 0,
+          students: [], // سيتم جلب تفاصيل الطلاب عند اختيار الحلقة
         }));
 
         setGroups(groupsList);

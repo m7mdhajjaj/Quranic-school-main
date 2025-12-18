@@ -11,7 +11,6 @@ const Chat = require('./schema/Chat');
 const Student = require('./schema/Student');
 const { NotificationService, FCMService } = require('./Notifications');
 const MonthlyChampionService = require('./services/ChampionService');
-const SuspensionService = require('./services/SuspensionService');
 const AttendanceService = require('./services/DashboardService/GetStudentAbsence');
 // Initialize FCM service (reads env FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_SERVICE_ACCOUNT_PATH)
 // FCMService is now imported from ./Notifications above
@@ -235,27 +234,21 @@ const io = new Server(server, {
 // Make io available to routes
 app.set('io', io);
 
-// Store online users
-const onlineUsers = new Map();
-// Store disconnect timeouts for graceful handling
-const disconnectTimeouts = new Map();
+// ✅ Initialize Presence Service - المصدر الوحيد للحقيقة
+const { onlineUsersManager, isUserOnline } = require('./services/PresenceService');
 
 // Initialize Notification Service immediately after Socket.IO is ready
 const notificationService = new NotificationService(io);
 global.notificationService = notificationService; // Make it globally accessible
 app.set('notificationService', notificationService); // ✅ لاستخدامه في الـ routes
-global.onlineUsers = onlineUsers; // Make onlineUsers globally accessible
+global.onlineUsersManager = onlineUsersManager; // ✅ Presence Service عام
+global.isUserOnline = isUserOnline; // ✅ دالة مساعدة عامة
 global.io = io; // Make io globally accessible for chat controllers
 global.fcmService = FCMService;
 
 // تشغيل Cron Job لتتويج أبطال الشهر
 MonthlyChampionService.start();
 console.log('🏆 خدمة تتويج الأبطال الشهرية تم تفعيلها');
-
-// تشغيل Cron Job لإدارة الفصل المؤقت
-SuspensionService.setIO(io); // ربط Socket.IO بخدمة الفصل
-SuspensionService.start();
-console.log('⚠️ خدمة إدارة الفصل المؤقت تم تفعيلها');
 
 // تشغيل Cron Job لتحديث قائمة الطلاب الغائبين عند منتصف الليل
 AttendanceService.setIO(io); // ربط Socket.IO بخدمة الحضور
@@ -284,12 +277,19 @@ io.on('connection', (socket) => {
       socket.join('admin-room');
     }
     
-    // Add to online users map immediately
-    onlineUsers.set(authUserId, {
-      socketId: socket.id,
-      role: authUserRole || 'unknown',
-      firstName: 'User', // Will be updated on 'login' event
-      loginTime: new Date().toISOString(),
+    // ✅ استخدام PresenceService بدلاً من onlineUsers Map
+    onlineUsersManager.setUserOnline(
+      authUserId,
+      socket.id,
+      authUserRole || 'unknown',
+      'User' // Will be updated on 'login' event
+    );
+
+    // ✅ بث حالة Online فوراً
+    io.emit('user-status', {
+      userId: authUserId,
+      isActive: true,
+      timestamp: new Date().toISOString(),
     });
   }
 
@@ -307,20 +307,13 @@ io.on('connection', (socket) => {
   socket.on('login', async (userData) => {
     const { userId, role, firstName } = userData;
 
-    // ✅ Graceful Reconnection: Cancel pending disconnect timeout if exists
-    if (disconnectTimeouts.has(userId)) {
-      console.log(`🔄 User ${userId} reconnected quickly. Cancelling offline status update.`);
-      clearTimeout(disconnectTimeouts.get(userId));
-      disconnectTimeouts.delete(userId);
-    }
-
-    // Store user in online users map
-    onlineUsers.set(userId, {
-      socketId: socket.id,
-      role: role,
-      firstName: firstName || 'مستخدم',
-      loginTime: new Date().toISOString(),
-    });
+    // ✅ تسجيل المستخدم كـ Online في PresenceService
+    onlineUsersManager.setUserOnline(
+      userId,
+      socket.id,
+      role,
+      firstName || 'مستخدم'
+    );
 
     // ✅ انضمام المستخدم لغرفة خاصة به لاستقبال الإشعارات
     socket.join(userId);
@@ -333,27 +326,27 @@ io.on('connection', (socket) => {
     
     console.log(`🔔 User ${userId} (${firstName}) joined rooms [${userId}, notifications${role === 'admin' ? ', admin-room' : ''}]`);
 
-    // Set isActive to true in database with better error handling
+    // ✅ تحديث lastSeen فقط في DB (بدون isActive)
     try {
       let updateResult;
       if (role === 'student') {
         updateResult = await Student.findByIdAndUpdate(
           userId,
-          { isActive: true, lastSeen: new Date() },
+          { lastSeen: new Date() },
           { new: true, upsert: false }
         );
       } else if (role === 'admin') {
         const Admin = require('./schema/Admin');
         updateResult = await Admin.findByIdAndUpdate(
           userId,
-          { isActive: true, lastSeen: new Date() },
+          { lastSeen: new Date() },
           { new: true, upsert: false }
         );
       } else if (role === 'teacher') {
         const Teacher = require('./schema/Teacher');
         updateResult = await Teacher.findByIdAndUpdate(
           userId,
-          { isActive: true, lastSeen: new Date() },
+          { lastSeen: new Date() },
           { new: true, upsert: false }
         );
       }
@@ -363,36 +356,23 @@ io.on('connection', (socket) => {
           `✅ User ${firstName} (${userId}) logged in successfully as ${role}`
         );
 
-        // ✅ إرسال تحديث الحالة بذكاء حسب الدور
-        const statusUpdate = {
+        // ✅ بث حالة Online للجميع
+        io.emit('user-status', {
           userId: userId,
           isActive: true,
-          lastSeen: updateResult?.lastSeen?.toISOString() || new Date().toISOString(),
-        };
-
-        // إرسال للـ Admins
-        io.to('admin-room').emit('userStatusChange', statusUpdate);
-        
-        // إرسال للمستخدم نفسه
-        io.to(userId).emit('userStatusChange', statusUpdate);
-        
-        // إرسال حسب نوع المستخدم
-        if (role === 'student') {
-          io.to('students').emit('userStatusChange', statusUpdate);
-        } else if (role === 'teacher') {
-          io.to('teachers').emit('userStatusChange', statusUpdate);
-        }
+          timestamp: new Date().toISOString(),
+        });
       } else {
         console.warn(`⚠️  User ${userId} not found in ${role} collection`);
       }
     } catch (error) {
       console.error(
-        `❌ Error setting isActive for user ${userId}:`,
+        `❌ Error updating lastSeen for user ${userId}:`,
         error.message
       );
     }
 
-    console.log(`📊 Online users: ${onlineUsers.size}`);
+    console.log(`📊 Online users: ${onlineUsersManager.getOnlineCount()}`);
   });
 
   // Heartbeat System - استقبال ping من Client
@@ -557,51 +537,46 @@ io.on('connection', (socket) => {
   socket.on('logout', async (userData) => {
     console.log(`User logging out: ${userData.userId}`);
 
-    // Set isActive to false in database
+    // ✅ تحديث lastSeen فقط في DB
     try {
       let updateResult;
       if (userData.role === 'student') {
         updateResult = await Student.findByIdAndUpdate(
           userData.userId,
-          { isActive: false, lastSeen: new Date() },
+          { lastSeen: new Date() },
           { new: true }
         );
       } else if (userData.role === 'admin') {
         updateResult = await require('./schema/Admin').findByIdAndUpdate(
           userData.userId,
-          { isActive: false, lastSeen: new Date() },
+          { lastSeen: new Date() },
           { new: true }
         );
       } else {
         updateResult = await require('./schema/Teacher').findByIdAndUpdate(
           userData.userId,
-          { isActive: false, lastSeen: new Date() },
+          { lastSeen: new Date() },
           { new: true }
         );
       }
 
-      // ✅ إرسال تحديث الحالة
       if (updateResult) {
-        const statusUpdate = {
-          userId: userData.userId,
-          isActive: false,
-          lastSeen: updateResult.lastSeen?.toISOString() || new Date().toISOString(),
-        };
-        
-        io.to('admin-room').emit('userStatusChange', statusUpdate);
-        
-        if (userData.role === 'student') {
-          io.to('students').emit('userStatusChange', statusUpdate);
-        } else if (userData.role === 'teacher') {
-          io.to('teachers').emit('userStatusChange', statusUpdate);
-        }
+        console.log(`✅ Updated lastSeen for user ${userData.userId}`);
       }
     } catch (error) {
-      console.error('Error setting isActive=false on logout:', error);
+      console.error('Error updating lastSeen on logout:', error);
     }
 
-    // Remove from online users
-    onlineUsers.delete(userData.userId);
+    // ✅ تسجيل المستخدم كـ Offline في PresenceService
+    onlineUsersManager.setUserOffline(userData.userId, (userId) => {
+      // ✅ بث حالة Offline بعد grace period
+      io.emit('user-status', {
+        userId: userId,
+        isActive: false,
+        timestamp: new Date().toISOString(),
+      });
+    });
+
     console.log(`User logged out: ${userData.userId}`);
   });
 
@@ -679,19 +654,19 @@ io.on('connection', (socket) => {
         );
       }
 
-      // Check if recipient is online
-      const recipientData = onlineUsers.get(recipient);
+      // ✅ التحقق من حالة المستلم من PresenceService
+      const recipientOnline = onlineUsersManager.isUserOnline(recipient);
+      const recipientData = onlineUsersManager.getUserData(recipient);
+      
       console.log('Looking for recipient:', recipient, 'in online users');
-      console.log('Current online users:', [...onlineUsers.entries()]);
+      console.log('Recipient online:', recipientOnline);
       console.log('Recipient data found:', recipientData);
 
-      let recipientOnline = false;
-      if (recipientData) {
+      if (recipientOnline && recipientData) {
         console.log(
           'Sending message to recipient socket:',
           recipientData.socketId
         );
-        recipientOnline = true;
         // Send the message to the recipient with populated data
         io.to(recipientData.socketId).emit('receiveMessage', {
           ...populatedMessage._doc,
@@ -759,12 +734,14 @@ io.on('connection', (socket) => {
           },
         });
 
-      // Emit to all students in the group who are online
-      for (const [userId, userData] of onlineUsers.entries()) {
-        if (userData.role === 'student') {
-          // Check if student belongs to this group
-          const student = await Student.findById(userId);
-          if (student && student.group === group) {
+      // ✅ Emit to all students in the group who are online
+      const onlineStudents = onlineUsersManager.getUsersByRole('student');
+      for (const userId of onlineStudents) {
+        // Check if student belongs to this group
+        const student = await Student.findById(userId);
+        if (student && student.group === group) {
+          const userData = onlineUsersManager.getUserData(userId);
+          if (userData) {
             io.to(userData.socketId).emit('receiveMessage', {
               ...populatedMessage._doc,
               senderName,
@@ -811,8 +788,9 @@ io.on('connection', (socket) => {
 
       socket.emit('messageEdited', updatedMessage);
 
-      // Find recipient's socket and emit to them
-      const recipientData = onlineUsers.get(message.recipient.toString());
+      // ✅ Find recipient's socket and emit to them
+      const recipientId = message.recipient.toString();
+      const recipientData = onlineUsersManager.getUserData(recipientId);
       if (recipientData) {
         io.to(recipientData.socketId).emit('messageEdited', updatedMessage);
       }
@@ -847,8 +825,8 @@ io.on('connection', (socket) => {
       // Emit to both sender and recipient
       socket.emit('messageDeleted', { messageId });
 
-      // Find recipient's socket and emit to them
-      const recipientData = onlineUsers.get(recipientId);
+      // ✅ Find recipient's socket and emit to them
+      const recipientData = onlineUsersManager.getUserData(recipientId);
       if (recipientData) {
         io.to(recipientData.socketId).emit('messageDeleted', { messageId });
       }
@@ -860,7 +838,8 @@ io.on('connection', (socket) => {
 
   // Handle user typing
   socket.on('typing', (data) => {
-    const recipientData = onlineUsers.get(data.recipient);
+    // ✅ استخدام PresenceService
+    const recipientData = onlineUsersManager.getUserData(data.recipient);
     if (recipientData) {
       io.to(recipientData.socketId).emit('userTyping', {
         sender: data.sender,
@@ -874,8 +853,8 @@ io.on('connection', (socket) => {
     const { userId, chatWith } = data;
     console.log(`📖 User ${userId} opened chat with ${chatWith}`);
 
-    // إشعار الطرف الآخر بفتح المحادثة
-    const otherUserData = onlineUsers.get(chatWith);
+    // ✅ إشعار الطرف الآخر بفتح المحادثة
+    const otherUserData = onlineUsersManager.getUserData(chatWith);
     if (otherUserData) {
       io.to(otherUserData.socketId).emit('chatOpened', {
         userId: userId,
@@ -913,16 +892,17 @@ io.on('connection', (socket) => {
         deliveredAt: new Date(deliveredAt),
       });
 
-      // إشعار المرسل بالتوصيل
-      for (const [userId, userData] of onlineUsers.entries()) {
-        const message = await Chat.findById(messageId).populate('sender');
-        if (message && message.sender._id.toString() === userId) {
-          io.to(userData.socketId).emit('messageDelivered', {
+      // ✅ إشعار المرسل بالتوصيل
+      const message = await Chat.findById(messageId).populate('sender');
+      if (message) {
+        const senderId = message.sender._id.toString();
+        const senderData = onlineUsersManager.getUserData(senderId);
+        if (senderData) {
+          io.to(senderData.socketId).emit('messageDelivered', {
             messageId: messageId,
             recipientOnline: true,
             deliveredAt: deliveredAt,
           });
-          break;
         }
       }
     } catch (error) {
@@ -942,15 +922,16 @@ io.on('connection', (socket) => {
         readAt: new Date(readAt),
       });
 
-      // إشعار المرسل بالقراءة
-      for (const [userId, userData] of onlineUsers.entries()) {
-        const message = await Chat.findById(messageId).populate('sender');
-        if (message && message.sender._id.toString() === userId) {
-          io.to(userData.socketId).emit('messageRead', {
+      // ✅ إشعار المرسل بالقراءة
+      const message = await Chat.findById(messageId).populate('sender');
+      if (message) {
+        const senderId = message.sender._id.toString();
+        const senderData = onlineUsersManager.getUserData(senderId);
+        if (senderData) {
+          io.to(senderData.socketId).emit('messageRead', {
             messageId: messageId,
             readAt: readAt,
           });
-          break;
         }
       }
     } catch (error) {
@@ -962,81 +943,62 @@ io.on('connection', (socket) => {
   socket.on('disconnect', async (reason) => {
     console.log(`🔌 Socket disconnected: ${socket.id} (reason: ${reason})`);
 
-    // Find user by socket ID
-    let disconnectedUserId = null;
-    let disconnectedUserData = null;
+    // ✅ الحصول على userId من PresenceService
+    const disconnectedUserId = onlineUsersManager.getUserIdBySocket(socket.id);
 
-    for (const [userId, userData] of onlineUsers.entries()) {
-      if (userData.socketId === socket.id) {
-        disconnectedUserId = userId;
-        disconnectedUserData = userData;
-        break;
-      }
-    }
+    if (disconnectedUserId) {
+      const disconnectedUserData = onlineUsersManager.getUserData(disconnectedUserId);
+      
+      if (disconnectedUserData) {
+        const { role, firstName } = disconnectedUserData;
 
-    if (disconnectedUserId && disconnectedUserData) {
-      const { role, firstName } = disconnectedUserData;
-
-      // Remove from onlineUsers immediately
-      onlineUsers.delete(disconnectedUserId);
-      console.log(`👋 User ${firstName} removed from online list`);
-      console.log(`📊 Remaining online users: ${onlineUsers.size}`);
-
-      // ✅ Graceful Disconnect: Delay DB update to allow for quick reconnection
-      const timeoutId = setTimeout(async () => {
-        try {
-          let updateResult;
-          if (role === 'student') {
-            updateResult = await Student.findByIdAndUpdate(
-              disconnectedUserId,
-              { isActive: false, lastSeen: new Date() },
-              { new: true }
-            );
-          } else if (role === 'admin') {
-            const Admin = require('./schema/Admin');
-            updateResult = await Admin.findByIdAndUpdate(
-              disconnectedUserId,
-              { isActive: false, lastSeen: new Date() },
-              { new: true }
-            );
-          } else if (role === 'teacher') {
-            const Teacher = require('./schema/Teacher');
-            updateResult = await Teacher.findByIdAndUpdate(
-              disconnectedUserId,
-              { isActive: false, lastSeen: new Date() },
-              { new: true }
-            );
-          }
-
-          if (updateResult) {
-            console.log(`✅ User ${firstName} (${disconnectedUserId}) marked as inactive (after delay)`);
-
-            // ✅ إرسال تحديث الحالة
-            const statusUpdate = {
-              userId: disconnectedUserId,
-              isActive: false,
-              lastSeen: updateResult?.lastSeen?.toISOString() || new Date().toISOString(),
-            };
-            
-            io.to('admin-room').emit('userStatusChange', statusUpdate);
-            
+        // ✅ تسجيل المستخدم كـ Offline مع grace period
+        onlineUsersManager.setUserOffline(disconnectedUserId, async (userId) => {
+          // ✅ تحديث lastSeen فقط بعد grace period
+          try {
+            let updateResult;
             if (role === 'student') {
-              io.to('students').emit('userStatusChange', statusUpdate);
+              updateResult = await Student.findByIdAndUpdate(
+                userId,
+                { lastSeen: new Date() },
+                { new: true }
+              );
+            } else if (role === 'admin') {
+              const Admin = require('./schema/Admin');
+              updateResult = await Admin.findByIdAndUpdate(
+                userId,
+                { lastSeen: new Date() },
+                { new: true }
+              );
             } else if (role === 'teacher') {
-              io.to('teachers').emit('userStatusChange', statusUpdate);
+              const Teacher = require('./schema/Teacher');
+              updateResult = await Teacher.findByIdAndUpdate(
+                userId,
+                { lastSeen: new Date() },
+                { new: true }
+              );
             }
-          }
-        } catch (error) {
-          console.error(
-            `❌ Error setting isActive=false for user ${disconnectedUserId}:`,
-            error.message
-          );
-        } finally {
-          disconnectTimeouts.delete(disconnectedUserId);
-        }
-      }, 5000); // 5 seconds delay
 
-      disconnectTimeouts.set(disconnectedUserId, timeoutId);
+            if (updateResult) {
+              console.log(`✅ User ${firstName} (${userId}) lastSeen updated (after delay)`);
+            }
+          } catch (error) {
+            console.error(
+              `❌ Error updating lastSeen for user ${userId}:`,
+              error.message
+            );
+          }
+
+          // ✅ بث حالة Offline للجميع
+          io.emit('user-status', {
+            userId: userId,
+            isActive: false,
+            timestamp: new Date().toISOString(),
+          });
+        });
+
+        console.log(`📊 Remaining online users: ${onlineUsersManager.getOnlineCount()}`);
+      }
     }
   });
 });

@@ -1,6 +1,9 @@
 /**
  * Helper function to send activity creation notifications
- * Sends Firebase notifications and Socket.IO events to all active students
+ * Sends Firebase notifications and Socket.IO events to all students
+ * 
+ * ✅ Updated: Uses PresenceService to send to online users via Socket,
+ * and saves to DB for offline users
  */
 exports.sendActivityNotifications = async (
   activity,
@@ -11,12 +14,20 @@ exports.sendActivityNotifications = async (
   // Send Firebase notifications
   if (global.notificationService) {
     try {
-      // Get all active students
+      // ✅ Get ALL students (not just isActive)
       const Student = require("../../schema/Student");
-      const activeStudents = await Student.find({ isActive: true });
+      const { isUserOnline, onlineUsersManager } = require("../../services/PresenceService");
+      
+      const allStudents = await Student.find({});
+
+      let sentToOnline = 0;
+      let savedForOffline = 0;
 
       // Send notification to each student
-      for (const student of activeStudents) {
+      for (const student of allStudents) {
+        const studentId = student._id.toString();
+        
+        // Create notification (will be sent via Socket if online, or saved to DB)
         await global.notificationService.createNotification({
           recipient: student._id,
           recipientModel: "Student",
@@ -31,10 +42,16 @@ exports.sendActivityNotifications = async (
             category: category,
           },
         });
+
+        if (isUserOnline(studentId)) {
+          sentToOnline++;
+        } else {
+          savedForOffline++;
+        }
       }
 
       console.log(
-        `✅ Sent new activity notifications to ${activeStudents.length} students`
+        `✅ Activity notifications: ${sentToOnline} sent to online, ${savedForOffline} saved for offline (total: ${allStudents.length})`
       );
     } catch (notificationError) {
       console.error("❌ Error sending activity notifications:", notificationError);
@@ -55,7 +72,10 @@ exports.sendActivityNotifications = async (
 
 /**
  * Helper function to send activity update notifications
- * Sends Firebase notifications and Socket.IO events to all active students
+ * Sends Firebase notifications and Socket.IO events to all students
+ * 
+ * ✅ Updated: Uses PresenceService to send to online users via Socket,
+ * and saves to DB for offline users
  */
 exports.sendActivityUpdateNotifications = async (
   activity,
@@ -66,12 +86,19 @@ exports.sendActivityUpdateNotifications = async (
   // Send Firebase notifications
   if (global.notificationService) {
     try {
-      // Get all active students
+      // ✅ Get ALL students (not just isActive)
       const Student = require("../../schema/Student");
-      const activeStudents = await Student.find({ isActive: true });
+      const { isUserOnline } = require("../../services/PresenceService");
+      
+      const allStudents = await Student.find({});
+
+      let sentToOnline = 0;
+      let savedForOffline = 0;
 
       // Send notification to each student
-      for (const student of activeStudents) {
+      for (const student of allStudents) {
+        const studentId = student._id.toString();
+        
         await global.notificationService.createNotification({
           recipient: student._id,
           recipientModel: "Student",
@@ -86,10 +113,16 @@ exports.sendActivityUpdateNotifications = async (
             category: category,
           },
         });
+
+        if (isUserOnline(studentId)) {
+          sentToOnline++;
+        } else {
+          savedForOffline++;
+        }
       }
 
       console.log(
-        `✅ Sent activity update notifications to ${activeStudents.length} students`
+        `✅ Activity update notifications: ${sentToOnline} sent to online, ${savedForOffline} saved for offline (total: ${allStudents.length})`
       );
     } catch (notificationError) {
       console.error("❌ Error sending activity update notifications:", notificationError);

@@ -65,7 +65,6 @@ export const useWarningsActions = (
       });
 
       // Socket سيقوم بالتحديث تلقائياً - لا داعي لاستدعاءات API إضافية
-      // تم إزالة refetchData() و fetchTeacherStatistics() لتحسين الأداء
       
       return true;
     } catch (error: any) {
@@ -91,7 +90,7 @@ export const useWarningsActions = (
       const errorMessage = error?.response?.data?.message || 'حدث خطأ أثناء إعطاء الإنذار';
       throw new Error(errorMessage);
     }
-  }, [refetchData, fetchTeacherStatistics]);
+  }, []);
 
   // ✅ حذف إنذار باستخدام endpoint مباشر - محسّن بـ useCallback
   const deleteWarning = useCallback(async (student: Student, warningType: string) => {

@@ -436,7 +436,7 @@ exports.getGroupStudents = async (req, res) => {
  * 🆕 الحصول على حلقات المعلم بفلاتر مرنة
  * Query params:
  * - teacherId: ID المعلم (required)
- * - filter: 'all' | 'withStudents' | 'withoutStudents' (default: 'all')
+ * - filter: 'all' | 'withStudents' | 'withoutStudents' | 'active' (default: 'all')
  * - includeStudents: true | false (default: false) - هل نجلب بيانات الطلاب مع الحلقات
  */
 exports.getGroupsByTeacherIdWithFilters = async (req, res) => {
@@ -496,10 +496,8 @@ exports.getGroupsByTeacherIdWithFilters = async (req, res) => {
     let groupsWithInfo = groups.map((group) => {
       const currentStudents = studentCountMap.get(group.name) || 0;
       const examCount = examCountMap.get(group.name) || 0;
-      // تحديث activeStatus: فعالة إذا كان لها معلم وفيها طالب واحد على الأقل
-      const calculatedActiveStatus = !!group.teacher && currentStudents > 0;
-      // استخدام activeStatus من قاعدة البيانات إذا كان موجوداً، وإلا استخدم الحساب
-      const activeStatus = group.activeStatus !== undefined ? group.activeStatus : calculatedActiveStatus;
+      // ✅ حساب حالة النشاط بشكل ديناميكي: الحلقة نشطة إذا فيها طالب واحد على الأقل
+      const isActive = currentStudents > 0;
       
       return {
         ...group,
@@ -509,7 +507,7 @@ exports.getGroupsByTeacherIdWithFilters = async (req, res) => {
         capacity: group.capacity || 30,
         hasStudents: currentStudents > 0,
         isEmpty: currentStudents === 0,
-        activeStatus: activeStatus, // حالة الحلقة (فعالة/غير فعالة)
+        activeStatus: isActive, // ✅ حالة الحلقة حسب عدد الطلاب الفعلي
       };
     });
 
@@ -520,6 +518,10 @@ exports.getGroupsByTeacherIdWithFilters = async (req, res) => {
     } else if (filter === 'withoutStudents') {
       groupsWithInfo = groupsWithInfo.filter((g) => g.isEmpty);
       console.log(`🔍 فلترة: ${groupsWithInfo.length} حلقة فارغة`);
+    } else if (filter === 'active') {
+      // ✅ فلترة الحلقات النشطة (التي فيها طلاب فعلياً)
+      groupsWithInfo = groupsWithInfo.filter((g) => g.currentStudents > 0);
+      console.log(`🔍 فلترة: ${groupsWithInfo.length} حلقة نشطة (فيها طلاب)`);
     }
 
     // 6. جلب الطلاب إذا كان مطلوباً

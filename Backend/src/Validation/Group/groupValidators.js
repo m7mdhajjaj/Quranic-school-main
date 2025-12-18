@@ -205,8 +205,8 @@ const getGroupsByTeacherIdValidation = [
 
   query('filter')
     .optional()
-    .isIn(['all', 'withStudents', 'withoutStudents'])
-    .withMessage('filter يجب أن يكون: all, withStudents, أو withoutStudents'),
+    .isIn(['all', 'withStudents', 'withoutStudents', 'active'])
+    .withMessage('filter يجب أن يكون: all, withStudents, withoutStudents, أو active'),
 
   query('includeStudents')
     .optional()
