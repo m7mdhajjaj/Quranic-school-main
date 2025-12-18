@@ -35,13 +35,21 @@ const generateTeacherId = async () => {
  */
 const getTeacherGroups = async (teacherId) => {
   try {
-    const teacher = await Teacher.findById(teacherId).select("groups");
+    // Populate the 'id' field in the groups array to get access to the Group document
+    const teacher = await Teacher.findById(teacherId).populate({
+      path: 'groups.id',
+      select: 'activeStatus'
+    });
     
     if (!teacher || !teacher.groups || teacher.groups.length === 0) {
       return [];
     }
     
-    return teacher.groups.map(g => g.name);
+    // Filter groups that are active
+    // Note: g.id is now the populated Group document
+    const activeGroups = teacher.groups.filter(g => g.id && g.id.activeStatus === true);
+    
+    return activeGroups.map(g => g.name);
   } catch (error) {
     console.error("Error fetching teacher groups:", error);
     return [];

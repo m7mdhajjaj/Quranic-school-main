@@ -7,8 +7,6 @@ import type { PodiumProps } from "../types/ranking";
 import { getFullName } from "../utils/rankingHelpers";
 
 export const Podium = ({ topThreeStudents }: PodiumProps) => {
-  if (topThreeStudents.length < 3) return null;
-
   // Medal colors as Tailwind classes
   const getMedalClasses = (rank: number) => {
     if (rank === 1) return {

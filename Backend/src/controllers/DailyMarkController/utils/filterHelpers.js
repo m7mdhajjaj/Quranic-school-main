@@ -42,9 +42,13 @@ async function getUserGroupsByRole(user, requestedGroup = null) {
       // If specific group requested, check if it has students
       if (userGroup) {
         if (!teacherGroups.includes(userGroup)) {
-          throw new Error("ليس لديك صلاحية للوصول إلى هذه الحلقة أو الحلقة لا تحتوي على طلاب");
+          // Fallback: If the requested group is not accessible (e.g. inactive or no students), 
+          // don't throw error. Instead, fall back to the default selection logic.
+          userGroup = null;
         }
-      } else if (teacherGroups.length > 0) {
+      } 
+      
+      if (!userGroup && teacherGroups.length > 0) {
         // If no specific group requested, use first group with students
         userGroup = teacherGroups[0];
       }

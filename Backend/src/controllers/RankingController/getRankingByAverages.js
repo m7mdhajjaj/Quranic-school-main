@@ -32,26 +32,35 @@ const getRankingByAverages = async (req, res) => {
         allTeacherGroups = await getTeacherGroups(req.user._id);
         
         if (allTeacherGroups && allTeacherGroups.length > 0) {
-          // ✅ جلب الحلقات التي تحتوي على طلاب فقط (فلترة الحلقات الفارغة)
+          // ✅ جلب الحلقات التي تحتوي على طلاب (للاختيار الذكي الافتراضي)
           const groupsWithStudents = await Student.distinct('group', {
             group: { $in: allTeacherGroups }
           });
           
-          // ✅ ترتيب الحلقات أبجدياً لعرض أفضل
-          teacherGroups = groupsWithStudents.sort((a, b) => a.localeCompare(b, 'ar'));
+          // ✅ إرجاع جميع حلقات المعلم للقائمة المنسدلة (حتى الفارغة منها)
+          teacherGroups = allTeacherGroups.sort((a, b) => a.localeCompare(b, 'ar'));
           
           // If specific group requested, check if it has students
           if (userGroup) {
             // Check if teacher has access to this group (even if it has no students)
+            // Note: userGroup might be URL encoded or have slight differences, so we check loosely or ensure exact match
+            // But getTeacherGroups returns exact names from DB.
             if (!allTeacherGroups.includes(userGroup)) {
-              return res.status(403).json({
-                success: false,
-                message: "ليس لديك صلاحية للوصول إلى هذه الحلقة",
-              });
+               // Fallback: If the requested group is not accessible (e.g. inactive), 
+               // don't return 403. Instead, fall back to the default selection logic.
+               // This handles cases where a user has a stale group selected in their UI/LocalStorage.
+               console.log(`Teacher ${req.user._id} requested invalid/inactive group '${userGroup}'. Falling back to default.`);
+               userGroup = null;
             }
-          } else if (teacherGroups.length > 0) {
-            // If no specific group requested, use first group with students
-            userGroup = teacherGroups[0];
+          }
+          
+          if (!userGroup) {
+            // Smart default: Pick first group with students, otherwise first group
+            if (groupsWithStudents.length > 0) {
+                userGroup = teacherGroups.find(g => groupsWithStudents.includes(g)) || teacherGroups[0];
+            } else {
+                userGroup = teacherGroups[0];
+            }
           }
         }
       }

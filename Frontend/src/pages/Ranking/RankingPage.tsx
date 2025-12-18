@@ -60,6 +60,20 @@ const RankingPage = () => {
     userAuth.user
   );
 
+  // Update selectedGroup when teacherGroups are loaded (if empty or invalid)
+  useEffect(() => {
+    if (
+      userAuth.user?.role === "teacher" &&
+      teacherGroups &&
+      teacherGroups.length > 0
+    ) {
+      // If no group selected, OR selected group is not in the list of available groups (e.g. it was inactive)
+      if (!selectedGroup || !teacherGroups.includes(selectedGroup)) {
+        setSelectedGroup(teacherGroups[0]);
+      }
+    }
+  }, [teacherGroups, selectedGroup, userAuth.user]);
+
   // Socket: Refresh data when socket updates
   useEffect(() => {
     if (lastUpdate) {
@@ -81,7 +95,7 @@ const RankingPage = () => {
   // Get top three students who have marks (totalMarks > 0)
   const studentsWithMarks = students.filter(student => student.totalMarks > 0);
   const topThreeStudents = studentsWithMarks.slice(0, 3);
-  const showPodium = topThreeStudents.length === 3; // Only show if we have exactly 3 students with marks
+  const showPodium = topThreeStudents.length > 0; // Show podium if we have at least 1 student
 
   return (
     <div
