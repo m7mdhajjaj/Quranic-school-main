@@ -126,14 +126,32 @@ export const useNewsData = () => {
       window.clearTimeout(existing);
     }
 
-    validateTimersRef.current[name] = window.setTimeout(async () => {
-      if (!value.trim()) return;
-      const validation = await validateField(name, value);
-      if (!validation.isValid && validation.message) {
-        setFieldErrors((prev) => ({
-          ...prev,
-          [name]: validation.message!,
-        }));
+    // Use requestIdleCallback for non-critical validation to avoid blocking
+    validateTimersRef.current[name] = window.setTimeout(() => {
+      // Schedule validation in idle time to avoid blocking main thread
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(async () => {
+          if (!value.trim()) return;
+          const validation = await validateField(name, value);
+          if (!validation.isValid && validation.message) {
+            setFieldErrors((prev) => ({
+              ...prev,
+              [name]: validation.message!,
+            }));
+          }
+        }, { timeout: 500 });
+      } else {
+        // Fallback for browsers without requestIdleCallback
+        Promise.resolve().then(async () => {
+          if (!value.trim()) return;
+          const validation = await validateField(name, value);
+          if (!validation.isValid && validation.message) {
+            setFieldErrors((prev) => ({
+              ...prev,
+              [name]: validation.message!,
+            }));
+          }
+        });
       }
     }, 300);
   };
@@ -191,15 +209,18 @@ export const useNewsData = () => {
       setFieldErrors(validationErrors);
 
       // Scroll to first error with a small delay to ensure DOM is updated
-      setTimeout(() => {
-        const firstErrorField = document.querySelector('.border-red-500');
-        if (firstErrorField) {
-          firstErrorField.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-          });
-        }
-      }, 100);
+      // Use requestAnimationFrame for better performance
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const firstErrorField = document.querySelector('.border-red-500');
+          if (firstErrorField) {
+            firstErrorField.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center',
+            });
+          }
+        });
+      });
 
       return;
     }

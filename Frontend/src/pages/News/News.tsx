@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,14 +12,17 @@ import {
   NewsFilters,
   NewsEmptyState,
 } from './components';
+import NewsResourceHints from './components/NewsResourceHints';
 import CardSkeleton from '@/components/skeletons/CardSkeleton';
 
 const News = () => {
   const { user: currentUser } = useAuth();
 
-  // Check if user is teacher or admin
-  const isTeacherOrAdmin =
-    currentUser?.role === 'teacher' || currentUser?.role === 'admin';
+  // Check if user is teacher or admin - memoized to prevent re-renders
+  const isTeacherOrAdmin = useMemo(
+    () => currentUser?.role === 'teacher' || currentUser?.role === 'admin',
+    [currentUser?.role]
+  );
 
   // Use custom hook for all news data management
   const {
@@ -54,9 +57,31 @@ const News = () => {
   // تعطيل scroll الصفحة عند فتح الـ Modal
   useDisableBodyScroll(isModalOpen);
 
-  // Initialize AOS
+  // Initialize AOS - deferred to idle time for better performance
   useEffect(() => {
-    AOS.init({ duration: 800, once: true });
+    // Defer AOS initialization to avoid blocking main thread
+    const initAOS = () => {
+      AOS.init({ 
+        duration: 800, 
+        once: true,
+        // Performance optimizations
+        disable: 'mobile', // Disable on mobile for better performance
+        startEvent: 'DOMContentLoaded',
+        useClassNames: false,
+        disableMutationObserver: true, // Reduce overhead
+        throttleDelay: 99, // Throttle scroll events
+        debounceDelay: 50, // Debounce resize events
+      });
+    };
+
+    // Use requestIdleCallback to defer initialization
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(initAOS, { timeout: 2000 });
+    } else {
+      // Fallback: defer with setTimeout
+      const timer = setTimeout(initAOS, 100);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   // ترتيب العرض حسب المطلوب:
@@ -83,6 +108,7 @@ const News = () => {
   // بعد التحميل: تظهر الصفحة كاملة
   return (
     <main className="container mx-auto px-4 py-6" dir="rtl">
+      <NewsResourceHints newsItems={newsItems} />
       <NewsHeader />
       <div className="space-y-4">
         <NewsFilters
@@ -107,13 +133,13 @@ const News = () => {
             hasNews={newsItems.length > 0}
             isFiltered={newsItems.length > 0 && filteredNews.length === 0}
             isTeacherOrAdmin={isTeacherOrAdmin}
-            onRetry={handleOpenModal} // Added missing required prop
+            onRetry={handleOpenModal}
             onAddNews={handleOpenModal}
           />
         ) : (
           filteredNews.map((item, index) => (
             <NewsCard
-              key={item._id}
+              key={`news-${item._id}`}
               news={item}
               index={index}
               isTeacherOrAdmin={isTeacherOrAdmin}

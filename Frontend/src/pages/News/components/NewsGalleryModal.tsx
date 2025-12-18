@@ -37,10 +37,14 @@ const NewsGalleryModal = ({
     if (!isOpen) return;
     setActiveIndex(clamp(initialIndex, 0, Math.max(0, safeImages.length - 1)));
     setShowDetails(true);
-    // trigger enter animation after mount
+    // trigger enter animation after mount using requestAnimationFrame for better performance
     setAnimateIn(false);
-    const t = window.setTimeout(() => setAnimateIn(true), 10);
-    return () => window.clearTimeout(t);
+    const rafId = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setAnimateIn(true);
+      });
+    });
+    return () => cancelAnimationFrame(rafId);
   }, [isOpen, initialIndex, safeImages.length]);
 
   // Keyboard controls

@@ -46,7 +46,10 @@ const NewsCard = memo(({
     (currentUserRole === 'admin' || newsAuthorId === currentUserId);
 
   return (
-    <div data-aos="fade-up" data-aos-delay={index * 100}>
+    <div 
+      data-aos={index < 8 ? "fade-up" : undefined} 
+      data-aos-delay={index < 8 ? Math.min(index * 80, 640) : undefined}
+    >
       <NewsGalleryModal
         isOpen={isGalleryOpen}
         title={news.title}
@@ -75,21 +78,29 @@ const NewsCard = memo(({
             alt={`${news.title} - صورة ${currentImageIndex + 1}`}
             width="600"
             height="400"
-            loading={index < 6 ? 'eager' : 'lazy'}
-            decoding="async"
+            loading={index < 4 ? 'eager' : 'lazy'}
+            decoding={index < 4 ? 'sync' : 'async'}
             fetchPriority={index < 2 ? 'high' : 'auto'}
             className={`w-full h-full object-cover rounded-t-xl transition-all duration-300 ${
               imageLoading ? 'opacity-0' : 'opacity-100'
             }`}
+            style={{ contentVisibility: 'auto' }}
             onLoad={() => {
-              setImageLoading(false);
-              setImageError(false);
+              // Use microtask to avoid blocking main thread
+              queueMicrotask(() => {
+                setImageLoading(false);
+                setImageError(false);
+              });
             }}
             onError={(e) => {
               const imgElement = e.target as HTMLImageElement;
               const originalSrc = images[currentImageIndex];
-              setImageLoading(false);
-              setImageError(true);
+              
+              // Use microtask to avoid blocking main thread
+              queueMicrotask(() => {
+                setImageLoading(false);
+                setImageError(true);
+              });
 
               // إذا كان placeholder، لا تفعل شيء
               if (originalSrc?.includes('placehold.co')) return;
@@ -98,19 +109,19 @@ const NewsCard = memo(({
               if (originalSrc?.includes('uploads/news/')) {
                 if (originalSrc.includes('/api/uploads/')) {
                   imgElement.src = originalSrc.replace('/api/uploads/', '/uploads/');
-                  setImageError(false);
+                  queueMicrotask(() => setImageError(false));
                   return;
                 }
                 if (originalSrc.startsWith('uploads/')) {
                   imgElement.src = originalSrc;
-                  setImageError(false);
+                  queueMicrotask(() => setImageError(false));
                   return;
                 }
               }
               
               // استخدام صورة بديلة
               imgElement.src = 'https://placehold.co/600x400/e9f5f2/1f6357?text=صورة+غير+متوفرة';
-              setImageError(false);
+              queueMicrotask(() => setImageError(false));
             }}
           />
           
@@ -120,10 +131,13 @@ const NewsCard = memo(({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setCurrentImageIndex((prev) => 
-                    prev === 0 ? images.length - 1 : prev - 1
-                  );
-                  setImageLoading(true);
+                  // Use microtask for state updates to avoid blocking
+                  queueMicrotask(() => {
+                    setCurrentImageIndex((prev) => 
+                      prev === 0 ? images.length - 1 : prev - 1
+                    );
+                    setImageLoading(true);
+                  });
                 }}
                 className="absolute left-3 top-1/2 -translate-y-1/2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full p-2.5 transition-all z-30 backdrop-blur-sm shadow-xl hover:scale-110 opacity-90 hover:opacity-100"
                 aria-label="الصورة السابقة"
@@ -133,10 +147,13 @@ const NewsCard = memo(({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setCurrentImageIndex((prev) => 
-                    prev === images.length - 1 ? 0 : prev + 1
-                  );
-                  setImageLoading(true);
+                  // Use microtask for state updates to avoid blocking
+                  queueMicrotask(() => {
+                    setCurrentImageIndex((prev) => 
+                      prev === images.length - 1 ? 0 : prev + 1
+                    );
+                    setImageLoading(true);
+                  });
                 }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full p-2.5 transition-all z-30 backdrop-blur-sm shadow-xl hover:scale-110 opacity-90 hover:opacity-100"
                 aria-label="الصورة التالية"
@@ -158,8 +175,11 @@ const NewsCard = memo(({
                     key={idx}
                     onClick={(e) => {
                       e.stopPropagation();
-                      setCurrentImageIndex(idx);
-                      setImageLoading(true);
+                      // Use microtask for state updates to avoid blocking
+                      queueMicrotask(() => {
+                        setCurrentImageIndex(idx);
+                        setImageLoading(true);
+                      });
                     }}
                     className={`h-1.5 rounded-full transition-all ${
                       idx === currentImageIndex
@@ -244,6 +264,21 @@ const NewsCard = memo(({
       </Card>
     </div>
   );
+}, (prevProps, nextProps) => {
+  // Custom comparison function to prevent unnecessary re-renders
+  return (
+    prevProps.news._id === nextProps.news._id &&
+    prevProps.news.title === nextProps.news.title &&
+    prevProps.news.content === nextProps.news.content &&
+    prevProps.news.image === nextProps.news.image &&
+    prevProps.index === nextProps.index &&
+    prevProps.isTeacherOrAdmin === nextProps.isTeacherOrAdmin &&
+    prevProps.currentUserId === nextProps.currentUserId &&
+    prevProps.currentUserRole === nextProps.currentUserRole &&
+    JSON.stringify(prevProps.news.images) === JSON.stringify(nextProps.news.images)
+  );
 });
+
+NewsCard.displayName = 'NewsCard';
 
 export default NewsCard;
