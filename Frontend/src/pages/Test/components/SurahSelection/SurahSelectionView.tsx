@@ -21,10 +21,10 @@ export const SurahSelectionView: React.FC<SurahSelectionViewProps> = ({
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 p-4 md:p-8"
+      className="min-h-screen bg-gradient-to-b from-emerald-50 via-teal-50 to-white p-4 md:p-8"
       dir="rtl"
     >
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         {/* العنوان */}
         <PageHeader
           title="اختبار القرآن الكريم"
@@ -33,10 +33,10 @@ export const SurahSelectionView: React.FC<SurahSelectionViewProps> = ({
         />
 
         {/* بطاقة السور */}
-        <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl p-6 md:p-8 mb-8 border border-indigo-100">
+        <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl p-6 md:p-8 mb-8 border border-emerald-100">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-3 rounded-xl shadow-md">
+              <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-3 rounded-xl shadow-md">
                 <span className="text-2xl">📖</span>
               </div>
               <div>
@@ -58,8 +58,8 @@ export const SurahSelectionView: React.FC<SurahSelectionViewProps> = ({
           </div>
 
           {selectedSurahs.length === 0 && (
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-xl mb-4 border border-blue-200">
-              <p className="text-gray-700 text-center font-medium">
+            <div className="bg-gradient-to-r from-emerald-50 to-teal-50 p-4 rounded-xl mb-4 border border-emerald-200">
+              <p className="text-emerald-800 text-center font-medium">
                 👈 اختر سورة واحدة على الأقل للبدء في الاختبار
               </p>
             </div>

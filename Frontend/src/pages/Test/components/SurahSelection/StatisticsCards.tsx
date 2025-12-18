@@ -15,17 +15,17 @@ export const StatisticsCards: React.FC<StatisticsCardsProps> = ({
 
   return (
     <div className="mt-6 sm:mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-      <div className="bg-gradient-to-br from-blue-100 to-indigo-100 p-4 sm:p-5 rounded-xl sm:rounded-2xl border border-blue-200 text-center">
+      <div className="bg-gradient-to-br from-emerald-100 to-teal-100 p-4 sm:p-5 rounded-xl sm:rounded-2xl border border-emerald-200 text-center">
         <div className="text-2xl sm:text-3xl mb-1 sm:mb-2">📊</div>
-        <div className="text-xl sm:text-2xl font-bold text-blue-700">~10</div>
-        <div className="text-xs sm:text-sm text-blue-600">أسئلة متوقعة</div>
+        <div className="text-xl sm:text-2xl font-bold text-emerald-700">~10</div>
+        <div className="text-xs sm:text-sm text-emerald-600">أسئلة متوقعة</div>
       </div>
-      <div className="bg-gradient-to-br from-purple-100 to-pink-100 p-4 sm:p-5 rounded-xl sm:rounded-2xl border border-purple-200 text-center">
+      <div className="bg-gradient-to-br from-teal-100 to-cyan-100 p-4 sm:p-5 rounded-xl sm:rounded-2xl border border-teal-200 text-center">
         <div className="text-2xl sm:text-3xl mb-1 sm:mb-2">⏱️</div>
-        <div className="text-xl sm:text-2xl font-bold text-purple-700">
+        <div className="text-xl sm:text-2xl font-bold text-teal-700">
           20 ث
         </div>
-        <div className="text-xs sm:text-sm text-purple-600">لكل سؤال</div>
+        <div className="text-xs sm:text-sm text-teal-600">لكل سؤال</div>
       </div>
       <div className="bg-gradient-to-br from-amber-100 to-yellow-100 p-4 sm:p-5 rounded-xl sm:rounded-2xl border border-amber-200 text-center">
         <div className="text-2xl sm:text-3xl mb-1 sm:mb-2">🎯</div>

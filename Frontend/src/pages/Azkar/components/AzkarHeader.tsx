@@ -39,21 +39,21 @@ const AzkarHeader = ({
       
       {/* الأزرار والشارة */}
       <div className="flex items-center justify-between gap-4 px-4" dir="rtl">
-        <Button
-          onClick={handleReset}
-          variant="primary"
-          size="md"
-          className="bg-blue-500 hover:bg-blue-600">
-          إعادة تعيين
+        <Button onClick={onBack} variant="ghost" size="md">
+          <span className="text-2xl">→</span>
+          <span className="font-medium">رجوع</span>
         </Button>
 
         <Badge variant="success" size="lg">
           التقدم: {completedCount} / {totalCount}
         </Badge>
 
-        <Button onClick={onBack} variant="ghost" size="md">
-          <span className="font-medium">رجوع</span>
-          <span className="text-2xl">←</span>
+        <Button
+          onClick={handleReset}
+          variant="primary"
+          size="md"
+          className="bg-blue-500 hover:bg-blue-600">
+          إعادة تعيين
         </Button>
       </div>
     </div>

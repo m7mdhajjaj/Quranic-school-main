@@ -20,7 +20,7 @@ export const TestView: React.FC<TestViewProps> = ({
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 p-4 md:p-8"
+      className="min-h-screen bg-gradient-to-b from-emerald-50 via-teal-50 to-white p-4 md:p-8"
       dir="rtl">
       <div className="max-w-3xl mx-auto">
         {/* العنوان */}
@@ -40,9 +40,9 @@ export const TestView: React.FC<TestViewProps> = ({
         <Timer timer={questionTimer} isActive={true} />
 
         {/* بطاقة السؤال */}
-        <div className="bg-white/95 backdrop-blur-lg rounded-3xl shadow-2xl p-6 md:p-8 mb-6 border border-blue-100">
+        <div className="bg-white/95 backdrop-blur-lg rounded-3xl shadow-2xl p-6 md:p-8 mb-6 border border-emerald-100">
           <div className="flex items-center gap-2 mb-4">
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-3 py-1 rounded-full text-sm font-bold">
+            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-3 py-1 rounded-full text-sm font-bold">
               سؤال {currentQuestionIndex + 1}
             </div>
             <div className="bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-700 px-3 py-1 rounded-full text-sm font-medium border border-amber-200">
@@ -84,8 +84,8 @@ export const TestView: React.FC<TestViewProps> = ({
                       : isWrong
                       ? "bg-gradient-to-r from-red-100 to-pink-100 border-red-500 text-red-800 shadow-lg"
                       : isSelected
-                      ? "bg-gradient-to-r from-blue-100 to-indigo-100 border-blue-500 text-blue-800"
-                      : "bg-white border-gray-300 hover:border-indigo-400 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50 hover:shadow-md hover:-translate-y-0.5"
+                      ? "bg-gradient-to-r from-emerald-100 to-teal-100 border-emerald-500 text-emerald-800"
+                      : "bg-white border-gray-300 hover:border-emerald-400 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-teal-50 hover:shadow-md hover:-translate-y-0.5"
                   } ${hasAnswered ? "cursor-default" : "cursor-pointer"}`}>
                   <div className="flex items-center justify-between">
                     <span className="flex-1">{option}</span>

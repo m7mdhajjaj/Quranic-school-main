@@ -77,7 +77,7 @@ export const getPerformanceGradient = (percentage: number): string => {
 
   if (isPerfect) return 'from-yellow-400 to-orange-400';
   if (isGood) return 'from-emerald-400 to-teal-400';
-  if (isAverage) return 'from-blue-400 to-cyan-400';
+  if (isAverage) return 'from-teal-400 to-cyan-400';
   return 'from-gray-400 to-slate-400';
 };
 
@@ -89,7 +89,7 @@ export const getProgressColor = (percentage: number): string => {
 
   if (isPerfect) return '#f59e0b';
   if (isGood) return '#10b981';
-  if (isAverage) return '#3b82f6';
+  if (isAverage) return '#14b8a6';
   return '#6b7280';
 };
 
@@ -144,7 +144,7 @@ export const getTimerClasses = (timer: number): string => {
   if (isWarning) {
     return 'bg-gradient-to-br from-yellow-400 to-orange-400 text-white';
   }
-  return 'bg-gradient-to-br from-blue-500 to-indigo-500 text-white';
+  return 'bg-gradient-to-br from-emerald-500 to-teal-500 text-white';
 };
 
 /**

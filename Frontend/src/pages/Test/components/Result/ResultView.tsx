@@ -20,7 +20,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 p-4 md:p-8 flex items-center justify-center"
+      className="min-h-screen bg-gradient-to-b from-emerald-50 via-teal-50 to-white p-4 md:p-8 flex items-center justify-center"
       dir="rtl"
     >
       <div className="max-w-3xl w-full">
@@ -60,7 +60,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
                       : isGood
                         ? 'text-emerald-600'
                         : isAverage
-                          ? 'text-blue-600'
+                          ? 'text-teal-600'
                           : 'text-gray-600'
                   }`}
                 >
@@ -91,11 +91,11 @@ export const ResultView: React.FC<ResultViewProps> = ({
                 ✗ إجابات خاطئة
               </div>
             </div>
-            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-6 rounded-2xl border-2 border-blue-200 hover:shadow-lg transition-shadow">
-              <div className="text-4xl font-bold text-blue-600 mb-1">
+            <div className="bg-gradient-to-br from-teal-50 to-cyan-50 p-6 rounded-2xl border-2 border-teal-200 hover:shadow-lg transition-shadow">
+              <div className="text-4xl font-bold text-teal-600 mb-1">
                 {result.totalQuestions}
               </div>
-              <div className="text-sm font-medium text-blue-700">
+              <div className="text-sm font-medium text-teal-700">
                 📝 إجمالي الأسئلة
               </div>
             </div>

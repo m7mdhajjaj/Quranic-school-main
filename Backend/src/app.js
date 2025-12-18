@@ -161,6 +161,7 @@ app.use('/api', require('./routes/profileRoutes'));
 app.use('/api/upload', require('./routes/UploadRoutes/uploadRoutes'));
 app.use('/api/warnings', require('./routes/WarningRoutes/WarningRoutes'));
 app.use('/api/quran', require('./routes/QuranRoutes/quranRoutes'));
+app.use('/api/test', require('./routes/testRoutes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

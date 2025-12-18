@@ -27,9 +27,9 @@ const Azkar = () => {
   if (selectedCategory && categoryWithStats) {
     return (
       <div
-        className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 p-4 md:p-8"
+        className="min-h-screen bg-gradient-to-b from-emerald-50 via-teal-50 to-white p-4 md:p-8"
         dir="rtl">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <AzkarHeader
             title={categoryWithStats.title}
             icon={categoryWithStats.icon}
@@ -64,9 +64,9 @@ const Azkar = () => {
   // Main Categories View
   return (
     <div
-      className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 p-4 md:p-8"
+      className="min-h-screen bg-gradient-to-b from-emerald-50 via-teal-50 to-white p-4 md:p-8"
       dir="rtl">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <PageHeader />
         <InfoMessage />
 
