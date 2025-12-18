@@ -81,6 +81,5 @@ export const useTeachersData = (hasPermission: boolean) => {
     retryCount,
     apiStats,
     fetchTeachers,
-    onTeacherStatusChange: handleTeacherStatusChange, // expose for manual updates
   };
 };
