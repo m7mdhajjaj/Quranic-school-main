@@ -20,6 +20,7 @@ const getRankingByAverages = async (req, res) => {
     // Get user's group(s)
     let userGroup = group || null;
     let teacherGroups = null;
+    let allTeacherGroups = [];
     
     if (req.user) {
       if (req.user.role === "student") {
@@ -28,7 +29,7 @@ const getRankingByAverages = async (req, res) => {
         userGroup = studentData ? studentData.group : null;
       } else if (req.user.role === "teacher") {
         // Teacher: get assigned groups that have students ONLY
-        const allTeacherGroups = await getTeacherGroups(req.user._id);
+        allTeacherGroups = await getTeacherGroups(req.user._id);
         
         if (allTeacherGroups && allTeacherGroups.length > 0) {
           // ✅ جلب الحلقات التي تحتوي على طلاب فقط (فلترة الحلقات الفارغة)
@@ -41,10 +42,11 @@ const getRankingByAverages = async (req, res) => {
           
           // If specific group requested, check if it has students
           if (userGroup) {
-            if (!teacherGroups.includes(userGroup)) {
+            // Check if teacher has access to this group (even if it has no students)
+            if (!allTeacherGroups.includes(userGroup)) {
               return res.status(403).json({
                 success: false,
-                message: "ليس لديك صلاحية للوصول إلى هذه الحلقة أو الحلقة لا تحتوي على طلاب",
+                message: "ليس لديك صلاحية للوصول إلى هذه الحلقة",
               });
             }
           } else if (teacherGroups.length > 0) {
@@ -63,7 +65,7 @@ const getRankingByAverages = async (req, res) => {
       filter.group = userGroup;
     } else if (req.user && req.user.role === "teacher") {
       // Teacher: specific group if selected, or first group
-      if (userGroup && teacherGroups && teacherGroups.includes(userGroup)) {
+      if (userGroup && allTeacherGroups.includes(userGroup)) {
         filter.group = userGroup;
       } else if (teacherGroups && teacherGroups.length > 0) {
         filter.group = teacherGroups[0];
