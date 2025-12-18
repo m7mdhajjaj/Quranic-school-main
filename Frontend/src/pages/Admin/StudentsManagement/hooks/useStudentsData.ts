@@ -4,7 +4,6 @@ import {
   getStudentStats,
 } from "@/Api/studentApi";
 import type { Student, ApiStats } from "../types";
-import { useUserStatusSocket } from "@/Socket/StatusSocket";
 
 export const useStudentsData = (hasPermission: boolean) => {
   const [students, setStudents] = useState<Student[]>([]);
@@ -12,22 +11,6 @@ export const useStudentsData = (hasPermission: boolean) => {
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [apiStats, setApiStats] = useState<ApiStats | null>(null);
-
-  // تحديث حالة الطالب لحظياً عند تغيير حالته
-  const handleStudentStatusChange = useCallback((data: { userId: string; isActive: boolean; lastSeen: string }) => {
-    console.log('🔄 Updating student status:', data);
-    
-    setStudents(prevStudents => 
-      prevStudents.map(student => 
-        student._id === data.userId 
-          ? { ...student, isActive: data.isActive, lastSeen: new Date(data.lastSeen) }
-          : student
-      )
-    );
-  }, []);
-
-  // استخدام Socket للتحديثات اللحظية
-  useUserStatusSocket(handleStudentStatusChange, 'student');
 
   const fetchStudents = useCallback(async (retryAttempt = 0, filters?: {
     gender?: string;

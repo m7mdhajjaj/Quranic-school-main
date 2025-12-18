@@ -1,7 +1,7 @@
 // contexts/UserStatusContext.tsx
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { useUserStatusSocket } from '../Socket/StatusSocket';
+import { socketManager } from '../Socket/SocketManager';
 import api from '../Api/api';
 
 // تعريف الواجهات والأنواع
@@ -16,6 +16,8 @@ export interface UserStatusContextType {
   userStatuses: Record<string, UserStatusState>;
   getUserStatus: (userId?: string) => UserStatusState;
   refreshStatus: () => void;
+  joinRoom: (roomType: 'teachers' | 'students' | 'admin') => void;
+  leaveRoom: (roomType: 'teachers' | 'students' | 'admin') => void;
 }
 
 // إنشاء السياق
@@ -79,8 +81,68 @@ export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       }));
   }, []);
 
-  // استخدام useUserStatusSocket hook للاستماع لتحديثات Socket
-  useUserStatusSocket(handleUserStatusChange);
+  // الاستماع لتحديثات Socket مباشرة
+  useEffect(() => {
+    if (!socketManager.isConnected()) return;
+
+    console.log('👂 [UserStatusContext] Setting up status listener...');
+    
+    // الاشتراك في الحدث
+    socketManager.on('userStatusChange', handleUserStatusChange);
+
+    return () => {
+      console.log('🧹 [UserStatusContext] Cleaning up status listener...');
+      socketManager.off('userStatusChange', handleUserStatusChange);
+    };
+  }, [handleUserStatusChange]);
+
+  /**
+   * الانضمام لغرفة حسب نوع المستخدم
+   */
+  const joinRoom = useCallback((roomType: 'teachers' | 'students' | 'admin') => {
+    if (!socketManager.isConnected()) return;
+    
+    const eventMap = {
+      teachers: 'joinTeachers',
+      students: 'joinStudents',
+      admin: 'joinAdmin',
+    };
+    
+    const emojiMap = {
+      teachers: '👨‍🏫',
+      students: '👨‍🎓',
+      admin: '👨‍💼',
+    };
+    
+    socketManager.emit(eventMap[roomType], {
+      timestamp: Date.now(),
+    });
+    console.log(`${emojiMap[roomType]} Joined ${roomType} room`);
+  }, []);
+
+  /**
+   * مغادرة غرفة حسب نوع المستخدم
+   */
+  const leaveRoom = useCallback((roomType: 'teachers' | 'students' | 'admin') => {
+    if (!socketManager.isConnected()) return;
+    
+    const eventMap = {
+      teachers: 'leaveTeachers',
+      students: 'leaveStudents',
+      admin: 'leaveAdmin',
+    };
+    
+    const emojiMap = {
+      teachers: '👨‍🏫',
+      students: '👨‍🎓',
+      admin: '👨‍💼',
+    };
+    
+    socketManager.emit(eventMap[roomType], {
+      timestamp: Date.now(),
+    });
+    console.log(`${emojiMap[roomType]} Left ${roomType} room`);
+  }, []);
 
   // جلب الحالة الأولية للمستخدم الحالي
   useEffect(() => {
@@ -144,6 +206,8 @@ export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     userStatuses, // إضافة userStatuses للسماح للمكونات بمراقبة التغييرات
     getUserStatus,
     refreshStatus,
+    joinRoom,
+    leaveRoom,
   };
 
   return (

@@ -13,6 +13,7 @@ import {
   registerTokenWithBackend 
 } from '../config/firebase';
 import { useAuth } from './useAuth';
+import notificationSoundUrl from '../assets/sounds/notification.mp3';
 
 interface NotificationPayload {
   notification?: {
@@ -113,6 +114,14 @@ export const useFirebaseMessaging = (): UseFirebaseMessagingReturn => {
       if (typedPayload.notification) {
         const { title, body } = typedPayload.notification;
         
+        // Play notification sound
+        try {
+          const audio = new Audio(notificationSoundUrl);
+          audio.play().catch(err => console.warn('Could not play notification sound:', err));
+        } catch (err) {
+          console.warn('Error initializing audio:', err);
+        }
+
         // Queue notification creation for later
         requestAnimationFrame(() => {
           setTimeout(() => {

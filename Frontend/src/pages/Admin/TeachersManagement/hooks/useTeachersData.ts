@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { getAllTeachers, getTeacherStats } from "@/Api/teacherApi";
 import type { Teacher, ApiStats, TeacherFiltersParams } from "../types";
-import { useTeachersSocket } from "@/Socket/StatusSocket";
 
 export const useTeachersData = (hasPermission: boolean) => {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
@@ -9,22 +8,6 @@ export const useTeachersData = (hasPermission: boolean) => {
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [apiStats, setApiStats] = useState<ApiStats | null>(null);
-
-  // تحديث حالة المعلم لحظياً عند تغيير حالته
-  const handleTeacherStatusChange = useCallback((data: { userId: string; isActive: boolean; lastSeen: string }) => {
-    console.log('🔄 Updating teacher status:', data);
-    
-    setTeachers(prevTeachers => 
-      prevTeachers.map(teacher => 
-        teacher._id === data.userId 
-          ? { ...teacher, isActive: data.isActive, lastSeen: new Date(data.lastSeen) }
-          : teacher
-      )
-    );
-  }, []);
-
-  // استخدام Socket للتحديثات اللحظية
-  useTeachersSocket(handleTeacherStatusChange);
 
   const fetchTeachers = useCallback(async (retryAttempt = 0, filters?: TeacherFiltersParams) => {
     setIsLoading(true);

@@ -10,4 +10,4 @@ export {
   TeacherViewSkeleton, 
   GroupsGridSkeleton,
   AdminViewSkeleton 
-} from "./AttendanceSkeleton";
+} from "../../../components/skeletons/AttendanceSkeleton";

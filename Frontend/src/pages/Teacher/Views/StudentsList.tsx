@@ -5,7 +5,8 @@ import type { Student } from "@/Api/studentApi";
 import { EmptyState } from "@/components/UI/EmptyState";
 import Avatar from "@/components/Avatar/Avatar";
 import { CardSkeleton } from "@/components/skeletons";
-import { useUserStatusSocket } from "@/Socket/StatusSocket";
+import { UserStatusContext } from "@/Context/UserStatusContext";
+import { useContext } from "react";
 
 const COLOR_VARIANTS = [
   { gradient: "from-emerald-500 via-teal-500 to-cyan-500", bg: "from-emerald-50 via-teal-50/60 to-cyan-50/40", border: "border-emerald-200", icon: "text-emerald-600", hoverBorder: "hover:border-emerald-400" },
@@ -36,7 +37,9 @@ export const StudentsList: React.FC<StudentsListProps> = ({
   refreshTrigger = 0,
 }) => {
 
-  const { joinRoom, leaveRoom } = useUserStatusSocket();
+  const context = useContext(UserStatusContext);
+  const joinRoom = context?.joinRoom;
+  const leaveRoom = context?.leaveRoom;
   
   // استخدام الـ hook لفصل منطق البحث والفلترة
   const {
@@ -50,8 +53,10 @@ export const StudentsList: React.FC<StudentsListProps> = ({
 
   // Join students room for real-time updates
   useEffect(() => {
-    joinRoom('students');
-    return () => leaveRoom('students');
+    if (joinRoom && leaveRoom) {
+      joinRoom('students');
+      return () => leaveRoom('students');
+    }
   }, [joinRoom, leaveRoom]);
 
   const { students, error, isLoading, refetch } = useGroupStudents(groupId, {

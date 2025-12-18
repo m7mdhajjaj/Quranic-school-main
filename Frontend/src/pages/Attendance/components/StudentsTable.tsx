@@ -61,8 +61,8 @@ export const StudentsTable = ({
                       <input
                         type="checkbox"
                         checked={selectedAll}
-                        onChange={onToggleAll}
-                        className="w-5 h-5 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 cursor-pointer"
+                        readOnly
+                        className="w-5 h-5 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 pointer-events-none"
                         title="حضور الكل"
                       />
                     </div>

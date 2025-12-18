@@ -1,43 +1,82 @@
-/**
- * AttendanceSkeleton Component
- * Skeleton loader for AttendanceSection
- */
+// AttendanceSkeleton.tsx - Skeleton loaders for attendance pages
+import { Calendar, CalendarDays } from "lucide-react";
 
-export const AttendanceSkeleton = () => {
-  // استخدام قيم ثابتة بدلاً من Math.random() للأداء
-  const progressWidths = [45, 30, 25]; // قيم ثابتة للنسب
-  
+// Skeleton for Student View
+export const StudentViewSkeleton = () => {
   return (
-    <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 lg:p-6 border border-gray-100 shadow-sm relative overflow-hidden">
-      {/* Shimmer effect */}
-      <div className="absolute inset-0 skeleton-shimmer opacity-20"></div>
-      
-      <div className="relative z-10">
-        {/* Header */}
-        <div className="flex items-center gap-2 mb-4 sm:mb-6">
-          <div className="w-5 h-5 bg-gray-300 rounded animate-pulse"></div>
-          <div className="h-6 bg-gray-300 rounded w-32 animate-pulse"></div>
+    <div className="space-y-6 animate-pulse">
+      {/* Header Skeleton */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-3xl shadow-2xl p-8">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-3 bg-white/20 backdrop-blur-sm rounded-2xl">
+            <Calendar className="w-8 h-8 text-white opacity-50" />
+          </div>
+          <div className="space-y-2">
+            <div className="h-8 w-64 bg-white/30 rounded-lg"></div>
+            <div className="h-4 w-48 bg-white/20 rounded"></div>
+          </div>
         </div>
+        
+        <div className="mt-6">
+          <div className="h-4 w-32 bg-white/20 rounded mb-2"></div>
+          <div className="flex gap-3">
+            <div className="h-12 w-40 bg-white/30 rounded-xl"></div>
+            <div className="h-12 w-32 bg-white/30 rounded-xl"></div>
+          </div>
+        </div>
+      </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <div
-              key={index}
-              className="border-2 border-gray-200 rounded-xl p-4 sm:p-5 bg-gray-50">
-              <div className="flex items-center justify-between mb-2 sm:mb-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-300 rounded animate-pulse"></div>
-                <div className="h-8 sm:h-9 bg-gray-300 rounded w-12 animate-pulse"></div>
-              </div>
-              <div className="h-4 bg-gray-200 rounded w-16 mb-2 animate-pulse"></div>
-              
-              {/* Progress Bar */}
-              <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-                <div 
-                  className="h-full bg-gray-300 rounded-full transition-all duration-1000" 
-                  style={{ width: `${progressWidths[index]}%` }}></div>
-              </div>
-              <div className="h-3 bg-gray-200 rounded w-12 animate-pulse"></div>
+      {/* Stat Cards Skeleton */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="bg-gray-100 rounded-3xl p-6 h-32"></div>
+        ))}
+      </div>
+
+      {/* Timeline Skeleton */}
+      <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+        <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 py-6 px-8">
+          <div className="h-6 w-48 bg-white/30 rounded"></div>
+        </div>
+        <div className="p-8 space-y-4">
+          {[1, 2].map((i) => (
+            <div key={i} className="h-32 bg-gray-100 rounded-2xl"></div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Skeleton for Teacher View
+export const TeacherViewSkeleton = () => {
+  return (
+    <div className="space-y-6 animate-pulse">
+      {/* Toolbar Skeleton */}
+      <div className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl p-6">
+        <div className="flex justify-between items-center mb-4">
+          <div className="h-6 w-48 bg-white/30 rounded"></div>
+          <div className="h-10 w-48 bg-white/30 rounded-xl"></div>
+        </div>
+        <div className="grid grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-24 bg-white/20 rounded-2xl"></div>
+          ))}
+        </div>
+      </div>
+
+      {/* Table Skeleton */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="py-4 px-6 bg-gray-50">
+          <div className="h-6 w-32 bg-gray-200 rounded"></div>
+        </div>
+        <div className="divide-y divide-gray-100">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-16 px-6 flex items-center gap-4">
+              <div className="h-4 w-4 bg-gray-200 rounded"></div>
+              <div className="h-4 w-8 bg-gray-200 rounded"></div>
+              <div className="h-4 flex-1 bg-gray-200 rounded"></div>
+              <div className="h-8 w-24 bg-gray-200 rounded-full"></div>
             </div>
           ))}
         </div>
@@ -46,4 +85,37 @@ export const AttendanceSkeleton = () => {
   );
 };
 
-export default AttendanceSkeleton;
+// Skeleton for Groups Grid (Teacher)
+export const GroupsGridSkeleton = () => {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
+      {[1, 2, 3, 4, 5, 6].map((i) => (
+        <div key={i} className="bg-white rounded-2xl p-6 border border-gray-200 h-32"></div>
+      ))}
+    </div>
+  );
+};
+
+// Skeleton for Admin View
+export const AdminViewSkeleton = () => {
+  return (
+    <div className="space-y-6 animate-pulse">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="bg-white rounded-2xl p-6 border border-gray-200 h-28"></div>
+        ))}
+      </div>
+
+      {/* Main Content */}
+      <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+        <div className="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 py-6 px-8">
+          <div className="h-8 w-64 bg-white/30 rounded"></div>
+        </div>
+        <div className="p-8">
+          <div className="h-64 bg-gray-100 rounded-xl"></div>
+        </div>
+      </div>
+    </div>
+  );
+};

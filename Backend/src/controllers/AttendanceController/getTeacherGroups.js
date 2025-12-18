@@ -153,7 +153,7 @@ exports.getTeacherGroupsForAttendance = async (req, res) => {
         const group = groupsMap.get(row.groupId.toString());
         group.totalStudents++;
 
-        const isPresent = row.todayAttendance ? row.todayAttendance.isPresent : true; // Default to present
+        const isPresent = row.todayAttendance ? row.todayAttendance.isPresent : false; // Default to absent
         
         if (isPresent) presentToday++;
         else absentToday++;

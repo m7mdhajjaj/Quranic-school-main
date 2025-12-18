@@ -236,6 +236,8 @@ app.set('io', io);
 
 // Store online users
 const onlineUsers = new Map();
+// Store disconnect timeouts for graceful handling
+const disconnectTimeouts = new Map();
 
 // Initialize Notification Service immediately after Socket.IO is ready
 const notificationService = new NotificationService(io);
@@ -296,20 +298,20 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', (reason) => {
-    console.log(`User disconnected: ${socket.id}, reason: ${reason}`);
-    // Clean up user from online users when they disconnect
-    for (const [userId, userData] of onlineUsers.entries()) {
-      if (userData.socketId === socket.id) {
-        onlineUsers.delete(userId);
-        console.log(`Removed user ${userId} from online users`);
-        break;
-      }
-    }
+    // This handler is removed in favor of the comprehensive one at the end of the file
+    // to avoid duplicate handling and race conditions.
   });
 
   // User login - store their user ID and socket ID with improved handling
   socket.on('login', async (userData) => {
     const { userId, role, firstName } = userData;
+
+    // ✅ Graceful Reconnection: Cancel pending disconnect timeout if exists
+    if (disconnectTimeouts.has(userId)) {
+      console.log(`🔄 User ${userId} reconnected quickly. Cancelling offline status update.`);
+      clearTimeout(disconnectTimeouts.get(userId));
+      disconnectTimeouts.delete(userId);
+    }
 
     // Store user in online users map
     onlineUsers.set(userId, {
@@ -959,64 +961,81 @@ io.on('connection', (socket) => {
   socket.on('disconnect', async (reason) => {
     console.log(`🔌 Socket disconnected: ${socket.id} (reason: ${reason})`);
 
-    // Remove user from online users and set isActive to false
+    // Find user by socket ID
+    let disconnectedUserId = null;
+    let disconnectedUserData = null;
+
     for (const [userId, userData] of onlineUsers.entries()) {
       if (userData.socketId === socket.id) {
-        const { role, firstName } = userData;
+        disconnectedUserId = userId;
+        disconnectedUserData = userData;
+        break;
+      }
+    }
 
-        // Set isActive to false in database
+    if (disconnectedUserId && disconnectedUserData) {
+      const { role, firstName } = disconnectedUserData;
+
+      // Remove from onlineUsers immediately
+      onlineUsers.delete(disconnectedUserId);
+      console.log(`👋 User ${firstName} removed from online list`);
+      console.log(`📊 Remaining online users: ${onlineUsers.size}`);
+
+      // ✅ Graceful Disconnect: Delay DB update to allow for quick reconnection
+      const timeoutId = setTimeout(async () => {
         try {
           let updateResult;
           if (role === 'student') {
             updateResult = await Student.findByIdAndUpdate(
-              userId,
+              disconnectedUserId,
               { isActive: false, lastSeen: new Date() },
               { new: true }
             );
           } else if (role === 'admin') {
             const Admin = require('./schema/Admin');
             updateResult = await Admin.findByIdAndUpdate(
-              userId,
+              disconnectedUserId,
               { isActive: false, lastSeen: new Date() },
               { new: true }
             );
           } else if (role === 'teacher') {
             const Teacher = require('./schema/Teacher');
             updateResult = await Teacher.findByIdAndUpdate(
-              userId,
+              disconnectedUserId,
               { isActive: false, lastSeen: new Date() },
               { new: true }
             );
           }
 
-          console.log(`✅ User ${firstName} (${userId}) marked as inactive`);
+          if (updateResult) {
+            console.log(`✅ User ${firstName} (${disconnectedUserId}) marked as inactive (after delay)`);
 
-          // ✅ إرسال تحديث الحالة
-          const statusUpdate = {
-            userId: userId,
-            isActive: false,
-            lastSeen: updateResult?.lastSeen?.toISOString() || new Date().toISOString(),
-          };
-          
-          io.to('admin-room').emit('userStatusChange', statusUpdate);
-          
-          if (role === 'student') {
-            io.to('students').emit('userStatusChange', statusUpdate);
-          } else if (role === 'teacher') {
-            io.to('teachers').emit('userStatusChange', statusUpdate);
+            // ✅ إرسال تحديث الحالة
+            const statusUpdate = {
+              userId: disconnectedUserId,
+              isActive: false,
+              lastSeen: updateResult?.lastSeen?.toISOString() || new Date().toISOString(),
+            };
+            
+            io.to('admin-room').emit('userStatusChange', statusUpdate);
+            
+            if (role === 'student') {
+              io.to('students').emit('userStatusChange', statusUpdate);
+            } else if (role === 'teacher') {
+              io.to('teachers').emit('userStatusChange', statusUpdate);
+            }
           }
         } catch (error) {
           console.error(
-            `❌ Error setting isActive=false for user ${userId}:`,
+            `❌ Error setting isActive=false for user ${disconnectedUserId}:`,
             error.message
           );
+        } finally {
+          disconnectTimeouts.delete(disconnectedUserId);
         }
+      }, 5000); // 5 seconds delay
 
-        onlineUsers.delete(userId);
-        console.log(`👋 User ${firstName} removed from online list`);
-        console.log(`📊 Remaining online users: ${onlineUsers.size}`);
-        break;
-      }
+      disconnectTimeouts.set(disconnectedUserId, timeoutId);
     }
   });
 });

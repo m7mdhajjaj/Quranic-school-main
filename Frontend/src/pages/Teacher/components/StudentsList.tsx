@@ -6,7 +6,8 @@ import { EmptyState } from "@/components/UI/EmptyState";
 import { DropdownMenu } from "@/components/UI/DropdownMenu";
 import Avatar from "@/components/Avatar/Avatar";
 import { CardSkeleton } from "@/components/skeletons";
-import { useUserStatusSocket } from "@/Socket/StatusSocket";
+import { UserStatusContext } from "@/Context/UserStatusContext";
+import { useContext } from "react";
 
 interface StudentsListProps {
   groupId: string;
@@ -26,7 +27,9 @@ export const StudentsList: React.FC<StudentsListProps> = ({
   onDeleteStudent,
 }) => {
 
-  const { joinRoom, leaveRoom } = useUserStatusSocket();
+  const context = useContext(UserStatusContext);
+  const joinRoom = context?.joinRoom;
+  const leaveRoom = context?.leaveRoom;
   
   // استخدام الـ hook لفصل منطق البحث والفلترة
   const {
@@ -40,8 +43,10 @@ export const StudentsList: React.FC<StudentsListProps> = ({
 
   // Join students room for real-time updates
   useEffect(() => {
-    joinRoom('students');
-    return () => leaveRoom('students');
+    if (joinRoom && leaveRoom) {
+      joinRoom('students');
+      return () => leaveRoom('students');
+    }
   }, [joinRoom, leaveRoom]);
 
   const { students, error, isLoading } = useGroupStudents(groupId, {

@@ -47,31 +47,30 @@ export const useStudentSelection = ({
     onChangeDetected();
   }, [setStudents, onChangeDetected]);
 
-  // Toggle all students - استخدام functional update لتجنب dependency على selectedAll
+  // Toggle all students
   const toggleAllStudents = useCallback(() => {
-    setSelectedAll((prev) => {
-      const newState = !prev;
-      const visibleIds = visibleStudents.map((s) => s._id);
-      setStudents((prevStudents) =>
-        prevStudents.map((s) => {
-          if (visibleIds.includes(s._id)) {
-            // تحديث فقط إذا تغيرت الحالة
-            if (s.isPresent !== newState) {
-              const newTotalAbsences = (s.totalAbsences || 0) + (newState ? -1 : 1);
-              return { 
-                ...s, 
-                isPresent: newState,
-                totalAbsences: Math.max(0, newTotalAbsences)
-              };
-            }
+    const newState = !selectedAll;
+    setSelectedAll(newState);
+
+    const visibleIds = visibleStudents.map((s) => s._id);
+    setStudents((prevStudents) =>
+      prevStudents.map((s) => {
+        if (visibleIds.includes(s._id)) {
+          // تحديث فقط إذا تغيرت الحالة
+          if (s.isPresent !== newState) {
+            const newTotalAbsences = (s.totalAbsences || 0) + (newState ? -1 : 1);
+            return { 
+              ...s, 
+              isPresent: newState,
+              totalAbsences: Math.max(0, newTotalAbsences)
+            };
           }
-          return s;
-        })
-      );
-      onChangeDetected();
-      return newState;
-    });
-  }, [visibleStudents, setStudents, onChangeDetected]);
+        }
+        return s;
+      })
+    );
+    onChangeDetected();
+  }, [selectedAll, visibleStudents, setStudents, onChangeDetected]);
 
   return {
     selectedAll,

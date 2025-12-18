@@ -286,7 +286,7 @@ export const StudentView = ({ monthlyStats }: StudentViewProps) => {
                     </div>
 
                     {/* Stats Grid */}
-                    <div className="grid grid-cols-3 gap-4 mb-4">
+                    <div className="grid grid-cols-2 gap-4 mb-4">
                       {/* أيام الغياب */}
                       <div className="bg-white rounded-xl p-4 border border-gray-100 text-center hover:shadow-md transition-shadow">
                         <div className="text-2xl font-black text-red-600 mb-1">
@@ -302,37 +302,7 @@ export const StudentView = ({ monthlyStats }: StudentViewProps) => {
                         </div>
                         <div className="text-xs font-medium text-gray-600">إجمالي الأيام</div>
                       </div>
-
-                      {/* نسبة الغياب */}
-                      <div className="bg-white rounded-xl p-4 border border-gray-100 text-center hover:shadow-md transition-shadow">
-                        <div className="text-2xl font-black text-amber-600 mb-1">
-                          {m.rate.toFixed(1)}%
-                        </div>
-                        <div className="text-xs font-medium text-gray-600">نسبة الغياب</div>
-                      </div>
                     </div>
-
-                    {/* Progress Bar */}
-                    <div className="mb-4">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-xs font-semibold text-gray-600">معدل الحضور للشهر</span>
-                        <span className="text-xs font-bold text-emerald-600">{(100 - m.rate).toFixed(1)}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
-                          <div
-                          className={`h-full rounded-full transition-all duration-1000 ${
-                              m.rate === 0
-                              ? "bg-gradient-to-r from-emerald-500 to-teal-600"
-                                : m.rate <= 10
-                              ? "bg-gradient-to-r from-emerald-500 to-teal-500"
-                              : m.rate <= 25
-                              ? "bg-gradient-to-r from-amber-500 to-orange-500"
-                              : "bg-gradient-to-r from-red-500 to-rose-500"
-                            }`}
-                          style={{ width: `${100 - m.rate}%` }}
-                        ></div>
-                      </div>
-                        </div>
 
                     {/* تواريخ الغياب */}
                     {m.absenceDates && m.absenceDates.length > 0 && (
