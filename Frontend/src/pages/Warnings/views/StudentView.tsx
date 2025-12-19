@@ -34,10 +34,10 @@ export const StudentView: React.FC<StudentViewProps> = React.memo(({ warnings, l
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="text-center mb-8 animate-fade-in-down">
-          <div className="inline-block p-4 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl shadow-xl mb-4">
+          <div className="inline-block p-4 bg-gradient-to-br from-red-500 to-rose-500 rounded-2xl shadow-xl mb-4">
             <span className="text-5xl">⚠️</span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent mb-4">
             إنذاراتي
           </h1>
           <p className="text-gray-600 text-lg font-medium">

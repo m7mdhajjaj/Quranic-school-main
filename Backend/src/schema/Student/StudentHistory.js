@@ -1,7 +1,6 @@
 // ============================================================================
 // schema/Student/StudentHistory.js - Student History Schema
 // ============================================================================
-// Moved from root schema folder for better organization
 
 const mongoose = require("mongoose");
 
@@ -18,11 +17,18 @@ const studentHistorySchema = new mongoose.Schema(
     eventType: {
       type: String,
       enum: [
-        "WARNING",        // إنذار (تنبيه، أول، ثاني، ثالث)
-        "GROUP_CHANGE",   // نقل من حلقة لأخرى
-        "GROUP_REMOVAL",  // إزالة من حلقة
-        "EXPULSION",      // فصل نهائي
-        "RESTORATION"     // إعادة بعد فصل
+        // Discipline
+        "WARNING",          // إنذار
+        "WARNING_ESCALATION", // تصعيد إنذار
+        "WARNING_REMOVAL",  // حذف إنذار
+        "SUSPENSION",       // تعليق مؤقت
+        "EXPULSION",        // فصل نهائي
+        "RESTORATION",      // إعادة بعد فصل / تعليق
+
+        // Group
+        "GROUP_ASSIGNMENT", // تسجيل بحلقة
+        "GROUP_CHANGE",     // نقل بين حلقات
+        "GROUP_REMOVAL",    // إزالة من حلقة
       ],
       required: true,
       index: true,
@@ -32,9 +38,9 @@ const studentHistorySchema = new mongoose.Schema(
     warningLevel: {
       type: String,
       enum: ["warning", "first", "second", "third"],
-      required: function() {
+      required: function () {
         return this.eventType === "WARNING";
-      }
+      },
     },
 
     reason: {
@@ -42,27 +48,23 @@ const studentHistorySchema = new mongoose.Schema(
       required: true,
     },
 
-    // 🔐 Snapshot ثابت - معلومات الحلقة والمعلم وقت الحدث
+    // Snapshot ثابت - معلومات الحلقة والمعلم وقت الحدث
     groupId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Group",
-      required: false, // قد لا يكون موجود في حالة الفصل
     },
     groupName: {
       type: String,
-      required: false,
     },
     teacherId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Teacher",
-      required: false,
     },
     teacherName: {
       type: String,
-      required: false,
     },
 
-    // في حالة النقل بين حلقات (GROUP_CHANGE)
+    // في حالة النقل بين حلقات
     previousGroup: {
       groupId: { type: mongoose.Schema.Types.ObjectId, ref: "Group" },
       groupName: String,
@@ -70,11 +72,11 @@ const studentHistorySchema = new mongoose.Schema(
       teacherName: String,
     },
 
-    // من قام بهذا الإجراء
+    // من قام بالإجراء
     actionBy: {
       userId: {
         type: mongoose.Schema.Types.ObjectId,
-        refPath: "actionBy.userModel"
+        refPath: "actionBy.userModel",
       },
       userModel: {
         type: String,
@@ -84,20 +86,19 @@ const studentHistorySchema = new mongoose.Schema(
       userName: {
         type: String,
         required: true,
-      }
+      },
     },
 
-    // ربط بالإنذار الأصلي (إذا كان الحدث مرتبط بإنذار)
+    // ربط بالإنذار الأصلي
     warningId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Warning",
-      required: false,
-    }
+    },
   },
   { timestamps: true }
 );
 
-// فهرس مركب لتسريع الاستعلامات
+// Indexes
 studentHistorySchema.index({ studentId: 1, createdAt: -1 });
 studentHistorySchema.index({ eventType: 1, createdAt: -1 });
 

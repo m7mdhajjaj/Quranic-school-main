@@ -426,17 +426,36 @@ export const TeacherTableView: React.FC<TeacherTableViewProps> = ({
 
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                               {teacher.groups && teacher.groups.length > 0 ? (
-                                teacher.groups.map((group, index) => (
-                                  <div
-                                    key={index}
-                                    className="flex items-center gap-2 p-3 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg border-2 border-emerald-200 hover:border-emerald-400 hover:shadow-md transition-all"
-                                  >
-                                    <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full flex-shrink-0"></div>
-                                    <span className="text-sm text-gray-900 font-semibold truncate">
-                                      {getGroupDisplayName(group)}
-                                    </span>
-                                  </div>
-                                ))
+                                teacher.groups.map((group, index) => {
+                                  const groupObj = typeof group === 'object' ? group : { name: group };
+                                  const isActive = (groupObj as any).isActive !== false;
+                                  return (
+                                    <div
+                                      key={index}
+                                      className={`flex flex-col gap-2 p-3 rounded-lg border-2 transition-all ${
+                                        isActive
+                                          ? 'bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200 hover:border-emerald-400'
+                                          : 'bg-gradient-to-br from-gray-50 to-slate-50 border-gray-200 hover:border-gray-400'
+                                      } hover:shadow-md`}
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
+                                          isActive ? 'bg-emerald-500' : 'bg-gray-400'
+                                        }`}></div>
+                                        <span className="text-sm text-gray-900 font-semibold truncate">
+                                          {getGroupDisplayName(group)}
+                                        </span>
+                                      </div>
+                                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full w-fit ${
+                                        isActive
+                                          ? 'bg-emerald-100 text-emerald-700'
+                                          : 'bg-gray-100 text-gray-600'
+                                      }`}>
+                                        {isActive ? 'نشط' : 'غير نشط'}
+                                      </span>
+                                    </div>
+                                  );
+                                })
                               ) : (
                                 <div className="text-sm text-gray-500 italic p-4 bg-gray-50 rounded-lg col-span-full text-center border-2 border-dashed border-gray-200">
                                   لا توجد حلقات مُدرَّسة
