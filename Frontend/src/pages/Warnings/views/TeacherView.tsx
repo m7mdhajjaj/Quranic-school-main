@@ -14,7 +14,7 @@ import { GroupStatisticsModal } from '../components/statistics/GroupStatisticsMo
 import { DraggableSearchButton } from '../components/shared/DraggableSearchButton';
 import { useGroupStatistics, type GroupStatistics } from '../hooks/useGroupStatistics';
 import { ArrowRight, Users } from 'lucide-react';
-import { SuspendedStudentsSidebar } from '../components/shared';
+import { StudentHistorySidebar } from '../components/shared/StudentHistorySidebar';
 
 // ✅ Constants extracted outside component for performance
 const ANIMATION_DELAYS = [
@@ -41,7 +41,7 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
 }) => {
   const selectedGroup = selectedGroupProp;
   const [showGroupStats, setShowGroupStats] = useState(false);
-  const [showSuspendedSidebar, setShowSuspendedSidebar] = useState(false);
+  const [showHistorySidebar, setShowHistorySidebar] = useState(false);
   
   const [selectedGroupForStats, setSelectedGroupForStats] =
     useState<Group | null>(null);
@@ -55,9 +55,7 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
   // ✅ محسّن بـ useCallback
   const handleGroupSelect = useCallback((group: Group) => {
     console.log('Selected Group:', group);
-    console.log('Suspended Students:', group.suspendedStudents);
     onGroupSelect(group);
-    setShowSuspendedSidebar(false); // Reset sidebar state when changing groups
   }, [onGroupSelect]);
 
   const handleBack = useCallback(() => {
@@ -83,6 +81,10 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
   const handleCloseStatsModal = useCallback(() => {
     setShowGroupStats(false);
     setGroupStatisticsData(null);
+  }, []);
+
+  const handleCloseHistory = useCallback(() => {
+    setShowHistorySidebar(false);
   }, []);
 
   // ✅ Handle search
@@ -113,7 +115,7 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
   if (!selectedGroup) {
     return (
       <div
-        className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 p-4 md:p-8 bg-size-200 animate-gradient"
+        className="min-h-screen bg-gradient-to-b from-emerald-50 via-teal-50 to-emerald-100 p-4 md:p-8 bg-size-200 animate-gradient"
         dir="rtl"
       >
         <div className="max-w-7xl mx-auto space-y-6">
@@ -186,32 +188,55 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
   // عرض طلاب الحلقة المختارة
   return (
     <div
-      className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 p-4 md:p-8"
+      className="min-h-screen bg-gradient-to-b from-emerald-50 via-teal-50 to-emerald-100 p-4 md:p-8"
       dir="rtl"
     >
+      {/* زر الطلاب المفصولين - Fixed على الشمال */}
+      <button
+        onClick={() => setShowHistorySidebar(true)}
+        className="fixed left-2 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-1.5 bg-gradient-to-b from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white px-2 py-3 rounded-xl shadow-lg hover:shadow-red-500/50 transition-all duration-300 hover:scale-105 group"
+        title="عرض الطلاب المفصولين"
+      >
+        <span className="text-xl">⛔</span>
+        <div className="flex flex-col items-center gap-0.5">
+          {['الطلاب', 'المفصولين'].map((word, i) => (
+            <span key={i} className="text-[10px] font-bold whitespace-nowrap leading-tight">
+              {word}
+            </span>
+          ))}
+        </div>
+        {selectedGroup.suspendedStudents && selectedGroup.suspendedStudents.length > 0 && (
+          <span className="absolute -top-1 -right-1 bg-white text-red-600 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shadow-md animate-pulse">
+            {selectedGroup.suspendedStudents.length}
+          </span>
+        )}
+      </button>
+
       <div className="max-w-[1920px] mx-auto space-y-6">
         {/* Header */}
-        <div className="bg-white/80 backdrop-blur-lg rounded-3xl shadow-xl p-6 border border-white/50 animate-fade-in-down">
+        <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-3xl shadow-xl p-6 border border-emerald-300 animate-fade-in-down">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <Button
               onClick={handleBack}
               variant="secondary"
-              className="flex items-center gap-2 hover:scale-105 transition-transform duration-200"
+              className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white border-white/30 hover:scale-105 transition-all duration-200"
             >
               <ArrowRight className="w-5 h-5" />
               <span>رجوع</span>
             </Button>
             <div className="text-center flex-1">
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold text-white">
                 {selectedGroup.name}
               </h1>
-              <p className="text-gray-600 font-medium mt-2">
+              <p className="text-emerald-50 font-medium mt-2">
                 {selectedGroup.currentStudents || selectedGroup.students?.length || 0} طالب
               </p>
             </div>
+            
+            {/* زر الإحصائيات */}
             <Button
               onClick={() => handleShowGroupStatistics(selectedGroup)}
-              className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+              className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white border border-white/30 shadow-lg hover:shadow-xl transition-all duration-200"
             >
               <span>📊</span>
               <span>إظهار الإحصائيات</span>
@@ -223,9 +248,9 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left: Students List (2/3 width) */}
           <div className="lg:col-span-3 space-y-4">
-            <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-4 border border-blue-200">
+            <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-4 border border-emerald-200">
               <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">
-                <Users className="w-6 h-6 text-blue-600" />
+                <Users className="w-6 h-6 text-emerald-600" />
                 طلاب الحلقة ({filteredStudents?.length || 0})
               </h2>
               
@@ -282,11 +307,11 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
           </div>
         </div>
 
-        {/* Suspended Students Sidebar */}
-        <SuspendedStudentsSidebar
-          suspendedStudents={selectedGroup.suspendedStudents || []}
-          isOpen={showSuspendedSidebar}
-          onToggle={() => setShowSuspendedSidebar(!showSuspendedSidebar)}
+        {/* Student History Sidebar - عرض الطلاب المفصولين فقط */}
+        <StudentHistorySidebar
+          isOpen={showHistorySidebar}
+          onClose={handleCloseHistory}
+          groupId={selectedGroup?._id}
         />
 
         {/* Modal الإحصائيات */}

@@ -1,11 +1,6 @@
 import Swal from "sweetalert2";
 import type { SweetAlertOptions } from "sweetalert2";
-import { audioManager } from "@/utils/AudioManager";
-
-// ✅ استخدام AudioManager الموحد بدلاً من دالة محلية
-const playSound = (soundFile: string) => {
-  audioManager.play(soundFile);
-};
+import { playSuccessSound, playErrorSound } from "@/utils/AudioManager";
 
 // دالة لإعداد SweetAlert بموضع ثابت في الوسط وخلفية خفيفة - باستخدام Tailwind فقط
 export const showCenteredSwal = (options: SweetAlertOptions) => {
@@ -78,7 +73,7 @@ export const showSuccessMessage = (
   isToast: boolean = false
 ) => {
   // تشغيل صوت النجاح
-  playSound('successful.mp3');
+  playSuccessSound();
   
   if (isToast) {
     // نمط Toast للإشعارات السريعة

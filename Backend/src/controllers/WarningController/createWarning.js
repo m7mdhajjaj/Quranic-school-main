@@ -13,6 +13,7 @@ const {
   validateWarningSequence,
   suspendStudentFromGroup,
 } = require("./helpers");
+const { logWarningEvent, logExpulsionEvent } = require("../basicController/studentController/history/helpers/warningHistory");
 
 /**
  * إنشاء إنذار جديد (للمعلم فقط)
@@ -140,6 +141,8 @@ exports.createWarning = async (req, res) => {
       studentId,
       teacherId,
       groupId: group._id, // استخدم الـ ID الحقيقي للحلقة
+      teacherName: `${teacher.firstName} ${teacher.lastName}`, // حفظ اسم المعلم
+      groupName: group.name, // حفظ اسم الحلقة
       originalGroup: studentOriginalGroup, // حفظ الحلقة الأصلية (سواء كان الطالب في حلقة أو مفصول)
       type,
       reason,
@@ -165,7 +168,32 @@ exports.createWarning = async (req, res) => {
       .populate("teacherId", "firstName lastName")
       .populate("groupId", "name");
 
-    // 🔔 إرسال إشعار Socket.IO لتحديث الواجهة فوراً
+    // � تسجيل الحدث في التاريخ (History)
+    const historyData = {
+      _id: warning._id,
+      studentId: warning.studentId,
+      teacherId: warning.teacherId,
+      groupId: warning.groupId,
+      groupName: group.name,
+      teacherName: `${teacher.firstName} ${teacher.lastName}`,
+      type: warning.type,
+      reason: warning.reason
+    };
+
+    // تسجيل حسب نوع الإنذار
+    if (["third", "expulsion"].includes(type)) {
+      // إذا كان فصل، سجله كحدث فصل
+      logExpulsionEvent(warning.studentId, historyData, req.user).catch(err =>
+        console.error("❌ History logging error:", err)
+      );
+    } else {
+      // إنذار عادي
+      logWarningEvent(historyData, req.user).catch(err =>
+        console.error("❌ History logging error:", err)
+      );
+    }
+
+    // �🔔 إرسال إشعار Socket.IO لتحديث الواجهة فوراً
     if (global.io) {
       global.io.emit('warningCreated', populatedWarning);
       global.io.emit('warningStatisticsUpdated', { timestamp: new Date() });

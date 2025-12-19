@@ -1,11 +1,6 @@
 import { toast, Bounce } from 'react-toastify';
 import type { ToastOptions } from 'react-toastify';
-import { audioManager } from "@/utils/AudioManager";
-
-// ✅ استخدام AudioManager الموحد بدلاً من دالة محلية
-const playSound = (soundFile: string) => {
-  audioManager.play(soundFile, 0.6); // مستوى الصوت 60%
-};
+import { playSuccessSound, playErrorSound } from "@/utils/AudioManager";
 
 // الإعدادات الافتراضية للـ Toast
 const defaultOptions: ToastOptions = {
@@ -31,7 +26,7 @@ export const showSuccessToast = (
   options?: Partial<ToastOptions>
 ) => {
   // تشغيل صوت النجاح
-  playSound('successful.mp3');
+  playSuccessSound();
   
   // إظهار Toast - تصميم عصري مع خلفية بيضاء ونص أخضر
   return toast.success(message, {
@@ -62,7 +57,7 @@ export const showErrorToast = (
   options?: Partial<ToastOptions>
 ) => {
   // تشغيل صوت الخطأ
-  playSound('error.wav');
+  playErrorSound();
   
   // إظهار Toast - تصميم عصري مع خلفية بيضاء ونص أحمر
   return toast.error(message, {
@@ -182,9 +177,9 @@ export const updateToast = (
   type: 'success' | 'error' | 'info' | 'warning' = 'success'
 ) => {
   if (type === 'success') {
-    playSound('successful.mp3');
+    playSuccessSound();
   } else if (type === 'error') {
-    playSound('error.wav');
+    playErrorSound();
   }
 
   toast.update(toastId, {
@@ -230,13 +225,13 @@ export const showPromiseToast = <T,>(
       success: {
         render: messages.success || 'تم بنجاح ✓',
         ...defaultOptions,
-        onOpen: () => playSound('successful.mp3'),
+        onOpen: () => playSuccessSound(),
       },
       error: {
         render: messages.error || 'حدث خطأ ✗',
         ...defaultOptions,
         autoClose: 4000,
-        onOpen: () => playSound('error.wav'),
+        onOpen: () => playErrorSound(),
       },
     }
   );

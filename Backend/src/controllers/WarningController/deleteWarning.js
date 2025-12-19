@@ -4,6 +4,7 @@
 
 const Warning = require("../../schema/Warning");
 const { restoreStudentToGroup } = require("./helpers");
+const { logRestorationEvent } = require("../basicController/studentController/history/helpers/restorationHistory");
 
 /**
  * حذف إنذار (للمعلم أو المدير)
@@ -33,6 +34,21 @@ exports.deleteWarning = async (req, res) => {
 
     // إعادة الطالب للحلقة إذا كان فصل
     const restored = await restoreStudentToGroup(warning);
+
+    // 📚 تسجيل الإعادة في التاريخ إذا تمت
+    if (restored && restored.restoredTo) {
+      logRestorationEvent(
+        warning.studentId,
+        {
+          groupId: warning.groupId._id,
+          groupName: warning.groupId.name,
+          teacherId: warning.groupId.teacher,
+          teacherName: restored.restoredTo
+        },
+        `إعادة بعد حذف إنذار: ${warning.type}`,
+        req.user
+      ).catch(err => console.error("❌ History logging error:", err));
+    }
 
     // حذف الإنذار
     await Warning.findByIdAndDelete(warningId);

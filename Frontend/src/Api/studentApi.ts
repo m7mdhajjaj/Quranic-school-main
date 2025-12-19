@@ -516,3 +516,42 @@ export const exportStudentsToCSV = async (filters?: {
     );
   }
 };
+
+// ============================================================================
+// Student History APIs
+// ============================================================================
+
+/**
+ * جلب تاريخ طالب كامل (History)
+ * @route GET /api/students/:studentId/history
+ */
+export const getStudentHistory = async (
+  studentId: string,
+  options?: {
+    eventType?: string;
+    startDate?: string;
+    endDate?: string;
+    limit?: number;
+  }
+) => {
+  const params = new URLSearchParams();
+  if (options?.eventType) params.append('eventType', options.eventType);
+  if (options?.startDate) params.append('startDate', options.startDate);
+  if (options?.endDate) params.append('endDate', options.endDate);
+  if (options?.limit) params.append('limit', options.limit.toString());
+
+  const queryString = params.toString();
+  const url = `/students/${studentId}/history${queryString ? `?${queryString}` : ''}`;
+  
+  const response = await api.get(url);
+  return response.data;
+};
+
+/**
+ * جلب إحصائيات تاريخ الطالب
+ * @route GET /api/students/:studentId/history/stats
+ */
+export const getStudentHistoryStats = async (studentId: string) => {
+  const response = await api.get(`/students/${studentId}/history/stats`);
+  return response.data;
+};

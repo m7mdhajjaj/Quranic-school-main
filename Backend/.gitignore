@@ -20,6 +20,7 @@ dist
 src/config/firebase-service-account.json
 src/quranic-school-77b5e-firebase-adminsdk-fbsvc-b218bd18a0.json
 src/quranic-school-77b5e-firebase-adminsdk-fbsvc-ddccc44daf.json
+src/quranic-school-77b5e-firebase-adminsdk-fbsvc-b4b7d2932f.json
 *-firebase-adminsdk-*.json
 
 # Editor directories and files

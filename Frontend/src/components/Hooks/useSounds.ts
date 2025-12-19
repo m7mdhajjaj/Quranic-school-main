@@ -57,11 +57,11 @@ const playSoundWithDuration = (soundPath: string, volume: number = 0.6): Promise
 // Sound Player - دوال الأصوات الجاهزة
 // ============================================================================
 
-// استيراد ملفات الصوت
-import successfulSound from '@/assets/sounds/successful.mp3';
-import errorSound from '@/assets/sounds/error.wav';
-import notificationSound from '@/assets/sounds/notification.mp3';
-import loginSound from '@/assets/sounds/Login.mp3';
+// استخدام public folder بدلاً من assets لتجنب مشاكل cache في Vite
+const successfulSound = '/sounds/successful.mp3';
+const errorSound = '/sounds/error.wav';
+const notificationSound = '/sounds/notification.mp3';
+const loginSound = '/sounds/Login.mp3';
 
 export const soundPlayer = {
   // عمليات CRUD

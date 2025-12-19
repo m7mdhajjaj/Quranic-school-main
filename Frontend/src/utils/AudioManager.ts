@@ -106,3 +106,35 @@ audioManager.preload('successful.mp3');
 audioManager.preload('Adhan.mp3');
 audioManager.preload('error.wav');
 audioManager.preload('notification.mp3');
+
+// ============================================================================
+// Helper Functions - دوال مساعدة للأصوات الشائعة
+// ============================================================================
+
+/**
+ * تشغيل صوت النجاح
+ */
+export const playSuccessSound = (volume: number = 0.5) => {
+  audioManager.play('successful.mp3', volume);
+};
+
+/**
+ * تشغيل صوت الخطأ
+ */
+export const playErrorSound = (volume: number = 0.5) => {
+  audioManager.play('error.wav', volume);
+};
+
+/**
+ * تشغيل صوت الإشعار
+ */
+export const playNotificationSound = (volume: number = 0.5) => {
+  audioManager.play('notification.mp3', volume);
+};
+
+/**
+ * تشغيل الأذان
+ */
+export const playAdhanSound = (volume: number = 0.5) => {
+  audioManager.play('Adhan.mp3', volume);
+};

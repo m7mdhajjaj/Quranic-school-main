@@ -63,4 +63,5 @@ module.exports = {
   getUserPresenceData,
   getAllOnlineUserIds,
   getPresenceStats,
+  getUsersByRole: (role) => onlineUsersManager.getUsersByRole(role),
 };

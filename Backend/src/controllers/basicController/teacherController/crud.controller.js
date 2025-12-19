@@ -741,29 +741,13 @@ exports.deleteTeacher = async (req, res) => {
     const teacherName = `${teacher.firstName} ${teacher.lastName}`;
     console.log(`🗑️ جاري حذف المعلم: ${teacherName}`);
 
-    // 1. إزالة المعلم من الحلقات
-    const relatedGroups = await Group.find({
-      $or: [
-        { teacher: teacherName },
-        { teacherName: teacherName },
-        { teacher: teacher._id },
-        { teacher: teacher._id.toString() },
-      ],
-    });
+    // 1. إزالة المعلم من الحلقات (باستخدام _id فقط)
+    const relatedGroups = await Group.find({ teacher: teacher._id });
 
     if (relatedGroups.length > 0) {
       await Group.updateMany(
-        {
-          $or: [
-            { teacher: teacherName },
-            { teacherName: teacherName },
-            { teacher: teacher._id },
-            { teacher: teacher._id.toString() },
-          ],
-        },
-        {
-          $unset: { teacher: "", teacherName: "" },
-        }
+        { teacher: teacher._id },
+        { $unset: { teacher: "", teacherName: "" } }
       );
       console.log(`✅ تم إزالة المعلم من ${relatedGroups.length} حلقة`);
       

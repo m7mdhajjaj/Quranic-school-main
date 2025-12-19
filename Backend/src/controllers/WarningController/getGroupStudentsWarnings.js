@@ -32,16 +32,38 @@ exports.getGroupWithStudentsWarnings = async (req, res) => {
       }
     }
 
-    // جلب طلاب الحلقة
-    const students = await Student.find({ group: group.name })
+    // جلب طلاب الحلقة النشطين
+    const activeStudents = await Student.find({ group: group.name })
       .select("_id firstName lastName avatar")
       .lean();
+
+    // جلب الطلاب المفصولين من هذه الحلقة بالتحديد (originalGroup)
+    const expulsionWarnings = await Warning.find({
+      originalGroup: group.name,
+      type: { $in: ["third", "expulsion"] }
+    })
+      .select("studentId")
+      .lean();
+
+    const expelledStudentIds = expulsionWarnings.map((w) => w.studentId);
+
+    // جلب بيانات الطلاب المفصولين
+    const expelledStudents = await Student.find({
+      _id: { $in: expelledStudentIds },
+      group: null // التأكد من أنهم فعلاً مفصولين (group = null)
+    })
+      .select("_id firstName lastName avatar")
+      .lean();
+
+    // دمج الطلاب النشطين والمفصولين
+    const students = [...activeStudents, ...expelledStudents];
 
     if (students.length === 0) {
       return res.json({
         _id: group._id,
         name: group.name,
         students: [],
+        suspendedStudents: [],
       });
     }
 
@@ -61,8 +83,11 @@ exports.getGroupWithStudentsWarnings = async (req, res) => {
       warningsByStudent.get(studentId).push(warning);
     });
 
-    // إضافة معلومات الإنذارات لكل طالب
-    const studentsWithWarnings = students.map((student) => {
+    // إضافة معلومات الإنذارات لكل طالب وتحديد الطلاب المفصولين
+    const studentsWithWarnings = [];
+    const suspendedStudents = [];
+
+    students.forEach((student) => {
       const studentWarnings = warningsByStudent.get(student._id.toString()) || [];
       
       // استخراج أنواع الإنذارات (ما عدا التنبيه)
@@ -73,7 +98,10 @@ exports.getGroupWithStudentsWarnings = async (req, res) => {
       // حساب عدد التنبيهات فقط
       const warningsOnlyCount = studentWarnings.filter((w) => w.type === "warning").length;
 
-      return {
+      // التحقق إذا كان الطالب مفصول (has "third" warning)
+      const isSuspended = existingTypes.includes("third");
+
+      const studentData = {
         _id: student._id,
         firstName: student.firstName,
         lastName: student.lastName,
@@ -84,12 +112,22 @@ exports.getGroupWithStudentsWarnings = async (req, res) => {
         existingWarningTypes: existingTypes,
         allWarnings: studentWarnings,
       };
+
+      // تقسيم الطلاب: المفصولين vs العاديين
+      if (isSuspended) {
+        suspendedStudents.push(studentData);
+      } else {
+        studentsWithWarnings.push(studentData);
+      }
     });
 
     res.json({
       _id: group._id,
       name: group.name,
       students: studentsWithWarnings,
+      suspendedStudents: suspendedStudents,
+      currentStudents: studentsWithWarnings.length,
+      totalStudents: students.length,
     });
   } catch (error) {
     console.error("Error fetching group students with warnings:", error);

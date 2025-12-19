@@ -11,6 +11,7 @@ const studentStatus = require("./studentStatus");
 const getGroupStudentsWarnings = require("./getGroupStudentsWarnings");
 const deleteWarningByType = require("./deleteWarningByType");
 const getGroupStatistics = require("./getGroupStatistics");
+const getExpelledStudentsFromGroup = require("./getExpelledStudentsFromGroup");
 
 // Export all functions
 module.exports = {
@@ -21,6 +22,7 @@ module.exports = {
   ...getWarnings,
   ...getGroupStudentsWarnings,
   ...getGroupStatistics,
+  ...getExpelledStudentsFromGroup,
 
   // Delete operations
   ...deleteWarning,

@@ -81,3 +81,15 @@ export const getGroupStatistics = async (groupId: string) => {
   const response = await api.get(`/warnings/group/${groupId}/statistics`);
   return response.data;
 };
+
+/**
+ * جلب الطلاب المفصولين من حلقة معينة عبر البحث في التاريخ
+ * @route GET /api/warnings/group/:groupId/expelled-students
+ */
+export const getExpelledStudentsFromGroup = async (groupId: string) => {
+  const response = await api.get(`/warnings/group/${groupId}/expelled-students`);
+  return response.data;
+};
+
+// Note: Student history APIs moved to studentApi.ts
+// Use import { getStudentHistory, getStudentHistoryStats } from './studentApi'

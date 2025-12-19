@@ -76,7 +76,7 @@ exports.notifyStudentWarning = async (student, warning, io) => {
     // 3. إرسال إشعار Push (FCM)
     // نحتاج للتأكد من وجود FCMService
     if (global.fcmService) {
-      await sendPushNotification(global.fcmService, savedNotification);
+      await sendPushNotification(student._id, savedNotification);
       console.log(`📲 Push notification sent to student ${student._id}`);
     }
 

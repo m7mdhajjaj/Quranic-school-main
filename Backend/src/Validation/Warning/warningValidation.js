@@ -148,6 +148,20 @@ const validateCheckStudentStatus = [
   handleValidationErrors,
 ];
 
+/**
+ * Validation rules لجلب الطلاب المفصولين من حلقة
+ */
+const validateGetExpelledStudents = [
+  param("groupId")
+    .trim()
+    .notEmpty()
+    .withMessage("معرف الحلقة مطلوب")
+    .isMongoId()
+    .withMessage("معرف الحلقة غير صحيح"),
+
+  handleValidationErrors,
+];
+
 module.exports = {
   validateCreateWarning,
   validateDeleteWarning,
@@ -155,4 +169,5 @@ module.exports = {
   validateGetStudentWarnings,
   validateGetGroupWarnings,
   validateCheckStudentStatus,
+  validateGetExpelledStudents,
 };

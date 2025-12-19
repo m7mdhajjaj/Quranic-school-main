@@ -35,13 +35,13 @@ export const StudentCard: React.FC<StudentCardProps> = React.memo(({
 
   return (
     <Card 
-      className={`group relative overflow-hidden bg-white border border-gray-200 hover:border-blue-300 shadow-sm hover:shadow-lg transition-all duration-300 ${
+      className={`group relative overflow-hidden bg-white border border-gray-200 hover:border-emerald-300 shadow-sm hover:shadow-lg transition-all duration-300 ${
         isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
       }`} 
       padding="md"
     >
       {/* خط علوي ملون */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-500" />
       
       <div className="relative z-10 pt-2">
         {/* رأس البطاقة - الاسم والصورة */}

@@ -20,13 +20,14 @@ exports.getTeacherStats = async (req, res) => {
           // inactive: سيتم حسابها من الفرق
           
           // المعلمين النشطين - Placeholder (سيتم استبدالها)
+          // استخدام match مع شرط مستحيل بدلاً من limit: 0
           active: [
-            { $limit: 0 } // Dummy - سيتم استبدالها بـ PresenceService
+            { $match: { _id: null } } // شرط مستحيل - لن يرجع أي نتائج
           ],
           
           // المعلمين غير النشطين - Placeholder
           inactive: [
-            { $limit: 0 } // Dummy - سيتم استبدالها
+            { $match: { _id: null } } // شرط مستحيل - لن يرجع أي نتائج
           ],
           
           // التوزيع حسب الجنس

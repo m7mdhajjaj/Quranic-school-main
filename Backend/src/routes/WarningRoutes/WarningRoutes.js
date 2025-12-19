@@ -13,6 +13,7 @@ const {
   validateGetStudentWarnings,
   validateGetGroupWarnings,
   validateCheckStudentStatus,
+  validateGetExpelledStudents,
 } = require('../../Validation/Warning/warningValidation');
 
 // ============================================================================
@@ -44,8 +45,6 @@ router.get(
   warningController.getStudentWarnings
 );
 
-
-
 // جلب إحصائيات حلقة معينة
 // GET /api/warnings/group/:groupId/statistics
 router.get(
@@ -63,6 +62,16 @@ router.get(
   validateGetGroupWarnings,
   warningController.getGroupWithStudentsWarnings
 );
+
+// جلب الطلاب المفصولين من حلقة معينة عبر البحث في التاريخ
+// GET /api/warnings/group/:groupId/expelled-students
+router.get(
+  '/group/:groupId/expelled-students',
+  protect,
+  validateGetExpelledStudents,
+  warningController.getExpelledStudentsFromGroup
+);
+
 // جلب إنذارات حلقة معينة (للمعلم فقط)
 // GET /api/warnings/group/:groupId
 router.get('/group/:groupId', protect, validateGetGroupWarnings, warningController.getGroupWarnings);
