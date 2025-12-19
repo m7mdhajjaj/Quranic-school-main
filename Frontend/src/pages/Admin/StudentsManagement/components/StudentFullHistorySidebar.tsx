@@ -206,7 +206,7 @@ export const StudentFullHistorySidebar: React.FC<StudentFullHistorySidebarProps>
       />
 
       <div
-        className={`fixed top-0 left-0 h-full w-full sm:w-[700px] bg-white shadow-2xl transition-transform duration-300 ease-in-out z-50 ${
+        className={`fixed top-0 left-0 h-full w-full sm:w-[700px] bg-white shadow-2xl transition-transform duration-300 ease-in-out z-[120] ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         dir="rtl"
@@ -215,7 +215,15 @@ export const StudentFullHistorySidebar: React.FC<StudentFullHistorySidebarProps>
         <div className="sticky top-0 bg-gradient-to-br from-emerald-600 via-teal-500 to-emerald-600 text-white p-6 shadow-lg z-10">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3 flex-1">
-              {student && <Avatar user={student} size="lg" className="ring-2 ring-white shadow-lg" />}
+              {student && (
+                <Avatar
+                  user={student}
+                  size="lg"
+                  showStatus={true}
+                  statusSize="sm"
+                  className="ring-2 ring-white shadow-lg rounded-full"
+                />
+              )}
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <History className="w-6 h-6" />

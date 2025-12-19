@@ -1,3 +1,53 @@
+// تسجيل حدث RESTORATION عند إرجاع طالب للحلقة
+const { logRestorationEvent } = require("./history/helpers/restorationHistory");
+/**
+ * إرجاع طالب للحلقة بعد فصل (فقط للأدمن)
+ * @route POST /api/students/:id/restore
+ */
+exports.restoreStudentToGroup = async (req, res) => {
+  try {
+    // فقط الأدمن يملك صلاحية الإرجاع
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "غير مصرح لك بإرجاع الطالب" });
+    }
+
+    const studentId = req.params.id;
+    const { groupId, reason } = req.body;
+
+    // جلب الطالب والحلقة
+    const student = await Student.findById(studentId);
+    if (!student) {
+      return res.status(404).json({ message: "الطالب غير موجود" });
+    }
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(404).json({ message: "الحلقة غير موجودة" });
+    }
+
+    // تحديث مجموعة الطالب
+    student.group = group.name;
+    student.teacher = group.teacher;
+    await student.save();
+
+    // تسجيل حدث RESTORATION في التاريخ
+    await logRestorationEvent(
+      studentId,
+      {
+        groupId: group._id,
+        groupName: group.name,
+        teacherId: group.teacher,
+        teacherName: group.teacherName || "غير محدد",
+      },
+      reason || "إرجاع الطالب للحلقة من قبل الأدمن",
+      req.user
+    );
+
+    res.json({ success: true, message: "تم إرجاع الطالب للحلقة وتسجيل الحدث في التاريخ" });
+  } catch (error) {
+    console.error("Error restoring student:", error);
+    res.status(500).json({ message: "حدث خطأ أثناء إرجاع الطالب" });
+  }
+};
 const Student = require("../../../schema/Student");
 const Group = require("../../../schema/Group");
 const bcrypt = require("bcryptjs");
