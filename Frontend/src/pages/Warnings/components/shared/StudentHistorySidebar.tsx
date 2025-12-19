@@ -22,26 +22,29 @@ interface StudentHistorySidebarProps {
 
 const EVENT_ICONS = {
   WARNING: <AlertTriangle className="w-5 h-5 text-orange-600" />,
+  WARNING_ESCALATION: <AlertTriangle className="w-5 h-5 text-red-600" />,
+  WARNING_REMOVAL: <CheckCircle className="w-5 h-5 text-green-600" />,
+  SUSPENSION: <UserX className="w-5 h-5 text-orange-600" />,
   EXPULSION: <UserX className="w-5 h-5 text-red-600" />,
   RESTORATION: <CheckCircle className="w-5 h-5 text-emerald-600" />,
-  GROUP_CHANGE: <Users className="w-5 h-5 text-emerald-600" />,
-  GROUP_REMOVAL: <Users className="w-5 h-5 text-gray-600" />,
 };
 
 const EVENT_LABELS = {
   WARNING: 'إنذار',
+  WARNING_ESCALATION: 'تصعيد إنذار',
+  WARNING_REMOVAL: 'حذف إنذار',
+  SUSPENSION: 'تعليق',
   EXPULSION: 'فصل',
   RESTORATION: 'استعادة',
-  GROUP_CHANGE: 'تغيير حلقة',
-  GROUP_REMOVAL: 'إزالة من حلقة',
 };
 
 const EVENT_COLORS = {
   WARNING: 'bg-orange-50 border-orange-200',
+  WARNING_ESCALATION: 'bg-red-50 border-red-200',
+  WARNING_REMOVAL: 'bg-green-50 border-green-200',
+  SUSPENSION: 'bg-orange-50 border-orange-200',
   EXPULSION: 'bg-red-50 border-red-200',
   RESTORATION: 'bg-emerald-50 border-emerald-200',
-  GROUP_CHANGE: 'bg-emerald-50 border-emerald-200',
-  GROUP_REMOVAL: 'bg-gray-50 border-gray-200',
 };
 
 export const StudentHistorySidebar: React.FC<StudentHistorySidebarProps> = ({
@@ -57,7 +60,7 @@ export const StudentHistorySidebar: React.FC<StudentHistorySidebarProps> = ({
   
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(initialStudentId || null);
   const [selectedStudentName, setSelectedStudentName] = useState<string>(initialStudentName || '');
-  const [expelledStudents, setExpelledStudents] = useState<Array<{ _id: string; firstName: string; lastName: string }>>([]);
+  const [expelledStudents, setExpelledStudents] = useState<Array<{ _id: string; firstName: string; lastName: string; gender?: string; avatar?: any }>>([]);
   const [history, setHistory] = useState<StudentHistoryEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingExpelled, setLoadingExpelled] = useState(false);
@@ -140,7 +143,7 @@ export const StudentHistorySidebar: React.FC<StudentHistorySidebarProps> = ({
     <>
       {/* Overlay */}
       <div
-        className={`fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 z-40 ${
+        className={`fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 z-[90] ${
           isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
         onClick={onClose}
@@ -148,19 +151,19 @@ export const StudentHistorySidebar: React.FC<StudentHistorySidebarProps> = ({
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 h-full w-full sm:w-[600px] bg-white shadow-2xl transition-transform duration-300 ease-in-out z-50 ${
+        className={`fixed top-0 left-0 h-full w-full sm:w-[600px] bg-white shadow-2xl transition-transform duration-300 ease-in-out z-[100] ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         dir="rtl"
       >
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-br from-red-600 via-red-500 to-rose-600 text-white p-6 shadow-lg z-10">
+        <div className="sticky top-0 bg-gradient-to-r from-emerald-500 to-teal-600 text-white p-6 shadow-lg z-10">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3 flex-1">
               {selectedStudentId && (students.length > 0 || expelledStudents.length > 0) ? (
                 <button
                   onClick={handleBackToList}
-                  className="flex items-center gap-2 bg-white text-red-600 hover:bg-red-50 px-5 py-2.5 rounded-xl transition-all duration-200 hover:scale-105 shadow-lg font-bold"
+                  className="flex items-center gap-2 bg-white text-emerald-600 hover:bg-emerald-50 px-5 py-2.5 rounded-xl transition-all duration-200 hover:scale-105 shadow-lg font-bold"
                   aria-label="رجوع للقائمة"
                 >
                   <ArrowRight className="w-5 h-5" />
@@ -226,21 +229,32 @@ export const StudentHistorySidebar: React.FC<StudentHistorySidebarProps> = ({
                   <div className="flex items-center gap-4">
                     <Avatar
                       user={{
+                        _id: student._id,
                         firstName: student.firstName,
                         lastName: student.lastName,
                         gender: (student as any).gender,
                         avatar: (student as any).avatar,
                       }}
                       size="lg"
-                      className="shrink-0 ring-2 ring-red-200 group-hover:ring-red-400 transition-all duration-200"
+                      showStatus={true}
+                      statusSize="sm"
+                      className="shrink-0 ring-2 ring-red-200 group-hover:ring-red-400 transition-all duration-200 rounded-full"
                     />
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-gray-900 truncate group-hover:text-red-700 transition-colors text-lg">
                         {student.firstName} {student.lastName}
                       </p>
-                      <Badge variant="danger" size="sm" className="mt-1" icon={<UserX className="w-3 h-3" />}>
-                        طالب مفصول
-                      </Badge>
+                      <div className="flex flex-col gap-1 mt-1">
+                        <Badge variant="danger" size="sm" icon={<UserX className="w-3 h-3" />}>
+                          طالب مفصول
+                        </Badge>
+                        {(student as any).expulsionDate && (
+                          <span className="text-xs text-gray-500 flex items-center gap-1">
+                            <span>📅</span>
+                            {new Date((student as any).expulsionDate).toLocaleDateString('ar-EG')}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <ArrowRight className="w-6 h-6 text-red-500 rotate-180 group-hover:-translate-x-2 transition-transform shrink-0" />
                   </div>

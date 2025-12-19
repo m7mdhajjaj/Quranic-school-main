@@ -60,8 +60,13 @@ export const useWarningsData = (): UseWarningsDataReturn => {
   // ✅ جلب إنذارات طلاب الحلقة - محسّن بـ useCallback
   const fetchGroupStudentsWarnings = useCallback(async (group: Group): Promise<Group> => {
     try {
+      // جلب الطلاب والإنذارات
       const data = await warningApi.getGroupStudentsWithWarnings(group._id);
       const studentsData = data?.students || [];
+
+      // جلب الطلاب المفصولين (للعرض في العداد)
+      const expelledData = await warningApi.getExpelledStudentsFromGroup(group._id);
+      const expelledStudents = expelledData?.expelledStudents || [];
 
       // استخدام البيانات الجاهزة من Backend مباشرة
       const studentsWithWarnings = studentsData.map((studentData: any) => ({
@@ -76,7 +81,11 @@ export const useWarningsData = (): UseWarningsDataReturn => {
         allWarnings: studentData.allWarnings || [],
       }));
 
-      return { ...group, students: studentsWithWarnings };
+      return { 
+        ...group, 
+        students: studentsWithWarnings,
+        suspendedStudents: expelledStudents // إضافة الطلاب المفصولين
+      };
     } catch (error) {
       console.error('Error fetching students warnings:', error);
       return group;

@@ -64,9 +64,8 @@ export const useStudentHistory = ({ studentId, isOpen, limit = 100 }: UseStudent
   const stats = useMemo(
     () => ({
       total: history.length,
-      warnings: history.filter((e) => e.eventType === 'WARNING').length,
-      groupChanges: history.filter((e) => e.eventType === 'GROUP_CHANGE').length,
-      expulsions: history.filter((e) => e.eventType === 'EXPULSION').length,
+      warnings: history.filter((e) => e.eventType === 'WARNING' || e.eventType === 'WARNING_ESCALATION' || e.eventType === 'WARNING_REMOVAL').length,
+      expulsions: history.filter((e) => e.eventType === 'EXPULSION' || e.eventType === 'SUSPENSION').length,
       restorations: history.filter((e) => e.eventType === 'RESTORATION').length,
     }),
     [history]

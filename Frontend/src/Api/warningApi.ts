@@ -84,10 +84,10 @@ export const getGroupStatistics = async (groupId: string) => {
 
 /**
  * جلب الطلاب المفصولين من حلقة معينة عبر البحث في التاريخ
- * @route GET /api/warnings/group/:groupId/expelled-students
+ * @route GET /api/students/history/group/:groupId/expelled
  */
 export const getExpelledStudentsFromGroup = async (groupId: string) => {
-  const response = await api.get(`/warnings/group/${groupId}/expelled-students`);
+  const response = await api.get(`/students/history/group/${groupId}/expelled`);
   return response.data;
 };
 

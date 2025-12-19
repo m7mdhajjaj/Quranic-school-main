@@ -63,8 +63,6 @@ async function getStudentHistoryStats(studentId) {
     const result = {
       totalEvents: 0,
       warnings: 0,
-      groupChanges: 0,
-      removals: 0,
       expulsions: 0,
       restorations: 0
     };
@@ -73,19 +71,16 @@ async function getStudentHistoryStats(studentId) {
       result.totalEvents += stat.count;
       switch(stat._id) {
         case 'WARNING':
-          result.warnings = stat.count;
+        case 'WARNING_ESCALATION':
+        case 'WARNING_REMOVAL':
+          result.warnings += stat.count;
           break;
-        case 'GROUP_CHANGE':
-          result.groupChanges = stat.count;
-          break;
-        case 'GROUP_REMOVAL':
-          result.removals = stat.count;
-          break;
+        case 'SUSPENSION':
         case 'EXPULSION':
-          result.expulsions = stat.count;
+          result.expulsions += stat.count;
           break;
         case 'RESTORATION':
-          result.restorations = stat.count;
+          result.restorations += stat.count;
           break;
       }
     });

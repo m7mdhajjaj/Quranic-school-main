@@ -93,6 +93,35 @@ const calculateAge = (birthDate) => {
   return age;
 };
 
+/**
+ * Pipeline مشترك لحساب عدد الطلاب مع استبعاد المفصولين
+ * @param {Object} matchStage - مرحلة الفلترة الأولية (مثل تحديد الحلقات)
+ */
+const getStudentCountPipeline = (matchStage = {}) => {
+  return [
+    { $match: matchStage },
+    {
+      $lookup: {
+        from: "warnings",
+        localField: "_id",
+        foreignField: "studentId",
+        as: "warnings"
+      }
+    },
+    {
+      $match: {
+        "warnings.type": { $nin: ["third", "expulsion"] }
+      }
+    },
+    {
+      $group: {
+        _id: '$group',
+        count: { $sum: 1 },
+      },
+    }
+  ];
+};
+
 module.exports = {
   successResponse,
   errorResponse,
@@ -101,4 +130,5 @@ module.exports = {
   handleError,
   checkDocumentExists,
   calculateAge,
+  getStudentCountPipeline,
 };

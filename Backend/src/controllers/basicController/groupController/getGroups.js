@@ -9,7 +9,7 @@ const TimeTable = require("../../../schema/TimeTable");
 const Teacher = require("../../../schema/Teacher");
 const { getStudentCountsForAllGroups, getStudentCountsForTeacher } = require("./cache");
 const { getTeacherInfo } = require("./helpers");
-const { successResponse, notFoundResponse, handleError } = require("./utils");
+const { successResponse, notFoundResponse, handleError, getStudentCountPipeline } = require("./utils");
 
 /**
  * الحصول على جميع الحلقات مع الفلترة والترتيب والـ pagination
@@ -473,11 +473,13 @@ exports.getGroupsByTeacherIdWithFilters = async (req, res) => {
     // 3. جلب عدد الطلاب وعدد الامتحانات لكل حلقة
     const groupNames = groups.map((g) => g.name);
     
+    // استخدام Pipeline موحد لضمان تطابق المنطق في كل مكان
+    const studentCountPipeline = getStudentCountPipeline({
+      group: { $in: groupNames }
+    });
+
     const [studentCounts, examCounts] = await Promise.all([
-      Student.aggregate([
-        { $match: { group: { $in: groupNames } } },
-        { $group: { _id: "$group", count: { $sum: 1 } } },
-      ]),
+      Student.aggregate(studentCountPipeline),
       ExamSchedule.aggregate([
         { $match: { group: { $in: groupNames } } },
         { $group: { _id: "$group", count: { $sum: 1 } } },

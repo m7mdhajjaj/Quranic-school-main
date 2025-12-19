@@ -98,8 +98,8 @@ exports.getGroupWithStudentsWarnings = async (req, res) => {
       // حساب عدد التنبيهات فقط
       const warningsOnlyCount = studentWarnings.filter((w) => w.type === "warning").length;
 
-      // التحقق إذا كان الطالب مفصول (has "third" warning)
-      const isSuspended = existingTypes.includes("third");
+      // التحقق إذا كان الطالب مفصول (has "third" or "expulsion" warning)
+      const isSuspended = existingTypes.includes("third") || existingTypes.includes("expulsion");
 
       const studentData = {
         _id: student._id,

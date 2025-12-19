@@ -3,6 +3,7 @@
 // ============================================
 
 const Student = require('../../../schema/Student');
+const { getStudentCountPipeline } = require('./utils');
 
 // Cache بسيط للنتائج (يمكن استبداله بـ Redis في الإنتاج)
 let studentCountsCache = {
@@ -26,19 +27,11 @@ const getStudentCountsForAllGroups = async () => {
     console.log('🔄 تحديث إحصائيات الطلاب من قاعدة البيانات...');
 
     // استخدام aggregation pipeline للحصول على عدد الطلاب لكل حلقة في استعلام واحد
-    const studentCounts = await Student.aggregate([
-      {
-        $match: {
-          group: { $exists: true, $ne: null, $ne: '' },
-        },
-      },
-      {
-        $group: {
-          _id: '$group',
-          count: { $sum: 1 },
-        },
-      },
-    ]);
+    const pipeline = getStudentCountPipeline({
+      group: { $exists: true, $ne: null, $ne: '' },
+    });
+    
+    const studentCounts = await Student.aggregate(pipeline);
 
     // تحويل النتيجة إلى object للبحث السريع
     const countMap = {};
@@ -66,20 +59,12 @@ const getStudentCountsForAllGroups = async () => {
  */
 const getStudentCountsForTeacher = async (teacherName) => {
   try {
-    const studentCounts = await Student.aggregate([
-      {
-        $match: {
-          teacher: teacherName,
-          group: { $exists: true, $ne: null, $ne: '' },
-        },
-      },
-      {
-        $group: {
-          _id: '$group',
-          count: { $sum: 1 },
-        },
-      },
-    ]);
+    const pipeline = getStudentCountPipeline({
+      teacher: teacherName,
+      group: { $exists: true, $ne: null, $ne: '' },
+    });
+
+    const studentCounts = await Student.aggregate(pipeline);
 
     const countMap = {};
     studentCounts.forEach((item) => {

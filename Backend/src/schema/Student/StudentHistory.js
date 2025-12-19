@@ -24,11 +24,6 @@ const studentHistorySchema = new mongoose.Schema(
         "SUSPENSION",       // تعليق مؤقت
         "EXPULSION",        // فصل نهائي
         "RESTORATION",      // إعادة بعد فصل / تعليق
-
-        // Group
-        "GROUP_ASSIGNMENT", // تسجيل بحلقة
-        "GROUP_CHANGE",     // نقل بين حلقات
-        "GROUP_REMOVAL",    // إزالة من حلقة
       ],
       required: true,
       index: true,
@@ -48,29 +43,17 @@ const studentHistorySchema = new mongoose.Schema(
       required: true,
     },
 
-    // Snapshot ثابت - معلومات الحلقة والمعلم وقت الحدث
+    // Snapshot للحلقة والمعلم وقت الحدث
     groupId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Group",
     },
-    groupName: {
-      type: String,
-    },
+    groupName: String,
     teacherId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Teacher",
     },
-    teacherName: {
-      type: String,
-    },
-
-    // في حالة النقل بين حلقات
-    previousGroup: {
-      groupId: { type: mongoose.Schema.Types.ObjectId, ref: "Group" },
-      groupName: String,
-      teacherId: { type: mongoose.Schema.Types.ObjectId, ref: "Teacher" },
-      teacherName: String,
-    },
+    teacherName: String,
 
     // من قام بالإجراء
     actionBy: {

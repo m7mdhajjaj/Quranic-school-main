@@ -41,7 +41,7 @@ const WarningsPage: React.FC = () => {
   });
 
   // ✅ Memoize onSuccess callback - Optimized
-  const handleModalSuccess = useCallback(() => {
+  const handleModalSuccess = useCallback(async () => {
     // Socket.IO سيقوم بالتحديث التلقائي لكل شيء:
     // - warningCreated → يحدث قائمة الطلاب المفصولين
     // - warningDeleted → يحدث قائمة الطلاب المفصولين
@@ -49,8 +49,14 @@ const WarningsPage: React.FC = () => {
     
     // تحديث قائمة طلاب الحلقة فقط (باقي التحديثات عبر Socket)
     // ✅ استخدام refreshCurrentGroup بدلاً من handleGroupSelect لمنع الوميض
-    refreshCurrentGroup();
-  }, [refreshCurrentGroup]);
+    await refreshCurrentGroup();
+    
+    // تحديث قائمة الحلقات لتحديث العدادات في الكروت
+    // إضافة تأخير بسيط لضمان اكتمال التحديث في قاعدة البيانات
+    setTimeout(() => {
+      refetchData();
+    }, 100);
+  }, [refreshCurrentGroup, refetchData]);
 
   const { showGiveWarningModal, showDeleteWarningModal, showDeleteWarningByIdModal } =
     useWarningsModals({

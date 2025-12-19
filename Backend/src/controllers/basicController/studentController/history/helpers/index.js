@@ -4,7 +4,6 @@
 
 const { logWarningEvent, logExpulsionEvent } = require("./warningHistory");
 const { logRestorationEvent } = require("./restorationHistory");
-const { logGroupChangeEvent, logGroupRemovalEvent } = require("./groupHistory");
 const { getStudentHistory, getStudentHistoryStats } = require("./queryHistory");
 
 module.exports = {
@@ -14,10 +13,6 @@ module.exports = {
   
   // Restoration operations
   logRestorationEvent,
-  
-  // Group operations
-  logGroupChangeEvent,
-  logGroupRemovalEvent,
   
   // Query operations
   getStudentHistory,

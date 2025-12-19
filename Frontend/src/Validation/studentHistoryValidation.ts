@@ -9,7 +9,7 @@ import { z } from "zod";
  */
 export const studentHistoryOptionsSchema = z.object({
   eventType: z
-    .enum(["WARNING", "GROUP_CHANGE", "GROUP_REMOVAL", "EXPULSION", "RESTORATION"])
+    .enum(["WARNING", "WARNING_ESCALATION", "WARNING_REMOVAL", "SUSPENSION", "EXPULSION", "RESTORATION"])
     .optional(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),

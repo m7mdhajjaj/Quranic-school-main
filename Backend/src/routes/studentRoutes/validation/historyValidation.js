@@ -36,7 +36,7 @@ const validateGetStudentHistory = [
 
   query("eventType")
     .optional()
-    .isIn(["WARNING", "GROUP_CHANGE", "GROUP_REMOVAL", "EXPULSION", "RESTORATION"])
+    .isIn(["WARNING", "WARNING_ESCALATION", "WARNING_REMOVAL", "SUSPENSION", "EXPULSION", "RESTORATION"])
     .withMessage("نوع الحدث غير صحيح"),
 
   query("startDate")

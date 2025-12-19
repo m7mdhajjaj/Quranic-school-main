@@ -68,12 +68,29 @@ async function restoreStudentToGroup(warning) {
 async function suspendStudentFromGroup(student, group, type, originalGroup) {
   console.log(`⚠️ Processing suspension for student from group: ${originalGroup}`);
   
-  // إزالة الطالب من الحلقة (إذا لم يكن مفصول بالفعل)
-  if (student.group) {
-    console.log(`⚠️ Removing student from group: ${student.group}`);
+  try {
+    // استخدام findByIdAndUpdate لضمان التحديث وإرجاع الوثيقة المحدثة
+    const updatedStudent = await Student.findByIdAndUpdate(
+      student._id,
+      { 
+        $set: { 
+          group: null,
+          teacher: null
+        } 
+      },
+      { new: true, runValidators: false } // runValidators: false لتجنب مشاكل التحقق من الحقول المطلوبة
+    );
+    
+    if (!updatedStudent) {
+      console.error(`❌ Failed to find student to suspend: ${student._id}`);
+      throw new Error("Student not found for suspension");
+    }
+
+    console.log(`✅ Student suspended. New group: ${updatedStudent.group}`);
+    
+    // تحديث الكائن المحلي أيضاً للاستخدام اللاحق
     student.group = null;
-    student.teacher = null; // ✅ إزالة المعلم أيضاً عند الفصل
-    await student.save();
+    student.teacher = null;
 
     // إزالة الطالب من قائمة طلاب الحلقة إذا كانت موجودة
     if (group.students && Array.isArray(group.students)) {
@@ -83,12 +100,12 @@ async function suspendStudentFromGroup(student, group, type, originalGroup) {
       await group.save();
       console.log(`✅ Student removed from group array`);
     }
-  } else {
-    console.log(`ℹ️ Student already removed from group (suspended)`);
+    
+    console.log(`✅ Student suspended successfully`);
+  } catch (error) {
+    console.error(`❌ Error suspending student:`, error);
+    throw error;
   }
-  
-  // ✅ isActive removed - account ban/unban no longer supported
-  // If you need account ban, create a separate 'accountStatus' field
 }
 
 /**

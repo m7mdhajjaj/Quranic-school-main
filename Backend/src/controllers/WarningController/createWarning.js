@@ -4,6 +4,8 @@
 
 const Warning = require("../../schema/Warning");
 const { notifyStudentWarning } = require("../../Notifications");
+const { invalidateCache } = require("../../middleware/cacheMiddleware");
+const { invalidateStudentCountsCache } = require("../basicController/groupController/cache");
 const {
   validateBasicInput,
   findGroup,
@@ -160,6 +162,11 @@ exports.createWarning = async (req, res) => {
     // تعديل: الفصل يتم فقط في حالة الإنذار الثالث (فصل) أو الطرد
     if (["third", "expulsion"].includes(type)) {
       await suspendStudentFromGroup(student, group, type, studentOriginalGroup);
+
+      // 🗑️ إبطال الكاش لمجموعات المعلم لضمان تحديث العدد فوراً
+      const cachePattern = `cache:/api/groups/teacher-id/${teacherId}*`;
+      await invalidateCache(cachePattern);
+      invalidateStudentCountsCache();
     }
 
     // إرجاع الإنذار مع البيانات المرتبطة

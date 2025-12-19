@@ -13,7 +13,6 @@ const {
   validateGetStudentWarnings,
   validateGetGroupWarnings,
   validateCheckStudentStatus,
-  validateGetExpelledStudents,
 } = require('../../Validation/Warning/warningValidation');
 
 // ============================================================================
@@ -61,15 +60,6 @@ router.get(
   protect,
   validateGetGroupWarnings,
   warningController.getGroupWithStudentsWarnings
-);
-
-// جلب الطلاب المفصولين من حلقة معينة عبر البحث في التاريخ
-// GET /api/warnings/group/:groupId/expelled-students
-router.get(
-  '/group/:groupId/expelled-students',
-  protect,
-  validateGetExpelledStudents,
-  warningController.getExpelledStudentsFromGroup
 );
 
 // جلب إنذارات حلقة معينة (للمعلم فقط)

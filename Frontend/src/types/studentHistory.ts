@@ -4,19 +4,13 @@
 
 export type StudentEventType =
   | "WARNING"
-  | "GROUP_CHANGE"
-  | "GROUP_REMOVAL"
+  | "WARNING_ESCALATION"
+  | "WARNING_REMOVAL"
+  | "SUSPENSION"
   | "EXPULSION"
   | "RESTORATION";
 
 export type WarningLevel = "warning" | "first" | "second" | "third";
-
-export interface GroupContext {
-  groupId?: string;
-  groupName?: string;
-  teacherId?: string;
-  teacherName?: string;
-}
 
 export interface ActionBy {
   userId: string;
@@ -31,15 +25,6 @@ export interface StudentHistoryEvent {
   warningLevel?: WarningLevel;
   reason: string;
   
-  // معلومات الحلقة الحالية
-  groupId?: string;
-  groupName?: string;
-  teacherId?: string;
-  teacherName?: string;
-  
-  // في حالة النقل
-  previousGroup?: GroupContext;
-  
   // من قام بالإجراء
   actionBy: ActionBy;
   
@@ -53,8 +38,6 @@ export interface StudentHistoryEvent {
 export interface StudentHistoryStats {
   totalEvents: number;
   warnings: number;
-  groupChanges: number;
-  removals: number;
   expulsions: number;
   restorations: number;
 }
@@ -79,8 +62,9 @@ export interface StudentHistoryResponse {
 export const getEventTypeLabel = (type: StudentEventType): string => {
   const labels: Record<StudentEventType, string> = {
     WARNING: "إنذار",
-    GROUP_CHANGE: "نقل بين حلقات",
-    GROUP_REMOVAL: "إزالة من حلقة",
+    WARNING_ESCALATION: "تصعيد إنذار",
+    WARNING_REMOVAL: "حذف إنذار",
+    SUSPENSION: "تعليق",
     EXPULSION: "فصل",
     RESTORATION: "إعادة",
   };
@@ -93,8 +77,9 @@ export const getEventTypeLabel = (type: StudentEventType): string => {
 export const getEventTypeColor = (type: StudentEventType): string => {
   const colors: Record<StudentEventType, string> = {
     WARNING: "#3B82F6", // أزرق
-    GROUP_CHANGE: "#10B981", // أخضر
-    GROUP_REMOVAL: "#F59E0B", // برتقالي
+    WARNING_ESCALATION: "#F59E0B", // برتقالي
+    WARNING_REMOVAL: "#10B981", // أخضر
+    SUSPENSION: "#F97316", // برتقالي غامق
     EXPULSION: "#EF4444", // أحمر
     RESTORATION: "#8B5CF6", // بنفسجي
   };
@@ -107,8 +92,9 @@ export const getEventTypeColor = (type: StudentEventType): string => {
 export const getEventTypeIcon = (type: StudentEventType): string => {
   const icons: Record<StudentEventType, string> = {
     WARNING: "⚠️",
-    GROUP_CHANGE: "🔄",
-    GROUP_REMOVAL: "❌",
+    WARNING_ESCALATION: "🔺",
+    WARNING_REMOVAL: "✅",
+    SUSPENSION: "⏸️",
     EXPULSION: "🚫",
     RESTORATION: "✅",
   };

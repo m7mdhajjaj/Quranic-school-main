@@ -17,6 +17,17 @@ const {
 } = require('./validation/historyValidation');
 
 /**
+ * @route   GET /api/students/history/group/:groupId/expelled
+ * @desc    جلب الطلاب المفصولين من حلقة معينة عبر البحث في التاريخ
+ * @access  Private (Admin, Teacher للحلقة)
+ */
+router.get(
+  '/history/group/:groupId/expelled',
+  protect,
+  studentController.getExpelledStudentsFromGroupHistory
+);
+
+/**
  * @route   GET /api/students/:studentId/history
  * @desc    جلب تاريخ طالب كامل مع الأحداث
  * @access  Private (Admin, Teacher للطالب التابع له, الطالب نفسه)

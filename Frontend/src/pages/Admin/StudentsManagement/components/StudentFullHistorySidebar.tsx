@@ -34,6 +34,24 @@ const EVENT_CONFIG = {
     color: 'bg-orange-50 border-orange-200',
     iconColor: 'text-orange-600',
   },
+  WARNING_ESCALATION: {
+    icon: AlertTriangle,
+    label: 'تصعيد إنذار',
+    color: 'bg-red-50 border-red-200',
+    iconColor: 'text-red-600',
+  },
+  WARNING_REMOVAL: {
+    icon: CheckCircle,
+    label: 'حذف إنذار',
+    color: 'bg-green-50 border-green-200',
+    iconColor: 'text-green-600',
+  },
+  SUSPENSION: {
+    icon: UserX,
+    label: 'تعليق',
+    color: 'bg-orange-50 border-orange-200',
+    iconColor: 'text-orange-600',
+  },
   EXPULSION: {
     icon: UserX,
     label: 'فصل',
@@ -45,18 +63,6 @@ const EVENT_CONFIG = {
     label: 'استعادة',
     color: 'bg-emerald-50 border-emerald-200',
     iconColor: 'text-emerald-600',
-  },
-  GROUP_CHANGE: {
-    icon: Users,
-    label: 'تغيير حلقة',
-    color: 'bg-blue-50 border-blue-200',
-    iconColor: 'text-blue-600',
-  },
-  GROUP_REMOVAL: {
-    icon: Users,
-    label: 'إزالة من حلقة',
-    color: 'bg-gray-50 border-gray-200',
-    iconColor: 'text-gray-600',
   },
 } as const;
 
@@ -108,21 +114,6 @@ const ExpulsionCard: React.FC<{ expulsion: StudentHistoryEvent }> = ({ expulsion
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
-            {expulsion.groupName && (
-              <div className="bg-white/70 rounded-lg p-2 border border-red-200">
-                <p className="text-xs text-red-600 mb-1">الحلقة:</p>
-                <p className="text-sm font-semibold text-gray-900">{expulsion.groupName}</p>
-              </div>
-            )}
-            {expulsion.teacherName && (
-              <div className="bg-white/70 rounded-lg p-2 border border-red-200">
-                <p className="text-xs text-red-600 mb-1">المعلم:</p>
-                <p className="text-sm font-semibold text-gray-900">{expulsion.teacherName}</p>
-              </div>
-            )}
-          </div>
-
           {expulsion.actionBy?.userName && (
             <div className="flex items-center gap-2 text-xs text-gray-600 pt-2 border-t border-red-200">
               <span>تم بواسطة:</span>
@@ -171,39 +162,6 @@ const EventCard: React.FC<{ event: StudentHistoryEvent; isLast: boolean }> = ({ 
             <div className="mb-3">
               <p className="text-sm font-semibold text-gray-700 mb-1">السبب:</p>
               <p className="text-sm text-gray-600 bg-white/50 p-2 rounded-lg">{event.reason}</p>
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-3 text-xs">
-            {event.groupName && (
-              <div className="bg-white/60 p-2 rounded-lg">
-                <p className="text-gray-500 mb-1">الحلقة:</p>
-                <p className="font-semibold text-gray-900">{event.groupName}</p>
-              </div>
-            )}
-            {event.teacherName && (
-              <div className="bg-white/60 p-2 rounded-lg">
-                <p className="text-gray-500 mb-1">المعلم:</p>
-                <p className="font-semibold text-gray-900">{event.teacherName}</p>
-              </div>
-            )}
-          </div>
-
-          {event.eventType === 'GROUP_CHANGE' && event.previousGroup && (
-            <div className="mt-3 pt-3 border-t border-gray-200">
-              <p className="text-xs text-gray-500 mb-2">الحلقة السابقة:</p>
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div className="bg-gray-100/60 p-2 rounded-lg">
-                  <p className="text-gray-500 mb-1">الحلقة:</p>
-                  <p className="font-semibold text-gray-900">{event.previousGroup.groupName}</p>
-                </div>
-                {event.previousGroup.teacherName && (
-                  <div className="bg-gray-100/60 p-2 rounded-lg">
-                    <p className="text-gray-500 mb-1">المعلم:</p>
-                    <p className="font-semibold text-gray-900">{event.previousGroup.teacherName}</p>
-                  </div>
-                )}
-              </div>
             </div>
           )}
 
@@ -283,11 +241,10 @@ export const StudentFullHistorySidebar: React.FC<StudentFullHistorySidebarProps>
           </div>
 
           {stats.total > 0 && (
-            <div className="grid grid-cols-3 gap-2 mt-4">
+            <div className="grid grid-cols-2 gap-2 mt-4">
               {[
                 { value: stats.total, label: 'إجمالي الأحداث' },
                 { value: stats.warnings, label: 'الإنذارات' },
-                { value: stats.groupChanges, label: 'تغيير حلقة' },
               ].map((stat, i) => (
                 <div key={i} className="bg-white/10 rounded-lg p-2 text-center">
                   <div className="text-2xl font-bold">{stat.value}</div>

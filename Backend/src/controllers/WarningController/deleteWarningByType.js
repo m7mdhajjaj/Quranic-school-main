@@ -4,6 +4,8 @@
 
 const Warning = require("../../schema/Warning");
 const { restoreStudentToGroup } = require("./helpers");
+const { invalidateCache } = require("../../middleware/cacheMiddleware");
+const { invalidateStudentCountsCache } = require("../basicController/groupController/cache");
 const { logRestorationEvent } = require("../basicController/studentController/history/helpers/restorationHistory");
 
 /**
@@ -38,7 +40,17 @@ exports.deleteWarningByType = async (req, res) => {
     // إعادة الطالب للحلقة إذا كان فصل
     const restored = await restoreStudentToGroup(warning);
 
-    // 📚 تسجيل الإعادة في التاريخ إذا تمت
+    // �️ إبطال الكاش إذا تم استعادة الطالب
+    if (restored) {
+      const teacherId = warning.groupId?.teacher;
+      if (teacherId) {
+        const cachePattern = `cache:/api/groups/teacher-id/${teacherId}*`;
+        await invalidateCache(cachePattern);
+        invalidateStudentCountsCache();
+      }
+    }
+
+    // �📚 تسجيل الإعادة في التاريخ إذا تمت
     if (restored && restored.restoredTo) {
       logRestorationEvent(
         warning.studentId,

@@ -191,27 +191,8 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
       className="min-h-screen bg-gradient-to-b from-emerald-50 via-teal-50 to-emerald-100 p-4 md:p-8"
       dir="rtl"
     >
-      {/* زر الطلاب المفصولين - Fixed على الشمال */}
-      <button
-        onClick={() => setShowHistorySidebar(true)}
-        className="fixed left-2 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-1.5 bg-gradient-to-b from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white px-2 py-3 rounded-xl shadow-lg hover:shadow-red-500/50 transition-all duration-300 hover:scale-105 group"
-        title="عرض الطلاب المفصولين"
-      >
-        <span className="text-xl">⛔</span>
-        <div className="flex flex-col items-center gap-0.5">
-          {['الطلاب', 'المفصولين'].map((word, i) => (
-            <span key={i} className="text-[10px] font-bold whitespace-nowrap leading-tight">
-              {word}
-            </span>
-          ))}
-        </div>
-        {selectedGroup.suspendedStudents && selectedGroup.suspendedStudents.length > 0 && (
-          <span className="absolute -top-1 -right-1 bg-white text-red-600 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shadow-md animate-pulse">
-            {selectedGroup.suspendedStudents.length}
-          </span>
-        )}
-      </button>
-
+      {/* زر الطلاب المفصولين - Fixed على الشمال - REMOVED */}
+      
       <div className="max-w-[1920px] mx-auto space-y-6">
         {/* Header */}
         <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-3xl shadow-xl p-6 border border-emerald-300 animate-fade-in-down">
@@ -234,25 +215,38 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
             </div>
             
             {/* زر الإحصائيات */}
-            <Button
-              onClick={() => handleShowGroupStatistics(selectedGroup)}
-              className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white border border-white/30 shadow-lg hover:shadow-xl transition-all duration-200"
-            >
-              <span>📊</span>
-              <span>إظهار الإحصائيات</span>
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={() => setShowHistorySidebar(true)}
+                className="flex items-center gap-2 bg-red-500/20 hover:bg-red-500/30 text-white border border-red-200/30 shadow-lg hover:shadow-xl transition-all duration-200 relative"
+              >
+                <span>⛔</span>
+                <span>الطلاب المفصولين</span>
+                {selectedGroup.suspendedStudents && selectedGroup.suspendedStudents.length > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-md border-2 border-white animate-pulse">
+                    {selectedGroup.suspendedStudents.length}
+                  </span>
+                )}
+              </Button>
+
+              <Button
+                onClick={() => handleShowGroupStatistics(selectedGroup)}
+                className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white border border-white/30 shadow-lg hover:shadow-xl transition-all duration-200"
+              >
+                <span>📊</span>
+                <span>إظهار الإحصائيات</span>
+              </Button>
+            </div>
           </div>
         </div>
 
-        {/* Layout: Students List + Suspended Students Side by Side */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left: Students List (2/3 width) */}
-          <div className="lg:col-span-3 space-y-4">
-            <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-4 border border-emerald-200">
-              <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">
-                <Users className="w-6 h-6 text-emerald-600" />
-                طلاب الحلقة ({filteredStudents?.length || 0})
-              </h2>
+        {/* Layout: Students List - Simplified to reduce CLS */}
+        <div className="w-full space-y-4">
+          <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-4 border border-emerald-200 min-h-[60vh]">
+            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">
+              <Users className="w-6 h-6 text-emerald-600" />
+              طلاب الحلقة ({filteredStudents?.length || 0})
+            </h2>
               
               {loadingStudents ? (
                 <div className="space-y-4">
@@ -303,7 +297,6 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
                   description="الحلقة فارغة حالياً"
                 />
               ) : null}
-            </div>
           </div>
         </div>
 
