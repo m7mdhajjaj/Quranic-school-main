@@ -293,7 +293,11 @@ export const StudentFullHistorySidebar: React.FC<StudentFullHistorySidebarProps>
                     lastName: student.lastName,
                     gender: student.gender,
                     avatar: student.avatar,
+                    role: 'student',
                   }}
+                  userId={student._id || studentId}
+                  userRole="students"
+                  autoFetch={true}
                   size="lg"
                   showStatus={true}
                   statusSize="sm"

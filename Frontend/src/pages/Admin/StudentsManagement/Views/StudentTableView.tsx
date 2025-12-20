@@ -297,6 +297,7 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
                               setHistoryStudentId(student._id || '');
                               setHistoryStudentName(`${student.firstName} ${student.lastName}`);
                               setHistoryStudent({
+                                _id: student._id,
                                 firstName: student.firstName,
                                 lastName: student.lastName,
                                 gender: student.gender,
