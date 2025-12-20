@@ -59,6 +59,24 @@ exports.getExpelledStudentsFromGroupHistory = async (req, res) => {
     // استخراج معرفات الطلاب الفريدة
     const studentIds = [...new Set(expulsionEvents.map((e) => e.studentId))];
 
+    // التحقق من الطلاب الذين تم إرجاعهم (RESTORATION بعد EXPULSION)
+    const restorationEvents = await StudentHistory.find({
+      eventType: "RESTORATION",
+      studentId: { $in: studentIds }
+    })
+      .select("studentId createdAt")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // إنشاء خريطة للطلاب المُرجعين مع تاريخ الإرجاع
+    const restoredStudentsMap = new Map();
+    restorationEvents.forEach((restoration) => {
+      const studentId = restoration.studentId.toString();
+      if (!restoredStudentsMap.has(studentId)) {
+        restoredStudentsMap.set(studentId, restoration.createdAt);
+      }
+    });
+
     // جلب بيانات الطلاب
     const students = await Student.find({
       _id: { $in: studentIds }
@@ -73,6 +91,14 @@ exports.getExpelledStudentsFromGroupHistory = async (req, res) => {
       .map((event) => {
         const student = studentsMap.get(event.studentId.toString());
         if (!student) return null;
+
+        const studentId = event.studentId.toString();
+        const restorationDate = restoredStudentsMap.get(studentId);
+        
+        // إذا كان هناك حدث إرجاع بعد الفصل، لا نُضيف الطالب للقائمة
+        if (restorationDate && new Date(restorationDate) > new Date(event.createdAt)) {
+          return null;
+        }
 
         return {
           _id: student._id,

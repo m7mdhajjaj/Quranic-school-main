@@ -555,3 +555,24 @@ export const getStudentHistoryStats = async (studentId: string) => {
   const response = await api.get(`/students/${studentId}/history/stats`);
   return response.data;
 };
+
+/**
+ * إرجاع طالب مفصول للحلقة (Admin only)
+ * @route POST /api/students/:studentId/restore
+ */
+export const restoreStudentToGroup = async (
+  studentId: string,
+  data: {
+    groupId: string;
+    reason?: string;
+  }
+): Promise<{ success: boolean; message: string }> => {
+  try {
+    const response = await api.post(`/students/${studentId}/restore`, data);
+    return response.data;
+  } catch (error) {
+    console.error("Error restoring student:", error);
+    const axiosError = error as AxiosError<{ message?: string }>;
+    throw new Error(axiosError.response?.data?.message || "حدث خطأ أثناء إرجاع الطالب");
+  }
+};

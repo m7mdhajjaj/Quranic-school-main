@@ -18,6 +18,7 @@ interface StudentTableViewProps {
   selectedStudents?: Set<string>;
   onToggleStudent?: (studentId: string) => void;
   onToggleAll?: () => void;
+  onStudentRestored?: () => void;
 }
 
 // دالة مساعدة للحصول على اسم الحلقة بشكل آمن
@@ -48,6 +49,7 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
   isLoading = false,
   selectedStudents,
   onToggleStudent,
+  onStudentRestored,
   onToggleAll,
 }) => {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
@@ -109,6 +111,7 @@ export const StudentTableView: React.FC<StudentTableViewProps> = ({
           studentId={historyStudentId}
           studentName={historyStudentName}
           student={historyStudent}
+          onStudentRestored={onStudentRestored}
         />
       )}
 

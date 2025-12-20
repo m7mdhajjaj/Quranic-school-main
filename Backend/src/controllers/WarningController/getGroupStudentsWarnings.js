@@ -38,9 +38,11 @@ exports.getGroupWithStudentsWarnings = async (req, res) => {
       .lean();
 
     // جلب الطلاب المفصولين من هذه الحلقة بالتحديد (originalGroup)
+    // ✅ فقط الإنذارات النشطة (status: "active") تُعتبر فصل فعلي
     const expulsionWarnings = await Warning.find({
       originalGroup: group.name,
-      type: { $in: ["third", "expulsion"] }
+      type: { $in: ["third", "expulsion"] },
+      status: "active"
     })
       .select("studentId")
       .lean();
@@ -67,10 +69,13 @@ exports.getGroupWithStudentsWarnings = async (req, res) => {
       });
     }
 
-    // جلب جميع الإنذارات للطلاب دفعة واحدة
+    // جلب جميع الإنذارات النشطة للطلاب دفعة واحدة
     const studentIds = students.map((s) => s._id);
-    const warnings = await Warning.find({ studentId: { $in: studentIds } })
-      .select("studentId type reason createdAt")
+    const warnings = await Warning.find({ 
+      studentId: { $in: studentIds },
+      status: "active" // فقط الإنذارات النشطة
+    })
+      .select("studentId type reason createdAt status")
       .lean();
 
     // تجميع الإنذارات حسب الطالب
@@ -98,8 +103,11 @@ exports.getGroupWithStudentsWarnings = async (req, res) => {
       // حساب عدد التنبيهات فقط
       const warningsOnlyCount = studentWarnings.filter((w) => w.type === "warning").length;
 
-      // التحقق إذا كان الطالب مفصول (has "third" or "expulsion" warning)
-      const isSuspended = existingTypes.includes("third") || existingTypes.includes("expulsion");
+      // التحقق إذا كان الطالب مفصول (has active "third" or "expulsion" warning)
+      const isSuspended = studentWarnings.some(w => 
+        (w.type === "third" || w.type === "expulsion") && 
+        w.status === "active"
+      );
 
       const studentData = {
         _id: student._id,

@@ -110,7 +110,12 @@ const getStudentCountPipeline = (matchStage = {}) => {
     },
     {
       $match: {
-        "warnings.type": { $nin: ["third", "expulsion"] }
+        $nor: [
+          {
+            "warnings.type": { $in: ["third", "expulsion"] },
+            "warnings.status": "active"
+          }
+        ]
       }
     },
     {

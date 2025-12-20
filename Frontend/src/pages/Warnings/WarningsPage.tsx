@@ -103,6 +103,30 @@ const WarningsPage: React.FC = () => {
     // No action needed - updates handled by other events
   }, []);
 
+  const handleStudentUpdated = useCallback((data: any) => {
+    // When a student is updated (e.g., restored), refresh the current group
+    // This will update the expelled students list
+    if (isTeacher && selectedGroup) {
+      console.log('📡 Student updated event received, refreshing group data');
+      refreshCurrentGroup();
+      // Also refetch groups to update the counts on cards
+      setTimeout(() => {
+        refetchData();
+      }, 100);
+    }
+  }, [isTeacher, selectedGroup, refreshCurrentGroup, refetchData]);
+
+  // ✅ Socket listener for student updates (restoration)
+  useEffect(() => {
+    const socket = socketManager.getSocket();
+    if (socket) {
+      socket.on('studentUpdated', handleStudentUpdated);
+      return () => {
+        socket.off('studentUpdated', handleStudentUpdated);
+      };
+    }
+  }, [handleStudentUpdated]);
+
   // Socket للتحديثات الفورية - مباشرة من مجلد Socket
 
   // ❌ REMOVED: Real-time user status updates

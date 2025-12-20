@@ -2,13 +2,15 @@
 // StudentFullHistorySidebar - عرض تاريخ الطالب الكامل
 // ============================================================================
 
-import React from 'react';
-import { X, AlertTriangle, UserX, Users, CheckCircle, Calendar, History } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, AlertTriangle, UserX, Users, CheckCircle, Calendar, History, RotateCcw } from 'lucide-react';
 import { useDisableBodyScroll } from '@/hooks/useDisableBodyScroll';
 import { useStudentHistory } from '../hooks/useStudentHistory';
 import Avatar from '@/components/Avatar/Avatar';
 import { Badge } from '@/components/UI/Badge';
 import type { StudentHistoryEvent } from '@/types/studentHistory';
+import { restoreStudentToGroup } from '@/Api/studentApi';
+import { showSuccessToast, showErrorToast } from '@/utils/toastUtils';
 
 interface StudentFullHistorySidebarProps {
   isOpen: boolean;
@@ -16,11 +18,13 @@ interface StudentFullHistorySidebarProps {
   studentId: string;
   studentName: string;
   student?: {
+    _id?: string;
     firstName?: string;
     lastName?: string;
     gender?: string;
     avatar?: { url?: string; publicId?: string };
   };
+  onStudentRestored?: () => void; // Callback لإعادة تحميل البيانات
 }
 
 // ============================================================================
@@ -86,7 +90,10 @@ const formatDate = (date: string | Date) =>
 // Sub-Components
 // ============================================================================
 
-const ExpulsionCard: React.FC<{ expulsion: StudentHistoryEvent }> = ({ expulsion }) => (
+const ExpulsionCard: React.FC<{ 
+  expulsion: StudentHistoryEvent;
+  onRestore?: () => void;
+}> = ({ expulsion, onRestore }) => (
   <div className="mb-6 bg-gradient-to-br from-red-50 to-rose-50 border-2 border-red-300 rounded-xl p-5 shadow-lg animate-fade-in">
     <div className="flex items-start gap-4">
       <div className="flex-shrink-0 w-12 h-12 bg-red-500 rounded-full flex items-center justify-center shadow-md">
@@ -119,6 +126,16 @@ const ExpulsionCard: React.FC<{ expulsion: StudentHistoryEvent }> = ({ expulsion
               <span>تم بواسطة:</span>
               <span className="font-semibold text-gray-800">{expulsion.actionBy.userName}</span>
             </div>
+          )}
+
+          {onRestore && (
+            <button
+              onClick={onRestore}
+              className="mt-4 w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+            >
+              <RotateCcw className="w-4 h-4" />
+              إرجاع الطالب للحلقة
+            </button>
           )}
         </div>
       </div>
@@ -188,13 +205,66 @@ export const StudentFullHistorySidebar: React.FC<StudentFullHistorySidebarProps>
   studentId,
   studentName,
   student,
+  onStudentRestored,
 }) => {
   useDisableBodyScroll(isOpen);
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
+  const [reason, setReason] = useState('');
+  const [restoring, setRestoring] = useState(false);
 
   const { history, loading, error, isExpelled, lastExpulsion, stats, refetch } = useStudentHistory({
     studentId,
     isOpen,
   });
+
+  // جلب الحلقة السابقة من التاريخ (آخر حلقة قبل الفصل)
+  const getPreviousGroup = () => {
+    if (!lastExpulsion) return null;
+    return {
+      groupId: lastExpulsion.groupId,
+      groupName: lastExpulsion.groupName,
+      teacherName: lastExpulsion.teacherName,
+    };
+  };
+
+  const handleRestoreClick = () => {
+    setShowRestoreModal(true);
+  };
+
+  const handleRestoreSubmit = async () => {
+    const previousGroup = getPreviousGroup();
+    if (!previousGroup?.groupId) {
+      showErrorToast('لم يتم العثور على الحلقة السابقة في التاريخ');
+      return;
+    }
+
+    setRestoring(true);
+    try {
+      await restoreStudentToGroup(studentId, {
+        groupId: previousGroup.groupId,
+        reason: reason || 'إرجاع الطالب لحلقته السابقة من قبل الأدمن',
+      });
+      
+      showSuccessToast('تم إرجاع الطالب للحلقة بنجاح');
+      setShowRestoreModal(false);
+      setReason('');
+      refetch(); // إعادة تحميل التاريخ
+      
+      // إعادة تحميل بيانات الطلاب في الصفحة الرئيسية
+      if (onStudentRestored) {
+        onStudentRestored();
+      }
+      
+      // إغلاق السايدبار بعد ثانية
+      setTimeout(() => {
+        onClose();
+      }, 1000);
+    } catch (error: any) {
+      showErrorToast(error.message || 'فشل إرجاع الطالب');
+    } finally {
+      setRestoring(false);
+    }
+  };
 
   return (
     <>
@@ -217,7 +287,13 @@ export const StudentFullHistorySidebar: React.FC<StudentFullHistorySidebarProps>
             <div className="flex items-center gap-3 flex-1">
               {student && (
                 <Avatar
-                  user={student}
+                  user={{
+                    _id: student._id || studentId,
+                    firstName: student.firstName,
+                    lastName: student.lastName,
+                    gender: student.gender,
+                    avatar: student.avatar,
+                  }}
                   size="lg"
                   showStatus={true}
                   statusSize="sm"
@@ -289,7 +365,9 @@ export const StudentFullHistorySidebar: React.FC<StudentFullHistorySidebarProps>
             </div>
           ) : (
             <>
-              {isExpelled && lastExpulsion && <ExpulsionCard expulsion={lastExpulsion} />}
+              {isExpelled && lastExpulsion && (
+                <ExpulsionCard expulsion={lastExpulsion} onRestore={handleRestoreClick} />
+              )}
               <div className="relative">
                 {history.map((event, index) => (
                   <EventCard key={event._id || index} event={event} isLast={index === history.length - 1} />
@@ -299,6 +377,89 @@ export const StudentFullHistorySidebar: React.FC<StudentFullHistorySidebarProps>
           )}
         </div>
       </div>
+
+      {/* Restore Modal */}
+      {showRestoreModal && (() => {
+        const previousGroup = getPreviousGroup();
+        return (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[150] flex items-center justify-center p-4" onClick={() => setShowRestoreModal(false)}>
+            <div 
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-fade-in"
+              onClick={(e) => e.stopPropagation()}
+              dir="rtl"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <RotateCcw className="w-6 h-6 text-emerald-600" />
+                  إرجاع الطالب للحلقة
+                </h3>
+                <button
+                  onClick={() => setShowRestoreModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* معلومات الحلقة السابقة */}
+                <div className="bg-emerald-50 border-2 border-emerald-200 rounded-lg p-4">
+                  <p className="text-sm font-semibold text-emerald-800 mb-2">الحلقة السابقة:</p>
+                  <div className="space-y-1">
+                    <p className="text-base font-bold text-gray-900">{previousGroup?.groupName || 'غير محدد'}</p>
+                    {previousGroup?.teacherName && (
+                      <p className="text-sm text-gray-600">المعلم: {previousGroup.teacherName}</p>
+                    )}
+                  </div>
+                  <p className="text-xs text-emerald-700 mt-3">سيتم إرجاع الطالب إلى هذه الحلقة تلقائياً</p>
+                </div>
+
+              {/* سبب الإرجاع */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  سبب الإرجاع (اختياري)
+                </label>
+                <textarea
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="اذكر سبب إرجاع الطالب..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none"
+                  rows={3}
+                />
+              </div>
+
+              {/* الأزرار */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={handleRestoreSubmit}
+                  disabled={restoring || !previousGroup?.groupId}
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {restoring ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                      جاري الإرجاع...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4" />
+                      إرجاع الطالب
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => setShowRestoreModal(false)}
+                  disabled={restoring}
+                  className="px-6 py-2.5 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  إلغاء
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        );
+      })()}
     </>
   );
 };

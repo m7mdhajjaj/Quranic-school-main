@@ -264,6 +264,7 @@ const StudentsManagement: React.FC = () => {
               selectedStudents={selectedStudents}
               onToggleStudent={toggleStudent}
               onToggleAll={toggleAllStudents}
+              onStudentRestored={fetchStudents}
             />
           </>
         )}

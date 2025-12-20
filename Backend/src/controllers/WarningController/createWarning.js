@@ -88,7 +88,11 @@ exports.createWarning = async (req, res) => {
     // 🔄 منطق الترقية التلقائية (3 تنبيهات -> إنذار أول -> ...)
     // ============================================================
     if (type === 'warning') {
-      const existingAlerts = await Warning.find({ studentId, type: 'warning' });
+      const existingAlerts = await Warning.find({ 
+        studentId, 
+        type: 'warning',
+        status: 'active' // فقط التنبيهات النشطة
+      });
       
       // إذا كان لديه تنبيهين سابقين (وهذا الثالث)
       if (existingAlerts.length >= 2) {
@@ -102,17 +106,29 @@ exports.createWarning = async (req, res) => {
         reason = `${reason} (تلقائي: تراكم 3 تنبيهات)`;
         
         // 3. التحقق التسلسلي للترقية للأعلى
-        const existingFirst = await Warning.findOne({ studentId, type: 'first' });
+        const existingFirst = await Warning.findOne({ 
+          studentId, 
+          type: 'first',
+          status: 'active'
+        });
         if (existingFirst) {
           type = 'second';
           reason = `${reason} -> ترقية لإنذار ثاني`;
           
-          const existingSecond = await Warning.findOne({ studentId, type: 'second' });
+          const existingSecond = await Warning.findOne({ 
+            studentId, 
+            type: 'second',
+            status: 'active'
+          });
           if (existingSecond) {
             type = 'third'; // إنذار نهائي (فصل)
             reason = `${reason} -> ترقية لإنذار ثالث`;
             
-            const existingThird = await Warning.findOne({ studentId, type: 'third' });
+            const existingThird = await Warning.findOne({ 
+              studentId, 
+              type: 'third',
+              status: 'active'
+            });
             if (existingThird) {
               type = 'expulsion'; // فصل نهائي
               reason = `${reason} -> ترقية لفصل نهائي`;

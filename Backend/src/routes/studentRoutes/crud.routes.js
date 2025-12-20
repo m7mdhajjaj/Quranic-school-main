@@ -42,6 +42,9 @@ router.get("/:id", protect, cacheMiddleware(300), studentController.getStudentBy
 // Create new student (with validation)
 router.post("/", protect, sanitizeStudentData, validateStudentData, studentController.createStudent);
 
+// Restore expelled student to group (admin only)
+router.post("/:id/restore", protect, studentController.restoreStudentToGroup);
+
 // Update student (with validation)
 router.put("/:id", protect, sanitizeStudentData, validateStudentData, studentController.updateStudent);
 

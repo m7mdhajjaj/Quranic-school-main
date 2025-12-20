@@ -1,5 +1,27 @@
+const Student = require("../../../schema/Student");
+const Group = require("../../../schema/Group");
+const bcrypt = require("bcryptjs");
+const { checkDuplicateFields } = require("../../../utils/validators/duplicateChecker");
+const { invalidateCache } = require("../../../middleware/cacheMiddleware");
+const { updateGroupActiveStatus, updateGroupsActiveStatusOnStudentMove } = require("../groupController");
+const {
+  notifyStudentAddedToGroup,
+  notifyStudentRemovedFromGroup,
+  notifyStudentMovedGroup
+} = require("../../../Notifications");
+const {
+  validateTeacherGroupMatch,
+  validateGroupCapacity,
+  buildStudentQuery,
+  invalidateStudentCaches,
+  emitStudentEvent,
+  notifyStudentUpdate,
+  handleStudentError,
+  populateTeacherFullName,
+} = require("./studentHelpers");
 // تسجيل حدث RESTORATION عند إرجاع طالب للحلقة
 const { logRestorationEvent } = require("./history/helpers/restorationHistory");
+
 /**
  * إرجاع طالب للحلقة بعد فصل (فقط للأدمن)
  * @route POST /api/students/:id/restore
@@ -24,10 +46,24 @@ exports.restoreStudentToGroup = async (req, res) => {
       return res.status(404).json({ message: "الحلقة غير موجودة" });
     }
 
-    // تحديث مجموعة الطالب
+    // تحديث مجموعة الطالب والمعلم
+    const oldGroup = student.group;
     student.group = group.name;
     student.teacher = group.teacher;
     await student.save();
+
+    // إلغاء تفعيل جميع الإنذارات للطالب عند إرجاعه (تصفير الإنذارات)
+    const Warning = require("../../../schema/Warning");
+    const warningUpdate = await Warning.updateMany(
+      {
+        studentId: studentId,
+        status: "active"
+      },
+      {
+        $set: { status: "student_removed" }
+      }
+    );
+    console.log(`✅ تم إلغاء ${warningUpdate.modifiedCount} إنذارات للطالب ${studentId}`);
 
     // تسجيل حدث RESTORATION في التاريخ
     await logRestorationEvent(
@@ -42,33 +78,29 @@ exports.restoreStudentToGroup = async (req, res) => {
       req.user
     );
 
+    // تحديث activeStatus للحلقة الجديدة
+    await updateGroupActiveStatus(group.name).catch(err => 
+      console.error("⚠️ Error updating group activeStatus:", err)
+    );
+
+    // مسح الكاش
+    await invalidateStudentCaches();
+
+    // إرسال الإشعارات
+    const io = req.app.get("io");
+    if (io) {
+      notifyStudentAddedToGroup(student, group.name, io);
+    }
+
+    // إرسال حدث Socket للطالب
+    emitStudentEvent('updated', student);
+
     res.json({ success: true, message: "تم إرجاع الطالب للحلقة وتسجيل الحدث في التاريخ" });
   } catch (error) {
     console.error("Error restoring student:", error);
     res.status(500).json({ message: "حدث خطأ أثناء إرجاع الطالب" });
   }
 };
-const Student = require("../../../schema/Student");
-const Group = require("../../../schema/Group");
-const bcrypt = require("bcryptjs");
-const { checkDuplicateFields } = require("../../../utils/validators/duplicateChecker");
-const { invalidateCache } = require("../../../middleware/cacheMiddleware");
-const { updateGroupActiveStatus, updateGroupsActiveStatusOnStudentMove } = require("../groupController");
-const {
-  notifyStudentAddedToGroup,
-  notifyStudentRemovedFromGroup,
-  notifyStudentMovedGroup
-} = require("../../../Notifications");
-const {
-  validateTeacherGroupMatch,
-  validateGroupCapacity,
-  buildStudentQuery,
-  invalidateStudentCaches,
-  emitStudentEvent,
-  notifyStudentUpdate,
-  handleStudentError,
-  populateTeacherFullName,
-} = require("./studentHelpers");
 
 /**
  * جلب جميع الطلاب مع فلترة وترتيب (محسّن للأداء)

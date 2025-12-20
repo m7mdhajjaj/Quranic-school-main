@@ -109,7 +109,7 @@ async function suspendStudentFromGroup(student, group, type, originalGroup) {
 }
 
 /**
- * التحقق من وجود إنذار سابق من نفس النوع
+ * التحقق من وجود إنذار سابق من نفس النوع (فقط الإنذارات النشطة)
  */
 async function checkDuplicateWarning(studentId, type) {
   if (type === "warning") {
@@ -119,6 +119,7 @@ async function checkDuplicateWarning(studentId, type) {
   const existingWarning = await Warning.findOne({
     studentId,
     type,
+    status: "active" // فقط الإنذارات النشطة
   });
 
   if (existingWarning) {
@@ -143,14 +144,17 @@ async function checkDuplicateWarning(studentId, type) {
 }
 
 /**
- * التحقق من تسلسل الإنذارات
+ * التحقق من تسلسل الإنذارات (فقط الإنذارات النشطة)
  */
 async function validateWarningSequence(studentId, type) {
   if (type === "warning" || type === "first") {
     return null; // التنبيه والإنذار الأول لا يحتاجان تحقق
   }
 
-  const studentWarnings = await Warning.find({ studentId });
+  const studentWarnings = await Warning.find({ 
+    studentId,
+    status: "active" // فقط الإنذارات النشطة
+  });
   
   if (type === "second") {
     const hasFirst = studentWarnings.some(w => w.type === "first");
