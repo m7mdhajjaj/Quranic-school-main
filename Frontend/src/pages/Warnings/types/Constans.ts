@@ -9,10 +9,10 @@ import type { WarningType } from "./warnings";
  */
 export const getWarningTitle = (type: WarningType): string => {
   const titles: Record<WarningType, string> = {
-    warning: "⚠️ إعطاء تنبيه",
-    first: "🔴 الإنذار الأول",
-    second: "🔴🔴 الإنذار الثاني",
-    third: "🔴🔴🔴 الإنذار الثالث",
+    warning: "إعطاء تنبيه",
+    first: "الإنذار الأول",
+    second: "الإنذار الثاني",
+    third: "الإنذار الثالث",
   };
   return titles[type];
 };
@@ -35,10 +35,10 @@ export const getWarningLabel = (type: string): string => {
  */
 export const getWarningDescription = (type: WarningType): string => {
   const descriptions: Record<WarningType, string> = {
-    warning: "⚠️ تنبيه فقط - تحذير من الإنذار في المرة القادمة",
-    first: "� الإنذار الأول",
-    second: "🔴 الإنذار الثاني",
-    third: "🔴 الإنذار الثالث",
+    warning: "تنبيه بسيط - تحذير من الإنذار في المرة القادمة",
+    first: "إنذار رسمي أول",
+    second: "إنذار رسمي ثانٍ",
+    third: "إنذار نهائي - قد يؤدي للفصل",
   };
   return descriptions[type];
 };
@@ -48,25 +48,12 @@ export const getWarningDescription = (type: WarningType): string => {
  */
 export const getWarningColor = (type: string): string => {
   const colors: Record<string, string> = {
-    warning: "from-yellow-400 to-orange-500",
-    first: "from-orange-500 to-red-500",
-    second: "from-red-500 to-red-600",
-    third: "from-red-600 to-red-700",
+    warning: "from-amber-400 via-yellow-500 to-orange-500",
+    first: "from-orange-500 via-red-400 to-rose-500",
+    second: "from-red-500 via-rose-500 to-pink-600",
+    third: "from-rose-600 via-red-700 to-red-800",
   };
   return colors[type] || "from-gray-400 to-gray-600";
-};
-
-/**
- * الحصول على أيقونة الإنذار
- */
-export const getWarningIcon = (type: string): string => {
-  const icons: Record<string, string> = {
-    warning: "⚠️",
-    first: "🔴",
-    second: "🔴🔴",
-    third: "🔴🔴🔴",
-  };
-  return icons[type] || "⚠️";
 };
 
 /**

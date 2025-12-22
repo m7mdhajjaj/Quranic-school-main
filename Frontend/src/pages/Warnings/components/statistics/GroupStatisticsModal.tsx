@@ -3,9 +3,25 @@
 // ============================================================================
 
 import React, { useMemo } from 'react';
-import { X, Users, AlertTriangle, TrendingUp } from 'lucide-react';
-import { getWarningLabel, getWarningIcon } from '../../types/Constans';
+import { X, Users, AlertTriangle, TrendingUp, ShieldAlert, AlertOctagon, Ban } from 'lucide-react';
+import { getWarningLabel } from '../../types/Constans';
 import { useDisableBodyScroll } from '@/hooks/useDisableBodyScroll';
+
+// ✅ Modern icon mapping
+const getWarningIcon = (type: string) => {
+  switch (type) {
+    case 'warning':
+      return <AlertTriangle className="w-5 h-5" />;
+    case 'first':
+      return <ShieldAlert className="w-5 h-5" />;
+    case 'second':
+      return <AlertOctagon className="w-5 h-5" />;
+    case 'third':
+      return <Ban className="w-5 h-5" />;
+    default:
+      return <AlertTriangle className="w-5 h-5" />;
+  }
+};
 
 interface StudentDetail {
   _id: string;

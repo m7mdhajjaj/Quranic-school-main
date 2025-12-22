@@ -63,6 +63,8 @@ export const validateCreateWarning = (data: CreateWarningData): ValidationResult
     errors.push('اسم الحلقة مطلوب');
   } else if (typeof data.groupName !== 'string') {
     errors.push('اسم الحلقة يجب أن يكون نص');
+  } else if (data.groupName.trim().length < 2) {
+    errors.push('اسم الحلقة يجب أن يكون على الأقل حرفين');
   }
 
   // التحقق من نوع الإنذار

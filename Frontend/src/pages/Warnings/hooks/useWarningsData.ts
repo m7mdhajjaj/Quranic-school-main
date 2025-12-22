@@ -2,7 +2,7 @@
 // useWarningsData Hook - جلب بيانات الإنذارات
 // ============================================================================
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import api from '@/Api/api';
 import * as warningApi from '@/Api/warningApi';
@@ -15,8 +15,8 @@ export const useWarningsData = (): UseWarningsDataReturn => {
   const [warnings, setWarnings] = useState<Warning[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const isTeacher = user?.role === 'teacher';
-  const isStudent = user?.role === 'student';
+  const isTeacher = useMemo(() => user?.role === 'teacher', [user?.role]);
+  const isStudent = useMemo(() => user?.role === 'student', [user?.role]);
 
   // جلب البيانات
   const fetchData = async () => {
@@ -93,8 +93,10 @@ export const useWarningsData = (): UseWarningsDataReturn => {
   }, []);
 
   useEffect(() => {
-    fetchData();
-  }, [user]);
+    if (user?._id) {
+      fetchData();
+    }
+  }, [user?._id]); // ✅ Only re-fetch when user ID changes
 
   return {
     user,

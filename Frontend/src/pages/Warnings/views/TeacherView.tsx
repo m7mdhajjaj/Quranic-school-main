@@ -54,7 +54,6 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
 
   // ✅ محسّن بـ useCallback
   const handleGroupSelect = useCallback((group: Group) => {
-    console.log('Selected Group:', group);
     onGroupSelect(group);
   }, [onGroupSelect]);
 

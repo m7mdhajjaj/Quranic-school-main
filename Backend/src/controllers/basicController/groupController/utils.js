@@ -103,19 +103,27 @@ const getStudentCountPipeline = (matchStage = {}) => {
     {
       $lookup: {
         from: "warnings",
-        localField: "_id",
-        foreignField: "studentId",
-        as: "warnings"
+        let: { studentId: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$studentId", "$$studentId"] },
+                  { $eq: ["$status", "active"] },
+                  { $in: ["$type", ["third", "expulsion"]] }
+                ]
+              }
+            }
+          }
+        ],
+        as: "activeExpulsionWarnings"
       }
     },
     {
       $match: {
-        $nor: [
-          {
-            "warnings.type": { $in: ["third", "expulsion"] },
-            "warnings.status": "active"
-          }
-        ]
+        // استبعاد الطلاب الذين لديهم إنذار فصل نشط
+        activeExpulsionWarnings: { $size: 0 }
       }
     },
     {

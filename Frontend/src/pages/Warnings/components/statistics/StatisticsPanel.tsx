@@ -7,11 +7,26 @@ import { Card } from '@/components/UI/Card';
 import { StatCard } from '@/components/UI/StatCard';
 import {
   getWarningLabel,
-  getWarningIcon,
   formatArabicDate,
 } from '../../types/Constans';
-import { BarChart3, Users, AlertTriangle, XCircle } from 'lucide-react';
+import { BarChart3, Users, AlertTriangle, XCircle, ShieldAlert, AlertOctagon, Ban } from 'lucide-react';
 import '../../styles/animations.css';
+
+// ✅ Modern icon mapping
+const getWarningIcon = (type: string) => {
+  switch (type) {
+    case 'warning':
+      return '⚠️';
+    case 'first':
+      return <ShieldAlert className="w-4 h-4" />;
+    case 'second':
+      return <AlertOctagon className="w-4 h-4" />;
+    case 'third':
+      return <Ban className="w-4 h-4" />;
+    default:
+      return '⚠️';
+  }
+};
 
 export const StatisticsPanel: React.FC<StatisticsPanelProps> = ({
   statistics,
