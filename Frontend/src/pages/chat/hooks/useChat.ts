@@ -11,7 +11,8 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
   const { user } = useAuth();
   const { 
     messages, 
-    loading, 
+    loading,
+    loadingMore, 
     hasMore, 
     fetchMessages, 
     addMessage, 
@@ -185,6 +186,7 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
   return {
     messages,
     loading,
+    loadingMore,
     hasMore,
     fetchMessages,
     sendMessage,

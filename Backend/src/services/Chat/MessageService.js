@@ -321,6 +321,21 @@ class MessageService {
       tempId: clientTempId, 
       message: message.toObject()
     });
+    
+    // ✅ Emit conversation update to both users
+    global.io.to(recipientId.toString()).emit("conversation:updated", {
+      chatType: "DM",
+      targetId: senderId.toString(),
+      lastMessage: message.toObject(),
+      timestamp: message.createdAt
+    });
+    
+    global.io.to(senderId.toString()).emit("conversation:updated", {
+      chatType: "DM",
+      targetId: recipientId.toString(),
+      lastMessage: message.toObject(),
+      timestamp: message.createdAt
+    });
   }
 
   /**
@@ -340,6 +355,14 @@ class MessageService {
     global.io.to(senderId.toString()).emit("message:sent", { 
       tempId: clientTempId, 
       message: message.toObject()
+    });
+    
+    // ✅ Emit conversation update to group members
+    global.io.to(`group:${groupId}`).emit("conversation:updated", {
+      chatType: "GROUP",
+      targetId: groupId.toString(),
+      lastMessage: message.toObject(),
+      timestamp: message.createdAt
     });
   }
 

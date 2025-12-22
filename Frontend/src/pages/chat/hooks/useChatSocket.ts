@@ -85,6 +85,14 @@ export const useChatSocket = () => {
     };
   }, []);
 
+  // ✅ Listen for conversation updates
+  const onConversationUpdated = useCallback((callback: (data: any) => void) => {
+    socketRef.current?.on('conversation:updated', callback);
+    return () => {
+      socketRef.current?.off('conversation:updated', callback);
+    };
+  }, []);
+
   return {
     socket: socketRef.current,
     joinGroup,
@@ -96,6 +104,7 @@ export const useChatSocket = () => {
     onMessageSent,
     onMessageDelivered,
     onMessageRead,
-    onTyping
+    onTyping,
+    onConversationUpdated
   };
 };

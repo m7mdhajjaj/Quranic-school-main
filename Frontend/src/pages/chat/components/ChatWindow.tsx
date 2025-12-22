@@ -18,7 +18,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
   const { user } = useAuth();
   const { 
     messages, 
-    loading, 
+    loading,
+    loadingMore, 
     hasMore,
     fetchMessages,
     sendMessage, 
@@ -50,20 +51,17 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
         setIsSending(false);
       }
     },
-    onTypingChange: handleTyping,
+    onTyping: handleTyping,
     maxLength: 1000
   });
   
   // Scroll management (auto-scroll, pagination)
-  const { messagesContainerRef, messagesEndRef, handleScroll } = useMessageScroll({
+  const { messagesContainerRef, messagesEndRef, handleScroll, loadingMore: showLoadingSpinner } = useMessageScroll({
     messages,
     hasMore,
-    loading,
-    onLoadMore: () => {
-      const oldestMessage = messages[messages.length - 1];
-      if (oldestMessage) {
-        fetchMessages(oldestMessage.createdAt);
-      }
+    loading: loadingMore,
+    onLoadMore: (before) => {
+      fetchMessages(before);
     }
   });
   
@@ -114,7 +112,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
         onScroll={handleScroll}
         className="flex-1 overflow-y-auto p-4 space-y-3"
       >
-        {loading && (
+        {/* Loading Spinner for Pagination */}
+        {showLoadingSpinner && (
+          <div className="flex justify-center items-center py-4">
+            <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
+          </div>
+        )}
+
+        {loading && messages.length === 0 && (
           <div className="text-center py-8">
             <LoadingSpinner size="lg" />
             <p className="text-gray-500 mt-2">جاري التحميل...</p>

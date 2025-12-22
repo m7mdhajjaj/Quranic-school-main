@@ -5,11 +5,19 @@ import type { GetMessagesInput } from '../../../Validation/chatValidation';
 export const useChatMessages = (chatType: 'DM' | 'GROUP', targetId: string) => {
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
 
   const fetchMessages = useCallback(async (before?: string) => {
     if (!targetId) return;
-    setLoading(true);
+    
+    // Use different loading states for initial load vs pagination
+    if (before) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
+    
     try {
       const params: GetMessagesInput = {
         chatType,
@@ -22,11 +30,13 @@ export const useChatMessages = (chatType: 'DM' | 'GROUP', targetId: string) => {
       
       if (newMessages.length < 50) setHasMore(false);
 
-      setMessages(prev => before ? [...prev, ...newMessages] : newMessages);
+      // ✅ Fix: Prepend older messages when using pagination (Chronological Order)
+      setMessages(prev => before ? [...newMessages, ...prev] : newMessages);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   }, [chatType, targetId]);
 
@@ -38,7 +48,8 @@ export const useChatMessages = (chatType: 'DM' | 'GROUP', targetId: string) => {
 
   // Add optimistic message (قبل ما يوصل للسيرفر)
   const addOptimisticMessage = useCallback((message: any) => {
-    setMessages(prev => [{ ...message, _optimistic: true }, ...prev]);
+    // ✅ Fix: Append to end (Chronological Order)
+    setMessages(prev => [...prev, { ...message, _optimistic: true }]);
   }, []);
 
   // Add real message from server
@@ -46,7 +57,8 @@ export const useChatMessages = (chatType: 'DM' | 'GROUP', targetId: string) => {
     setMessages(prev => {
       // Remove optimistic version if exists
       const filtered = prev.filter(m => m.clientTempId !== message.clientTempId);
-      return [message, ...filtered];
+      // ✅ Fix: Append to end (Chronological Order)
+      return [...filtered, message];
     });
   }, []);
 
@@ -64,7 +76,8 @@ export const useChatMessages = (chatType: 'DM' | 'GROUP', targetId: string) => {
 
   return { 
     messages, 
-    loading, 
+    loading,
+    loadingMore, 
     hasMore, 
     fetchMessages, 
     addMessage, 
