@@ -12,18 +12,13 @@ const {
   validateDeleteWarningByType,
   validateGetStudentWarnings,
   validateGetGroupWarnings,
-  validateCheckStudentStatus,
 } = require('../../Validation/Warning/warningValidation');
 
 // ============================================================================
 // GET ROUTES - جلب الإنذارات
 // ============================================================================
 
-// جلب إحصائيات الإنذارات (للمدير) - يجب أن يكون قبل الـ routes الديناميكية
-// GET /api/warnings/statistics/all
-router.get('/statistics/all', protect, warningController.getWarningsStatistics);
-
-// جلب إحصائيات المعلم
+// جلب إحصائيات المعلم (USED by Frontend)
 // GET /api/warnings/statistics/teacher
 router.get(
   '/statistics/teacher',
@@ -31,11 +26,7 @@ router.get(
   warningController.getTeacherStatistics
 );
 
-// التحقق من حالة الطالب (مفصول أم لا)
-// GET /api/warnings/status/:studentId
-router.get('/status/:studentId', protect, validateCheckStudentStatus, warningController.checkStudentStatus);
-
-// جلب إنذارات طالب معين
+// جلب إنذارات طالب معين (USED by Frontend)
 // GET /api/warnings/student/:studentId
 router.get(
   '/student/:studentId',
@@ -44,7 +35,7 @@ router.get(
   warningController.getStudentWarnings
 );
 
-// جلب إحصائيات حلقة معينة
+// جلب إحصائيات حلقة معينة (USED by Frontend)
 // GET /api/warnings/group/:groupId/statistics
 router.get(
   '/group/:groupId/statistics',
@@ -53,7 +44,7 @@ router.get(
   warningController.getGroupStatistics
 );
 
-// جلب طلاب الحلقة مع تفاصيل الإنذارات الكاملة
+// جلب طلاب الحلقة مع تفاصيل الإنذارات الكاملة (USED by Frontend)
 // GET /api/warnings/group/:groupId/students-with-warnings
 router.get(
   '/group/:groupId/students-with-warnings',
@@ -61,10 +52,6 @@ router.get(
   validateGetGroupWarnings,
   warningController.getGroupWithStudentsWarnings
 );
-
-// جلب إنذارات حلقة معينة (للمعلم فقط)
-// GET /api/warnings/group/:groupId
-router.get('/group/:groupId', protect, validateGetGroupWarnings, warningController.getGroupWarnings);
 
 // ============================================================================
 // POST ROUTES - إنشاء الإنذارات

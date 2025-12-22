@@ -99,7 +99,7 @@ export const StudentHistorySidebar: React.FC<StudentHistorySidebarProps> = React
         </div>
 
         {/* Content */}
-        <div className="p-4 overflow-y-auto h-[calc(100vh-100px)]">
+        <div className="p-4 pb-6 overflow-y-auto h-[calc(100vh-88px)]">
           {!selectedStudentId && loadingExpelled ? (
             // ⚡ Skeleton Loading
             <div className="space-y-2">

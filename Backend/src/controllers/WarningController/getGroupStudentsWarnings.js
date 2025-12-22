@@ -69,7 +69,7 @@ exports.getGroupWithStudentsWarnings = async (req, res) => {
       });
     }
 
-    // جلب جميع الإنذارات النشطة للطلاب دفعة واحدة
+    // ✅ OPTIMIZED: جلب جميع الإنذارات النشطة دفعة واحدة
     const studentIds = students.map((s) => s._id);
     const warnings = await Warning.find({ 
       studentId: { $in: studentIds },

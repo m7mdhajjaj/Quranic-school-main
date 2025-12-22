@@ -6,52 +6,105 @@ const Warning = require("../../schema/Warning");
 const mongoose = require("mongoose");
 
 /**
- * جلب إحصائيات الإنذارات (للمدير)
- * @route GET /api/warnings/statistics/all
- */
-exports.getWarningsStatistics = async (req, res) => {
-  try {
-    const totalWarnings = await Warning.countDocuments();
-    const warningsByType = await Warning.aggregate([
-      {
-        $group: {
-          _id: "$type",
-          count: { $sum: 1 },
-        },
-      },
-    ]);
-
-    const activeWarnings = await Warning.countDocuments({ isActive: true });
-
-    res.json({
-      totalWarnings,
-      warningsByType,
-      activeWarnings,
-    });
-  } catch (error) {
-    console.error("Error fetching warnings statistics:", error);
-    res.status(500).json({ message: "حدث خطأ أثناء جلب الإحصائيات" });
-  }
-};
-
-/**
  * جلب إحصائيات المعلم
+ * ✅ OPTIMIZED: استخدام aggregation pipeline بدلاً من queries منفصلة
  * @route GET /api/warnings/statistics/teacher
  */
 exports.getTeacherStatistics = async (req, res) => {
   try {
     const teacherId = req.user._id;
 
-    // إجمالي الإنذارات التي أعطاها هذا المعلم
-    const totalWarnings = await Warning.countDocuments({ teacherId });
-
-    // الإنذارات حسب النوع
-    const warningsByType = await Warning.aggregate([
+    // ✅ استخدام aggregation واحد لحساب كل الإحصائيات دفعة واحدة
+    const [statistics] = await Warning.aggregate([
       { $match: { teacherId: new mongoose.Types.ObjectId(teacherId) } },
       {
-        $group: {
-          _id: "$type",
-          count: { $sum: 1 },
+        $facet: {
+          // إجمالي الإنذارات
+          totalCount: [{ $count: "count" }],
+          
+          // الإنذارات حسب النوع
+          byType: [
+            {
+              $group: {
+                _id: "$type",
+                count: { $sum: 1 },
+              },
+            },
+          ],
+          
+          // عدد الطلاب الفريدين
+          uniqueStudents: [
+            {
+              $group: {
+                _id: "$studentId",
+              },
+            },
+            { $count: "count" },
+          ],
+          
+          // عدد المفصولين
+          expelled: [
+            { $match: { type: "expulsion" } },
+            { $count: "count" },
+          ],
+          
+          // أكثر 5 أسباب
+          topReasons: [
+            {
+              $group: {
+                _id: "$reason",
+                count: { $sum: 1 },
+              },
+            },
+            { $sort: { count: -1 } },
+            { $limit: 5 },
+          ],
+          
+          // الإنذارات حسب الحلقة
+          byGroup: [
+            {
+              $lookup: {
+                from: "groups",
+                localField: "groupId",
+                foreignField: "_id",
+                as: "group",
+              },
+            },
+            { $unwind: { path: "$group", preserveNullAndEmptyArrays: true } },
+            {
+              $group: {
+                _id: "$group.name",
+                count: { $sum: 1 },
+              },
+            },
+            { $sort: { count: -1 } },
+          ],
+          
+          // آخر 10 إنذارات
+          recentWarnings: [
+            { $sort: { createdAt: -1 } },
+            { $limit: 10 },
+            {
+              $lookup: {
+                from: "students",
+                localField: "studentId",
+                foreignField: "_id",
+                as: "student",
+              },
+            },
+            { $unwind: "$student" },
+            {
+              $project: {
+                _id: 1,
+                type: 1,
+                reason: 1,
+                createdAt: 1,
+                studentName: {
+                  $concat: ["$student.firstName", " ", "$student.lastName"],
+                },
+              },
+            },
+          ],
         },
       },
     ]);
@@ -65,70 +118,18 @@ exports.getTeacherStatistics = async (req, res) => {
       expulsion: 0,
     };
 
-    warningsByType.forEach((item) => {
+    statistics.byType.forEach((item) => {
       warningsCount[item._id] = item.count;
     });
 
-    // عدد الطلاب الذين لديهم إنذارات من هذا المعلم
-    const studentsWithWarnings = await Warning.distinct("studentId", {
-      teacherId,
-    });
-
-    // عدد الطلاب المفصولين
-    const expelledStudents = await Warning.countDocuments({
-      teacherId,
-      type: "expulsion",
-    });
-
-    // أكثر 5 أسباب تكراراً
-    const topReasons = await Warning.aggregate([
-      { $match: { teacherId: new mongoose.Types.ObjectId(teacherId) } },
-      {
-        $group: {
-          _id: "$reason",
-          count: { $sum: 1 },
-        },
-      },
-      { $sort: { count: -1 } },
-      { $limit: 5 },
-    ]);
-
-    // الإنذارات حسب الحلقة
-    const warningsByGroup = await Warning.aggregate([
-      { $match: { teacherId: new mongoose.Types.ObjectId(teacherId) } },
-      {
-        $lookup: {
-          from: "groups",
-          localField: "groupId",
-          foreignField: "_id",
-          as: "group",
-        },
-      },
-      { $unwind: "$group" },
-      {
-        $group: {
-          _id: "$group.name",
-          count: { $sum: 1 },
-        },
-      },
-      { $sort: { count: -1 } },
-    ]);
-
-    // آخر 5 إنذارات
-    const recentWarnings = await Warning.find({ teacherId })
-      .populate("studentId", "firstName lastName")
-      .populate("groupId", "name")
-      .sort({ createdAt: -1 })
-      .limit(5);
-
     res.json({
-      totalWarnings,
+      totalWarnings: statistics.totalCount[0]?.count || 0,
       warningsCount,
-      studentsWithWarnings: studentsWithWarnings.length,
-      expelledStudents,
-      topReasons,
-      warningsByGroup,
-      recentWarnings,
+      studentsWithWarnings: statistics.uniqueStudents[0]?.count || 0,
+      expelledStudents: statistics.expelled[0]?.count || 0,
+      topReasons: statistics.topReasons,
+      warningsByGroup: statistics.byGroup,
+      recentWarnings: statistics.recentWarnings,
     });
   } catch (error) {
     console.error("Error fetching teacher statistics:", error);

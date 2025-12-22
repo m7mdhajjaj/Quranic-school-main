@@ -135,20 +135,6 @@ const validateGetGroupWarnings = [
 ];
 
 /**
- * Validation rules لحالة الطالب
- */
-const validateCheckStudentStatus = [
-  param("studentId")
-    .trim()
-    .notEmpty()
-    .withMessage("معرف الطالب مطلوب")
-    .isMongoId()
-    .withMessage("معرف الطالب غير صحيح"),
-
-  handleValidationErrors,
-];
-
-/**
  * Validation rules لجلب الطلاب المفصولين من حلقة
  */
 const validateGetExpelledStudents = [
@@ -162,12 +148,14 @@ const validateGetExpelledStudents = [
   handleValidationErrors,
 ];
 
+// ============================================================================
+// EXPORTS - Only used validators (Optimized for performance)
+// ============================================================================
 module.exports = {
   validateCreateWarning,
   validateDeleteWarning,
   validateDeleteWarningByType,
   validateGetStudentWarnings,
   validateGetGroupWarnings,
-  validateCheckStudentStatus,
   validateGetExpelledStudents,
 };

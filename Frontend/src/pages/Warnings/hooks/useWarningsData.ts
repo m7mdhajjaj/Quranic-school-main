@@ -92,10 +92,29 @@ export const useWarningsData = (): UseWarningsDataReturn => {
     }
   }, []);
 
+  // ✅ استخدام AbortController لمنع race conditions
   useEffect(() => {
-    if (user?._id) {
-      fetchData();
-    }
+    if (!user?._id) return;
+    
+    const controller = new AbortController();
+    let isMounted = true;
+    
+    const loadData = async () => {
+      try {
+        await fetchData();
+      } catch (error) {
+        if (!controller.signal.aborted && isMounted) {
+          console.error('Error in loadData:', error);
+        }
+      }
+    };
+    
+    loadData();
+    
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
   }, [user?._id, fetchData]);
 
   return {

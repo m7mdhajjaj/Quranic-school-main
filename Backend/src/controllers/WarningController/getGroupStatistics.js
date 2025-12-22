@@ -58,7 +58,7 @@ exports.getGroupStatistics = async (req, res) => {
 
     const studentIds = students.map((s) => s._id);
 
-    // جلب جميع الإنذارات للطلاب دفعة واحدة
+    // ✅ OPTIMIZED: جلب جميع الإنذارات للطلاب دفعة واحدة
     const warnings = await Warning.find({ studentId: { $in: studentIds } })
       .select("studentId type")
       .lean();

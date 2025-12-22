@@ -2,12 +2,11 @@
 // WarningController/index.js - Main Controller Entry Point
 // ============================================================================
 
-// Import all controllers
+// Import all controllers (OPTIMIZED - Only used endpoints)
 const createWarning = require("./createWarning");
 const getWarnings = require("./getWarnings");
 const deleteWarning = require("./deleteWarning");
 const warningStatistics = require("./warningStatistics");
-const studentStatus = require("./studentStatus");
 const getGroupStudentsWarnings = require("./getGroupStudentsWarnings");
 const deleteWarningByType = require("./deleteWarningByType");
 const getGroupStatistics = require("./getGroupStatistics");
@@ -28,9 +27,6 @@ module.exports = {
   ...deleteWarning,
   ...deleteWarningByType,
 
-  // Statistics operations
+  // Statistics operations (only getTeacherStatistics is used)
   ...warningStatistics,
-
-  // Student status operations
-  ...studentStatus,
 };

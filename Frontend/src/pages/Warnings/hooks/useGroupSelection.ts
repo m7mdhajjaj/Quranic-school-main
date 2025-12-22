@@ -82,11 +82,7 @@ export const useGroupSelection = ({
       // لا نضع setLoadingStudents(true) هنا لمنع الوميض
       const updatedGroup = await fetchGroupStudentsWarnings(selectedGroup);
       if (updatedGroup) {
-        setSelectedGroup(prev => {
-          // الحفاظ على نفس الكائن إذا لم يتغير لتجنب إعادة الرندر غير الضروري
-          if (JSON.stringify(prev) === JSON.stringify(updatedGroup)) return prev;
-          return updatedGroup;
-        });
+        setSelectedGroup(updatedGroup);
       }
     } catch (error) {
       console.error("Error refreshing group data:", error);
