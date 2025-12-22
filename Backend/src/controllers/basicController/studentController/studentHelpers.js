@@ -5,7 +5,7 @@
 
 const Group = require('../../../schema/Group');
 const Student = require('../../../schema/Student');
-const { invalidateCache } = require('../../../middleware/cacheMiddleware');
+const { invalidateCache } = require('../../../middleware');
 const { getTeacherInfo } = require('../groupController/helpers');
 
 /**

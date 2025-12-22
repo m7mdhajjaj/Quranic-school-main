@@ -5,37 +5,44 @@
  * 
  * هذا الملف يوفر نقطة وصول موحدة لجميع middleware في التطبيق
  * يسهل استيراد واستخدام جميع middleware بشكل منظم
+ * 
+ * البنية:
+ * - auth/          : المصادقة والصلاحيات
+ * - validation/    : التحقق من صحة البيانات
+ * - rateLimiter/   : محدد معدل الطلبات
+ * - errorHandler/  : معالجة الأخطاء
+ * - cache/         : التخزين المؤقت
  */
 
-// ==================== Authentication Middleware ====================
+// ==================== Authentication & Authorization ====================
 const auth = require('./auth');
 
-// ==================== Error Handling Middleware ====================
-const { 
-  asyncHandler, 
-  globalErrorHandler, 
-  notFound, 
-  AppError 
-} = require('./errorHandler');
+// ==================== Validation ====================
+const validation = require('./validation');
 
-// ==================== Cache Middleware ====================
-const { 
-  cacheMiddleware, 
-  invalidateCache 
-} = require('./cacheMiddleware');
+// ==================== Rate Limiting ====================
+const rateLimiter = require('./rateLimiter');
+
+// ==================== Error Handling ====================
+const errorHandler = require('./errorHandler');
+
+// ==================== Cache ====================
+const cache = require('./cache');
 
 // ==================== Export All Middleware ====================
 module.exports = {
   // Authentication & Authorization
   ...auth,
   
+  // Validation
+  ...validation,
+  
+  // Rate Limiting
+  ...rateLimiter,
+  
   // Error Handling
-  asyncHandler,
-  globalErrorHandler,
-  notFound,
-  AppError,
+  ...errorHandler,
   
   // Caching
-  cacheMiddleware,
-  invalidateCache,
+  ...cache,
 };

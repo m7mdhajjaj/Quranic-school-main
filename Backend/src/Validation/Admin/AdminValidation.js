@@ -1,6 +1,6 @@
 // Validation/AdminValidation.js
 const bcrypt = require('bcryptjs');
-const { checkDuplicateFields } = require('../../utils/validators/duplicateChecker');
+const { checkDuplicateFields } = require('../validators/duplicateChecker');
 
 /**
  * Admin data validation middleware with comprehensive rules

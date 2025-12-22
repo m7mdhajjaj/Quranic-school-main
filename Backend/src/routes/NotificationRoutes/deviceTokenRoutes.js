@@ -38,23 +38,40 @@ router.post('/register-token', protect, async (req, res) => {
     }
 
     // Upsert token (unique)
-    const existing = await DeviceToken.findOne({ token });
-    if (existing) {
-      existing.user = userId;
-      existing.userModel = userModel;
-      existing.platform = platform;
-      await existing.save();
-      
-      console.log(`✅ Device token updated for user ${userId}`);
-    } else {
-      await DeviceToken.create({ 
-        user: userId, 
-        userModel, 
-        token, 
-        platform 
-      });
-      
-      console.log(`✅ New device token registered for user ${userId}`);
+    try {
+      const existing = await DeviceToken.findOne({ token });
+      if (existing) {
+        // Update existing token
+        existing.user = userId;
+        existing.userModel = userModel;
+        existing.platform = platform;
+        await existing.save();
+        
+        console.log(`✅ Device token updated for user ${userId}`);
+      } else {
+        // Create new token
+        await DeviceToken.create({ 
+          user: userId, 
+          userModel, 
+          token, 
+          platform 
+        });
+        
+        console.log(`✅ New device token registered for user ${userId}`);
+      }
+    } catch (dbError) {
+      // Handle duplicate key error (E11000)
+      if (dbError.code === 11000) {
+        console.log(`⚠️ Duplicate token detected, updating instead...`);
+        await DeviceToken.findOneAndUpdate(
+          { token },
+          { user: userId, userModel, platform },
+          { upsert: true, new: true }
+        );
+        console.log(`✅ Device token updated (via upsert) for user ${userId}`);
+      } else {
+        throw dbError; // Re-throw if not duplicate error
+      }
     }
 
     return res.status(200).json({ 
@@ -64,15 +81,18 @@ router.post('/register-token', protect, async (req, res) => {
   } catch (error) {
     console.error('❌ Error registering token:', error);
     console.error('❌ Error stack:', error.stack);
+    console.error('❌ Error details:', {
+      name: error.name,
+      message: error.message,
+      code: error.code
+    });
     
-    // ✅ تأكد من إرجاع JSON دائماً
-    if (!res.headersSent) {
-      return res.status(500).json({ 
-        success: false, 
-        message: 'error registering token', 
-        error: error.message 
-      });
-    }
+    // ✅ تأكد من إرجاع JSON دائماً - حتى في حالة الخطأ
+    return res.status(500).json({ 
+      success: false, 
+      message: 'error registering token', 
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
   }
 });
 

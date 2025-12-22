@@ -7,7 +7,7 @@
  * يحسن الأداء عن طريق تقليل استعلامات قاعدة البيانات
  */
 
-const { cache } = require('../utils/cache/redisClient');
+const { cache } = require('../../utils/cache/redisClient');
 
 /**
  * Cache middleware for GET requests

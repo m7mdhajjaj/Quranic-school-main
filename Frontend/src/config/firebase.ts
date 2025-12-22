@@ -201,6 +201,19 @@ export const registerTokenWithBackend = async (
       })
     });
 
+    // Check if response is ok before parsing JSON
+    if (!response.ok) {
+      console.error(`❌ Failed to register token - Status: ${response.status}`);
+      // Try to get error message from response
+      try {
+        const errorText = await response.text();
+        console.error('❌ Error response:', errorText);
+      } catch (e) {
+        console.error('❌ Could not read error response');
+      }
+      return false;
+    }
+
     const data = await response.json();
     
     if (data.success) {

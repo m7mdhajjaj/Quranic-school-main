@@ -1,0 +1,236 @@
+import React, { useState } from 'react';
+import { Avatar } from '../../../components/Avatar';
+import { EmptyState, LoadingSpinner, Badge } from '../../../components/UI';
+import { MessageSquare, Users } from 'lucide-react';
+import type { Conversation } from '../types';
+import type { Contact, Group } from '../hooks/useChatContacts';
+
+interface ChatSidebarProps {
+  conversations: Conversation[];
+  contacts: Contact[];
+  groups: Group[];
+  loading: boolean;
+  onSelect: (conv: Conversation) => void;
+  onStartNewChat: (target: Contact | Group, isGroup: boolean) => void;
+  selectedId?: string;
+  currentUserId: string;
+}
+
+const ChatSidebar: React.FC<ChatSidebarProps> = ({ 
+  conversations, 
+  contacts, 
+  groups, 
+  loading, 
+  onSelect, 
+  onStartNewChat,
+  selectedId,
+  currentUserId
+}) => {
+  const [view, setView] = useState<'conversations' | 'contacts'>('conversations');
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  const getConversationDisplay = (conv: Conversation) => {
+    if (conv.type === 'GROUP' && conv.groupId) {
+      return {
+        name: conv.groupId.name,
+        subtitle: 'محادثة جماعية',
+        avatar: conv.groupId.image?.url || null,
+        userId: conv.groupId._id
+      };
+    } else {
+      // DM: Get the other participant
+      const otherParticipant = conv.participants.find(p => p.userId._id !== currentUserId);
+      if (otherParticipant) {
+        return {
+          name: `${otherParticipant.userId.firstName} ${otherParticipant.userId.lastName}`,
+          subtitle: otherParticipant.userModel === 'Student' ? 'طالب' : otherParticipant.userModel === 'Teacher' ? 'معلم' : 'مشرف',
+          avatar: otherParticipant.userId.avatar?.url,
+          userId: otherParticipant.userId._id
+        };
+      }
+    }
+    return { name: 'محادثة', subtitle: '', avatar: null, userId: '' };
+  };
+
+  return (
+    <div className="flex flex-col h-full bg-gradient-to-b from-white to-gray-50">
+      {/* Header */}
+      <div className="p-6 bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg">
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <MessageSquare className="w-6 h-6" />
+          المحادثات
+        </h2>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setView('conversations')}
+            className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+              view === 'conversations'
+                ? 'bg-white text-emerald-600 shadow-md'
+                : 'bg-white/20 text-white hover:bg-white/30'
+            }`}
+          >
+            <MessageSquare className="w-4 h-4" />
+            المحادثات
+          </button>
+          <button
+            onClick={() => setView('contacts')}
+            className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+              view === 'contacts'
+                ? 'bg-white text-emerald-600 shadow-md'
+                : 'bg-white/20 text-white hover:bg-white/30'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            جهات الاتصال
+          </button>
+        </div>
+      </div>
+      
+      <div className="flex-1 overflow-y-auto">
+        {view === 'conversations' ? (
+          // Show existing conversations
+          conversations.length === 0 ? (
+            <EmptyState
+              icon={<MessageSquare className="w-20 h-20 text-gray-300" />}
+              title="لا توجد محادثات"
+              description="ابدأ محادثة جديدة من جهات الاتصال"
+            />
+          ) : (
+            Array.from(new Map(conversations.map(conv => [conv._id, conv])).values())
+              .filter(conv => conv && conv._id) // Filter out invalid conversations
+              .map(conv => {
+              const display = getConversationDisplay(conv);
+              return (
+                <div 
+                  key={conv._id}
+                  onClick={() => onSelect(conv)}
+                  className={`flex items-center p-4 mx-2 my-1 rounded-xl cursor-pointer transition-all duration-200 relative group ${
+                    selectedId === conv._id
+                      ? 'bg-gradient-to-r from-emerald-50 to-teal-50 shadow-md border-r-4 border-emerald-500'
+                      : 'hover:bg-gray-50 hover:shadow-sm'
+                  }`}
+                >
+                  <div className="ml-3">
+                    <Avatar 
+                      userId={display.userId}
+                      src={display.avatar || undefined}
+                      userName={display.name}
+                      size="md"
+                      showStatus={conv.type === 'DM'}
+                      statusSize="sm"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium">{display.name}</div>
+                    <div className="text-xs text-gray-500 truncate">
+                      {conv.lastMessage?.text || display.subtitle}
+                    </div>
+                  </div>
+                  {conv.unreadCount > 0 && (
+                    <Badge 
+                      variant="danger"
+                      className="absolute top-2 left-2 min-w-[20px] h-5 flex items-center justify-center animate-pulse"
+                    >
+                      {conv.unreadCount > 9 ? '9+' : conv.unreadCount}
+                    </Badge>
+                  )}
+                </div>
+              );
+            })
+          )
+        ) : (
+          // Show contacts & groups to start new chat
+          <div className="p-2">
+            {/* Groups Section */}
+            {groups.length > 0 && (
+              <div className="mb-6">
+                <div className="px-4 py-3 bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-800 text-sm font-bold rounded-lg mb-2 flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  الحلقات
+                </div>
+                <div className="space-y-1">
+                  {groups.filter(g => g && g._id).map(group => (
+                    <div
+                      key={group._id}
+                      onClick={() => onStartNewChat(group, true)}
+                      className="flex items-center p-3 mx-1 rounded-xl cursor-pointer hover:bg-emerald-50 transition-all duration-200 group"
+                    >
+                      <div className="ml-3">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-lg shadow-md group-hover:scale-110 transition-transform">
+                          {group.name.charAt(0)}
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-semibold text-gray-800">{group.name}</div>
+                        <div className="text-xs text-emerald-600 flex items-center gap-1">
+                          <MessageSquare className="w-3 h-3" />
+                          محادثة جماعية
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Contacts Section */}
+            {contacts.length > 0 && (
+              <div>
+                <div className="px-4 py-3 bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 text-sm font-bold rounded-lg mb-2 flex items-center gap-2">
+                  <MessageSquare className="w-4 h-4" />
+                  جهات الاتصال
+                </div>
+                <div className="space-y-1">
+                  {contacts.filter(c => c && c._id).map(contact => (
+                    <div
+                      key={contact._id}
+                      onClick={() => onStartNewChat(contact, false)}
+                      className="flex items-center p-3 mx-1 rounded-xl cursor-pointer hover:bg-blue-50 transition-all duration-200 group"
+                    >
+                      <div className="ml-3">
+                        <Avatar 
+                          userId={contact._id}
+                          src={contact.avatar?.url}
+                          userName={contact.firstName}
+                          size="md"
+                          showStatus={true}
+                          statusSize="sm"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-semibold text-gray-800">{contact.firstName} {contact.lastName}</div>
+                        <Badge 
+                          variant={contact.role === 'student' ? 'success' : contact.role === 'teacher' ? 'primary' : 'warning'}
+                          className="text-xs"
+                        >
+                          {contact.role === 'student' ? 'طالب' : contact.role === 'teacher' ? 'معلم' : 'مشرف'}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {contacts.length === 0 && groups.length === 0 && (
+              <EmptyState
+                icon={<Users className="w-20 h-20 text-gray-300" />}
+                title="لا توجد جهات اتصال"
+                description="لم يتم العثور على أي جهات اتصال أو مجموعات"
+              />
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ChatSidebar;

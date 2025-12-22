@@ -115,6 +115,12 @@ export const getPrimaryNavItems = (rolePermissions: RolePermissions): Navigation
         icon: UserCheck,
         color: "from-red-500 to-pink-500",
       },
+      {
+        to: "/chat",
+        label: "المحادثة",
+        icon: MessageSquare,
+        color: "from-green-500 to-teal-500",
+      },
     ];
   }
 
@@ -156,6 +162,12 @@ export const getPrimaryNavItems = (rolePermissions: RolePermissions): Navigation
       label: "اختبر نفسك",
       icon: FileCheck2,
       color: "from-indigo-500 to-purple-500",
+    },
+    {
+      to: "/chat",
+      label: "المحادثة",
+      icon: MessageSquare,
+      color: "from-green-500 to-teal-500",
     },
   ];
 };
@@ -235,12 +247,6 @@ export const getSecondaryNavItems = (rolePermissions: RolePermissions): Navigati
       label: "الامتحانات الرسمية",
       icon: ClipboardList,
       color: "from-violet-500 to-purple-500",
-    },
-    {
-      to: "/chat",
-      label: "المحادثة",
-      icon: MessageSquare,
-      color: "from-green-500 to-teal-500",
     },
   ];
 };

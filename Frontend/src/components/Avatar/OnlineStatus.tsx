@@ -2,7 +2,7 @@
  * 🟢 Online Status Indicator - Real-time Component
  * ================================================
  * مؤشر حالة المستخدم (Online/Offline) في الوقت الفعلي
- * يعتمد 100% على UserStatusContext الذي يستمع لـ Socket.io
+ * يعتمد 100% على PresenceService عبر useChatPresence hook
  * 
  * @module OnlineStatus
  * @description نقطة خضراء/حمراء تعرض حالة المستخدم لحظياً
@@ -12,7 +12,7 @@ import React, { useContext, useMemo } from 'react';
 import { UserStatusContext } from '@/Context/UserStatusContext';
 
 interface OnlineStatusProps {
-  /** Force status - يتجاوز Context */
+  /** Force status - يتجاوز PresenceService */
   isOnline?: boolean;
   /** حجم المؤشر */
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl';
@@ -20,7 +20,7 @@ interface OnlineStatusProps {
   className?: string;
   /** موضع المؤشر */
   position?: 'absolute' | 'relative';
-  /** بيانات المستخدم (يُستخدم _id لجلب الحالة من Context) */
+  /** بيانات المستخدم (يُستخدم _id لجلب الحالة من PresenceService) */
   user?: {
     isActive?: boolean;
     _id?: string;
@@ -34,30 +34,25 @@ const OnlineStatusComponent: React.FC<OnlineStatusProps> = ({
   position = 'absolute',
   user,
 }) => {
-  // ✅ الحصول على Context
+  // ✅ استخدام UserStatusContext للحصول على الحالة من PresenceService
   const context = useContext(UserStatusContext);
   
   /**
-   * ✅ تحديد حالة المستخدم من Context
-   * الأولوية: externalIsOnline > Context
-   * 
-   * ⚠️ Important: لا نستخدم useMemo هنا لأننا نريد re-render عند كل تغيير في userStatuses
+   * ✅ تحديد حالة المستخدم
+   * الأولوية: externalIsOnline > PresenceService
    */
-  let isOnline = false;
-  
-  // الأولوية 1: من prop مباشر (force)
-  if (externalIsOnline !== undefined) {
-    isOnline = externalIsOnline;
-  }
-  // الأولوية 2: من Context (Real-time من Socket)
-  else if (user?._id && context) {
-    const status = context.getUserStatus(user._id);
-    isOnline = status?.isActive || false;
-  }
-  else {
-    // Default to false if no context or user ID
-    isOnline = false;
-  }
+  const isOnline = useMemo(() => {
+    // الأولوية 1: من prop مباشر (force)
+    if (externalIsOnline !== undefined) {
+      return externalIsOnline;
+    }
+    // الأولوية 2: من PresenceService (Real-time من Socket)
+    if (user?._id && context) {
+      return context.isUserOnline(user._id);
+    }
+    // Default to false
+    return false;
+  }, [externalIsOnline, user?._id, context, context?.userStatuses]);
 
   // Size classes - محسّنة مع useMemo
   const sizeClass = useMemo(() => {

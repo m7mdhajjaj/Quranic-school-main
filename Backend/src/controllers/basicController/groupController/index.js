@@ -18,7 +18,7 @@ const { updateGroup, renameGroup } = require('./updateGroup');
 const { deleteGroup } = require('./deleteGroup');
 const { invalidateStudentCountsCache } = require('./cache');
 const { exportGroupsToCSV } = require('./ExportOperation');
-const { validateAndCheckGroupName } = require('../../../utils/validators/duplicateChecker');
+const { validateAndCheckGroupName } = require('../../../Validation/validators/duplicateChecker');
 const { updateGroupActiveStatus, updateGroupsActiveStatusOnStudentMove } = require('./updateActiveStatus');
 
 /**

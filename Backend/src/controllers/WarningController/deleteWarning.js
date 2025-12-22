@@ -4,7 +4,7 @@
 
 const Warning = require("../../schema/Warning");
 const { restoreStudentToGroup } = require("./helpers");
-const { invalidateCache } = require("../../middleware/cacheMiddleware");
+const { invalidateCache } = require("../../middleware");
 const { invalidateStudentCountsCache } = require("../basicController/groupController/cache");
 const { logRestorationEvent } = require("../basicController/studentController/history/helpers/restorationHistory");
 

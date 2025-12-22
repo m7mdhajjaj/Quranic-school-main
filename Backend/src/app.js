@@ -7,12 +7,13 @@ const path = require('path');
 const connectDB = require('./config/db');
 const http = require('http');
 const { Server } = require('socket.io');
-const Chat = require('./schema/Chat');
+const Chat = require('./schema/Chat/Chat');
 const Student = require('./schema/Student');
 const { NotificationService, FCMService } = require('./Notifications');
 const MonthlyChampionService = require('./services/ChampionService');
 const AttendanceService = require('./services/DashboardService/GetStudentAbsence');
 const WarningJob = require('./Notifications/Jobs/WarningJob');
+const TokenCleanupJob = require('./Notifications/Jobs/TokenCleanupJob');
 // Initialize FCM service (reads env FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_SERVICE_ACCOUNT_PATH)
 // FCMService is now imported from ./Notifications above
 
@@ -143,8 +144,8 @@ app.use(
   require('./routes/DailyMarkRoutes/DailyMarkRoutes')
 );
 app.use('/api/attendance', require('./routes/attendanceRoutes'));
-// TODO: Chat routes not implemented yet
-// app.use('/api/chat', require('./routes/chatRoutes'));
+app.use('/api/chat', require('./routes/ChatRoutes/chatRoutes'));
+app.use('/api/fcm', require('./routes/fcmRoutes'));
 app.use(
   '/api/notifications',
   require('./routes/NotificationRoutes/notificationRoutes')
@@ -259,6 +260,10 @@ console.log('📋 خدمة تحديث قائمة الطلاب الغائبين �
 
 // تشغيل Cron Job لإنفاذ قرارات الفصل
 WarningJob.setupWarningJobs();
+
+// تشغيل Cron Job لتنظيف FCM tokens القديمة
+TokenCleanupJob.start();
+console.log('🧹 خدمة تنظيف FCM tokens القديمة تم تفعيلها');
 
 // Socket.IO error handling
 io.engine.on('connection_error', (err) => {
@@ -999,26 +1004,27 @@ io.on('connection', (socket) => {
 
             if (updateResult) {
               console.log(`✅ User ${firstName} (${userId}) lastSeen updated (after delay)`);
+
+              // ✅ بث حالة Offline للجميع
+              io.emit('user-status', {
+                userId: userId,
+                isActive: false,
+                timestamp: new Date().toISOString(),
+              });
             }
           } catch (error) {
-            console.error(
-              `❌ Error updating lastSeen for user ${userId}:`,
-              error.message
-            );
+            console.error('Error updating lastSeen on disconnect:', error);
           }
-
-          // ✅ بث حالة Offline للجميع
-          io.emit('user-status', {
-            userId: userId,
-            isActive: false,
-            timestamp: new Date().toISOString(),
-          });
         });
-
-        console.log(`📊 Remaining online users: ${onlineUsersManager.getOnlineCount()}`);
       }
     }
+
+    console.log(`📊 Online users: ${onlineUsersManager.getOnlineCount()}`);
   });
+
+  // ✅ Chat Socket Events (New Modular Structure)
+  const chatSocketHandler = require('./sockets/Chat');
+  chatSocketHandler(io, socket);
 });
 
 // Handle server errors

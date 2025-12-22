@@ -8,7 +8,7 @@ const {
 } = require("../../Validation/Student/StudentValidation");
 const { validateStudentSearchQuery } = require("../../Validation/Student/StudentQueryValidation");
 const { protect } = require("../../middleware/auth");
-const { cacheMiddleware } = require("../../middleware/cacheMiddleware");
+const { cacheMiddleware } = require("../../middleware");
 
 /**
  * CRUD Routes for Students

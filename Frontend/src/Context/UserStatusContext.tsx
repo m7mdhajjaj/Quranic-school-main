@@ -50,31 +50,31 @@ export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ ch
    * ✅ معالج تحديث حالة المستخدم من Socket (user-status event)
    * هذا هو المصدر الوحيد لتحديث الحالات
    */
-  const handleUserStatus = useCallback((data: { 
-    userId: string; 
-    isActive: boolean; 
-    timestamp: string;
-  }) => {
-    console.log('🟢 [Presence] Status update received:', data);
+  const handleUserStatus = useCallback((data: any) => {
+    if (!data?.userId) return;
     
-    setUserStatuses(prev => {
-      const updated = {
-        ...prev,
-        [data.userId]: {
-          isActive: data.isActive,
-          timestamp: data.timestamp,
-        },
-      };
-      console.log('📊 [Presence] Updated userStatuses:', updated);
-      return updated;
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🟢 [Presence] Status update received:', data);
+    }
+    
+    setUserStatuses(prev => ({
+      ...prev,
+      [data.userId]: {
+        isActive: data.isActive ?? false,
+        timestamp: data.timestamp,
+      },
+    }));
   }, []);
 
   /**
    * ✅ معالج استقبال القائمة الأولية للمستخدمين المتصلين
    */
-  const handleInitialOnlineUsers = useCallback((data: Record<string, UserStatusState>) => {
-    console.log('📥 [Presence] Initial online users received:', Object.keys(data).length);
+  const handleInitialOnlineUsers = useCallback((data: any) => {
+    if (!data || typeof data !== 'object') return;
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📥 [Presence] Initial online users received:', Object.keys(data).length);
+    }
     setUserStatuses(prev => ({
       ...prev,
       ...data
@@ -85,19 +85,25 @@ export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ ch
    * ✅ الاستماع لتحديثات Socket
    */
   useEffect(() => {
-    console.log('👂 [Presence] Setting up listeners for presence events');
+    if (!user?._id) return;
+    
+    const userId = user._id;
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('👂 [Presence] Setting up listeners for presence events');
+    }
     
     const handleConnect = () => {
-      if (user?._id) {
+      if (process.env.NODE_ENV === 'development') {
         console.log('🔌 [Presence] Socket connected, setting self as online');
-        setUserStatuses(prev => ({
-          ...prev,
-          [user._id]: {
-            isActive: true,
-            timestamp: new Date().toISOString()
-          }
-        }));
       }
+      setUserStatuses(prev => ({
+        ...prev,
+        [userId]: {
+          isActive: true,
+          timestamp: new Date().toISOString()
+        }
+      }));
     };
 
     // الاشتراك في Events
@@ -106,35 +112,19 @@ export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     socketManager.on('connect', handleConnect);
 
     // إذا كان متصلاً بالفعل
-    if (socketManager.isConnected() && user?._id) {
+    if (socketManager.isConnected()) {
       handleConnect();
     }
 
     return () => {
-      console.log('🧹 [Presence] Cleaning up listeners');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🧹 [Presence] Cleaning up listeners');
+      }
       socketManager.off('user-status', handleUserStatus);
       socketManager.off('initial-online-users', handleInitialOnlineUsers);
       socketManager.off('connect', handleConnect);
     };
   }, [handleUserStatus, handleInitialOnlineUsers, user?._id]);
-
-  /**
-   * ✅ تحديث تفاؤلي (Optimistic Update) للمستخدم الحالي
-   * بمجرد تسجيل الدخول، نعتبر المستخدم Online محلياً
-   */
-  useEffect(() => {
-    if (user?._id) {
-      console.log('👤 [Presence] Current user detected, setting optimistic online status');
-      setUserStatuses(prev => ({
-        ...prev,
-        [user._id]: {
-          isActive: true,
-          timestamp: new Date().toISOString()
-        }
-      }));
-    }
-  }, [user?._id]);
-
 
   /**
    * الحصول على حالة مستخدم معين

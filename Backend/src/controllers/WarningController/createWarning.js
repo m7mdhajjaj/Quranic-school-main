@@ -4,7 +4,7 @@
 
 const Warning = require("../../schema/Warning");
 const { notifyStudentWarning } = require("../../Notifications");
-const { invalidateCache } = require("../../middleware/cacheMiddleware");
+const { invalidateCache } = require("../../middleware");
 const { invalidateStudentCountsCache } = require("../basicController/groupController/cache");
 const {
   validateBasicInput,

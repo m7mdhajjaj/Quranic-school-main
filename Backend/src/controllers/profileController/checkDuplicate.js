@@ -3,7 +3,7 @@
  * Handles real-time duplicate checking for profile fields
  */
 
-const { checkDuplicateFields } = require("../../utils/validators/duplicateChecker");
+const { checkDuplicateFields } = require("../../Validation/validators/duplicateChecker");
 
 /**
  * @desc    Check if a field value is duplicate (for real-time validation)

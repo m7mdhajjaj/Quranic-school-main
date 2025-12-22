@@ -8,7 +8,7 @@ const Student = require("../../../schema/Student");
 const { findTeacherByIdOrName } = require("./helpers");
 const { invalidateStudentCountsCache } = require("./cache");
 const { successResponse, notFoundResponse, handleError, emitSocketEvent } = require("./utils");
-const { checkDuplicateGroupName } = require("../../../utils/validators/duplicateChecker");
+const { checkDuplicateGroupName } = require("../../../Validation/validators/duplicateChecker");
 
 /**
  * تحديث حلقة

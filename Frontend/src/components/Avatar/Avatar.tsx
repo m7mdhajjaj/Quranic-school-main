@@ -337,27 +337,18 @@ const Avatar: React.FC<AvatarProps> = React.memo(({
    * ✅ عرض النص مع الحالة (showStatusText)
    */
   if (showStatusText) {
-    // جلب الحالة من Context
+    // جلب الحالة من UserStatusContext
     const context = useContext(UserStatusContext);
     const targetUserId = userId || user?._id;
-    
-    const userStatusFromContext = useMemo(() => {
-      if (!targetUserId || !context?.getUserStatus) return null;
-      try {
-        return context.getUserStatus(targetUserId);
-      } catch {
-        return null;
-      }
-    }, [targetUserId, context, context?.userStatuses]);
+    const presenceIsOnline = context && targetUserId ? context.isUserOnline(targetUserId) : false;
 
     // تحديد النص بناءً على الحالة
     const statusText = useMemo(() => {
       if (userIsOnline === true) return 'نشط الآن';
       if (userIsOnline === false) return 'غير نشط';
-      if (userStatusFromContext?.isActive === true) return 'نشط الآن';
-      if (userStatusFromContext?.isActive === false) return 'غير نشط';
+      if (presenceIsOnline === true) return 'نشط الآن';
       return 'غير نشط';
-    }, [userIsOnline, userStatusFromContext?.isActive]);
+    }, [userIsOnline, presenceIsOnline]);
 
     return (
       <div className="flex items-center gap-2">

@@ -1,6 +1,6 @@
 // Teacher Validation - متطابق مع Frontend validation
 // التحقق من صحة بيانات المعلمين - نفس المنطق المستخدم في الفرونت إند
-const { checkDuplicateFields } = require('../../utils/validators/duplicateChecker');
+const { checkDuplicateFields } = require('../validators/duplicateChecker');
 
 // تطبيع الجنس - نفس المنطق في Frontend
 const normalizeGender = (value) => {

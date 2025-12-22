@@ -99,6 +99,13 @@ import TeachersManagement from "./pages/Admin/TeachersManagement/index";
 import GroupManagement from "./pages/Admin/GroupManagement/index";
 
 // ============================================================================
+// Chat Components
+// ============================================================================
+import StudentChatView from "./pages/chat/Views/StudentChatView";
+import TeacherChatView from "./pages/chat/Views/TeacherChatView";
+import AdminChatView from "./pages/chat/Views/AdminChatView";
+
+// ============================================================================
 // Other Components
 // ============================================================================
 import Soon from "./pages/Soon";
@@ -147,7 +154,7 @@ const AdminRoutes: React.FC = () => {
         {/* ============================================
             صفحات التواصل - Communication Pages
             ============================================ */}
-        <Route path="/chat" element={<Soon />} />
+        <Route path="/chat" element={<AdminChatView />} />
 
         {/* ============================================
             الإعدادات الشخصية - User Settings
@@ -251,7 +258,7 @@ const TeacherRoutes: React.FC = () => {
           } 
         />
         {/* <Route path="/chat" element={<NotFound />} /> */}
-        <Route path="/chat" element={<Soon />} />
+        <Route path="/chat" element={<StudentChatView />} />
         <Route path="/activities" element={<Activities />} />
 
         {/* ============================================
@@ -411,7 +418,7 @@ const StudentRoutes: React.FC = () => {
             </React.Suspense>
           } 
         />
-        <Route path="/chat" element={<Soon />} />
+        <Route path="/chat" element={<TeacherChatView />} />
         <Route path="/activities" element={<Activities />} />
 
         {/* ============================================

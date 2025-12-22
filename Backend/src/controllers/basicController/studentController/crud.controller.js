@@ -1,8 +1,8 @@
 const Student = require("../../../schema/Student");
 const Group = require("../../../schema/Group");
 const bcrypt = require("bcryptjs");
-const { checkDuplicateFields } = require("../../../utils/validators/duplicateChecker");
-const { invalidateCache } = require("../../../middleware/cacheMiddleware");
+const { checkDuplicateFields } = require("../../../Validation/validators/duplicateChecker");
+const { invalidateCache } = require("../../../middleware");
 const { updateGroupActiveStatus, updateGroupsActiveStatusOnStudentMove } = require("../groupController");
 const {
   notifyStudentAddedToGroup,

@@ -8,7 +8,7 @@ const {
   detectTeacherChanges, 
   buildNotificationMessage 
 } = require("./utils.controller");
-const { checkDuplicateFields } = require("../../../utils/validators/duplicateChecker");
+const { checkDuplicateFields } = require("../../../Validation/validators/duplicateChecker");
 
 /**
  * جلب جميع المعلمين مع فلترة، بحث، ترتيب و pagination

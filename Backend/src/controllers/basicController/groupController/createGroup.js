@@ -6,7 +6,7 @@ const Group = require("../../../schema/Group");
 const Teacher = require("../../../schema/Teacher");
 const { findTeacherByIdOrName } = require("./helpers");
 const { successResponse, notFoundResponse, handleError, emitSocketEvent } = require("./utils");
-const { checkDuplicateGroupName } = require("../../../utils/validators/duplicateChecker");
+const { checkDuplicateGroupName } = require("../../../Validation/validators/duplicateChecker");
 
 /**
  * إنشاء حلقة جديدة
