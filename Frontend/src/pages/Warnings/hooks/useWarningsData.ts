@@ -18,8 +18,8 @@ export const useWarningsData = (): UseWarningsDataReturn => {
   const isTeacher = useMemo(() => user?.role === 'teacher', [user?.role]);
   const isStudent = useMemo(() => user?.role === 'student', [user?.role]);
 
-  // جلب البيانات
-  const fetchData = async () => {
+  // ✅ جلب البيانات - محسّن بـ useCallback
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -55,7 +55,7 @@ export const useWarningsData = (): UseWarningsDataReturn => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isTeacher, isStudent, user?._id]);
 
   // ✅ جلب إنذارات طلاب الحلقة - محسّن بـ useCallback
   const fetchGroupStudentsWarnings = useCallback(async (group: Group): Promise<Group> => {
@@ -96,7 +96,7 @@ export const useWarningsData = (): UseWarningsDataReturn => {
     if (user?._id) {
       fetchData();
     }
-  }, [user?._id]); // ✅ Only re-fetch when user ID changes
+  }, [user?._id, fetchData]);
 
   return {
     user,

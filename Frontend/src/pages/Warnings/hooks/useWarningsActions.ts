@@ -12,9 +12,7 @@ import type {
   UseWarningsActionsReturn,
 } from '../types/warnings';
 
-export const useWarningsActions = (
-  refetchData: () => void
-): UseWarningsActionsReturn => {
+export const useWarningsActions = (): UseWarningsActionsReturn => {
   const [loadingStatistics, setLoadingStatistics] = useState(false);
   const [statistics, setStatistics] = useState<TeacherStatistics | null>(null);
 

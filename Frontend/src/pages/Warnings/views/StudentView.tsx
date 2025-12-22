@@ -2,7 +2,7 @@
 // StudentView - عرض الطالب للإنذارات
 // ============================================================================
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import type { StudentViewProps } from '../types/warnings';
 import { Card } from '@/components/UI/Card';
 import {
@@ -12,45 +12,20 @@ import {
   formatArabicDate,
 } from '../types/Constans';
 import {
-  AlertTriangle,
   ShieldAlert,
-  AlertOctagon,
-  Ban,
   CheckCircle,
   Calendar,
   Users,
   User,
+  AlertTriangle,
 } from 'lucide-react';
-
-// ✅ Constants extracted outside component for performance
-const ANIMATION_DELAYS = [
-  '',
-  'animate-delay-100',
-  'animate-delay-200',
-  'animate-delay-300',
-  'animate-delay-400',
-] as const;
-
-// ✅ Modern icon mapping
-const getWarningIcon = (type: string) => {
-  switch (type) {
-    case 'warning':
-      return <AlertTriangle className="w-6 h-6" />;
-    case 'first':
-      return <ShieldAlert className="w-6 h-6" />;
-    case 'second':
-      return <AlertOctagon className="w-6 h-6" />;
-    case 'third':
-      return <Ban className="w-6 h-6" />;
-    default:
-      return <AlertTriangle className="w-6 h-6" />;
-  }
-};
+import { useStudentView } from '../hooks/useStudentView';
+import { ANIMATION_DELAYS, LOADING_SKELETON_COUNT, EMPTY_STATES } from '../types/viewsConstants';
+import { getWarningIcon } from './warningIconHelper';
 
 export const StudentView: React.FC<StudentViewProps> = React.memo(
   ({ warnings, loading }) => {
-    // ✅ Memoize has warnings check
-    const hasWarnings = useMemo(() => warnings.length > 0, [warnings.length]);
+    const { hasWarnings } = useStudentView({ warnings });
 
     return (
       <div
@@ -74,7 +49,7 @@ export const StudentView: React.FC<StudentViewProps> = React.memo(
           {/* Warnings List */}
           {loading ? (
             <div className="space-y-5">
-              {[1, 2, 3].map((i) => (
+              {Array.from({ length: LOADING_SKELETON_COUNT.warnings }).map((_, i) => (
                 <div
                   key={i}
                   className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg border border-gray-100 animate-pulse"
@@ -199,10 +174,10 @@ export const StudentView: React.FC<StudentViewProps> = React.memo(
                   <CheckCircle className="w-10 h-10 text-white" />
                 </div>
                 <h3 className="text-2xl font-bold text-gray-800 mb-3">
-                  لا توجد إنذارات
+                  {EMPTY_STATES.noWarnings.title}
                 </h3>
                 <p className="text-gray-600 text-lg">
-                  سجلك نظيف! استمر في التفوق والالتزام 🌟
+                  {EMPTY_STATES.noWarnings.description}
                 </p>
               </div>
             </div>
@@ -216,3 +191,5 @@ export const StudentView: React.FC<StudentViewProps> = React.memo(
     return prevProps.warnings.length === nextProps.warnings.length;
   }
 );
+
+StudentView.displayName = 'StudentView';

@@ -4,66 +4,22 @@
 
 import React, { useMemo } from 'react';
 import { X, Users, AlertTriangle, TrendingUp, ShieldAlert, AlertOctagon, Ban } from 'lucide-react';
-import { getWarningLabel } from '../../types/Constans';
+import { 
+  getWarningLabel, 
+  getWarningColorClasses, 
+  MEDAL_COLORS, 
+  WARNING_TYPE_KEYS 
+} from '../../types/Constans';
+import type { GroupStatisticsModalProps } from '../../types/warnings';
 import { useDisableBodyScroll } from '@/hooks/useDisableBodyScroll';
 
-// ✅ Modern icon mapping
-const getWarningIcon = (type: string) => {
-  switch (type) {
-    case 'warning':
-      return <AlertTriangle className="w-5 h-5" />;
-    case 'first':
-      return <ShieldAlert className="w-5 h-5" />;
-    case 'second':
-      return <AlertOctagon className="w-5 h-5" />;
-    case 'third':
-      return <Ban className="w-5 h-5" />;
-    default:
-      return <AlertTriangle className="w-5 h-5" />;
-  }
-};
-
-interface StudentDetail {
-  _id: string;
-  name: string;
-  warningsCount: number;
-  warningsOnlyCount: number;
-  existingWarningTypes: string[];
-}
-
-interface GroupStatistics {
-  groupName: string;
-  totalStudents: number;
-  studentsWithWarnings: number;
-  totalWarnings: number;
-  warningsByType: {
-    warning: number;
-    first: number;
-    second: number;
-    third: number;
-  };
-  topStudents: {
-    name: string;
-    warningsCount: number;
-  }[];
-  studentsDetails?: StudentDetail[];
-}
-
-interface GroupStatisticsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  statistics: GroupStatistics | null;
-  loading?: boolean;
-}
-
-// ✅ Constants extracted outside for performance
-const MEDAL_COLORS = [
-  'from-amber-400 to-yellow-500',
-  'from-gray-300 to-gray-400',
-  'from-orange-400 to-amber-600',
-] as const;
-
-const WARNING_TYPE_KEYS = ['warning', 'first', 'second', 'third'] as const;
+// ✅ Icon mapping
+const WARNING_ICONS = {
+  warning: <AlertTriangle className="w-5 h-5" />,
+  first: <ShieldAlert className="w-5 h-5" />,
+  second: <AlertOctagon className="w-5 h-5" />,
+  third: <Ban className="w-5 h-5" />,
+} as const;
 
 export const GroupStatisticsModal: React.FC<GroupStatisticsModalProps> = React.memo(({
   isOpen,
@@ -191,41 +147,14 @@ export const GroupStatisticsModal: React.FC<GroupStatisticsModalProps> = React.m
                     statistics.totalWarnings > 0
                       ? (count / statistics.totalWarnings) * 100
                       : 0;
-                  const colors = {
-                    warning: {
-                      bg: 'bg-amber-500',
-                      light: 'bg-amber-100',
-                      text: 'text-amber-700',
-                    },
-                    first: {
-                      bg: 'bg-yellow-500',
-                      light: 'bg-yellow-100',
-                      text: 'text-yellow-700',
-                    },
-                    second: {
-                      bg: 'bg-orange-500',
-                      light: 'bg-orange-100',
-                      text: 'text-orange-700',
-                    },
-                    third: {
-                      bg: 'bg-rose-500',
-                      light: 'bg-rose-100',
-                      text: 'text-rose-700',
-                    },
-                    expulsion: {
-                      bg: 'bg-red-600',
-                      light: 'bg-red-100',
-                      text: 'text-red-700',
-                    },
-                  };
-                  const color = colors[type];
+                  const color = getWarningColorClasses(type);
 
                   return (
                     <div key={type} className="space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="text-xl">
-                            {getWarningIcon(type)}
+                            {WARNING_ICONS[type as keyof typeof WARNING_ICONS]}
                           </span>
                           <span className="text-sm font-medium text-gray-700">
                             {getWarningLabel(type)}
@@ -388,9 +317,13 @@ export const GroupStatisticsModal: React.FC<GroupStatisticsModalProps> = React.m
     </div>
   );
 }, (prevProps, nextProps) => {
-  // ✅ Custom comparison for performance
-  if (prevProps.isOpen !== nextProps.isOpen) return false;
-  if (prevProps.statistics?.groupName !== nextProps.statistics?.groupName) return false;
-  if (prevProps.statistics?.totalWarnings !== nextProps.statistics?.totalWarnings) return false;
-  return true;
+  // ✅ Custom comparison for better performance
+  return (
+    prevProps.isOpen === nextProps.isOpen &&
+    prevProps.loading === nextProps.loading &&
+    prevProps.statistics?.groupName === nextProps.statistics?.groupName &&
+    prevProps.statistics?.totalWarnings === nextProps.statistics?.totalWarnings
+  );
 });
+
+GroupStatisticsModal.displayName = 'GroupStatisticsModal';

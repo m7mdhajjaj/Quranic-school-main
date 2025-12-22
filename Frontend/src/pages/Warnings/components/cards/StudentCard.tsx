@@ -186,7 +186,7 @@ export const StudentCard: React.FC<StudentCardProps> = React.memo(({
     </Card>
   );
 }, (prevProps, nextProps) => {
-  // ✅ مقارنة مخصصة لتجنب Re-render غير ضروري
+  // ✅ Custom comparison للأداء الأفضل
   return (
     prevProps.student._id === nextProps.student._id &&
     prevProps.student.warningsOnlyCount === nextProps.student.warningsOnlyCount &&
@@ -195,3 +195,5 @@ export const StudentCard: React.FC<StudentCardProps> = React.memo(({
     prevProps.student.isActive === nextProps.student.isActive
   );
 });
+
+StudentCard.displayName = 'StudentCard';

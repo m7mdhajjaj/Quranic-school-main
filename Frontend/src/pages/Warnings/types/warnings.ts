@@ -2,11 +2,14 @@
 // Types & Interfaces للإنذارات
 // ============================================================================
 
+import type { StudentEventType } from './Constans';
+
 export type WarningType =
   | "warning"
   | "first"
   | "second"
-  | "third";
+  | "third"
+  | "expulsion";
 
 export interface Warning {
   _id: string;
@@ -78,8 +81,6 @@ export interface TeacherViewProps {
   selectedGroup?: Group | null;
   onGroupSelect: (group: Group) => void;
   onBack?: () => void;
-  statistics: TeacherStatistics | null;
-  loadingStatistics?: boolean;
   onGiveWarning?: (student: Student, type: WarningType) => void;
   onDeleteWarning?: (student: Student, type: string) => void;
   onDeleteWarningById?: (warningId: string, student: Student) => void;
@@ -129,6 +130,70 @@ export interface DeleteWarningModalProps {
   warningId?: string;
   onConfirm: () => void;
 }
+
+export interface StudentDetail {
+  _id: string;
+  name: string;
+  warningsCount: number;
+  warningsOnlyCount: number;
+  existingWarningTypes: string[];
+}
+
+export interface GroupStatistics {
+  groupName: string;
+  totalStudents: number;
+  studentsWithWarnings: number;
+  totalWarnings: number;
+  warningsByType: {
+    warning: number;
+    first: number;
+    second: number;
+    third: number;
+  };
+  topStudents: {
+    name: string;
+    warningsCount: number;
+  }[];
+  studentsDetails?: StudentDetail[];
+}
+
+export interface GroupStatisticsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  statistics: GroupStatistics | null;
+  loading?: boolean;
+}
+
+export interface StudentHistorySidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+  groupId?: string;
+}
+
+export interface ExpelledStudent {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  gender?: string;
+  avatar?: {
+    url?: string;
+    publicId?: string;
+  };
+}
+
+export interface StudentHistoryEvent {
+  _id: string;
+  eventType: StudentEventType;
+  warningLevel?: 'first' | 'second' | 'third';
+  groupName?: string;
+  teacherName?: string;
+  reason?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+// Re-export for convenience
+export type { StudentEventType };
 
 // ============================================================================
 // Hook Return Types

@@ -35,10 +35,12 @@ export const GroupCard: React.FC<GroupCardProps> = React.memo(({ group, onClick 
     </Card>
   );
 }, (prevProps, nextProps) => {
-  // ✅ مقارنة مخصصة
+  // ✅ Custom comparison
   return (
     prevProps.group._id === nextProps.group._id &&
     prevProps.group.currentStudents === nextProps.group.currentStudents &&
     prevProps.group.students?.length === nextProps.group.students?.length
   );
 });
+
+GroupCard.displayName = 'GroupCard';

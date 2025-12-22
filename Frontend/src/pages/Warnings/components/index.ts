@@ -17,4 +17,3 @@ export { StudentView } from "../views/StudentView";
 // Shared Components
 export { WarningBadge } from "./shared/WarningBadge";
 export { WarningsPageHeader } from "./shared/WarningsPageHeader";
-export { DraggableSearchButton } from "./shared/DraggableSearchButton";

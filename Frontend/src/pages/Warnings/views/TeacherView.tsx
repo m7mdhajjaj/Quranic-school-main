@@ -2,116 +2,52 @@
 // TeacherView - عرض المعلم للإنذارات
 // ============================================================================
 
-import React, { useState, useCallback, useMemo, useContext, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import type { TeacherViewProps, Group } from '../types/warnings';
+import React from 'react';
+import type { TeacherViewProps } from '../types/warnings';
 import { EmptyState } from '@/components/UI/EmptyState';
 import { Button } from '@/components/UI/Button';
 import { GroupCard } from '../components/cards/GroupCard';
 import { StudentCard } from '../components/cards/StudentCard';
 import { WarningsPageHeader } from '../components/shared/WarningsPageHeader';
 import { GroupStatisticsModal } from '../components/statistics/GroupStatisticsModal';
-import { DraggableSearchButton } from '../components/shared/DraggableSearchButton';
-import { useGroupStatistics, type GroupStatistics } from '../hooks/useGroupStatistics';
+import { useTeacherView } from '../hooks/useTeacherView';
 import { ArrowRight, Users } from 'lucide-react';
 import { StudentHistorySidebar } from '../components/shared/StudentHistorySidebar';
-
-// ✅ Constants extracted outside component for performance
-const ANIMATION_DELAYS = [
-  '',
-  'animate-delay-100',
-  'animate-delay-200',
-  'animate-delay-300',
-  'animate-delay-400',
-  'animate-delay-500',
-] as const;
+import { ANIMATION_DELAYS, LOADING_SKELETON_COUNT, EMPTY_STATES } from '../types/viewsConstants';
 
 export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
   groups,
   loading,
   loadingStudents,
   selectedGroup: selectedGroupProp,
-  statistics,
-  loadingStatistics,
   onGroupSelect,
   onBack,
   onGiveWarning,
   onDeleteWarning,
   onDeleteWarningById,
 }) => {
-  const selectedGroup = selectedGroupProp;
-  const [showGroupStats, setShowGroupStats] = useState(false);
-  const [showHistorySidebar, setShowHistorySidebar] = useState(false);
-  
-  const [selectedGroupForStats, setSelectedGroupForStats] =
-    useState<Group | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const { fetchGroupStatistics } = useGroupStatistics();
-  const [groupStatisticsData, setGroupStatisticsData] = useState<GroupStatistics | null>(null);
-  const [loadingGroupStats, setLoadingGroupStats] = useState(false);
-
-
-
-  // ✅ محسّن بـ useCallback
-  const handleGroupSelect = useCallback((group: Group) => {
-    onGroupSelect(group);
-  }, [onGroupSelect]);
-
-  const handleBack = useCallback(() => {
-    onBack?.();
-  }, [onBack]);
-
-  const handleShowGroupStatistics = useCallback(async (group: Group) => {
-    setSelectedGroupForStats(group);
-    setShowGroupStats(true);
-    setLoadingGroupStats(true);
-    
-    const stats = await fetchGroupStatistics(group._id);
-    setGroupStatisticsData(stats);
-    setLoadingGroupStats(false);
-  }, [fetchGroupStatistics]);
-  
-  const handleCloseStats = useCallback(() => {
-    setShowGroupStats(false);
-  }, []);
-
-
-
-  const handleCloseStatsModal = useCallback(() => {
-    setShowGroupStats(false);
-    setGroupStatisticsData(null);
-  }, []);
-
-  const handleCloseHistory = useCallback(() => {
-    setShowHistorySidebar(false);
-  }, []);
-
-  // ✅ Handle search
-  const handleSearch = useCallback((query: string) => {
-    const trimmedQuery = query.trim().toLowerCase();
-    setSearchQuery(trimmedQuery);
-  }, []);
-
-  // ✅ Filter students based on search query
-  const filteredStudents = useMemo(() => {
-    if (!selectedGroup?.students) {
-      return [];
-    }
-    
-    if (!searchQuery) {
-      return selectedGroup.students;
-    }
-    
-    const filtered = selectedGroup.students.filter((student) => {
-      const fullName = `${student.firstName || ''} ${student.lastName || ''}`.toLowerCase().trim();
-      return fullName.includes(searchQuery);
-    });
-    
-    return filtered;
-  }, [selectedGroup?.students, searchQuery]);
+  const {
+    showGroupStats,
+    showHistorySidebar,
+    groupStatisticsData,
+    loadingGroupStats,
+    filteredStudents,
+    studentsCount,
+    suspendedCount,
+    handleGroupSelect,
+    handleBack,
+    handleShowGroupStatistics,
+    handleCloseStatsModal,
+    handleCloseHistory,
+    handleOpenHistory,
+  } = useTeacherView({
+    selectedGroup: selectedGroupProp ?? null,
+    onGroupSelect,
+    onBack,
+  });
 
   // عرض الحلقات
-  if (!selectedGroup) {
+  if (!selectedGroupProp) {
     return (
       <div
         className="min-h-screen bg-gradient-to-b from-emerald-50 via-teal-50 to-emerald-100 p-4 md:p-8 bg-size-200 animate-gradient"
@@ -126,7 +62,7 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
           {/* Groups Grid */}
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
+              {Array.from({ length: LOADING_SKELETON_COUNT.groups }).map((_, i) => (
                 <div key={i} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-48 flex flex-col justify-between">
                   <div className="flex justify-between items-start">
                     <div className="w-12 h-12 bg-gray-200 rounded-xl animate-pulse" />
@@ -160,9 +96,9 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
           ) : (
             <div className="animate-fade-in">
               <EmptyState
-                icon="📚"
-                title="لا توجد حلقات مسجلة"
-                description="لا يوجد حلقات متاحة لعرضها"
+                icon={EMPTY_STATES.noGroups.icon}
+                title={EMPTY_STATES.noGroups.title}
+                description={EMPTY_STATES.noGroups.description}
               />
             </div>
           )}
@@ -180,7 +116,7 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
   }
 
   // ✅ التحقق من وجود حلقة مختارة قبل العرض
-  if (!selectedGroup) {
+  if (!selectedGroupProp) {
     return null;
   }
 
@@ -206,30 +142,30 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
             </Button>
             <div className="text-center flex-1">
               <h1 className="text-3xl font-bold text-white">
-                {selectedGroup.name}
+                {selectedGroupProp.name}
               </h1>
               <p className="text-emerald-50 font-medium mt-2">
-                {selectedGroup.currentStudents || selectedGroup.students?.length || 0} طالب
+                {selectedGroupProp.currentStudents || selectedGroupProp.students?.length || 0} طالب
               </p>
             </div>
             
             {/* زر الإحصائيات */}
             <div className="flex items-center gap-3">
               <Button
-                onClick={() => setShowHistorySidebar(true)}
+                onClick={handleOpenHistory}
                 className="flex items-center gap-2 bg-red-500/20 hover:bg-red-500/30 text-white border border-red-200/30 shadow-lg hover:shadow-xl transition-all duration-200 relative"
               >
                 <span>⛔</span>
                 <span>الطلاب المفصولين</span>
-                {selectedGroup.suspendedStudents && selectedGroup.suspendedStudents.length > 0 && (
+                {suspendedCount > 0 && (
                   <span className="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-md border-2 border-white animate-pulse">
-                    {selectedGroup.suspendedStudents.length}
+                    {suspendedCount}
                   </span>
                 )}
               </Button>
 
               <Button
-                onClick={() => handleShowGroupStatistics(selectedGroup)}
+                onClick={() => handleShowGroupStatistics(selectedGroupProp)}
                 className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white border border-white/30 shadow-lg hover:shadow-xl transition-all duration-200"
               >
                 <span>📊</span>
@@ -244,12 +180,12 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
           <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-4 border border-emerald-200 min-h-[60vh]">
             <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2 mb-4">
               <Users className="w-6 h-6 text-emerald-600" />
-              طلاب الحلقة ({filteredStudents?.length || 0})
+              طلاب الحلقة ({studentsCount})
             </h2>
               
               {loadingStudents ? (
                 <div className="space-y-4">
-                  {[1, 2, 3, 4, 5].map((i) => (
+                  {Array.from({ length: LOADING_SKELETON_COUNT.students }).map((_, i) => (
                     <div key={i} className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm flex items-center gap-4">
                       <div className="w-12 h-12 bg-gray-200 rounded-full animate-pulse" />
                       <div className="flex-1 space-y-2">
@@ -262,13 +198,6 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
                 </div>
               ) : filteredStudents && filteredStudents.length > 0 ? (
                 <>
-                  {searchQuery && (
-                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-4" dir="rtl">
-                      <p className="text-emerald-700 text-sm">
-                        تم العثور على <span className="font-bold">{filteredStudents.length}</span> من أصل {selectedGroup.students?.length || 0} طالب
-                      </p>
-                    </div>
-                  )}
                   <div className="space-y-4">
                     {filteredStudents.map((student) => (
                       <StudentCard
@@ -283,17 +212,11 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
                     ))}
                   </div>
                 </>
-              ) : searchQuery && filteredStudents.length === 0 ? (
+              ) : (!selectedGroupProp.students || selectedGroupProp.students.length === 0) ? (
                 <EmptyState
-                  icon="🔍"
-                  title="لم يتم العثور على نتائج"
-                  description={`لا يوجد طلاب بهذا الاسم: "${searchQuery}"`}
-                />
-              ) : (!selectedGroup.students || selectedGroup.students.length === 0) ? (
-                <EmptyState
-                  icon="👨‍🎓"
-                  title="لا يوجد طلاب في هذه الحلقة"
-                  description="الحلقة فارغة حالياً"
+                  icon={EMPTY_STATES.noStudents.icon}
+                  title={EMPTY_STATES.noStudents.title}
+                  description={EMPTY_STATES.noStudents.description}
                 />
               ) : null}
           </div>
@@ -303,7 +226,7 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
         <StudentHistorySidebar
           isOpen={showHistorySidebar}
           onClose={handleCloseHistory}
-          groupId={selectedGroup?._id}
+          groupId={selectedGroupProp?._id}
         />
 
         {/* Modal الإحصائيات */}
@@ -314,11 +237,8 @@ export const TeacherView: React.FC<TeacherViewProps> = React.memo(({
           loading={loadingGroupStats}
         />
       </div>
-      
-      {/* Draggable Search Button */}
-      {selectedGroup && selectedGroup.students && selectedGroup.students.length > 0 && (
-        <DraggableSearchButton onSearch={handleSearch} />
-      )}
     </div>
   );
 });
+
+TeacherView.displayName = 'TeacherView';

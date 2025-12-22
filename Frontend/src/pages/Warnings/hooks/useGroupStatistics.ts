@@ -41,9 +41,12 @@ export const useGroupStatistics = () => {
       setError(null);
       const data = await warningApi.getGroupStatistics(groupId);
       return data;
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error fetching group statistics:', err);
-      setError(err?.response?.data?.message || 'حدث خطأ أثناء جلب الإحصائيات');
+      const errorMessage = err && typeof err === 'object' && 'response' in err
+        ? (err as { response?: { data?: { message?: string } } })?.response?.data?.message
+        : 'حدث خطأ أثناء جلب الإحصائيات';
+      setError(errorMessage || 'حدث خطأ أثناء جلب الإحصائيات');
       return null;
     } finally {
       setLoading(false);

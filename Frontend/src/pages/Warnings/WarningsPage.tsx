@@ -2,9 +2,7 @@
 // WarningsPage - الصفحة الرئيسية للإنذارات
 // ============================================================================
 
-import React, { useCallback, useEffect, useMemo } from "react";
-// import { useWarningsSocket } from "@/Socket/useWarningsSocket";
-import { socketManager } from "@/Socket/SocketManager";
+import React, { useCallback, useEffect } from "react";
 import { useWarningsData } from "./hooks/useWarningsData";
 import { useWarningsActions } from "./hooks/useWarningsActions";
 import { useGroupSelection } from "./hooks/useGroupSelection";
@@ -23,17 +21,14 @@ const WarningsPage: React.FC = () => {
     isStudent,
     refetchData,
     fetchGroupStudentsWarnings,
-    setWarnings,
   } = useWarningsData();
 
   const {
-    statistics,
-    loadingStatistics,
     fetchTeacherStatistics,
     giveWarning,
     deleteWarning,
     deleteWarningById,
-  } = useWarningsActions(refetchData);
+  } = useWarningsActions();
 
   const { selectedGroup, loadingStudents, handleGroupSelect, refreshCurrentGroup, handleBack } = useGroupSelection({
     fetchGroupStudentsWarnings,
@@ -68,71 +63,12 @@ const WarningsPage: React.FC = () => {
       onSuccess: handleModalSuccess,
     });
 
-  // ✅ جلب الإحصائيات تلقائياً عند التحميل - استخدام useEffect مباشرة
+  // ✅ جلب الإحصائيات تلقائياً عند التحميل
   useEffect(() => {
     if (isTeacher && !loading) {
       fetchTeacherStatistics();
     }
   }, [isTeacher, loading, fetchTeacherStatistics]);
-
-  // ✅ Optimized socket callbacks - Reduced API calls and console logs
-  const handleNewWarning = useCallback((newWarning: any) => {
-    if (isStudent && newWarning.studentId._id === user?._id) {
-      setWarnings((prev) => [newWarning, ...prev]);
-    } else if (
-      isTeacher &&
-      selectedGroup &&
-      newWarning.groupId._id === selectedGroup._id
-    ) {
-      // ✅ استخدام refreshCurrentGroup بدلاً من handleGroupSelect لمنع الوميض
-      refreshCurrentGroup();
-    }
-  }, [isStudent, isTeacher, user?._id, selectedGroup, setWarnings, refreshCurrentGroup]);
-
-  const handleWarningDeleted = useCallback((deletedWarningId: string) => {
-    setWarnings((prev) => prev.filter((w) => w._id !== deletedWarningId));
-    // Socket statisticsUpdated event will handle the rest
-  }, [setWarnings]);
-
-  const handleStatisticsUpdated = useCallback((updatedStatistics: any) => {
-    // Single call to update statistics
-    fetchTeacherStatistics();
-  }, [fetchTeacherStatistics]);
-
-  const handleStudentStatusUpdated = useCallback((data: any) => {
-    // No action needed - updates handled by other events
-  }, []);
-
-  const handleStudentUpdated = useCallback((data: any) => {
-    // When a student is updated (e.g., restored), refresh the current group
-    // This will update the expelled students list
-    if (isTeacher && selectedGroup) {
-      console.log('📡 Student updated event received, refreshing group data');
-      refreshCurrentGroup();
-      // Also refetch groups to update the counts on cards
-      setTimeout(() => {
-        refetchData();
-      }, 100);
-    }
-  }, [isTeacher, selectedGroup, refreshCurrentGroup, refetchData]);
-
-  // ✅ Socket listener for student updates (restoration)
-  useEffect(() => {
-    const socket = socketManager.getSocket();
-    if (socket) {
-      socket.on('studentUpdated', handleStudentUpdated);
-      return () => {
-        socket.off('studentUpdated', handleStudentUpdated);
-      };
-    }
-  }, [handleStudentUpdated]);
-
-  // Socket للتحديثات الفورية - مباشرة من مجلد Socket
-
-  // ❌ REMOVED: Real-time user status updates
-  // المشكلة: كان يسبب استدعاءات API متكررة بشكل مفرط
-  // الحل: تحديث حالة المستخدم يتم التعامل معه في مكان آخر (Avatar component)
-  // لا حاجة لإعادة تحميل كل بيانات الحلقة عند كل تغيير في حالة المستخدم
 
   // ✅ عرض واجهة المعلم
   if (isTeacher) {
@@ -142,8 +78,6 @@ const WarningsPage: React.FC = () => {
           loading={loading}
           loadingStudents={loadingStudents}
           selectedGroup={selectedGroup}
-          statistics={statistics}
-          loadingStatistics={loadingStatistics}
           onGroupSelect={handleGroupSelect}
           onBack={handleBack}
           onGiveWarning={showGiveWarningModal}
