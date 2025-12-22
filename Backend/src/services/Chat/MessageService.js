@@ -153,6 +153,37 @@ class MessageService {
   }
 
   /**
+   * Mark all undelivered messages for user as delivered
+   */
+  async markAllUndeliveredAsDelivered(userId) {
+    try {
+      const messages = await Chat.find({
+        chatType: "DM",
+        recipient: userId,
+        deliveredAt: null
+      });
+
+      if (messages.length === 0) return;
+
+      const now = new Date();
+      
+      for (const msg of messages) {
+        msg.deliveredAt = now;
+        await msg.save();
+        
+        if (global.io) {
+          global.io.to(msg.sender.toString()).emit("message:delivered", {
+            messageId: msg._id,
+            deliveredAt: now
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error marking messages as delivered:", error);
+    }
+  }
+
+  /**
    * Mark Message as Delivered
    */
   async markDelivered(userId, messageId) {

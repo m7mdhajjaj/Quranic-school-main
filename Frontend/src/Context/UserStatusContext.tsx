@@ -106,10 +106,22 @@ export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       }));
     };
 
+    // Global message listener for delivery status
+    const handleNewMessage = (message: any) => {
+      if (message.chatType === 'DM' && message.recipient === user?._id) {
+        socketManager.emit('message:delivered', {
+          messageId: message._id,
+          chatType: 'DM',
+          senderId: message.sender._id || message.sender
+        });
+      }
+    };
+
     // الاشتراك في Events
     socketManager.on('user-status', handleUserStatus);
     socketManager.on('initial-online-users', handleInitialOnlineUsers);
     socketManager.on('connect', handleConnect);
+    socketManager.on('message:new', handleNewMessage);
 
     // إذا كان متصلاً بالفعل
     if (socketManager.isConnected()) {
@@ -123,6 +135,7 @@ export const UserStatusProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       socketManager.off('user-status', handleUserStatus);
       socketManager.off('initial-online-users', handleInitialOnlineUsers);
       socketManager.off('connect', handleConnect);
+      socketManager.off('message:new', handleNewMessage);
     };
   }, [handleUserStatus, handleInitialOnlineUsers, user?._id]);
 

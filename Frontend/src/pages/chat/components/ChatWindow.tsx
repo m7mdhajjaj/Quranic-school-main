@@ -1,4 +1,4 @@
-import React, { useEffect, useContext } from 'react';
+import React, { useEffect, useContext, useRef } from 'react';
 import { useChat } from '../hooks/useChat';
 import { useMessageInput, useMessageOperations, useMessageScroll } from '../hooks';
 import { UserStatusContext } from '../../../Context/UserStatusContext';
@@ -25,7 +25,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
     sendMessage, 
     handleTyping,
     typingUsers,
-    isTyping
+    isTyping,
+    markMessageAsRead
   } = useChat(chatType, targetId);
   
   // Message operations (reply, sending state)
@@ -36,6 +37,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
     inputText, 
     handleInputChange: handleInputTextChange, 
     handleKeyDown, 
+    handleSend,
     clearInput,
     canSend
   } = useMessageInput({
@@ -68,6 +70,27 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
   // Online status
   const statusContext = useContext(UserStatusContext);
   const isOnline = chatType === 'DM' && statusContext ? statusContext.isUserOnline(targetId) : false;
+
+  // Track messages being marked as read to avoid duplicates
+  const markingReadRef = useRef<Set<string>>(new Set());
+
+  // Mark unread messages as read
+  useEffect(() => {
+    if (!messages.length || !user || chatType !== 'DM') return;
+
+    const unreadMessages = messages.filter((msg: any) => {
+      const isFromMe = msg.sender?._id === user._id;
+      if (isFromMe) return false;
+      return !msg.readAt && !markingReadRef.current.has(msg._id);
+    });
+
+    if (unreadMessages.length > 0) {
+      unreadMessages.forEach((msg: any) => {
+        markingReadRef.current.add(msg._id);
+        markMessageAsRead(msg._id);
+      });
+    }
+  }, [messages, user, chatType, markMessageAsRead]);
 
   // Notify parent of new messages
   useEffect(() => {
@@ -181,7 +204,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
             />
           </div>
           <Button
-            onClick={() => {}} // Will be handled by handleKeyDown
+            onClick={handleSend}
             disabled={!canSend || isSending}
             variant="primary"
             size="lg"

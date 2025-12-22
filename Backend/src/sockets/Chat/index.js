@@ -5,6 +5,7 @@
 const messageHandlers = require("./messageHandlers");
 const typingHandlers = require("./typingHandlers");
 const groupHandlers = require("./groupHandlers");
+const MessageService = require("../../services/Chat/MessageService");
 
 module.exports = (io, socket) => {
   const userId = socket.handshake.auth?.userId;
@@ -16,6 +17,11 @@ module.exports = (io, socket) => {
   }
 
   console.log(`🔌 Chat Socket connected - User: ${userId}, Role: ${userRole}`);
+
+  // Mark undelivered messages as delivered
+  MessageService.markAllUndeliveredAsDelivered(userId).catch(err => {
+    console.error("Failed to mark messages as delivered:", err);
+  });
 
   // Register all handlers
   messageHandlers(io, socket, userId, userRole);
