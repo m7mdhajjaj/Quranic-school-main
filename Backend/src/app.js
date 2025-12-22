@@ -591,7 +591,7 @@ io.on('connection', (socket) => {
     }
 
     // ✅ تسجيل المستخدم كـ Offline في PresenceService
-    onlineUsersManager.setUserOffline(userData.userId, (userId) => {
+    onlineUsersManager.setUserOffline(userData.userId, socket.id, (userId) => {
       // ✅ بث حالة Offline بعد grace period
       io.emit('user-status', {
         userId: userId,
@@ -976,7 +976,7 @@ io.on('connection', (socket) => {
         const { role, firstName } = disconnectedUserData;
 
         // ✅ تسجيل المستخدم كـ Offline مع grace period
-        onlineUsersManager.setUserOffline(disconnectedUserId, async (userId) => {
+        onlineUsersManager.setUserOffline(disconnectedUserId, socket.id, async (userId) => {
           // ✅ تحديث lastSeen فقط بعد grace period
           try {
             let updateResult;

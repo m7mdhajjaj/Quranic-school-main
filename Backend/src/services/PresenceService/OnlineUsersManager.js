@@ -52,18 +52,33 @@ class OnlineUsersManager {
         console.log(`🔄 [Presence] User ${userId} reconnected quickly - cancelled offline timeout`);
       }
 
-      // تسجيل المستخدم
-      this.onlineUsers.set(userId, {
-        socketId,
-        role,
-        firstName,
-        connectedAt: new Date().toISOString(),
-      });
+      // الحصول على بيانات المستخدم الحالية أو إنشاء جديدة
+      let userData = this.onlineUsers.get(userId);
+
+      if (userData) {
+        // تحديث البيانات وإضافة Socket الجديد
+        userData.sockets.add(socketId);
+        // تحديث البيانات الوصفية إذا كانت أحدث
+        if (role !== 'unknown') userData.role = role;
+        if (firstName !== 'User') userData.firstName = firstName;
+        // الاحتفاظ بـ connectedAt الأصلي
+      } else {
+        // مستخدم جديد
+        userData = {
+          sockets: new Set([socketId]),
+          role,
+          firstName,
+          connectedAt: new Date().toISOString(),
+          // نحتفظ بـ socketId للتوافق مع الكود القديم (اختياري، لكن الأفضل استخدام sockets Set)
+          socketId: socketId 
+        };
+        this.onlineUsers.set(userId, userData);
+      }
 
       // تسجيل الخريطة العكسية
       this.socketToUser.set(socketId, userId);
 
-      console.log(`✅ [Presence] User ${firstName} (${userId}) is now ONLINE`);
+      console.log(`✅ [Presence] User ${firstName} (${userId}) is now ONLINE (Sockets: ${userData.sockets.size})`);
       console.log(`📊 [Presence] Total online users: ${this.onlineUsers.size}`);
       
       return true;
@@ -76,10 +91,11 @@ class OnlineUsersManager {
   /**
    * تسجيل مستخدم كـ Offline (مع grace period)
    * @param {string} userId - معرف المستخدم
+   * @param {string} socketId - معرف Socket الذي تم فصله
    * @param {Function} onOfflineCallback - دالة تُنفذ عند تأكيد Offline
    * @returns {boolean} - true إذا تم جدولة Offline
    */
-  setUserOffline(userId, onOfflineCallback = null) {
+  setUserOffline(userId, socketId, onOfflineCallback = null) {
     try {
       const userData = this.onlineUsers.get(userId);
       
@@ -88,11 +104,28 @@ class OnlineUsersManager {
         return false;
       }
 
-      // حذف الخريطة العكسية
-      this.socketToUser.delete(userData.socketId);
+      // حذف Socket المحدد من القائمة
+      if (userData.sockets) {
+        userData.sockets.delete(socketId);
+      }
+      
+      // حذف الخريطة العكسية لهذا الـ Socket
+      this.socketToUser.delete(socketId);
 
-      // جدولة Offline بعد grace period
+      // إذا كان للمستخدم اتصالات أخرى نشطة، لا نعتبره Offline
+      if (userData.sockets && userData.sockets.size > 0) {
+        console.log(`ℹ️ [Presence] User ${userId} disconnected socket ${socketId}, but has ${userData.sockets.size} active sockets.`);
+        return false;
+      }
+
+      // جدولة Offline بعد grace period فقط إذا لم تبق أي اتصالات
       const timeoutId = setTimeout(() => {
+        // تحقق نهائي (في حال عاد المستخدم خلال فترة السماح)
+        const currentData = this.onlineUsers.get(userId);
+        if (currentData && currentData.sockets && currentData.sockets.size > 0) {
+          return;
+        }
+
         // حذف من القائمة
         this.onlineUsers.delete(userId);
         this.disconnectTimeouts.delete(userId);

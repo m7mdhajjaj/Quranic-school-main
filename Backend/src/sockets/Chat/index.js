@@ -18,6 +18,9 @@ module.exports = (io, socket) => {
 
   console.log(`🔌 Chat Socket connected - User: ${userId}, Role: ${userRole}`);
 
+  // Join user room for personal events (like message:read, message:delivered)
+  socket.join(userId);
+
   // Mark undelivered messages as delivered
   MessageService.markAllUndeliveredAsDelivered(userId).catch(err => {
     console.error("Failed to mark messages as delivered:", err);
