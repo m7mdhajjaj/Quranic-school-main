@@ -17,11 +17,29 @@ export const useConversations = () => {
     setLoading(true);
     try {
       const res = await api.get('/chat/conversations');
-      // Remove duplicates on client side as well
-      const uniqueConversations = Array.from(
-        new Map(res.data.map((conv: Conversation) => [conv._id, conv])).values()
-      );
-      setConversations(uniqueConversations);
+      
+      // ✅ Deduplicate conversations (Client-side fix)
+      const uniqueMap = new Map();
+      res.data.forEach((conv: Conversation) => {
+        let key = conv._id;
+        
+        // For groups, use groupId as unique key
+        if (conv.type === 'GROUP' && conv.groupId) {
+          key = conv.groupId._id;
+        }
+        
+        if (uniqueMap.has(key)) {
+          const existing = uniqueMap.get(key);
+          // Keep the one with more recent update
+          if (new Date(conv.updatedAt) > new Date(existing.updatedAt)) {
+            uniqueMap.set(key, conv);
+          }
+        } else {
+          uniqueMap.set(key, conv);
+        }
+      });
+
+      setConversations(Array.from(uniqueMap.values()));
     } catch (err: any) {
       setError(err.message);
     } finally {

@@ -130,17 +130,6 @@ class GroupService {
    */
   async _createGroupConversation(group, teacherId) {
     try {
-      // Double-check for existing conversation (race condition protection)
-      const existing = await Conversation.findOne({
-        type: "GROUP",
-        groupId: group._id
-      });
-      
-      if (existing) {
-        console.log(`Group conversation already exists for ${group.name}`);
-        return existing;
-      }
-
       const students = await Student.find({ group: group.name }).select('_id');
       const studentIds = students.map(s => s._id);
       
@@ -149,13 +138,20 @@ class GroupService {
         ...studentIds.map(sid => ({ userId: sid, userModel: "Student" }))
       ];
       
-      const conversation = await Conversation.create({
-        type: "GROUP",
-        groupId: group._id,
-        participants,
-        lastMessage: null,
-        unreadCounts: participants.map(p => ({ userId: p.userId, count: 0 }))
-      });
+      // ✅ Use findOneAndUpdate with upsert to prevent duplicates (Atomic Operation)
+      const conversation = await Conversation.findOneAndUpdate(
+        { type: "GROUP", groupId: group._id },
+        {
+          $setOnInsert: {
+            type: "GROUP",
+            groupId: group._id,
+            participants,
+            lastMessage: null,
+            unreadCounts: participants.map(p => ({ userId: p.userId, count: 0 }))
+          }
+        },
+        { new: true, upsert: true, setDefaultsOnInsert: true }
+      );
       
       return conversation;
     } catch (error) {
