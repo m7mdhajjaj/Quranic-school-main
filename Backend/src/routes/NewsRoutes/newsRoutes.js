@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const newsController = require("../../controllers/NewsController");
-const { protect } = require("../../middleware/authMiddleware");
+const { protect } = require("../../middleware/auth");
 const { uploadNews } = require("../../config/multer");
 const { validateNewsData } = require("../../Validation/News/NewsValidation");
 

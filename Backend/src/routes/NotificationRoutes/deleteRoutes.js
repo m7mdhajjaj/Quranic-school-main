@@ -5,7 +5,7 @@
 const express = require("express");
 const router = express.Router();
 const Notification = require("../../schema/Notification");
-const { protect } = require("../../middleware/authMiddleware");
+const { protect } = require("../../middleware/auth");
 
 // ============================================================================
 // Delete Routes

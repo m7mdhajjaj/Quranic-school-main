@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const rankingController = require("../../controllers/RankingController");
-const { protect, teacherProtect, adminProtect } = require("../../middleware/authMiddleware");
+const { protect, teacherProtect, adminProtect } = require("../../middleware/auth");
 
 // ============================================================================
 // POST/DELETE ROUTES - إنشاء وحذف الترتيبات

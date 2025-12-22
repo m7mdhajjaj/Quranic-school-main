@@ -4,7 +4,7 @@ const router = express.Router();
 const cloudinary = require("../../config/cloudinary");
 const Admin = require("../../schema/Admin");
 const { uploadAvatar } = require("../../config/multer");
-const { protect } = require("../../middleware/authMiddleware");
+const { protect } = require("../../middleware/auth");
 
 /**
  * Avatar Management Routes for Admins

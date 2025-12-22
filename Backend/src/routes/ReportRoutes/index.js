@@ -13,7 +13,7 @@ const groupReportRoutes = require("./groupReportRoutes");
 const exportRoutes = require("./exportRoutes");
 
 // Import middleware
-const { protect } = require("../../middleware/authMiddleware");
+const { protect } = require("../../middleware/auth");
 
 // Import validation
 const {

@@ -5,7 +5,7 @@
 const express = require('express');
 const router = express.Router();
 const studentController = require('../../controllers/basicController/studentController');
-const { protect } = require('../../middleware/authMiddleware');
+const { protect } = require('../../middleware/auth');
 
 // ============================================================================
 // Student History Routes

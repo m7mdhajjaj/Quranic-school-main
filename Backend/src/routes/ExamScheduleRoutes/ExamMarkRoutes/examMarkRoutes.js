@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { protect } = require("../../../middleware/authMiddleware");
+const { protect } = require("../../../middleware/auth");
 const examMarkController = require("../../../controllers/ExamShedule/Mark");
 const { validateExamMarkData } = require("../../../Validation/ExamSchedule/ExamMarkValidation");
 const { getGroupsByTeacherIdWithFilters } = require("../../../controllers/basicController/groupController/getGroups");

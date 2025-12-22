@@ -8,7 +8,7 @@ const Notification = require("../../schema/Notification");
 const Student = require("../../schema/Student");
 const Group = require("../../schema/Group");
 const { sendRealTimeNotification } = require("../../Notifications/Core/SocketSender");
-const { protect } = require("../../middleware/authMiddleware");
+const { protect } = require("../../middleware/auth");
 const { validateNotificationFormData } = require("../../Validation/Notification/NotificationValidation");
 
 // ============================================================================

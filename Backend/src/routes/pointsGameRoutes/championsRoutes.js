@@ -5,7 +5,7 @@ const {
   crownMonthlyChampions,
   getMonthlyChampions,
 } = require("../../controllers/PointsGameController");
-const { protect, adminProtect } = require("../../middleware/authMiddleware");
+const { protect, adminProtect } = require("../../middleware/auth");
 
 // تتويج أبطال الشهر (Admin/Cron)
 router.post("/crown", adminProtect, crownMonthlyChampions);

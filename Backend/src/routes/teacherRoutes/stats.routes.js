@@ -4,7 +4,7 @@ const router = express.Router();
 const controller = require("../../controllers/basicController/teacherController");
 const Student = require("../../schema/Student");
 const Teacher = require("../../schema/Teacher");
-const { protect } = require("../../middleware/authMiddleware");
+const { protect } = require("../../middleware/auth");
 
 /**
  * Statistics and Query Routes for Teachers

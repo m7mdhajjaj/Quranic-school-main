@@ -5,7 +5,7 @@
 
 const express = require("express");
 const router = express.Router();
-const { protect } = require("../../middleware/authMiddleware");
+const { protect } = require("../../middleware/auth");
 const { validateProfileData, sanitizeProfile } = require("../../Validation/Profile/ProfileValidation");
 
 // Import profile controllers

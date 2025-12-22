@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const controller = require("../../controllers/basicController/teacherController");
-const { protect } = require("../../middleware/authMiddleware");
+const { protect } = require("../../middleware/auth");
 const {
   validateTeacherData,
   validateTeacherGroups,

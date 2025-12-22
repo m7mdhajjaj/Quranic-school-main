@@ -1,8 +1,26 @@
+/**
+ * ============================================================================
+ * Cache Middleware - Middleware التخزين المؤقت
+ * ============================================================================
+ * 
+ * يستخدم Redis للتخزين المؤقت لطلبات GET
+ * يحسن الأداء عن طريق تقليل استعلامات قاعدة البيانات
+ */
+
 const { cache } = require('../utils/cache/redisClient');
 
 /**
  * Cache middleware for GET requests
+ * Middleware التخزين المؤقت لطلبات GET
+ * 
  * @param {number} duration - Cache duration in seconds (default: 5 minutes)
+ * @returns {Function} Express middleware function
+ * 
+ * الوظائف:
+ * - يعمل فقط على طلبات GET
+ * - يتحقق من وجود البيانات في Cache
+ * - يحفظ الاستجابة الناجحة في Cache
+ * - يتجاوز العملية إذا Redis غير متصل
  */
 const cacheMiddleware = (duration = 300) => {
   return async (req, res, next) => {

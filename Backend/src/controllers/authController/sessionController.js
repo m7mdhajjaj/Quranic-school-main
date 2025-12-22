@@ -1,6 +1,8 @@
 /**
+ * ============================================================================
  * Session Management Controllers
- * Handles user session operations (getMe, logout)
+ * معالج العمليات المتعلقة بجلسات المستخدمين (getMe, logout)
+ * ============================================================================
  */
 
 const jwt = require("jsonwebtoken");
@@ -12,6 +14,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 /**
  * Get current authenticated user data
+ * الحصول على بيانات المستخدم الحالي
  * @route GET /api/auth/me
  * @access Private
  */
@@ -84,6 +87,7 @@ exports.getMe = async (req, res) => {
 
 /**
  * Logout user and update status
+ * تسجيل خروج المستخدم وتحديث حالته
  * @route POST /api/auth/logout
  * @access Private
  */

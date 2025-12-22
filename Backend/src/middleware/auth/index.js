@@ -1,27 +1,23 @@
 /**
+ * ============================================================================
  * Authentication Middleware Index
- * Central export point for all authentication middleware
+ * نقطة التصدير المركزية لجميع middleware المصادقة
+ * ============================================================================
  * 
- * Structure:
- * - protect.middleware.js: Core JWT authentication
- * - role.middleware.js: Role-based authorization (teacher, admin, restrictAdmin)
- * - session.middleware.js: Session management (getMe, logout)
+ * البنية:
+ * - protect.middleware.js: المصادقة الأساسية بواسطة JWT
+ * - role.middleware.js: التحقق من الصلاحيات حسب الدور (teacher, admin, restrictAdmin)
  */
 
 const { protect } = require("./protect.middleware");
 const { teacherProtect, adminProtect, restrictAdmin } = require("./role.middleware");
-const { getMe, logout } = require("./session.middleware");
 
 module.exports = {
-  // Core authentication
+  // Core authentication - المصادقة الأساسية
   protect,
   
-  // Role-based authorization
+  // Role-based authorization - التحقق من الصلاحيات
   teacherProtect,
   adminProtect,
   restrictAdmin,
-  
-  // Session management
-  getMe,
-  logout,
 };

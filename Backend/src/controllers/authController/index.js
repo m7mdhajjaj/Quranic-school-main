@@ -2,7 +2,7 @@
 const loginController = require("./login.controller");
 const registerController = require("./register.controller");
 const passwordController = require("./password.controller");
-const sessionController = require("./session.controller");
+const sessionController = require("./sessionController");
 const verificationController = require("./verification.controller");
 
 module.exports = {

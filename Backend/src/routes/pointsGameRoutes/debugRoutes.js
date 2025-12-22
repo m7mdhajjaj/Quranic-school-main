@@ -5,7 +5,7 @@ const {
   getDebugMonthlyPoints,
   recalculateMonthlyPoints,
 } = require("../../controllers/PointsGameController");
-const { protect, adminProtect } = require("../../middleware/authMiddleware");
+const { protect, adminProtect } = require("../../middleware/auth");
 
 // [DEBUG] جلب جميع نقاط الشهر
 router.get("/monthly-points", protect, getDebugMonthlyPoints);

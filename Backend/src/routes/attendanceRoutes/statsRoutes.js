@@ -3,7 +3,7 @@ const router = express.Router();
 const {
   getStudentAttendanceStats,
 } = require("../../controllers/AttendanceController/index");
-const { protect } = require("../../middleware/authMiddleware");
+const { protect } = require("../../middleware/auth");
 
 // Get attendance statistics for a specific student
 router.get("/student/:studentId/stats", protect, getStudentAttendanceStats);

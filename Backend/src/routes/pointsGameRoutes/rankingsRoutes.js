@@ -5,7 +5,7 @@ const {
   getPointsRankings,
   getBadgesRankings,
 } = require("../../controllers/PointsGameController");
-const { protect } = require("../../middleware/authMiddleware");
+const { protect } = require("../../middleware/auth");
 
 // ترتيب الطلاب حسب النقاط
 router.get("/points", protect, getPointsRankings);

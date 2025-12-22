@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const timetableController = require("../../controllers/TimeTableController");
 const { validateTimetableData } = require("../../Validation/Timetable/TimetableValidation");
-const { protect } = require("../../middleware/authMiddleware");
+const { protect } = require("../../middleware/auth");
 
 // ============================================
 // TIMETABLE ROUTES

@@ -1,7 +1,7 @@
 // routes/authRoutes/utility.routes.js
 const express = require("express");
 const router = express.Router();
-const { protect } = require("../../middleware/authMiddleware");
+const { protect } = require("../../middleware/auth");
 
 /**
  * Utility & Testing Routes

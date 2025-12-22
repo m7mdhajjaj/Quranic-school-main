@@ -3,7 +3,7 @@ const express = require("express");
 const router = express.Router();
 const controller = require("../../controllers/basicController/adminController");
 const { validateAdminData } = require("../../Validation/Admin/AdminValidation");
-const { protect } = require("../../middleware/authMiddleware");
+const { protect } = require("../../middleware/auth");
 
 /**
  * CRUD Routes for Admins

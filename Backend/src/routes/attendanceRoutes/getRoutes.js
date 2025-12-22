@@ -6,7 +6,7 @@ const {
   getTeacherGroupsForAttendance,
   getTeacherGroupsForMarks,
 } = require("../../controllers/AttendanceController/index");
-const { protect } = require("../../middleware/authMiddleware");
+const { protect } = require("../../middleware/auth");
 const { validateGetTeacherGroups } = require("../../Validation/Group/GroupValidation");
 
 // Get all attendance records for a specific student

@@ -5,7 +5,7 @@
 const express = require("express");
 const router = express.Router();
 const DeviceToken = require("../../schema/DeviceToken");
-const { protect } = require("../../middleware/authMiddleware");
+const { protect } = require("../../middleware/auth");
 
 // ============================================================================
 // Device Token Routes (FCM - Firebase Cloud Messaging)

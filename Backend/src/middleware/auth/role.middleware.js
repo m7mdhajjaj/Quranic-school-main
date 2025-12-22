@@ -1,13 +1,21 @@
 /**
- * Role-Based Authorization Middleware
- * Handles role-specific access control
+ * ============================================================================
+ * Role-Based Authorization Middleware - التحقق من الصلاحيات
+ * ============================================================================
+ * 
+ * يتعامل مع التحكم في الوصول حسب دور المستخدم
+ * يستخدم protect middleware أولاً ثم يتحقق من الدور
  */
 
 const { protect } = require("./protect.middleware");
 
 /**
  * Teacher and Admin only access
+ * الوصول للمعلمين والمديرين فقط
+ * 
  * @middleware
+ * @description يسمح فقط للمستخدمين من نوع teacher أو admin
+ * @access Protected (Teacher, Admin only)
  */
 exports.teacherProtect = async (req, res, next) => {
   try {
@@ -34,7 +42,11 @@ exports.teacherProtect = async (req, res, next) => {
 
 /**
  * Admin only access
+ * الوصول للمديرين فقط
+ * 
  * @middleware
+ * @description يسمح فقط للمستخدمين من نوع admin
+ * @access Protected (Admin only)
  */
 exports.adminProtect = async (req, res, next) => {
   try {
@@ -62,7 +74,11 @@ exports.adminProtect = async (req, res, next) => {
 
 /**
  * Restrict admin from student/teacher pages
+ * منع المديرين من صفحات الطلاب/المعلمين
+ * 
  * @middleware
+ * @description يمنع المستخدمين من نوع admin من الوصول
+ * @access Protected (Students and Teachers only)
  */
 exports.restrictAdmin = async (req, res, next) => {
   try {

@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const activityController = require("../../controllers/activityController");
-const { protect } = require("../../middleware/authMiddleware");
+const { protect } = require("../../middleware/auth");
 const { uploadActivity } = require("../../config/multer");
 const { validateActivityData } = require("../../Validation/Activity");
 

@@ -5,7 +5,7 @@ const {
   saveDailyPoints,
   getDailyPoints,
 } = require("../../controllers/PointsGameController");
-const { protect } = require("../../middleware/authMiddleware");
+const { protect } = require("../../middleware/auth");
 
 // حفظ النقاط اليومية
 router.post("/", protect, saveDailyPoints);

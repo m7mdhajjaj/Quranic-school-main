@@ -7,7 +7,7 @@ const {
   sanitizeStudentData 
 } = require("../../Validation/Student/StudentValidation");
 const { validateStudentSearchQuery } = require("../../Validation/Student/StudentQueryValidation");
-const { protect } = require("../../middleware/authMiddleware");
+const { protect } = require("../../middleware/auth");
 const { cacheMiddleware } = require("../../middleware/cacheMiddleware");
 
 /**

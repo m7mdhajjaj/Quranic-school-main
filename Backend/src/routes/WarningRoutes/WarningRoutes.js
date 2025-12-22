@@ -5,7 +5,7 @@
 const express = require('express');
 const router = express.Router();
 const warningController = require('../../controllers/WarningController/index');
-const { protect } = require('../../middleware/authMiddleware');
+const { protect } = require('../../middleware/auth');
 const {
   validateCreateWarning,
   validateDeleteWarning,

@@ -7,7 +7,7 @@ const {
   uploadLogo,
   uploadAvatar,
 } = require('../../config/multer');
-const { protect } = require('../../middleware/authMiddleware');
+const { protect } = require('../../middleware/auth');
 const {
   uploadActivityImage,
   uploadNewsImage,

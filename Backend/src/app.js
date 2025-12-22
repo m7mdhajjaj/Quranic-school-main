@@ -143,7 +143,8 @@ app.use(
   require('./routes/DailyMarkRoutes/DailyMarkRoutes')
 );
 app.use('/api/attendance', require('./routes/attendanceRoutes'));
-app.use('/api/chat', require('./routes/chatRoutes'));
+// TODO: Chat routes not implemented yet
+// app.use('/api/chat', require('./routes/chatRoutes'));
 app.use(
   '/api/notifications',
   require('./routes/NotificationRoutes/notificationRoutes')

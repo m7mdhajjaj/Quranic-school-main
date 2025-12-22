@@ -1,6 +1,10 @@
 /**
- * Core Authentication Middleware
- * Handles JWT verification and user authentication
+ * ============================================================================
+ * Core Authentication Middleware - المصادقة الأساسية
+ * ============================================================================
+ * 
+ * يتعامل مع التحقق من JWT وربط بيانات المستخدم بالطلب
+ * يدعم ثلاثة أنواع من المستخدمين: Student, Teacher, Admin
  */
 
 const jwt = require("jsonwebtoken");
@@ -12,8 +16,21 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 /**
  * Main authentication middleware
- * Verifies JWT token and attaches user to request
+ * المصادقة الرئيسية - التحقق من JWT وإضافة المستخدم للطلب
+ * 
  * @middleware
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
+ * @returns {Promise<void>}
+ * 
+ * الوظائف:
+ * - التحقق من وجود token في Authorization header
+ * - فك تشفير وفحص صلاحية JWT
+ * - تحديد نوع المستخدم (student/teacher/admin)
+ * - إرفاق بيانات المستخدم بـ req.user
+ * - تحديث حالة النشاط (isActive = true)
+ * - إرسال إشعار Socket.io بتغيير حالة المستخدم
  */
 exports.protect = async (req, res, next) => {
   try {

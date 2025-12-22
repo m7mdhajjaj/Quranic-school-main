@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const groupController = require('../../controllers/basicController/groupController');
-const authMiddleware = require('../../middleware/authMiddleware');
+const authMiddleware = require('../../middleware/auth');
 const {
   createGroupValidation,
   updateGroupValidation,
