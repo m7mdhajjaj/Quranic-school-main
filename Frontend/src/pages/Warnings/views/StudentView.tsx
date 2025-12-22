@@ -5,8 +5,8 @@
 import React from 'react';
 import type { StudentViewProps } from '../types/warnings';
 import { Card } from '@/components/UI/Card';
+import PageHeader from '@/components/UI/PageHeader';
 import {
-  getWarningColor,
   getWarningLabel,
   getWarningDescription,
   formatArabicDate,
@@ -20,7 +20,11 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { useStudentView } from '../hooks/useStudentView';
-import { ANIMATION_DELAYS, LOADING_SKELETON_COUNT, EMPTY_STATES } from '../types/viewsConstants';
+import {
+  ANIMATION_DELAYS,
+  LOADING_SKELETON_COUNT,
+  EMPTY_STATES,
+} from '../types/viewsConstants';
 import { getWarningIcon } from './warningIconHelper';
 
 export const StudentView: React.FC<StudentViewProps> = React.memo(
@@ -29,49 +33,45 @@ export const StudentView: React.FC<StudentViewProps> = React.memo(
 
     return (
       <div
-        className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4 md:p-8"
+        className="min-h-screen bg-gradient-to-br from-emerald-50/50 via-teal-50/40 to-cyan-50/50 p-4 md:p-8"
         dir="rtl"
       >
-        <div className="max-w-4xl mx-auto space-y-8">
-          {/* Header - Modern & Clean */}
-          <div className="text-center mb-12 animate-fade-in-down">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-red-500 to-rose-600 rounded-3xl shadow-2xl mb-6 transform hover:scale-105 transition-transform duration-300">
-              <ShieldAlert className="w-10 h-10 text-white" />
-            </div>
-            <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-red-600 via-rose-600 to-pink-600 bg-clip-text text-transparent mb-3 tracking-tight">
-              إنذاراتي
-            </h1>
-            <p className="text-gray-600 text-lg font-medium max-w-md mx-auto">
-              عرض شامل لجميع الإنذارات والتنبيهات الخاصة بك
-            </p>
-          </div>
+        <div className="max-w-5xl mx-auto space-y-6">
+          {/* Header - يعتمد على PageHeader للمطابقة مع باقي الصفحات */}
+          <PageHeader
+            title="إنذاراتي"
+            subtitle="عرض وتنظيم كل التنبيهات الخاصة بك"
+            icon={<ShieldAlert className="w-6 h-6" />}
+          />
 
           {/* Warnings List */}
           {loading ? (
-            <div className="space-y-5">
-              {Array.from({ length: LOADING_SKELETON_COUNT.warnings }).map((_, i) => (
-                <div
-                  key={i}
-                  className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg border border-gray-100 animate-pulse"
-                >
-                  <div className="flex gap-5">
-                    <div className="w-14 h-14 bg-gray-200 rounded-2xl flex-shrink-0" />
-                    <div className="flex-1 space-y-4">
-                      <div className="h-7 w-1/3 bg-gray-200 rounded-lg" />
-                      <div className="h-5 w-2/3 bg-gray-200 rounded" />
-                      <div className="h-20 bg-gray-200 rounded-xl mt-4" />
-                      <div className="flex gap-3 mt-4">
-                        <div className="h-5 w-32 bg-gray-200 rounded" />
-                        <div className="h-5 w-32 bg-gray-200 rounded" />
-                        <div className="h-5 w-32 bg-gray-200 rounded" />
+            <div className="space-y-4">
+              {Array.from({ length: LOADING_SKELETON_COUNT.warnings }).map(
+                (_, i) => (
+                  <div
+                    key={i}
+                    className="bg-white rounded-2xl p-5 shadow-md border border-gray-100 animate-pulse"
+                  >
+                    <div className="flex gap-4">
+                      <div className="w-12 h-12 bg-gray-200 rounded-xl flex-shrink-0" />
+                      <div className="flex-1 space-y-3">
+                        <div className="h-5 w-1/3 bg-gray-200 rounded-lg" />
+                        <div className="h-4 w-2/3 bg-gray-200 rounded" />
+                        <div className="h-14 bg-gray-200 rounded-xl mt-3" />
+                        <div className="grid grid-cols-3 gap-2 mt-3">
+                          <div className="h-4 bg-gray-200 rounded" />
+                          <div className="h-4 bg-gray-200 rounded" />
+                          <div className="h-4 bg-gray-200 rounded" />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              )}
             </div>
           ) : hasWarnings ? (
-            <div className="space-y-5">
+            <div className="space-y-4">
               {warnings.map((warning, index) => {
                 const delayClass =
                   ANIMATION_DELAYS[index % ANIMATION_DELAYS.length];
@@ -81,83 +81,90 @@ export const StudentView: React.FC<StudentViewProps> = React.memo(
                     className={`animate-fade-in-up ${delayClass}`}
                   >
                     <Card
-                      className={`relative overflow-hidden bg-gradient-to-br ${getWarningColor(
-                        warning.type
-                      )} text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] border-0`}
+                      className="relative overflow-hidden bg-gradient-to-r from-[#f4fff7] via-[#d8f7e7] to-[#b7ecd4] text-emerald-900 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.01] border border-emerald-100 rounded-3xl ring-1 ring-emerald-100/40"
                       padding="lg"
                     >
-                      {/* Decorative pattern overlay */}
-                      <div className="absolute top-0 right-0 w-64 h-64 opacity-10">
-                        <div className="absolute inset-0 bg-white rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2" />
-                      </div>
+                      {/* Decorative soft glow */}
+                      <div className="absolute inset-0 opacity-30 pointer-events-none bg-[radial-gradient(circle_at_30%_20%,#ffffff,transparent_45%)]" />
+                      <div className="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(circle_at_80%_10%,#ffffff,transparent_40%)]" />
 
-                      <div className="relative z-10">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            {/* Warning Header */}
-                            <div className="flex items-center gap-4 mb-4">
-                              <div className="flex-shrink-0 w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-                                {getWarningIcon(warning.type)}
-                              </div>
-                              <div>
-                                <h3 className="text-2xl font-bold mb-1">
-                                  {getWarningLabel(warning.type)}
-                                </h3>
-                                <p className="text-sm opacity-90">
-                                  {getWarningDescription(warning.type)}
-                                </p>
-                              </div>
+                      <div className="relative z-10 space-y-4">
+                        {/* Top Row */}
+                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                          <div className="inline-flex items-center gap-3 bg-white/60 backdrop-blur-sm rounded-2xl px-4 py-2 shadow-sm border border-emerald-100">
+                            <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center shadow-inner text-emerald-800">
+                              {getWarningIcon(warning.type)}
                             </div>
+                            <div className="flex flex-col text-emerald-900">
+                              <span className="text-xs text-emerald-700">
+                                تنبيه
+                              </span>
+                              <span className="text-lg font-bold leading-tight">
+                                {getWarningLabel(warning.type)}
+                              </span>
+                            </div>
+                          </div>
 
-                            {/* Reason Box */}
-                            <div className="bg-white/15 backdrop-blur-md rounded-2xl p-4 mb-4 border border-white/20">
-                              <div className="flex items-start gap-2 mb-2">
-                                <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                                <p className="font-semibold text-sm">السبب:</p>
-                              </div>
-                              <p className="text-sm leading-relaxed opacity-95 pr-6">
-                                {warning.reason}
+                          <span className="inline-flex items-center gap-2 bg-white/70 backdrop-blur-md px-3 py-2 rounded-full border border-emerald-100 text-sm font-semibold text-emerald-800">
+                            <Calendar className="w-4 h-4" />
+                            {formatArabicDate(warning.createdAt)}
+                          </span>
+                        </div>
+
+                        {/* Description */}
+                        <div className="flex items-center gap-2 bg-white/70 backdrop-blur-md rounded-2xl px-4 py-3 text-emerald-900 shadow-sm border border-emerald-100">
+                          <AlertTriangle className="w-5 h-5 flex-shrink-0 text-amber-600" />
+                          <p className="text-sm font-medium leading-relaxed text-emerald-900">
+                            {getWarningDescription(warning.type)}
+                          </p>
+                        </div>
+
+                        {/* Reason */}
+                        <div className="bg-white/80 backdrop-blur-md rounded-2xl p-4 border border-emerald-100 shadow-inner">
+                          <p className="text-xs uppercase tracking-wide text-emerald-700 mb-1">
+                            السبب
+                          </p>
+                          <p className="text-base font-semibold text-emerald-900 leading-relaxed">
+                            {warning.reason}
+                          </p>
+                        </div>
+
+                        {/* Info Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div className="flex items-center gap-2 bg-white/70 backdrop-blur-sm rounded-xl px-3 py-2 border border-emerald-100 shadow-sm text-emerald-900">
+                            <Users className="w-4 h-4 flex-shrink-0 text-emerald-700" />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs text-emerald-700 mb-0.5">
+                                الحلقة
+                              </p>
+                              <p className="text-sm font-semibold truncate text-emerald-900">
+                                {warning.groupId?.name}
                               </p>
                             </div>
+                          </div>
 
-                            {/* Info Grid */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2">
-                                <Users className="w-4 h-4 flex-shrink-0" />
-                                <div className="min-w-0 flex-1">
-                                  <p className="text-xs opacity-75 mb-0.5">
-                                    الحلقة
-                                  </p>
-                                  <p className="text-sm font-medium truncate">
-                                    {warning.groupId?.name}
-                                  </p>
-                                </div>
-                              </div>
+                          <div className="flex items-center gap-2 bg-white/70 backdrop-blur-sm rounded-xl px-3 py-2 border border-emerald-100 shadow-sm text-emerald-900">
+                            <User className="w-4 h-4 flex-shrink-0 text-emerald-700" />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs text-emerald-700 mb-0.5">
+                                المعلم
+                              </p>
+                              <p className="text-sm font-semibold truncate text-emerald-900">
+                                {warning.teacherId?.firstName}{' '}
+                                {warning.teacherId?.lastName}
+                              </p>
+                            </div>
+                          </div>
 
-                              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2">
-                                <User className="w-4 h-4 flex-shrink-0" />
-                                <div className="min-w-0 flex-1">
-                                  <p className="text-xs opacity-75 mb-0.5">
-                                    المعلم
-                                  </p>
-                                  <p className="text-sm font-medium truncate">
-                                    {warning.teacherId?.firstName}{' '}
-                                    {warning.teacherId?.lastName}
-                                  </p>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2">
-                                <Calendar className="w-4 h-4 flex-shrink-0" />
-                                <div className="min-w-0 flex-1">
-                                  <p className="text-xs opacity-75 mb-0.5">
-                                    التاريخ
-                                  </p>
-                                  <p className="text-sm font-medium truncate">
-                                    {formatArabicDate(warning.createdAt)}
-                                  </p>
-                                </div>
-                              </div>
+                          <div className="flex items-center gap-2 bg-white/70 backdrop-blur-sm rounded-xl px-3 py-2 border border-emerald-100 shadow-sm text-emerald-900">
+                            <Calendar className="w-4 h-4 flex-shrink-0 text-emerald-700" />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs text-emerald-700 mb-0.5">
+                                التاريخ
+                              </p>
+                              <p className="text-sm font-semibold truncate text-emerald-900">
+                                {formatArabicDate(warning.createdAt)}
+                              </p>
                             </div>
                           </div>
                         </div>
@@ -169,14 +176,14 @@ export const StudentView: React.FC<StudentViewProps> = React.memo(
             </div>
           ) : (
             <div className="animate-fade-in">
-              <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-12 text-center shadow-lg border border-gray-100">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-emerald-400 to-green-500 rounded-3xl shadow-lg mb-6">
-                  <CheckCircle className="w-10 h-10 text-white" />
+              <div className="bg-white rounded-2xl p-10 text-center shadow-lg border-2 border-emerald-100">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-lg mb-5">
+                  <CheckCircle className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-800 mb-3">
+                <h3 className="text-2xl font-bold text-gray-800 mb-2">
                   {EMPTY_STATES.noWarnings.title}
                 </h3>
-                <p className="text-gray-600 text-lg">
+                <p className="text-gray-600">
                   {EMPTY_STATES.noWarnings.description}
                 </p>
               </div>
