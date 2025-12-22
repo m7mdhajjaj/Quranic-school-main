@@ -50,7 +50,7 @@ const AveragesBarComponent = ({
             title="📖 معدل الحفظ"
             value={`${memorizationAverage}/10`}
             description={`من ${totalMarks} علامة`}
-            color="teal"
+            color="emerald"
             icon={
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -67,35 +67,6 @@ const AveragesBarComponent = ({
               </svg>
             }
           />
-          {/* Progress Ring */}
-          <div className="mt-3 flex justify-center">
-            <div className="relative inline-flex items-center justify-center">
-              <svg className="transform -rotate-90" width="80" height="80">
-                <circle
-                  cx="40"
-                  cy="40"
-                  r="32"
-                  stroke="#14b8a6"
-                  strokeWidth="6"
-                  fill="transparent"
-                  className="opacity-20"
-                />
-                <circle
-                  cx="40"
-                  cy="40"
-                  r="32"
-                  stroke="#0d9488"
-                  strokeWidth="6"
-                  fill="transparent"
-                  strokeDasharray={`${(memorizationAverage / 10) * 201} 201`}
-                  className="transition-all duration-1000"
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-teal-700 font-bold text-base">{Math.round((memorizationAverage / 10) * 100)}%</span>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Review Average */}
@@ -121,35 +92,6 @@ const AveragesBarComponent = ({
               </svg>
             }
           />
-          {/* Progress Ring */}
-          <div className="mt-3 flex justify-center">
-            <div className="relative inline-flex items-center justify-center">
-              <svg className="transform -rotate-90" width="80" height="80">
-                <circle
-                  cx="40"
-                  cy="40"
-                  r="32"
-                  stroke="#10b981"
-                  strokeWidth="6"
-                  fill="transparent"
-                  className="opacity-20"
-                />
-                <circle
-                  cx="40"
-                  cy="40"
-                  r="32"
-                  stroke="#059669"
-                  strokeWidth="6"
-                  fill="transparent"
-                  strokeDasharray={`${(reviewAverage / 10) * 201} 201`}
-                  className="transition-all duration-1000"
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-emerald-600 font-bold text-base">{Math.round((reviewAverage / 10) * 100)}%</span>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Overall Average */}
@@ -158,7 +100,7 @@ const AveragesBarComponent = ({
             title="⭐ المعدل الإجمالي"
             value={`${overallAverage}/100`}
             description="الحفظ + المراجعة"
-            color="teal"
+            color="emerald"
             icon={
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -175,35 +117,6 @@ const AveragesBarComponent = ({
               </svg>
             }
           />
-          {/* Progress Ring */}
-          <div className="mt-3 flex justify-center">
-            <div className="relative inline-flex items-center justify-center">
-              <svg className="transform -rotate-90" width="80" height="80">
-                <circle
-                  cx="40"
-                  cy="40"
-                  r="32"
-                  stroke="#14b8a6"
-                  strokeWidth="6"
-                  fill="transparent"
-                  className="opacity-20"
-                />
-                <circle
-                  cx="40"
-                  cy="40"
-                  r="32"
-                  stroke="#0d9488"
-                  strokeWidth="6"
-                  fill="transparent"
-                  strokeDasharray={`${(overallAverage / 100) * 201} 201`}
-                  className="transition-all duration-1000"
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-teal-700 font-bold text-base">{Math.round(overallAverage)}%</span>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
