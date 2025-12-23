@@ -140,11 +140,10 @@ class ContactsService {
    * - All groups
    */
   async _getAdminContacts(adminId) {
-    const [students, teachers, admins, allGroups] = await Promise.all([
-      Student.find({}).select("firstName lastName avatar studentId group").lean(),
-      Teacher.find({}).select("firstName lastName avatar teacherId").lean(),
-      Admin.find({ _id: { $ne: adminId } }).select("firstName lastName avatar adminId").lean(),
-      Group.find({}).select("name description image teacher").lean()
+    const [students, teachers, admins] = await Promise.all([
+      Student.find({}).select("firstName lastName avatar studentId group").sort({ firstName: 1, lastName: 1 }).lean(),
+      Teacher.find({}).select("firstName lastName avatar teacherId").sort({ firstName: 1, lastName: 1 }).lean(),
+      Admin.find({ _id: { $ne: adminId } }).select("firstName lastName avatar adminId").sort({ firstName: 1, lastName: 1 }).lean()
     ]);
     
     const contacts = [
@@ -153,13 +152,8 @@ class ContactsService {
       ...admins.map(a => ({ ...a, role: "admin" }))
     ];
     
-    const groups = allGroups.map(g => ({
-      _id: g._id,
-      name: g.name,
-      description: g.description,
-      image: g.image,
-      teacher: g.teacher
-    }));
+    // Admin sees NO groups
+    const groups = [];
 
     return { contacts, groups };
   }

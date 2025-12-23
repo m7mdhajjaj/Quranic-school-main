@@ -64,9 +64,19 @@ class ConversationService {
    * Get All Conversations for User
    */
   async getConversations(userId, role) {
-    let conversations = await Conversation.find({
-      "participants.userId": userId
-    })
+    const normalizedRole = role.charAt(0).toUpperCase() + role.slice(1);
+    
+    let query = { "participants.userId": userId };
+
+    // ✅ Admin sees ONLY DMs (No Groups)
+    if (normalizedRole === 'Admin') {
+      query = {
+        "participants.userId": userId,
+        type: "DM"
+      };
+    }
+
+    let conversations = await Conversation.find(query)
     .populate("lastMessage")
     .populate("participants.userId", "firstName lastName avatar")
     .populate({

@@ -38,7 +38,7 @@ export const useChatLayout = () => {
   const { contacts, groups, loading: contactsLoading } = useChatContacts();
   const { initializeGroupConversations } = useGroupConversations();
   
-  const [selectedConversation, setSelectedConversation] = useState<any>(null);
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [initialized, setInitialized] = useState(false);
 
   // Auto-initialize group conversations for teachers and admins
@@ -68,14 +68,14 @@ export const useChatLayout = () => {
   /**
    * Handle conversation selection
    */
-  const handleSelectConversation = useCallback(async (conv: any) => {
+  const handleSelectConversation = useCallback(async (conv: Conversation) => {
     setSelectedConversation(conv);
     
     // Reset unread count if needed
     if (conv.unreadCount > 0) {
       if (conv.type === 'DM') {
         const otherParticipant = conv.participants.find(
-          (p: any) => p.userId._id !== user?._id
+          p => p.userId._id !== user?._id
         );
         if (otherParticipant) {
           await resetUnreadCount('DM', otherParticipant.userId._id);
@@ -105,8 +105,9 @@ export const useChatLayout = () => {
           type: 'GROUP',
           groupId: group,
           participants: [],
-          unreadCount: 0
-        };
+          unreadCount: 0,
+          updatedAt: new Date().toISOString()
+        } as Conversation;
         setSelectedConversation(tempConv);
       }
     } else {
@@ -131,8 +132,9 @@ export const useChatLayout = () => {
                         : 'Admin' 
             }
           ],
-          unreadCount: 0
-        };
+          unreadCount: 0,
+          updatedAt: new Date().toISOString()
+        } as unknown as Conversation;
         setSelectedConversation(tempConv);
       }
     }
@@ -152,7 +154,7 @@ export const useChatLayout = () => {
       };
     } else {
       const otherParticipant = selectedConversation.participants.find(
-        (p: any) => p.userId._id !== user?._id
+        p => p.userId._id !== user?._id
       );
       
       if (otherParticipant) {
