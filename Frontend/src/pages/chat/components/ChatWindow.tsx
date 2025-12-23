@@ -5,7 +5,7 @@ import { UserStatusContext } from '../../../Context/UserStatusContext';
 import MessageItem from './MessageItem';
 import { useAuth } from '../../../hooks/useAuth';
 import { Button, LoadingSpinner, EmptyState } from '../../../components/UI';
-import { Send, Reply, X, Loader2, MoreVertical, BellOff, Bell } from 'lucide-react';
+import { Send, Reply, X, Loader2, MoreVertical, BellOff, Bell, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { DropdownMenu } from '../../../components/UI/DropdownMenu';
 import { showSuccessMessage, showErrorMessage } from '../../../utils/sweetalertUtils';
 import api from '../../../Api/api';
@@ -14,6 +14,8 @@ interface ChatWindowProps {
   chatType: 'DM' | 'GROUP';
   targetId: string;
   targetName: string;
+  isSidebarOpen: boolean;
+  onToggleSidebar: () => void;
   onNewMessage?: (message: any) => void;
 }
 
@@ -47,7 +49,7 @@ const LastSeenDisplay: React.FC<{ lastSeen: string | null; isOnline: boolean }> 
   return <span className="text-sm font-medium">آخر ظهور {formatLastSeen(lastSeen)}</span>;
 };
 
-const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName, onNewMessage }) => {
+const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName, isSidebarOpen, onToggleSidebar, onNewMessage }) => {
   const { user } = useAuth();
   const [lastSeen, setLastSeen] = useState<string | null>(null);
   const { 
@@ -83,6 +85,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
         await sendMessage(text, undefined, replyTo?._id);
         clearInput();
         clearReply();
+        // Scroll to bottom after sending with smooth animation
+        requestAnimationFrame(() => {
+          setTimeout(() => scrollToBottom('smooth'), 50);
+        });
       } catch (err) {
         console.error("Failed to send message:", err);
       } finally {
@@ -94,7 +100,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
   });
   
   // Scroll management (auto-scroll, pagination)
-  const { messagesContainerRef, messagesEndRef, handleScroll, loadingMore: showLoadingSpinner } = useMessageScroll({
+  const { messagesContainerRef, messagesEndRef, handleScroll, scrollToBottom, loadingMore: showLoadingSpinner } = useMessageScroll({
     messages,
     hasMore,
     loading: loadingMore,
@@ -269,32 +275,47 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
     <div className="flex flex-col h-full bg-gray-50 overflow-hidden">
       {/* Header with Online Status */}
       <div className="p-4 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 text-white shadow-md flex justify-between items-center flex-shrink-0">
-        <div className="flex items-center gap-3 min-w-0">
-          <h3 className="font-bold text-lg truncate">{targetName}</h3>
-          {chatType === 'DM' && (
-            <div className="flex items-center gap-2 bg-white/20 px-2.5 py-1 rounded-full backdrop-blur-sm border border-white/30">
-              <div 
-                className={`w-2 h-2 rounded-full ${
-                  isOnline ? 'bg-green-400 animate-pulse' : 'bg-gray-300'
-                }`}
-              />
-              <LastSeenDisplay lastSeen={lastSeen} isOnline={isOnline} />
-            </div>
-          )}
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <button
+            onClick={onToggleSidebar}
+            className="p-1.5 hover:bg-white/20 rounded-lg transition-colors flex-shrink-0"
+            title={isSidebarOpen ? 'إخفاء القائمة' : 'إظهار القائمة'}
+          >
+            {isSidebarOpen ? (
+              <PanelLeftClose className="w-5 h-5" />
+            ) : (
+              <PanelLeftOpen className="w-5 h-5" />
+            )}
+          </button>
+          
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <h3 className="font-bold text-lg truncate">{targetName}</h3>
+            
+            {chatType === 'DM' && (
+              <div className="flex items-center gap-1.5 bg-white/20 px-2 py-0.5 rounded-full backdrop-blur-sm border border-white/30 flex-shrink-0">
+                <div 
+                  className={`w-2 h-2 rounded-full ${
+                    isOnline ? 'bg-green-400 animate-pulse' : 'bg-gray-300'
+                  }`}
+                />
+                <LastSeenDisplay lastSeen={lastSeen} isOnline={isOnline} />
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 flex-shrink-0">
           {isTyping && (
-            <p className="text-sm text-white/90 animate-pulse flex items-center gap-2">
+            <p className="text-sm text-white/90 animate-pulse flex items-center gap-1.5">
               <Loader2 className="w-4 h-4 animate-spin" />
-              {typingUsers.length === 1 ? 'يكتب' : `${typingUsers.length} يكتبون`}...
+              <span className="hidden sm:inline">{typingUsers.length === 1 ? 'يكتب' : `${typingUsers.length} يكتبون`}...</span>
             </p>
           )}
 
           <DropdownMenu
             trigger={
-              <button className="p-2 hover:bg-white/20 rounded-full transition-colors focus:outline-none">
-                <MoreVertical className="w-6 h-6 text-white" />
+              <button className="p-1.5 hover:bg-white/20 rounded-full transition-colors focus:outline-none flex-shrink-0">
+                <MoreVertical className="w-5 h-5 text-white" />
               </button>
             }
             items={getHeaderDropdownItems()}
@@ -307,7 +328,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
       <div 
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-2"
+        className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-2 scroll-smooth scrollbar-hide"
       >
         {/* Loading Spinner for Pagination */}
         {showLoadingSpinner && (

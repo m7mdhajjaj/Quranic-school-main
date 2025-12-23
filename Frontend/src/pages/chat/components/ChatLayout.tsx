@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ChatSidebar from './ChatSidebar';
 import ChatWindow from './ChatWindow';
 import { useChatLayout } from '../hooks';
 import { EmptyState } from '../../../components/UI';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 const ChatLayout: React.FC = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const {
     conversations,
     contacts,
@@ -22,8 +23,13 @@ const ChatLayout: React.FC = () => {
   } = useChatLayout();
 
   return (
-    <div className="flex h-[calc(100vh-64px)] bg-gray-50 overflow-hidden" dir="rtl">
-      <div className="w-80 flex-shrink-0 border-l border-gray-200 bg-white overflow-hidden">
+    <div className="flex h-[calc(100vh-64px)] bg-gray-50 overflow-hidden relative" dir="rtl">
+      {/* Sidebar */}
+      <div 
+        className={`flex-shrink-0 border-l border-gray-200 bg-white overflow-hidden transition-all duration-300 ${
+          isSidebarOpen ? 'w-80' : 'w-0'
+        }`}
+      >
         <ChatSidebar 
           conversations={conversations}
           contacts={contacts}
@@ -38,12 +44,16 @@ const ChatLayout: React.FC = () => {
           onDeleteConversation={deleteConversation}
         />
       </div>
+
+      {/* Main Chat Area */}
       <div className="flex-1 overflow-hidden">
         {targetInfo ? (
           <ChatWindow 
             chatType={targetInfo.chatType}
             targetId={targetInfo.targetId}
             targetName={targetInfo.targetName}
+            isSidebarOpen={isSidebarOpen}
+            onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
             onNewMessage={(newMsg) => {
               // Update conversation on new message if needed
             }}

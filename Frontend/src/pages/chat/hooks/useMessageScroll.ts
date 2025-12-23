@@ -47,10 +47,12 @@ export const useMessageScroll = ({
     const container = messagesContainerRef.current;
     if (!container) return;
 
-    const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+    const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
     
     if (isAtBottom) {
-      scrollToBottom('auto');
+      requestAnimationFrame(() => {
+        scrollToBottom('smooth');
+      });
     }
   }, [messages.length, scrollToBottom]);
 
