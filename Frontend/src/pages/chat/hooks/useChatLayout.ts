@@ -96,6 +96,42 @@ export const useChatLayout = () => {
     }
   }, [user, resetUnreadCount]);
 
+  // Check for pending notification navigation
+  useEffect(() => {
+    const checkNotification = () => {
+      if (!conversationsLoading && conversations.length > 0) {
+        const pendingNotification = localStorage.getItem('chatNotification');
+        if (pendingNotification) {
+          try {
+            const data = JSON.parse(pendingNotification);
+            const { conversationId } = data;
+
+            if (conversationId) {
+              const targetConv = conversations.find(c => c._id === conversationId);
+              if (targetConv) {
+                handleSelectConversation(targetConv);
+                localStorage.removeItem('chatNotification');
+              }
+            }
+          } catch (e) {
+            console.error("Error parsing chat notification data", e);
+            localStorage.removeItem('chatNotification');
+          }
+        }
+      }
+    };
+
+    // Check on mount/update
+    checkNotification();
+
+    // Listen for event (in case user is already on chat page)
+    window.addEventListener('chat-notification-click', checkNotification);
+    
+    return () => {
+      window.removeEventListener('chat-notification-click', checkNotification);
+    };
+  }, [conversationsLoading, conversations, handleSelectConversation]);
+
   /**
    * Start new chat with contact or group
    */

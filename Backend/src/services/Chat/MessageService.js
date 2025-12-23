@@ -8,6 +8,10 @@ const { sendPushNotification } = require("../../Notifications/Core/PushSender");
 const ContactsService = require("./ContactsService");
 const ConversationService = require("./ConversationService");
 const GroupService = require("./GroupService");
+const { notifyNewMessage } = require("../../Notifications/Handlers/ChatHandler");
+const Student = require("../../schema/Student");
+const Group = require("../../schema/Group");
+const Conversation = require("../../schema/Chat/Conversation");
 
 class MessageService {
   /**
@@ -79,6 +83,17 @@ class MessageService {
     // Emit Socket Events
     this._emitDMEvents(senderId, data.recipientId, message, data.clientTempId);
 
+    // Send In-App Notification
+    const senderName = `${message.sender.firstName} ${message.sender.lastName}`;
+    await notifyNewMessage(
+      data.recipientId, 
+      recipientRole, 
+      senderName, 
+      data.text, 
+      conversation._id, 
+      "DM"
+    );
+
     // Send Push Notification if offline
     await this._sendPushIfOffline(data.recipientId, senderId, senderRole, data.text, conversation._id);
 
@@ -113,6 +128,10 @@ class MessageService {
 
     // Emit to Group Room
     this._emitGroupEvents(senderId, data.groupId, message, data.clientTempId);
+
+    // Send In-App Notifications
+    const senderName = `${message.sender.firstName} ${message.sender.lastName}`;
+    await this._notifyGroupMembers(data.groupId, senderId, senderName, data.text, "GROUP");
 
     return message;
   }
@@ -579,6 +598,51 @@ class MessageService {
       } catch (err) {
         console.error("Error sending push notification:", err);
       }
+    }
+  }
+
+  /**
+   * Private: Notify Group Members
+   */
+  async _notifyGroupMembers(groupId, senderId, senderName, text, chatType) {
+    try {
+      // Get Group
+      const group = await Group.findById(groupId);
+      if (!group) return;
+
+      // Get Conversation ID for the group
+      const conversation = await Conversation.findOne({ type: 'GROUP', groupId: groupId });
+      const conversationId = conversation ? conversation._id : null;
+      if (!conversationId) return;
+
+      // Notify Teacher (if not sender)
+      if (group.teacher.toString() !== senderId.toString()) {
+        await notifyNewMessage(
+          group.teacher,
+          "Teacher",
+          senderName,
+          text,
+          conversationId,
+          chatType
+        );
+      }
+
+      // Notify Students
+      const students = await Student.find({ groupId: groupId });
+      for (const student of students) {
+        if (student._id.toString() !== senderId.toString()) {
+          await notifyNewMessage(
+            student._id,
+            "Student",
+            senderName,
+            text,
+            conversationId,
+            chatType
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Error notifying group members:", error);
     }
   }
 }

@@ -17,6 +17,7 @@ const NewsHandler = require("./Handlers/NewsHandler");
 const StudentHandler = require("./Handlers/StudentHandler");
 const AttendanceHandler = require("./Handlers/AttendanceHandler");
 const WarningHandler = require("./Handlers/WarningHandler");
+const ChatHandler = require("./Handlers/ChatHandler");
 
 module.exports = {
   // Main Services
@@ -70,6 +71,9 @@ module.exports = {
   notifyAdminAddedStudent: require("./Handlers/AdminHandler").notifyAdminAddedStudent,
   notifyAdminRemovedStudent: require("./Handlers/AdminHandler").notifyAdminRemovedStudent,
   notifyAdminMovedStudent: require("./Handlers/AdminHandler").notifyAdminMovedStudent,
+
+  // Chat Notifications
+  notifyNewMessage: ChatHandler.notifyNewMessage,
 
   notifyNewsPublished: NewsHandler.notifyNewsPublished,
   notifyNewsArchived: NewsHandler.notifyNewsArchived,

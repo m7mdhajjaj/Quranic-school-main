@@ -81,11 +81,9 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
     if (notification.type === 'message') {
       localStorage.setItem(
         'chatNotification',
-        JSON.stringify({
-          senderId: notification.data?.senderId,
-          recipientId: notification.data?.recipientId,
-        })
+        JSON.stringify(notification.data)
       );
+      window.dispatchEvent(new Event('chat-notification-click'));
       navigate('/chat');
       setShowDropdown(false);
     } else if (notification.type === 'news') {
