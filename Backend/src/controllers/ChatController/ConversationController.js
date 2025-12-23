@@ -48,6 +48,24 @@ class ConversationController {
       });
     }
   }
+
+  /**
+   * DELETE /api/chat/conversations/:id
+   * Delete a conversation completely
+   */
+  async deleteConversation(req, res) {
+    try {
+      const { id } = req.params;
+      await ConversationService.deleteConversation(req.user.id, id);
+      return res.json({ success: true, message: "Conversation deleted successfully" });
+    } catch (error) {
+      console.error("Error in deleteConversation:", error);
+      return res.status(500).json({ 
+        success: false,
+        message: error.message 
+      });
+    }
+  }
 }
 
 module.exports = new ConversationController();

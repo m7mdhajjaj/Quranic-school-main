@@ -51,6 +51,7 @@ router.post("/initialize-groups", GroupController.initializeGroupConversations);
 // ============================================================================
 router.get("/conversations", ConversationController.getConversations);
 router.post("/conversations/reset-unread", validate(resetUnreadCountSchema), ConversationController.resetUnreadCount);
+router.delete("/conversations/:id", ConversationController.deleteConversation);
 
 // ============================================================================
 // Messages Routes

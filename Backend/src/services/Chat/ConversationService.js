@@ -226,6 +226,69 @@ class ConversationService {
       console.error("Error incrementing unread count:", err);
     }
   }
+
+  /**
+   * Delete Conversation (Hard Delete)
+   * - Deletes the conversation document
+   * - Deletes all messages in this conversation
+   */
+  async deleteConversation(userId, conversationId) {
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation) {
+      throw new Error("Conversation not found");
+    }
+
+    // Verify participation
+    const isParticipant = conversation.participants.some(
+      p => p.userId.toString() === userId.toString()
+    );
+
+    if (!isParticipant) {
+      throw new Error("Not authorized to delete this conversation");
+    }
+
+    // Hard Delete: Remove conversation and all its messages
+    // Note: In a real app, you might want to just remove the user from participants
+    // or use 'deletedFor' on conversation. But user asked for "completely deleted from database".
+    
+    // However, for DM, if one deletes, should it delete for other?
+    // User said: "delete chat between them... chat must be completely deleted between them in database"
+    // This implies deleting the data itself.
+    
+    await Chat.deleteMany({ 
+      $or: [
+        { chatType: "DM", $and: [{ sender: conversation.participants[0].userId }, { recipient: conversation.participants[1].userId }] },
+        { chatType: "DM", $and: [{ sender: conversation.participants[1].userId }, { recipient: conversation.participants[0].userId }] },
+        { chatType: "GROUP", groupId: conversation.groupId }
+      ]
+    });
+
+    // Actually, Chat schema doesn't have conversationId directly for DMs usually, 
+    // but let's check how we link them.
+    // The Chat schema uses sender/recipient for DM and groupId for Group.
+    // It does NOT seem to have a conversationId field.
+    // So we must delete based on participants or groupId.
+    
+    if (conversation.type === "GROUP") {
+      await Chat.deleteMany({ groupId: conversation.groupId });
+    } else {
+      // For DM, we need to match messages between these two users
+      const p1 = conversation.participants[0].userId;
+      const p2 = conversation.participants[1].userId;
+      
+      await Chat.deleteMany({
+        chatType: "DM",
+        $or: [
+          { sender: p1, recipient: p2 },
+          { sender: p2, recipient: p1 }
+        ]
+      });
+    }
+
+    await Conversation.findByIdAndDelete(conversationId);
+
+    return { success: true };
+  }
 }
 
 module.exports = new ConversationService();

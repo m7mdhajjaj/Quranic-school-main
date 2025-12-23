@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Avatar } from '../../../components/Avatar';
 import { EmptyState, LoadingSpinner, Badge } from '../../../components/UI';
-import { MessageSquare, Users, Search } from 'lucide-react';
+import { MessageSquare, Users, Search, Trash2 } from 'lucide-react';
 import type { Conversation } from '../types';
 import type { Contact, Group } from '../hooks/useChatContacts';
+import api from '../../../Api/api';
+import { showConfirmMessage, showSuccessMessage, showErrorMessage } from '../../../utils/sweetalertUtils';
 
 interface ChatSidebarProps {
   conversations: Conversation[];
@@ -31,6 +33,30 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
   onSearchChange
 }) => {
   const [view, setView] = useState<'conversations' | 'contacts'>('conversations');
+
+  const handleDeleteConversation = async (e: React.MouseEvent, conversationId: string) => {
+    e.stopPropagation();
+    
+    try {
+      const confirmed = await showConfirmMessage(
+        "حذف المحادثة؟",
+        "سيتم حذف المحادثة وجميع الرسائل نهائياً من قاعدة البيانات. هل أنت متأكد؟",
+        "نعم، احذف",
+        "إلغاء"
+      );
+
+      if (confirmed.isConfirmed) {
+        await api.delete(`/chat/conversations/${conversationId}`);
+        showSuccessMessage("تم الحذف", "تم حذف المحادثة بنجاح");
+        // Ideally trigger a refresh or remove from list locally
+        // For now, we rely on parent re-fetching or socket updates if implemented
+        // But since we don't have a callback for refresh here, we might need to reload or use context
+        window.location.reload(); // Temporary simple fix, better to use callback
+      }
+    } catch (error: any) {
+      showErrorMessage("خطأ", error.response?.data?.message || "فشل حذف المحادثة");
+    }
+  };
 
   if (loading) {
     return (
@@ -61,6 +87,29 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
       }
     }
     return { name: 'محادثة', subtitle: '', avatar: null, userId: '' };
+  };
+
+  // Helper to check if contact is selected
+  const isContactSelected = (contactId: string) => {
+    if (!selectedId) return false;
+    if (selectedId === `temp-${contactId}`) return true;
+    
+    const activeConv = conversations.find(c => c._id === selectedId);
+    if (activeConv && activeConv.type === 'DM') {
+      return activeConv.participants.some(p => p.userId._id === contactId);
+    }
+    return false;
+  };
+
+  const isGroupSelected = (groupId: string) => {
+    if (!selectedId) return false;
+    if (selectedId === `temp-${groupId}`) return true;
+    
+    const activeConv = conversations.find(c => c._id === selectedId);
+    if (activeConv && activeConv.type === 'GROUP') {
+      return activeConv.groupId?._id === groupId;
+    }
+    return false;
   };
 
   return (
@@ -150,6 +199,16 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                       {conv.lastMessage?.text || display.subtitle}
                     </div>
                   </div>
+
+                  {/* Delete Button - Shows on Hover */}
+                  <button
+                    onClick={(e) => handleDeleteConversation(e, conv._id)}
+                    className="absolute left-2 opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all duration-200 z-10"
+                    title="حذف المحادثة"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+
                   {conv.unreadCount > 0 && (
                     <Badge 
                       variant="danger"
@@ -173,11 +232,17 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                   الحلقات
                 </div>
                 <div className="space-y-1">
-                  {groups.filter(g => g && g._id).map(group => (
+                  {groups.filter(g => g && g._id).map(group => {
+                    const isSelected = isGroupSelected(group._id);
+                    return (
                     <div
                       key={group._id}
                       onClick={() => onStartNewChat(group, true)}
-                      className="flex items-center p-3 mx-1 rounded-xl cursor-pointer hover:bg-emerald-50 transition-all duration-200 group"
+                      className={`flex items-center p-3 mx-1 rounded-xl cursor-pointer transition-all duration-200 group ${
+                        isSelected 
+                          ? 'bg-gradient-to-r from-emerald-50 to-teal-50 border-r-4 border-emerald-500 shadow-sm' 
+                          : 'hover:bg-emerald-50 border-r-4 border-transparent'
+                      }`}
                     >
                       <div className="ml-3">
                         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-lg shadow-md group-hover:scale-110 transition-transform">
@@ -192,7 +257,8 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                         </div>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -205,11 +271,17 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                   جهات الاتصال
                 </div>
                 <div className="space-y-1">
-                  {contacts.filter(c => c && c._id).map(contact => (
+                  {contacts.filter(c => c && c._id).map(contact => {
+                    const isSelected = isContactSelected(contact._id);
+                    return (
                     <div
                       key={contact._id}
                       onClick={() => onStartNewChat(contact, false)}
-                      className="flex items-center p-3 mx-1 rounded-xl cursor-pointer hover:bg-blue-50 transition-all duration-200 group"
+                      className={`flex items-center p-3 mx-1 rounded-xl cursor-pointer transition-all duration-200 group ${
+                        isSelected 
+                          ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-r-4 border-blue-500 shadow-sm' 
+                          : 'hover:bg-blue-50 border-r-4 border-transparent'
+                      }`}
                     >
                       <div className="ml-3">
                         <Avatar 
@@ -231,7 +303,8 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                         </Badge>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

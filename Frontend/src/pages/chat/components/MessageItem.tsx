@@ -1,7 +1,11 @@
 import React from 'react';
-import { Reply, Check, CheckCheck, Clock } from 'lucide-react';
+import { Reply, Check, CheckCheck, Clock, Trash2 } from 'lucide-react';
 import { Avatar } from '../../../components/Avatar';
 import { Tooltip } from '../../../components/UI';
+import { DropdownMenu } from '../../../components/UI/DropdownMenu';
+import { useAuth } from '../../../hooks/useAuth';
+import api from '../../../Api/api';
+import { showConfirmMessage, showSuccessMessage, showErrorMessage } from '../../../utils/sweetalertUtils';
 
 interface MessageItemProps {
   message: any;
@@ -16,6 +20,67 @@ const MessageItem: React.FC<MessageItemProps> = ({
   onReply,
   onReplyClick
 }) => {
+  const { user } = useAuth();
+
+  const handleDelete = async (deleteForAll: boolean) => {
+    try {
+      const confirmed = await showConfirmMessage(
+        deleteForAll ? "حذف لدى الجميع؟" : "حذف لديّ؟",
+        deleteForAll 
+          ? "سيتم حذف الرسالة لدى جميع المشاركين في المحادثة." 
+          : "سيتم حذف الرسالة من جهازك فقط.",
+        "نعم، احذف",
+        "إلغاء"
+      );
+
+      if (confirmed.isConfirmed) {
+        await api.delete(`/chat/messages/${message._id}`, {
+          data: { deleteForAll }
+        });
+        // UI update is handled via socket usually, but we can optimistically hide it if needed
+        // For now, rely on socket event "message:deleted"
+      }
+    } catch (error: any) {
+      showErrorMessage("خطأ", error.response?.data?.message || "فشل حذف الرسالة");
+    }
+  };
+
+  const getDropdownItems = () => {
+    const items = [
+      {
+        label: "حذف لديّ",
+        icon: <Trash2 size={16} />,
+        onClick: () => handleDelete(false),
+        variant: 'default' as const
+      }
+    ];
+
+    // Logic for "Delete for Everyone"
+    // 1. Must be own message
+    // 2. Not deleted already
+    // 3. Less than 3 minutes old
+    // 4. Not read (for DM)
+    if (isOwn && !message.deletedForAll) {
+      const createdAt = new Date(message.createdAt).getTime();
+      const now = Date.now();
+      const diffMins = (now - createdAt) / 1000 / 60;
+      
+      const isRead = message.readAt || (message.seenBy && message.seenBy.length > 0);
+
+      if (diffMins < 3 && !isRead) {
+        items.push({
+          label: "حذف لدى الجميع",
+          icon: <Trash2 size={16} />,
+          onClick: () => handleDelete(true),
+          variant: 'danger' as const,
+          className: 'text-red-600 hover:bg-red-50'
+        });
+      }
+    }
+
+    return items;
+  };
+
   const getStatusIcon = () => {
     if (!isOwn || message._optimistic) return null;
     if (message.readAt) {
@@ -39,10 +104,22 @@ const MessageItem: React.FC<MessageItemProps> = ({
     );
   };
 
+  // If deleted for all, show placeholder
+  if (message.deletedForAll) {
+    return (
+      <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-2`}>
+        <div className="px-4 py-2 rounded-lg bg-gray-100 border border-gray-200 text-gray-500 italic text-sm flex items-center gap-2">
+          <Trash2 size={14} />
+          <span>تم حذف هذه الرسالة</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div 
       id={`message-${message._id}`}
-      className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-2 group`}
+      className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-2 group relative`}
     >
       {/* Avatar for incoming messages */}
       {!isOwn && message.sender && (
@@ -56,7 +133,16 @@ const MessageItem: React.FC<MessageItemProps> = ({
         </div>
       )}
       
-      <div className={`max-w-[70%] ${isOwn ? 'order-first' : ''}`}>
+      <div className={`max-w-[70%] ${isOwn ? 'order-first' : ''} relative group`}>
+        {/* Dropdown Menu - Shows on Hover/Click */}
+        <div className={`absolute top-2 ${isOwn ? '-right-10' : '-left-10'} opacity-0 group-hover:opacity-100 transition-opacity z-20`}>
+          <DropdownMenu 
+            items={getDropdownItems()} 
+            position={isOwn ? 'left' : 'right'}
+            buttonClassName="w-8 h-8 p-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 shadow-sm rounded-full transition-colors"
+          />
+        </div>
+
         {/* Reply preview */}
         {message.replyTo && (
           <div 

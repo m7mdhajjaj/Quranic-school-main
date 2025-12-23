@@ -79,7 +79,7 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = memo(({
         aria-haspopup="menu"
         aria-expanded={isOpen ? "true" : "false"}
       >
-        <MoreVertical size={20} className="text-gray-700" />
+        <MoreVertical size={20} />
       </button>
 
       {isOpen && (

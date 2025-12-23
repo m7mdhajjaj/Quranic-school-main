@@ -21,7 +21,7 @@ const ChatLayout: React.FC = () => {
   } = useChatLayout();
 
   return (
-    <div className="flex h-[calc(100vh-64px)] bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="flex h-[calc(100vh-64px)] bg-gradient-to-br from-gray-50 to-gray-100" dir="rtl">
       <div className="w-1/4 min-w-[320px] border-l-2 border-gray-200 bg-white shadow-lg">
         <ChatSidebar 
           conversations={conversations}
