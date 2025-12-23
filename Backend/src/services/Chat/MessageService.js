@@ -268,7 +268,7 @@ class MessageService {
   }
 
   /**
-   * Edit Message
+   * Edit Message (Must be within 5 minutes)
    */
   async editMessage(userId, messageId, newText) {
     const message = await Chat.findById(messageId);
@@ -276,14 +276,30 @@ class MessageService {
       throw new Error("Message not found");
     }
     
+    // Check if sender
     if (message.sender.toString() !== userId.toString()) {
       throw new Error("Not authorized");
     }
 
-    message.text = newText;
+    // Check if within 5 minutes
+    const timeDiff = (Date.now() - new Date(message.createdAt).getTime()) / 1000 / 60;
+    if (timeDiff > 5) {
+      throw new Error("Cannot edit message after 5 minutes");
+    }
+
+    // Validate text
+    if (!newText || newText.trim().length === 0) {
+      throw new Error("Message text cannot be empty");
+    }
+
+    message.text = newText.trim();
     message.edited = true;
     message.editedAt = new Date();
     await message.save();
+
+    // Populate for response
+    await message.populate("sender", "firstName lastName avatar");
+    await message.populate("replyTo");
 
     // Emit update
     if (global.io) {

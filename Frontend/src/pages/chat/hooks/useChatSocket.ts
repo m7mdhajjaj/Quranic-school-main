@@ -43,6 +43,15 @@ export const useChatSocket = () => {
     socketRef.current?.emit('message:read', { messageId });
   }, []);
 
+  const editMessage = useCallback((messageId: string, text: string) => {
+    return new Promise((resolve, reject) => {
+      socketRef.current?.emit('message:edit', { messageId, text }, (response: any) => {
+        if (response.status === 'ok') resolve(response.data);
+        else reject(new Error(response.message));
+      });
+    });
+  }, []);
+
   // Listen for new messages
   const onMessage = useCallback((callback: (message: any) => void) => {
     socketRef.current?.on('message:new', callback);
@@ -101,6 +110,14 @@ export const useChatSocket = () => {
     };
   }, []);
 
+  // ✅ Listen for message edited
+  const onMessageEdited = useCallback((callback: (message: any) => void) => {
+    socketRef.current?.on('message:edited', callback);
+    return () => {
+      socketRef.current?.off('message:edited', callback);
+    };
+  }, []);
+
   return {
     socket: socketRef.current,
     joinGroup,
@@ -108,12 +125,14 @@ export const useChatSocket = () => {
     sendTyping,
     markDelivered,
     markRead,
+    editMessage,
     onMessage,
     onMessageSent,
     onMessageDelivered,
     onMessageRead,
     onTyping,
     onConversationUpdated,
-    onMessageDeleted
+    onMessageDeleted,
+    onMessageEdited
   };
 };

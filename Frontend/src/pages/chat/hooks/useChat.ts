@@ -28,12 +28,14 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
     sendTyping,
     markDelivered,
     markRead,
+    editMessage: editSocketMessage,
     onMessage,
     onMessageSent,
     onMessageDelivered,
     onMessageRead,
     onTyping,
     onMessageDeleted,
+    onMessageEdited,
     joinGroup
   } = useChatSocket();
 
@@ -125,6 +127,18 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
     return cleanup;
   }, [onMessageDeleted, handleMessageDeleted]);
 
+  // Listen for message edited (Real-time)
+  useEffect(() => {
+    const cleanup = onMessageEdited((updatedMessage: any) => {
+      updateMessage(updatedMessage._id, {
+        text: updatedMessage.text,
+        edited: true,
+        editedAt: updatedMessage.editedAt
+      });
+    });
+    return cleanup;
+  }, [onMessageEdited, updateMessage]);
+
   // Send message with optimistic update
   const sendMessage = useCallback(async (text: string, attachments?: any[], replyTo?: string) => {
     if (!user) return;
@@ -194,6 +208,25 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
     markRead(messageId);
   }, [markRead]);
 
+  // Edit message
+  const editMessage = useCallback(async (messageId: string, newText: string) => {
+    try {
+      // Optimistic update
+      updateMessage(messageId, {
+        text: newText,
+        edited: true,
+        editedAt: new Date().toISOString()
+      });
+
+      // Send via socket
+      await editSocketMessage(messageId, newText);
+    } catch (error: any) {
+      // Revert on error - need to re-fetch or keep old text
+      console.error('Failed to edit message:', error);
+      throw error;
+    }
+  }, [editSocketMessage, updateMessage]);
+
   return {
     messages,
     loading,
@@ -201,6 +234,7 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
     hasMore,
     fetchMessages,
     sendMessage,
+    editMessage,
     handleTyping,
     markMessageAsRead,
     jumpToMessage,

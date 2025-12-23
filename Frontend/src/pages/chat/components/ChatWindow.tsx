@@ -58,7 +58,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
     loadingMore, 
     hasMore,
     fetchMessages,
-    sendMessage, 
+    sendMessage,
+    editMessage,
     handleTyping,
     typingUsers,
     isTyping,
@@ -379,6 +380,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
                 onReply={setReplyTo}
                 onReplyClick={handleReplyClick}
                 onDelete={handleMessageDeleted}
+                onEdit={editMessage}
               />
             </React.Fragment>
           );

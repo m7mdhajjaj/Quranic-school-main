@@ -38,6 +38,11 @@ export const markSeenSchema = z.object({
   chatType: z.enum(["DM", "GROUP"]),
 });
 
+export const editMessageSchema = z.object({
+  text: z.string().min(1, "الرسالة لا يمكن أن تكون فارغة").max(4000, "الرسالة يجب أن لا تتجاوز 4000 حرف"),
+});
+
 export type SendMessageInput = z.infer<typeof sendMessageSchema>;
 export type GetMessagesInput = z.infer<typeof getMessagesSchema>;
 export type MarkSeenInput = z.infer<typeof markSeenSchema>;
+export type EditMessageInput = z.infer<typeof editMessageSchema>;
