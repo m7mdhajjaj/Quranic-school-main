@@ -15,6 +15,36 @@ interface ChatWindowProps {
   onNewMessage?: (message: any) => void;
 }
 
+// Separate component for Last Seen to isolate re-renders
+const LastSeenDisplay: React.FC<{ lastSeen: string | null; isOnline: boolean }> = ({ lastSeen, isOnline }) => {
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    if (isOnline || !lastSeen) return;
+    // Update every minute to refresh "X minutes ago" text
+    const interval = setInterval(() => {
+      setTick(t => t + 1);
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [isOnline, lastSeen]);
+
+  if (isOnline) return <span className="text-sm font-medium">متصل الآن</span>;
+  if (!lastSeen) return <span className="text-sm font-medium">غير متصل</span>;
+
+  const formatLastSeen = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return 'منذ لحظات';
+    if (diffInSeconds < 3600) return `منذ ${Math.floor(diffInSeconds / 60)} دقيقة`;
+    if (diffInSeconds < 86400) return `منذ ${Math.floor(diffInSeconds / 3600)} ساعة`;
+    return date.toLocaleDateString('ar-EG');
+  };
+
+  return <span className="text-sm font-medium">آخر ظهور {formatLastSeen(lastSeen)}</span>;
+};
+
 const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName, onNewMessage }) => {
   const { user } = useAuth();
   const [lastSeen, setLastSeen] = useState<string | null>(null);
@@ -113,28 +143,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
     }
   }, [chatType, targetId, isOnline, userStatus?.timestamp, userStatus?.isActive]);
 
-  // Force update for Last Seen ticker
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    if (isOnline || !lastSeen) return;
-    const interval = setInterval(() => {
-      setTick(t => t + 1);
-    }, 60000); // Update every minute
-    return () => clearInterval(interval);
-  }, [isOnline, lastSeen]);
-
-  // Format Last Seen
-  const formatLastSeen = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
-    if (diffInSeconds < 60) return 'منذ لحظات';
-    if (diffInSeconds < 3600) return `منذ ${Math.floor(diffInSeconds / 60)} دقيقة`;
-    if (diffInSeconds < 86400) return `منذ ${Math.floor(diffInSeconds / 3600)} ساعة`;
-    return date.toLocaleDateString('ar-EG');
-  };
-
   // Date Divider Helper
   const shouldShowDateDivider = (currentMsg: any, prevMsg: any) => {
     if (!prevMsg) return true;
@@ -198,9 +206,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
                   isOnline ? 'bg-green-400 animate-pulse shadow-lg shadow-green-400/50' : 'bg-gray-300'
                 }`}
               />
-              <span className="text-sm font-medium">
-                {isOnline ? 'متصل الآن' : lastSeen ? `آخر ظهور ${formatLastSeen(lastSeen)}` : 'غير متصل'}
-              </span>
+              <LastSeenDisplay lastSeen={lastSeen} isOnline={isOnline} />
             </div>
           )}
         </div>
