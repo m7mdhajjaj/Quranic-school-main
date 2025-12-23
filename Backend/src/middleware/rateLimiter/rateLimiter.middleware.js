@@ -12,7 +12,7 @@ const rateLimit = require('express-rate-limit');
  */
 const messageLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 20, // 20 messages per minute
+  max: 100, // Increased from 20 to 100
   message: { message: 'تم تجاوز الحد الأقصى للرسائل. يرجى الانتظار قليلاً.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -31,7 +31,7 @@ const messageLimiter = rateLimit({
  */
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requests per 15 minutes
+  max: 1000, // Increased from 100 to 1000
   message: { message: 'تم تجاوز الحد الأقصى للطلبات.' },
   standardHeaders: true,
   legacyHeaders: false,

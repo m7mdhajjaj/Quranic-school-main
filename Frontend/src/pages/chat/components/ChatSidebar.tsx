@@ -18,6 +18,7 @@ interface ChatSidebarProps {
   currentUserId: string;
   searchTerm: string;
   onSearchChange: (term: string) => void;
+  onDeleteConversation: (id: string) => Promise<void>;
 }
 
 const ChatSidebar: React.FC<ChatSidebarProps> = ({ 
@@ -30,7 +31,8 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
   selectedId,
   currentUserId,
   searchTerm,
-  onSearchChange
+  onSearchChange,
+  onDeleteConversation
 }) => {
   const [view, setView] = useState<'conversations' | 'contacts'>('conversations');
 
@@ -46,12 +48,8 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
       );
 
       if (confirmed.isConfirmed) {
-        await api.delete(`/chat/conversations/${conversationId}`);
+        await onDeleteConversation(conversationId);
         showSuccessMessage("تم الحذف", "تم حذف المحادثة بنجاح");
-        // Ideally trigger a refresh or remove from list locally
-        // For now, we rely on parent re-fetching or socket updates if implemented
-        // But since we don't have a callback for refresh here, we might need to reload or use context
-        window.location.reload(); // Temporary simple fix, better to use callback
       }
     } catch (error: any) {
       showErrorMessage("خطأ", error.response?.data?.message || "فشل حذف المحادثة");

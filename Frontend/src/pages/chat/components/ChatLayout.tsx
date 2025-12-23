@@ -17,7 +17,8 @@ const ChatLayout: React.FC = () => {
     handleSelectConversation,
     handleStartNewChat,
     searchTerm,
-    setSearchTerm
+    setSearchTerm,
+    deleteConversation
   } = useChatLayout();
 
   return (
@@ -34,6 +35,7 @@ const ChatLayout: React.FC = () => {
           currentUserId={user?._id || ''}
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
+          onDeleteConversation={deleteConversation}
         />
       </div>
       <div className="flex-1 overflow-hidden">

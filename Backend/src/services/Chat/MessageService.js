@@ -351,6 +351,46 @@ class MessageService {
       if (!message.deletedFor.includes(userId)) {
         message.deletedFor.push(userId);
         await message.save();
+
+        // ✅ Find the new last message for this conversation for this user
+        const filter = {
+          chatType: message.chatType,
+          deletedForAll: false,
+          deletedFor: { $ne: userId }
+        };
+
+        if (message.chatType === "DM") {
+          filter.$or = [
+            { sender: message.sender, recipient: message.recipient },
+            { sender: message.recipient, recipient: message.sender }
+          ];
+        } else {
+          filter.groupId = message.groupId;
+        }
+
+        const newLastMessage = await Chat.findOne(filter)
+          .sort({ createdAt: -1 })
+          .populate("sender", "firstName lastName avatar");
+
+        // ✅ Emit conversation:updated to the user to update sidebar preview
+        if (global.io) {
+          const targetId = message.chatType === "DM" 
+            ? (message.sender.toString() === userId.toString() ? message.recipient : message.sender)
+            : message.groupId;
+
+          // 1. Emit conversation update (for sidebar)
+          global.io.to(userId.toString()).emit("conversation:updated", {
+            chatType: message.chatType,
+            targetId: targetId,
+            lastMessage: newLastMessage || null
+          });
+
+          // 2. Emit message deletion (for chat window in other tabs)
+          global.io.to(userId.toString()).emit("message:deleted", { 
+            messageId, 
+            deletedForAll: false 
+          });
+        }
       }
     }
 

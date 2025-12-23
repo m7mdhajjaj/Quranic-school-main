@@ -3,6 +3,7 @@
 // ============================================================================
 
 const Conversation = require("../../schema/Chat/Conversation");
+const Chat = require("../../schema/Chat/Chat");
 
 class ConversationService {
   /**
@@ -46,6 +47,9 @@ class ConversationService {
     conversation.lastMessage = messageId;
     conversation.updatedAt = new Date();
     
+    // ✅ Unhide conversation if it was deleted by any participant
+    conversation.deletedFor = [];
+    
     // Increment unread for recipient
     const unreadEntry = conversation.unreadCounts.find(
       u => u.userId.toString() === recipientId.toString()
@@ -66,13 +70,17 @@ class ConversationService {
   async getConversations(userId, role, search) {
     const normalizedRole = role.charAt(0).toUpperCase() + role.slice(1);
     
-    let query = { "participants.userId": userId };
+    let query = { 
+      "participants.userId": userId,
+      deletedFor: { $ne: userId }
+    };
 
     // ✅ Admin sees ONLY DMs (No Groups)
     if (normalizedRole === 'Admin') {
       query = {
         "participants.userId": userId,
-        type: "DM"
+        type: "DM",
+        deletedFor: { $ne: userId }
       };
     }
 
@@ -228,9 +236,9 @@ class ConversationService {
   }
 
   /**
-   * Delete Conversation (Hard Delete)
-   * - Deletes the conversation document
-   * - Deletes all messages in this conversation
+   * Delete Conversation (Soft Delete for User)
+   * - Hides the conversation from the user
+   * - Hides all existing messages from the user
    */
   async deleteConversation(userId, conversationId) {
     const conversation = await Conversation.findById(conversationId);
@@ -247,45 +255,41 @@ class ConversationService {
       throw new Error("Not authorized to delete this conversation");
     }
 
-    // Hard Delete: Remove conversation and all its messages
-    // Note: In a real app, you might want to just remove the user from participants
-    // or use 'deletedFor' on conversation. But user asked for "completely deleted from database".
-    
-    // However, for DM, if one deletes, should it delete for other?
-    // User said: "delete chat between them... chat must be completely deleted between them in database"
-    // This implies deleting the data itself.
-    
-    await Chat.deleteMany({ 
-      $or: [
-        { chatType: "DM", $and: [{ sender: conversation.participants[0].userId }, { recipient: conversation.participants[1].userId }] },
-        { chatType: "DM", $and: [{ sender: conversation.participants[1].userId }, { recipient: conversation.participants[0].userId }] },
-        { chatType: "GROUP", groupId: conversation.groupId }
-      ]
-    });
-
-    // Actually, Chat schema doesn't have conversationId directly for DMs usually, 
-    // but let's check how we link them.
-    // The Chat schema uses sender/recipient for DM and groupId for Group.
-    // It does NOT seem to have a conversationId field.
-    // So we must delete based on participants or groupId.
-    
+    // ✅ Soft Delete Messages: Add userId to deletedFor array of all messages
     if (conversation.type === "GROUP") {
-      await Chat.deleteMany({ groupId: conversation.groupId });
+      await Chat.updateMany(
+        { groupId: conversation.groupId },
+        { $addToSet: { deletedFor: userId } }
+      );
     } else {
-      // For DM, we need to match messages between these two users
+      // For DM, match messages between participants
       const p1 = conversation.participants[0].userId;
       const p2 = conversation.participants[1].userId;
       
-      await Chat.deleteMany({
-        chatType: "DM",
-        $or: [
-          { sender: p1, recipient: p2 },
-          { sender: p2, recipient: p1 }
-        ]
-      });
+      await Chat.updateMany(
+        {
+          chatType: "DM",
+          $or: [
+            { sender: p1, recipient: p2 },
+            { sender: p2, recipient: p1 }
+          ]
+        },
+        { $addToSet: { deletedFor: userId } }
+      );
     }
 
-    await Conversation.findByIdAndDelete(conversationId);
+    // ✅ Soft Delete Conversation: Add userId to deletedFor array
+    conversation.deletedFor.addToSet(userId);
+    
+    // Reset unread count for this user
+    const unreadEntry = conversation.unreadCounts.find(
+      u => u.userId.toString() === userId.toString()
+    );
+    if (unreadEntry) {
+      unreadEntry.count = 0;
+    }
+
+    await conversation.save();
 
     return { success: true };
   }

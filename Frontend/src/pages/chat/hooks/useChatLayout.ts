@@ -38,7 +38,13 @@ export const useChatLayout = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
   
-  const { conversations, loading: conversationsLoading, resetUnreadCount, fetchConversations } = useConversations(debouncedSearchTerm);
+  const { 
+    conversations, 
+    loading: conversationsLoading, 
+    resetUnreadCount, 
+    fetchConversations,
+    deleteConversation 
+  } = useConversations(debouncedSearchTerm);
   const { contacts, groups, loading: contactsLoading } = useChatContacts(debouncedSearchTerm);
   const { initializeGroupConversations } = useGroupConversations();
   
@@ -189,6 +195,7 @@ export const useChatLayout = () => {
     handleSelectConversation,
     handleStartNewChat,
     searchTerm,
-    setSearchTerm
+    setSearchTerm,
+    deleteConversation
   };
 };

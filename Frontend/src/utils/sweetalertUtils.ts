@@ -135,7 +135,7 @@ export const showSuccessMessage = (
 // دالة لرسالة الخطأ المخصصة - Tailwind only
 export const showErrorMessage = (title: string, message: string) => {
   // تشغيل صوت الفشل
-  playSound('error.wav');
+  playErrorSound();
   
   return showCenteredSwal({
     title: title,
