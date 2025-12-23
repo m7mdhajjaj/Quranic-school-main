@@ -53,7 +53,7 @@ export const useFirebaseMessaging = (): UseFirebaseMessagingReturn => {
       }
 
       const response = await api.post(
-        "/notifications/register-token",
+        "/fcm/token",
         { token, platform: Platform.OS },
         {
           headers: {

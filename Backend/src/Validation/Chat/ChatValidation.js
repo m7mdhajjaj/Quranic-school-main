@@ -53,7 +53,7 @@ const deleteMessageSchema = z.object({
 
 const fcmTokenSchema = z.object({
   token: z.string().min(1, "FCM token is required"),
-  platform: z.enum(["web", "ios", "android"]).optional().default("web"),
+  platform: z.enum(["web", "ios", "android", "unknown"]).optional().default("web"),
 });
 
 const removeFcmTokenSchema = z.object({

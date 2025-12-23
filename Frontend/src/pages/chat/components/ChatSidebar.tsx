@@ -111,33 +111,33 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-white to-gray-50">
+    <div className="flex flex-col h-full bg-white">
       {/* Header */}
-      <div className="p-6 bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg">
-        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-          <MessageSquare className="w-6 h-6" />
+      <div className="p-5 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 text-white shadow-md">
+        <h2 className="text-lg font-bold mb-3 flex items-center gap-2">
+          <MessageSquare className="w-5 h-5" />
           المحادثات
         </h2>
 
         {/* Search Input */}
-        <div className="relative mb-4">
+        <div className="relative mb-3">
           <input
             type="text"
             placeholder="بحث عن محادثة أو شخص..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full py-2 pr-10 pl-4 rounded-lg bg-white/20 text-white placeholder-white/70 border border-white/30 focus:outline-none focus:bg-white/30 focus:border-white/50 transition-all"
+            className="w-full py-2.5 pr-10 pl-4 rounded-lg bg-white/20 text-white placeholder-white/80 border border-white/30 focus:outline-none focus:bg-white/30 focus:border-white transition-all backdrop-blur-sm"
           />
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70" />
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/80" />
         </div>
 
         <div className="flex gap-2">
           <button
             onClick={() => setView('conversations')}
-            className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+            className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 ${
               view === 'conversations'
-                ? 'bg-white text-emerald-600 shadow-md'
-                : 'bg-white/20 text-white hover:bg-white/30'
+                ? 'bg-white text-emerald-600 shadow-sm'
+                : 'bg-white/15 text-white hover:bg-white/25 backdrop-blur-sm'
             }`}
           >
             <MessageSquare className="w-4 h-4" />
@@ -145,10 +145,10 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
           </button>
           <button
             onClick={() => setView('contacts')}
-            className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+            className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 ${
               view === 'contacts'
-                ? 'bg-white text-emerald-600 shadow-md'
-                : 'bg-white/20 text-white hover:bg-white/30'
+                ? 'bg-white text-emerald-600 shadow-sm'
+                : 'bg-white/15 text-white hover:bg-white/25 backdrop-blur-sm'
             }`}
           >
             <Users className="w-4 h-4" />
@@ -175,10 +175,10 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                 <div 
                   key={conv._id}
                   onClick={() => onSelect(conv)}
-                  className={`flex items-center p-4 mx-2 my-1 rounded-xl cursor-pointer transition-all duration-200 relative group ${
+                  className={`flex items-center p-3.5 mx-2 my-1 rounded-lg cursor-pointer transition-all duration-200 relative group ${
                     selectedId === conv._id
-                      ? 'bg-gradient-to-r from-emerald-50 to-teal-50 shadow-md border-r-4 border-emerald-500'
-                      : 'hover:bg-gray-50 hover:shadow-sm'
+                      ? 'bg-emerald-50 shadow-sm border-r-4 border-emerald-500'
+                      : 'hover:bg-gray-50'
                   }`}
                 >
                   <div className="ml-3">
@@ -224,8 +224,8 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
           <div className="p-2">
             {/* Groups Section */}
             {groups.length > 0 && (
-              <div className="mb-6">
-                <div className="px-4 py-3 bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-800 text-sm font-bold rounded-lg mb-2 flex items-center gap-2">
+              <div className="mb-5">
+                <div className="px-4 py-2.5 bg-emerald-50 text-emerald-700 text-sm font-bold rounded-lg mb-2 flex items-center gap-2 border-r-4 border-emerald-500">
                   <Users className="w-4 h-4" />
                   الحلقات
                 </div>
@@ -236,20 +236,20 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                     <div
                       key={group._id}
                       onClick={() => onStartNewChat(group, true)}
-                      className={`flex items-center p-3 mx-1 rounded-xl cursor-pointer transition-all duration-200 group ${
+                      className={`flex items-center p-3 mx-1 rounded-lg cursor-pointer transition-all duration-200 group ${
                         isSelected 
-                          ? 'bg-gradient-to-r from-emerald-50 to-teal-50 border-r-4 border-emerald-500 shadow-sm' 
-                          : 'hover:bg-emerald-50 border-r-4 border-transparent'
+                          ? 'bg-emerald-50 border-r-4 border-emerald-500 shadow-sm' 
+                          : 'hover:bg-gray-50 border-r-4 border-transparent'
                       }`}
                     >
                       <div className="ml-3">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-lg shadow-md group-hover:scale-110 transition-transform">
+                        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white font-bold shadow-sm group-hover:scale-105 transition-transform">
                           {group.name.charAt(0)}
                         </div>
                       </div>
                       <div className="flex-1">
-                        <div className="font-semibold text-gray-800">{group.name}</div>
-                        <div className="text-xs text-emerald-600 flex items-center gap-1">
+                        <div className="font-medium text-gray-800">{group.name}</div>
+                        <div className="text-xs text-gray-500 flex items-center gap-1">
                           <MessageSquare className="w-3 h-3" />
                           محادثة جماعية
                         </div>
@@ -264,7 +264,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
             {/* Contacts Section */}
             {contacts.length > 0 && (
               <div>
-                <div className="px-4 py-3 bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 text-sm font-bold rounded-lg mb-2 flex items-center gap-2">
+                <div className="px-4 py-2.5 bg-teal-50 text-teal-700 text-sm font-bold rounded-lg mb-2 flex items-center gap-2 border-r-4 border-teal-500">
                   <MessageSquare className="w-4 h-4" />
                   جهات الاتصال
                 </div>
@@ -275,10 +275,10 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                     <div
                       key={contact._id}
                       onClick={() => onStartNewChat(contact, false)}
-                      className={`flex items-center p-3 mx-1 rounded-xl cursor-pointer transition-all duration-200 group ${
+                      className={`flex items-center p-3 mx-1 rounded-lg cursor-pointer transition-all duration-200 group ${
                         isSelected 
-                          ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-r-4 border-blue-500 shadow-sm' 
-                          : 'hover:bg-blue-50 border-r-4 border-transparent'
+                          ? 'bg-teal-50 border-r-4 border-teal-500 shadow-sm' 
+                          : 'hover:bg-gray-50 border-r-4 border-transparent'
                       }`}
                     >
                       <div className="ml-3">

@@ -1,30 +1,32 @@
 // ============================================================================
-// deviceTokenRoutes.js - Device Token Management Routes (FCM)
+// fcmRoutes.js - Unified FCM Token Management Routes
 // ============================================================================
 
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const DeviceToken = require("../../schema/DeviceToken");
-const { protect } = require("../../middleware/auth");
+const { protect } = require('../../middleware/auth/protect.middleware');
+const { validate } = require('../../middleware');
+const DeviceToken = require('../../schema/DeviceToken');
+const { fcmTokenSchema, removeFcmTokenSchema } = require('../../Validation/Chat/chatValidation');
 
 // ============================================================================
-// Device Token Routes (FCM - Firebase Cloud Messaging)
+// Register/Update FCM Token
 // ============================================================================
-
-// Register/Update device token for current user
-router.post('/register-token', protect, async (req, res) => {
+router.post('/token', protect, validate(fcmTokenSchema), async (req, res) => {
   try {
     // ✅ التحقق من وجود المستخدم
-    if (!req.user || !req.user._id) {
+    if (!req.user || !req.user.id) {
       console.error('❌ User not authenticated');
       return res.status(401).json({ 
         success: false, 
-        message: 'user not authenticated' 
+        message: 'User not authenticated' 
       });
     }
 
-    const userId = req.user._id;
-    const userModel = req.user.role === 'admin' ? 'Admin' : req.user.role === 'teacher' ? 'Teacher' : 'Student';
+    const userId = req.user.id;
+    const userModel = req.user.role === 'admin' ? 'Admin' 
+                    : req.user.role === 'teacher' ? 'Teacher' 
+                    : 'Student';
     const { token, platform = 'web' } = req.body;
 
     console.log(`📱 Register token request - User: ${userId}, Role: ${userModel}, Platform: ${platform}`);
@@ -33,13 +35,14 @@ router.post('/register-token', protect, async (req, res) => {
       console.warn('⚠️ Token missing in request');
       return res.status(400).json({ 
         success: false, 
-        message: 'token is required' 
+        message: 'Token is required' 
       });
     }
 
-    // Upsert token (unique)
+    // Upsert token (handle duplicates gracefully)
     try {
       const existing = await DeviceToken.findOne({ token });
+      
       if (existing) {
         // Update existing token
         existing.user = userId;
@@ -70,34 +73,30 @@ router.post('/register-token', protect, async (req, res) => {
         );
         console.log(`✅ Device token updated (via upsert) for user ${userId}`);
       } else {
-        throw dbError; // Re-throw if not duplicate error
+        throw dbError;
       }
     }
 
     return res.status(200).json({ 
       success: true, 
-      message: 'token registered' 
+      message: 'Token registered successfully' 
     });
   } catch (error) {
     console.error('❌ Error registering token:', error);
     console.error('❌ Error stack:', error.stack);
-    console.error('❌ Error details:', {
-      name: error.name,
-      message: error.message,
-      code: error.code
-    });
     
-    // ✅ تأكد من إرجاع JSON دائماً - حتى في حالة الخطأ
     return res.status(500).json({ 
       success: false, 
-      message: 'error registering token', 
+      message: 'Error registering token', 
       error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 });
 
-// Unregister device token
-router.post('/unregister-token', protect, async (req, res) => {
+// ============================================================================
+// Remove FCM Token (on logout)
+// ============================================================================
+router.delete('/token', protect, validate(removeFcmTokenSchema), async (req, res) => {
   try {
     const { token } = req.body;
     
@@ -107,30 +106,59 @@ router.post('/unregister-token', protect, async (req, res) => {
       console.warn('⚠️ Token missing in request');
       return res.status(400).json({ 
         success: false, 
-        message: 'token is required' 
+        message: 'Token is required' 
       });
     }
+
+    const result = await DeviceToken.findOneAndDelete({ token });
     
-    const result = await DeviceToken.deleteOne({ token });
-    
-    console.log(`✅ Device token unregistered: ${result.deletedCount} deleted`);
+    console.log(`✅ Device token unregistered: ${result ? 1 : 0} deleted`);
     
     return res.status(200).json({ 
       success: true, 
-      deletedCount: result.deletedCount 
+      message: 'Token removed successfully',
+      deletedCount: result ? 1 : 0
     });
   } catch (error) {
-    console.error('❌ Error unregistering token:', error);
+    console.error('❌ Error removing FCM token:', error);
     console.error('❌ Error stack:', error.stack);
     
-    // ✅ تأكد من إرجاع JSON دائماً
     if (!res.headersSent) {
       return res.status(500).json({ 
         success: false, 
-        message: 'error unregistering token', 
-        error: error.message 
+        message: 'Error removing token', 
+        error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
       });
     }
+  }
+});
+
+// ============================================================================
+// Get all tokens for current user
+// ============================================================================
+router.get('/tokens', protect, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    console.log(`📱 Get tokens request for user: ${userId}`);
+    
+    const tokens = await DeviceToken.find({ user: userId });
+    
+    console.log(`✅ Found ${tokens.length} tokens for user ${userId}`);
+    
+    return res.status(200).json({ 
+      success: true, 
+      tokens,
+      count: tokens.length
+    });
+  } catch (error) {
+    console.error('❌ Error getting tokens:', error);
+    
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Error retrieving tokens',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
   }
 });
 

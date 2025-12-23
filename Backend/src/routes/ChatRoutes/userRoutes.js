@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const Student = require("../schema/Student");
-const Teacher = require("../schema/Teacher");
-const Admin = require("../schema/Admin");
-const { protect } = require("../middleware/auth");
+const Student = require("../../schema/Student");
+const Teacher = require("../../schema/Teacher");
+const Admin = require("../../schema/Admin");
+const { protect } = require("../../middleware/auth");
 
 /**
  * Get user status (lastSeen)

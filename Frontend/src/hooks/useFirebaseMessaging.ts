@@ -55,7 +55,7 @@ export const useFirebaseMessaging = (): UseFirebaseMessagingReturn => {
         
         // تسجيل Token مع الباكيند (استخدام registerTokenWithBackend الذي يحتوي على منطق منع التكرار)
         if (authToken) {
-          const apiUrl = '/api/notifications/register-token';
+          const apiUrl = '/api/fcm/token';
           const success = await registerTokenWithBackend(token, apiUrl, authToken);
           if (success) {
             console.log('✅ تم تسجيل FCM Token بنجاح');
@@ -84,7 +84,7 @@ export const useFirebaseMessaging = (): UseFirebaseMessagingReturn => {
             setIsPermissionGranted(true);
             
             // تسجيل Token مع الباكيند (استخدام registerTokenWithBackend الذي يحتوي على منطق منع التكرار)
-            const apiUrl = '/api/notifications/register-token';
+            const apiUrl = '/api/fcm/token';
             const success = await registerTokenWithBackend(token, apiUrl, authToken);
             if (success) {
               console.log('✅ تم تسجيل FCM Token بنجاح');

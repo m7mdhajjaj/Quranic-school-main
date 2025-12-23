@@ -113,7 +113,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
   if (message.deletedForAll) {
     return (
       <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-2`}>
-        <div className="px-4 py-2 rounded-lg bg-gray-100 border border-gray-200 text-gray-500 italic text-sm flex items-center gap-2">
+        <div className="px-3 py-2 rounded-lg bg-gray-50 border border-gray-200 text-gray-500 italic text-sm flex items-center gap-2">
           <Trash2 size={14} />
           <span>تم حذف هذه الرسالة</span>
         </div>
@@ -152,18 +152,18 @@ const MessageItem: React.FC<MessageItemProps> = ({
         {message.replyTo && (
           <div 
             onClick={() => onReplyClick && onReplyClick(message.replyTo._id)}
-            className={`p-2.5 rounded-t-xl text-xs border-r-4 mb-1 cursor-pointer hover:opacity-80 transition-opacity ${
+            className={`p-2 rounded-t-lg text-xs border-r-3 mb-1 cursor-pointer hover:opacity-80 transition-opacity ${
             isOwn 
-              ? 'bg-emerald-100/50 border-emerald-400'
+              ? 'bg-emerald-100/60 border-emerald-400'
               : 'bg-gray-100 border-gray-400'
           }`}>
-            <div className="flex items-center gap-1 mb-1">
-              <Reply className="w-3 h-3 opacity-60" />
-              <span className="font-semibold opacity-80">
+            <div className="flex items-center gap-1 mb-0.5">
+              <Reply className="w-3 h-3 opacity-70" />
+              <span className="font-semibold opacity-90">
                 {message.replyTo.sender?.firstName}:
               </span>
             </div>
-            <p className="truncate opacity-75">
+            <p className="truncate opacity-80">
               {message.replyTo.text?.substring(0, 50)}...
             </p>
           </div>
@@ -171,10 +171,10 @@ const MessageItem: React.FC<MessageItemProps> = ({
         
         {/* Message bubble */}
         <div 
-          className={`p-3.5 rounded-2xl shadow-md transition-all ${
+          className={`p-3 rounded-xl shadow-sm transition-all ${
             isOwn 
               ? 'bg-gradient-to-br from-emerald-500 to-teal-500 text-white' 
-              : 'bg-white border-2 border-gray-100 hover:border-gray-200'
+              : 'bg-white border border-gray-200'
           } ${message._optimistic ? 'opacity-60 scale-95' : 'opacity-100 scale-100'}`}
         >
           {/* Sender name for group chats */}
@@ -222,10 +222,10 @@ const MessageItem: React.FC<MessageItemProps> = ({
         {!message._optimistic && onReply && (
           <button 
             onClick={() => onReply(message)} 
-            className="opacity-0 group-hover:opacity-100 transition-all duration-200 mt-2 px-3 py-1.5 text-xs text-gray-600 hover:text-white hover:bg-gradient-to-r hover:from-emerald-500 hover:to-teal-500 rounded-lg flex items-center gap-1.5 font-medium"
+            className="opacity-0 group-hover:opacity-100 transition-all duration-200 mt-1.5 px-2.5 py-1 text-xs text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg flex items-center gap-1 font-medium"
             aria-label="رد على الرسالة"
           >
-            <Reply className="w-3.5 h-3.5" />
+            <Reply className="w-3 h-3" />
             رد
           </button>
         )}

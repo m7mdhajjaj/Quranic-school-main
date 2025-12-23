@@ -22,8 +22,8 @@ const ChatLayout: React.FC = () => {
   } = useChatLayout();
 
   return (
-    <div className="flex h-[calc(100vh-64px)] bg-gradient-to-br from-gray-50 to-gray-100" dir="rtl">
-      <div className="w-1/4 min-w-[320px] border-l-2 border-gray-200 bg-white shadow-lg">
+    <div className="flex h-[calc(100vh-64px)] bg-gray-50 overflow-hidden" dir="rtl">
+      <div className="w-80 flex-shrink-0 border-l border-gray-200 bg-white overflow-hidden">
         <ChatSidebar 
           conversations={conversations}
           contacts={contacts}
@@ -49,9 +49,9 @@ const ChatLayout: React.FC = () => {
             }}
           />
         ) : (
-          <div className="flex h-full items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+          <div className="flex h-full items-center justify-center bg-gray-50">
             <EmptyState
-              icon={<MessageSquare className="w-16 h-16 text-emerald-500" />}
+              icon={<MessageSquare className="w-20 h-20 text-emerald-500" />}
               title="اختر محادثة للبدء"
               description="اختر محادثة من القائمة أو ابدأ محادثة جديدة"
             />

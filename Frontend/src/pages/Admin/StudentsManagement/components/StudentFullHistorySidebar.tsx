@@ -8,7 +8,7 @@ import { useDisableBodyScroll } from '@/hooks/useDisableBodyScroll';
 import { useStudentHistory } from '../hooks/useStudentHistory';
 import Avatar from '@/components/Avatar/Avatar';
 import { Badge } from '@/components/UI/Badge';
-import type { StudentHistoryEvent } from '@/types/studentHistory';
+import type { StudentHistoryEvent } from '@/pages/Warnings/types/studentHistory';
 import { restoreStudentToGroup } from '@/Api/studentApi';
 import { showSuccessToast, showErrorToast } from '@/utils/toastUtils';
 

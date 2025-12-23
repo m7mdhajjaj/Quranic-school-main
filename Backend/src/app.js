@@ -145,7 +145,7 @@ app.use(
 );
 app.use('/api/attendance', require('./routes/attendanceRoutes'));
 app.use('/api/chat', require('./routes/ChatRoutes/chatRoutes'));
-app.use('/api/fcm', require('./routes/fcmRoutes'));
+app.use('/api/fcm', require('./routes/NotificationRoutes/fcmRoutes'));
 app.use(
   '/api/notifications',
   require('./routes/NotificationRoutes/notificationRoutes')
@@ -164,7 +164,7 @@ app.use('/api/upload', require('./routes/UploadRoutes/uploadRoutes'));
 app.use('/api/warnings', require('./routes/WarningRoutes/WarningRoutes'));
 app.use('/api/quran', require('./routes/QuranRoutes/quranRoutes'));
 app.use('/api/test', require('./routes/TestRoutes/testRoutes'));
-app.use('/api/users', require('./routes/userRoutes'));
+app.use('/api/users', require('./routes/ChatRoutes/userRoutes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

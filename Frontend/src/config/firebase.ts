@@ -175,7 +175,7 @@ export const onMessageListener = (callback: (payload: unknown) => void) => {
  */
 export const registerTokenWithBackend = async (
   token: string,
-  apiUrl: string = '/api/notifications/register-token',
+  apiUrl: string = '/api/fcm/token',
   authToken?: string
 ): Promise<boolean> => {
   // Skip if token was already registered (use window object to persist)

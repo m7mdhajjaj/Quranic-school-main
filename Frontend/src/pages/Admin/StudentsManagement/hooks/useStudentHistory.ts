@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { getStudentHistory } from '@/Api/studentApi';
-import type { StudentHistoryEvent } from '@/types/studentHistory';
+import type { StudentHistoryEvent } from '@/pages/Warnings/types/studentHistory';
 
 interface UseStudentHistoryOptions {
   studentId: string | null;

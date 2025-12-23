@@ -7,7 +7,7 @@
 // - updateRoutes.js: تحديث الإشعارات
 // - deleteRoutes.js: حذف الإشعارات
 // - createRoutes.js: إنشاء إشعارات
-// - deviceTokenRoutes.js: إدارة توكنات FCM
+// ملاحظة: إدارة توكنات FCM تم نقلها إلى /api/fcm (fcmRoutes.js)
 //
 // ============================================================================
 
@@ -19,13 +19,11 @@ const getRoutes = require("./getRoutes");
 const updateRoutes = require("./updateRoutes");
 const deleteRoutes = require("./deleteRoutes");
 const createRoutes = require("./createRoutes");
-const deviceTokenRoutes = require("./deviceTokenRoutes");
 
 // Mount route modules
 router.use("/", getRoutes);
 router.use("/", updateRoutes);
 router.use("/", deleteRoutes);
 router.use("/", createRoutes);
-router.use("/", deviceTokenRoutes);
 
 module.exports = router;
