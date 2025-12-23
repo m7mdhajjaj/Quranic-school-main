@@ -58,7 +58,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
     handleTyping,
     typingUsers,
     isTyping,
-    markMessageAsRead
+    markMessageAsRead,
+    jumpToMessage
   } = useChat(chatType, targetId);
   
   // Message operations (reply, sending state)
@@ -193,6 +194,38 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
     }
   }, [messages, onNewMessage, user]);
 
+  // Handle scrolling to replied message
+  const handleReplyClick = async (messageId: string) => {
+    const element = document.getElementById(`message-${messageId}`);
+    
+    if (element) {
+      // Case 1: Message is already loaded
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.classList.add('bg-yellow-50/50', 'transition-colors', 'duration-1000');
+      setTimeout(() => {
+        element.classList.remove('bg-yellow-50/50', 'transition-colors', 'duration-1000');
+      }, 2000);
+    } else {
+      // Case 2: Message is not loaded (fetch context)
+      try {
+        await jumpToMessage(messageId);
+        // Wait for render then scroll
+        setTimeout(() => {
+          const newElement = document.getElementById(`message-${messageId}`);
+          if (newElement) {
+            newElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            newElement.classList.add('bg-yellow-50/50', 'transition-colors', 'duration-1000');
+            setTimeout(() => {
+              newElement.classList.remove('bg-yellow-50/50', 'transition-colors', 'duration-1000');
+            }, 2000);
+          }
+        }, 100);
+      } catch (err) {
+        console.error("Failed to jump to message:", err);
+      }
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header with Online Status */}
@@ -261,6 +294,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
                 message={msg}
                 isOwn={msg.sender?._id === user?._id}
                 onReply={setReplyTo}
+                onReplyClick={handleReplyClick}
               />
             </React.Fragment>
           );

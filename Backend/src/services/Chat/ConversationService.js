@@ -63,7 +63,7 @@ class ConversationService {
   /**
    * Get All Conversations for User
    */
-  async getConversations(userId, role) {
+  async getConversations(userId, role, search) {
     const normalizedRole = role.charAt(0).toUpperCase() + role.slice(1);
     
     let query = { "participants.userId": userId };
@@ -85,6 +85,25 @@ class ConversationService {
     })
     .sort({ updatedAt: -1 })
     .lean();
+
+    // ✅ Filter by search term (if provided)
+    if (search) {
+      const searchLower = search.toLowerCase();
+      conversations = conversations.filter(conv => {
+        if (conv.type === 'GROUP' && conv.groupId) {
+          return conv.groupId.name.toLowerCase().includes(searchLower);
+        } else if (conv.type === 'DM') {
+          const other = conv.participants.find(p => 
+            p.userId && p.userId._id && p.userId._id.toString() !== userId.toString()
+          );
+          if (other && other.userId) {
+            const fullName = `${other.userId.firstName} ${other.userId.lastName}`.toLowerCase();
+            return fullName.includes(searchLower);
+          }
+        }
+        return false;
+      });
+    }
 
     // ✅ Deduplicate conversations (Backend fix)
     // This handles cases where bad data might have created duplicate conversations

@@ -20,7 +20,7 @@ export interface Group {
   teacher?: string;
 }
 
-export const useChatContacts = () => {
+export const useChatContacts = (search?: string) => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(false);
@@ -30,7 +30,9 @@ export const useChatContacts = () => {
     const fetchContacts = async () => {
       setLoading(true);
       try {
-        const res = await api.get('/chat/contacts');
+        const res = await api.get('/chat/contacts', {
+          params: { search }
+        });
         // Response now returns { contacts: [], groups: [] }
         setContacts(res.data.contacts || []);
         setGroups(res.data.groups || []);
@@ -42,7 +44,7 @@ export const useChatContacts = () => {
     };
 
     fetchContacts();
-  }, []);
+  }, [search]);
 
   return { contacts, groups, loading, error };
 };

@@ -6,17 +6,19 @@ import type { Conversation } from '../types';
 
 export type { Conversation };
 
-export const useConversations = () => {
+export const useConversations = (search?: string) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { onMessage, onConversationUpdated } = useChatSocket();
   const { user } = useAuth();
 
-  const fetchConversations = async () => {
+  const fetchConversations = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get('/chat/conversations');
+      const res = await api.get('/chat/conversations', {
+        params: { search }
+      });
       
       setConversations(res.data);
     } catch (err: any) {
@@ -24,11 +26,11 @@ export const useConversations = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [search]);
 
   useEffect(() => {
     fetchConversations();
-  }, []);
+  }, [fetchConversations]);
 
   // ✅ Listen for real-time new messages and update conversations
   useEffect(() => {

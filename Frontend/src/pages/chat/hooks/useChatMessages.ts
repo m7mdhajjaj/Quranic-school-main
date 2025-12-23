@@ -74,6 +74,22 @@ export const useChatMessages = (chatType: 'DM' | 'GROUP', targetId: string) => {
     setMessages(prev => prev.filter(m => m.clientTempId !== clientTempId));
   }, []);
 
+  // Jump to specific message (fetch context)
+  const jumpToMessage = useCallback(async (messageId: string) => {
+    setLoading(true);
+    try {
+      const res = await api.get(`/chat/messages/${messageId}/context`);
+      setMessages(res.data);
+      // Since we jumped, we might have more messages in both directions
+      // For simplicity, we can assume we might have more older messages
+      setHasMore(true); 
+    } catch (err) {
+      console.error("Failed to jump to message:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return { 
     messages, 
     loading,
@@ -83,6 +99,7 @@ export const useChatMessages = (chatType: 'DM' | 'GROUP', targetId: string) => {
     addMessage, 
     addOptimisticMessage,
     updateMessage,
-    removeMessage
+    removeMessage,
+    jumpToMessage
   };
 };

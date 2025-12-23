@@ -4,6 +4,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
+import { useDebounce } from '../../../hooks/useDebounce';
 import { useConversations } from './useConversations';
 import { useChatContacts } from './useChatContacts';
 import { useGroupConversations } from './useGroupConversations';
@@ -34,8 +35,11 @@ interface TargetInfo {
 
 export const useChatLayout = () => {
   const { user } = useAuth();
-  const { conversations, loading: conversationsLoading, resetUnreadCount, fetchConversations } = useConversations();
-  const { contacts, groups, loading: contactsLoading } = useChatContacts();
+  const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+  
+  const { conversations, loading: conversationsLoading, resetUnreadCount, fetchConversations } = useConversations(debouncedSearchTerm);
+  const { contacts, groups, loading: contactsLoading } = useChatContacts(debouncedSearchTerm);
   const { initializeGroupConversations } = useGroupConversations();
   
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
@@ -184,5 +188,7 @@ export const useChatLayout = () => {
     // Actions
     handleSelectConversation,
     handleStartNewChat,
+    searchTerm,
+    setSearchTerm
   };
 };

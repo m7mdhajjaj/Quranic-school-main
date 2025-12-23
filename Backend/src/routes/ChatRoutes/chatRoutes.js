@@ -56,6 +56,7 @@ router.post("/conversations/reset-unread", validate(resetUnreadCountSchema), Con
 // Messages Routes
 // ============================================================================
 router.get("/messages", validate(getMessagesSchema, 'query'), MessageController.getMessages);
+router.get("/messages/:id/context", MessageController.getMessageContext);
 router.post("/messages", messageLimiter, validate(sendMessageSchema), MessageController.sendMessage);
 router.post("/messages/seen", validate(markSeenSchema), MessageController.markSeen);
 router.patch("/messages/:id", validate(editMessageSchema), MessageController.editMessage);

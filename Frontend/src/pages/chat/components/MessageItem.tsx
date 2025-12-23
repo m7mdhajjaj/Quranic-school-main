@@ -7,12 +7,14 @@ interface MessageItemProps {
   message: any;
   isOwn: boolean;
   onReply?: (message: any) => void;
+  onReplyClick?: (messageId: string) => void;
 }
 
 const MessageItem: React.FC<MessageItemProps> = ({ 
   message, 
   isOwn, 
-  onReply
+  onReply,
+  onReplyClick
 }) => {
   const getStatusIcon = () => {
     if (!isOwn || message._optimistic) return null;
@@ -39,6 +41,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
 
   return (
     <div 
+      id={`message-${message._id}`}
       className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-2 group`}
     >
       {/* Avatar for incoming messages */}
@@ -56,7 +59,9 @@ const MessageItem: React.FC<MessageItemProps> = ({
       <div className={`max-w-[70%] ${isOwn ? 'order-first' : ''}`}>
         {/* Reply preview */}
         {message.replyTo && (
-          <div className={`p-2.5 rounded-t-xl text-xs border-r-4 mb-1 ${
+          <div 
+            onClick={() => onReplyClick && onReplyClick(message.replyTo._id)}
+            className={`p-2.5 rounded-t-xl text-xs border-r-4 mb-1 cursor-pointer hover:opacity-80 transition-opacity ${
             isOwn 
               ? 'bg-emerald-100/50 border-emerald-400'
               : 'bg-gray-100 border-gray-400'

@@ -11,9 +11,11 @@ class ConversationController {
    */
   async getConversations(req, res) {
     try {
+      const { search } = req.query;
       const conversations = await ConversationService.getConversations(
         req.user.id, 
-        req.user.role
+        req.user.role,
+        search
       );
       return res.json(conversations);
     } catch (error) {

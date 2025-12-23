@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Avatar } from '../../../components/Avatar';
 import { EmptyState, LoadingSpinner, Badge } from '../../../components/UI';
-import { MessageSquare, Users } from 'lucide-react';
+import { MessageSquare, Users, Search } from 'lucide-react';
 import type { Conversation } from '../types';
 import type { Contact, Group } from '../hooks/useChatContacts';
 
@@ -14,6 +14,8 @@ interface ChatSidebarProps {
   onStartNewChat: (target: Contact | Group, isGroup: boolean) => void;
   selectedId?: string;
   currentUserId: string;
+  searchTerm: string;
+  onSearchChange: (term: string) => void;
 }
 
 const ChatSidebar: React.FC<ChatSidebarProps> = ({ 
@@ -24,7 +26,9 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
   onSelect, 
   onStartNewChat,
   selectedId,
-  currentUserId
+  currentUserId,
+  searchTerm,
+  onSearchChange
 }) => {
   const [view, setView] = useState<'conversations' | 'contacts'>('conversations');
 
@@ -67,6 +71,19 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
           <MessageSquare className="w-6 h-6" />
           المحادثات
         </h2>
+
+        {/* Search Input */}
+        <div className="relative mb-4">
+          <input
+            type="text"
+            placeholder="بحث عن محادثة أو شخص..."
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="w-full py-2 pr-10 pl-4 rounded-lg bg-white/20 text-white placeholder-white/70 border border-white/30 focus:outline-none focus:bg-white/30 focus:border-white/50 transition-all"
+          />
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70" />
+        </div>
+
         <div className="flex gap-2">
           <button
             onClick={() => setView('conversations')}

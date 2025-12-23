@@ -48,6 +48,24 @@ class MessageController {
   }
 
   /**
+   * GET /api/chat/messages/:id/context
+   * Get message with surrounding context
+   */
+  async getMessageContext(req, res) {
+    try {
+      const { id } = req.params;
+      const messages = await MessageService.getMessageContext(req.user.id, id);
+      return res.json(messages);
+    } catch (error) {
+      console.error("Error in getMessageContext:", error);
+      return res.status(400).json({ 
+        success: false,
+        message: error.message 
+      });
+    }
+  }
+
+  /**
    * POST /api/chat/messages/mark-seen
    * Mark message as read
    */

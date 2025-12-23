@@ -11,7 +11,8 @@ class ContactsController {
    */
   async getContacts(req, res) {
     try {
-      const result = await ContactsService.getContacts(req.user.id, req.user.role);
+      const { search } = req.query;
+      const result = await ContactsService.getContacts(req.user.id, req.user.role, search);
       return res.json(result);
     } catch (error) {
       console.error("Error in getContacts:", error);

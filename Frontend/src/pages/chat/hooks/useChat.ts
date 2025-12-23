@@ -18,7 +18,8 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
     addMessage, 
     addOptimisticMessage,
     updateMessage,
-    removeMessage
+    removeMessage,
+    jumpToMessage
   } = useChatMessages(chatType, targetId);
   
   const {
@@ -192,6 +193,7 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
     sendMessage,
     handleTyping,
     markMessageAsRead,
+    jumpToMessage,
     typingUsers: Array.from(typingUsers),
     isTyping: typingUsers.size > 0
   };

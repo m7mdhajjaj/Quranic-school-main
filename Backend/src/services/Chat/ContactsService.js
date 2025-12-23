@@ -12,20 +12,20 @@ class ContactsService {
    * Get allowed contacts for a user based on their role
    * Returns both individuals AND groups
    */
-  async getContacts(userId, role) {
+  async getContacts(userId, role, search) {
     const normalizedRole = role.charAt(0).toUpperCase() + role.slice(1);
     
     let result = { contacts: [], groups: [] };
 
     switch (normalizedRole) {
       case "Student":
-        result = await this._getStudentContacts(userId);
+        result = await this._getStudentContacts(userId, search);
         break;
       case "Teacher":
-        result = await this._getTeacherContacts(userId);
+        result = await this._getTeacherContacts(userId, search);
         break;
       case "Admin":
-        result = await this._getAdminContacts(userId);
+        result = await this._getAdminContacts(userId, search);
         break;
     }
 
@@ -48,7 +48,7 @@ class ContactsService {
    * - Teacher of their group ONLY
    * - Group chat ONLY (no individual student DM)
    */
-  async _getStudentContacts(studentId) {
+  async _getStudentContacts(studentId, search) {
     const student = await Student.findById(studentId);
     if (!student || !student.group) {
       return { contacts: [], groups: [] };
@@ -63,6 +63,9 @@ class ContactsService {
       return { contacts: [], groups: [] };
     }
 
+    // Filter by search if provided
+    const searchRegex = search ? new RegExp(search, 'i') : null;
+
     // 1. Add teacher as contact
     if (group.teacher) {
       const teacher = await Teacher.findById(group.teacher)
@@ -70,18 +73,23 @@ class ContactsService {
         .lean();
       
       if (teacher) {
-        contacts.push({ ...teacher, role: "teacher" });
+        const fullName = `${teacher.firstName} ${teacher.lastName}`;
+        if (!searchRegex || searchRegex.test(fullName)) {
+          contacts.push({ ...teacher, role: "teacher" });
+        }
       }
     }
 
     // 2. Add student's group
-    groups.push({
-      _id: group._id,
-      name: group.name,
-      description: group.description,
-      image: group.image,
-      teacher: group.teacher
-    });
+    if (!searchRegex || searchRegex.test(group.name)) {
+      groups.push({
+        _id: group._id,
+        name: group.name,
+        description: group.description,
+        image: group.image,
+        teacher: group.teacher
+      });
+    }
 
     return { contacts, groups };
   }
@@ -92,7 +100,7 @@ class ContactsService {
    * - All admins
    * - All their groups
    */
-  async _getTeacherContacts(teacherId) {
+  async _getTeacherContacts(teacherId, search) {
     const teacher = await Teacher.findById(teacherId);
     if (!teacher || !teacher.groups || teacher.groups.length === 0) {
       return { contacts: [], groups: [] };
@@ -100,6 +108,7 @@ class ContactsService {
 
     const contacts = [];
     const groupIds = teacher.groups.map(g => g.id);
+    const searchRegex = search ? new RegExp(search, 'i') : null;
 
     // 1. Get all students from teacher's groups
     const groupNames = teacher.groups.map(g => g.name);
@@ -107,27 +116,42 @@ class ContactsService {
       .select("firstName lastName avatar studentId group")
       .lean();
     
-    contacts.push(...students.map(s => ({ ...s, role: "student" })));
+    students.forEach(s => {
+      const fullName = `${s.firstName} ${s.lastName}`;
+      if (!searchRegex || searchRegex.test(fullName)) {
+        contacts.push({ ...s, role: "student" });
+      }
+    });
 
     // 2. Get all admins
     const admins = await Admin.find({})
       .select("firstName lastName avatar adminId")
       .lean();
     
-    contacts.push(...admins.map(a => ({ ...a, role: "admin" })));
+    admins.forEach(a => {
+      const fullName = `${a.firstName} ${a.lastName}`;
+      if (!searchRegex || searchRegex.test(fullName)) {
+        contacts.push({ ...a, role: "admin" });
+      }
+    });
 
     // 3. Get all teacher's groups
     const teacherGroups = await Group.find({ _id: { $in: groupIds } })
       .select("name description image teacher")
       .lean();
 
-    const groups = teacherGroups.map(g => ({
-      _id: g._id,
-      name: g.name,
-      description: g.description,
-      image: g.image,
-      teacher: g.teacher
-    }));
+    const groups = [];
+    teacherGroups.forEach(g => {
+      if (!searchRegex || searchRegex.test(g.name)) {
+        groups.push({
+          _id: g._id,
+          name: g.name,
+          description: g.description,
+          image: g.image,
+          teacher: g.teacher
+        });
+      }
+    });
 
     return { contacts, groups };
   }
@@ -139,11 +163,20 @@ class ContactsService {
    * - Other admins
    * - All groups
    */
-  async _getAdminContacts(adminId) {
+  async _getAdminContacts(adminId, search) {
+    const searchRegex = search ? new RegExp(search, 'i') : null;
+    const query = searchRegex ? {
+      $or: [
+        { firstName: searchRegex },
+        { lastName: searchRegex }
+      ]
+    } : {};
+
+    // For Admin, we can filter at DB level since we fetch everyone
     const [students, teachers, admins] = await Promise.all([
-      Student.find({}).select("firstName lastName avatar studentId group").sort({ firstName: 1, lastName: 1 }).lean(),
-      Teacher.find({}).select("firstName lastName avatar teacherId").sort({ firstName: 1, lastName: 1 }).lean(),
-      Admin.find({ _id: { $ne: adminId } }).select("firstName lastName avatar adminId").sort({ firstName: 1, lastName: 1 }).lean()
+      Student.find(query).select("firstName lastName avatar studentId group").sort({ firstName: 1, lastName: 1 }).lean(),
+      Teacher.find(query).select("firstName lastName avatar teacherId").sort({ firstName: 1, lastName: 1 }).lean(),
+      Admin.find({ ...query, _id: { $ne: adminId } }).select("firstName lastName avatar adminId").sort({ firstName: 1, lastName: 1 }).lean()
     ]);
     
     const contacts = [
