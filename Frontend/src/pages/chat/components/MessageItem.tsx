@@ -19,7 +19,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
     if (message.readAt) {
       return (
         <Tooltip content="تم القراءة">
-          <CheckCheck className="w-4 h-4 text-emerald-400" />
+          <CheckCheck className="w-4 h-4 text-blue-500" />
         </Tooltip>
       );
     }

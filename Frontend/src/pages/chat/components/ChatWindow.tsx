@@ -1,4 +1,4 @@
-import React, { useEffect, useContext, useRef } from 'react';
+import React, { useEffect, useContext, useRef, useState } from 'react';
 import { useChat } from '../hooks/useChat';
 import { useMessageInput, useMessageOperations, useMessageScroll } from '../hooks';
 import { UserStatusContext } from '../../../Context/UserStatusContext';
@@ -6,6 +6,7 @@ import MessageItem from './MessageItem';
 import { useAuth } from '../../../hooks/useAuth';
 import { Button, LoadingSpinner, EmptyState } from '../../../components/UI';
 import { Send, Reply, X, Loader2 } from 'lucide-react';
+import api from '../../../Api/api';
 
 interface ChatWindowProps {
   chatType: 'DM' | 'GROUP';
@@ -16,6 +17,7 @@ interface ChatWindowProps {
 
 const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName, onNewMessage }) => {
   const { user } = useAuth();
+  const [lastSeen, setLastSeen] = useState<string | null>(null);
   const { 
     messages, 
     loading,
@@ -69,7 +71,88 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
   
   // Online status
   const statusContext = useContext(UserStatusContext);
-  const isOnline = chatType === 'DM' && statusContext ? statusContext.isUserOnline(targetId) : false;
+  const userStatus = chatType === 'DM' && statusContext ? statusContext.getUserStatus(targetId) : null;
+  const isOnline = userStatus?.isActive || false;
+
+  // Fetch Last Seen
+  useEffect(() => {
+    if (chatType === 'DM' && targetId && !isOnline) {
+      // Use context timestamp immediately if available (Real-time update)
+      if (userStatus?.timestamp && !userStatus.isActive) {
+        setLastSeen(userStatus.timestamp);
+      }
+
+      const fetchLastSeen = async () => {
+        try {
+          const res = await api.get(`/users/${targetId}/status`);
+          if (res.data?.lastSeen) {
+            setLastSeen((prev) => {
+              // If we have no previous value, accept the new one
+              if (!prev) return res.data.lastSeen;
+              
+              // Compare timestamps to ensure we don't show an older value
+              const prevTime = new Date(prev).getTime();
+              const newTime = new Date(res.data.lastSeen).getTime();
+              
+              // Only update if the new time is newer or equal
+              return newTime >= prevTime ? res.data.lastSeen : prev;
+            });
+          }
+        } catch (err) {
+          console.error("Failed to fetch last seen:", err);
+        }
+      };
+      
+      fetchLastSeen();
+      
+      // Poll for updates every 30 seconds
+      const pollInterval = setInterval(fetchLastSeen, 30000);
+      return () => clearInterval(pollInterval);
+    } else {
+      setLastSeen(null);
+    }
+  }, [chatType, targetId, isOnline, userStatus?.timestamp, userStatus?.isActive]);
+
+  // Force update for Last Seen ticker
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (isOnline || !lastSeen) return;
+    const interval = setInterval(() => {
+      setTick(t => t + 1);
+    }, 60000); // Update every minute
+    return () => clearInterval(interval);
+  }, [isOnline, lastSeen]);
+
+  // Format Last Seen
+  const formatLastSeen = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return 'منذ لحظات';
+    if (diffInSeconds < 3600) return `منذ ${Math.floor(diffInSeconds / 60)} دقيقة`;
+    if (diffInSeconds < 86400) return `منذ ${Math.floor(diffInSeconds / 3600)} ساعة`;
+    return date.toLocaleDateString('ar-EG');
+  };
+
+  // Date Divider Helper
+  const shouldShowDateDivider = (currentMsg: any, prevMsg: any) => {
+    if (!prevMsg) return true;
+    const currentDate = new Date(currentMsg.createdAt).toDateString();
+    const prevDate = new Date(prevMsg.createdAt).toDateString();
+    return currentDate !== prevDate;
+  };
+
+  const formatDateDivider = (dateString: string) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) return 'اليوم';
+    if (date.toDateString() === yesterday.toDateString()) return 'أمس';
+    return date.toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  };
 
   // Track messages being marked as read to avoid duplicates
   const markingReadRef = useRef<Set<string>>(new Set());
@@ -116,7 +199,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
                 }`}
               />
               <span className="text-sm font-medium">
-                {isOnline ? 'متصل الآن' : 'غير متصل'}
+                {isOnline ? 'متصل الآن' : lastSeen ? `آخر ظهور ${formatLastSeen(lastSeen)}` : 'غير متصل'}
               </span>
             </div>
           )}
@@ -157,14 +240,25 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
           />
         )}
         
-        {messages.map((msg: any) => (
-          <MessageItem 
-            key={msg._id || msg.clientTempId} 
-            message={msg}
-            isOwn={msg.sender?._id === user?._id}
-            onReply={setReplyTo}
-          />
-        ))}
+        {messages.map((msg: any, index: number) => {
+          const showDivider = shouldShowDateDivider(msg, messages[index - 1]);
+          return (
+            <React.Fragment key={msg._id || msg.clientTempId}>
+              {showDivider && (
+                <div className="flex justify-center my-4">
+                  <span className="bg-gray-200 text-gray-600 text-xs px-3 py-1 rounded-full shadow-sm">
+                    {formatDateDivider(msg.createdAt)}
+                  </span>
+                </div>
+              )}
+              <MessageItem 
+                message={msg}
+                isOwn={msg.sender?._id === user?._id}
+                onReply={setReplyTo}
+              />
+            </React.Fragment>
+          );
+        })}
         <div ref={messagesEndRef} />
       </div>
 

@@ -30,9 +30,9 @@ class OnlineUsersManager {
     
     /**
      * مدة الانتظار قبل اعتبار المستخدم offline (بالميلي ثانية)
-     * @default 5000 (5 ثوان)
+     * @default 1500 (1.5 ثانية) - تم تقليلها لاستجابة أسرع
      */
-    this.gracePeriod = 5000;
+    this.gracePeriod = 1500;
   }
 
   /**

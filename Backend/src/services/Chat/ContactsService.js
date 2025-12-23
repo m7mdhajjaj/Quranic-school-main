@@ -15,16 +15,32 @@ class ContactsService {
   async getContacts(userId, role) {
     const normalizedRole = role.charAt(0).toUpperCase() + role.slice(1);
     
+    let result = { contacts: [], groups: [] };
+
     switch (normalizedRole) {
       case "Student":
-        return this._getStudentContacts(userId);
+        result = await this._getStudentContacts(userId);
+        break;
       case "Teacher":
-        return this._getTeacherContacts(userId);
+        result = await this._getTeacherContacts(userId);
+        break;
       case "Admin":
-        return this._getAdminContacts(userId);
-      default:
-        return { contacts: [], groups: [] };
+        result = await this._getAdminContacts(userId);
+        break;
     }
+
+    // ✅ Deduplicate contacts by ID to ensure clean list
+    if (result.contacts && result.contacts.length > 0) {
+      const uniqueContacts = new Map();
+      result.contacts.forEach(c => {
+        if (c && c._id) {
+          uniqueContacts.set(c._id.toString(), c);
+        }
+      });
+      result.contacts = Array.from(uniqueContacts.values());
+    }
+
+    return result;
   }
 
   /**

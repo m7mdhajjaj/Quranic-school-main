@@ -50,7 +50,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
       if (otherParticipant) {
         return {
           name: `${otherParticipant.userId.firstName} ${otherParticipant.userId.lastName}`,
-          subtitle: otherParticipant.userModel === 'Student' ? 'طالب' : otherParticipant.userModel === 'Teacher' ? 'معلم' : 'مشرف',
+          subtitle: otherParticipant.userModel === 'Student' ? 'طالب' : otherParticipant.userModel === 'Teacher' ? 'معلم' : 'مدير',
           avatar: otherParticipant.userId.avatar?.url,
           userId: otherParticipant.userId._id
         };

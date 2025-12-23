@@ -164,6 +164,7 @@ app.use('/api/upload', require('./routes/UploadRoutes/uploadRoutes'));
 app.use('/api/warnings', require('./routes/WarningRoutes/WarningRoutes'));
 app.use('/api/quran', require('./routes/QuranRoutes/quranRoutes'));
 app.use('/api/test', require('./routes/TestRoutes/testRoutes'));
+app.use('/api/users', require('./routes/userRoutes'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -247,6 +248,33 @@ app.set('notificationService', notificationService); // ✅ لاستخدامه �
 global.onlineUsersManager = onlineUsersManager; // ✅ Presence Service عام
 global.isUserOnline = isUserOnline; // ✅ دالة مساعدة عامة
 global.io = io; // Make io globally accessible for chat controllers
+
+// ✅ Periodic LastSeen Update (Heartbeat) - Every 5 minutes
+setInterval(async () => {
+  const onlineUsers = onlineUsersManager.getAllOnlineUsers();
+  const now = new Date();
+  
+  for (const userId of onlineUsers) {
+    const userData = onlineUsersManager.getUserData(userId);
+    if (!userData) continue;
+    
+    const role = userData.role?.toLowerCase();
+    try {
+      if (role === 'student') {
+        await Student.findByIdAndUpdate(userId, { lastSeen: now });
+      } else if (role === 'teacher') {
+        const Teacher = require('./schema/Teacher');
+        await Teacher.findByIdAndUpdate(userId, { lastSeen: now });
+      } else if (role === 'admin') {
+        const Admin = require('./schema/Admin');
+        await Admin.findByIdAndUpdate(userId, { lastSeen: now });
+      }
+    } catch (err) {
+      console.error(`Error updating heartbeat lastSeen for ${userId}:`, err);
+    }
+  }
+}, 5 * 60 * 1000);
+
 global.fcmService = FCMService;
 
 // تشغيل Cron Job لتتويج أبطال الشهر
@@ -563,28 +591,49 @@ io.on('connection', (socket) => {
     // ✅ تحديث lastSeen فقط في DB
     try {
       let updateResult;
-      if (userData.role === 'student') {
+      const now = new Date();
+      const role = userData.role?.toLowerCase();
+
+      if (role === 'student') {
         updateResult = await Student.findByIdAndUpdate(
           userData.userId,
-          { lastSeen: new Date() },
+          { lastSeen: now },
           { new: true }
         );
-      } else if (userData.role === 'admin') {
+      } else if (role === 'admin') {
         updateResult = await require('./schema/Admin').findByIdAndUpdate(
           userData.userId,
-          { lastSeen: new Date() },
+          { lastSeen: now },
           { new: true }
         );
-      } else {
+      } else if (role === 'teacher') {
         updateResult = await require('./schema/Teacher').findByIdAndUpdate(
           userData.userId,
-          { lastSeen: new Date() },
+          { lastSeen: now },
           { new: true }
         );
       }
 
+      // Fallback: If role didn't match or update failed, try all collections
+      if (!updateResult) {
+        console.log(`⚠️ Role '${role}' not matched or update failed during logout. Trying all collections for user ${userData.userId}...`);
+        updateResult = await Student.findByIdAndUpdate(userData.userId, { lastSeen: now }, { new: true });
+        
+        if (!updateResult) {
+          const Teacher = require('./schema/Teacher');
+          updateResult = await Teacher.findByIdAndUpdate(userData.userId, { lastSeen: now }, { new: true });
+        }
+        
+        if (!updateResult) {
+          const Admin = require('./schema/Admin');
+          updateResult = await Admin.findByIdAndUpdate(userData.userId, { lastSeen: now }, { new: true });
+        }
+      }
+
       if (updateResult) {
         console.log(`✅ Updated lastSeen for user ${userData.userId}`);
+      } else {
+        console.warn(`⚠️ Failed to update lastSeen for user ${userData.userId} on logout`);
       }
     } catch (error) {
       console.error('Error updating lastSeen on logout:', error);
@@ -979,38 +1028,59 @@ io.on('connection', (socket) => {
         onlineUsersManager.setUserOffline(disconnectedUserId, socket.id, async (userId) => {
           // ✅ تحديث lastSeen فقط بعد grace period
           try {
+            const normalizedRole = role?.toLowerCase();
             let updateResult;
-            if (role === 'student') {
+            const now = new Date();
+
+            if (normalizedRole === 'student') {
               updateResult = await Student.findByIdAndUpdate(
                 userId,
-                { lastSeen: new Date() },
+                { lastSeen: now },
                 { new: true }
               );
-            } else if (role === 'admin') {
+            } else if (normalizedRole === 'admin') {
               const Admin = require('./schema/Admin');
               updateResult = await Admin.findByIdAndUpdate(
                 userId,
-                { lastSeen: new Date() },
+                { lastSeen: now },
                 { new: true }
               );
-            } else if (role === 'teacher') {
+            } else if (normalizedRole === 'teacher') {
               const Teacher = require('./schema/Teacher');
               updateResult = await Teacher.findByIdAndUpdate(
                 userId,
-                { lastSeen: new Date() },
+                { lastSeen: now },
                 { new: true }
               );
             }
 
+            // Fallback: If role didn't match or update failed, try all collections
+            if (!updateResult) {
+              console.log(`⚠️ Role '${role}' not matched or update failed. Trying all collections for user ${userId}...`);
+              updateResult = await Student.findByIdAndUpdate(userId, { lastSeen: now }, { new: true });
+              
+              if (!updateResult) {
+                const Teacher = require('./schema/Teacher');
+                updateResult = await Teacher.findByIdAndUpdate(userId, { lastSeen: now }, { new: true });
+              }
+              
+              if (!updateResult) {
+                const Admin = require('./schema/Admin');
+                updateResult = await Admin.findByIdAndUpdate(userId, { lastSeen: now }, { new: true });
+              }
+            }
+
             if (updateResult) {
-              console.log(`✅ User ${firstName} (${userId}) lastSeen updated (after delay)`);
+              console.log(`✅ User ${firstName} (${userId}) lastSeen updated to ${now.toISOString()}`);
 
               // ✅ بث حالة Offline للجميع
               io.emit('user-status', {
                 userId: userId,
                 isActive: false,
-                timestamp: new Date().toISOString(),
+                timestamp: now.toISOString(),
               });
+            } else {
+              console.warn(`⚠️ Failed to update lastSeen for user ${userId} (Role: ${role})`);
             }
           } catch (error) {
             console.error('Error updating lastSeen on disconnect:', error);

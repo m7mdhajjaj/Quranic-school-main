@@ -9,9 +9,14 @@ class ConversationService {
    * Get or Create DM Conversation
    */
   async getOrCreateDMConversation(userId1, userRole1, userId2, userRole2) {
+    // Try to find existing conversation with these exact participants
+    // We use $and to ensure both users are present
     let conversation = await Conversation.findOne({
       type: "DM",
-      "participants.userId": { $all: [userId1, userId2] }
+      $and: [
+        { "participants.userId": userId1 },
+        { "participants.userId": userId2 }
+      ]
     });
 
     if (!conversation) {
@@ -70,6 +75,52 @@ class ConversationService {
     })
     .sort({ updatedAt: -1 })
     .lean();
+
+    // ✅ Deduplicate conversations (Backend fix)
+    // This handles cases where bad data might have created duplicate conversations
+    const uniqueMap = new Map();
+    
+    for (const conv of conversations) {
+      let key = conv._id.toString();
+
+      if (conv.type === 'GROUP' && conv.groupId) {
+        key = `GROUP_${conv.groupId._id}`;
+      } else if (conv.type === 'DM') {
+        // Find the other participant
+        const other = conv.participants.find(p => 
+          p.userId && p.userId._id && p.userId._id.toString() !== userId.toString()
+        );
+        
+        if (other && other.userId) {
+          key = `DM_${other.userId._id}`;
+        } else {
+          // Handle "Chat with Self" or "Other Deleted"
+          // If I am a participant, treat it as "Chat with Self" for deduplication
+          const me = conv.participants.find(p => 
+            p.userId && p.userId._id && p.userId._id.toString() === userId.toString()
+          );
+          if (me) {
+            key = `DM_${userId}`;
+          }
+        }
+      }
+
+      if (uniqueMap.has(key)) {
+        const existing = uniqueMap.get(key);
+        // Keep the one with more recent update
+        if (new Date(conv.updatedAt) > new Date(existing.updatedAt)) {
+          uniqueMap.set(key, conv);
+        }
+      } else {
+        uniqueMap.set(key, conv);
+      }
+    }
+
+    conversations = Array.from(uniqueMap.values());
+
+    // ✅ Filter: Only show conversations that have a lastMessage (actual conversation history)
+    // This applies to both DMs and Groups as requested
+    conversations = conversations.filter(c => !!c.lastMessage);
 
     // Calculate unread count for each
     conversations = conversations.map(conv => {
