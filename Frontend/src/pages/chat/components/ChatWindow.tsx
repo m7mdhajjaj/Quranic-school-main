@@ -328,7 +328,17 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
       <div 
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-2 scroll-smooth scrollbar-hide"
+        className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-2 scroll-smooth scrollbar-hide overscroll-contain"
+        onWheel={(e) => {
+          // منع انتشار حدث السكرول للصفحة الرئيسية
+          const element = e.currentTarget;
+          const atTop = element.scrollTop === 0;
+          const atBottom = element.scrollHeight - element.scrollTop === element.clientHeight;
+          
+          if ((atTop && e.deltaY < 0) || (atBottom && e.deltaY > 0)) {
+            e.preventDefault();
+          }
+        }}
       >
         {/* Loading Spinner for Pagination */}
         {showLoadingSpinner && (

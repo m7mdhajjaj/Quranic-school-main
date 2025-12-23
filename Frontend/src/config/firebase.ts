@@ -230,26 +230,4 @@ export const registerTokenWithBackend = async (
   }
 };
 
-/**
- * Initialize FCM and register token automatically
- * Call this after user login
- */
-export const initializeFCM = async (authToken?: string): Promise<void> => {
-  try {
-    const token = await requestNotificationPermission();
-    
-    if (token) {
-      // Save token to localStorage
-      localStorage.setItem('fcm_token', token);
-      
-      // Register with backend if auth token is provided
-      if (authToken) {
-        await registerTokenWithBackend(token, undefined, authToken);
-      }
-    }
-  } catch (error) {
-    console.error('❌ Error initializing FCM:', error);
-  }
-};
-
 export { app, messaging };

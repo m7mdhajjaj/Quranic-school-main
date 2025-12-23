@@ -102,19 +102,19 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = memo(({
 
           {/* القائمة المنسدلة */}
           <div
-            className={`absolute ${alignmentClass} mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-40 animate-fadeIn ${menuClassName}`}
+            className={`absolute ${alignmentClass} mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-100 overflow-hidden z-40 animate-fadeIn ${menuClassName}`}
             role="menu"
           >
             {items.map((item, index) => (
               <button
                 key={`${item.label}-${index}`}
                 onClick={(e) => handleItemClick(e, item.onClick)}
-                className={`w-full px-4 py-3 text-right flex items-center gap-3 transition-colors font-semibold ${
+                className={`w-full px-3 py-2 text-right flex items-center gap-2 transition-colors text-sm ${
                   index > 0 ? 'border-t border-gray-100' : ''
                 } ${getVariantStyles(item.variant)} ${item.className || ''}`}
                 role="menuitem"
               >
-                {item.icon && <span className="flex-shrink-0">{item.icon}</span>}
+                {item.icon && <span className="flex-shrink-0 w-4 h-4">{item.icon}</span>}
                 <span>{item.label}</span>
               </button>
             ))}

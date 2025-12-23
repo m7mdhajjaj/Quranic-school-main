@@ -23,7 +23,7 @@ const ChatLayout: React.FC = () => {
   } = useChatLayout();
 
   return (
-    <div className="flex h-[calc(100vh-64px)] bg-gray-50 overflow-hidden relative" dir="rtl">
+    <div className="flex h-[calc(100vh-64px)] bg-gray-50 overflow-hidden relative overscroll-none" dir="rtl">
       {/* Sidebar */}
       <div 
         className={`flex-shrink-0 border-l border-gray-200 bg-white overflow-hidden transition-all duration-300 ${

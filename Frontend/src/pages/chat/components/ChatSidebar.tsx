@@ -157,7 +157,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
         </div>
       </div>
       
-      <div className="flex-1 overflow-y-auto scroll-smooth chat-scroll">
+      <div className="flex-1 overflow-y-auto scroll-smooth chat-scroll overscroll-contain">
         {view === 'conversations' ? (
           // Show existing conversations
           conversations.length === 0 ? (
