@@ -19,6 +19,7 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
     addOptimisticMessage,
     updateMessage,
     removeMessage,
+    handleMessageDeleted,
     jumpToMessage
   } = useChatMessages(chatType, targetId);
   
@@ -32,6 +33,7 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
     onMessageDelivered,
     onMessageRead,
     onTyping,
+    onMessageDeleted,
     joinGroup
   } = useChatSocket();
 
@@ -115,6 +117,14 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
     return cleanup;
   }, [onTyping, user]);
 
+  // Listen for message deletion (Real-time)
+  useEffect(() => {
+    const cleanup = onMessageDeleted((data: { messageId: string, deletedForAll: boolean }) => {
+      handleMessageDeleted(data.messageId, data.deletedForAll);
+    });
+    return cleanup;
+  }, [onMessageDeleted, handleMessageDeleted]);
+
   // Send message with optimistic update
   const sendMessage = useCallback(async (text: string, attachments?: any[], replyTo?: string) => {
     if (!user) return;
@@ -194,6 +204,7 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
     handleTyping,
     markMessageAsRead,
     jumpToMessage,
+    handleMessageDeleted,
     typingUsers: Array.from(typingUsers),
     isTyping: typingUsers.size > 0
   };

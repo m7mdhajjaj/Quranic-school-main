@@ -1,4 +1,4 @@
-import React, { useEffect, useContext, useRef, useState } from 'react';
+import React, { useEffect, useContext, useRef, useState, useCallback } from 'react';
 import { useChat } from '../hooks/useChat';
 import { useMessageInput, useMessageOperations, useMessageScroll } from '../hooks';
 import { UserStatusContext } from '../../../Context/UserStatusContext';
@@ -59,7 +59,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
     typingUsers,
     isTyping,
     markMessageAsRead,
-    jumpToMessage
+    jumpToMessage,
+    handleMessageDeleted
   } = useChat(chatType, targetId);
   
   // Message operations (reply, sending state)
@@ -195,7 +196,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
   }, [messages, onNewMessage, user]);
 
   // Handle scrolling to replied message
-  const handleReplyClick = async (messageId: string) => {
+  const handleReplyClick = useCallback(async (messageId: string) => {
     const element = document.getElementById(`message-${messageId}`);
     
     if (element) {
@@ -224,7 +225,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
         console.error("Failed to jump to message:", err);
       }
     }
-  };
+  }, [jumpToMessage]);
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-gray-50 to-gray-100">
@@ -295,6 +296,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
                 isOwn={msg.sender?._id === user?._id}
                 onReply={setReplyTo}
                 onReplyClick={handleReplyClick}
+                onDelete={handleMessageDeleted}
               />
             </React.Fragment>
           );

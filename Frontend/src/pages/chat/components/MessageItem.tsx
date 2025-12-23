@@ -12,13 +12,15 @@ interface MessageItemProps {
   isOwn: boolean;
   onReply?: (message: any) => void;
   onReplyClick?: (messageId: string) => void;
+  onDelete?: (messageId: string, deletedForAll: boolean) => void;
 }
 
 const MessageItem: React.FC<MessageItemProps> = ({ 
   message, 
   isOwn, 
   onReply,
-  onReplyClick
+  onReplyClick,
+  onDelete
 }) => {
   const { user } = useAuth();
 
@@ -37,8 +39,11 @@ const MessageItem: React.FC<MessageItemProps> = ({
         await api.delete(`/chat/messages/${message._id}`, {
           data: { deleteForAll }
         });
-        // UI update is handled via socket usually, but we can optimistically hide it if needed
-        // For now, rely on socket event "message:deleted"
+        
+        // Optimistic update / Manual handling
+        if (onDelete) {
+          onDelete(message._id, deleteForAll);
+        }
       }
     } catch (error: any) {
       showErrorMessage("خطأ", error.response?.data?.message || "فشل حذف الرسالة");
@@ -241,4 +246,4 @@ const MessageItem: React.FC<MessageItemProps> = ({
   );
 };
 
-export default MessageItem;
+export default React.memo(MessageItem);

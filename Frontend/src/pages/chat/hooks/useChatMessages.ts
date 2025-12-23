@@ -74,6 +74,23 @@ export const useChatMessages = (chatType: 'DM' | 'GROUP', targetId: string) => {
     setMessages(prev => prev.filter(m => m.clientTempId !== clientTempId));
   }, []);
 
+  // Handle Real-time Deletion
+  const handleMessageDeleted = useCallback((messageId: string, deletedForAll: boolean) => {
+    setMessages(prev => {
+      if (deletedForAll) {
+        // Update content to show it's deleted
+        return prev.map(msg => 
+          msg._id === messageId 
+            ? { ...msg, deletedForAll: true, text: "تم حذف هذه الرسالة", attachments: [] } 
+            : msg
+        );
+      } else {
+        // Remove completely (Delete for Me)
+        return prev.filter(msg => msg._id !== messageId);
+      }
+    });
+  }, []);
+
   // Jump to specific message (fetch context)
   const jumpToMessage = useCallback(async (messageId: string) => {
     setLoading(true);
@@ -100,6 +117,7 @@ export const useChatMessages = (chatType: 'DM' | 'GROUP', targetId: string) => {
     addOptimisticMessage,
     updateMessage,
     removeMessage,
+    handleMessageDeleted,
     jumpToMessage
   };
 };

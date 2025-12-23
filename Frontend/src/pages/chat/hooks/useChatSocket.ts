@@ -93,6 +93,14 @@ export const useChatSocket = () => {
     };
   }, []);
 
+  // ✅ Listen for message deletion
+  const onMessageDeleted = useCallback((callback: (data: { messageId: string, deletedForAll: boolean }) => void) => {
+    socketRef.current?.on('message:deleted', callback);
+    return () => {
+      socketRef.current?.off('message:deleted', callback);
+    };
+  }, []);
+
   return {
     socket: socketRef.current,
     joinGroup,
@@ -105,6 +113,7 @@ export const useChatSocket = () => {
     onMessageDelivered,
     onMessageRead,
     onTyping,
-    onConversationUpdated
+    onConversationUpdated,
+    onMessageDeleted
   };
 };
