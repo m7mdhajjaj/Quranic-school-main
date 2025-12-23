@@ -14,6 +14,7 @@ const conversationSchema = new mongoose.Schema(
       {
         userId: { type: mongoose.Schema.Types.ObjectId, required: true, refPath: "participants.userModel" },
         userModel: { type: String, required: true, enum: ["Teacher", "Student", "Admin"] },
+        mutedUntil: { type: Date, default: null }
       },
     ],
     

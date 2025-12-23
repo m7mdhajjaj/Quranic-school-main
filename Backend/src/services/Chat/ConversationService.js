@@ -65,6 +65,68 @@ class ConversationService {
   }
 
   /**
+   * Mute Conversation
+   */
+  async muteConversation(userId, chatType, targetId, duration) {
+    let conversation;
+    
+    if (chatType === 'DM') {
+      conversation = await Conversation.findOne({
+        type: 'DM',
+        $and: [
+          { "participants.userId": userId },
+          { "participants.userId": targetId }
+        ]
+      });
+    } else {
+      conversation = await Conversation.findOne({
+        type: 'GROUP',
+        groupId: targetId
+      });
+    }
+
+    if (!conversation) throw new Error("Conversation not found");
+
+    let mutedUntil = null;
+    if (duration === -1) {
+      // Mute indefinitely (e.g., for 100 years)
+      mutedUntil = new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000);
+    } else if (duration > 0) {
+      mutedUntil = new Date(Date.now() + duration * 60 * 1000);
+    } else {
+      // Unmute
+      mutedUntil = null;
+    }
+
+    // Update participant's mutedUntil
+    const participantIndex = conversation.participants.findIndex(
+      p => p.userId.toString() === userId.toString()
+    );
+
+    if (participantIndex !== -1) {
+      conversation.participants[participantIndex].mutedUntil = mutedUntil;
+      await conversation.save();
+    }
+  }
+
+  /**
+   * Check if conversation is muted for user
+   */
+  async isMuted(userId, conversationId) {
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation) return false;
+
+    const participant = conversation.participants.find(
+      p => p.userId.toString() === userId.toString()
+    );
+
+    if (participant && participant.mutedUntil) {
+      return new Date(participant.mutedUntil) > new Date();
+    }
+    return false;
+  }
+
+  /**
    * Get All Conversations for User
    */
   async getConversations(userId, role, search) {

@@ -80,7 +80,7 @@ class MessageService {
     this._emitDMEvents(senderId, data.recipientId, message, data.clientTempId);
 
     // Send Push Notification if offline
-    await this._sendPushIfOffline(data.recipientId, senderId, senderRole, data.text);
+    await this._sendPushIfOffline(data.recipientId, senderId, senderRole, data.text, conversation._id);
 
     return message;
   }
@@ -532,11 +532,17 @@ class MessageService {
   /**
    * Private: Send Push Notification if User Offline
    */
-  async _sendPushIfOffline(recipientId, senderId, senderRole, messageText) {
+  async _sendPushIfOffline(recipientId, senderId, senderRole, messageText, conversationId) {
     const isOnline = global.isUserOnline ? global.isUserOnline(recipientId) : false;
     
     if (!isOnline) {
       try {
+        // Check if muted
+        if (conversationId) {
+          const isMuted = await ConversationService.isMuted(recipientId, conversationId);
+          if (isMuted) return;
+        }
+
         const senderModel = senderRole === "Student" ? require("../../schema/Student/Student") 
                           : senderRole === "Teacher" ? require("../../schema/Teacher")
                           : require("../../schema/Admin");

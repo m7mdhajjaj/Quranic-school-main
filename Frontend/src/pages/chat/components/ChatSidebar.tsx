@@ -297,7 +297,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
                           variant={contact.role === 'student' ? 'success' : contact.role === 'teacher' ? 'primary' : 'warning'}
                           className="text-xs"
                         >
-                          {contact.role === 'student' ? 'طالب' : contact.role === 'teacher' ? 'معلم' : 'مشرف'}
+                          {contact.role === 'student' ? 'طالب' : contact.role === 'teacher' ? 'معلم' : 'مدير'}
                         </Badge>
                       </div>
                     </div>

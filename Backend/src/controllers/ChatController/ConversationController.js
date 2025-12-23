@@ -50,6 +50,24 @@ class ConversationController {
   }
 
   /**
+   * POST /api/chat/conversations/mute
+   * Mute a conversation
+   */
+  async muteConversation(req, res) {
+    try {
+      const { chatType, targetId, duration } = req.body; // duration in minutes, or -1 for indefinitely
+      await ConversationService.muteConversation(req.user.id, chatType, targetId, duration);
+      return res.json({ success: true });
+    } catch (error) {
+      console.error("Error in muteConversation:", error);
+      return res.status(500).json({ 
+        success: false,
+        message: error.message 
+      });
+    }
+  }
+
+  /**
    * DELETE /api/chat/conversations/:id
    * Delete a conversation completely
    */

@@ -5,7 +5,9 @@ import { UserStatusContext } from '../../../Context/UserStatusContext';
 import MessageItem from './MessageItem';
 import { useAuth } from '../../../hooks/useAuth';
 import { Button, LoadingSpinner, EmptyState } from '../../../components/UI';
-import { Send, Reply, X, Loader2 } from 'lucide-react';
+import { Send, Reply, X, Loader2, MoreVertical, BellOff, Bell } from 'lucide-react';
+import { DropdownMenu } from '../../../components/UI/DropdownMenu';
+import { showSuccessMessage, showErrorMessage } from '../../../utils/sweetalertUtils';
 import api from '../../../Api/api';
 
 interface ChatWindowProps {
@@ -227,12 +229,48 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
     }
   }, [jumpToMessage]);
 
+  const handleMute = async (duration: number) => {
+    try {
+      await api.post('/chat/conversations/mute', {
+        chatType,
+        targetId,
+        duration
+      });
+      showSuccessMessage("تم", duration === 0 ? "تم إلغاء كتم الإشعارات" : "تم كتم الإشعارات بنجاح");
+    } catch (err) {
+      showErrorMessage("خطأ", "فشل تحديث إعدادات الإشعارات");
+    }
+  };
+
+  const getHeaderDropdownItems = () => [
+    {
+      label: "كتم لمدة ساعة",
+      icon: <BellOff size={16} />,
+      onClick: () => handleMute(60),
+    },
+    {
+      label: "كتم لمدة يوم",
+      icon: <BellOff size={16} />,
+      onClick: () => handleMute(24 * 60),
+    },
+    {
+      label: "كتم دائماً",
+      icon: <BellOff size={16} />,
+      onClick: () => handleMute(-1),
+    },
+    {
+      label: "إلغاء الكتم",
+      icon: <Bell size={16} />,
+      onClick: () => handleMute(0),
+    }
+  ];
+
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header with Online Status */}
-      <div className="p-5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg">
+      <div className="p-5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <h3 className="font-bold text-xl flex-1">{targetName}</h3>
+          <h3 className="font-bold text-xl">{targetName}</h3>
           {chatType === 'DM' && (
             <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full backdrop-blur-sm">
               <div 
@@ -244,12 +282,25 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
             </div>
           )}
         </div>
-        {isTyping && (
-          <p className="text-sm text-white/90 animate-pulse mt-2 flex items-center gap-2">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            {typingUsers.length === 1 ? 'يكتب' : `${typingUsers.length} يكتبون`}...
-          </p>
-        )}
+
+        <div className="flex items-center gap-4">
+          {isTyping && (
+            <p className="text-sm text-white/90 animate-pulse flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              {typingUsers.length === 1 ? 'يكتب' : `${typingUsers.length} يكتبون`}...
+            </p>
+          )}
+
+          <DropdownMenu
+            trigger={
+              <button className="p-2 hover:bg-white/20 rounded-full transition-colors focus:outline-none">
+                <MoreVertical className="w-6 h-6 text-white" />
+              </button>
+            }
+            items={getHeaderDropdownItems()}
+            position="bottom-left"
+          />
+        </div>
       </div>
       
       {/* Messages */}

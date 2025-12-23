@@ -13,7 +13,8 @@ interface DropdownMenuProps {
   items: DropdownMenuItem[];
   buttonClassName?: string;
   menuClassName?: string;
-  position?: 'left' | 'right';
+  position?: 'left' | 'right' | 'bottom-left' | 'bottom-right';
+  trigger?: React.ReactNode;
 }
 
 export const DropdownMenu: React.FC<DropdownMenuProps> = memo(({
@@ -21,6 +22,7 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = memo(({
   buttonClassName = '',
   menuClassName = '',
   position = 'left',
+  trigger,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -68,19 +70,27 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = memo(({
     onClick();
   }, []);
 
+  const alignmentClass = (position === 'left' || position === 'bottom-left') ? 'left-0' : 'right-0';
+
   return (
     <div className="relative" ref={menuRef}>
-      <button
-        onClick={toggleMenu}
-        type="button"
-        className={`bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-md hover:bg-white transition-all duration-200 hover:scale-110 ${buttonClassName}`}
-        title="المزيد"
-        aria-label="المزيد"
-        aria-haspopup="menu"
-        aria-expanded={isOpen ? "true" : "false"}
-      >
-        <MoreVertical size={20} />
-      </button>
+      {trigger ? (
+        <div onClick={toggleMenu} className="cursor-pointer">
+          {trigger}
+        </div>
+      ) : (
+        <button
+          onClick={toggleMenu}
+          type="button"
+          className={`bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-md hover:bg-white transition-all duration-200 hover:scale-110 ${buttonClassName}`}
+          title="المزيد"
+          aria-label="المزيد"
+          aria-haspopup="menu"
+          aria-expanded={isOpen ? "true" : "false"}
+        >
+          <MoreVertical size={20} />
+        </button>
+      )}
 
       {isOpen && (
         <>
@@ -92,9 +102,7 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = memo(({
 
           {/* القائمة المنسدلة */}
           <div
-            className={`absolute ${
-              position === 'left' ? 'left-0' : 'right-0'
-            } mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-40 animate-fadeIn ${menuClassName}`}
+            className={`absolute ${alignmentClass} mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-40 animate-fadeIn ${menuClassName}`}
             role="menu"
           >
             {items.map((item, index) => (

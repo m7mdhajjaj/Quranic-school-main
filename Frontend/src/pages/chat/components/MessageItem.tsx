@@ -128,7 +128,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
     >
       {/* Avatar for incoming messages */}
       {!isOwn && message.sender && (
-        <div className="mr-2 flex-shrink-0">
+        <div className="ml-2 flex-shrink-0">
           <Avatar 
             user={message.sender}
             size="sm"
@@ -188,7 +188,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
           <p className="whitespace-pre-wrap break-words leading-relaxed">{message.text}</p>
           
           {message.edited && (
-            <span className="text-xs opacity-70 italic ml-2 inline-flex items-center gap-1">
+            <span className="text-xs opacity-70 italic mr-2 inline-flex items-center gap-1">
               <Clock className="w-3 h-3" />
               (معدلة)
             </span>
@@ -233,7 +233,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
       
       {/* Avatar for outgoing messages */}
       {isOwn && message.sender && (
-        <div className="ml-2 flex-shrink-0">
+        <div className="mr-2 flex-shrink-0">
           <Avatar 
             user={message.sender}
             size="sm"
