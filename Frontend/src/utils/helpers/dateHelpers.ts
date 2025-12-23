@@ -78,16 +78,6 @@ export const formatTime12Arabic = (timeStr: string): string => {
 };
 
 /**
- * تحويل التاريخ إلى صيغة dd/mm/yyyy
- * @param date - التاريخ المراد تحويله
- * @returns التاريخ بصيغة dd/mm/yyyy
- */
-export const formatDateDDMMYYYY = (date: Date | string): string => {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleDateString('en-GB');
-};
-
-/**
  * حساب العمر من تاريخ الميلاد
  * @param birthDate - تاريخ الميلاد
  * @returns العمر بالسنوات
@@ -103,43 +93,4 @@ export const calculateAge = (birthDate: string | Date): number => {
   }
   
   return age;
-};
-
-/**
- * توليد قائمة بالسنوات (للاستخدام في Select)
- * @param range - المدى من السنة الحالية (قبل وبعد)
- * @returns مصفوفة بالسنوات
- */
-export const generateYearRange = (range: number = 2): number[] => {
-  const currentYear = new Date().getFullYear();
-  return Array.from({ length: range * 2 + 1 }, (_, i) => currentYear - range + i);
-};
-
-/**
- * الحصول على اليوم الحالي بصيغة yyyy-mm-dd
- */
-export const getTodayDate = (): string => {
-  return formatDateForInput(new Date());
-};
-
-/**
- * التحقق من أن التاريخ في المستقبل
- * @param date - التاريخ المراد التحقق منه
- * @returns true إذا كان التاريخ في المستقبل
- */
-export const isFutureDate = (date: Date | string): boolean => {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  return d > new Date();
-};
-
-/**
- * التحقق من أن التاريخ في الماضي
- * @param date - التاريخ المراد التحقق منه
- * @returns true إذا كان التاريخ في الماضي
- */
-export const isPastDate = (date: Date | string): boolean => {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return d < today;
 };
