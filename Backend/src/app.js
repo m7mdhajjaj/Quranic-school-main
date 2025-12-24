@@ -145,6 +145,7 @@ app.use(
 );
 app.use('/api/attendance', require('./routes/attendanceRoutes'));
 app.use('/api/chat', require('./routes/ChatRoutes/chatRoutes'));
+app.use('/api/mentions', require('./routes/ChatRoutes/mentionRoutes'));
 app.use('/api/fcm', require('./routes/NotificationRoutes/fcmRoutes'));
 app.use(
   '/api/notifications',

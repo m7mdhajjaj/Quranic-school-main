@@ -17,6 +17,7 @@ const sendMessageSchema = z.object({
   ).optional(),
   replyTo: z.string().regex(objectIdRegex).optional().nullable(),
   clientTempId: z.string().optional(),
+  mentions: z.array(z.string()).optional(),
 }).refine((data) => {
   if (data.chatType === "DM" && !data.recipientId) return false;
   if (data.chatType === "GROUP" && !data.groupId) return false;

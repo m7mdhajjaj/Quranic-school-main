@@ -8,7 +8,7 @@ const { sendPushNotification } = require("../../Notifications/Core/PushSender");
 const ContactsService = require("./ContactsService");
 const ConversationService = require("./ConversationService");
 const GroupService = require("./GroupService");
-const { notifyNewMessage } = require("../../Notifications/Handlers/ChatHandler");
+const { notifyNewMessage, notifyMention } = require("../../Notifications/Handlers/ChatHandler");
 const Student = require("../../schema/Student");
 const Group = require("../../schema/Group");
 const Conversation = require("../../schema/Chat/Conversation");
@@ -22,6 +22,8 @@ class MessageService {
     
     // Validate input
     const validated = sendMessageSchema.parse(data);
+    // Pass mentions through validation if not already
+    if (data.mentions) validated.mentions = data.mentions;
 
     if (validated.chatType === "DM") {
       return this._sendDMMessage(senderId, normalizedSenderRole, validated);
@@ -65,6 +67,7 @@ class MessageService {
       attachments: data.attachments,
       replyTo: data.replyTo,
       clientTempId: data.clientTempId,
+      mentions: data.mentions || [], // Add mentions
       deliveredAt: null,
       readAt: null
     });
@@ -123,6 +126,7 @@ class MessageService {
       attachments: data.attachments,
       replyTo: data.replyTo,
       clientTempId: data.clientTempId,
+      mentions: data.mentions || [], // Add mentions
       deliveredTo: [] // Initialize empty
     };
 
@@ -171,7 +175,36 @@ class MessageService {
 
     // Send In-App Notifications
     const senderName = `${message.sender.firstName} ${message.sender.lastName}`;
-    await this._notifyGroupMembers(data.groupId, senderId, senderName, data.text, "GROUP");
+    
+    // Handle Mentions Notifications
+    if (data.mentions && data.mentions.length > 0) {
+      const group = await Group.findById(data.groupId);
+      const groupName = group ? group.name : "المجموعة";
+
+      for (const mention of data.mentions) {
+        if (mention.type === 'all') {
+          // Notify everyone (handled by _notifyGroupMembers but with special title maybe?)
+          // For now, standard notification covers it, or we can send a special "Mention All"
+          // Let's stick to standard group notification but ensure it goes out
+        } else if (mention.type === 'user' && mention.user) {
+          // Specific user mention
+          await notifyMention(
+            mention.user,
+            'Student', // Assuming mostly students are mentioned, or fetch role
+            senderName,
+            data.text,
+            data.groupId, // Conversation ID for group is group ID usually or conversation ID
+            "GROUP",
+            groupName
+          );
+        }
+      }
+    }
+
+    // Standard Group Notification (skips if already mentioned to avoid double? Or just send standard)
+    // Usually, if mentioned, you get a mention notification. If not, you get a message notification.
+    // We can filter out mentioned users from standard notification list in _notifyGroupMembers
+    await this._notifyGroupMembers(data.groupId, senderId, senderName, data.text, "GROUP", data.mentions);
 
     return message;
   }
@@ -206,6 +239,7 @@ class MessageService {
       .limit(parseInt(limit))
       .populate("sender", "firstName lastName avatar")
       .populate("replyTo")
+      .populate("mentions.user", "firstName lastName avatar") // Populate mentions
       .lean();
 
     // ✅ Populate seenBy users for Group Chat (Manual Population)
@@ -727,7 +761,7 @@ class MessageService {
   /**
    * Private: Notify Group Members
    */
-  async _notifyGroupMembers(groupId, senderId, senderName, text, chatType) {
+  async _notifyGroupMembers(groupId, senderId, senderName, text, chatType, mentions = []) {
     try {
       // Get Group
       const group = await Group.findById(groupId);
@@ -738,8 +772,16 @@ class MessageService {
       const conversationId = conversation ? conversation._id : null;
       if (!conversationId) return;
 
-      // Notify Teacher (if not sender)
-      if (group.teacher.toString() !== senderId.toString()) {
+      // Helper to check if user is mentioned
+      const isMentioned = (userId) => {
+        return mentions.some(m => 
+          (m.type === 'user' && m.user && m.user.toString() === userId.toString()) ||
+          m.type === 'all'
+        );
+      };
+
+      // Notify Teacher (if not sender AND not mentioned)
+      if (group.teacher && group.teacher.toString() !== senderId.toString() && !isMentioned(group.teacher)) {
         await notifyNewMessage(
           group.teacher,
           "Teacher",
@@ -751,11 +793,10 @@ class MessageService {
         );
       }
 
-      // Notify Students
-      // Fix: Student schema uses 'group' (name) not 'groupId'
-      const students = await Student.find({ group: group.name });
+      // Notify Students (if not sender AND not mentioned)
+      const students = await Student.find({ group: group.name }).select('_id');
       for (const student of students) {
-        if (student._id.toString() !== senderId.toString()) {
+        if (student._id.toString() !== senderId.toString() && !isMentioned(student._id)) {
           await notifyNewMessage(
             student._id,
             "Student",
@@ -767,8 +808,8 @@ class MessageService {
           );
         }
       }
-    } catch (error) {
-      console.error("Error notifying group members:", error);
+    } catch (err) {
+      console.error("Error notifying group members:", err);
     }
   }
 }

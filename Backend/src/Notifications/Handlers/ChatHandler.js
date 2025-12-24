@@ -39,7 +39,6 @@ const notifyNewMessage = async (recipientId, recipientModel, senderName, text, c
     const notification = await Notification.create(notificationData);
 
     // Send Real-time (Socket)
-    // This sends the "notification" event to the user's socket room
     if (global.io) {
       await sendRealTimeNotification(global.io, notification);
     } else {
@@ -52,6 +51,46 @@ const notifyNewMessage = async (recipientId, recipientModel, senderName, text, c
   }
 };
 
+/**
+ * Notify user about a mention
+ */
+const notifyMention = async (recipientId, recipientModel, senderName, text, conversationId, chatType, groupName) => {
+  try {
+    let title = `قام ${senderName} بذكرك`;
+    if (chatType === 'GROUP' && groupName) {
+      title = `قام ${senderName} بذكرك في ${groupName}`;
+    }
+
+    const message = text.length > 50 ? text.substring(0, 50) + "..." : text;
+    
+    const notificationData = {
+      recipient: recipientId,
+      recipientModel: recipientModel,
+      type: "mention", // New type
+      title: title,
+      message: message,
+      link: "/chat",
+      data: {
+        conversationId: conversationId.toString(),
+        chatType: chatType
+      },
+      isRead: false,
+      sentAt: new Date()
+    };
+
+    const notification = await Notification.create(notificationData);
+
+    if (global.io) {
+      await sendRealTimeNotification(global.io, notification);
+    }
+
+    return notification;
+  } catch (error) {
+    console.error("Error creating mention notification:", error);
+  }
+};
+
 module.exports = {
-  notifyNewMessage
+  notifyNewMessage,
+  notifyMention
 };

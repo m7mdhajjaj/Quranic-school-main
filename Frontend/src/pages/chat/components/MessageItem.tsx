@@ -378,8 +378,28 @@ const MessageItem: React.FC<MessageItemProps> = ({
               </div>
             ) : (
               <>
-                {/* Message text */}
-                <p className="whitespace-pre-wrap break-words leading-relaxed">{message.text}</p>
+                {/* Message text with mentions */}
+                <p className="whitespace-pre-wrap break-words leading-relaxed">
+                  {message.text.split(/(@[\u0600-\u06FFa-zA-Z0-9\s]+)/g).map((part: string, i: number) => {
+                    // Simple check if this part matches a mention in message.mentions
+                    // This is a basic rendering. For robust rendering, we'd need tokens in text.
+                    // But since we just stored text, we highlight anything starting with @ that matches a user
+                    const isMention = message.mentions?.some((m: any) => {
+                      if (m.type === 'all' && part.trim() === '@الجميع') return true;
+                      if (m.type === 'user' && m.user && part.trim() === `@${m.user.firstName} ${m.user.lastName}`) return true;
+                      return false;
+                    });
+
+                    if (isMention || part.trim() === '@الجميع') {
+                      return (
+                        <span key={i} className={`font-bold px-1 rounded ${isOwn ? 'bg-white/20' : 'bg-emerald-100 text-emerald-700'}`}>
+                          {part}
+                        </span>
+                      );
+                    }
+                    return part;
+                  })}
+                </p>
                 
                 <div className="flex items-center justify-end gap-2 mt-1 select-none">
                   {message.edited && (

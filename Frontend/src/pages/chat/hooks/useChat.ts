@@ -164,9 +164,12 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
   }, [onMessageEdited, updateMessage]);
 
   // Send message with optimistic update
-  const sendMessage = useCallback(async (text: string, attachments?: any[], replyTo?: string) => {
+  const sendMessage = useCallback(async (data: any | string, mentions: any[] = []) => {
     if (!user) return;
 
+    const text = typeof data === 'string' ? data : data.text;
+    const attachments = typeof data === 'string' ? [] : data.attachments;
+    const replyTo = typeof data === 'string' ? undefined : data.replyTo;
     const clientTempId = `temp_${Date.now()}_${Math.random()}`;
     
     // Create optimistic message
@@ -184,19 +187,21 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
       attachments,
       replyTo,
       createdAt: new Date().toISOString(),
-      _optimistic: true
+      _optimistic: true,
+      mentions // Add mentions
     };
 
     // Add to UI فوراً
     addOptimisticMessage(optimisticMessage);
 
     try {
-      const messageData: SendMessageInput = {
+      const messageData: SendMessageInput & { mentions?: any[] } = {
         chatType,
         text,
         attachments,
         replyTo,
         clientTempId,
+        mentions, // Send mentions
         ...(chatType === 'DM' ? { recipientId: targetId } : { groupId: targetId })
       };
 

@@ -9,6 +9,8 @@ import { Send, Reply, X, Loader2, MoreVertical, BellOff, Bell, PanelLeftClose, P
 import { DropdownMenu } from '../../../components/UI/DropdownMenu';
 import { showSuccessMessage, showErrorMessage } from '../../../utils/sweetalertUtils';
 import api from '../../../Api/api';
+import { useMentions } from '../../../hooks/useMentions';
+import { MentionDropdown } from './MentionDropdown';
 
 interface ChatWindowProps {
   chatType: 'DM' | 'GROUP';
@@ -67,6 +69,104 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
     jumpToMessage,
     handleMessageDeleted
   } = useChat(chatType, targetId);
+
+  // Mentions Hook
+  const [mentions, setMentions] = useState<any[]>([]);
+  const {
+    isOpen: isMentionOpen,
+    query: mentionQuery,
+    activeIndex: mentionActiveIndex,
+    users: mentionUsers,
+    position: mentionPosition,
+    triggerIndex: mentionTriggerIndex,
+    textareaRef,
+    handleChange: handleMentionChange,
+    handleKeyDown: handleMentionKeyDown,
+    closeMentions
+  } = useMentions();
+
+  const handleSelectMention = (user: any | 'all') => {
+    if (mentionTriggerIndex === null) return;
+
+    const textBefore = inputText.slice(0, mentionTriggerIndex);
+    const textAfter = inputText.slice(textareaRef.current?.selectionStart || 0);
+    
+    let mentionText = '';
+    let newMention = null;
+
+    if (user === 'all') {
+      mentionText = '@الجميع ';
+      newMention = { type: 'all' };
+    } else {
+      mentionText = `@${user.firstName} ${user.lastName} `;
+      newMention = { type: 'user', user: user._id };
+    }
+
+    const newText = textBefore + mentionText + textAfter;
+    handleInputTextChange(newText);
+    
+    // Add to mentions list to be sent with message
+    setMentions(prev => [...prev, newMention]);
+    
+    closeMentions();
+    
+    // Restore focus and cursor position
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        const newCursorPos = textBefore.length + mentionText.length;
+        textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
+      }
+    }, 0);
+  };
+
+  // Override handleSend to include mentions
+  const handleSendWithMentions = async () => {
+    if (!inputText.trim() && !file) return;
+    
+    // Filter mentions that are actually still in the text
+    const validMentions = mentions.filter(m => {
+      if (m.type === 'all') return inputText.includes('@الجميع');
+      // For users, it's harder to verify perfectly without unique IDs in text, 
+      // but we can check if the name exists. 
+      // Ideally, use a unique token in text like @[John Doe](userId) but user asked for simple text.
+      // We'll send all collected mentions and let backend validate/filter if needed.
+      return true; 
+    });
+
+    await handleSend(validMentions);
+    setMentions([]); // Clear mentions after send
+  };
+
+  // Combined KeyDown Handler
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (isMentionOpen) {
+      const handled = handleMentionKeyDown(e);
+      if (handled) {
+        // If Enter was pressed in mention list
+        if (e.key === 'Enter') {
+           const selected = mentionUsers.length > 0 
+             ? (mentionActiveIndex === 0 ? { _id: 'all', firstName: 'الجميع', lastName: '(All)' } : mentionUsers[mentionActiveIndex - 1])
+             : (mentionActiveIndex === 0 ? { _id: 'all', firstName: 'الجميع', lastName: '(All)' } : null);
+           
+           // Adjust index logic because "All" is first
+           const allOption = { _id: 'all', firstName: 'الجميع', lastName: '(All)' };
+           const list = [allOption, ...mentionUsers];
+           const item = list[mentionActiveIndex];
+           
+           if (item) handleSelectMention(item._id === 'all' ? 'all' : item);
+        }
+        return;
+      }
+    }
+    handleKeyDown(e);
+  };
+
+  // Combined Change Handler
+  const onInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    handleInputTextChange(e.target.value);
+    handleMentionChange(e);
+  };
   
   // Intersection Observer for Read Receipts
   useEffect(() => {
@@ -455,13 +555,21 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
       )}
 
       {/* Input */}
-      <div className="p-4 bg-white border-t border-gray-200 flex-shrink-0">
+      <div className="p-4 bg-white border-t border-gray-200 flex-shrink-0 relative">
+        <MentionDropdown 
+          isOpen={isMentionOpen}
+          users={mentionUsers}
+          activeIndex={mentionActiveIndex}
+          position={mentionPosition}
+          onSelect={handleSelectMention}
+        />
         <div className="flex gap-2.5 items-end">
           <div className="flex-1 min-w-0">
             <textarea
+              ref={textareaRef}
               value={inputText}
-              onChange={(e) => handleInputTextChange(e.target.value)}
-              onKeyDown={handleKeyDown}
+              onChange={onInputChange}
+              onKeyDown={onKeyDown}
               placeholder="اكتب رسالة..."
               disabled={isSending}
               rows={1}
@@ -470,7 +578,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
             />
           </div>
           <Button
-            onClick={handleSend}
+            onClick={handleSendWithMentions}
             disabled={!canSend || isSending}
             variant="primary"
             size="lg"
