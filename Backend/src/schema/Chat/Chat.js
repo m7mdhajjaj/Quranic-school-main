@@ -89,13 +89,13 @@ const chatSchema = new mongoose.Schema(
     deliveredTo: [
       {
         userId: { type: mongoose.Schema.Types.ObjectId, required: true, index: true },
-        at: { type: Date, required: true },
+        deliveredAt: { type: Date, required: true },
       },
     ],
     seenBy: [
       {
         userId: { type: mongoose.Schema.Types.ObjectId, required: true, index: true },
-        at: { type: Date, required: true },
+        seenAt: { type: Date, required: true },
       },
     ],
 

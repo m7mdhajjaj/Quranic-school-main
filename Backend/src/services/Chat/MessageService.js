@@ -81,7 +81,7 @@ class MessageService {
     );
 
     // Emit Socket Events
-    this._emitDMEvents(senderId, data.recipientId, message, data.clientTempId);
+    this._emitChatEvents(senderId, senderRole, message, data);
 
     // Send In-App Notification
     const senderName = `${message.sender.firstName} ${message.sender.lastName}`;
@@ -110,8 +110,11 @@ class MessageService {
       throw new Error("Not authorized to send to this group");
     }
 
+    // Ensure conversation exists
+    await GroupService.ensureGroupConversationExists(data.groupId);
+
     // Create message
-    const message = await Chat.create({
+    const messageData = {
       chatType: "GROUP",
       sender: senderId,
       senderModel: senderRole,
@@ -120,14 +123,51 @@ class MessageService {
       attachments: data.attachments,
       replyTo: data.replyTo,
       clientTempId: data.clientTempId,
-    });
+      deliveredTo: [] // Initialize empty
+    };
+
+    // ✅ Check for Online Members (for immediate "Delivered" status)
+    try {
+      // Get all students in group + teacher
+      const group = await Group.findById(data.groupId);
+      if (group) {
+        const students = await Student.find({ group: group.name }).select('_id');
+        const memberIds = students.map(s => s._id.toString());
+        if (group.teacher) memberIds.push(group.teacher.toString());
+
+        // Filter out sender
+        const recipients = memberIds.filter(id => id !== senderId.toString());
+        
+        // Check who is online
+        const now = new Date();
+        recipients.forEach(recipientId => {
+          if (global.isUserOnline && global.isUserOnline(recipientId)) {
+            messageData.deliveredTo.push({
+              userId: recipientId,
+              deliveredAt: now
+            });
+          }
+        });
+      }
+    } catch (err) {
+      console.error("Error checking online status for group message:", err);
+    }
+
+    const message = await Chat.create(messageData);
 
     // Populate sender info
     await message.populate("sender", "firstName lastName avatar");
     await message.populate("replyTo");
 
+    // Update conversation
+    await ConversationService.updateGroupConversationAfterMessage(
+      data.groupId,
+      message._id,
+      senderId
+    );
+
     // Emit to Group Room
-    this._emitGroupEvents(senderId, data.groupId, message, data.clientTempId);
+    this._emitChatEvents(senderId, senderRole, message, data);
 
     // Send In-App Notifications
     const senderName = `${message.sender.firstName} ${message.sender.lastName}`;
@@ -161,12 +201,49 @@ class MessageService {
       filter.createdAt = { $lt: new Date(before) };
     }
 
-    const messages = await Chat.find(filter)
+    let messages = await Chat.find(filter)
       .sort({ createdAt: -1 })
       .limit(parseInt(limit))
       .populate("sender", "firstName lastName avatar")
       .populate("replyTo")
       .lean();
+
+    // ✅ Populate seenBy users for Group Chat (Manual Population)
+    if (chatType === "GROUP" && messages.length > 0) {
+      const userIds = new Set();
+      messages.forEach(msg => {
+        if (msg.seenBy) {
+          msg.seenBy.forEach(s => {
+            if (s.userId) userIds.add(s.userId.toString());
+          });
+        }
+      });
+
+      if (userIds.size > 0) {
+        const ids = Array.from(userIds);
+        const Teacher = require("../../schema/Teacher");
+        const Admin = require("../../schema/Admin");
+        
+        const [students, teachers, admins] = await Promise.all([
+          Student.find({ _id: { $in: ids } }).select("firstName lastName avatar").lean(),
+          Teacher.find({ _id: { $in: ids } }).select("firstName lastName avatar").lean(),
+          Admin.find({ _id: { $in: ids } }).select("firstName lastName avatar").lean()
+        ]);
+
+        const userMap = new Map();
+        [...students, ...teachers, ...admins].forEach(u => userMap.set(u._id.toString(), u));
+
+        messages.forEach(msg => {
+          if (msg.seenBy) {
+            msg.seenBy.forEach(s => {
+              if (s.userId) {
+                s.user = userMap.get(s.userId.toString());
+              }
+            });
+          }
+        });
+      }
+    }
 
     return messages.reverse();
   }
@@ -211,16 +288,18 @@ class MessageService {
       throw new Error("Message not found");
     }
 
+    const now = new Date();
+
     if (message.chatType === "DM") {
       if (message.recipient.toString() === userId.toString() && !message.deliveredAt) {
-        message.deliveredAt = new Date();
+        message.deliveredAt = now;
         await message.save();
         
         // Notify sender
         if (global.io) {
           global.io.to(message.sender.toString()).emit("message:delivered", {
             messageId: message._id,
-            deliveredAt: message.deliveredAt
+            deliveredAt: now
           });
         }
       }
@@ -230,8 +309,18 @@ class MessageService {
       );
       
       if (!alreadyDelivered) {
-        message.deliveredTo.push({ userId, deliveredAt: new Date() });
+        // ✅ Fix: Use 'deliveredAt' to match Schema
+        message.deliveredTo.push({ userId, deliveredAt: now });
         await message.save();
+
+        // ✅ Notify Group (Real-time delivery status)
+        if (global.io) {
+          global.io.to(`group:${message.groupId}`).emit("message:delivered", {
+            messageId: message._id,
+            userId: userId,
+            deliveredAt: now
+          });
+        }
       }
     }
 
@@ -247,11 +336,13 @@ class MessageService {
       throw new Error("Message not found");
     }
 
+    const now = new Date();
+
     if (message.chatType === "DM") {
       if (message.recipient.toString() === userId.toString() && !message.readAt) {
-        message.readAt = new Date();
+        message.readAt = now;
         if (!message.deliveredAt) {
-          message.deliveredAt = new Date();
+          message.deliveredAt = now;
         }
         await message.save();
         
@@ -262,7 +353,7 @@ class MessageService {
         if (global.io) {
           global.io.to(message.sender.toString()).emit("message:read", {
             messageId: message._id,
-            readAt: message.readAt
+            readAt: now
           });
         }
       }
@@ -272,18 +363,50 @@ class MessageService {
       );
       
       if (!alreadySeen) {
-        message.seenBy.push({ userId, seenAt: new Date() });
+        // ✅ Fix: Use 'seenAt' to match Schema
+        message.seenBy.push({ userId, seenAt: now });
+        
+        // Also mark as delivered if not already
         if (!message.deliveredTo.find(d => d.userId.toString() === userId.toString())) {
-          message.deliveredTo.push({ userId, deliveredAt: new Date() });
+          message.deliveredTo.push({ userId, deliveredAt: now });
         }
+        
         await message.save();
         
         // Reset unread count for group
         await ConversationService.resetUnreadCount(userId, message.chatType, message.groupId);
+
+        // ✅ Notify Group (Real-time read status)
+        // We need to send user details for the avatar
+        const userModel = await this._getUserModel(userId);
+        const user = await userModel.findById(userId).select("firstName lastName avatar");
+
+        if (global.io) {
+          global.io.to(`group:${message.groupId}`).emit("message:read", {
+            messageId: message._id,
+            userId: userId,
+            seenAt: now,
+            user: user // Send user details for avatar display
+          });
+        }
       }
     }
 
     return message;
+  }
+
+  async _getUserModel(userId) {
+    // Helper to find user model (Student, Teacher, Admin)
+    // This is a bit of a hack, ideally we know the role. 
+    // But for now we can try to find in each collection or pass role.
+    // Since we don't have role here easily without querying, let's try:
+    const Student = require("../../schema/Student/Student");
+    const Teacher = require("../../schema/Teacher");
+    const Admin = require("../../schema/Admin");
+
+    if (await Student.exists({ _id: userId })) return Student;
+    if (await Teacher.exists({ _id: userId })) return Teacher;
+    return Admin;
   }
 
   /**
@@ -502,66 +625,66 @@ class MessageService {
   }
 
   /**
-   * Private: Emit DM Socket Events
+   * Private: Emit Chat Socket Events (General)
    */
-  _emitDMEvents(senderId, recipientId, message, clientTempId) {
+  _emitChatEvents(senderId, senderRole, message, data) {
     if (!global.io) return;
 
-    // Notify recipient
-    global.io.to(recipientId.toString()).emit("message:new", {
-      ...message.toObject(),
-      chatType: "DM",
-      from: senderId.toString()
-    });
-    
-    // Confirm to sender
+    const { chatType, clientTempId } = data;
+    const messageObj = message.toObject();
+
+    // 1. Confirm to Sender (Always)
     global.io.to(senderId.toString()).emit("message:sent", { 
       tempId: clientTempId, 
-      message: message.toObject()
+      message: messageObj
     });
-    
-    // ✅ Emit conversation update to both users
-    global.io.to(recipientId.toString()).emit("conversation:updated", {
-      chatType: "DM",
-      targetId: senderId.toString(),
-      lastMessage: message.toObject(),
-      timestamp: message.createdAt
-    });
-    
-    global.io.to(senderId.toString()).emit("conversation:updated", {
-      chatType: "DM",
-      targetId: recipientId.toString(),
-      lastMessage: message.toObject(),
-      timestamp: message.createdAt
-    });
-  }
 
-  /**
-   * Private: Emit Group Socket Events
-   */
-  _emitGroupEvents(senderId, groupId, message, clientTempId) {
-    if (!global.io) return;
+    // 2. Broadcast Message & Update Conversation
+    if (chatType === "DM") {
+      const recipientId = data.recipientId;
+      
+      // Notify Recipient
+      global.io.to(recipientId.toString()).emit("message:new", {
+        ...messageObj,
+        chatType: "DM",
+        from: senderId.toString()
+      });
 
-    // Broadcast to group
-    global.io.to(`group:${groupId}`).emit("message:new", {
-      ...message.toObject(),
-      chatType: "GROUP",
-      from: senderId.toString()
-    });
-    
-    // Confirm to sender
-    global.io.to(senderId.toString()).emit("message:sent", { 
-      tempId: clientTempId, 
-      message: message.toObject()
-    });
-    
-    // ✅ Emit conversation update to group members
-    global.io.to(`group:${groupId}`).emit("conversation:updated", {
-      chatType: "GROUP",
-      targetId: groupId.toString(),
-      lastMessage: message.toObject(),
-      timestamp: message.createdAt
-    });
+      // Update Conversation (Recipient)
+      global.io.to(recipientId.toString()).emit("conversation:updated", {
+        chatType: "DM",
+        targetId: senderId.toString(),
+        lastMessage: messageObj,
+        timestamp: message.createdAt
+      });
+
+      // Update Conversation (Sender)
+      global.io.to(senderId.toString()).emit("conversation:updated", {
+        chatType: "DM",
+        targetId: recipientId.toString(),
+        lastMessage: messageObj,
+        timestamp: message.createdAt
+      });
+
+    } else if (chatType === "GROUP") {
+      const groupId = data.groupId;
+      const room = `group:${groupId}`;
+
+      // Broadcast to Group
+      global.io.to(room).emit("message:new", {
+        ...messageObj,
+        chatType: "GROUP",
+        from: senderId.toString()
+      });
+
+      // Update Conversation (Group Members)
+      global.io.to(room).emit("conversation:updated", {
+        chatType: "GROUP",
+        targetId: groupId.toString(),
+        lastMessage: messageObj,
+        timestamp: message.createdAt
+      });
+    }
   }
 
   /**
@@ -623,12 +746,14 @@ class MessageService {
           senderName,
           text,
           conversationId,
-          chatType
+          chatType,
+          group.name
         );
       }
 
       // Notify Students
-      const students = await Student.find({ groupId: groupId });
+      // Fix: Student schema uses 'group' (name) not 'groupId'
+      const students = await Student.find({ group: group.name });
       for (const student of students) {
         if (student._id.toString() !== senderId.toString()) {
           await notifyNewMessage(
@@ -637,7 +762,8 @@ class MessageService {
             senderName,
             text,
             conversationId,
-            chatType
+            chatType,
+            group.name
           );
         }
       }

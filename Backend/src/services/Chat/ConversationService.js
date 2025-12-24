@@ -65,6 +65,27 @@ class ConversationService {
   }
 
   /**
+   * Update Group Conversation After Message
+   */
+  async updateGroupConversationAfterMessage(groupId, messageId, senderId) {
+    const conversation = await Conversation.findOne({ type: 'GROUP', groupId: groupId });
+    if (!conversation) return;
+
+    conversation.lastMessage = messageId;
+    conversation.updatedAt = new Date();
+    conversation.deletedFor = []; // Unhide for everyone
+
+    // Increment unread for all participants EXCEPT sender
+    conversation.unreadCounts.forEach(entry => {
+      if (entry.userId.toString() !== senderId.toString()) {
+        entry.count += 1;
+      }
+    });
+
+    await conversation.save();
+  }
+
+  /**
    * Mute Conversation
    */
   async muteConversation(userId, chatType, targetId, duration) {

@@ -3,6 +3,7 @@ import { useChatSocket } from './useChatSocket';
 import { useChatMessages } from './useChatMessages';
 import { useAuth } from '../../../hooks/useAuth';
 import type { SendMessageInput } from '../../../Validation/chatValidation';
+import notificationSound from '../../../assets/sounds/notification.mp3';
 
 /**
  * Hook شامل للشات مع Real-time updates
@@ -18,6 +19,7 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
     addMessage, 
     addOptimisticMessage,
     updateMessage,
+    updateGroupMessageStatus,
     removeMessage,
     handleMessageDeleted,
     jumpToMessage
@@ -53,9 +55,19 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
   useEffect(() => {
     const cleanup = onMessage((message: any) => {
       // Mark as delivered فوراً
-      if (message.chatType === 'DM' && message.recipient === user?._id) {
-        markDelivered(message._id);
+      const isFromMe = message.sender?._id === user?._id;
+      
+      if (!isFromMe) {
+        // Sound is handled globally by useNotificationsSocket to prevent double sound
+        
+        if (message.chatType === 'DM' && message.recipient === user?._id) {
+          markDelivered(message._id);
+        } else if (message.chatType === 'GROUP') {
+          // For groups, we also mark as delivered if we receive it
+          markDelivered(message._id);
+        }
       }
+      
       addMessage(message);
     });
     return cleanup;
@@ -74,20 +86,32 @@ export const useChat = (chatType: 'DM' | 'GROUP', targetId: string) => {
   // Listen for delivery status
   useEffect(() => {
     const cleanup = onMessageDelivered((data: any) => {
-      const { messageId, deliveredAt } = data;
-      updateMessage(messageId, { deliveredAt });
+      const { messageId, deliveredAt, userId } = data;
+      if (userId) {
+        // Group Chat
+        updateGroupMessageStatus(messageId, userId, 'delivered', deliveredAt);
+      } else {
+        // DM
+        updateMessage(messageId, { deliveredAt });
+      }
     });
     return cleanup;
-  }, [onMessageDelivered, updateMessage]);
+  }, [onMessageDelivered, updateMessage, updateGroupMessageStatus]);
 
   // Listen for read status
   useEffect(() => {
     const cleanup = onMessageRead((data: any) => {
-      const { messageId, readAt } = data;
-      updateMessage(messageId, { readAt });
+      const { messageId, readAt, seenAt, userId, user } = data;
+      if (userId) {
+        // Group Chat
+        updateGroupMessageStatus(messageId, userId, 'read', seenAt || readAt, user);
+      } else {
+        // DM
+        updateMessage(messageId, { readAt });
+      }
     });
     return cleanup;
-  }, [onMessageRead, updateMessage]);
+  }, [onMessageRead, updateMessage, updateGroupMessageStatus]);
 
   // Listen for typing indicators
   useEffect(() => {

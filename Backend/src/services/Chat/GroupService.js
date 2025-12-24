@@ -126,6 +126,19 @@ class GroupService {
   }
 
   /**
+   * Ensure Group Conversation Exists
+   */
+  async ensureGroupConversationExists(groupId) {
+    const existing = await Conversation.findOne({ type: 'GROUP', groupId: groupId });
+    if (existing) return existing;
+
+    const group = await Group.findById(groupId);
+    if (!group) return null;
+
+    return this._createGroupConversation(group, group.teacher);
+  }
+
+  /**
    * Private: Create Group Conversation
    */
   async _createGroupConversation(group, teacherId) {

@@ -69,6 +69,41 @@ export const useChatMessages = (chatType: 'DM' | 'GROUP', targetId: string) => {
     ));
   }, []);
 
+  // ✅ Update Group Message Status (Push to arrays)
+  const updateGroupMessageStatus = useCallback((messageId: string, userId: string, type: 'delivered' | 'read', timestamp: string, user?: any) => {
+    setMessages(prev => prev.map(msg => {
+      if (msg._id !== messageId) return msg;
+
+      if (type === 'delivered') {
+        const exists = msg.deliveredTo?.some((d: any) => d.userId === userId);
+        if (exists) return msg;
+        return {
+          ...msg,
+          deliveredTo: [...(msg.deliveredTo || []), { userId, deliveredAt: timestamp }]
+        };
+      } else if (type === 'read') {
+        const exists = msg.seenBy?.some((s: any) => s.userId === userId);
+        if (exists) return msg;
+        
+        // If read, it's also delivered
+        const deliveredExists = msg.deliveredTo?.some((d: any) => d.userId === userId);
+        const newDeliveredTo = deliveredExists 
+          ? msg.deliveredTo 
+          : [...(msg.deliveredTo || []), { userId, deliveredAt: timestamp }];
+
+        // Add user info if provided (for avatar display)
+        const seenEntry = { userId, seenAt: timestamp, user };
+
+        return {
+          ...msg,
+          seenBy: [...(msg.seenBy || []), seenEntry],
+          deliveredTo: newDeliveredTo
+        };
+      }
+      return msg;
+    }));
+  }, []);
+
   // Remove failed message
   const removeMessage = useCallback((clientTempId: string) => {
     setMessages(prev => prev.filter(m => m.clientTempId !== clientTempId));
@@ -116,6 +151,7 @@ export const useChatMessages = (chatType: 'DM' | 'GROUP', targetId: string) => {
     addMessage, 
     addOptimisticMessage,
     updateMessage,
+    updateGroupMessageStatus,
     removeMessage,
     handleMessageDeleted,
     jumpToMessage

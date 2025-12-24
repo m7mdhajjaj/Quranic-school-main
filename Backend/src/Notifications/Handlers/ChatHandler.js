@@ -9,10 +9,15 @@ const { sendRealTimeNotification } = require("../Core/SocketSender");
  * @param {string} text - The message text
  * @param {string} conversationId - The ID of the conversation
  * @param {string} chatType - The type of chat (DM or GROUP)
+ * @param {string} [groupName] - The name of the group (optional, for GROUP chat)
  */
-const notifyNewMessage = async (recipientId, recipientModel, senderName, text, conversationId, chatType) => {
+const notifyNewMessage = async (recipientId, recipientModel, senderName, text, conversationId, chatType, groupName) => {
   try {
-    const title = `رسالة جديدة من ${senderName}`;
+    let title = `رسالة جديدة من ${senderName}`;
+    if (chatType === 'GROUP' && groupName) {
+      title = `${senderName} في ${groupName}`;
+    }
+
     const message = text.length > 50 ? text.substring(0, 50) + "..." : text;
     
     const notificationData = {

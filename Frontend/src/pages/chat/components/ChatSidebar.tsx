@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Avatar } from '../../../components/Avatar';
 import { EmptyState, LoadingSpinner, Badge } from '../../../components/UI';
-import { MessageSquare, Users, Search, Trash2 } from 'lucide-react';
+import { MessageSquare, Users, Search } from 'lucide-react';
 import type { Conversation } from '../types';
 import type { Contact, Group } from '../hooks/useChatContacts';
-import api from '../../../Api/api';
-import { showConfirmMessage, showSuccessMessage, showErrorMessage } from '../../../utils/sweetalertUtils';
+import ConversationItem from './ConversationItem';
 
 interface ChatSidebarProps {
   conversations: Conversation[];
@@ -36,25 +35,14 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
 }) => {
   const [view, setView] = useState<'conversations' | 'contacts'>('conversations');
 
-  const handleDeleteConversation = async (e: React.MouseEvent, conversationId: string) => {
+  const handleDeleteConversation = useCallback(async (e: React.MouseEvent, conversationId: string) => {
     e.stopPropagation();
-    
     try {
-      const confirmed = await showConfirmMessage(
-        "حذف المحادثة؟",
-        "سيتم حذف المحادثة وجميع الرسائل نهائياً من قاعدة البيانات. هل أنت متأكد؟",
-        "نعم، احذف",
-        "إلغاء"
-      );
-
-      if (confirmed.isConfirmed) {
-        await onDeleteConversation(conversationId);
-        showSuccessMessage("تم الحذف", "تم حذف المحادثة بنجاح");
-      }
+      await onDeleteConversation(conversationId);
     } catch (error: any) {
-      showErrorMessage("خطأ", error.response?.data?.message || "فشل حذف المحادثة");
+      console.error("Failed to delete conversation", error);
     }
-  };
+  }, [onDeleteConversation]);
 
   if (loading) {
     return (
@@ -63,29 +51,6 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
       </div>
     );
   }
-
-  const getConversationDisplay = (conv: Conversation) => {
-    if (conv.type === 'GROUP' && conv.groupId) {
-      return {
-        name: conv.groupId.name,
-        subtitle: 'محادثة جماعية',
-        avatar: conv.groupId.image?.url || null,
-        userId: conv.groupId._id
-      };
-    } else {
-      // DM: Get the other participant
-      const otherParticipant = conv.participants.find(p => p.userId._id !== currentUserId);
-      if (otherParticipant) {
-        return {
-          name: `${otherParticipant.userId.firstName} ${otherParticipant.userId.lastName}`,
-          subtitle: otherParticipant.userModel === 'Student' ? 'طالب' : otherParticipant.userModel === 'Teacher' ? 'معلم' : 'مدير',
-          avatar: otherParticipant.userId.avatar?.url,
-          userId: otherParticipant.userId._id
-        };
-      }
-    }
-    return { name: 'محادثة', subtitle: '', avatar: null, userId: '' };
-  };
 
   // Helper to check if contact is selected
   const isContactSelected = (contactId: string) => {
@@ -169,55 +134,16 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
           ) : (
             Array.from(new Map(conversations.map(conv => [conv._id, conv])).values())
               .filter(conv => conv && conv._id) // Filter out invalid conversations
-              .map(conv => {
-              const display = getConversationDisplay(conv);
-              return (
-                <div 
+              .map(conv => (
+                <ConversationItem
                   key={conv._id}
-                  onClick={() => onSelect(conv)}
-                  className={`flex items-center p-3.5 mx-2 my-1 rounded-lg cursor-pointer transition-all duration-200 relative group ${
-                    selectedId === conv._id
-                      ? 'bg-emerald-50 shadow-sm border-r-4 border-emerald-500'
-                      : 'hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="ml-3">
-                    <Avatar 
-                      userId={display.userId}
-                      src={display.avatar || undefined}
-                      userName={display.name}
-                      size="md"
-                      showStatus={conv.type === 'DM'}
-                      statusSize="sm"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-medium">{display.name}</div>
-                    <div className="text-xs text-gray-500 truncate">
-                      {conv.lastMessage?.text || display.subtitle}
-                    </div>
-                  </div>
-
-                  {/* Delete Button - Shows on Hover */}
-                  <button
-                    onClick={(e) => handleDeleteConversation(e, conv._id)}
-                    className="absolute left-2 opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all duration-200 z-10"
-                    title="حذف المحادثة"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-
-                  {conv.unreadCount > 0 && (
-                    <Badge 
-                      variant="danger"
-                      className="absolute top-2 left-2 min-w-[20px] h-5 flex items-center justify-center animate-pulse"
-                    >
-                      {conv.unreadCount > 9 ? '9+' : conv.unreadCount}
-                    </Badge>
-                  )}
-                </div>
-              );
-            })
+                  conversation={conv}
+                  isSelected={selectedId === conv._id}
+                  currentUserId={currentUserId}
+                  onSelect={onSelect}
+                  onDelete={handleDeleteConversation}
+                />
+              ))
           )
         ) : (
           // Show contacts & groups to start new chat

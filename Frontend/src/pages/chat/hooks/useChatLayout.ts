@@ -43,7 +43,7 @@ export const useChatLayout = () => {
     loading: conversationsLoading, 
     resetUnreadCount, 
     fetchConversations,
-    deleteConversation 
+    deleteConversation: deleteConversationApi 
   } = useConversations(debouncedSearchTerm);
   const { contacts, groups, loading: contactsLoading } = useChatContacts(debouncedSearchTerm);
   const { initializeGroupConversations } = useGroupConversations();
@@ -214,6 +214,19 @@ export const useChatLayout = () => {
     
     return null;
   }, [selectedConversation, user]);
+
+  const deleteConversation = useCallback(async (conversationId: string) => {
+    try {
+      // If deleting the currently selected conversation, deselect it
+      if (selectedConversation && selectedConversation._id === conversationId) {
+        setSelectedConversation(null);
+      }
+      
+      await deleteConversationApi(conversationId);
+    } catch (error) {
+      console.error("Failed to delete conversation", error);
+    }
+  }, [selectedConversation, deleteConversationApi]);
 
   return {
     // Data

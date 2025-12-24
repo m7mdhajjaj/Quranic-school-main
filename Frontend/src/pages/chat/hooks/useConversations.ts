@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../../../Api/api';
 import { useChatSocket } from './useChatSocket';
 import { useAuth } from '../../../hooks/useAuth';
@@ -8,10 +8,16 @@ export type { Conversation };
 
 export const useConversations = (search?: string) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const conversationsRef = useRef(conversations);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { onMessage, onConversationUpdated, onMessageDeleted } = useChatSocket();
+  const { onMessage, onConversationUpdated, onMessageDeleted, joinGroup } = useChatSocket();
   const { user } = useAuth();
+
+  // Keep ref in sync
+  useEffect(() => {
+    conversationsRef.current = conversations;
+  }, [conversations]);
 
   const fetchConversations = useCallback(async () => {
     setLoading(true);
@@ -21,12 +27,19 @@ export const useConversations = (search?: string) => {
       });
       
       setConversations(res.data);
+
+      // ✅ Join all group rooms
+      res.data.forEach((conv: Conversation) => {
+        if (conv.type === 'GROUP' && conv.groupId) {
+          joinGroup(conv.groupId._id);
+        }
+      });
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, [search, joinGroup]);
 
   useEffect(() => {
     fetchConversations();
@@ -103,7 +116,7 @@ export const useConversations = (search?: string) => {
 
   const deleteConversation = useCallback(async (conversationId: string) => {
     // Optimistic Update
-    const previousConversations = [...conversations];
+    const previousConversations = conversationsRef.current;
     setConversations(prev => prev.filter(c => c._id !== conversationId));
 
     try {
@@ -114,7 +127,7 @@ export const useConversations = (search?: string) => {
       setConversations(previousConversations);
       throw err; // Re-throw to let UI handle error message
     }
-  }, [conversations]);
+  }, []);
 
   const resetUnreadCount = useCallback(async (chatType: 'DM' | 'GROUP', targetId: string) => {
     try {
@@ -154,16 +167,18 @@ export const useConversations = (search?: string) => {
         // Only increment unread if message is not from current user
         const isFromCurrentUser = message.sender?._id === user?._id;
         
-        updated[index] = {
+        // Create new object to trigger re-render
+        const updatedConv = {
           ...updated[index],
           lastMessage: message,
           updatedAt: message.createdAt,
-          unreadCount: isFromCurrentUser ? updated[index].unreadCount : updated[index].unreadCount + 1
+          unreadCount: isFromCurrentUser ? updated[index].unreadCount : (updated[index].unreadCount || 0) + 1
         };
         
-        // Move to top
-        const [item] = updated.splice(index, 1);
-        updated.unshift(item);
+        // Remove from old position
+        updated.splice(index, 1);
+        // Add to top
+        updated.unshift(updatedConv);
       } else {
         // New conversation - fetch full conversations list
         fetchConversations();

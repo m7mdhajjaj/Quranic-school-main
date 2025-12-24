@@ -68,6 +68,42 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
     handleMessageDeleted
   } = useChat(chatType, targetId);
   
+  // Intersection Observer for Read Receipts
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const messageId = entry.target.getAttribute('data-message-id');
+            if (messageId) {
+              const message = messages.find(m => m._id === messageId);
+              if (message && message.sender?._id !== user?._id) {
+                // Check if already read by me
+                // For DM: readAt
+                // For Group: seenBy array
+                const isRead = chatType === 'DM' 
+                  ? !!message.readAt 
+                  : message.seenBy?.some((s: any) => s.userId === user?._id);
+                
+                if (!isRead) {
+                  markMessageAsRead(messageId);
+                }
+              }
+            }
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    const elements = document.querySelectorAll('.message-observer-target');
+    elements.forEach((el) => observer.observe(el));
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [messages, markMessageAsRead, user?._id, chatType]);
+
   // Message operations (reply, sending state)
   const { replyTo, setReplyTo, clearReply, isSending, setIsSending } = useMessageOperations();
   
@@ -178,12 +214,20 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
 
   // Mark unread messages as read
   useEffect(() => {
-    if (!messages.length || !user || chatType !== 'DM') return;
+    if (!messages.length || !user) return;
 
     const unreadMessages = messages.filter((msg: any) => {
       const isFromMe = msg.sender?._id === user._id;
       if (isFromMe) return false;
-      return !msg.readAt && !markingReadRef.current.has(msg._id);
+
+      // Check if already read by me
+      if (chatType === 'DM') {
+        return !msg.readAt && !markingReadRef.current.has(msg._id);
+      } else {
+        // Group: Check if I am in seenBy array
+        const seenByMe = msg.seenBy?.some((s: any) => s.userId === user._id);
+        return !seenByMe && !markingReadRef.current.has(msg._id);
+      }
     });
 
     if (unreadMessages.length > 0) {
@@ -374,14 +418,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
                   </span>
                 </div>
               )}
-              <MessageItem 
-                message={msg}
-                isOwn={msg.sender?._id === user?._id}
-                onReply={setReplyTo}
-                onReplyClick={handleReplyClick}
-                onDelete={handleMessageDeleted}
-                onEdit={editMessage}
-              />
+              <div data-message-id={msg._id} className="message-observer-target">
+                <MessageItem 
+                  message={msg}
+                  isOwn={msg.sender?._id === user?._id}
+                  onReply={setReplyTo}
+                  onReplyClick={handleReplyClick}
+                  onDelete={handleMessageDeleted}
+                  onEdit={editMessage}
+                />
+              </div>
             </React.Fragment>
           );
         })}
