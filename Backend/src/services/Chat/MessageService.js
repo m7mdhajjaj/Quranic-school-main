@@ -10,6 +10,8 @@ const ConversationService = require("./ConversationService");
 const GroupService = require("./GroupService");
 const { notifyNewMessage, notifyMention } = require("../../Notifications/Handlers/ChatHandler");
 const Student = require("../../schema/Student");
+const Teacher = require("../../schema/Teacher");
+const Admin = require("../../schema/Admin");
 const Group = require("../../schema/Group");
 const Conversation = require("../../schema/Chat/Conversation");
 
@@ -116,6 +118,28 @@ class MessageService {
     // Ensure conversation exists
     await GroupService.ensureGroupConversationExists(data.groupId);
 
+    // Process Mentions
+    const processedMentions = [];
+    if (data.mentions && Array.isArray(data.mentions)) {
+      for (const m of data.mentions) {
+        if (m.type === 'all') {
+          processedMentions.push({ type: 'all' });
+        } else if (m.type === 'user' && m.user) {
+          const userId = typeof m.user === 'object' ? m.user._id : m.user;
+          
+          let userModel = 'Student';
+          if (await Teacher.exists({ _id: userId })) userModel = 'Teacher';
+          else if (await Admin.exists({ _id: userId })) userModel = 'Admin';
+
+          processedMentions.push({
+            type: 'user',
+            user: userId,
+            userModel: userModel
+          });
+        }
+      }
+    }
+
     // Create message
     const messageData = {
       chatType: "GROUP",
@@ -126,7 +150,7 @@ class MessageService {
       attachments: data.attachments,
       replyTo: data.replyTo,
       clientTempId: data.clientTempId,
-      mentions: data.mentions || [], // Add mentions
+      mentions: processedMentions,
       deliveredTo: [] // Initialize empty
     };
 
@@ -148,7 +172,7 @@ class MessageService {
           if (global.isUserOnline && global.isUserOnline(recipientId)) {
             messageData.deliveredTo.push({
               userId: recipientId,
-              deliveredAt: now
+              at: now
             });
           }
         });
@@ -241,6 +265,20 @@ class MessageService {
       .populate("replyTo")
       .populate("mentions.user", "firstName lastName avatar") // Populate mentions
       .lean();
+
+    // Transform 'at' to 'seenAt'/'deliveredAt' for frontend compatibility
+    messages.forEach(msg => {
+      if (msg.seenBy) {
+        msg.seenBy.forEach(s => {
+          if (s.at) s.seenAt = s.at;
+        });
+      }
+      if (msg.deliveredTo) {
+        msg.deliveredTo.forEach(d => {
+          if (d.at) d.deliveredAt = d.at;
+        });
+      }
+    });
 
     // ✅ Populate seenBy users for Group Chat (Manual Population)
     if (chatType === "GROUP" && messages.length > 0) {
@@ -343,8 +381,8 @@ class MessageService {
       );
       
       if (!alreadyDelivered) {
-        // ✅ Fix: Use 'deliveredAt' to match Schema
-        message.deliveredTo.push({ userId, deliveredAt: now });
+        // ✅ Fix: Use 'at' to match Schema
+        message.deliveredTo.push({ userId, at: now });
         await message.save();
 
         // ✅ Notify Group (Real-time delivery status)
@@ -397,12 +435,12 @@ class MessageService {
       );
       
       if (!alreadySeen) {
-        // ✅ Fix: Use 'seenAt' to match Schema
-        message.seenBy.push({ userId, seenAt: now });
+        // ✅ Fix: Use 'at' to match Schema
+        message.seenBy.push({ userId, at: now });
         
         // Also mark as delivered if not already
         if (!message.deliveredTo.find(d => d.userId.toString() === userId.toString())) {
-          message.deliveredTo.push({ userId, deliveredAt: now });
+          message.deliveredTo.push({ userId, at: now });
         }
         
         await message.save();

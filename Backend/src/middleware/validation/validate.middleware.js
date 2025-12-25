@@ -37,6 +37,12 @@ const validate = (schema, source = 'body') => {
           message: err.message
         }));
         
+        console.log('Validation Error:', {
+            source,
+            data: req[source],
+            errors
+        });
+
         return res.status(400).json({
           success: false,
           message: 'خطأ في البيانات المدخلة',

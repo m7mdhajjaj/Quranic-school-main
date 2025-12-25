@@ -46,13 +46,13 @@ const ConversationItem: React.FC<ConversationItemProps> = React.memo(({
   return (
     <div 
       onClick={() => onSelect(conversation)}
-      className={`flex items-center p-3.5 mx-2 my-1 rounded-lg cursor-pointer transition-all duration-200 relative group ${
+      className={`flex items-center p-3 mx-1 rounded-xl cursor-pointer transition-all duration-200 relative group ${
         isSelected
-          ? 'bg-emerald-50 shadow-sm border-r-4 border-emerald-500'
+          ? 'bg-emerald-50 shadow-sm ring-1 ring-emerald-500/20'
           : 'hover:bg-gray-50'
       }`}
     >
-      <div className="ml-3">
+      <div className="ml-3 relative">
         <Avatar 
           userId={display.userId}
           src={display.avatar || undefined}
@@ -63,31 +63,40 @@ const ConversationItem: React.FC<ConversationItemProps> = React.memo(({
         />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="font-medium truncate">{display.name}</div>
-        <div className="text-xs text-gray-500 truncate">
-          {conversation.lastMessage?.text || display.subtitle}
+        <div className="flex justify-between items-baseline mb-0.5">
+          <div className={`font-bold truncate ${isSelected ? 'text-gray-900' : 'text-gray-800'}`}>
+            {display.name}
+          </div>
+          {conversation.lastMessage && (
+            <div className={`text-[10px] flex-shrink-0 ${isSelected ? 'text-emerald-600 font-medium' : 'text-gray-400'}`}>
+              {new Date(conversation.lastMessage.createdAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
+            </div>
+          )}
+        </div>
+        <div className="flex justify-between items-center">
+          <div className={`text-xs truncate max-w-[80%] ${
+            isSelected ? 'text-emerald-700/80 font-medium' : 
+            conversation.unreadCount > 0 ? 'text-gray-800 font-semibold' : 'text-gray-500'
+          }`}>
+            {conversation.lastMessage?.text || display.subtitle}
+          </div>
+          
+          {conversation.unreadCount > 0 && (
+            <div className="min-w-[18px] h-[18px] flex items-center justify-center bg-emerald-500 text-white text-[10px] font-bold rounded-full shadow-sm animate-pulse">
+              {conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Delete Button - Shows on Hover */}
       <button
         onClick={(e) => onDelete(e, conversation._id)}
-        className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all duration-200 z-10"
+        className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-200 z-10"
         title="حذف المحادثة"
       >
         <Trash2 size={16} />
       </button>
-
-      {conversation.unreadCount > 0 && (
-        <div className="absolute top-3 left-3 min-w-[20px] h-5 flex items-center justify-center">
-          <Badge 
-            variant="danger"
-            className="animate-pulse shadow-sm"
-          >
-            {conversation.unreadCount > 99 ? '99+' : conversation.unreadCount}
-          </Badge>
-        </div>
-      )}
     </div>
   );
 });

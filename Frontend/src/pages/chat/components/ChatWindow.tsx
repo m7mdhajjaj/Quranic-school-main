@@ -5,7 +5,7 @@ import { UserStatusContext } from '../../../Context/UserStatusContext';
 import MessageItem from './MessageItem';
 import { useAuth } from '../../../hooks/useAuth';
 import { Button, LoadingSpinner, EmptyState } from '../../../components/UI';
-import { Send, Reply, X, Loader2, MoreVertical, BellOff, Bell, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Send, Reply, X, Loader2, MoreVertical, BellOff, Bell, PanelLeftClose, PanelLeftOpen, MessageSquare } from 'lucide-react';
 import { DropdownMenu } from '../../../components/UI/DropdownMenu';
 import { showSuccessMessage, showErrorMessage } from '../../../utils/sweetalertUtils';
 import api from '../../../Api/api';
@@ -69,6 +69,36 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
     jumpToMessage,
     handleMessageDeleted
   } = useChat(chatType, targetId);
+
+  // Dedupe messages to prevent key errors
+  const uniqueMessages = React.useMemo(() => {
+    return messages.filter((msg, index, self) => 
+      index === self.findIndex((m) => (
+        m._id ? m._id === msg._id : m.clientTempId === msg.clientTempId
+      ))
+    );
+  }, [messages]);
+
+  // Fix passive event listener issue
+  useEffect(() => {
+    const element = messagesContainerRef.current;
+    if (!element) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      const atTop = element.scrollTop === 0;
+      const atBottom = Math.abs(element.scrollHeight - element.scrollTop - element.clientHeight) < 1;
+      
+      if ((atTop && e.deltaY < 0) || (atBottom && e.deltaY > 0)) {
+        e.preventDefault();
+      }
+    };
+
+    element.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+      element.removeEventListener('wheel', handleWheel);
+    };
+  }, []);
 
   // Mentions Hook
   const [mentions, setMentions] = useState<any[]>([]);
@@ -417,13 +447,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
   ];
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 overflow-hidden">
+    <div className="flex flex-col h-full bg-[#f0f2f5] overflow-hidden relative">
       {/* Header with Online Status */}
-      <div className="p-4 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 text-white shadow-md flex justify-between items-center flex-shrink-0">
+      <div className="px-4 py-3 bg-white border-b border-gray-200 shadow-sm flex justify-between items-center flex-shrink-0 z-20">
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <button
             onClick={onToggleSidebar}
-            className="p-1.5 hover:bg-white/20 rounded-lg transition-colors flex-shrink-0"
+            className="p-2 hover:bg-gray-100 rounded-xl transition-colors flex-shrink-0 text-gray-600"
             title={isSidebarOpen ? 'إخفاء القائمة' : 'إظهار القائمة'}
           >
             {isSidebarOpen ? (
@@ -433,34 +463,42 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
             )}
           </button>
           
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <h3 className="font-bold text-lg truncate">{targetName}</h3>
-            
-            {chatType === 'DM' && (
-              <div className="flex items-center gap-1.5 bg-white/20 px-2 py-0.5 rounded-full backdrop-blur-sm border border-white/30 flex-shrink-0">
-                <div 
-                  className={`w-2 h-2 rounded-full ${
-                    isOnline ? 'bg-green-400 animate-pulse' : 'bg-gray-300'
-                  }`}
-                />
-                <LastSeenDisplay lastSeen={lastSeen} isOnline={isOnline} />
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="relative">
+              <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-lg">
+                {targetName.charAt(0)}
               </div>
-            )}
+              {chatType === 'DM' && isOnline && (
+                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+              )}
+            </div>
+            
+            <div className="flex flex-col">
+              <h3 className="font-bold text-gray-900 truncate text-base">{targetName}</h3>
+              
+              {chatType === 'DM' ? (
+                <div className="text-xs text-gray-500 flex items-center gap-1">
+                  <LastSeenDisplay lastSeen={lastSeen} isOnline={isOnline} />
+                </div>
+              ) : (
+                <div className="text-xs text-gray-500">محادثة جماعية</div>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 flex-shrink-0">
+        <div className="flex items-center gap-2 flex-shrink-0">
           {isTyping && (
-            <p className="text-sm text-white/90 animate-pulse flex items-center gap-1.5">
-              <Loader2 className="w-4 h-4 animate-spin" />
+            <div className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-xs font-medium animate-pulse flex items-center gap-1.5">
+              <Loader2 className="w-3 h-3 animate-spin" />
               <span className="hidden sm:inline">{typingUsers.length === 1 ? 'يكتب' : `${typingUsers.length} يكتبون`}...</span>
-            </p>
+            </div>
           )}
 
           <DropdownMenu
             trigger={
-              <button className="p-1.5 hover:bg-white/20 rounded-full transition-colors focus:outline-none flex-shrink-0">
-                <MoreVertical className="w-5 h-5 text-white" />
+              <button className="p-2 hover:bg-gray-100 rounded-xl transition-colors focus:outline-none flex-shrink-0 text-gray-600">
+                <MoreVertical className="w-5 h-5" />
               </button>
             }
             items={getHeaderDropdownItems()}
@@ -473,47 +511,42 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
       <div 
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-2 scroll-smooth scrollbar-hide overscroll-contain"
-        onWheel={(e) => {
-          // منع انتشار حدث السكرول للصفحة الرئيسية
-          const element = e.currentTarget;
-          const atTop = element.scrollTop === 0;
-          const atBottom = element.scrollHeight - element.scrollTop === element.clientHeight;
-          
-          if ((atTop && e.deltaY < 0) || (atBottom && e.deltaY > 0)) {
-            e.preventDefault();
-          }
-        }}
+        className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 scroll-smooth scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent overscroll-contain bg-[#efeae2] bg-opacity-40"
+        style={{ backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)', backgroundSize: '20px 20px' }}
       >
         {/* Loading Spinner for Pagination */}
         {showLoadingSpinner && (
           <div className="flex justify-center items-center py-4">
-            <Loader2 className="w-6 h-6 animate-spin text-emerald-500" />
+            <div className="bg-white/80 backdrop-blur-sm px-4 py-1 rounded-full shadow-sm">
+               <Loader2 className="w-5 h-5 animate-spin text-emerald-600" />
+            </div>
           </div>
         )}
 
-        {loading && messages.length === 0 && (
-          <div className="text-center py-8">
+        {loading && uniqueMessages.length === 0 && (
+          <div className="text-center py-12">
             <LoadingSpinner size="lg" />
-            <p className="text-gray-500 mt-2">جاري التحميل...</p>
+            <p className="text-gray-500 mt-3 font-medium">جاري تحميل الرسائل...</p>
           </div>
         )}
         
-        {!loading && messages.length === 0 && (
-          <EmptyState
-            icon="💬"
-            title="لا توجد رسائل بعد"
-            description="ابدأ محادثة جديدة وأرسل أول رسالة"
-          />
+        {!loading && uniqueMessages.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-full opacity-70">
+            <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
+              <MessageSquare className="w-10 h-10 text-emerald-500" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-700 mb-2">لا توجد رسائل بعد</h3>
+            <p className="text-gray-500">ابدأ المحادثة بإرسال رسالة ترحيب 👋</p>
+          </div>
         )}
         
-        {messages.map((msg: any, index: number) => {
-          const showDivider = shouldShowDateDivider(msg, messages[index - 1]);
+        {uniqueMessages.map((msg: any, index: number) => {
+          const showDivider = shouldShowDateDivider(msg, uniqueMessages[index - 1]);
           return (
             <React.Fragment key={msg._id || msg.clientTempId}>
               {showDivider && (
-                <div className="flex justify-center my-3">
-                  <span className="bg-white text-gray-600 text-xs px-3 py-1 rounded-full shadow-sm border border-gray-200">
+                <div className="flex justify-center my-6 sticky top-2 z-10">
+                  <span className="bg-white/90 backdrop-blur-sm text-gray-600 text-xs font-medium px-4 py-1.5 rounded-full shadow-sm border border-gray-100">
                     {formatDateDivider(msg.createdAt)}
                   </span>
                 </div>
@@ -536,26 +569,26 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
 
       {/* Reply Preview */}
       {replyTo && (
-        <div className="px-4 py-2.5 bg-emerald-50 border-t border-emerald-100 flex justify-between items-center flex-shrink-0">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 mb-0.5">
+        <div className="mx-4 mt-2 p-3 bg-white rounded-t-2xl border-b-2 border-emerald-500 shadow-lg flex justify-between items-center flex-shrink-0 animate-slideUp">
+          <div className="flex-1 min-w-0 border-r-4 border-emerald-500 pr-3 mr-1">
+            <div className="flex items-center gap-1.5 mb-1">
               <Reply className="w-3.5 h-3.5 text-emerald-600" />
-              <p className="text-xs text-emerald-700 font-semibold">رد على:</p>
+              <p className="text-xs text-emerald-700 font-bold">رد على رسالة</p>
             </div>
-            <p className="text-sm text-gray-700 truncate">{replyTo.text}</p>
+            <p className="text-sm text-gray-600 truncate">{replyTo.text}</p>
           </div>
           <button 
             onClick={clearReply} 
-            className="mr-3 p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
             aria-label="إلغاء الرد"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
       )}
 
       {/* Input */}
-      <div className="p-4 bg-white border-t border-gray-200 flex-shrink-0 relative">
+      <div className="p-4 bg-white border-t border-gray-100 flex-shrink-0 relative z-20">
         <MentionDropdown 
           isOpen={isMentionOpen}
           users={mentionUsers}
@@ -563,7 +596,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
           position={mentionPosition}
           onSelect={handleSelectMention}
         />
-        <div className="flex gap-2.5 items-end">
+        <div className="flex gap-3 items-end bg-gray-50 p-2 rounded-3xl border border-gray-200 focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:border-emerald-500 transition-all shadow-sm">
           <div className="flex-1 min-w-0">
             <textarea
               ref={textareaRef}
@@ -573,21 +606,25 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
               placeholder="اكتب رسالة..."
               disabled={isSending}
               rows={1}
-              className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent disabled:bg-gray-100 resize-none text-right"
-              style={{ maxHeight: '120px' }}
+              className="w-full p-3 bg-transparent border-none focus:ring-0 resize-none text-right text-gray-800 placeholder-gray-400 max-h-32"
+              style={{ minHeight: '44px' }}
             />
           </div>
-          <Button
+          <button
             onClick={handleSendWithMentions}
             disabled={!canSend || isSending}
-            variant="primary"
-            size="lg"
-            loading={isSending}
-            className="h-12 px-5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
-            leftIcon={<Send className="w-4 h-4" />}
+            className={`p-3 rounded-full flex items-center justify-center transition-all duration-200 ${
+              canSend && !isSending
+                ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-md hover:shadow-lg transform hover:scale-105'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            }`}
           >
-            إرسال
-          </Button>
+            {isSending ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Send className="w-5 h-5 ml-0.5" /> // ml-0.5 to visually center the icon
+            )}
+          </button>
         </div>
       </div>
     </div>

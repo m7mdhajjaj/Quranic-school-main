@@ -224,7 +224,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
     // Default: Sent (1 Grey Tick)
     return (
       <Tooltip content="تم الإرسال">
-        <Check className="w-4 h-4 text-gray-300" />
+        <Check className="w-3.5 h-3.5 text-white/70" />
       </Tooltip>
     );
   };
@@ -233,8 +233,8 @@ const MessageItem: React.FC<MessageItemProps> = ({
   if (message.deletedForAll) {
     return (
       <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-2`}>
-        <div className="px-3 py-2 rounded-lg bg-gray-50 border border-gray-200 text-gray-500 italic text-sm flex items-center gap-2">
-          <Trash2 size={14} />
+        <div className="px-4 py-2 rounded-full bg-gray-100 border border-gray-200 text-gray-500 italic text-xs flex items-center gap-2 shadow-sm">
+          <Trash2 size={12} />
           <span>تم حذف هذه الرسالة</span>
         </div>
       </div>
@@ -244,35 +244,34 @@ const MessageItem: React.FC<MessageItemProps> = ({
   return (
     <div 
       id={`message-${message._id}`}
-      className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-2 group relative`}
+      className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-1 group relative items-end`}
     >
       {/* Avatar for incoming messages */}
       {!isOwn && message.sender && (
-        <div className="ml-2 flex-shrink-0">
+        <div className="ml-2 mb-1 flex-shrink-0">
           <Tooltip 
             content={`${message.sender.firstName} ${message.sender.lastName}`}
             width="w-auto whitespace-nowrap"
             position="left"
           >
-            <div className="cursor-pointer">
+            <div className="cursor-pointer hover:scale-105 transition-transform">
               <Avatar 
                 user={message.sender}
                 size="sm"
-                showStatus={true}
-                statusSize="sm"
+                showStatus={false}
               />
             </div>
           </Tooltip>
         </div>
       )}
       
-      <div className={`max-w-[70%] ${isOwn ? 'order-first' : ''} relative group`}>
+      <div className={`max-w-[75%] ${isOwn ? 'order-first' : ''} relative group`}>
         {/* Dropdown Menu - Shows on Hover/Click */}
-        <div className={`absolute top-2 ${isOwn ? '-right-10' : '-left-10'} opacity-0 group-hover:opacity-100 transition-opacity z-20`}>
+        <div className={`absolute top-0 ${isOwn ? '-right-8' : '-left-8'} opacity-0 group-hover:opacity-100 transition-all duration-200 z-20`}>
           <DropdownMenu 
             items={getDropdownItems()} 
             position={isOwn ? 'left' : 'right'}
-            buttonClassName="w-8 h-8 p-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 shadow-sm rounded-full transition-colors"
+            buttonClassName="w-7 h-7 p-1.5 bg-white text-gray-500 hover:text-emerald-600 hover:bg-gray-50 shadow-sm rounded-full transition-colors border border-gray-100"
           />
         </div>
 
@@ -280,14 +279,14 @@ const MessageItem: React.FC<MessageItemProps> = ({
         {message.replyTo && (
           <div 
             onClick={() => onReplyClick && onReplyClick(message.replyTo._id)}
-            className={`p-2 rounded-t-lg text-xs border-r-3 mb-1 cursor-pointer hover:opacity-80 transition-opacity ${
+            className={`p-2 rounded-xl text-xs mb-1 cursor-pointer hover:opacity-90 transition-opacity shadow-sm ${
             isOwn 
-              ? 'bg-emerald-100/60 border-emerald-400'
-              : 'bg-gray-100 border-gray-400'
+              ? 'bg-emerald-600 text-emerald-100'
+              : 'bg-white text-gray-600 border border-gray-100'
           }`}>
             <div className="flex items-center gap-1 mb-0.5">
               <Reply className="w-3 h-3 opacity-70" />
-              <span className="font-semibold opacity-90">
+              <span className="font-bold opacity-90">
                 {message.replyTo.sender?.firstName}:
               </span>
             </div>
@@ -311,30 +310,30 @@ const MessageItem: React.FC<MessageItemProps> = ({
           position={isOwn ? 'right' : 'left'}
         >
           <div 
-            className={`p-3 rounded-xl shadow-sm transition-all ${
+            className={`px-4 py-2 shadow-sm transition-all relative ${
               isOwn 
-                ? 'bg-gradient-to-br from-emerald-500 to-teal-500 text-white' 
-                : 'bg-white border border-gray-200'
-            } ${message._optimistic ? 'opacity-60 scale-95' : 'opacity-100 scale-100'} ${
+                ? 'bg-emerald-500 text-white rounded-2xl rounded-tr-sm' 
+                : 'bg-white text-gray-800 rounded-2xl rounded-tl-sm border border-gray-100'
+            } ${message._optimistic ? 'opacity-70' : 'opacity-100'} ${
               isEditing ? 'ring-2 ring-emerald-400' : ''
             }`}
           >
             {/* Sender name for group chats */}
             {!isOwn && message.sender && message.chatType === 'GROUP' && (
-              <p className="text-xs font-bold mb-2 text-emerald-600 flex items-center gap-1">
+              <p className="text-[10px] font-bold mb-1 text-emerald-600 flex items-center gap-1">
                 {message.sender.firstName} {message.sender.lastName}
               </p>
             )}
             
             {/* Message text or Edit mode */}
             {isEditing ? (
-              <div className="space-y-2">
+              <div className="space-y-2 min-w-[200px]">
                 <textarea
                   ref={textareaRef}
                   value={editText}
                   onChange={(e) => setEditText(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  className={`w-full p-2 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-emerald-400 ${
+                  className={`w-full p-2 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm ${
                     isOwn 
                       ? 'bg-white/20 text-white placeholder-white/60' 
                       : 'bg-gray-50 text-gray-900 placeholder-gray-400 border border-gray-200'
@@ -348,42 +347,35 @@ const MessageItem: React.FC<MessageItemProps> = ({
                     {editError}
                   </p>
                 )}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 justify-end">
+                  <button
+                    onClick={handleCancelEdit}
+                    className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${
+                      isOwn
+                        ? 'bg-white/10 hover:bg-white/20 text-white'
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                    }`}
+                  >
+                    إلغاء
+                  </button>
                   <button
                     onClick={handleSaveEdit}
-                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors ${
                       isOwn
-                        ? 'bg-white/20 hover:bg-white/30 text-white'
-                        : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                        ? 'bg-white text-emerald-600 hover:bg-gray-100'
+                        : 'bg-emerald-600 text-white hover:bg-emerald-700'
                     }`}
                   >
                     <Save className="w-3 h-3" />
                     حفظ
                   </button>
-                  <button
-                    onClick={handleCancelEdit}
-                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      isOwn
-                        ? 'bg-white/10 hover:bg-white/20 text-white'
-                        : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
-                    }`}
-                  >
-                    <X className="w-3 h-3" />
-                    إلغاء
-                  </button>
-                  <span className="text-xs opacity-70 mr-auto">
-                    Enter = حفظ • Esc = إلغاء
-                  </span>
                 </div>
               </div>
             ) : (
               <>
                 {/* Message text with mentions */}
-                <p className="whitespace-pre-wrap break-words leading-relaxed">
+                <p className="whitespace-pre-wrap break-words leading-relaxed text-[15px]">
                   {message.text.split(/(@[\u0600-\u06FFa-zA-Z0-9\s]+)/g).map((part: string, i: number) => {
-                    // Simple check if this part matches a mention in message.mentions
-                    // This is a basic rendering. For robust rendering, we'd need tokens in text.
-                    // But since we just stored text, we highlight anything starting with @ that matches a user
                     const isMention = message.mentions?.some((m: any) => {
                       if (m.type === 'all' && part.trim() === '@الجميع') return true;
                       if (m.type === 'user' && m.user && part.trim() === `@${m.user.firstName} ${m.user.lastName}`) return true;
@@ -401,16 +393,20 @@ const MessageItem: React.FC<MessageItemProps> = ({
                   })}
                 </p>
                 
-                <div className="flex items-center justify-end gap-2 mt-1 select-none">
+                <div className={`flex items-center gap-1 mt-1 select-none ${isOwn ? 'justify-end text-emerald-100' : 'justify-end text-gray-400'}`}>
                   {message.edited && (
-                    <span className="text-[10px] opacity-70 italic inline-flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      (معدلة)
+                    <span className="text-[10px] opacity-70 italic inline-flex items-center gap-0.5">
+                      <Edit3 className="w-2.5 h-2.5" />
+                      معدلة
                     </span>
                   )}
                   
+                  <span className="text-[10px] font-medium opacity-80">
+                    {new Date(message.createdAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+
                   {!message.deletedForAll && isOwn && (
-                    <div className="flex items-center gap-0.5">
+                    <div className="flex items-center gap-0.5 ml-0.5">
                       {message._optimistic && (
                         <Clock className="w-3 h-3 animate-spin text-white/70" />
                       )}
@@ -425,15 +421,13 @@ const MessageItem: React.FC<MessageItemProps> = ({
           </div>
         </Tooltip>
 
-
-
         {/* Seen By Avatars (Group Chat) */}
         {message.chatType === 'GROUP' && message.seenBy && message.seenBy.length > 0 && (
-          <div className="flex items-center justify-end mt-1 mr-1 gap-[-8px]">
-            {message.seenBy.slice(0, 4).map((seen: any, index: number) => (
+          <div className="flex items-center justify-end mt-1 mr-1 gap-[-6px]">
+            {message.seenBy.slice(0, 3).map((seen: any, index: number) => (
               <div 
                 key={seen.userId} 
-                className="relative -ml-2 first:ml-0 transition-transform hover:z-10 hover:scale-110"
+                className="relative -ml-1.5 first:ml-0 transition-transform hover:z-10 hover:scale-110"
               >
                 <Tooltip 
                   width="w-auto whitespace-nowrap"
@@ -443,30 +437,17 @@ const MessageItem: React.FC<MessageItemProps> = ({
                     <Avatar 
                       user={seen.user} 
                       size="xs"
-                      className="border-2 border-white ring-1 ring-gray-100"
+                      className="border border-white ring-1 ring-gray-100 w-4 h-4 text-[8px]"
                     />
                   </div>
                 </Tooltip>
               </div>
             ))}
-            {message.seenBy.length > 4 && (
-              <div className="relative -ml-2 z-0">
-                <Tooltip
-                  width="w-auto min-w-[200px]"
-                  content={
-                    <div className="max-h-40 overflow-y-auto custom-scrollbar p-1">
-                      {message.seenBy.slice(4).map((seen: any) => (
-                        <div key={seen.userId} className="py-1 border-b border-gray-700/50 last:border-0 text-xs whitespace-nowrap">
-                          تمت المشاهدة بواسطة {seen.user?.firstName} في {new Date(seen.seenAt).toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' })}
-                        </div>
-                      ))}
-                    </div>
-                  }
-                >
-                  <div className="w-6 h-6 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-gray-600 cursor-pointer hover:bg-gray-200 transition-colors">
-                    +{message.seenBy.length - 4}
-                  </div>
-                </Tooltip>
+            {message.seenBy.length > 3 && (
+              <div className="relative -ml-1.5 z-0">
+                <div className="w-4 h-4 rounded-full bg-gray-100 border border-white flex items-center justify-center text-[8px] font-bold text-gray-600">
+                  +{message.seenBy.length - 3}
+                </div>
               </div>
             )}
           </div>
@@ -476,34 +457,26 @@ const MessageItem: React.FC<MessageItemProps> = ({
         {!message._optimistic && !isEditing && onReply && (
           <button 
             onClick={() => onReply(message)} 
-            className="opacity-0 group-hover:opacity-100 transition-all duration-200 mt-1.5 px-2.5 py-1 text-xs text-gray-600 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg flex items-center gap-1 font-medium"
+            className={`opacity-0 group-hover:opacity-100 transition-all duration-200 absolute top-1/2 -translate-y-1/2 ${isOwn ? '-left-8' : '-right-8'} p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-full`}
             aria-label="رد على الرسالة"
           >
-            <Reply className="w-3 h-3" />
-            رد
+            <Reply className="w-4 h-4" />
           </button>
         )}
       </div>
       
-      {/* Avatar for outgoing messages */}
-      {isOwn && message.sender && (
-        <div className="mr-2 flex-shrink-0">
-          <Tooltip 
-            content="أنت"
-            width="w-auto whitespace-nowrap"
-            position="right"
-          >
+      {/* Avatar for outgoing messages - Hidden for cleaner look, or keep if desired. User usually prefers cleaner. I'll hide it for own messages as it's redundant with the bubble color */}
+      {/* {isOwn && message.sender && (
+        <div className="mr-2 mb-1 flex-shrink-0">
             <div className="cursor-pointer">
               <Avatar 
                 user={message.sender}
                 size="sm"
-                showStatus={true}
-                statusSize="sm"
+                showStatus={false}
               />
             </div>
-          </Tooltip>
         </div>
-      )}
+      )} */}
     </div>
   );
 };

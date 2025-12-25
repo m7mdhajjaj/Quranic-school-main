@@ -55,6 +55,11 @@ export const useChatMessages = (chatType: 'DM' | 'GROUP', targetId: string) => {
   // Add real message from server
   const addMessage = useCallback((message: any) => {
     setMessages(prev => {
+      // Check if message already exists by _id
+      if (message._id && prev.some(m => m._id === message._id)) {
+        return prev;
+      }
+      
       // Remove optimistic version if exists
       const filtered = prev.filter(m => m.clientTempId !== message.clientTempId);
       // ✅ Fix: Append to end (Chronological Order)

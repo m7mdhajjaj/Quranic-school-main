@@ -73,6 +73,25 @@ const chatSchema = new mongoose.Schema(
       },
     ],
 
+    // Mentions
+    mentions: [
+      {
+        type: {
+          type: String,
+          enum: ["user", "all"],
+          required: true,
+        },
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          refPath: "mentions.userModel",
+        },
+        userModel: {
+          type: String,
+          enum: ["Student", "Teacher", "Admin"],
+        }
+      },
+    ],
+
     // Reply
     replyTo: {
       type: mongoose.Schema.Types.ObjectId,
@@ -89,13 +108,13 @@ const chatSchema = new mongoose.Schema(
     deliveredTo: [
       {
         userId: { type: mongoose.Schema.Types.ObjectId, required: true, index: true },
-        deliveredAt: { type: Date, required: true },
+        at: { type: Date, required: true },
       },
     ],
     seenBy: [
       {
         userId: { type: mongoose.Schema.Types.ObjectId, required: true, index: true },
-        seenAt: { type: Date, required: true },
+        at: { type: Date, required: true },
       },
     ],
 

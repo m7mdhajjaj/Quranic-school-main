@@ -184,6 +184,11 @@ class GroupService {
       const duplicates = [];
       
       for (const conv of allGroupConversations) {
+        if (!conv.groupId) {
+          // Invalid group conversation without groupId, mark for removal
+          duplicates.push(conv._id);
+          continue;
+        }
         const groupId = conv.groupId.toString();
         
         if (groupMap.has(groupId)) {
