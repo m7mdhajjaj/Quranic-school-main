@@ -16,6 +16,7 @@ interface ChatWindowProps {
   chatType: 'DM' | 'GROUP';
   targetId: string;
   targetName: string;
+  targetAvatar?: string;
   isSidebarOpen: boolean;
   onToggleSidebar: () => void;
   onNewMessage?: (message: any) => void;
@@ -51,7 +52,7 @@ const LastSeenDisplay: React.FC<{ lastSeen: string | null; isOnline: boolean }> 
   return <span className="text-sm font-medium">آخر ظهور {formatLastSeen(lastSeen)}</span>;
 };
 
-const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName, isSidebarOpen, onToggleSidebar, onNewMessage }) => {
+const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName, targetAvatar, isSidebarOpen, onToggleSidebar, onNewMessage }) => {
   const { user } = useAuth();
   const [lastSeen, setLastSeen] = useState<string | null>(null);
   const { 
@@ -478,9 +479,17 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
           
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <div className="relative">
-              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-emerald-100 to-emerald-200 flex items-center justify-center text-emerald-700 font-bold text-lg shadow-md ring-2 ring-white">
-                {targetName.charAt(0)}
-              </div>
+              {targetAvatar ? (
+                <img 
+                  src={targetAvatar} 
+                  alt={targetName}
+                  className="w-11 h-11 rounded-full object-cover shadow-md ring-2 ring-white"
+                />
+              ) : (
+                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-emerald-100 to-emerald-200 flex items-center justify-center text-emerald-700 font-bold text-lg shadow-md ring-2 ring-white">
+                  {targetName.charAt(0)}
+                </div>
+              )}
               {chatType === 'DM' && isOnline && (
                 <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full animate-pulse shadow-sm"></div>
               )}

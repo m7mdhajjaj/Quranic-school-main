@@ -31,6 +31,7 @@ interface TargetInfo {
   chatType: 'DM' | 'GROUP';
   targetId: string;
   targetName: string;
+  targetAvatar?: string;
 }
 
 export const useChatLayout = () => {
@@ -196,7 +197,8 @@ export const useChatLayout = () => {
       return {
         chatType: 'GROUP',
         targetId: selectedConversation.groupId._id,
-        targetName: selectedConversation.groupId.name
+        targetName: selectedConversation.groupId.name,
+        targetAvatar: (selectedConversation.groupId as any).image?.url
       };
     } else {
       const otherParticipant = selectedConversation.participants.find(
@@ -207,7 +209,8 @@ export const useChatLayout = () => {
         return {
           chatType: 'DM',
           targetId: otherParticipant.userId._id,
-          targetName: `${otherParticipant.userId.firstName} ${otherParticipant.userId.lastName}`
+          targetName: `${otherParticipant.userId.firstName} ${otherParticipant.userId.lastName}`,
+          targetAvatar: otherParticipant.userId.avatar?.url
         };
       }
     }

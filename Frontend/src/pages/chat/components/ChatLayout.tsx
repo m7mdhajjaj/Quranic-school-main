@@ -52,6 +52,7 @@ const ChatLayout: React.FC = () => {
             chatType={targetInfo.chatType}
             targetId={targetInfo.targetId}
             targetName={targetInfo.targetName}
+            targetAvatar={targetInfo.targetAvatar}
             isSidebarOpen={isSidebarOpen}
             onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
             onNewMessage={(newMsg) => {
