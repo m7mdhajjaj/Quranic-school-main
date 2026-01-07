@@ -55,6 +55,7 @@ const LastSeenDisplay: React.FC<{ lastSeen: string | null; isOnline: boolean }> 
 const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName, targetAvatar, isSidebarOpen, onToggleSidebar, onNewMessage }) => {
   const { user } = useAuth();
   const [lastSeen, setLastSeen] = useState<string | null>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
   const { 
     messages, 
     loading,
@@ -281,7 +282,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
   });
   
   // Scroll management (auto-scroll, pagination)
-  const { messagesContainerRef, messagesEndRef, handleScroll, scrollToBottom, loadingMore: showLoadingSpinner } = useMessageScroll({
+  const { messagesContainerRef, messagesEndRef, handleScroll: originalHandleScroll, scrollToBottom, loadingMore: showLoadingSpinner } = useMessageScroll({
     messages,
     hasMore,
     loading: loadingMore,
@@ -289,6 +290,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
       fetchMessages(before);
     }
   });
+
+  // Enhanced scroll handler with button visibility
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    originalHandleScroll(e);
+    const container = e.currentTarget;
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 200;
+    setShowScrollButton(!isNearBottom);
+  }, [originalHandleScroll]);
   
   // Online status
   const statusContext = useContext(UserStatusContext);
@@ -535,12 +544,13 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
       </div>
       
       {/* Messages */}
-      <div 
-        ref={messagesContainerRef}
-        onScroll={handleScroll}
-        className="flex-1 overflow-y-auto overflow-x-hidden p-5 space-y-5 scroll-smooth scrollbar-thin scrollbar-thumb-gray-300 hover:scrollbar-thumb-gray-400 scrollbar-track-transparent overscroll-contain bg-gradient-to-br from-gray-50 via-slate-50/50 to-gray-100/30"
-        style={{ backgroundImage: 'radial-gradient(circle, rgba(203, 213, 225, 0.15) 1px, transparent 1px)', backgroundSize: '24px 24px' }}
-      >
+      <div className="flex-1 overflow-hidden relative">
+        <div 
+          ref={messagesContainerRef}
+          onScroll={handleScroll}
+          className="h-full overflow-y-auto overflow-x-hidden p-5 space-y-5 scroll-smooth scrollbar-thin scrollbar-thumb-gray-300 hover:scrollbar-thumb-gray-400 scrollbar-track-transparent overscroll-contain bg-gradient-to-br from-gray-50 via-slate-50/50 to-gray-100/30"
+          style={{ backgroundImage: 'radial-gradient(circle, rgba(203, 213, 225, 0.15) 1px, transparent 1px)', backgroundSize: '24px 24px' }}
+        >
         {/* Loading Spinner for Pagination */}
         {showLoadingSpinner && (
           <div className="flex justify-center items-center py-4 animate-fadeIn">
@@ -599,6 +609,21 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
           );
         })}
         <div ref={messagesEndRef} />
+        </div>
+        
+        {/* Scroll to Bottom Button */}
+        {showScrollButton && (
+          <button
+            onClick={() => scrollToBottom('smooth')}
+            className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-emerald-500 hover:bg-emerald-600 text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 z-10 animate-bounce-slow hover:scale-110 active:scale-95"
+            title="النزول للأسفل"
+            aria-label="النزول للأسفل"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Reply Preview */}
@@ -625,14 +650,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
 
       {/* Input */}
       <div className="p-4 bg-white/95 backdrop-blur-md border-t border-gray-200/80 flex-shrink-0 relative z-20 shadow-lg">
-        <MentionDropdown 
-          isOpen={isMentionOpen}
-          users={mentionUsers}
-          activeIndex={mentionActiveIndex}
-          position={mentionPosition}
-          onSelect={handleSelectMention}
-        />
-        <div className="flex gap-2 items-end bg-white p-2 rounded-xl border border-gray-200/80 focus-within:border-emerald-400 focus-within:ring-1 focus-within:ring-emerald-100 transition-all shadow-sm" dir="rtl">
+        <div className="flex gap-2 items-end bg-white p-2 rounded-xl border border-gray-200/80 focus-within:border-emerald-400 focus-within:ring-1 focus-within:ring-emerald-100 transition-all shadow-sm relative" dir="rtl">
+          <MentionDropdown 
+            isOpen={isMentionOpen}
+            users={mentionUsers}
+            activeIndex={mentionActiveIndex}
+            position={mentionPosition}
+            onSelect={handleSelectMention}
+          />
           <div className="flex-1 min-w-0">
             <textarea
               ref={textareaRef}
