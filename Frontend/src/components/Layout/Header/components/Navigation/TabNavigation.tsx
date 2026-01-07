@@ -1,56 +1,31 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
-import type { NavigationItem } from '../../types/navigation.types';
+import { useRef } from 'react';
+
+// Components
 import DropdownNavItem from './DropdownNavItem';
-import MoreDropdown from './MoreDropdown';
+
+// Utils
+import { checkIsActive } from '../../utils/navigation.utils';
+
+// Types
+import type { NavigationItem } from '../../types/navigation.types';
 
 interface TabNavigationProps {
   items: NavigationItem[];
   secondaryItems?: NavigationItem[];
   className?: string;
-  maxVisibleItems?: number;
 }
 
 const TabNavigation: React.FC<TabNavigationProps> = ({ 
   items, 
   secondaryItems = [],
-  className = '',
-  maxVisibleItems = 999 
+  className = ''
 }) => {
   const location = useLocation();
   const containerRef = useRef<HTMLDivElement>(null);
-  const itemsRef = useRef<(HTMLDivElement | null)[]>([]);
-  // دمج جميع العناصر (primary + secondary) لعرضها معاً
+
+  // Merge all items (primary + secondary)
   const allItems = [...items, ...secondaryItems];
-  const [visibleCount, setVisibleCount] = useState(allItems.length);
-
-  const checkIsActive = (itemPath: string): boolean => {
-    // الصفحة الرئيسية تكون نشطة فقط عندما نكون في المسار الدقيق "/"
-    if (itemPath === '/') {
-      return location.pathname === '/';
-    }
-    // باقي الصفحات تكون نشطة إذا كان المسار الحالي يبدأ بمسار العنصر
-    // لكن يجب التأكد من أن المسار لا يبدأ بمسار آخر أطول
-    const currentPath = location.pathname;
-    if (currentPath === itemPath) {
-      return true;
-    }
-    // التحقق من أن المسار يبدأ بمسار العنصر + "/" (وليس فقط يبدأ بالمسار)
-    return currentPath.startsWith(itemPath + '/');
-  };
-
-  // جميع العناصر مرئية - لا حاجة لحساب المساحة
-  useEffect(() => {
-    // تعيين عدد العناصر المرئية = جميع العناصر
-    setVisibleCount(allItems.length);
-  }, [allItems.length]);
-
-  // جميع العناصر مرئية
-  const visibleItems = allItems;
-  const hiddenItems: NavigationItem[] = [];
-  
-  // لا يوجد عناصر في قائمة "المزيد"
-  const moreItems: NavigationItem[] = [];
 
   return (
     <nav className={`flex items-center gap-1 sm:gap-1.5 min-w-0 w-full ${className}`}>
@@ -58,22 +33,22 @@ const TabNavigation: React.FC<TabNavigationProps> = ({
         ref={containerRef}
         className="flex items-center gap-0.5 sm:gap-1 md:gap-1.5 overflow-x-auto scrollbar-hide px-0.5 sm:px-1 md:px-2 lg:px-3 py-1 sm:py-1.5 bg-white/10 backdrop-blur-md rounded-lg sm:rounded-xl md:rounded-2xl border border-white/20 shadow-lg w-full min-w-0"
       >
-        {/* العناصر المرئية - جميع العناصر */}
-        {visibleItems.map((item, index) => {
-          // إذا كان العنصر يحتوي على subItems، استخدم DropdownNavItem
+        {allItems.map((item) => {
+          // If item has subItems, use DropdownNavItem
           if (item.subItems && item.subItems.length > 0) {
             return <DropdownNavItem key={item.to} item={item} />;
           }
 
-          // وإلا استخدم NavLink العادي
+          // Otherwise use regular NavLink
           const IconComponent = item.icon;
+          const isActive = checkIsActive(item.to, location.pathname);
 
           return (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.to === '/'}
-              className={({ isActive }) => {
+              className={() => {
                 return `group relative flex items-center gap-0.5 sm:gap-1 md:gap-1.5 lg:gap-2 px-1 sm:px-1.5 md:px-2 lg:px-3 xl:px-4 py-1 sm:py-1.5 md:py-2 rounded-md sm:rounded-lg md:rounded-xl transition-all duration-300 whitespace-nowrap isolation-auto flex-shrink-0 ${
                   isActive
                     ? 'bg-white text-emerald-600 shadow-xl scale-105 font-semibold z-10'

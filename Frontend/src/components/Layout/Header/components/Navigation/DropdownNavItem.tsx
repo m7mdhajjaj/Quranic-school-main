@@ -1,6 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
+
+// Utils
+import { checkIsActive, hasActiveSubItem } from '../../utils/navigation.utils';
+
+// Types
 import type { NavigationItem } from '../../types/navigation.types';
 
 interface DropdownNavItemProps {
@@ -9,26 +14,18 @@ interface DropdownNavItemProps {
 }
 
 const DropdownNavItem: React.FC<DropdownNavItemProps> = ({ item, className = '' }) => {
+  // ==================== State & Refs ====================
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const IconComponent = item.icon;
 
-  // التحقق من وجود عنصر نشط في القائمة المنسدلة
-  const hasActiveSubItem = item.subItems?.some((subItem) => {
-    if (subItem.to === '/') {
-      return location.pathname === '/';
-    }
-    return location.pathname === subItem.to || location.pathname.startsWith(subItem.to + '/');
-  });
+  // ==================== Computed Values ====================
+  const hasActiveChild = hasActiveSubItem(item.subItems, location.pathname);
+  const isItemActive = checkIsActive(item.to, location.pathname) || hasActiveChild;
 
-  // التحقق من أن العنصر نفسه نشط
-  const isActive = item.to === '/' 
-    ? location.pathname === '/' 
-    : location.pathname === item.to || location.pathname.startsWith(item.to + '/');
-
-  const isItemActive = isActive || hasActiveSubItem;
-
+  // ==================== Effects ====================
+  // Close dropdown on click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -45,7 +42,7 @@ const DropdownNavItem: React.FC<DropdownNavItemProps> = ({ item, className = '' 
     };
   }, [isOpen]);
 
-  // إغلاق القائمة عند الضغط على ESC
+  // Close dropdown on ESC key
   useEffect(() => {
     const handleEscKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && isOpen) {
@@ -56,6 +53,8 @@ const DropdownNavItem: React.FC<DropdownNavItemProps> = ({ item, className = '' 
     document.addEventListener('keydown', handleEscKey);
     return () => document.removeEventListener('keydown', handleEscKey);
   }, [isOpen]);
+
+  // ==================== Render ====================
 
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
@@ -82,7 +81,7 @@ const DropdownNavItem: React.FC<DropdownNavItemProps> = ({ item, className = '' 
       {isOpen && item.subItems && item.subItems.length > 0 && (
         <div className="absolute top-full mt-1 sm:mt-2 right-0 w-56 sm:w-64 z-50" dir="rtl">
           <div className="bg-white rounded-2xl shadow-2xl border border-emerald-100 overflow-hidden backdrop-blur-xl">
-            {/* رأس القائمة المنسدلة */}
+            {/* Dropdown Header */}
             <div className="bg-gradient-to-r from-emerald-50 to-teal-50 px-4 py-3 border-b border-emerald-100">
               <div className="flex items-center gap-2">
                 <IconComponent size={18} className="text-emerald-600" />
@@ -90,14 +89,11 @@ const DropdownNavItem: React.FC<DropdownNavItemProps> = ({ item, className = '' 
               </div>
             </div>
 
-            {/* عناصر القائمة */}
+            {/* Dropdown Items */}
             <div className="py-2">
               {item.subItems.map((subItem) => {
                 const SubIconComponent = subItem.icon;
-                const isSubActive =
-                  subItem.to === '/'
-                    ? location.pathname === '/'
-                    : location.pathname === subItem.to || location.pathname.startsWith(subItem.to + '/');
+                const isSubActive = checkIsActive(subItem.to, location.pathname);
 
                 return (
                   <NavLink

@@ -1,36 +1,45 @@
 import { useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { ChangePasswordModal } from '@/pages/Auth/ChangePass';
-import { showLogoutConfirmation } from '@/pages/Auth/LogOut/logoutUtils';
-import { NotificationHeader } from '@/components/Notifications';
-
-// Import custom hooks
-import { useNavigation } from '../hooks/useNavigation';
-import { useLogo } from '@/components/Hooks/useLogo';
-import { Logo } from '@/components/UI';
-import TabNavigation from './Navigation/TabNavigation';
-import ProfileMenu from '../../ProfileMenu';
-import MobileMenuButton from './MobileMenu/MobileMenuButton';
-import MobileMenu from './MobileMenu/MobileMenu';
-import Avatar from '@/components/Avatar/Avatar';
 import { ChevronDown } from 'lucide-react';
 
+// Hooks
+import { useAuth } from '@/hooks/useAuth';
+import { useNavigation } from '../hooks/useNavigation';
+import { useLogo } from '@/components/Hooks/useLogo';
+
+// Components
+import { Logo } from '@/components/UI';
+import Avatar from '@/components/Avatar/Avatar';
+import { NotificationHeader } from '@/components/Notifications';
+import ProfileMenu from '../../ProfileMenu';
+import TabNavigation from './Navigation/TabNavigation';
+import MobileMenuButton from './MobileMenu/MobileMenuButton';
+import MobileMenu from './MobileMenu/MobileMenu';
+
+// Modals
+import { ChangePasswordModal } from '@/pages/Auth/ChangePass';
+
+// Utils
+import { showLogoutConfirmation } from '@/pages/Auth/LogOut/logoutUtils';
+
+// Types
 import type { HeaderProps } from '../types/navigation.types';
 
 const Header: React.FC<HeaderProps> = ({ className = '' }) => {
+  // ==================== Hooks ====================
   const { user: currentUser, logout: authLogout, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const { logoUrl, logoLoading } = useLogo();
 
+  // ==================== State ====================
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] =
-    useState(false);
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
 
+  // ==================== Refs ====================
   const profileMenuRef = useRef<HTMLButtonElement>(null);
-  const navigate = useNavigate();
 
-  // Custom hooks
-  const { logoUrl, logoLoading } = useLogo();
+  // ==================== Computed Values ====================
   const isTeacher = currentUser?.role === 'teacher';
   const isAdmin = currentUser?.role === 'admin';
   const isTeacherOrAdmin = isTeacher || isAdmin;
@@ -40,7 +49,7 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
     isTeacherOrAdmin,
   });
 
-  // Handlers
+  // ==================== Handlers ====================
   const handleLogout = useCallback(async () => {
     const confirmed = await showLogoutConfirmation({
       userType: 'user',
@@ -61,16 +70,15 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
     setIsChangePasswordModalOpen(true);
   };
 
-  // Effects
+  // ==================== Effects ====================
+  // Redirect if not authenticated
   useEffect(() => {
     if (!isAuthenticated && !currentUser) {
       navigate('/login', { replace: true });
     }
   }, [isAuthenticated, currentUser, navigate]);
 
-  // إغلاق القائمة عند النقر خارجها (يتم التعامل معه عبر overlay في ProfileMenu)
-  // تم إزالة هذا الـ effect لأن ProfileMenu يستخدم overlay الآن
-
+  // Close menus on ESC key
   useEffect(() => {
     const handleEscKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -82,20 +90,25 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
     return () => document.removeEventListener('keydown', handleEscKey);
   }, []);
 
+  // ==================== Render ====================
+
+  // ==================== Render ====================
   if (!currentUser) {
-    return null; // أو مكون تحميل
+    return null;
   }
 
   return (
     <>
+      {/* ==================== Header ==================== */}
       <header
         className={`fixed top-0 left-0 right-0 z-[100] bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-600 shadow-xl backdrop-blur-xl border-b border-white/20 m-0 ${className}`}
         dir="rtl"
       >
         <div className="max-w-[2000px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
-          {/* صف واحد مبسط */}
+          {/* ==================== Main Row ==================== */}
           <div className="flex items-center justify-between h-14 sm:h-16 md:h-20 gap-1 sm:gap-2 md:gap-3 py-1 sm:py-2 overflow-hidden">
-            {/* اللوجو */}
+            
+            {/* ==================== Logo ==================== */}
             <Link
               to="/"
               className="flex items-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-3 hover:opacity-90 transition-all duration-300 group flex-shrink-0 min-w-0 max-w-[30%] sm:max-w-[35%]"
@@ -120,29 +133,30 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
               </div>
             </Link>
 
-            {/* التنقل الرئيسي - Tabs - يظهر فقط في الشاشات المتوسطة والكبيرة */}
+            {/* ==================== Navigation - Desktop ==================== */}
             <div className="hidden sm:flex flex-1 justify-center min-w-0 max-w-[40%] sm:max-w-[45%] md:max-w-[50%] mx-0.5 sm:mx-1 md:mx-2 lg:mx-4 overflow-hidden">
               <TabNavigation items={primaryNavItems} secondaryItems={secondaryNavItems} />
             </div>
 
-            {/* الأدوات اليمنى */}
+            {/* ==================== Right Tools ==================== */}
             <div className="flex items-center gap-0.5 sm:gap-1 md:gap-1.5 lg:gap-2 flex-shrink-0 min-w-0 max-w-[30%] sm:max-w-[25%]">
-              {/* الإشعارات */}
+              
+              {/* Notifications */}
               <div className="relative">
                 <NotificationHeader userId={currentUser._id} />
               </div>
 
-              {/* خط فاصل */}
+              {/* Divider */}
               <div className="hidden min-[375px]:block h-6 sm:h-8 w-px bg-white/30"></div>
 
-              {/* الملف الشخصي */}
+              {/* Profile Menu */}
               <div className="relative z-[200]">
                 <button
                   ref={profileMenuRef}
                   onClick={() => setProfileMenuOpen(!profileMenuOpen)}
                   className="flex items-center gap-1 sm:gap-2 px-1.5 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl hover:bg-white/20 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/50"
                   aria-label="قائمة الملف الشخصي"
-                  aria-expanded={profileMenuOpen ? "true" : "false"}
+                  aria-expanded={profileMenuOpen}
                 >
                   <Avatar
                     user={currentUser}
@@ -184,7 +198,7 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
                 />
               </div>
 
-              {/* زر القائمة - للموبايل */}
+              {/* Mobile Menu Button */}
               <div className="sm:hidden">
                 <MobileMenuButton
                   isOpen={isMenuOpen}
@@ -196,10 +210,10 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
         </div>
       </header>
 
-      {/* مسافة بديلة للهيدر */}
+      {/* ==================== Header Spacer ==================== */}
       <div className="h-14 sm:h-16 md:h-20"></div>
 
-      {/* قائمة الموبايل */}
+      {/* ==================== Mobile Menu ==================== */}
       <MobileMenu
         isOpen={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
@@ -210,7 +224,7 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
         onProfileClick={handleProfileClick}
       />
 
-      {/* Change Password Modal */}
+      {/* ==================== Change Password Modal ==================== */}
       <ChangePasswordModal
         isOpen={isChangePasswordModalOpen}
         onClose={() => setIsChangePasswordModalOpen(false)}
