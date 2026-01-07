@@ -290,8 +290,9 @@ const MessageItem: React.FC<MessageItemProps> = React.memo(({
         {/* Reply preview */}
         {message.replyTo && (
           <div 
+            dir="rtl"
             onClick={() => onReplyClick && onReplyClick(message.replyTo._id)}
-            className={`p-2 rounded-xl text-xs mb-1 cursor-pointer hover:opacity-90 transition-opacity shadow-sm ${
+            className={`p-2 rounded-xl text-xs mb-1 cursor-pointer hover:opacity-90 transition-opacity shadow-sm text-right ${
             isOwn 
               ? 'bg-emerald-600 text-emerald-100'
               : 'bg-white text-gray-600 border border-gray-100'
@@ -310,6 +311,7 @@ const MessageItem: React.FC<MessageItemProps> = React.memo(({
         
         {/* Message bubble */}
         <div 
+          dir="rtl"
           className={`px-4 py-2 shadow-sm transition-all relative ${
             isOwn 
               ? 'bg-emerald-500 text-white rounded-2xl rounded-tr-sm' 
@@ -333,7 +335,8 @@ const MessageItem: React.FC<MessageItemProps> = React.memo(({
                   value={editText}
                   onChange={(e) => setEditText(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  className={`w-full p-2 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm ${
+                  dir="rtl"
+                  className={`w-full p-2 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm text-right ${
                     isOwn 
                       ? 'bg-white/20 text-white placeholder-white/60' 
                       : 'bg-gray-50 text-gray-900 placeholder-gray-400 border border-gray-200'

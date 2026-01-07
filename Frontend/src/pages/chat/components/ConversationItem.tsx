@@ -63,15 +63,26 @@ const ConversationItem: React.FC<ConversationItemProps> = React.memo(({
         />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="flex justify-between items-baseline mb-0.5">
+        <div className="flex justify-between items-start mb-0.5">
           <div className={`font-bold truncate ${isSelected ? 'text-gray-900' : 'text-gray-800'}`}>
             {display.name}
           </div>
-          {conversation.lastMessage && (
-            <div className={`text-[10px] flex-shrink-0 ${isSelected ? 'text-emerald-600 font-medium' : 'text-gray-400'}`}>
-              {new Date(conversation.lastMessage.createdAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
-            </div>
-          )}
+          <div className="flex flex-col items-end gap-1">
+            {conversation.lastMessage && (
+              <div className={`text-[10px] flex-shrink-0 ${isSelected ? 'text-emerald-600 font-medium' : 'text-gray-400'}`}>
+                {new Date(conversation.lastMessage.createdAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
+              </div>
+            )}
+            {/* Delete Button - Shows on Hover */}
+            <button
+              onClick={(e) => onDelete(e, conversation._id)}
+              className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-all duration-200 hover:shadow-md"
+              title="حذف المحادثة"
+              aria-label="حذف المحادثة"
+            >
+              <Trash2 size={14} />
+            </button>
+          </div>
         </div>
         <div className="flex justify-between items-center">
           <div className={`text-xs truncate max-w-[80%] ${
@@ -88,15 +99,6 @@ const ConversationItem: React.FC<ConversationItemProps> = React.memo(({
           )}
         </div>
       </div>
-
-      {/* Delete Button - Shows on Hover */}
-      <button
-        onClick={(e) => onDelete(e, conversation._id)}
-        className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all duration-200 z-10"
-        title="حذف المحادثة"
-      >
-        <Trash2 size={16} />
-      </button>
     </div>
   );
 });

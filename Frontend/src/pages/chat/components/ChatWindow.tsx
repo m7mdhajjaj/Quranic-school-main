@@ -498,7 +498,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
             <div className="flex flex-col min-w-0">
               <h3 className="font-bold text-gray-900 truncate text-base leading-tight">{targetName}</h3>
               
-              {chatType === 'DM' ? (
+              {isTyping ? (
+                <div className="text-xs text-emerald-600 font-medium mt-0.5 flex items-center gap-1.5">
+                  <div className="flex gap-0.5">
+                    <span className="w-1 h-1 bg-emerald-600 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></span>
+                    <span className="w-1 h-1 bg-emerald-600 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></span>
+                    <span className="w-1 h-1 bg-emerald-600 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></span>
+                  </div>
+                  <span>{typingUsers.length === 1 ? 'يكتب' : `${typingUsers.length} يكتبون`}...</span>
+                </div>
+              ) : chatType === 'DM' ? (
                 <div className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
                   <LastSeenDisplay lastSeen={lastSeen} isOnline={isOnline} />
                 </div>
@@ -513,17 +522,6 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
         </div>
 
         <div className="flex items-center gap-2 flex-shrink-0">
-          {isTyping && (
-            <div className="px-3 py-1.5 bg-gradient-to-r from-emerald-50 to-emerald-100 text-emerald-700 rounded-full text-xs font-semibold flex items-center gap-1.5 shadow-md border border-emerald-200 animate-bounce-slow">
-              <div className="flex gap-0.5">
-                <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></span>
-                <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></span>
-                <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></span>
-              </div>
-              <span className="hidden sm:inline">{typingUsers.length === 1 ? 'يكتب' : `${typingUsers.length} يكتبون`}...</span>
-            </div>
-          )}
-
           <DropdownMenu
             trigger={
               <button className="p-2.5 hover:bg-gray-100 rounded-xl transition-all duration-200 focus:outline-none flex-shrink-0 text-gray-600 hover:text-gray-900 hover:shadow-sm active:scale-95">
@@ -634,7 +632,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
           position={mentionPosition}
           onSelect={handleSelectMention}
         />
-        <div className="flex gap-2 items-end bg-white p-2 rounded-xl border border-gray-200/80 focus-within:border-emerald-400 focus-within:ring-1 focus-within:ring-emerald-100 transition-all shadow-sm">
+        <div className="flex gap-2 items-end bg-white p-2 rounded-xl border border-gray-200/80 focus-within:border-emerald-400 focus-within:ring-1 focus-within:ring-emerald-100 transition-all shadow-sm" dir="rtl">
           <div className="flex-1 min-w-0">
             <textarea
               ref={textareaRef}
@@ -644,6 +642,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
               placeholder="اكتب رسالة..."
               disabled={isSending}
               rows={1}
+              dir="rtl"
               className="w-full px-2 py-1.5 bg-white border-none focus:ring-0 focus:outline-none resize-none text-right text-gray-900 placeholder-gray-400 max-h-32 text-sm"
               style={{ minHeight: '32px' }}
             />
