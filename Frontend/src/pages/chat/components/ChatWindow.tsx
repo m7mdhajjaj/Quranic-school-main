@@ -70,6 +70,19 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
     handleMessageDeleted
   } = useChat(chatType, targetId);
 
+  // Memoize callbacks to prevent re-renders
+  const handleReplyCallback = useCallback((message: any) => {
+    setReplyTo(message);
+  }, []);
+
+  const handleDeleteCallback = useCallback((messageId: string, deletedForAll: boolean) => {
+    handleMessageDeleted(messageId, deletedForAll);
+  }, [handleMessageDeleted]);
+
+  const handleEditCallback = useCallback((messageId: string, newText: string) => {
+    editMessage(messageId, newText);
+  }, [editMessage]);
+
   // Dedupe messages to prevent key errors
   const uniqueMessages = React.useMemo(() => {
     return messages.filter((msg, index, self) => 
@@ -569,10 +582,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
                 <MessageItem 
                   message={msg}
                   isOwn={msg.sender?._id === user?._id}
-                  onReply={setReplyTo}
+                  onReply={handleReplyCallback}
                   onReplyClick={handleReplyClick}
-                  onDelete={handleMessageDeleted}
-                  onEdit={editMessage}
+                  onDelete={handleDeleteCallback}
+                  onEdit={handleEditCallback}
                 />
               </div>
             </React.Fragment>
@@ -612,7 +625,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
           position={mentionPosition}
           onSelect={handleSelectMention}
         />
-        <div className="flex gap-3 items-end bg-gradient-to-br from-gray-50 to-white p-3 rounded-2xl border border-gray-200 focus-within:ring-2 focus-within:ring-emerald-400/30 focus-within:border-emerald-400 transition-all shadow-md hover:shadow-lg">
+        <div className="flex gap-2 items-end bg-white p-2 rounded-xl border border-gray-200/80 focus-within:border-emerald-400 focus-within:ring-1 focus-within:ring-emerald-100 transition-all shadow-sm">
           <div className="flex-1 min-w-0">
             <textarea
               ref={textareaRef}
@@ -622,25 +635,23 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatType, targetId, targetName,
               placeholder="اكتب رسالة..."
               disabled={isSending}
               rows={1}
-              className="w-full p-3 bg-transparent border-none focus:ring-0 resize-none text-right text-gray-800 placeholder-gray-400 max-h-32 font-medium"
-              style={{ minHeight: '44px' }}
+              className="w-full px-2 py-1.5 bg-white border-none focus:ring-0 focus:outline-none resize-none text-right text-gray-900 placeholder-gray-400 max-h-32 text-sm"
+              style={{ minHeight: '32px' }}
             />
           </div>
           <button
             onClick={handleSendWithMentions}
             disabled={!canSend || isSending}
-            className={`p-3.5 rounded-full flex items-center justify-center transition-all duration-200 ${
+            className={`p-2 rounded-full flex items-center justify-center transition-all duration-200 flex-shrink-0 ${
               canSend && !isSending
-                ? 'bg-gradient-to-r from-emerald-600 to-emerald-500 text-white hover:from-emerald-700 hover:to-emerald-600 shadow-lg hover:shadow-xl transform hover:scale-110 active:scale-95'
+                ? 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-sm hover:shadow-md active:scale-95'
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             }`}
           >
             {isSending ? (
-              <div className="relative">
-                <Loader2 className="w-5 h-5 animate-spin" />
-              </div>
+              <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <Send className="w-5 h-5 ml-0.5" />
+              <Send className="w-4 h-4" />
             )}
           </button>
         </div>

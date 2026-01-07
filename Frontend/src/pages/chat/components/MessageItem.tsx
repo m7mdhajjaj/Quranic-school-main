@@ -17,7 +17,7 @@ interface MessageItemProps {
   onEdit?: (messageId: string, newText: string) => void;
 }
 
-const MessageItem: React.FC<MessageItemProps> = ({ 
+const MessageItem: React.FC<MessageItemProps> = React.memo(({ 
   message, 
   isOwn, 
   onReply,
@@ -469,6 +469,17 @@ const MessageItem: React.FC<MessageItemProps> = ({
       )} */}
     </div>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison for better performance
+  return (
+    prevProps.message._id === nextProps.message._id &&
+    prevProps.message.text === nextProps.message.text &&
+    prevProps.message.readAt === nextProps.message.readAt &&
+    prevProps.message.deliveredAt === nextProps.message.deliveredAt &&
+    prevProps.message.seenBy?.length === nextProps.message.seenBy?.length &&
+    prevProps.isOwn === nextProps.isOwn &&
+    prevProps.message.isEdited === nextProps.message.isEdited
+  );
+});
 
-export default React.memo(MessageItem);
+export default MessageItem;
