@@ -82,13 +82,13 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = memo(({
         <button
           onClick={toggleMenu}
           type="button"
-          className={`bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-md hover:bg-white transition-all duration-200 hover:scale-110 ${buttonClassName}`}
+          className={`bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-sm hover:bg-white transition-all duration-200 hover:scale-105 ${buttonClassName}`}
           title="المزيد"
           aria-label="المزيد"
           aria-haspopup="menu"
           aria-expanded={isOpen ? "true" : "false"}
         >
-          <MoreVertical size={20} />
+          <MoreVertical size={16} />
         </button>
       )}
 
@@ -102,19 +102,19 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = memo(({
 
           {/* القائمة المنسدلة */}
           <div
-            className={`absolute ${alignmentClass} mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-100 overflow-hidden z-40 animate-fadeIn ${menuClassName}`}
+            className={`absolute ${alignmentClass} mt-2 w-36 bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden z-40 animate-fadeIn ${menuClassName}`}
             role="menu"
           >
             {items.map((item, index) => (
               <button
                 key={`${item.label}-${index}`}
                 onClick={(e) => handleItemClick(e, item.onClick)}
-                className={`w-full px-3 py-2 text-right flex items-center gap-2 transition-colors text-sm ${
+                className={`w-full px-2.5 py-1.5 text-right flex items-center gap-1.5 transition-colors text-xs ${
                   index > 0 ? 'border-t border-gray-100' : ''
                 } ${getVariantStyles(item.variant)} ${item.className || ''}`}
                 role="menuitem"
               >
-                {item.icon && <span className="flex-shrink-0 w-4 h-4">{item.icon}</span>}
+                {item.icon && <span className="flex-shrink-0 w-3.5 h-3.5">{item.icon}</span>}
                 <span>{item.label}</span>
               </button>
             ))}

@@ -124,7 +124,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
       if (diffMins < 5) {
         items.push({
           label: 'تعديل',
-          icon: <Edit3 size={16} />,
+          icon: <Edit3 size={14} />,
           onClick: handleStartEdit,
           variant: 'default' as const
         });
@@ -134,7 +134,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
     // Delete for me
     items.push({
       label: "حذف لديّ",
-      icon: <Trash2 size={16} />,
+      icon: <Trash2 size={14} />,
       onClick: () => handleDelete(false),
       variant: 'default' as const
     });
@@ -154,7 +154,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
       if (diffMins < 3 && !isRead) {
         items.push({
           label: "حذف لدى الجميع",
-          icon: <Trash2 size={16} />,
+          icon: <Trash2 size={14} />,
           onClick: () => handleDelete(true),
           variant: 'danger' as const,
           className: 'text-red-600 hover:bg-red-50'
@@ -244,7 +244,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
   return (
     <div 
       id={`message-${message._id}`}
-      className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-1 group relative items-end`}
+      className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-4 group relative items-end`}
     >
       {/* Avatar for incoming messages */}
       {!isOwn && message.sender && (
@@ -266,13 +266,25 @@ const MessageItem: React.FC<MessageItemProps> = ({
       )}
       
       <div className={`max-w-[75%] ${isOwn ? 'order-first' : ''} relative group`}>
-        {/* Dropdown Menu - Shows on Hover/Click */}
-        <div className={`absolute top-0 ${isOwn ? '-right-8' : '-left-8'} opacity-0 group-hover:opacity-100 transition-all duration-200 z-20`}>
+        {/* Action Buttons - Compact Column Layout */}
+        <div className={`absolute -top-1 -left-9 flex flex-col items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all duration-200 z-20`}>
+          {/* Dropdown Menu */}
           <DropdownMenu 
             items={getDropdownItems()} 
-            position={isOwn ? 'left' : 'right'}
-            buttonClassName="w-7 h-7 p-1.5 bg-white text-gray-500 hover:text-emerald-600 hover:bg-gray-50 shadow-sm rounded-full transition-colors border border-gray-100"
+            position="right"
+            buttonClassName="p-1 bg-white/95 backdrop-blur-sm hover:bg-gray-50 text-gray-400 hover:text-gray-700 rounded-full shadow-sm hover:shadow transition-all duration-150 border border-gray-100/50"
           />
+          
+          {/* Reply Button */}
+          {!message._optimistic && !isEditing && onReply && (
+            <button 
+              onClick={() => onReply(message)} 
+              className="p-1 bg-white/95 backdrop-blur-sm hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 rounded-full shadow-sm hover:shadow transition-all duration-150 border border-gray-100/50 hover:border-emerald-300"
+              aria-label="رد على الرسالة"
+            >
+              <Reply className="w-3 h-3" />
+            </button>
+          )}
         </div>
 
         {/* Reply preview */}
@@ -297,28 +309,16 @@ const MessageItem: React.FC<MessageItemProps> = ({
         )}
         
         {/* Message bubble */}
-        <Tooltip 
-          content={new Date(message.createdAt).toLocaleDateString('ar', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          })}
-          width="w-auto whitespace-nowrap"
-          position={isOwn ? 'right' : 'left'}
+        <div 
+          className={`px-4 py-2 shadow-sm transition-all relative ${
+            isOwn 
+              ? 'bg-emerald-500 text-white rounded-2xl rounded-tr-sm' 
+              : 'bg-white text-gray-800 rounded-2xl rounded-tl-sm border border-gray-100'
+          } ${message._optimistic ? 'opacity-70' : 'opacity-100'} ${
+            isEditing ? 'ring-2 ring-emerald-400' : ''
+          }`}
         >
-          <div 
-            className={`px-4 py-2 shadow-sm transition-all relative ${
-              isOwn 
-                ? 'bg-emerald-500 text-white rounded-2xl rounded-tr-sm' 
-                : 'bg-white text-gray-800 rounded-2xl rounded-tl-sm border border-gray-100'
-            } ${message._optimistic ? 'opacity-70' : 'opacity-100'} ${
-              isEditing ? 'ring-2 ring-emerald-400' : ''
-            }`}
-          >
-            {/* Sender name for group chats */}
+          {/* Sender name for group chats */}
             {!isOwn && message.sender && message.chatType === 'GROUP' && (
               <p className="text-[10px] font-bold mb-1 text-emerald-600 flex items-center gap-1">
                 {message.sender.firstName} {message.sender.lastName}
@@ -419,7 +419,6 @@ const MessageItem: React.FC<MessageItemProps> = ({
               </>
             )}
           </div>
-        </Tooltip>
 
         {/* Seen By Avatars (Group Chat) */}
         {message.chatType === 'GROUP' && message.seenBy && message.seenBy.length > 0 && (
@@ -454,15 +453,6 @@ const MessageItem: React.FC<MessageItemProps> = ({
         )}
         
         {/* Actions */}
-        {!message._optimistic && !isEditing && onReply && (
-          <button 
-            onClick={() => onReply(message)} 
-            className={`opacity-0 group-hover:opacity-100 transition-all duration-200 absolute top-1/2 -translate-y-1/2 ${isOwn ? '-left-8' : '-right-8'} p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-full`}
-            aria-label="رد على الرسالة"
-          >
-            <Reply className="w-4 h-4" />
-          </button>
-        )}
       </div>
       
       {/* Avatar for outgoing messages - Hidden for cleaner look, or keep if desired. User usually prefers cleaner. I'll hide it for own messages as it's redundant with the bubble color */}
