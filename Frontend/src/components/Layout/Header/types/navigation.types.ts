@@ -71,6 +71,7 @@ export interface LogoHookReturn {
 }
 
 export interface RolePermissions {
+  isStudent: boolean;
   isTeacher: boolean;
   isAdmin: boolean;
   isTeacherOrAdmin: boolean;

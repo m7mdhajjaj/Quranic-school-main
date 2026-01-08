@@ -45,9 +45,14 @@ const getDashboardStats = async (req, res) => {
       // Calculate average marks from regular marks
       DailyMark.aggregate([
         {
+          $project: {
+            avgMark: { $avg: ["$reviewMark", "$memorizationMark"] },
+          },
+        },
+        {
           $group: {
             _id: null,
-            averageMarks: { $avg: "$mark" },
+            averageMarks: { $avg: "$avgMark" },
           },
         },
       ]),
@@ -77,7 +82,7 @@ const getDashboardStats = async (req, res) => {
             totalAttendance: { $sum: 1 },
             presentCount: {
               $sum: {
-                $cond: [{ $eq: ["$status", "present"] }, 1, 0],
+                $cond: [{ $eq: ["$isPresent", true] }, 1, 0],
               },
             },
           },
@@ -96,7 +101,7 @@ const getDashboardStats = async (req, res) => {
       DailyMark.find()
         .sort({ createdAt: -1 })
         .limit(100)
-        .select("mark createdAt"),
+        .select("reviewMark memorizationMark createdAt"),
     ]);
 
     // Calculate attendance rate
@@ -127,7 +132,7 @@ const getDashboardStats = async (req, res) => {
       totalTeachers: teachersCount,
       totalExams: examsCount,
       totalGroups: groupsCount,
-      totalActivities: activitiesCount,
+      totalActivities: 0,
       totalNews: newsCount,
       averageMarks: averageMarks,
       averageExamMarks: averageExamMarks,

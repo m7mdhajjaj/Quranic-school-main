@@ -28,7 +28,7 @@ import type { NavigationItem } from '../types/navigation.types';
 
 const Header: React.FC<HeaderProps> = ({ className = '' }) => {
   // ==================== Hooks ====================
-  const { user: currentUser, logout: authLogout, isAuthenticated } = useAuth();
+  const { user: currentUser, logout: authLogout, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const { logoUrl, logoLoading } = useLogo();
 
@@ -43,10 +43,12 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
   // ==================== Computed Values ====================
   const isTeacher = currentUser?.role === 'teacher';
   const isAdmin = currentUser?.role === 'admin';
+  const isStudent = currentUser?.role === 'student';
   const isTeacherOrAdmin = isTeacher || isAdmin;
   const { primaryNavItems, secondaryNavItems } = useNavigation({
     isTeacher,
     isAdmin,
+    isStudent,
     isTeacherOrAdmin,
   });
 
@@ -76,10 +78,10 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
   // ==================== Effects ====================
   // Redirect if not authenticated
   useEffect(() => {
-    if (!isAuthenticated && !currentUser) {
+    if (!isLoading && !isAuthenticated && !currentUser) {
       navigate('/login', { replace: true });
     }
-  }, [isAuthenticated, currentUser, navigate]);
+  }, [isAuthenticated, currentUser, navigate, isLoading]);
 
   // Close menus on ESC key
   useEffect(() => {
@@ -96,10 +98,9 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
   // ==================== Render ====================
 
   // ==================== Render ====================
-  if (!currentUser) {
-    return null;
-  }
-
+  // Show header shell even if user is loading to prevent layout shift
+  // but content will be conditionally rendered
+  
   return (
     <>
       {/* ==================== Header ==================== */}
@@ -126,11 +127,11 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
                   variant="header"
                 />
               </div>
-              <div className="block">
-                <h1 className="text-sm md:text-base lg:text-lg font-bold text-white drop-shadow-lg leading-tight">
+              <div className="block flex-shrink min-w-0">
+                <h1 className="text-sm md:text-base lg:text-lg font-bold text-white drop-shadow-lg leading-tight truncate">
                   مدرسة القرآن الكريم
                 </h1>
-                <p className="text-[10px] md:text-xs text-emerald-50/95 font-medium">
+                <p className="text-[10px] md:text-xs text-emerald-50/95 font-medium truncate">
                   أكاديمية مدرسة المهاجرين
                 </p>
               </div>
@@ -139,70 +140,97 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
             {/* ==================== Navigation - Desktop ==================== */}
             <div className="hidden lg:flex flex-1 justify-center px-2 lg:px-4">
               {/* Combine primary and grouped secondary items into one nav */}
-              <TabNavigation items={combinedItems} />
+              {isLoading ? (
+                 <div className="flex items-center gap-2 animate-pulse">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="h-9 w-24 bg-white/20 rounded-xl" />
+                    ))}
+                 </div>
+              ) : (
+                 <TabNavigation items={combinedItems} />
+              )}
             </div>
 
             {/* ==================== Right Tools ==================== */}
             <div className="flex items-center gap-1 sm:gap-2 md:gap-3 flex-shrink-0">
               
-              {/* Notifications */}
-              <div className="relative">
-                <NotificationHeader userId={currentUser._id} />
-              </div>
-
-              {/* Divider */}
-              <div className="hidden sm:block h-6 sm:h-8 w-px bg-white/30"></div>
-
-              {/* Profile Menu */}
-              <div className="relative z-[200]">
-                <button
-                  ref={profileMenuRef}
-                  onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                  className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl hover:bg-white/20 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/50"
-                  aria-label="قائمة الملف الشخصي"
-                  aria-expanded={profileMenuOpen}
-                >
-                  <Avatar
-                    user={currentUser}
-                    size="sm"
-                    border="ring"
-                    showStatus={true}
-                    statusSize="sm"
-                    autoFetch={true}
-                    userId={currentUser._id}
-                    userRole={currentUser.role}
-                    className="flex-shrink-0"
-                  />
-                  <div className="hidden md:flex flex-col items-start overflow-hidden">
-                    <span className="text-white text-xs md:text-sm font-semibold truncate max-w-[100px]">
-                      {currentUser?.firstName && currentUser?.lastName
-                        ? `${currentUser.firstName} ${currentUser.lastName}`
-                        : currentUser?.firstName || "المستخدم"}
-                    </span>
-                    <span className="text-emerald-100 text-[10px] md:text-xs font-medium truncate">
-                      {currentUser?.role === "teacher" ? "معلم" : currentUser?.role === "admin" ? "مدير" : "طالب"}
-                    </span>
+              {currentUser ? (
+                <>
+                  {/* Notifications */}
+                  <div className="relative">
+                    <NotificationHeader userId={currentUser._id} />
                   </div>
-                  <ChevronDown
-                    size={16}
-                    className={`w-4 h-4 text-white transition-transform duration-200 flex-shrink-0 hidden sm:block ${
-                      profileMenuOpen ? 'rotate-180' : ''
-                    }`}
-                  />
-                </button>
 
-                <ProfileMenu
-                  user={currentUser}
-                  isOpen={profileMenuOpen}
-                  onClose={() => setProfileMenuOpen(false)}
-                  onProfileClick={handleProfileClick}
-                  onChangePasswordClick={handleChangePasswordClick}
-                  onLogout={handleLogout}
-                  buttonRef={profileMenuRef}
-                />
-              </div>
+                  {/* Divider */}
+                  <div className="hidden sm:block h-6 sm:h-8 w-px bg-white/30"></div>
 
-              {/* Mobile Menu Button */}
+                  {/* Profile Menu */}
+                  <div className="relative z-[200]">
+                    <button
+                      ref={profileMenuRef}
+                      onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                      className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl hover:bg-white/20 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/50"
+                      aria-label="قائمة الملف الشخصي"
+                      aria-expanded={profileMenuOpen}
+                    >
+                      <Avatar
+                        user={currentUser}
+                        size="sm"
+                        border="ring"
+                        showStatus={true}
+                        statusSize="sm"
+                        autoFetch={true}
+                        userId={currentUser._id}
+                        userRole={currentUser.role}
+                        className="flex-shrink-0"
+                      />
+                      <div className="hidden md:flex flex-col items-start overflow-hidden">
+                        <span className="text-white text-xs md:text-sm font-semibold truncate max-w-[100px]">
+                          {currentUser?.firstName && currentUser?.lastName
+                            ? `${currentUser.firstName} ${currentUser.lastName}`
+                            : currentUser?.firstName || "المستخدم"}
+                        </span>
+                        <span className="text-emerald-100 text-[10px] md:text-xs font-medium truncate">
+                          {currentUser?.role === "teacher" ? "معلم" : currentUser?.role === "admin" ? "مدير" : "طالب"}
+                        </span>
+                      </div>
+                      <ChevronDown
+                        size={16}
+                        className={`w-4 h-4 text-white transition-transform duration-200 flex-shrink-0 hidden sm:block ${
+                          profileMenuOpen ? 'rotate-180' : ''
+                        }`}
+                      />
+                    </button>
+
+                    <ProfileMenu
+                      user={currentUser}
+                      isOpen={profileMenuOpen}
+                      onClose={() => setProfileMenuOpen(false)}
+                      onProfileClick={handleProfileClick}
+                      onChangePasswordClick={handleChangePasswordClick}
+                      onLogout={handleLogout}
+                      buttonRef={profileMenuRef}
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Loading State Skeleton */}
+                  <div className="flex items-center gap-3">
+                     <div className="w-8 h-8 rounded-full bg-white/20 animate-pulse"></div>
+                     <div className="hidden sm:block h-8 w-px bg-white/20"></div>
+                     <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-white/20 animate-pulse"></div>
+                        <div className="hidden md:flex flex-col gap-1">
+                           <div className="w-20 h-3 bg-white/20 rounded animate-pulse"></div>
+                           <div className="w-12 h-2 bg-white/20 rounded animate-pulse"></div>
+                        </div>
+                     </div>
+                  </div>
+                </>
+              )}
+
+              {/* Mobile Menu Button - Always Visible if safe, or hide if loading? Better safe. */}
               <div className="lg:hidden">
                 <MobileMenuButton
                   isOpen={isMenuOpen}

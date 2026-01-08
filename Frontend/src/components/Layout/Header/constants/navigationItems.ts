@@ -224,11 +224,12 @@ export const getPrimaryNavItems = (rolePermissions: RolePermissions): Navigation
   }
 
   // ==================== Student Navigation ====================
+  if (rolePermissions.isStudent) {
   return [
     homeItem,
     {
       to: "/news",
-      label: "أخبار المدرسة",
+      label: "الأخبار",
       icon: Newspaper,
       color: "from-purple-500 to-pink-500",
     },
@@ -296,7 +297,7 @@ export const getPrimaryNavItems = (rolePermissions: RolePermissions): Navigation
         },
         {
           to: "/azkar",
-          label: "حصن المسلم",
+          label: "الأذكار",
           icon: BookOpenCheck,
           color: "from-green-500 to-emerald-500",
         },
@@ -342,11 +343,15 @@ export const getPrimaryNavItems = (rolePermissions: RolePermissions): Navigation
     },
     {
       to: "/chat",
-      label: "مراسلة المعلم",
+      label: "المحادثات",
       icon: MessageSquare,
       color: "from-green-500 to-teal-500",
     },
-  ];
+    ];
+  }
+
+  // Default fallback (loading or guest)
+  return [homeItem];
 };
 
 export const getSecondaryNavItems = (rolePermissions: RolePermissions): NavigationItem[] => {

@@ -18,6 +18,7 @@
 // ============================================================================
 
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import Header from './Header';
 import Sidebar from './Sidebar/Sidebar';
 import { Footer } from './Footer';
@@ -82,6 +83,7 @@ const shouldHideLayout = (pathname: string): boolean => {
  */
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const location = useLocation();
 
   // Determine what to show based on current route
   const hideLayout = shouldHideLayout(location.pathname);

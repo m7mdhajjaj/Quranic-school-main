@@ -93,8 +93,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setIsLoading(false); // ✅ أنهي التحميل فوراً
           
           // تحقق من صحة التوكن في الخلفية (دون انتظار)
-          verifyToken()
-            .then((response) => {
+          verifyToken().then((response) => { // Removed await to prevent blocking logic if it was async inside
               if (response && response.success) {
                 // Connect socket and emit login
                 if (!socketManager.isConnected()) {
@@ -104,7 +103,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 // ✅ استخدام onConnectionChange بدلاً من setTimeout  
                 const unsub = socketManager.onConnectionChange((connected) => {
                   if (connected) {
-                    console.log('📡 [AuthContext] Socket connected on init, emitting login event');
+                    // console.log('📡 [AuthContext] Socket connected on init, emitting login event'); 
                     socketManager.emit('login', {
                       userId: parsedUser._id,
                       role: parsedUser.role,
@@ -116,7 +115,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 
                 // Fallback: إذا متصل بالفعل
                 if (socketManager.isConnected()) {
-                  console.log('📡 [AuthContext] Socket already connected on init');
+                  // console.log('📡 [AuthContext] Socket already connected on init');
                   socketManager.emit('login', {
                     userId: parsedUser._id,
                     role: parsedUser.role,
