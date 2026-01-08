@@ -77,6 +77,9 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
   };
 
   const handleNotificationClick = (notification: Notification) => {
+    // إغلاق القائمة المنسدلة مباشرةً عند النقر على أي إشعار
+    setShowDropdown(false);
+    
     // التنقل حسب النوع
     if (notification.type === 'message') {
       localStorage.setItem(
@@ -85,13 +88,8 @@ const NotificationHeader: React.FC<NotificationHeaderProps> = ({ userId }) => {
       );
       window.dispatchEvent(new Event('chat-notification-click'));
       navigate('/chat');
-      setShowDropdown(false);
     } else if (notification.type === 'news') {
       navigate('/news');
-      setShowDropdown(false);
-    } else {
-      // For other types, just close the dropdown
-      setShowDropdown(false);
     }
   };
 

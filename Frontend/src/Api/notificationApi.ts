@@ -99,10 +99,12 @@ export const getAllNotifications = async (
 ): Promise<{notifications: Notification[], total: number, hasMore: boolean}> => {
   try {
     const response = await api.get(`/notifications/${userId}?page=${page}&limit=${limit}`);
+    // Backend returns: { success: true, data: { notifications, pagination, stats } }
+    const responseData = response.data?.data;
     return {
-      notifications: response.data.data || [],
-      total: response.data.total || 0,
-      hasMore: response.data.hasMore || false
+      notifications: responseData?.notifications || [],
+      total: responseData?.stats?.totalCount || 0,
+      hasMore: responseData?.pagination?.hasNextPage || false
     };
   } catch (error) {
     console.error('Failed to get all notifications:', error);

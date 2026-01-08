@@ -5,7 +5,7 @@
 
 import { useEffect, useCallback, useReducer, useRef } from 'react';
 import {
-  getRecentNotifications,
+  getAllNotifications,
   markAsRead,
   markAllAsRead,
   deleteNotification,
@@ -320,21 +320,18 @@ export const useNotificationDataOptimized = ({
 
   const fetchNotifications = useCallback(
     async (pageNum: number = 1, reset: boolean = false) => {
-      if (state.isLoading) return;
+      if (state.isLoading) {
+        console.log('⏳ Already loading, skipping fetch');
+        return;
+      }
 
       try {
         dispatch({ type: 'SET_LOADING', payload: true });
-        const data = await getRecentNotifications(userId, 20);
+        
+        console.log(`📡 Fetching notifications - page: ${pageNum}, reset: ${reset}`);
+        const { notifications: notificationsArray, hasMore } = await getAllNotifications(userId, pageNum, 20);
 
-        let notificationsArray: any[] = [];
-
-        if (Array.isArray(data)) {
-          notificationsArray = data;
-        } else if (data?.notifications) {
-          notificationsArray = data.notifications;
-        } else if (data?.data) {
-          notificationsArray = data.data;
-        }
+        console.log(`✅ Received ${notificationsArray.length} notifications, hasMore: ${hasMore}`);
 
         const notifications: Notification[] = notificationsArray.map((n) => ({
           _id: n._id,
@@ -346,14 +343,16 @@ export const useNotificationDataOptimized = ({
           isRead: n.isRead,
           priority: n.priority || 'medium',
           isNew: !n.isRead,
-          data: n.data || n.metadata,
+          data: n.data || {},
         }));
 
         dispatch({ type: 'SET_NOTIFICATIONS', payload: notifications, reset });
         dispatch({ type: 'SET_PAGE', payload: pageNum });
-        dispatch({ type: 'SET_HAS_MORE', payload: notifications.length === 20 });
+        dispatch({ type: 'SET_HAS_MORE', payload: hasMore });
+        dispatch({ type: 'SET_LOADING', payload: false });
       } catch (error) {
         console.error('❌ خطأ في جلب الإشعارات:', error);
+        dispatch({ type: 'SET_HAS_MORE', payload: false });
         dispatch({ type: 'SET_LOADING', payload: false });
       }
     },

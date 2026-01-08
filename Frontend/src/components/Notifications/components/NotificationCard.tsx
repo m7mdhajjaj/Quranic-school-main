@@ -22,8 +22,15 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
   const priorityBadge = getPriorityBadge(notification.priority);
 
   const handleClick = () => {
-    onMarkAsRead(notification._id);
+    if (!notification.isRead) {
+      onMarkAsRead(notification._id);
+    }
     onClick?.();
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation(); // منع تشغيل handleClick
+    onDelete(notification._id, e);
   };
 
   return (
@@ -88,7 +95,7 @@ export const NotificationCard: React.FC<NotificationCardProps> = ({
 
         {/* زر الحذف */}
         <button
-          onClick={(e) => onDelete(notification._id, e)}
+          onClick={handleDelete}
           className="flex-shrink-0 p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
           title="حذف الإشعار"
           aria-label="حذف الإشعار">

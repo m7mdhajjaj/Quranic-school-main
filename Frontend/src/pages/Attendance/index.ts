@@ -1,2 +1,2 @@
 // index.ts
-export { default } from "./AbsencePage";
+export { default } from "./AbsencePage.tsx";
