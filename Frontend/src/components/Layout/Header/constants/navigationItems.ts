@@ -124,7 +124,7 @@ export const getPrimaryNavItems = (rolePermissions: RolePermissions): Navigation
           },
           {
             to: "/daily-marks",
-            label: "إدخال العلامات",
+            label: "علامات يومية",
             icon: Award,
             color: "from-orange-500 to-red-500",
           },

@@ -126,7 +126,7 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
                   variant="header"
                 />
               </div>
-              <div className="hidden lg:block">
+              <div className="block">
                 <h1 className="text-sm md:text-base lg:text-lg font-bold text-white drop-shadow-lg leading-tight">
                   مدرسة القرآن الكريم
                 </h1>

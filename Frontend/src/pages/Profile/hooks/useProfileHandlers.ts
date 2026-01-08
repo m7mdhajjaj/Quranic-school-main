@@ -55,8 +55,8 @@ export const useProfileHandlers = (
   const heroBgColor = useMemo(
     () =>
       user?.role === "admin"
-        ? "bg-gradient-to-b from-teal-500 to-emerald-50"
-        : "bg-gradient-to-b from-teal-500 to-gray-50",
+        ? "bg-gradient-to-b from-emerald-600 to-emerald-50"
+        : "bg-gradient-to-b from-emerald-600 to-gray-50",
     [user?.role]
   );
 

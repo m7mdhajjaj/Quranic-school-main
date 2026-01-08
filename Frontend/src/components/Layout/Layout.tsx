@@ -17,9 +17,9 @@
 // └─────────────────────────────────┘
 // ============================================================================
 
-import React from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
 import Header from './Header';
+import Sidebar from './Sidebar/Sidebar';
 import { Footer } from './Footer';
 import { AiChatbot } from '../AiChatbot';
 
@@ -81,7 +81,7 @@ const shouldHideLayout = (pathname: string): boolean => {
  * ```
  */
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const location = useLocation();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Determine what to show based on current route
   const hideLayout = shouldHideLayout(location.pathname);
@@ -94,16 +94,36 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div className="app-content m-0 p-0">
-      {/* Header - Conditional rendering based on route */}
-      {showHeader && <HeaderComponent />}
+      {/* Top Header - Always Visible if showHeader is true */}
+      {showHeader && (
+        <HeaderComponent />
+      )}
+
+      {/* Sidebar - Toggled visibility */}
+      {showHeader && (
+        <Sidebar 
+          isOpen={isSidebarOpen} 
+          onClose={() => setIsSidebarOpen(false)}
+        />
+      )}
 
       {/* Main Content Area */}
-      <main className="main-content m-0 p-0">
+      <main 
+        className={`main-content m-0 p-0 transition-all duration-300 ease-in-out ${
+          showHeader && isSidebarOpen ? 'lg:mr-72' : ''
+        }`}
+      >
         {children}
       </main>
 
       {/* Footer - Conditional rendering based on route */}
-      {showFooter && <Footer />}
+      <div 
+        className={`transition-all duration-300 ease-in-out ${
+          showHeader && isSidebarOpen ? 'lg:mr-72' : ''
+        }`}
+      >
+        {showFooter && <Footer />}
+      </div>
 
       {/* Global AI Chatbot */}
       <AiChatbot />
