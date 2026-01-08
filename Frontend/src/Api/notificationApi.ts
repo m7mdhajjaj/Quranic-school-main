@@ -9,7 +9,7 @@ export interface Notification {
   id?: number;
   title: string;
   message: string;
-  type: 'grade' | 'message' | 'prayer_time' | 'activity' | 'attendance' | 'exam' | 'general' | 'daily_marks'; // ✅ متطابق مع Backend
+  type: 'grade' | 'message' | 'prayer_time' | 'attendance' | 'exam' | 'general' | 'daily_marks'; // ✅ متطابق مع Backend
   priority: 'low' | 'medium' | 'high' | 'urgent'; // ✅ متطابق مع Backend
   isRead: boolean;
   userId?: string;
@@ -72,7 +72,7 @@ export const markAsRead = async (notificationId: string): Promise<boolean> => {
 // Mark all notifications as read for a user
 export const markAllAsRead = async (userId: string): Promise<boolean> => {
   try {
-    const response = await api.put(`/notifications/read-all`);
+    const response = await api.put(`/notifications/${userId}/read-all`);
     return response.data.success;
   } catch (error) {
     console.error('Failed to mark all notifications as read:', error);

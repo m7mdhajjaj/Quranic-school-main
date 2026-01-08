@@ -59,7 +59,6 @@ import Timetable from "./pages/Timetable/TimetablePage";
 // Page Components - Communication & Activities
 // ============================================================================
 // import Chat from "./pages/Chat";
-import Activities from "./pages/Activities";
 
 // ============================================================================
 // Page Components - Attendance & Management
@@ -259,7 +258,6 @@ const TeacherRoutes: React.FC = () => {
         />
         {/* <Route path="/chat" element={<NotFound />} /> */}
         <Route path="/chat" element={<StudentChatView />} />
-        <Route path="/activities" element={<Activities />} />
 
         {/* ============================================
             الحضور والإدارة - Attendance & Management
@@ -419,7 +417,6 @@ const StudentRoutes: React.FC = () => {
           } 
         />
         <Route path="/chat" element={<TeacherChatView />} />
-        <Route path="/activities" element={<Activities />} />
 
         {/* ============================================
             الحضور والغياب - Attendance (View Only)

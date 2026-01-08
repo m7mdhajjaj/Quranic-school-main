@@ -32,7 +32,6 @@ import {
   Trophy,
   FileText,
   Calendar,
-  Activity,
   BookMarked,
 } from "lucide-react-native";
 
@@ -85,7 +84,6 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({ isOpen, onClose }) => {
       { to: "/reports", label: "التقارير", icon: FileText },
       { to: "/timetable", label: "المواعيد", icon: Clock },
       { to: "/chat", label: "المحادثة", icon: MessageSquare },
-      { to: "/activities", label: "الأنشطة", icon: Activity },
       { to: "/attendance", label: "الحضور والغياب", icon: UserCheck },
       { to: "/warnings", label: "الإنذارات", icon: AlertTriangle },
       { to: "/points-game", label: "لعبة النقاط", icon: Trophy },

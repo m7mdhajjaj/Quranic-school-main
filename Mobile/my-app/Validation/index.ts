@@ -7,14 +7,6 @@
 
 // Re-export main validation schemas and functions
 export {
-  activityValidationSchema,
-  validateActivityForm,
-  validateActivityTitle,
-  validateActivityDescription,
-  validateActivityDate,
-  VALID_ACTIVITY_TYPES,
-} from "./activityValidation";
-export {
   adminValidationSchema,
   validateAdminWithYup,
   sanitizeAdminData,

@@ -219,12 +219,6 @@ export const getSecondaryNavItems = (rolePermissions: RolePermissions): Navigati
       color: "from-yellow-500 to-orange-500",
     },
     {
-      to: "/activities",
-      label: "الأنشطة",
-      icon: Sparkles,
-      color: "from-pink-500 to-rose-500",
-    },
-    {
       to: "/warnings",
       label: "الإنذارات",
       icon: AlertTriangle,

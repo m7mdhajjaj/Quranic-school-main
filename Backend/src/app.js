@@ -136,7 +136,6 @@ app.use('/api/teachers', require('./routes/teacherRoutes'));
 app.use('/api/admins', require('./routes/adminRoutes'));
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/news', require('./routes/NewsRoutes/newsRoutes'));
-app.use('/api/activities', require('./routes/activityRoutes/activityRoutes'));
 app.use('/api/rankings', require('./routes/rankingRoutes'));
 // Sections now part of daily-marks: /api/daily-marks/sections
 app.use(

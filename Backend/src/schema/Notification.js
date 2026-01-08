@@ -19,7 +19,6 @@ const notificationSchema = new mongoose.Schema(
         "grade",
         "message",
         "prayer_time",
-        "activity",
         "attendance",
         "exam",
         "news",

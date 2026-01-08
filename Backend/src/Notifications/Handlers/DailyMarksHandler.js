@@ -60,7 +60,7 @@ exports.notifySectionAdded = async (section, io) => {
     const notifications = students.map((student) => ({
       recipient: student._id,
       recipientModel: "Student",
-      type: "daily_marks", // or 'activity'
+      type: "daily_marks",
       title: "مقطع جديد",
       message: `تم إضافة مقطع جديد لحلقة ${groupName} بتاريخ ${dateStr}: حفظ ${section.memorizationSection}، مراجعة ${section.reviewSection}`,
       data: {

@@ -16,24 +16,6 @@ export interface MultipleUploadResponse {
 }
 
 /**
- * رفع صورة واحدة للأنشطة
- */
-export const uploadActivityImage = async (
-  file: File
-): Promise<UploadResponse> => {
-  const formData = new FormData();
-  formData.append("image", file);
-
-  const response = await axios.post(`${API_URL}/activity`, formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
-
-  return response.data;
-};
-
-/**
  * رفع صورة واحدة للأخبار
  */
 export const uploadNewsImage = async (file: File): Promise<UploadResponse> => {
@@ -41,26 +23,6 @@ export const uploadNewsImage = async (file: File): Promise<UploadResponse> => {
   formData.append("image", file);
 
   const response = await axios.post(`${API_URL}/news`, formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
-
-  return response.data;
-};
-
-/**
- * رفع عدة صور للأنشطة
- */
-export const uploadMultipleActivityImages = async (
-  files: File[]
-): Promise<MultipleUploadResponse> => {
-  const formData = new FormData();
-  files.forEach((file) => {
-    formData.append("images", file);
-  });
-
-  const response = await axios.post(`${API_URL}/activity/multiple`, formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },

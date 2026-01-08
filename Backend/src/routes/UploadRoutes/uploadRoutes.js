@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const {
-  uploadActivity,
+
   uploadNews,
   uploadHero,
   uploadLogo,
@@ -9,9 +9,7 @@ const {
 } = require('../../config/multer');
 const { protect } = require('../../middleware/auth');
 const {
-  uploadActivityImage,
   uploadNewsImage,
-  uploadMultipleActivityImages,
   uploadMultipleNewsImages,
   uploadHeroImage,
   getHeroImage,
@@ -21,13 +19,7 @@ const {
   deleteImage,
 } = require('../../controllers/uploadController');
 
-// ============= Activity Image Routes =============
-router.post('/activity', uploadActivity.single('image'), uploadActivityImage);
-router.post(
-  '/activity/multiple',
-  uploadActivity.array('images', 5),
-  uploadMultipleActivityImages
-);
+
 
 // ============= News Image Routes =============
 router.post('/news', uploadNews.single('image'), uploadNewsImage);

@@ -2,7 +2,6 @@ const Student = require("../../schema/Student");
 const Teacher = require("../../schema/Teacher");
 const ExamSchedule = require("../../schema/ExamSchedule");
 const Group = require("../../schema/Group");
-const Activity = require("../../schema/Activity");
 const News = require("../../schema/News");
 const DailyMark = require("../../schema/DailyMark/DailyMark");
 const ExamMark = require("../../schema/ExamMark");
@@ -20,7 +19,6 @@ const getDashboardStats = async (req, res) => {
       teachersCount,
       examsCount,
       groupsCount,
-      activitiesCount,
       newsCount,
       averageMarksResult,
       examMarksResult,
@@ -40,9 +38,6 @@ const getDashboardStats = async (req, res) => {
 
       // Count total groups
       Group.countDocuments(),
-
-      // Count total activities
-      Activity.countDocuments(),
 
       // Count total news
       News.countDocuments(),

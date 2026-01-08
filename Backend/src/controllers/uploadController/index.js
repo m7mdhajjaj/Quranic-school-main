@@ -3,11 +3,7 @@
  * Central export point for all upload controllers
  */
 
-// Import Activity Upload Controllers
-const {
-  uploadActivityImage,
-  uploadMultipleActivityImages,
-} = require("./activityUpload");
+
 
 // Import News Upload Controllers
 const {
@@ -48,9 +44,7 @@ const {
 
 // Export all controllers
 module.exports = {
-  // Activity Controllers
-  uploadActivityImage,
-  uploadMultipleActivityImages,
+
   
   // News Controllers
   uploadNewsImage,

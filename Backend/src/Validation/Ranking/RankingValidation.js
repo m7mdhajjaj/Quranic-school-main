@@ -82,7 +82,7 @@ const validateRankingType = (rankingType) => {
   const typeStr = rankingType.toString().trim().toLowerCase();
   const validTypes = [
     'overall', 'monthly', 'weekly', 'semester', 'yearly',
-    'subject', 'exam', 'attendance', 'activity', 'behavior',
+    'subject', 'exam', 'attendance', 'behavior',
     'memorization', 'recitation', 'participation'
   ];
   

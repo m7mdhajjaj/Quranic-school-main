@@ -14,7 +14,6 @@ export type NotificationType =
   | 'grade'           // إشعار علامة
   | 'message'         // رسالة
   | 'prayer_time'     // وقت صلاة
-  | 'activity'        // نشاط
   | 'attendance'      // حضور/غياب
   | 'exam'            // امتحان
   | 'assignment'      // مقطع/واجب

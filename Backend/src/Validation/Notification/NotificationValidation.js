@@ -79,7 +79,7 @@ const validateNotificationType = (type) => {
   const typeStr = type.toString().trim().toLowerCase();
   const validTypes = [
     'info', 'success', 'warning', 'error', 'announcement',
-    'exam', 'assignment', 'attendance', 'grade', 'activity',
+    'exam', 'assignment', 'attendance', 'grade',
     'event', 'reminder', 'system', 'urgent', 'general',
     'daily_marks', 'prayer_time', 'message', 'news'
   ];
@@ -329,7 +329,7 @@ const validateNotificationData = (data) => {
   // Validate related entity type
   if (data.relatedEntityType !== undefined) {
     const entityType = data.relatedEntityType.toString().trim().toLowerCase();
-    const validEntityTypes = ['exam', 'assignment', 'activity', 'news', 'event', 'grade', 'attendance', 'daily_marks'];
+    const validEntityTypes = ['exam', 'assignment', 'news', 'event', 'grade', 'attendance', 'daily_marks'];
     if (validEntityTypes.includes(entityType)) {
       validatedData.relatedEntityType = entityType;
     } else {

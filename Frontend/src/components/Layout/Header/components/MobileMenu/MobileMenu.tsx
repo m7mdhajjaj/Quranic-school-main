@@ -1,13 +1,12 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { User, LogOut, X, ChevronDown, ChevronUp } from "lucide-react";
-import { useState } from "react";
+import { User, LogOut, X } from "lucide-react";
 
 // Components
 import { Button } from "@/components/UI";
 import Avatar from "@/components/Avatar/Avatar";
 
 // Utils
-import { checkIsActive, hasActiveSubItem } from '../../utils/navigation.utils';
+import { checkIsActive } from '../../utils/navigation.utils';
 
 // Types
 import type { MobileMenuProps, NavigationItem } from "../../types/navigation.types";
@@ -25,8 +24,22 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
 
   if (!isOpen) return null;
 
-  // Merge all items
-  const allItems = [...primaryItems, ...secondaryItems];
+  // Flatten all items (expand subItems into flat list)
+  const flattenItems = (items: NavigationItem[]): NavigationItem[] => {
+    const flattened: NavigationItem[] = [];
+    items.forEach(item => {
+      if (item.subItems && item.subItems.length > 0) {
+        // Add all subItems directly
+        flattened.push(...item.subItems);
+      } else {
+        // Add regular item
+        flattened.push(item);
+      }
+    });
+    return flattened;
+  };
+
+  const allItems = flattenItems([...primaryItems, ...secondaryItems]);
 
   return (
     <div className="xl:hidden fixed inset-0 z-40 animate-fade-in">
@@ -89,23 +102,8 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
           )}
 
           {/* ==================== Navigation Items ==================== */}
-
-          {/* ==================== Navigation Items ==================== */}
           <div className="space-y-1">
             {allItems.map((item) => {
-              // If item has subItems, show as dropdown
-              if (item.subItems && item.subItems.length > 0) {
-                return (
-                  <MobileDropdownItem
-                    key={item.to}
-                    item={item}
-                    location={location}
-                    onClose={onClose}
-                  />
-                );
-              }
-
-              // Otherwise show as regular item
               const IconComponent = item.icon;
               const isCurrentActive = checkIsActive(item.to, location.pathname);
 
@@ -164,86 +162,6 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
           </div>
         </div>
       </div>
-    </div>
-  );
-};
-
-// ==========================================
-// Mobile Dropdown Item Component
-// ==========================================
-interface MobileDropdownItemProps {
-  item: NavigationItem;
-  location: ReturnType<typeof useLocation>;
-  onClose: () => void;
-}
-
-const MobileDropdownItem: React.FC<MobileDropdownItemProps> = ({
-  item,
-  location,
-  onClose,
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const IconComponent = item.icon;
-
-  // Check if has active sub-item
-  const hasActiveChild = hasActiveSubItem(item.subItems, location.pathname);
-  const isItemActive = checkIsActive(item.to, location.pathname) || hasActiveChild;
-
-  return (
-    <div className="space-y-1">
-      {/* Dropdown Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all ${
-          isItemActive
-            ? "bg-white/20 text-white shadow-lg"
-            : "text-emerald-100 hover:bg-white/15 hover:text-white"
-        }`}
-      >
-        <div className="flex items-center gap-3 flex-1">
-          <IconComponent
-            size={22}
-            className={isItemActive ? "text-white" : "text-white/70"}
-          />
-          <span className="font-medium">{item.label}</span>
-        </div>
-        {isOpen ? (
-          <ChevronUp size={20} className="text-white/70" />
-        ) : (
-          <ChevronDown size={20} className="text-white/70" />
-        )}
-      </button>
-
-      {/* Dropdown Items */}
-      {isOpen && item.subItems && (
-        <div className="mr-4 space-y-1 bg-white/5 rounded-xl p-2">
-          {item.subItems.map((subItem) => {
-            const SubIconComponent = subItem.icon;
-            const isSubActive = checkIsActive(subItem.to, location.pathname);
-
-            return (
-              <NavLink
-                key={subItem.to}
-                to={subItem.to}
-                onClick={onClose}
-                className={() => {
-                  return `flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all ${
-                    isSubActive
-                      ? "bg-white/20 text-white shadow-md"
-                      : "text-emerald-100 hover:bg-white/10 hover:text-white"
-                  }`;
-                }}
-              >
-                <SubIconComponent
-                  size={18}
-                  className={isSubActive ? "text-white" : "text-white/60"}
-                />
-                <span className="font-medium text-sm">{subItem.label}</span>
-              </NavLink>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 };

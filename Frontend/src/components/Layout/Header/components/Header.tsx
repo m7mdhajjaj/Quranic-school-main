@@ -101,17 +101,17 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
     <>
       {/* ==================== Header ==================== */}
       <header
-        className={`fixed top-0 left-0 right-0 z-[100] bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-600 shadow-xl backdrop-blur-xl border-b border-white/20 m-0 ${className}`}
+        className={`fixed top-0 left-0 right-0 z-[100] bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-600 shadow-2xl backdrop-blur-xl border-b-2 border-white/30 m-0 ${className}`}
         dir="rtl"
       >
         <div className="max-w-[2000px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
-          {/* ==================== Main Row ==================== */}
-          <div className="flex items-center justify-between h-14 sm:h-16 md:h-20 gap-1 sm:gap-2 md:gap-3 py-1 sm:py-2 overflow-hidden">
+          {/* ==================== Top Row - Logo, Navigation & Tools ==================== */}
+          <div className="flex items-center justify-between h-14 sm:h-16 md:h-18 gap-2 sm:gap-3 md:gap-4 py-2 overflow-hidden">
             
             {/* ==================== Logo ==================== */}
             <Link
               to="/"
-              className="flex items-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-3 hover:opacity-90 transition-all duration-300 group flex-shrink-0 min-w-0 max-w-[30%] sm:max-w-[35%]"
+              className="flex items-center gap-1 sm:gap-1.5 md:gap-2 hover:opacity-90 transition-all duration-300 group flex-shrink-0"
             >
               <div className="relative transition-transform duration-300 group-hover:scale-110 flex-shrink-0">
                 <Logo
@@ -123,23 +123,23 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
                   variant="header"
                 />
               </div>
-              <div className="hidden min-[375px]:block min-w-0 overflow-hidden">
-                <h1 className="text-xs sm:text-sm md:text-lg lg:text-xl font-bold text-white drop-shadow-lg leading-tight truncate">
+              <div className="hidden lg:block">
+                <h1 className="text-sm md:text-base lg:text-lg font-bold text-white drop-shadow-lg leading-tight">
                   مدرسة القرآن الكريم
                 </h1>
-                <p className="text-[9px] sm:text-[10px] md:text-xs lg:text-sm text-emerald-50/90 font-medium truncate">
+                <p className="text-[10px] md:text-xs text-emerald-50/95 font-medium">
                   أكاديمية مدرسة المهاجرين
                 </p>
               </div>
             </Link>
 
             {/* ==================== Navigation - Desktop ==================== */}
-            <div className="hidden sm:flex flex-1 justify-center min-w-0 max-w-[40%] sm:max-w-[45%] md:max-w-[50%] mx-0.5 sm:mx-1 md:mx-2 lg:mx-4 overflow-hidden">
-              <TabNavigation items={primaryNavItems} secondaryItems={secondaryNavItems} />
+            <div className="hidden lg:flex flex-1 justify-center max-w-[60%]">
+              <TabNavigation items={primaryNavItems} secondaryItems={[]} />
             </div>
 
             {/* ==================== Right Tools ==================== */}
-            <div className="flex items-center gap-0.5 sm:gap-1 md:gap-1.5 lg:gap-2 flex-shrink-0 min-w-0 max-w-[30%] sm:max-w-[25%]">
+            <div className="flex items-center gap-1 sm:gap-2 md:gap-3 flex-shrink-0">
               
               {/* Notifications */}
               <div className="relative">
@@ -147,14 +147,14 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
               </div>
 
               {/* Divider */}
-              <div className="hidden min-[375px]:block h-6 sm:h-8 w-px bg-white/30"></div>
+              <div className="hidden sm:block h-6 sm:h-8 w-px bg-white/30"></div>
 
               {/* Profile Menu */}
               <div className="relative z-[200]">
                 <button
                   ref={profileMenuRef}
                   onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                  className="flex items-center gap-1 sm:gap-2 px-1.5 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl hover:bg-white/20 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/50"
+                  className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl hover:bg-white/20 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/50"
                   aria-label="قائمة الملف الشخصي"
                   aria-expanded={profileMenuOpen}
                 >
@@ -169,19 +169,19 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
                     userRole={currentUser.role}
                     className="flex-shrink-0"
                   />
-                  <div className="hidden sm:flex flex-col items-start min-w-0 mr-1 sm:mr-1.5 lg:mr-2 overflow-hidden">
-                    <span className="text-white text-[10px] sm:text-xs md:text-sm font-semibold truncate max-w-[60px] sm:max-w-[80px] md:max-w-[100px]">
+                  <div className="hidden md:flex flex-col items-start overflow-hidden">
+                    <span className="text-white text-xs md:text-sm font-semibold truncate max-w-[100px]">
                       {currentUser?.firstName && currentUser?.lastName
                         ? `${currentUser.firstName} ${currentUser.lastName}`
                         : currentUser?.firstName || "المستخدم"}
                     </span>
-                    <span className="text-emerald-100 text-[9px] sm:text-[10px] md:text-xs font-medium truncate">
+                    <span className="text-emerald-100 text-[10px] md:text-xs font-medium truncate">
                       {currentUser?.role === "teacher" ? "معلم" : currentUser?.role === "admin" ? "مدير" : "طالب"}
                     </span>
                   </div>
                   <ChevronDown
                     size={16}
-                    className={`w-4 h-4 sm:w-[18px] sm:h-[18px] text-white transition-transform duration-200 flex-shrink-0 hidden min-[375px]:block ${
+                    className={`w-4 h-4 text-white transition-transform duration-200 flex-shrink-0 hidden sm:block ${
                       profileMenuOpen ? 'rotate-180' : ''
                     }`}
                   />
@@ -199,7 +199,7 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
               </div>
 
               {/* Mobile Menu Button */}
-              <div className="sm:hidden">
+              <div className="lg:hidden">
                 <MobileMenuButton
                   isOpen={isMenuOpen}
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -207,11 +207,20 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
               </div>
             </div>
           </div>
+
+          {/* ==================== Bottom Row - Secondary Navigation (Desktop Only) ==================== */}
+          <div className="hidden lg:block pb-2">
+            <div className="flex items-center justify-center">
+              <div className="max-w-[80%]">
+                <TabNavigation items={[]} secondaryItems={secondaryNavItems} />
+              </div>
+            </div>
+          </div>
         </div>
       </header>
 
       {/* ==================== Header Spacer ==================== */}
-      <div className="h-14 sm:h-16 md:h-20"></div>
+      <div className="h-28 sm:h-32 md:h-36"></div>
 
       {/* ==================== Mobile Menu ==================== */}
       <MobileMenu
