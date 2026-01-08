@@ -41,15 +41,29 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
   const [editingSession, setEditingSession] = useState<Session | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // ✅ التحقق من وجود طلب إضافة جلسة من الرابط (مثل من صفحة DailyMarks)
+  // ✅ التحقق من وجود طلب إضافة/تعديل جلسة من الرابط
   useEffect(() => {
     const addSession = searchParams.get('addSession');
+    const editSession = searchParams.get('editSession');
     const sectionId = searchParams.get('sectionId');
-    if (addSession === 'true' && sectionId) {
-      setIsModalOpen(true);
-      // يمكن استخدام sectionId كـ prop إضافي للمودال لاحقاً
+    
+    if (sectionId) {
+      if (editSession === 'true') {
+        const sessionToEdit = sessions.find(s => s.sectionId === sectionId);
+        if (sessionToEdit) {
+          setEditingSession(sessionToEdit);
+          setIsModalOpen(true);
+        } else {
+             // If no session found, do nothing (respecting "Only if there is a time")
+             // or check if user implicitly meant Add. 
+             // Given the request "If there is a time", we should probably NOT open Add mode automatically here.
+        }
+      } else if (addSession === 'true') {
+        setEditingSession(null);
+        setIsModalOpen(true);
+      }
     }
-  }, [searchParams]);
+  }, [searchParams, sessions]);
 
   const handleOpenAddModal = () => {
     setEditingSession(null);
@@ -182,8 +196,8 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
         isOpen={isModalOpen}
         onClose={() => {
           handleCloseModal();
-          // Remove query params if they exist
-          if (searchParams.get('addSession')) {
+          // Remove query params if they exist (both add and edit)
+          if (searchParams.get('addSession') || searchParams.get('editSession')) {
             setSearchParams({});
           }
         }}

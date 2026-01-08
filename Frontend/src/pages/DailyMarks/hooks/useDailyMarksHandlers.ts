@@ -172,19 +172,34 @@ export const useDailyMarksHandlers = ({
       setEditingSection(null);
       showSuccessToast("✅ تم تحديث المقطع بنجاح!");
 
-      // 2. Call API in background
-      const updatedSectionData = await updateSection(editingSection._id, {
+      // 2. Start API call in background
+      const updatePromise = updateSection(editingSection._id, {
         date: editingSection.date,
         memorizationSection: editingSection.memorizationSection,
         reviewSection: editingSection.reviewSection,
       });
 
-      // 3. Update with actual server data to ensure consistency
-      setSections((prev) =>
-        prev.map((section) =>
-          section._id === editingSection._id ? updatedSectionData : section
-        ).filter((s): s is Section => s !== null)
+      // Show confirmation dialog immediately (without waiting for API)
+      const confirmResult = await showConfirmMessage(
+        "تحديث الجدول",
+        "هل تود تعديل موعد الجدول المرتبط بهذا المقطع؟",
+        "نعم، عدّل الموعد",
+        "لا، شكراً"
       );
+
+      if (confirmResult.isConfirmed) {
+        navigate(`/timetable?editSession=true&sectionId=${editingSection._id}&groupName=${encodeURIComponent(selectedGroup)}`);
+      }
+
+      // 3. Wait for API and update with actual server data to ensure consistency
+      const updatedSection = await updatePromise;
+      if (updatedSection) {
+        setSections((prev) =>
+          prev.map((section) =>
+            section._id === editingSection._id ? updatedSection : section
+          ).filter((s): s is Section => s !== null)
+        );
+      }
 
     } catch (err) {
       console.error("Error updating section:", err);
@@ -195,7 +210,7 @@ export const useDailyMarksHandlers = ({
     } finally {
       setIsEditingSectionLoading?.(false);
     }
-  }, [setSections, setIsEditSectionModalOpen, setEditingSection, refetchSections]);
+  }, [setSections, setIsEditSectionModalOpen, setEditingSection, refetchSections, selectedGroup, navigate]);
 
   // Handler: Delete Section
   const handleDeleteSection = useCallback(async (sectionId: string) => {
