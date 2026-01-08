@@ -193,6 +193,7 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
         teacherGroups={teacherGroups}
         sessions={sessions}
         initialSectionId={searchParams.get('sectionId') || undefined}
+        initialGroupName={searchParams.get('groupName') || undefined}
       />
     </div>
   );

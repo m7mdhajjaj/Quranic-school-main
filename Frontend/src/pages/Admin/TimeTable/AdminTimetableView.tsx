@@ -183,6 +183,7 @@ export const AdminTimetableView: React.FC<AdminTimetableViewProps> = ({
         role="admin"
         sessions={sessions}
         initialSectionId={searchParams.get('sectionId') || undefined}
+        initialGroupName={searchParams.get('groupName') || undefined}
       />
     </div>
   );

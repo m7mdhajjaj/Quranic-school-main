@@ -122,7 +122,8 @@ export const useDailyMarksHandlers = ({
 
           if (result.isConfirmed) {
             // Navigate to timetable with query params
-            navigate(`/timetable?addSession=true&sectionId=${createdSection._id}`);
+            // Passes sectionId AND group name to pre-fill the form
+            navigate(`/timetable?addSession=true&sectionId=${createdSection._id}&groupName=${encodeURIComponent(selectedGroup)}`);
           } else {
              showSuccessToast("✅ تم إضافة المقطع بنجاح!");
           }
