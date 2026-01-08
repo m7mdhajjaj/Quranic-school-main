@@ -1,4 +1,5 @@
 const Section = require("../../../schema/DailyMark/Section");
+const TimeTable = require("../../../schema/TimeTable");
 const { notifySectionUpdated } = require("../../../Notifications");
 const {
   sendSuccess,
@@ -27,6 +28,16 @@ exports.updateSection = async (req, res) => {
       updateData,
       { new: true }
     );
+
+    // ✅ Sync date with TimeTable if linked
+    // إذا تغير التاريخ وكان هناك موعد مرتبط، نحدّث تاريخ الموعد أيضاً ليظل متطابقاً
+    if (updatedSection.timetableId && updateData.date && 
+        new Date(updateData.date).getTime() !== new Date(oldSection.date).getTime()) {
+      await TimeTable.findByIdAndUpdate(updatedSection.timetableId, {
+        sessionDate: updatedSection.date
+      });
+      console.log(`🔄 Synced TimeTable date for Section ${updatedSection._id}`);
+    }
 
     // إرسال إشعارات لجميع طلاب الحلقة
     const io = req.app.get("io");

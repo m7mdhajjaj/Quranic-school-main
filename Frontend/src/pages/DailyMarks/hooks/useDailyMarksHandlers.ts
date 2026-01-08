@@ -3,12 +3,15 @@ import { createMark, deleteMark, updateMark } from "@/Api/dailyMarksApi";
 import {
   showCenteredSwal,
   showWarningMessage,
+  showConfirmMessage,
 } from "@/utils/sweetalertUtils";
 import {
   showSuccessToast,
   showErrorToast,
 } from "@/utils/toastUtils";
 import type { Section, Mark } from "../types/types";
+import { useNavigate } from "react-router-dom";
+import { useCallback } from "react";
 
 interface UseHandlersProps {
   selectedGroup: string;
@@ -27,60 +30,8 @@ interface UseHandlersProps {
   refetchSections?: () => Promise<void>;
 }
 
-interface UseDailyMarksHandlersReturn {
-  handleAddSection: (
-    e: React.FormEvent,
-    newSection: Omit<Section, "_id">,
-    setNewSection: (section: Omit<Section, "_id">) => void,
-    setIsAddingSectionLoading: (loading: boolean) => void
-  ) => Promise<void>;
-  handleEditSection: (
-    e: React.FormEvent,
-    editingSection: Section | null,
-    setIsEditingSectionLoading?: (loading: boolean) => void
-  ) => Promise<void>;
-  handleDeleteSection: (sectionId: string) => Promise<void>;
-  handleAddMark: (
-    e: React.FormEvent,
-    selectedStudentId: string | null,
-    selectedSection: Section | null,
-    newMark: { reviewMark: number; memorizationMark: number },
-    setIsAddingMarkLoading?: (loading: boolean) => void
-  ) => Promise<void>;
-  handleUpdateMark: (
-    e: React.FormEvent,
-    editingMark: Mark | null,
-    selectedStudentId: string | null,
-    selectedSection: Section | null,
-    newMark: { reviewMark: number; memorizationMark: number },
-    setIsUpdatingMarkLoading?: (loading: boolean) => void
-  ) => Promise<void>;
-  handleDeleteMark: (markId: string) => Promise<void>;
-  executeBulkUpdate: (
-    sections: Section[],
-    selectedSectionsForBulk: string[],
-    updateData: { reviewSection?: string; memorizationSection?: string },
-    setIsBulkUpdating?: (loading: boolean) => void
-  ) => Promise<void>;
-  executeBulkDelete: (
-    selectedSectionsForBulk: string[],
-    setIsBulkDeleting?: (loading: boolean) => void
-  ) => Promise<void>;
-}
+// ... imports ...
 
-/**
- * Custom hook for Daily Marks business logic handlers
- * 
- * @description
- * - Handles all CRUD operations for sections and marks
- * - Manages bulk operations (update, delete)
- * - Shows appropriate feedback (toasts, alerts)
- * - Integrates with API and updates local state
- * 
- * @param {UseHandlersProps} props - Dependencies and state setters
- * 
- * @returns {UseDailyMarksHandlersReturn} All handler functions
- */
 export const useDailyMarksHandlers = ({
   selectedGroup,
   currentUser,
@@ -97,9 +48,10 @@ export const useDailyMarksHandlers = ({
   refetchMarks,
   refetchSections,
 }: UseHandlersProps): UseDailyMarksHandlersReturn => {
+  const navigate = useNavigate();
   
   // Handler: Add Section
-  const handleAddSection = async (
+  const handleAddSection = useCallback(async (
     e: React.FormEvent,
     newSection: Omit<Section, "_id">,
     setNewSection: (section: Omit<Section, "_id">) => void,
@@ -140,9 +92,14 @@ export const useDailyMarksHandlers = ({
           : "",
       };
 
-      const createdSection = await createSection(sectionData);
+      const createdSectionResponse = await createSection(sectionData);
 
-      if (createdSection) {
+      if (createdSectionResponse) {
+        // Handle both simple section response and response with meta
+        const createdSection = (createdSectionResponse as any).meta 
+          ? (createdSectionResponse as any) 
+          : createdSectionResponse;
+
         setSections((prev) => [createdSection, ...prev]);
         setIsAddSectionModalOpen(false);
 
@@ -152,7 +109,26 @@ export const useDailyMarksHandlers = ({
           reviewSection: "",
         });
 
-        showSuccessToast("✅ تم إضافة المقطع بنجاح!");
+        // showSuccessToast("✅ تم إضافة المقطع بنجاح!");
+
+        // Check if we need to ask/prompt for schedule
+        if ((createdSectionResponse as any).meta?.askForSchedule) {
+          const result = await showConfirmMessage(
+            "تم إضافة المقطع بنجاح",
+            "هل تود إضافة موعد في الجدول لهذا المقطع؟",
+            "نعم، أضف موعد",
+            "لا، شكراً"
+          );
+
+          if (result.isConfirmed) {
+            // Navigate to timetable with query params
+            navigate(`/timetable?addSession=true&sectionId=${createdSection._id}`);
+          } else {
+             showSuccessToast("✅ تم إضافة المقطع بنجاح!");
+          }
+        } else {
+             showSuccessToast("✅ تم إضافة المقطع بنجاح!");
+        }
       }
     } catch (err: unknown) {
       console.error("Error adding section:", err);
@@ -165,10 +141,10 @@ export const useDailyMarksHandlers = ({
     } finally {
       setIsAddingSectionLoading(false);
     }
-  };
+  }, [selectedGroup, currentUser, setSections, setIsAddSectionModalOpen, navigate]);
 
   // Handler: Edit Section
-  const handleEditSection = async (
+  const handleEditSection = useCallback(async (
     e: React.FormEvent,
     editingSection: Section | null,
     setIsEditingSectionLoading?: (loading: boolean) => void
@@ -179,31 +155,49 @@ export const useDailyMarksHandlers = ({
 
     setIsEditingSectionLoading?.(true);
 
+    // Optimistic Update: Create the optimistically updated section
+    // We assume editingSection contains the modifications from the form
+    const optimisticSection = { ...editingSection };
+
     try {
+      // 1. Update UI Immediately (Optimistic)
+      setSections((prev) =>
+        prev.map((section) =>
+          section._id === editingSection._id ? optimisticSection : section
+        ).filter((s): s is Section => s !== null)
+      );
+      
+      setIsEditSectionModalOpen(false);
+      setEditingSection(null);
+      showSuccessToast("✅ تم تحديث المقطع بنجاح!");
+
+      // 2. Call API in background
       const updatedSectionData = await updateSection(editingSection._id, {
         date: editingSection.date,
         memorizationSection: editingSection.memorizationSection,
         reviewSection: editingSection.reviewSection,
       });
 
+      // 3. Update with actual server data to ensure consistency
       setSections((prev) =>
         prev.map((section) =>
           section._id === editingSection._id ? updatedSectionData : section
         ).filter((s): s is Section => s !== null)
       );
-      setIsEditSectionModalOpen(false);
-      setEditingSection(null);
-      showSuccessToast("✅ تم تحديث المقطع بنجاح!");
+
     } catch (err) {
       console.error("Error updating section:", err);
-      showErrorToast("❌ حدث خطأ أثناء تحديث المقطع");
+      showErrorToast("❌ حدث خطأ أثناء تحديث المقطع، سيتم استعادة البيانات...");
+      
+      // 4. Rollback on error
+      if (refetchSections) await refetchSections();
     } finally {
       setIsEditingSectionLoading?.(false);
     }
-  };
+  }, [setSections, setIsEditSectionModalOpen, setEditingSection, refetchSections]);
 
   // Handler: Delete Section
-  const handleDeleteSection = async (sectionId: string) => {
+  const handleDeleteSection = useCallback(async (sectionId: string) => {
     const result = await showCenteredSwal({
       title: "تأكيد الحذف",
       text: "هل أنت متأكد من حذف هذا المقطع؟ سيتم حذف جميع العلامات المرتبطة به.",
@@ -240,10 +234,10 @@ export const useDailyMarksHandlers = ({
       if (refetchSections) await refetchSections();
       if (refetchMarks) await refetchMarks();
     }
-  };
+  }, [setSections, setMarks, refetchSections, refetchMarks]);
 
   // Handler: Add Mark
-  const handleAddMark = async (
+  const handleAddMark = useCallback(async (
     e: React.FormEvent,
     selectedStudentId: string | null,
     selectedSection: Section | null,
@@ -311,10 +305,10 @@ export const useDailyMarksHandlers = ({
     } finally {
       setIsAddingMarkLoading?.(false);
     }
-  };
+  }, [setMarks, setIsAddMarkModalOpen, refetchSections]);
 
   // Handler: Update Mark
-  const handleUpdateMark = async (
+  const handleUpdateMark = useCallback(async (
     e: React.FormEvent,
     editingMark: Mark | null,
     _selectedStudentId: string | null,
@@ -387,10 +381,10 @@ export const useDailyMarksHandlers = ({
     } finally {
       setIsUpdatingMarkLoading?.(false);
     }
-  };
+  }, [setMarks, setIsUpdateMarkModalOpen, setEditingMark, refetchSections]);
 
   // Handler: Delete Mark
-  const handleDeleteMark = async (markId: string) => {
+  const handleDeleteMark = useCallback(async (markId: string) => {
     const result = await showCenteredSwal({
       title: "هل أنت متأكد؟",
       text: "سيتم حذف العلامة نهائياً",
@@ -423,7 +417,7 @@ export const useDailyMarksHandlers = ({
       showErrorToast("❌ حدث خطأ أثناء حذف العلامة");
       if (refetchMarks) await refetchMarks();
     }
-  };
+  }, [setMarks, refetchMarks, refetchSections]);
 
   // Handler: Bulk Update
   const executeBulkUpdate = async (

@@ -11,9 +11,10 @@ interface UseSessionFormProps {
   editingSession: Session | null;
   role: UserRole;
   teacherGroups?: string[];
+  initialSectionId?: string;
 }
 
-export const useSessionForm = ({ editingSession, role, teacherGroups = [] }: UseSessionFormProps) => {
+export const useSessionForm = ({ editingSession, role, teacherGroups = [], initialSectionId }: UseSessionFormProps) => {
   // جلب كل الأوقات + الأوقات المحجوزة من الـ Backend
   const [hours, setHours] = useState<string[]>([]);
   const [bookedHours, setBookedHours] = useState<string[]>([]); // الأوقات المحجوزة (للتعطيل)
@@ -26,6 +27,7 @@ export const useSessionForm = ({ editingSession, role, teacherGroups = [] }: Use
     description: "",
     sessionType: undefined,
     teacherId: "",
+    sectionId: initialSectionId || "",
   }));
   
   // ============================================
@@ -165,6 +167,7 @@ export const useSessionForm = ({ editingSession, role, teacherGroups = [] }: Use
         description: "",
         sessionType: undefined,
         teacherId: defaultTeacherId, // للمعلم: ID تلقائي، للأدمن: فارغ
+        sectionId: initialSectionId || "",
       });
       
       if (role === "teacher" && teacherGroups.length > 0) {
@@ -172,7 +175,7 @@ export const useSessionForm = ({ editingSession, role, teacherGroups = [] }: Use
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editingSession, role]);
+  }, [editingSession, role, initialSectionId]);
 
   // دالة لإعادة تعيين النموذج (reset)
   const resetForm = () => {
@@ -187,6 +190,7 @@ export const useSessionForm = ({ editingSession, role, teacherGroups = [] }: Use
       description: "",
       sessionType: undefined,
       teacherId: defaultTeacherId,
+      sectionId: initialSectionId || "",
     });
     
     setSelectedGroup("");

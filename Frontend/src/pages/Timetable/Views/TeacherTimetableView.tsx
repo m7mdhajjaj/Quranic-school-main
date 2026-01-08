@@ -3,7 +3,8 @@
 // ============================================================================
 // المعلم يمكنه إضافة/تعديل/حذف مواعيد حلقاته فقط
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import type { Session, SessionFormData } from "../types/timetable.types";
 import { useViewMode } from "../hooks";
 import { SessionModal } from "../Model/SessionModal";
@@ -38,6 +39,17 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
   const { viewMode, setViewMode } = useViewMode('grid');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSession, setEditingSession] = useState<Session | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // ✅ التحقق من وجود طلب إضافة جلسة من الرابط (مثل من صفحة DailyMarks)
+  useEffect(() => {
+    const addSession = searchParams.get('addSession');
+    const sectionId = searchParams.get('sectionId');
+    if (addSession === 'true' && sectionId) {
+      setIsModalOpen(true);
+      // يمكن استخدام sectionId كـ prop إضافي للمودال لاحقاً
+    }
+  }, [searchParams]);
 
   const handleOpenAddModal = () => {
     setEditingSession(null);
@@ -61,7 +73,8 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
     
     if (success) {
       handleCloseModal();
-      refetchSessions();
+      // Refetch removed to improve performance - local state is updated optimistically
+      // refetchSessions();
     }
     return success;
   };
@@ -167,12 +180,19 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
       {/* Modal إضافة/تعديل موعد */}
       <SessionModal
         isOpen={isModalOpen}
-        onClose={handleCloseModal}
+        onClose={() => {
+          handleCloseModal();
+          // Remove query params if they exist
+          if (searchParams.get('addSession')) {
+            setSearchParams({});
+          }
+        }}
         onSubmit={handleSubmit}
         editingSession={editingSession}
         role="teacher"
         teacherGroups={teacherGroups}
         sessions={sessions}
+        initialSectionId={searchParams.get('sectionId') || undefined}
       />
     </div>
   );

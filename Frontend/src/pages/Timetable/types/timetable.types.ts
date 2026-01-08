@@ -20,6 +20,7 @@ export interface Session {
   sessionType?: SessionType; // حفظ، مراجعة، أو الاثنين
   groupId?: string;
   teacherId?: string | Teacher; // معرف المعلم أو بياناته الكاملة
+  sectionId?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -49,6 +50,7 @@ export interface SessionFormData {
   description?: string; // وصف أو ملاحظات إضافية
   sessionType?: SessionType;
   teacherId: string; // معرف المعلم مطلوب
+  sectionId?: string; // معرف القسم المرتبط اختياري
 }
 
 export interface TimetableState {

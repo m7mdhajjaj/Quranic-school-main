@@ -286,6 +286,7 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
                               {role === "admin" && (
                                 <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                                   <button
+                                    type="button"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       onEdit?.(session);
@@ -295,6 +296,7 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
                                     <Edit size={14} />
                                   </button>
                                   <button
+                                    type="button"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       onDelete?.(session);

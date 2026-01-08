@@ -29,6 +29,7 @@ interface SessionModalProps {
   role: UserRole;
   teacherGroups?: string[];
   sessions: Session[];
+  initialSectionId?: string;
 }
 
 export const SessionModal: React.FC<SessionModalProps> = ({
@@ -38,12 +39,14 @@ export const SessionModal: React.FC<SessionModalProps> = ({
   editingSession,
   role,
   teacherGroups = [],
+  initialSectionId,
 }) => {
   // ✅ استخدام الـ hooks المنفصلة لتنظيم أفضل
   const { formData, setFormData, hours, bookedHours, handleStartHourChange, resetForm } = useSessionForm({
     editingSession,
     role,
     teacherGroups,
+    initialSectionId,
   });
 
   const { teachers, loadingTeachers } = useTeachers({

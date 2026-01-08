@@ -21,6 +21,7 @@ export interface Session {
   description?: string;
   groupId?: string;
   teacherId?: string | Teacher; // معرف المعلم أو بياناته الكاملة
+  sectionId?: string;
   sessionType?: 'hifz' | 'murajaah' | 'both'; // حفظ، مراجعة، أو الاثنين
   createdAt?: string;
   updatedAt?: string;

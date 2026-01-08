@@ -52,7 +52,15 @@ exports.createSection = async (req, res) => {
     // إعادة جلب المقطع مع الحالة المحدثة
     const sectionWithStatus = await Section.findById(newSection._id).lean();
     
-    sendCreated(res, sectionWithStatus, "تم إنشاء المقطع بنجاح");
+    // sendCreated(res, sectionWithStatus, "تم إنشاء المقطع بنجاح");
+    res.status(201).json({
+      success: true,
+      message: "تم إنشاء المقطع بنجاح. هل تريد تحديد موعد لهذا المقطع؟",
+      data: sectionWithStatus,
+      meta: {
+        askForSchedule: true, // ✅ إشارة للفرونت إند بطلب تحديد موعد
+      }
+    });
   } catch (error) {
     console.error(" Error creating section:", error);
 

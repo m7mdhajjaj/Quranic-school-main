@@ -205,6 +205,13 @@ const DailyMarksPage = () => {
     selectedYear
   );
 
+  const handleAddSectionClick = useCallback(() => {
+    const today = new Date();
+    const localDate = new Date(today.getTime() - (today.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+    state.setNewSection(prev => ({ ...prev, date: localDate }));
+    state.setIsAddSectionModalOpen(true);
+  }, [state.setNewSection, state.setIsAddSectionModalOpen]);
+
   // ==========================================================================
   // ROLE & DEFAULT VALUES
   // ==========================================================================
@@ -294,7 +301,7 @@ const DailyMarksPage = () => {
                   loadingMarks={loadingMarks || isPending}
                   onBulkMarks={() => {}}
                   onGroupSelect={(g) => setGroupWithUrl(g, false)}
-                  onAddSection={() => state.setIsAddSectionModalOpen(true)}
+                  onAddSection={handleAddSectionClick}
                   onEditSection={openEditSectionModal}
                   onDeleteSection={handlers.handleDeleteSection}
                   onBulkDelete={() => state.setIsBulkDeleteModalOpen(true)}

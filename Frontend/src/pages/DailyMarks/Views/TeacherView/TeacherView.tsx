@@ -1,4 +1,4 @@
-import { memo, useMemo, useState, useEffect, useRef } from 'react';
+import { memo, useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import type { TeacherViewProps } from '../../types/types';
 import type { MarkStatus } from '../../components/SectionStatusBadge';
 import { useSearchParams } from 'react-router-dom';
@@ -96,12 +96,14 @@ const TeacherViewComponent = ({
 
   const sectionIdParam = searchParams.get('sectionId');
 
-  const setSectionIdInUrl = (sectionId: string | null, replace = false) => {
-    const next = new URLSearchParams(searchParams);
-    if (sectionId) next.set('sectionId', sectionId);
-    else next.delete('sectionId');
-    setSearchParams(next, { replace });
-  };
+  const setSectionIdInUrl = useMemo(() => (sectionId: string | null, replace = false) => {
+    setSearchParams(prev => {
+       const next = new URLSearchParams(prev);
+       if (sectionId) next.set('sectionId', sectionId);
+       else next.delete('sectionId');
+       return next;
+    }, { replace });
+  }, [setSearchParams]);
 
   // Sync section selection with URL (back/forward)
   useEffect(() => {
@@ -181,6 +183,12 @@ const TeacherViewComponent = ({
     return tableData.filter((row) => row.mark?._id).map((row) => row.mark!._id);
   }, [tableData]);
 
+  const handleSectionSelectWrapper = useCallback((section: any) => {
+    setSectionIdInUrl(section._id, false);
+    handleSectionSelect(section);
+  }, [setSectionIdInUrl, handleSectionSelect]);
+
+
   // GroupsGridView is now shown in DailyMarksPage, so we don't render it here
   // If no group selected, return null (groups will be shown in parent)
   if (!selectedGroup || selectedGroup === 'all') {
@@ -240,10 +248,7 @@ const TeacherViewComponent = ({
       onBulkDelete={onBulkDelete}
       onEditSection={onEditSection}
       onDeleteSection={onDeleteSection}
-      onSectionSelect={(section) => {
-        setSectionIdInUrl(section._id, false);
-        handleSectionSelect(section);
-      }}
+      onSectionSelect={handleSectionSelectWrapper}
       onFilterToggle={() => setIsFilterOpen(!isFilterOpen)}
       onStatusChange={setSelectedStatus}
       onMonthChange={(month) => month !== null && onMonthChange(month)}
@@ -258,4 +263,4 @@ const TeacherViewComponent = ({
   );
 };
 
-export const TeacherView = memo(TeacherViewComponent);
+export const TeacherView = TeacherViewComponent;

@@ -69,10 +69,14 @@ export const getSectionById = async (
 // Create new section
 export const createSection = async (
   sectionData: CreateSectionData
-): Promise<Section | null> => {
+): Promise<(Section & { meta?: any }) | null> => {
   try {
     const response = await api.post("/daily-marks/sections", sectionData);
-    return response.data.data || response.data;
+    const data = response.data.data || response.data;
+    if (response.data.meta) {
+      return { ...data, meta: response.data.meta };
+    }
+    return data;
   } catch (error) {
     console.error("Failed to create section:", error);
     throw error;

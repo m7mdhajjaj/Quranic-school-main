@@ -2,7 +2,8 @@
 // AdminTimetableView - عرض الجدول للإداري (إدارة كاملة)
 // ============================================================================
 
-import React from "react";
+import React, { useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useDisableBodyScroll } from "@/hooks/useDisableBodyScroll";
 import type { Session, SessionFormData } from "../../Timetable/types/timetable.types";
 import { useViewMode, useSessionModal } from "../../Timetable/hooks";
@@ -35,6 +36,16 @@ export const AdminTimetableView: React.FC<AdminTimetableViewProps> = ({
 }) => {
   const { viewMode, setViewMode } = useViewMode('grid');
   const { showModal, editingSession, openAddModal, openEditModal, closeModal } = useSessionModal();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // ✅ التحقق من وجود طلب إضافة جلسة من الرابط
+  useEffect(() => {
+    const addSession = searchParams.get('addSession');
+    const sectionId = searchParams.get('sectionId');
+    if (addSession === 'true' && sectionId) {
+      openAddModal();
+    }
+  }, [searchParams, openAddModal]);
 
   // تعطيل scroll الصفحة عند فتح الـ Modal
   useDisableBodyScroll(showModal);
@@ -47,6 +58,7 @@ export const AdminTimetableView: React.FC<AdminTimetableViewProps> = ({
 
     if (result) {
       closeModal();
+      // Refetch removed to improve performance - local state is updated optimistically
     }
 
     return result;
@@ -159,11 +171,18 @@ export const AdminTimetableView: React.FC<AdminTimetableViewProps> = ({
       {/* نافذة إضافة/تعديل الموعد */}
       <SessionModal
         isOpen={showModal}
-        onClose={handleCloseModal}
+        onClose={() => {
+          handleCloseModal();
+           // Remove query params if they exist
+           if (searchParams.get('addSession')) {
+            setSearchParams({});
+          }
+        }}
         onSubmit={handleSubmitSession}
         editingSession={editingSession}
         role="admin"
         sessions={sessions}
+        initialSectionId={searchParams.get('sectionId') || undefined}
       />
     </div>
   );

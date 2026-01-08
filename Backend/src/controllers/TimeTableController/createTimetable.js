@@ -3,6 +3,7 @@
 // ============================================
 
 const TimeTable = require("../../schema/TimeTable");
+const Section = require("../../schema/DailyMark/Section");
 const Group = require("../../schema/Group");
 const { addTimetableToGroup } = require("./Helper/groupHelpers");
 const { checkTimetableConflict, checkSessionConflict } = require("./Helper/conflictChecker");
@@ -13,7 +14,7 @@ const { checkTimetableConflict, checkSessionConflict } = require("./Helper/confl
 exports.createTimetable = async (req, res) => {
   try {
     const timetableData = req.validatedData || req.body;
-    const { day, startHour, endHour, note, description, sessionType, teacherId } = timetableData;
+    const { day, startHour, endHour, note, description, sessionType, teacherId, sectionId } = timetableData;
 
     // ✅ فحص الصلاحيات: المعلم يمكنه إضافة مواعيد لنفسه فقط (بناءً على teacherId)
     const currentUser = req.user;
@@ -68,6 +69,22 @@ exports.createTimetable = async (req, res) => {
       }
     }
 
+    // ✅ إذا كان الموعد مرتبط بمقطع، احصل على تاريخ المقطع
+    let sessionDate = null;
+    let section = null;
+    
+    if (sectionId) {
+      section = await Section.findById(sectionId);
+      if (!section) {
+         return res.status(404).json({
+          success: false,
+          error: "Not Found",
+          message: "المقطع المرتبط غير موجود",
+        });
+      }
+      sessionDate = section.date; // نسخ التاريخ من المقطع
+    }
+
     // إنشاء موعد جديد مع groupId و sessionType و teacherId و description
     const timetable = new TimeTable({ 
       day, 
@@ -77,9 +94,24 @@ exports.createTimetable = async (req, res) => {
       description: description || "", // ✅ إضافة حقل الوصف/الملاحظات
       groupId,
       teacherId, // ✅ معرف المعلم مطلوب
-      sessionType: sessionType || undefined // ✅ إضافة sessionType إذا كان موجود
+      sessionType: sessionType || undefined, // ✅ إضافة sessionType إذا كان موجود
+      
+      // ✅ حقول الربط الجديد
+      sectionId: sectionId || undefined,
+      sessionDate: sessionDate || undefined,
     });
+    
     await timetable.save();
+
+    // ✅ تحديث المقطع لربطه بالموعد
+    if (section) {
+      await Section.findByIdAndUpdate(section._id, {
+        hasSchedule: true,
+        scheduleStatus: "scheduled",
+        timetableId: timetable._id
+      });
+      console.log(`🔗 Linked Section ${section._id} to TimeTable ${timetable._id}`);
+    }
 
     // إضافة الموعد إلى جدول الحلقة إذا كان هناك اسم حلقة
     if (note && note.trim() && groupId) {

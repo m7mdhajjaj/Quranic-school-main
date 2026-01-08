@@ -69,6 +69,14 @@ api.interceptors.response.use(
         timestamp: Date.now(),
       });
     }
+
+    // ✅ مسح الـ cache عند حدوث تغيير في البيانات (POST, PUT, DELETE, PATCH)
+    if (['post', 'put', 'delete', 'patch'].includes(response.config.method?.toLowerCase() || '')) {
+      if (import.meta.env.DEV) {
+        console.log('🧹 Clearing API cache due to mutation');
+      }
+      requestCache.clear();
+    }
     
     return response;
   },

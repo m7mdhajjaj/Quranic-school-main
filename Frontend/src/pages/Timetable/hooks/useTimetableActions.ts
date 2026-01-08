@@ -13,6 +13,7 @@ import {
 import type { Session, SessionFormData } from "../types/timetable.types";
 import { showConfirmDialog, showErrorMessage } from "@/utils/sweetalertUtils";
 import { showSuccessToast, showErrorToast } from "@/utils/toastUtils";
+import { getCurrentUser } from "../utils";
 
 interface UseTimetableActionsProps {
   setSessions: React.Dispatch<React.SetStateAction<Session[]>>;
@@ -33,7 +34,20 @@ export const useTimetableActions = ({
     async (formData: SessionFormData) => {
       try {
         const added = await createSession(formData);
-        setSessions((prev) => [...prev, added]);
+        
+        // Populate teacher info locally if needed to avoid refresh
+        let sessionToAdd = { ...added };
+        const currentUser = getCurrentUser();
+        
+        if (typeof sessionToAdd.teacherId === 'string' && currentUser && currentUser._id === sessionToAdd.teacherId) {
+           sessionToAdd.teacherId = {
+             _id: currentUser._id,
+             firstName: currentUser.firstName,
+             lastName: currentUser.lastName || ''
+           };
+        }
+
+        setSessions((prev) => [...prev, sessionToAdd]);
 
         showSuccessToast(
           `تم إضافة موعد ${formData.note} يوم ${formData.day} بنجاح ✓`
@@ -73,8 +87,21 @@ export const useTimetableActions = ({
     async (sessionId: string, formData: SessionFormData) => {
       try {
         const updated = await updateSession(sessionId, formData);
+        
+        // Populate teacher info locally if needed to avoid refresh
+        let sessionToUpdate = { ...updated };
+        const currentUser = getCurrentUser();
+        
+        if (typeof sessionToUpdate.teacherId === 'string' && currentUser && currentUser._id === sessionToUpdate.teacherId) {
+           sessionToUpdate.teacherId = {
+             _id: currentUser._id,
+             firstName: currentUser.firstName,
+             lastName: currentUser.lastName || ''
+           };
+        }
+
         setSessions((prev) =>
-          prev.map((s) => (s._id === sessionId ? updated : s))
+          prev.map((s) => (s._id === sessionId ? sessionToUpdate : s))
         );
 
         showSuccessToast("تم تحديث موعد الحلقة بنجاح ✓");
@@ -124,6 +151,8 @@ export const useTimetableActions = ({
       if (session._id) {
         try {
           await deleteSession(session._id);
+          
+          // ⚠️ تحديث محلي لإزالة الموعد فوراً دون إعادة تحميل
           setSessions((prev) => prev.filter((s) => s._id !== session._id));
 
           showSuccessToast("تم حذف الموعد بنجاح ✓");

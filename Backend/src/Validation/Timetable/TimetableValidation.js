@@ -306,6 +306,26 @@ const sanitizeTimetableData = (data) => {
 };
 
 /**
+ * Validate sectionId (optional relation)
+ */
+const validateSectionId = (sectionId) => {
+  if (!sectionId || sectionId.toString().trim() === '') {
+    return { isValid: true, value: undefined }; // Optional
+  }
+
+  const idStr = sectionId.toString().trim();
+  
+  if (!/^[a-fA-F0-9]{24}$/.test(idStr)) {
+    return { 
+      isValid: false, 
+      message: 'معرف المقطع غير صحيح' 
+    };
+  }
+
+  return { isValid: true, value: idStr };
+};
+
+/**
  * Main validation middleware for timetable data
  */
 const validateTimetableData = async (req, res, next) => {
@@ -378,6 +398,16 @@ const validateTimetableData = async (req, res, next) => {
         validatedData.sessionType = sessionTypeValidation.value;
       }
     }
+
+    // Validate optional sectionId field
+    if (data.sectionId !== undefined) {
+      const sectionIdValidation = validateSectionId(data.sectionId);
+      if (!sectionIdValidation.isValid) {
+        errors.push(sectionIdValidation.message);
+      } else {
+        validatedData.sectionId = sectionIdValidation.value;
+      }
+    }
     
     // Validate required teacherId field for creation
     if (!isUpdate || data.teacherId !== undefined) {
@@ -440,5 +470,6 @@ module.exports = {
   validateNote,
   validateTeacherId,
   validateSessionType,
+  validateSectionId,
   validateTimeLogic
 };
