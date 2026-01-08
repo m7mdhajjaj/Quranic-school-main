@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, X, MessageSquare, ChevronLeft, ChevronRight, Loader2, BookOpen } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Send, X, MessageSquare, ChevronLeft, ChevronRight, Loader2, BookOpen, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import api from '../../Api/api';
 
 // Types for chat messages
@@ -17,7 +17,7 @@ export const AiChatbot: React.FC = () => {
     {
       id: '1',
       role: 'assistant',
-      content: 'السلام عليكم! أنا مساعدك لتفسير القرآن الكريم من المصادر المنسقة. يمكنك سؤالي عن تفسير أي آية (مثال: تفسير سورة الإخلاص).',
+      content: 'السلام عليكم! أنا مساعدك لتفسير القرآن الكريم. \n\n💡 يمكنك السؤال بأي طريقة:\n• تفسير سورة الإخلاص\n• سورة البقرة آية 255\n• الآية الأولى من سورة طه\n• ما تفسير آية الكرسي\n• اشرح لي سورة الفاتحة',
       timestamp: new Date()
     }
   ]);
@@ -79,107 +79,244 @@ export const AiChatbot: React.FC = () => {
   return (
     <>
       {/* Toggle Button */}
-      <button
+      <motion.button
+        whileHover={{ scale: 1.1, rotate: 5 }}
+        whileTap={{ scale: 0.9 }}
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-8 right-8 z-50 p-4 rounded-full shadow-lg transition-all duration-300 bg-emerald-600 hover:bg-emerald-700 text-white ${
-          isOpen ? 'translate-y-24 opacity-0' : 'translate-y-0 opacity-100'
+        className={`fixed bottom-8 right-8 z-50 p-5 rounded-full shadow-2xl transition-all duration-300 bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white ${
+          isOpen ? 'translate-y-24 opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'
         }`}
+        style={{
+          boxShadow: '0 10px 40px rgba(16, 185, 129, 0.4)'
+        }}
         aria-label="Toggle AI Chat"
       >
-        <BookOpen size={24} />
-      </button>
+        <motion.div
+          animate={{ rotate: [0, 360] }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+        >
+          <BookOpen size={28} />
+        </motion.div>
+      </motion.button>
 
       {/* Chat Sidebar */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ x: '100%', opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: '100%', opacity: 0 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed top-0 right-0 h-full w-full sm:w-[400px] bg-white shadow-2xl z-[100] border-l border-gray-200 flex flex-col"
-            dir="rtl"
-          >
-            {/* Header */}
-            <div className="bg-emerald-600 p-4 shadow-md flex justify-between items-center">
-              <div className="flex items-center gap-2 text-white">
-                <BookOpen size={20} />
-                <h3 className="font-bold text-lg">المساعد الإسلامي</h3>
-              </div>
-              <button 
-                onClick={() => setIsOpen(false)}
-                className="p-2 text-white hover:bg-white/20 rounded-full transition-colors"
-                aria-label="إغلاق المساعد"
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[80%] p-3 rounded-2xl text-right ${
-                      msg.role === 'user'
-                        ? 'bg-emerald-600 text-white rounded-bl-none'
-                        : 'bg-white border border-gray-200 text-gray-800 rounded-br-none shadow-sm'
-                    }`}
-                    dir="rtl"
-                  >
-                    <p className="text-sm leading-relaxed">{msg.content}</p>
-                    <span className={`text-[10px] block mt-1 ${
-                      msg.role === 'user' ? 'text-emerald-100' : 'text-gray-400'
-                    }`}>
-                      {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-                </div>
-              ))}
-              {isLoading && (
-                <div className="flex justify-start">
-                  <div className="bg-white border border-gray-200 p-4 rounded-2xl rounded-br-none shadow-sm flex items-center gap-2 text-gray-500" dir="rtl">
-                    <Loader2 size={16} className="animate-spin text-emerald-600" />
-                    <span className="text-sm">جاري تحليل المصادر...</span>
-                  </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-
-            {/* Input Area */}
-            <form onSubmit={handleSubmit} className="p-4 bg-white border-t border-gray-100">
-               <div className="mb-2 text-xs text-gray-400 text-center" dir="rtl">
-                 للحصول على أدق النتائج، يرجى تحديد السورة ورقم الآية.
-              </div>
-              <div className="flex gap-2" dir="rtl">
-                <button
-                  type="submit"
-                  disabled={isLoading || !input.trim()}
-                  className={`p-3 rounded-xl flex items-center justify-center transition-all ${
-                    isLoading || !input.trim()
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-md hover:shadow-lg'
-                  }`}
-                  aria-label="إرسال الرسالة"
-                >
-                  <Send size={20} />
-                </button>
-                <input
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="اسأل عن آية أو حكم فقهي..."
-                  className="flex-1 p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all text-right"
-                  dir="rtl"
-                  disabled={isLoading}
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsOpen(false)}
+              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[99] sm:hidden"
+            />
+            
+            <motion.div
+              initial={{ x: '100%', opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: '100%', opacity: 0 }}
+              transition={{ type: 'spring', damping: 30, stiffness: 250 }}
+              className="fixed top-0 right-0 h-full w-full sm:w-[420px] bg-gradient-to-b from-white to-gray-50 shadow-2xl z-[100] border-l border-gray-200 flex flex-col"
+              dir="rtl"
+            >
+              {/* Header with Gradient */}
+              <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 p-5 shadow-lg flex justify-between items-center relative overflow-hidden">
+                {/* Animated background pattern */}
+                <motion.div
+                  animate={{
+                    backgroundPosition: ['0% 0%', '100% 100%'],
+                  }}
+                  transition={{
+                    duration: 20,
+                    repeat: Infinity,
+                    repeatType: 'reverse',
+                  }}
+                  className="absolute inset-0 opacity-10"
+                  style={{
+                    backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
+                    backgroundSize: '30px 30px',
+                  }}
                 />
+                
+                <motion.div 
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="flex items-center gap-3 text-white z-10"
+                >
+                  <motion.div
+                    animate={{ rotate: [0, 10, -10, 0] }}
+                    transition={{ duration: 3, repeat: Infinity }}
+                  >
+                    <Sparkles size={24} className="text-yellow-300" />
+                  </motion.div>
+                  <div>
+                    <h3 className="font-bold text-xl">المساعد الإسلامي</h3>
+                    <p className="text-xs text-emerald-100">مدعوم بالذكاء الاصطناعي</p>
+                  </div>
+                </motion.div>
+                
+                <motion.button 
+                  whileHover={{ scale: 1.1, rotate: 90 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setIsOpen(false)}
+                  className="p-2 text-white hover:bg-white/20 rounded-full transition-colors z-10 backdrop-blur-sm"
+                  aria-label="إغلاق المساعد"
+                >
+                  <X size={24} />
+                </motion.button>
               </div>
-            </form>
-          </motion.div>
+
+              {/* Messages Area with Enhanced Styling */}
+              <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-gradient-to-b from-gray-50 to-white">
+                <AnimatePresence mode="popLayout">
+                  {messages.map((msg, index) => (
+                    <motion.div
+                      key={msg.id}
+                      initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ 
+                        type: "spring",
+                        stiffness: 300,
+                        damping: 25,
+                        delay: index * 0.05
+                      }}
+                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        className={`max-w-[85%] p-4 rounded-2xl text-right shadow-md ${
+                          msg.role === 'user'
+                            ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-bl-none'
+                            : 'bg-white border border-gray-100 text-gray-800 rounded-br-none'
+                        }`}
+                        dir="rtl"
+                      >
+                        {msg.role === 'assistant' && (
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="flex items-center gap-2 mb-2 text-emerald-600"
+                          >
+                            <Sparkles size={14} />
+                            <span className="text-xs font-semibold">الذكاء الاصطناعي</span>
+                          </motion.div>
+                        )}
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                        <motion.span 
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.3 }}
+                          className={`text-[10px] block mt-2 ${
+                            msg.role === 'user' ? 'text-emerald-100' : 'text-gray-400'
+                          }`}
+                        >
+                          {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </motion.span>
+                      </motion.div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+                
+                {/* Enhanced Loading State */}
+                {isLoading && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex justify-start"
+                  >
+                    <div className="bg-white border border-gray-100 p-4 rounded-2xl rounded-br-none shadow-md" dir="rtl">
+                      <div className="flex items-center gap-3">
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        >
+                          <Loader2 size={18} className="text-emerald-600" />
+                        </motion.div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-sm text-gray-600 font-medium">جاري تحليل المصادر</span>
+                          <div className="flex gap-1">
+                            {[0, 1, 2].map((i) => (
+                              <motion.div
+                                key={i}
+                                animate={{
+                                  scale: [1, 1.2, 1],
+                                  opacity: [0.5, 1, 0.5]
+                                }}
+                                transition={{
+                                  duration: 1,
+                                  repeat: Infinity,
+                                  delay: i * 0.2
+                                }}
+                                className="w-2 h-2 bg-emerald-500 rounded-full"
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Enhanced Input Area */}
+              <div className="p-5 bg-white border-t border-gray-100 shadow-lg">
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-3 p-3 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg border border-emerald-100" 
+                  dir="rtl"
+                >
+                  <div className="flex items-center gap-2">
+                    <BookOpen size={14} className="text-emerald-600" />
+                    <p className="text-xs text-emerald-700 font-medium">
+                      للحصول على أدق النتائج، يرجى تحديد السورة ورقم الآية.
+                    </p>
+                  </div>
+                </motion.div>
+                
+                <form onSubmit={handleSubmit} className="flex gap-3" dir="rtl">
+                  <motion.input
+                    whileFocus={{ scale: 1.01 }}
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="اسأل عن آية أو حكم فقهي..."
+                    className="flex-1 p-3.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all bg-gray-50 hover:bg-white"
+                    style={{ direction: 'rtl', textAlign: 'right' }}
+                    disabled={isLoading}
+                  />
+                  
+                  <motion.button
+                    type="submit"
+                    disabled={isLoading || !input.trim()}
+                    whileHover={!isLoading && input.trim() ? { scale: 1.05, rotate: -5 } : {}}
+                    whileTap={!isLoading && input.trim() ? { scale: 0.95 } : {}}
+                    className={`p-3.5 rounded-xl flex items-center justify-center transition-all duration-200 ${
+                      isLoading || !input.trim()
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white hover:shadow-xl'
+                    }`}
+                    style={
+                      !isLoading && input.trim() 
+                        ? { boxShadow: '0 4px 20px rgba(16, 185, 129, 0.3)' }
+                        : {}
+                    }
+                    aria-label="إرسال الرسالة"
+                  >
+                    <motion.div
+                      animate={isLoading ? {} : { x: [0, -3, 0] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                    >
+                      <Send size={20} />
+                    </motion.div>
+                  </motion.button>
+                </form>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </>
