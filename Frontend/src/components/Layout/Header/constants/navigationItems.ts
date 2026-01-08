@@ -46,44 +46,28 @@ export const getPrimaryNavItems = (rolePermissions: RolePermissions): Navigation
         color: "from-purple-600 to-indigo-600",
       },
       {
-        to: "#users",
-        label: "المستخدمين",
+        to: "/admin/students",
+        label: "إدارة الطلاب",
         icon: Users,
         color: "from-blue-600 to-cyan-600",
-        subItems: [
-          {
-            to: "/admin/students",
-            label: "إدارة الطلاب",
-            icon: Users,
-            color: "from-blue-600 to-cyan-600",
-          },
-          {
-            to: "/admin/teachers",
-            label: "إدارة المعلمين",
-            icon: UserPlus,
-            color: "from-green-600 to-emerald-600",
-          },
-        ]
       },
       {
-        to: "#system",
-        label: "إدارة النظام",
-        icon: BarChart3,
+        to: "/admin/teachers",
+        label: "إدارة المعلمين",
+        icon: UserPlus,
+        color: "from-green-600 to-emerald-600",
+      },
+      {
+        to: "/admin/groups",
+        label: "إدارة الحلقات",
+        icon: BookOpen,
         color: "from-teal-600 to-cyan-600",
-        subItems: [
-          {
-            to: "/admin/groups",
-            label: "إدارة الحلقات",
-            icon: BookOpen,
-            color: "from-teal-600 to-cyan-600",
-          },
-          {
-            to: "/timetable",
-            label: "مواعيد الحلقات",
-            icon: Clock,
-            color: "from-indigo-600 to-purple-600",
-          },
-        ]
+      },
+      {
+        to: "/timetable",
+        label: "مواعيد الحلقات",
+        icon: Clock,
+        color: "from-indigo-600 to-purple-600",
       },
       {
         to: "/chat",
