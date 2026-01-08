@@ -1,3 +1,10 @@
 # Prevent accidental Windows device filenames that break Git
 nul
 NUL
+
+# Environment files - NEVER commit these!
+.env
+.env.local
+.env.*.local
+**/.env
+**/.env.local
