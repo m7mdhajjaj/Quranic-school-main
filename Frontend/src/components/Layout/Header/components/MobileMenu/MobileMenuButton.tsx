@@ -8,9 +8,9 @@ const MobileMenuButton: React.FC<MobileMenuButtonProps> = ({ isOpen, onClick }) 
       onClick={onClick}
       variant="ghost"
       size="sm"
-      className="xl:hidden p-2 rounded-xl bg-white/20 hover:bg-white/30 text-white border-none"
+      className="xl:hidden p-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white border-none shadow-md hover:shadow-lg transition-all duration-300"
       title={isOpen ? "إغلاق القائمة" : "فتح القائمة"}
-      leftIcon={isOpen ? <X size={20} /> : <Menu size={20} />}
+      leftIcon={isOpen ? <X size={22} /> : <Menu size={22} />}
     />
   );
 };

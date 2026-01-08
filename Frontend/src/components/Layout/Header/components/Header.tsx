@@ -1,6 +1,6 @@
 import { useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Menu as MenuIcon } from 'lucide-react';
 
 // Hooks
 import { useAuth } from '@/hooks/useAuth';
@@ -24,6 +24,7 @@ import { showLogoutConfirmation } from '@/pages/Auth/LogOut/logoutUtils';
 
 // Types
 import type { HeaderProps } from '../types/navigation.types';
+import type { NavigationItem } from '../types/navigation.types';
 
 const Header: React.FC<HeaderProps> = ({ className = '' }) => {
   // ==================== Hooks ====================
@@ -48,6 +49,8 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
     isAdmin,
     isTeacherOrAdmin,
   });
+
+  const combinedItems: NavigationItem[] = primaryNavItems;
 
   // ==================== Handlers ====================
   const handleLogout = useCallback(async () => {
@@ -106,7 +109,7 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
       >
         <div className="max-w-[2000px] mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
           {/* ==================== Top Row - Logo, Navigation & Tools ==================== */}
-          <div className="flex items-center justify-between h-14 sm:h-16 md:h-18 gap-2 sm:gap-3 md:gap-4 py-2 overflow-hidden">
+          <div className="flex items-center justify-between h-14 sm:h-16 md:h-18 gap-2 sm:gap-3 md:gap-4 py-2">
             
             {/* ==================== Logo ==================== */}
             <Link
@@ -134,8 +137,9 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
             </Link>
 
             {/* ==================== Navigation - Desktop ==================== */}
-            <div className="hidden lg:flex flex-1 justify-center max-w-[60%]">
-              <TabNavigation items={primaryNavItems} secondaryItems={[]} />
+            <div className="hidden lg:flex flex-1 justify-center px-2 lg:px-4">
+              {/* Combine primary and grouped secondary items into one nav */}
+              <TabNavigation items={combinedItems} />
             </div>
 
             {/* ==================== Right Tools ==================== */}
@@ -208,19 +212,21 @@ const Header: React.FC<HeaderProps> = ({ className = '' }) => {
             </div>
           </div>
 
-          {/* ==================== Bottom Row - Secondary Navigation (Desktop Only) ==================== */}
+          {/* ==================== Bottom Row - Removed as per request ==================== */}
+          {/* 
           <div className="hidden lg:block pb-2">
             <div className="flex items-center justify-center">
               <div className="max-w-[80%]">
                 <TabNavigation items={[]} secondaryItems={secondaryNavItems} />
               </div>
             </div>
-          </div>
+          </div> 
+          */}
         </div>
       </header>
 
-      {/* ==================== Header Spacer ==================== */}
-      <div className="h-28 sm:h-32 md:h-36"></div>
+      {/* ==================== Header Spacer - Adjusted for single row ==================== */}
+      <div className="h-16 sm:h-20"></div>
 
       {/* ==================== Mobile Menu ==================== */}
       <MobileMenu
