@@ -16,7 +16,7 @@ const WarningJob = require('./Notifications/Jobs/WarningJob');
 const TokenCleanupJob = require('./Notifications/Jobs/TokenCleanupJob');
 // Initialize FCM service (reads env FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_SERVICE_ACCOUNT_PATH)
 // FCMService is now imported from ./Notifications above
-
+//dasasdsa
 // Connect to MongoDB
 connectDB();
 
@@ -163,6 +163,7 @@ app.use('/api/goals', require('./routes/Goals/goalRoutes'));
 app.use('/api', require('./routes/profileRoutes'));
 app.use('/api/upload', require('./routes/UploadRoutes/uploadRoutes'));
 app.use('/api/warnings', require('./routes/WarningRoutes/WarningRoutes'));
+app.use('/api/ai-chat', require('./routes/AiChatRoutes/aiChatRoutes'));
 app.use('/api/quran', require('./routes/QuranRoutes/quranRoutes'));
 app.use('/api/test', require('./routes/TestRoutes/testRoutes'));
 app.use('/api/users', require('./routes/ChatRoutes/userRoutes'));

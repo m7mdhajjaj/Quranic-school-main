@@ -58,6 +58,33 @@ class QuranService {
   }
 
   /**
+   * Fetch specific Ayah with Translation
+   * @param {number} surahNumber 
+   * @param {number} ayahNumber 
+   * @param {string} edition - e.g., 'en.asahih'
+   */
+  async getAyahWithEdition(surahNumber, ayahNumber, edition = 'en.asahih') {
+    try {
+      const response = await axios.get(`${QURAN_API_BASE}/ayah/${surahNumber}:${ayahNumber}/${edition}`);
+      return response.data.data;
+    } catch (error) {
+       // Fallback or rethrow
+       console.warn(`Failed to fetch edition ${edition} for ${surahNumber}:${ayahNumber}`);
+       return null;
+    }
+  }
+
+  /**
+   * Fetch Tafsir (Commentary)
+   * Defaults to Ibn Kathir (English) if available via identifier 'en.ibnkathir' 
+   * or a simple one if that fails.
+   */
+  async getTafsir(surahNumber, ayahNumber, edition = 'en.ibnkathir') {
+    return this.getAyahWithEdition(surahNumber, ayahNumber, edition);
+  }
+
+
+  /**
    * Validate Surah number
    */
   validateSurahNumber(surahNumber) {
