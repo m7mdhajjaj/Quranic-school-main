@@ -125,11 +125,12 @@ export const sectionValidationSchema = yup.object<SectionFormData>({
        const matchingMems = mems.filter(m => m.surahNumber === rev.surahNumber);
        
        for (const mem of matchingMems) {
-          // Rule 1: Cannot review if memorization starts at 1 (same surah)
+
+          // Rule 1: Cannot review if memorization starts at 1
           if (mem.ayahStart === 1) {
              return this.createError({
                 path: 'reviewMeta',
-                message: `لا يمكن المراجعة في سورة ${rev.surahNameCanonical || ''} لأن الحفظ يبدأ من الآية 1`
+                message: `لا يمكن المراجعة في سورة ${rev.surahNameCanonical || ''} لأنك بدأت حفظها للتو (من الآية 1)`
              });
           }
 
@@ -139,10 +140,11 @@ export const sectionValidationSchema = yup.object<SectionFormData>({
              if (rev.ayahEnd >= mem.ayahStart) {
                 return this.createError({
                   path: 'reviewMeta',
-                  message: `المراجعة في سورة ${rev.surahNameCanonical || ''} تتداخل مع الحفظ. يجب أن تنتهي قبل الآية ${mem.ayahStart}`
+                  message: `تداخل النطاق: المراجعة (${rev.ayahStart}-${rev.ayahEnd}) تتداخل مع الحفظ (${mem.ayahStart}-${mem.ayahEnd || '?'}). أقصى آية للمراجعة هي ${mem.ayahStart - 1}`
                 });
              }
           }
+
        }
     }
 

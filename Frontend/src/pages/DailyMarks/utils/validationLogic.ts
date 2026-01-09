@@ -40,10 +40,12 @@ export const validateSectionConsistency = (
     }
   }
 
-  // 2. Aggregate internal segment-specific errors (e.g. "Start Ayah > End Ayah" set by the UI execution)
+  // 2. Aggregate internal segment-specific errors
+  // Check against Max Memorized logic if applicable (though this is usually handled per segment)
   const collectSegmentErrors = (segments: QuranSegmentUI[], label: string) => {
     segments.forEach((seg, idx) => {
         if (seg.error && !errors.includes(seg.error)) {
+            // Only add if it's not a generic "invalid"
             errors.push(`${label} (${idx + 1}): ${seg.error}`);
         }
     });

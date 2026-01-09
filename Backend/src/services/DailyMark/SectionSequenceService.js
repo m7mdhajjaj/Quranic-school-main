@@ -213,19 +213,21 @@ class SectionSequenceService {
         const memSegments = memorizationMeta.filter(m => m.surahNumber === rev.surahNumber);
         
         for (const mem of memSegments) {
+            
             // حالة خاصة: إذا كان الحفظ يبدأ من الآية 1، لا يمكن وجود مراجعة لنفس السورة
             if (mem.ayahStart === 1) {
                  return {
                      isValid: false,
-                     message: `🚫 لا يمكن إضافة مراجعة لسورة ${mem.surahNameCanonical} لأن حفظها يبدأ من الآية 1 في هذا المقطع.`
+                     message: `🚫 لا يمكن إضافة مراجعة لسورة ${mem.surahNameCanonical} لأنك بدأت حفظها للتو (من الآية 1).`
                  };
             }
 
-            // القاعدة: نهاية المراجعة يجب أن تكون أصغر من بداية الحفظ
+            // القاعدة: التحقق من التداخل
+            // إذا كانت المراجعة تتجاوز أو تساوي بداية الحفظ
             if (rev.ayahEnd >= mem.ayahStart) {
                  return {
                      isValid: false,
-                     message: `🚫 ترتيب غير منطقي في سورة ${rev.surahNameCanonical}: المراجعة (${rev.ayahStart}-${rev.ayahEnd}) تتقاطع أو تسبق الحفظ (${mem.ayahStart}-${mem.ayahEnd}).\nالمراجعة يجب أن تكون للآيات السابقة للحفظ الحالي.`
+                     message: `🚫 تداخل في النطاقات (${mem.surahNameCanonical}):\nالمراجعة (${rev.ayahStart}-${rev.ayahEnd}) تتداخل مع الحفظ الجديد (${mem.ayahStart}-${mem.ayahEnd}).\nيجب أن تنتهي المراجعة عند الآية ${mem.ayahStart - 1} كحد أقصى.`
                  };
             }
         }
