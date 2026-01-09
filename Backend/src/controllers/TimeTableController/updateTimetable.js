@@ -4,6 +4,8 @@
 
 const TimeTable = require("../../schema/TimeTable");
 const Group = require("../../schema/Group");
+const Teacher = require("../../schema/Teacher");
+const Section = require("../../schema/DailyMark/Section");
 const { removeTimetableFromGroup, updateTimetableInGroup } = require("./Helper/groupHelpers");
 const { checkTimetableConflict, checkSessionConflict } = require("./Helper/conflictChecker");
 
@@ -125,6 +127,28 @@ exports.updateTimetable = async (req, res) => {
     )
       .populate('groupId', 'name')
       .populate('teacherId', 'firstName lastName');
+
+    // ✅ مزامنة التعديلات مع المقطع (Section) المرتبط إذا وجد
+    if (timetable.sectionId) {
+      const sectionUpdates = {};
+      
+      // 1. تحديث اسم الحلقة (Group)
+      if (note && note.trim()) {
+        sectionUpdates.group = note.trim();
+      }
+
+      // 2. تحديث اسم المعلم (Teacher)
+      // إذا تم تحديث المعلم، نستخدم الاسم من النتيجة populated
+      if (timetable.teacherId && (updateData.teacherId || !oldTimetable.teacherId)) {
+        sectionUpdates.teacher = `${timetable.teacherId.firstName} ${timetable.teacherId.lastName}`;
+      }
+
+      // إذا وجدت تحديثات، طبقها على المقطع
+      if (Object.keys(sectionUpdates).length > 0) {
+         await Section.findByIdAndUpdate(timetable.sectionId, sectionUpdates);
+         console.log(`✅ تمت مزامنة تعديلات الموعد مع المقطع ${timetable.sectionId}`);
+      }
+    }
 
     // إزالة الموعد من جدول الحلقة القديمة
     if (oldTimetable.note && oldTimetable.note.trim()) {

@@ -12,7 +12,8 @@ import {
   organizeSessionsByDay,
 } from '../utils';
 import { Button } from '@/components/UI/Button';
-import { Edit, Trash2, Clock, Calendar, User } from 'lucide-react';
+import { Edit, Trash2, Clock, Calendar, User, MoreVertical } from 'lucide-react';
+import { DropdownMenu } from '@/components/UI/DropdownMenu';
 
 interface AdvancedTimetableViewProps {
   sessions: Session[];
@@ -113,7 +114,7 @@ export const AdvancedTimetableView: React.FC<AdvancedTimetableViewProps> = ({
                     return (
                       <div
                         key={session._id}
-                        className="bg-gradient-to-br from-yellow-50 to-amber-50 rounded-xl p-4 border-2 border-yellow-200 hover:border-yellow-400 hover:shadow-md transition-all duration-200"
+                        className="relative bg-gradient-to-br from-yellow-50 to-amber-50 rounded-xl p-4 border-2 border-yellow-200 hover:border-yellow-400 hover:shadow-md transition-all duration-200"
                       >
                         {/* معلومات الحلقة */}
                         <div className="space-y-3">
@@ -183,27 +184,31 @@ export const AdvancedTimetableView: React.FC<AdvancedTimetableViewProps> = ({
                             </div>
                           )}
 
-                          {/* أزرار التحكم - للمدير فقط */}
-                          {role === 'admin' && (
-                            <div className="flex gap-2 pt-2 border-t border-yellow-200">
-                              <Button
-                                size="sm"
-                                variant="warning"
-                                leftIcon={<Edit size={14} />}
-                                onClick={() => onEdit?.(session)}
-                                fullWidth
-                              >
-                                تعديل
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="danger"
-                                leftIcon={<Trash2 size={14} />}
-                                onClick={() => onDelete?.(session)}
-                                fullWidth
-                              >
-                                حذف
-                              </Button>
+                          {/* القائمة المنسدلة للإجراءات */}
+                          {(role === "admin" || role === "teacher") && (
+                            <div className="absolute top-3 left-3 z-10 w-auto border-t-0 p-0">
+                              <DropdownMenu
+                                trigger={
+                                  <button className="bg-white/80 hover:bg-white p-1.5 rounded-full shadow-sm text-yellow-700 transition-colors border border-yellow-200">
+                                    <MoreVertical size={16} />
+                                  </button>
+                                }
+                                items={[
+                                  {
+                                    label: "تعديل",
+                                    icon: <Edit size={14} />,
+                                    onClick: () => onEdit?.(session),
+                                    className: "text-amber-600 hover:bg-amber-50",
+                                  },
+                                  {
+                                    label: "حذف",
+                                    icon: <Trash2 size={14} />,
+                                    onClick: () => onDelete?.(session),
+                                    variant: "danger",
+                                  },
+                                ]}
+                                position="bottom-left"
+                              />
                             </div>
                           )}
                         </div>

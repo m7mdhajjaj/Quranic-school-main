@@ -5,7 +5,8 @@
 import React, { useMemo } from "react";
 import type { Session, UserRole } from "../types/timetable.types";
 import { WEEK_DAYS, generateHours, isSummerTime } from "../utils";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, MoreVertical } from "lucide-react";
+import { DropdownMenu, type DropdownMenuItem } from "@/components/UI/DropdownMenu";
 
 interface WeeklyGridViewProps {
   sessions: Session[];
@@ -198,27 +199,34 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
                                 </div>
                               )}
 
-                              {/* أزرار التحكم (تظهر عند hover) - للمدير فقط */}
-                              {role === "admin" && (
-                                <div className="absolute top-1 left-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onEdit?.(session);
-                                    }}
-                                    className="bg-orange-500 hover:bg-orange-600 text-white p-1 rounded shadow-sm"
-                                    title="تعديل">
-                                    <Edit size={12} />
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onDelete?.(session);
-                                    }}
-                                    className="bg-red-500 hover:bg-red-600 text-white p-1 rounded shadow-sm"
-                                    title="حذف">
-                                    <Trash2 size={12} />
-                                  </button>
+                              {/* القائمة المنسدلة للإجراءات */}
+                              {(role === "admin" || role === "teacher") && (
+                                <div 
+                                  className="absolute top-1 left-1 opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <DropdownMenu
+                                    trigger={
+                                      <button className="bg-white/90 hover:bg-white text-yellow-700 p-1.5 rounded-full shadow-sm border border-yellow-200 transition-colors">
+                                        <MoreVertical size={14} />
+                                      </button>
+                                    }
+                                    items={[
+                                      {
+                                        label: "تعديل",
+                                        icon: <Edit size={14} />,
+                                        onClick: () => onEdit?.(session),
+                                        className: "text-amber-700 hover:bg-amber-50",
+                                      },
+                                      {
+                                        label: "حذف",
+                                        icon: <Trash2 size={14} />,
+                                        onClick: () => onDelete?.(session),
+                                        variant: "danger",
+                                      },
+                                    ]}
+                                    position="bottom-left"
+                                  />
                                 </div>
                               )}
                             </div>
@@ -282,29 +290,34 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
                                 </div>
                               )}
 
-                              {/* أزرار التحكم (تظهر عند hover) - للمدير فقط */}
-                              {role === "admin" && (
-                                <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onEdit?.(session);
-                                    }}
-                                    className="bg-orange-500 hover:bg-orange-600 text-white p-1.5 rounded shadow-sm"
-                                    title="تعديل">
-                                    <Edit size={14} />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onDelete?.(session);
-                                    }}
-                                    className="bg-red-500 hover:bg-red-600 text-white p-1.5 rounded shadow-sm"
-                                    title="حذف">
-                                    <Trash2 size={14} />
-                                  </button>
+                              {/* القائمة المنسدلة للإجراءات */}
+                              {(role === "admin" || role === "teacher") && (
+                                <div 
+                                  className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <DropdownMenu
+                                    trigger={
+                                      <button className="bg-white/90 hover:bg-white text-yellow-700 p-1.5 rounded-full shadow-sm border border-yellow-200 transition-colors">
+                                        <MoreVertical size={14} />
+                                      </button>
+                                    }
+                                    items={[
+                                      {
+                                        label: "تعديل",
+                                        icon: <Edit size={14} />,
+                                        onClick: () => onEdit?.(session),
+                                        className: "text-amber-700 hover:bg-amber-50",
+                                      },
+                                      {
+                                        label: "حذف",
+                                        icon: <Trash2 size={14} />,
+                                        onClick: () => onDelete?.(session),
+                                        variant: "danger",
+                                      },
+                                    ]}
+                                    position="bottom-left"
+                                  />
                                 </div>
                               )}
                             </div>

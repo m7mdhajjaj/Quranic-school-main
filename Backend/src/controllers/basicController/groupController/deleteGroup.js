@@ -5,6 +5,7 @@
 const Group = require("../../../schema/Group");
 const Teacher = require("../../../schema/Teacher");
 const Student = require("../../../schema/Student");
+const TimeTable = require("../../../schema/TimeTable");
 const { invalidateStudentCountsCache } = require("./cache");
 const { successResponse, notFoundResponse, handleError, emitSocketEvent } = require("./utils");
 
@@ -37,6 +38,9 @@ exports.deleteGroup = async (req, res) => {
 
     // إزالة الحلقة من المعلمين
     await Teacher.updateMany({ "groups.id": id }, { $pull: { groups: { id: id } } });
+
+    // ✅ حذف المواعيد المرتبطة بالحلقة
+    await TimeTable.deleteMany({ groupId: id });
 
     // حذف الحلقة
     await Group.findByIdAndDelete(id);
