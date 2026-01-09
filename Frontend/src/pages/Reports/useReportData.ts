@@ -34,8 +34,14 @@ interface UseReportDataReturn {
 }
 
 export const useReportData = (): UseReportDataReturn => {
-  const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
-  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  // تعيين الشهر والسنة الحالية تلقائياً
+  const currentDate = new Date();
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(
+    currentDate.getMonth() + 1
+  );
+  const [selectedYear, setSelectedYear] = useState<number | null>(
+    currentDate.getFullYear()
+  );
   const [userRole, setUserRole] = useState<string>("teacher");
   const [loading, setLoading] = useState(true);
   const [chartData, setChartData] = useState<ChartData>({
