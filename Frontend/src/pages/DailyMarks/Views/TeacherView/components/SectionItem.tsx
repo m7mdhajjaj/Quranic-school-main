@@ -189,7 +189,7 @@ const SectionItemComponent = ({
             <div className="flex items-center gap-2 mt-1 text-sm text-cyan-700 font-medium mr-6">
                 <span>{(section.timetableId as any).day}</span>
                 <span className="text-cyan-300">|</span>
-                <span dir="ltr" className="font-mono text-xs">{(section.timetableId as any).startHour} - {(section.timetableId as any).endHour}</span>
+                <span dir="rtl" className="font-mono text-xs">{(section.timetableId as any).startHour} - {(section.timetableId as any).endHour}</span>
             </div>
           </div>
         )}
