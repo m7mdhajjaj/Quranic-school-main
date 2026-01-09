@@ -151,10 +151,18 @@ export const getStudentBadges = async (): Promise<StudentBadges> => {
 /**
  * جلب ترتيب الطلاب حسب النقاط (في نفس الحلقة فقط)
  */
-export const getPointsRankings = async (): Promise<RankingStudent[]> => {
+export const getPointsRankings = async (
+  groupId?: string
+): Promise<RankingStudent[]> => {
   try {
-    console.log("📊 [API] Fetching points rankings...");
-    const response = await axios.get(`${POINTS_GAME_URL}/rankings/points`, {
+    console.log(
+      "📊 [API] Fetching points rankings...",
+      groupId ? `for group: ${groupId}` : ""
+    );
+    const url = groupId
+      ? `${POINTS_GAME_URL}/rankings/points?groupId=${groupId}`
+      : `${POINTS_GAME_URL}/rankings/points`;
+    const response = await axios.get(url, {
       headers: getHeaders(),
     });
     console.log("📊 [API] Points rankings response:", response.data);
@@ -171,10 +179,18 @@ export const getPointsRankings = async (): Promise<RankingStudent[]> => {
 /**
  * جلب ترتيب الطلاب حسب الشارات (في نفس الحلقة فقط)
  */
-export const getBadgesRankings = async (): Promise<RankingStudent[]> => {
+export const getBadgesRankings = async (
+  groupId?: string
+): Promise<RankingStudent[]> => {
   try {
-    console.log("🏆 [API] Fetching badges rankings...");
-    const response = await axios.get(`${POINTS_GAME_URL}/rankings/badges`, {
+    console.log(
+      "🏆 [API] Fetching badges rankings...",
+      groupId ? `for group: ${groupId}` : ""
+    );
+    const url = groupId
+      ? `${POINTS_GAME_URL}/rankings/badges?groupId=${groupId}`
+      : `${POINTS_GAME_URL}/rankings/badges`;
+    const response = await axios.get(url, {
       headers: getHeaders(),
     });
     console.log("🏆 [API] Badges rankings response:", response.data);
@@ -182,6 +198,24 @@ export const getBadgesRankings = async (): Promise<RankingStudent[]> => {
   } catch (error: any) {
     console.error(
       "خطأ في جلب ترتيب الشارات:",
+      error.response?.data || error.message
+    );
+    throw error.response?.data || error;
+  }
+};
+
+/**
+ * جلب حلقات المعلم لصفحة لعبة النقاط
+ */
+export const getTeacherGroupsForPointsGame = async () => {
+  try {
+    const response = await axios.get(`${POINTS_GAME_URL}/teacher-groups`, {
+      headers: getHeaders(),
+    });
+    return response.data.data;
+  } catch (error: any) {
+    console.error(
+      "خطأ في جلب حلقات المعلم:",
       error.response?.data || error.message
     );
     throw error.response?.data || error;

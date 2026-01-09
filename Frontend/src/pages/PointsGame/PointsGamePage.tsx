@@ -1,24 +1,25 @@
 // PointsGamePage.tsx
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { usePointsGameData } from './hooks/usePointsGameData';
-import { usePointsGameActions } from './hooks/usePointsGameActions';
-import { useRankings } from './hooks/useRankings';
-import { calculateTotalPoints } from './utils/pointsCalculator';
-import PageHeader from '@/components/UI/PageHeader';
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { usePointsGameData } from "./hooks/usePointsGameData";
+import { usePointsGameActions } from "./hooks/usePointsGameActions";
+import { useRankings } from "./hooks/useRankings";
+import { useTeacherGroups } from "./hooks/useTeacherGroups";
+import { calculateTotalPoints } from "./utils/pointsCalculator";
+import PageHeader from "@/components/UI/PageHeader";
 import {
   RankingsModal,
   BadgesModal,
   StudentView,
   TeacherRankingsView,
-} from './components';
-import type { PrayerStatus, Prayers } from './types/pointsGame.types';
+} from "./components";
+import type { PrayerStatus, Prayers } from "./types/pointsGame.types";
 
 const PointsGamePage = () => {
   const { user } = useAuth();
   const [showRankings, setShowRankings] = useState(false);
   const [showBadges, setShowBadges] = useState(false);
-  const [rankingType, setRankingType] = useState<'points' | 'badges'>('points');
+  const [rankingType, setRankingType] = useState<"points" | "badges">("points");
 
   // استخدام الـ hooks
   const {
@@ -57,6 +58,13 @@ const PointsGamePage = () => {
     loadRankings,
   } = useRankings();
 
+  const {
+    loading: groupsLoading,
+    groups,
+    selectedGroupId,
+    setSelectedGroupId,
+  } = useTeacherGroups();
+
   // حساب النقاط
   const totalPoints = useMemo(
     () =>
@@ -69,19 +77,27 @@ const PointsGamePage = () => {
         adhkar,
         halaqah
       ),
-    [prayers, nawafel, parentRespect, schoolAttendance, dailyStudy, adhkar, halaqah]
+    [
+      prayers,
+      nawafel,
+      parentRespect,
+      schoolAttendance,
+      dailyStudy,
+      adhkar,
+      halaqah,
+    ]
   );
 
   // دالة لتحديث حالة الصلاة
-  const updatePrayerStatus = useCallback((
-    prayerName: keyof Prayers,
-    status: PrayerStatus
-  ) => {
-    setPrayers((prev) => ({
-      ...prev,
-      [prayerName]: { status },
-    }));
-  }, [setPrayers]);
+  const updatePrayerStatus = useCallback(
+    (prayerName: keyof Prayers, status: PrayerStatus) => {
+      setPrayers((prev) => ({
+        ...prev,
+        [prayerName]: { status },
+      }));
+    },
+    [setPrayers]
+  );
 
   const handleToggleNawafel = useCallback(
     (key: keyof typeof nawafel) => {
@@ -131,7 +147,18 @@ const PointsGamePage = () => {
     };
 
     await saveDailyData(dailyData, totalPoints);
-  }, [currentDate, prayers, nawafel, parentRespect, schoolAttendance, dailyStudy, adhkar, halaqah, saveDailyData, totalPoints]);
+  }, [
+    currentDate,
+    prayers,
+    nawafel,
+    parentRespect,
+    schoolAttendance,
+    dailyStudy,
+    adhkar,
+    halaqah,
+    saveDailyData,
+    totalPoints,
+  ]);
 
   // دالة لفتح لوحة الترتيب
   const handleShowRankings = useCallback(async () => {
@@ -139,43 +166,47 @@ const PointsGamePage = () => {
     setShowRankings(true);
   }, [loadRankings]);
 
-  // تحميل البيانات تلقائياً للمعلم
+  // تحميل البيانات تلقائياً للمعلم عند اختيار حلقة
   useEffect(() => {
-    if (user?.role === 'teacher') {
-      loadRankings();
+    if (user?.role === "teacher" && selectedGroupId) {
+      loadRankings(selectedGroupId);
     }
-  }, [user?.role, loadRankings]);
+  }, [user?.role, selectedGroupId, loadRankings]);
 
   return (
     <>
       <div
         className="min-h-screen bg-gradient-to-br from-emerald-50/40 via-teal-50/30 to-cyan-50/40 p-3 sm:p-4 md:p-6 lg:p-8"
-        dir="rtl"
-      >
+        dir="rtl">
         <div className="max-w-7xl mx-auto px-2 sm:px-0">
           {/* Header */}
           <PageHeader
-            title={user?.role === 'teacher' ? 'ترتيب الطلاب' : 'لعبة النقاط اليومية'}
+            title={
+              user?.role === "teacher" ? "ترتيب الطلاب" : "لعبة النقاط اليومية"
+            }
             subtitle={
-              user?.role === 'teacher'
+              user?.role === "teacher"
                 ? `المعلم: ${user?.firstName} ${user?.lastName} - تابع تقدم طلابك ومنافستهم! 🌟`
                 : `الطالب: ${user?.firstName} ${user?.lastName} - تابع نشاطاتك اليومية واجمع النقاط! 🌟`
             }
             icon={
               <div className="text-6xl">
-                {user?.role === 'teacher' ? '📊' : '🎮'}
+                {user?.role === "teacher" ? "📊" : "🎮"}
               </div>
             }
           />
 
           {/* المعلم يرى لوحة الترتيب مباشرة */}
-          {user?.role === 'teacher' ? (
+          {user?.role === "teacher" ? (
             <TeacherRankingsView
-              loading={rankingsLoading}
+              loading={rankingsLoading || groupsLoading}
               rankingType={rankingType}
               realRankings={realRankings}
               realBadgeRankings={realBadgeRankings}
               onChangeType={setRankingType}
+              groups={groups}
+              selectedGroupId={selectedGroupId}
+              onGroupChange={setSelectedGroupId}
             />
           ) : (
             <StudentView
@@ -189,19 +220,19 @@ const PointsGamePage = () => {
               prayers={prayers}
               onUpdatePrayer={updatePrayerStatus}
               nawafel={nawafel}
-            onToggleNawafel={handleToggleNawafel}
+              onToggleNawafel={handleToggleNawafel}
               parentRespect={parentRespect}
               schoolAttendance={schoolAttendance}
               dailyStudy={dailyStudy}
               onParentRespectChange={setParentRespect}
-            onSchoolAttendanceToggle={handleSchoolAttendanceToggle}
+              onSchoolAttendanceToggle={handleSchoolAttendanceToggle}
               onDailyStudyChange={setDailyStudy}
               adhkar={adhkar}
-            onToggleAdhkar={handleToggleAdhkar}
+              onToggleAdhkar={handleToggleAdhkar}
               halaqah={halaqah}
-            onUpdateHalaqah={handleUpdateHalaqah}
+              onUpdateHalaqah={handleUpdateHalaqah}
               onShowRankings={handleShowRankings}
-            onShowBadges={() => setShowBadges(true)}
+              onShowBadges={() => setShowBadges(true)}
               onSavePoints={handleSavePoints}
             />
           )}

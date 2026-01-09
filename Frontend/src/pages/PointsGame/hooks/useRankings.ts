@@ -10,13 +10,16 @@ export const useRankings = () => {
     []
   );
 
-  const loadRankings = useCallback(async () => {
+  const loadRankings = useCallback(async (groupId?: string) => {
     try {
       setLoading(true);
-      console.log("🔄 [useRankings] Loading rankings...");
+      console.log(
+        "🔄 [useRankings] Loading rankings...",
+        groupId ? `for group: ${groupId}` : ""
+      );
       const [pointsData, badgesData] = await Promise.all([
-        getPointsRankings(),
-        getBadgesRankings(),
+        getPointsRankings(groupId),
+        getBadgesRankings(groupId),
       ]);
       console.log("✅ [useRankings] Points rankings:", pointsData);
       console.log("✅ [useRankings] Badges rankings:", badgesData);
