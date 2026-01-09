@@ -26,7 +26,8 @@ export const useEditSectionModal = (editingSection: Section | null) => {
     (
       type: 'memorizationMeta' | 'reviewMeta', 
       segments: QuranSegmentUI[], 
-      onChange: (e: any) => void
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      _onChange: (e: any) => void
     ) => {
       // 1. Update Local State
       if (type === 'memorizationMeta') {
@@ -35,9 +36,8 @@ export const useEditSectionModal = (editingSection: Section | null) => {
         setLocalReviewMeta(segments);
       }
 
-      // 2. Trigger Parent Change (Update the main state object too)
-      // This mimics the event object for compatibility with the existing onChange handler
-      onChange({ target: { name: type, value: segments } });
+      // 2. NO Parent Update here. We sync on Save only.
+      // This improves performance and prevents race conditions with parent state.
       
       // Also update localSection to reflect changes immediately in UI if needed
        setLocalSection((prev) => (prev ? { ...prev, [type]: segments } : null));

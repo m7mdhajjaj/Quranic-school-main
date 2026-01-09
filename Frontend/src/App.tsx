@@ -624,7 +624,7 @@ const router = createBrowserRouter([
             theme="light"
             limit={3}
             style={{
-              zIndex: 9999,
+              zIndex: 99999, // High z-index to ensure visibility over Modals and SweetAlerts
               top: "1.5rem",
               right: "1.5rem",
               left: "auto",

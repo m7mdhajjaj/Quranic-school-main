@@ -26,7 +26,8 @@ export const useAddSectionModal = () => {
     (
       type: 'memorizationMeta' | 'reviewMeta', 
       segments: QuranSegmentUI[], 
-      onChange: (e: any) => void
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      _onChange: (e: any) => void
     ) => {
       // 1. Update Local State
       if (type === 'memorizationMeta') {
@@ -34,12 +35,19 @@ export const useAddSectionModal = () => {
       } else {
         setLocalReviewMeta(segments);
       }
-
-      // 2. Trigger Parent Change (Strip error before sending to parent/backend if needed, but keeping it for now is fine as backend ignores extra fields usually)
-      onChange({ target: { name: type, value: segments } });
+      // No parent update on change
     }, 
     []
   );
+
+  const syncWithParent = useCallback((onChange: (e: any) => void) => {
+      onChange({ target: { name: 'reviewMeta', value: localReviewMeta } });
+      onChange({ target: { name: 'memorizationMeta', value: localMemorizationMeta } });
+      // Clear legacy
+      onChange({ target: { name: 'reviewSection', value: '' } });
+      onChange({ target: { name: 'memorizationSection', value: '' } });
+  }, [localReviewMeta, localMemorizationMeta]);
+
 
   // Debounced input change handler (Legacy Text)
   const handleInputChange = useCallback(
@@ -86,5 +94,6 @@ export const useAddSectionModal = () => {
     syncLocalState,
     handleInputChange,
     handleMetaChange,
+    syncWithParent,
   };
 };

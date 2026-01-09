@@ -31,6 +31,7 @@ const AddSectionModalComponent = ({
     syncLocalState,
     // handleInputChange, // Legacy unused
     handleMetaChange,
+    syncWithParent,
   } = useAddSectionModal();
 
   // Sync with parent state when modal opens
@@ -46,15 +47,63 @@ const AddSectionModalComponent = ({
       localReviewMeta
   );
 
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (hasConsistencyErrors) return;
+    syncWithParent(onChange);
+    onSubmit(e);
+  };
+
   if (!isOpen) return null;
 
   // Get today's date in YYYY-MM-DD format for minDate
   const today = new Date();
   const minDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
+  const footerButtons = (
+    <div className="flex gap-3 w-full">
+      <Button
+        type="button"
+        onClick={onClose}
+        variant="secondary"
+        className="flex-1 py-3 px-6 rounded-xl hover:bg-gray-100 transition-colors"
+        disabled={isLoading}
+      >
+        إلغاء
+      </Button>
+      <Button
+        type="submit"
+        form="add-section-form"
+        variant="primary"
+        className={`flex-[2] py-3 px-8 rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 min-h-[52px] transition-all font-bold text-lg
+          ${hasConsistencyErrors 
+            ? 'bg-gray-400 cursor-not-allowed hover:bg-gray-400 hover:shadow-none hover:translate-y-0' 
+            : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700'
+          }`}
+        disabled={isLoading || hasConsistencyErrors}
+        title={hasConsistencyErrors ? 'يرجى تصحيح الأخطاء أولاً' : 'إضافة المقطع'}
+      >
+        {isLoading ? (
+          <span className="flex items-center justify-center gap-2">
+            <span className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-white"></span>
+            جاري الإضافة...
+          </span>
+        ) : (
+          'حفظ وإضافة'
+        )}
+      </Button>
+    </div>
+  );
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="إضافة مقطع جديد" size="2xl">
-      <form onSubmit={onSubmit}>
+    <Modal 
+       isOpen={isOpen} 
+       onClose={onClose} 
+       title="إضافة مقطع جديد" 
+       size="2xl"
+       footer={footerButtons}
+    >
+      <form id="add-section-form" onSubmit={handleFormSubmit}>
         
         {/* Date Field Container */}
         <div className="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
@@ -98,39 +147,6 @@ const AddSectionModalComponent = ({
         {/* Validation Errors Area */}
         <div className="mt-6">
           <ErrorMessageList errors={consistencyErrors} />
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-3 mt-8 pt-4 border-t border-gray-100">
-          <Button
-            type="button"
-            onClick={onClose}
-            variant="secondary"
-            className="flex-1 py-3 px-6 rounded-xl hover:bg-gray-100 transition-colors"
-            disabled={isLoading}
-          >
-            إلغاء
-          </Button>
-          <Button
-            type="submit"
-            variant="primary"
-            className={`flex-[2] py-3 px-8 rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 min-h-[52px] transition-all font-bold text-lg
-              ${hasConsistencyErrors 
-                ? 'bg-gray-400 cursor-not-allowed hover:bg-gray-400 hover:shadow-none hover:translate-y-0' 
-                : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700'
-              }`}
-            disabled={isLoading || hasConsistencyErrors}
-            title={hasConsistencyErrors ? 'يرجى تصحيح الأخطاء أولاً' : 'إضافة المقطع'}
-          >
-            {isLoading ? (
-              <span className="flex items-center justify-center gap-2">
-                <span className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-white"></span>
-                جاري الإضافة...
-              </span>
-            ) : (
-              'حفظ وإضافة'
-            )}
-          </Button>
         </div>
       </form>
     </Modal>

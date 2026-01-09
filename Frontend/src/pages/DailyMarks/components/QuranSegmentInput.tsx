@@ -112,7 +112,7 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
               
               {/* Dropdown Suggestions */}
               {isFocused && surahInput && !segment.surahNumber && suggestions.length > 0 && (
-                  <div className="absolute top-full text-right left-0 w-full bg-white rounded-xl shadow-2xl border border-gray-100 mt-2 max-h-60 overflow-y-auto divide-y divide-gray-50 z-[100] animate-in fade-in zoom-in-95 duration-100 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+                  <div className={`absolute top-full text-right left-0 w-full bg-white rounded-xl shadow-2xl border border-gray-100 mt-2 max-h-60 overflow-y-auto divide-y divide-gray-50 z-[100] animate-in fade-in zoom-in-95 duration-100 scrollbar-thin ${colorClass === 'amber' ? 'scrollbar-thumb-amber-500' : 'scrollbar-thumb-emerald-500'} scrollbar-track-transparent`}>
                       {suggestions.map(s => (
                           <div 
                             key={s.number}

@@ -142,7 +142,8 @@ export const useDailyMarksHandlers = ({
           reviewMeta: [],
         });
 
-        // showSuccessToast("✅ تم إضافة المقطع بنجاح!");
+        // Show success toast immediately
+        showSuccessToast("✅ تم إضافة المقطع بنجاح!");
 
         // Check if we need to ask/prompt for schedule
         if ((createdSectionResponse as any).meta?.askForSchedule) {
@@ -163,13 +164,8 @@ export const useDailyMarksHandlers = ({
             }
 
             // Navigate to timetable with query params
-            // Passes sectionId AND group name to pre-fill the form
             navigate(`/timetable?addSession=true&sectionId=${createdSection._id}&groupName=${encodeURIComponent(selectedGroup)}&sessionType=${sessionType}`);
-          } else {
-             showSuccessToast("✅ تم إضافة المقطع بنجاح!");
           }
-        } else {
-             showSuccessToast("✅ تم إضافة المقطع بنجاح!");
         }
       }
     } catch (err: unknown) {

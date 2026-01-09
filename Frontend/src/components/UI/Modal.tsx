@@ -88,11 +88,12 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
         )}
         
-        <div className={`p-6 overflow-y-auto ${bodyClassName || ''} custom-scrollbar`}>
+        {/* Modal Body with smooth scrolling */}
+        <div className={`p-6 overflow-y-auto flex-1 min-h-0 scroll-smooth overscroll-contain ${bodyClassName || ''} custom-scrollbar`}>
            {children}
         </div>
         
-        {footer && <div className="p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl shrink-0">{footer}</div>}
+        {footer && <div className="p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl shrink-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">{footer}</div>}
       </div>
     </div>
   );

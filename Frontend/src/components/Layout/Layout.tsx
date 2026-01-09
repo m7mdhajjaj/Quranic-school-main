@@ -95,7 +95,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const HeaderComponent = Header;
 
   return (
-    <div className="app-content m-0 p-0">
+    <div className="app-content m-0 p-0 min-h-screen flex flex-col">
       {/* Top Header - Always Visible if showHeader is true */}
       {showHeader && (
         <HeaderComponent />
@@ -111,7 +111,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       {/* Main Content Area */}
       <main 
-        className={`main-content m-0 p-0 transition-all duration-300 ease-in-out ${
+        className={`main-content m-0 p-0 transition-all duration-300 ease-in-out flex-grow ${
           showHeader && isSidebarOpen ? 'lg:mr-72' : ''
         }`}
       >
