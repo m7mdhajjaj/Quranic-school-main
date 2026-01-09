@@ -176,13 +176,13 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
             </button>
           </div>
 
-          {/* زر إضافة موعد */}
-          <Button
+          {/* زر إضافة موعد - تمت إزالته بناءً على الطلب */}
+          {/* <Button
             onClick={handleOpenAddModal}
             variant="primary"
             size="lg">
             ➕ إضافة موعد حلقة
-          </Button>
+          </Button> */}
         </div>
 
        
