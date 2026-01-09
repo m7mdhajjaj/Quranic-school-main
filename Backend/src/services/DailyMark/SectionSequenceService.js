@@ -11,10 +11,11 @@ class SectionSequenceService {
    * @param {string} groupId - معرف الحلقة
    * @param {number} surahNumber - رقم السورة
    * @param {string} type - 'memorization' | 'review'
-   * @param {Date} [beforeDate] - تاريخ مرجعي (لجلب ما قبله فقط)
+   * @param {Date} [beforeDate] - تاريخ مرجعي
+   * @param {string} [excludeSectionId] - استثناء مقطع معين
    * @returns {Promise<{lastEnd: number, nextStart: number, lastDate: Date} | null>}
    */
-  async getLastProgress(groupId, surahNumber, type, beforeDate = null) {
+  async getLastProgress(groupId, surahNumber, type, beforeDate = null, excludeSectionId = null) {
     const metaField = type === 'memorization' ? 'memorizationMeta' : 'reviewMeta';
 
     // إعداد الاستعلام
@@ -23,9 +24,15 @@ class SectionSequenceService {
       [`${metaField}.surahNumber`]: surahNumber
     };
 
-    // إذا تم تحديد تاريخ، ابحث عما قبله فقط (بدون inclusive)
+    if (excludeSectionId) {
+       query._id = { $ne: excludeSectionId };
+    }
+
+    // إذا تم تحديد تاريخ، ابحث عما قبله أو *نفس اليوم* (للسماح بعدة مقاطع في نفس اليوم)
+    // نستخدم $lte لأننا نريد شمول المقاطع التي تم إنشاؤها في نفس اليوم وتم حفظها سابقاً
+    // هذا مهم عندما يضيف المستخدم (1-5) ثم (6-10) في نفس التاريخ.
     if (beforeDate) {
-        query.date = { $lt: beforeDate };
+        query.date = { $lte: beforeDate };
     }
 
     // البحث عن آخر مقطع يحتوي على هذه السورة
@@ -49,9 +56,7 @@ class SectionSequenceService {
     // إذا كنا نبحث عن مراجعة، دعنا نجلب أيضاً حد الحفظ لهذه السورة
     let maxMemorized = null;
     if (type === 'review') {
-        // نداء تكراري لنفس الدالة لكن بنوع 'memorization'
-        // نمرر نفس التاريخ المرجعي لضمان الاتساق
-        const memProgress = await this.getLastProgress(groupId, surahNumber, 'memorization', beforeDate);
+        const memProgress = await this.getLastProgress(groupId, surahNumber, 'memorization', beforeDate, excludeSectionId);
         maxMemorized = memProgress ? memProgress.lastEnd : 0;
     }
 
@@ -60,20 +65,21 @@ class SectionSequenceService {
       nextStart: lastSegment.ayahEnd + 1,
       lastDate: lastSection.date,
       lastStatus: lastSegment.status,
-      maxMemorized // إضافة حد الحفظ
+      maxMemorized 
     };
   }
 
   /**
    * التحقق من صحة التسلسل للمقاطع الجديدة
-   * @param {Array} newSegments - المقاطع الجديدة المراد إضافتها
-   * @param {string} groupId - معرف الحلقة
-   * @param {string} type - 'memorization' | 'review'
-   * @param {Date} [newSectionDate] - تاريخ المقطع الجديد
-   * @param {string} [excludeSectionId] - استثناء مقطع معين
+   * @param {Array} newSegments 
+   * @param {string} groupId 
+   * @param {string} type 
+   * @param {Date} [newSectionDate] 
+   * @param {string} [excludeSectionId] 
+   * @param {Array} [siblingSegments] 
    * @returns {Promise<{isValid: boolean, message?: string}>}
    */
-  async validateSequence(newSegments, groupId, type, newSectionDate = null, excludeSectionId = null) {
+  async validateSequence(newSegments, groupId, type, newSectionDate = null, excludeSectionId = null, siblingSegments = []) {
     if (!newSegments || newSegments.length === 0) return { isValid: true };
 
     const metaField = type === 'memorization' ? 'memorizationMeta' : 'reviewMeta';
@@ -82,10 +88,7 @@ class SectionSequenceService {
     const newDateStr = newSectionDate ? new Date(newSectionDate).toLocaleDateString('en-CA') : null;
 
     for (const seg of newSegments) {
-      // ===================================
-      // 1. التحقق من التداخل (Overlap Check)
-      // ===================================
-      
+      // ... (Overlap check remains same)
       const overlapQuery = {
         group: groupId,
         [`${metaField}.surahNumber`]: seg.surahNumber,
@@ -105,7 +108,6 @@ class SectionSequenceService {
       const potentialConflicts = await Section.find(overlapQuery).select(`date ${metaField}`);
 
       for (const conflictingSection of potentialConflicts) {
-         // الحفظ: ممنوع التداخل مع أي تاريخ سابق
          if (type === 'memorization') {
             const conflictSeg = conflictingSection[metaField].find(s => 
                 s.surahNumber === seg.surahNumber && 
@@ -119,7 +121,6 @@ class SectionSequenceService {
             };
          }
          
-         // المراجعة: مسموح التكرار، إلا في نفس اليوم! (منع ازدواجية الخطأ)
          if (type === 'review' && newDateStr) {
              const conflictDateStr = new Date(conflictingSection.date).toLocaleDateString('en-CA');
              
@@ -132,15 +133,26 @@ class SectionSequenceService {
          }
       }
 
-      // =================================== 
-      // 1.5 التحقق من أن المراجعة لا تسبق الحفظ (Review <= Memorization Check)
-      // ===================================
+      // 1.5 Review <= Memorization Logic
       if (type === 'review') {
-          // جلب آخر نقطة وصل إليها الحفظ لهذه السورة (نسبة لتاريخ المقطع)
-          const memProgress = await this.getLastProgress(groupId, seg.surahNumber, 'memorization', newSectionDate);
+          const memProgress = await this.getLastProgress(groupId, seg.surahNumber, 'memorization', newSectionDate, excludeSectionId);
           
-          const maxMemorized = memProgress ? memProgress.lastEnd : 0;
+          let maxMemorized = memProgress ? memProgress.lastEnd : 0;
+
+          if (siblingSegments && siblingSegments.length > 0) {
+              const currentMem = siblingSegments.find(m => m.surahNumber === seg.surahNumber);
+              if (currentMem) {
+                  maxMemorized = Math.max(maxMemorized, currentMem.ayahEnd);
+              }
+          }
           
+          if (maxMemorized === 0) {
+             return {
+                 isValid: false,
+                 message: `🚫 لا يمكن إضافة مراجعة لسورة ${seg.surahNameCanonical} لأنه لم يتم البدء بحفظها أبداً.`
+             };
+          }
+
           if (seg.ayahEnd > maxMemorized) {
                return {
                   isValid: false,
@@ -149,19 +161,14 @@ class SectionSequenceService {
           }
       }
 
-      // ===================================
-      // 2. التحقق من التسلسل (Sequence Gap Check)
-      // ===================================
-      
-      // نمرر التاريخ الجديد للتحقق مما قبله فقط
-      const lastProgress = await this.getLastProgress(groupId, seg.surahNumber, type, newSectionDate);
+      // 2. Sequence Gap Check
+      // Pass excludeSectionId mostly for update scenarios
+      const lastProgress = await this.getLastProgress(groupId, seg.surahNumber, type, newSectionDate, excludeSectionId);
       
       if (lastProgress) {
-          // يجب أن تكون بداية الجديد = نهاية القديم + 1
           if (seg.ayahStart !== lastProgress.nextStart) {
               const dateStr = new Date(lastProgress.lastDate).toLocaleDateString('ar-EG');
               
-              // حالة الفجوة (Gap)
               if (seg.ayahStart > lastProgress.nextStart) {
                    return {
                       isValid: false,
@@ -169,7 +176,6 @@ class SectionSequenceService {
                    };
               }
               
-              // حالة التراجع/التداخل (Overlap/Regression)
               if (seg.ayahStart < lastProgress.nextStart) {
                    return {
                       isValid: false,
@@ -178,7 +184,6 @@ class SectionSequenceService {
               }
           }
       } else {
-          // أول مرة يدخل السورة في هذا النوع
           if (seg.ayahStart !== 1) {
              return {
                  isValid: false,

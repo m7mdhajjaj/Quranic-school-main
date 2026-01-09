@@ -105,10 +105,48 @@ export const sectionValidationSchema = yup.object<SectionFormData>({
 }).test(
   'at-least-one-section',
   'يجب إدخال مقطع حفظ أو مقطع مراجعة على الأقل',
-  (value) => {
-    const hasMem = (value.memorizationSection && value.memorizationSection.trim() !== "") || (value.memorizationMeta && value.memorizationMeta.length > 0);
-    const hasRev = (value.reviewSection && value.reviewSection.trim() !== "") || (value.reviewMeta && value.reviewMeta.length > 0);
-    return hasMem || hasRev;
+  (value: any) => {
+    // Safety check with optional chaining
+    const hasMem = (value?.memorizationSection?.trim()) || (value?.memorizationMeta?.length > 0);
+    const hasRev = (value?.reviewSection?.trim()) || (value?.reviewMeta?.length > 0);
+    return Boolean(hasMem || hasRev);
+  }
+).test(
+  'consistency-check',
+  'خطأ في اتساق البيانات',
+  function(value: any) {
+    if (!value?.memorizationMeta || !value?.reviewMeta) return true;
+    
+    const mems = value.memorizationMeta as QuranSegmentData[];
+    const revs = value.reviewMeta as QuranSegmentData[];
+
+    for (const rev of revs) {
+       // Find matching memorization
+       const matchingMems = mems.filter(m => m.surahNumber === rev.surahNumber);
+       
+       for (const mem of matchingMems) {
+          // Rule 1: Cannot review if memorization starts at 1 (same surah)
+          if (mem.ayahStart === 1) {
+             return this.createError({
+                path: 'reviewMeta',
+                message: `لا يمكن المراجعة في سورة ${rev.surahNameCanonical || ''} لأن الحفظ يبدأ من الآية 1`
+             });
+          }
+
+          // Rule 2: Review must be strictly before memorization
+          // Ensure values exist
+          if (rev.ayahEnd !== undefined && mem.ayahStart !== undefined) {
+             if (rev.ayahEnd >= mem.ayahStart) {
+                return this.createError({
+                  path: 'reviewMeta',
+                  message: `المراجعة في سورة ${rev.surahNameCanonical || ''} تتداخل مع الحفظ. يجب أن تنتهي قبل الآية ${mem.ayahStart}`
+                });
+             }
+          }
+       }
+    }
+
+    return true;
   }
 );
 

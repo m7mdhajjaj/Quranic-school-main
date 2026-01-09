@@ -51,7 +51,8 @@ exports.updateSection = async (req, res) => {
                  targetGroup,
                  'review',
                  updateData.date || section.date, // Pass date
-                 section._id
+                 section._id,
+                 updateData.memorizationMeta || section.memorizationMeta // Pass sibling memorization
              );
 
              if (!revValidation.isValid) {

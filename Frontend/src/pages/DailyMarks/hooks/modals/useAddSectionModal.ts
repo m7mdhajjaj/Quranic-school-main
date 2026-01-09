@@ -1,6 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import type { Section } from '../../types/types';
-import type { QuranSegmentData } from '@/Validation/dailyMarksValidation';
+import type { Section, QuranSegmentUI } from '../../types/types';
 
 const INPUT_DEBOUNCE = 10; // ms
 
@@ -9,8 +8,8 @@ export const useAddSectionModal = () => {
   const [localMemorizationSection, setLocalMemorizationSection] = useState('');
   
   // New Structured State
-  const [localReviewMeta, setLocalReviewMeta] = useState<QuranSegmentData[]>([]);
-  const [localMemorizationMeta, setLocalMemorizationMeta] = useState<QuranSegmentData[]>([]);
+  const [localReviewMeta, setLocalReviewMeta] = useState<QuranSegmentUI[]>([]);
+  const [localMemorizationMeta, setLocalMemorizationMeta] = useState<QuranSegmentUI[]>([]);
 
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
@@ -18,15 +17,15 @@ export const useAddSectionModal = () => {
   const syncLocalState = useCallback((section: Partial<Section>) => {
     setLocalReviewSection(section.reviewSection || '');
     setLocalMemorizationSection(section.memorizationSection || '');
-    setLocalReviewMeta(section.reviewMeta || []);
-    setLocalMemorizationMeta(section.memorizationMeta || []);
+    setLocalReviewMeta((section.reviewMeta || []) as QuranSegmentUI[]);
+    setLocalMemorizationMeta((section.memorizationMeta || []) as QuranSegmentUI[]);
   }, []);
 
   // Handle Meta Changes (Structured Data)
   const handleMetaChange = useCallback(
     (
       type: 'memorizationMeta' | 'reviewMeta', 
-      segments: QuranSegmentData[], 
+      segments: QuranSegmentUI[], 
       onChange: (e: any) => void
     ) => {
       // 1. Update Local State
@@ -36,7 +35,7 @@ export const useAddSectionModal = () => {
         setLocalReviewMeta(segments);
       }
 
-      // 2. Trigger Parent Change
+      // 2. Trigger Parent Change (Strip error before sending to parent/backend if needed, but keeping it for now is fine as backend ignores extra fields usually)
       onChange({ target: { name: type, value: segments } });
     }, 
     []

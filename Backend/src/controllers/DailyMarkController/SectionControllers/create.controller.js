@@ -8,9 +8,6 @@ const {
   sendValidationError,
 } = require("../utils/responseHelpers");
 
-// Legacy checker removed
-// const { checkSectionOverlaps, checkSequenceGap } = require("./utils/overlapChecker");
-
 /**
  * Create a new section
  * 
@@ -59,7 +56,9 @@ exports.createSection = async (req, res) => {
              sectionData.reviewMeta,
              sectionData.group,
              'review',
-             sectionData.date // NEW: Pass date for duplicate check
+             sectionData.date, // NEW: Pass date for duplicate check
+             null, // Exclude Id
+             sectionData.memorizationMeta // Pass sibling memorization for context
         );
 
         if (!revValidation.isValid) {

@@ -1,20 +1,19 @@
 import { useState, useCallback, useEffect } from 'react';
-import type { Section } from '../../types/types';
-import type { QuranSegmentData } from '@/Validation/dailyMarksValidation';
+import type { Section, QuranSegmentUI } from '../../types/types';
 
 export const useEditSectionModal = (editingSection: Section | null) => {
   const [localSection, setLocalSection] = useState<Section | null>(editingSection);
 
   // New Structured State
-  const [localReviewMeta, setLocalReviewMeta] = useState<QuranSegmentData[]>([]);
-  const [localMemorizationMeta, setLocalMemorizationMeta] = useState<QuranSegmentData[]>([]);
+  const [localReviewMeta, setLocalReviewMeta] = useState<QuranSegmentUI[]>([]);
+  const [localMemorizationMeta, setLocalMemorizationMeta] = useState<QuranSegmentUI[]>([]);
 
   // Sync local state when modal opens or section changes
   useEffect(() => {
     if (editingSection) {
       setLocalSection(editingSection);
-      setLocalReviewMeta(editingSection.reviewMeta || []);
-      setLocalMemorizationMeta(editingSection.memorizationMeta || []);
+      setLocalReviewMeta((editingSection.reviewMeta || []) as QuranSegmentUI[]);
+      setLocalMemorizationMeta((editingSection.memorizationMeta || []) as QuranSegmentUI[]);
     }
   }, [editingSection]);
 
@@ -26,7 +25,7 @@ export const useEditSectionModal = (editingSection: Section | null) => {
   const handleMetaChange = useCallback(
     (
       type: 'memorizationMeta' | 'reviewMeta', 
-      segments: QuranSegmentData[], 
+      segments: QuranSegmentUI[], 
       onChange: (e: any) => void
     ) => {
       // 1. Update Local State

@@ -247,13 +247,32 @@ const validateDailyMarksSectionData = async (req, res, next) => {
        }
     }
 
-    // Ensure at least one section exists (Legacy logic or new Logic)
-    // We check if (Review String OR Review Meta) OR (Mem String OR Mem Meta) exists
+    // Ensure at least one section exists
     const hasMem = (validatedData.memorizationSection || validatedData.memorizationMeta.length > 0);
     const hasRev = (validatedData.reviewSection || validatedData.reviewMeta.length > 0);
 
     if (!isUpdate && !hasMem && !hasRev) {
       errors.push("يجب إدخال مقطع الحفظ أو مقطع المراجعة على الأقل");
+    }
+
+    // --- Consistency Validation ---
+    // Rule 1: Review blocked if Memorization starts at 1
+    // Rule 2: Review End < Memorization Start (Strict Overlap)
+    
+    if (validatedData.memorizationMeta.length > 0 && validatedData.reviewMeta.length > 0) {
+       validatedData.reviewMeta.forEach(rev => {
+          const matchingMems = validatedData.memorizationMeta.filter(m => m.surahNumber === rev.surahNumber);
+          matchingMems.forEach(mem => {
+             // Rule 1
+             if (mem.ayahStart === 1) {
+                errors.push(`لا يمكن المراجعة في سورة ${rev.surahNameCanonical || ''} لأن الحفظ يبدأ من الآية 1`);
+             }
+             // Rule 2
+             if (rev.ayahEnd >= mem.ayahStart) {
+                errors.push(`المراجعة في سورة ${rev.surahNameCanonical || ''} تتداخل مع الحفظ. يجب أن تنتهي قبل الآية ${mem.ayahStart}`);
+             }
+          });
+       });
     }
 
     // Validate group (optional)

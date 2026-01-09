@@ -70,19 +70,24 @@ exports.notifySectionAdded = async (section, io) => {
       },
     }));
 
-    // Process notifications
-    for (const noteData of notifications) {
-      const notification = new Notification(noteData);
-      await notification.save();
+    // Process notifications in parallel for better performance
+    const notificationPromises = notifications.map(async (noteData) => {
+        try {
+            const notification = new Notification(noteData);
+            await notification.save();
 
-      // Real-time
-      if (io) {
-        await sendRealTimeNotification(io, notification);
-      }
+            // Fire and forget mechanism for better performance
+            const tasks = [];
+            if (io) tasks.push(sendRealTimeNotification(io, notification));
+            tasks.push(sendPushNotification(noteData.recipient, notification));
+            
+            await Promise.allSettled(tasks); // Use allSettled to prevent one failure from stopping others
+        } catch (err) {
+            console.error(`Failed to send notification to ${noteData.recipient}:`, err);
+        }
+    });
 
-      // Push
-      await sendPushNotification(noteData.recipient, notification);
-    }
+    await Promise.all(notificationPromises);
     
     console.log(`🔔 Sent section added notifications to ${students.length} students`);
   } catch (error) {
@@ -100,9 +105,14 @@ exports.notifySectionUpdated = async (section, oldSection, io) => {
   try {
     if (!section || !section.group) return;
 
+    // ... (rest of logic same as added) -> Optimize below
     let students = [];
     const groupIdentifier = section.group;
     let groupName = section.group;
+
+    // Optimized Group Lookup
+    // ... (Keep existing lookup for backward compatibility but maybe optimize later if needed)
+    // For now we trust the logic but optimize notification dispatch
 
     // Resolve Group Name if it is an ID
     if (mongoose.Types.ObjectId.isValid(groupIdentifier)) {
@@ -123,7 +133,7 @@ exports.notifySectionUpdated = async (section, oldSection, io) => {
       }
     }
 
-    // 3. If still no students and it looks like a Name, try finding by ID
+    // 3. Last resort
     if (students.length === 0 && !mongoose.Types.ObjectId.isValid(groupIdentifier)) {
        const groupDoc = await Group.findOne({ name: groupIdentifier });
        if (groupDoc) {
@@ -149,16 +159,23 @@ exports.notifySectionUpdated = async (section, oldSection, io) => {
       },
     }));
 
-    for (const noteData of notifications) {
-      const notification = new Notification(noteData);
-      await notification.save();
+    // Parallel Processing
+    const notificationPromises = notifications.map(async (noteData) => {
+        try {
+            const notification = new Notification(noteData);
+            await notification.save();
 
-      if (io) {
-        await sendRealTimeNotification(io, notification);
-      }
+            const tasks = [];
+            if (io) tasks.push(sendRealTimeNotification(io, notification));
+            tasks.push(sendPushNotification(noteData.recipient, notification));
+            
+            await Promise.allSettled(tasks);
+        } catch (err) {
+             console.error(`Failed to send update notification to ${noteData.recipient}:`, err);
+        }
+    });
 
-      await sendPushNotification(noteData.recipient, notification);
-    }
+    await Promise.all(notificationPromises);
     
     console.log(`🔔 Sent section updated notifications to ${students.length} students`);
   } catch (error) {

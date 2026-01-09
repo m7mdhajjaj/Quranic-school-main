@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { quranSurahs } from '@/data/quranSurahs';
 import { BookOpen, Search, X } from 'lucide-react';
-import type { QuranSegmentData } from '@/Validation/dailyMarksValidation';
+import type { QuranSegmentUI } from '../types/types';
 
 import { getLastSegment } from '@/Api/DailyMark/sectionApi';
 
 interface QuranSegmentInputProps {
   label: string;
-  onChange: (segments: QuranSegmentData[]) => void;
-  segments?: QuranSegmentData[]; 
+  onChange: (segments: QuranSegmentUI[]) => void;
+  segments?: QuranSegmentUI[]; 
   colorClass?: string;
   error?: string; // Add error prop to show validation issues
   groupName?: string; // For auto-suggestions
@@ -123,15 +123,39 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
           getLastSegment(groupName, numValue, type).then(suggestion => {
              if (suggestion) {
                  const nextStart = suggestion.nextStart || 1;
-                 const maxMemorized = (suggestion as any).maxMemorized || 9999;
+                 const maxMemorized = (suggestion as any).maxMemorized !== undefined ? (suggestion as any).maxMemorized : 9999;
                  
                  setExpectedStart(nextStart);
 
-                 // Special validation for Review: Cannot exceed memorization
-                 if (type === 'review' && nextStart > maxMemorized) {
-                     // Warning: Caught up!
-                     // We can set a flag or pass a message, but for now let's just clear the range
-                     // to force user to see the issue, or set it to maxMemorized + 1 (which will be invalid)
+                 // Special validation for Review: Cannot exceed memorization history
+                 if (type === 'review') {
+                     setReviewLimit(maxMemorized);
+
+                     if (maxMemorized === 0) {
+                         // Case: Surah never memorized
+                         // IMPORTANT: Pass a special "error" property that will be picked up by useSectionValidation
+                         // We are using API types, so we might need to cast or extended type
+                         // The parent needs to see this error.
+                         
+                         // Clear the start/end to force user to address it, and set error
+                         const errorSegment = {
+                             ...newSegment,
+                             ayahStart: undefined, // Clear start to prevent invalid assumption
+                             ayahEnd: undefined,
+                             error: `لم يتم البدء بحفظ سورة ${fullSurahData?.name} من قبل، لا يمكن مراجعتها.`
+                         };
+                         onChange([errorSegment]);
+                         return; // Stop further suggestion logic
+                     } else if (nextStart > maxMemorized) {
+                         // Case: Review caught up to Memorization
+                         onChange([{
+                             ...newSegment, 
+                             ayahStart: undefined,
+                             ayahEnd: undefined,
+                             error: `تم مراجعة كل ما تم حفظه من سورة ${fullSurahData?.name} (الحد: ${maxMemorized})`
+                         }]);
+                         return;
+                     }
                  }
 
                  // Determine Suggested End

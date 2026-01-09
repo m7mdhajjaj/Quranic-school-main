@@ -1,7 +1,8 @@
 import { Modal, Button, DatePicker } from '@/components/UI';
-import { memo, useMemo } from 'react';
+import { memo } from 'react';
 import type { EditSectionModalProps } from '../types/types';
 import { useEditSectionModal } from '../hooks/modals';
+import { useSectionValidation } from '../hooks/useSectionValidation'; // New Hook
 import QuranSegmentInput from '../components/QuranSegmentInput';
 
 /**
@@ -25,35 +26,12 @@ const EditSectionModalComponent = ({
   } = useEditSectionModal(editingSection);
 
   // ==========================================
-  // 🛡️ Frontend Validation (Real-time)
+  // 🛡️ Frontend Validation (Real-time) - DRY Hook
   // ==========================================
-  const consistencyErrors = useMemo(() => {
-    const errors: string[] = [];
-    if (!localMemorizationMeta || !localReviewMeta) return errors;
-
-    localReviewMeta.forEach((rev) => {
-      const matchingMems = localMemorizationMeta.filter(
-        (m) => m.surahNumber === rev.surahNumber
-      );
-      matchingMems.forEach((mem) => {
-        // Rule 1: Memorization starting at 1 cannot have same-surah Review
-        if (mem.ayahStart === 1) {
-          errors.push(
-            `🚫 تنبيه في سورة ${rev.surahNameCanonical}: الحفظ يبدأ من الآية 1، لذا لا يمكن إضافة مراجعة لنفس السورة.`
-          );
-        }
-        // Rule 2: Review must be strictly before Memorization
-        else if (rev.ayahEnd >= mem.ayahStart) {
-          errors.push(
-            `🚫 خطأ في سورة ${rev.surahNameCanonical}: المراجعة (${rev.ayahStart}-${rev.ayahEnd}) تتداخل مع أو تسبق الحفظ (${mem.ayahStart}-${mem.ayahEnd}). يجب أن تكون المراجعة قبل الحفظ.`
-          );
-        }
-      });
-    });
-    return errors;
-  }, [localMemorizationMeta, localReviewMeta]);
-
-  const hasConsistencyErrors = consistencyErrors.length > 0;
+  const { consistencyErrors, hasConsistencyErrors } = useSectionValidation(
+      localMemorizationMeta, 
+      localReviewMeta
+  );
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();

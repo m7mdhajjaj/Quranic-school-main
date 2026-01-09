@@ -54,7 +54,7 @@ const validateSectionId = (sectionId) => {
  * @param {string} fieldName - Field name for error message
  * @param {number} maxMark - Maximum mark value (default: 10)
  */
-const validateMarkValue = (mark, fieldName, maxMark = 10) => {
+const validateMarkValue = (mark, fieldName, maxMark = 100) => {
   // Allow null values
   if (mark === null || mark === undefined) {
     return { isValid: true, value: null };
