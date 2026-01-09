@@ -89,16 +89,17 @@ exports.updateSection = async (req, res) => {
     // إذا تغير التاريخ وكان هناك موعد مرتبط، نحدّث تاريخ الموعد أيضاً ليظل متطابقاً
     if (updatedSection.timetableId && updateData.date && 
         new Date(updateData.date).getTime() !== new Date(oldSection.date).getTime()) {
-      await TimeTable.findByIdAndUpdate(updatedSection.timetableId, {
+      // Async update
+      TimeTable.findByIdAndUpdate(updatedSection.timetableId, {
         sessionDate: updatedSection.date
-      });
-      console.log(`🔄 Synced TimeTable date for Section ${updatedSection._id}`);
+      }).catch(err => console.error("Timetable sync error:", err));
     }
 
-    // إرسال إشعارات لجميع طلاب الحلقة
+    // إرسال إشعارات لجميع طلاب الحلقة (Fire-and-forget)
     const io = req.app.get("io");
     if (io && updatedSection.group) {
-      await notifySectionUpdated(updatedSection, oldSection, io);
+       notifySectionUpdated(updatedSection, oldSection, io)
+        .catch(err => console.error("Notification Error (Async):", err));
     }
  
     sendSuccess(res, updatedSection, "تم تحديث المقطع بنجاح");

@@ -83,32 +83,27 @@ exports.createSection = async (req, res) => {
     const newSection = await section.save();
     console.log(" Section saved successfully:", newSection);
     
-    // تحديث حالة علامات المقطع (سيكون not_started لأنه جديد)
-    try {
-      await updateSectionMarksStatus(newSection._id.toString(), newSection.group);
-      console.log("✅ تم تحديث حالة علامات المقطع الجديد");
-    } catch (statusError) {
-      console.error("⚠️ خطأ في تحديث حالة علامات المقطع:", statusError);
-    }
-    
-    // إرسال إشعار للطلاب المعنيين
+    // Fire-and-forget: Status Update (Background)
+    updateSectionMarksStatus(newSection._id.toString(), newSection.group)
+      .then(() => console.log("✅ Status updated in background"))
+      .catch(err => console.error("⚠️ Async Status Update Error:", err));
+
+    // Fire-and-forget: Notification (Background)
     const io = req.app.get("io");
     if (io && newSection.group) {
-      await notifySectionAdded(newSection, io);
+      notifySectionAdded(newSection, io)
+        .catch(err => console.error("⚠️ Async Notification Error:", err));
     }
-    
-    // إعادة جلب المقطع مع الحالة المحدثة
-    const sectionWithStatus = await Section.findById(newSection._id).lean();
-    
-    // sendCreated(res, sectionWithStatus, "تم إنشاء المقطع بنجاح");
+
     res.status(201).json({
       success: true,
       message: "تم إنشاء المقطع بنجاح. هل تريد تحديد موعد لهذا المقطع؟",
-      data: sectionWithStatus,
+      data: newSection, // Send created object directly
       meta: {
-        askForSchedule: true, // ✅ إشارة للفرونت إند بطلب تحديد موعد
+        askForSchedule: true,
       }
     });
+
   } catch (error) {
     console.error(" Error creating section:", error);
 

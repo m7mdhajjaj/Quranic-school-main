@@ -88,33 +88,16 @@ exports.createOrUpdateMark = async (req, res) => {
     }
 
     // Perform background tasks (Non-blocking)
-    (async () => {
-      try {
-        // Update monthly average & section status in parallel
-        await Promise.all([
-          updateStudentMonthlyAverage(mark.studentId._id, mark.sectionId),
-          mark.sectionId && mark.sectionId._id ? updateSingleSectionStatus(mark.sectionId._id.toString()) : Promise.resolve()
-        ]);
-
-        // Send notification and Socket event
-        const newTotalMark = (mark.reviewMark || 0) + (mark.memorizationMark || 0);
-        console.log("🔔 إرسال الإشعار...");
+    // Using immediate execution without awaiting
+    Promise.all([
+      updateStudentMonthlyAverage(mark.studentId._id, mark.sectionId),
+      mark.sectionId && mark.sectionId._id ? updateSingleSectionStatus(mark.sectionId._id.toString()) : Promise.resolve(),
+      notifyMarkUpdated(mark, req.app.get("io"), isNewMark, oldTotalMark, (mark.reviewMark || 0) + (mark.memorizationMark || 0)).catch(e => console.error('Notification error:', e))
+    ]).then(() => {
         const io = req.app.get("io");
-        
-        // Send notification in background
-        notifyMarkUpdated(mark, io, isNewMark, oldTotalMark, newTotalMark).catch(err => 
-          console.error("⚠️ Error sending notification:", err)
-        );
-
         const eventName = isNewMark ? "markCreated" : "markUpdated";
-        emitSocketEvent(io, eventName, {
-          mark,
-          isNew: isNewMark,
-        });
-      } catch (bgError) {
-        console.error("⚠️ Error in background tasks for mark update:", bgError);
-      }
-    })();
+        emitSocketEvent(io, eventName, { mark, isNew: isNewMark });
+    }).catch(err => console.error("Background task error:", err));
 
     sendSuccess(res, mark, message, statusCode, { isNew: isNewMark });
   } catch (error) {
