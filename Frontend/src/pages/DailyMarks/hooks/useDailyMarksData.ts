@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import type { LoggedInUser, Student } from "../types/types";
 import { getStudentsByTeacher } from "@/Api/studentApi";
-import { getActiveGroups } from "@/Api/dailyMarksApi";
+import { getActiveGroups } from "@/Api/DailyMark/dailyMarksApi";
 
 interface UseDailyMarksDataReturn {
   currentUser: LoggedInUser | null;

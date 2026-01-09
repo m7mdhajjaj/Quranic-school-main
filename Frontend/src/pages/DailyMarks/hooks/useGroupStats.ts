@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getGroupStats } from "@/Api/dailyMarksApi";
+import { getGroupStats } from "@/Api/DailyMark/dailyMarksApi";
 
 interface GroupStats {
   studentsCount: number;

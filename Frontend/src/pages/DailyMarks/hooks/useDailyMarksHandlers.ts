@@ -1,5 +1,5 @@
-import { createSection, updateSection, deleteSection } from "@/Api/sectionApi";
-import { createMark, deleteMark, updateMark } from "@/Api/dailyMarksApi";
+import { createSection, updateSection, deleteSection } from "@/Api/DailyMark/sectionApi";
+import { createMark, deleteMark, updateMark } from "@/Api/DailyMark/dailyMarksApi";
 import {
   showCenteredSwal,
   showWarningMessage,

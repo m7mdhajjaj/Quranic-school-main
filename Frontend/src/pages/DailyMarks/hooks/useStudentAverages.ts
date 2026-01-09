@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getStudentAverages } from "@/Api/dailyMarksApi";
+import { getStudentAverages } from "@/Api/DailyMark/dailyMarksApi";
 
 interface StudentAverages {
   reviewAverage: number;

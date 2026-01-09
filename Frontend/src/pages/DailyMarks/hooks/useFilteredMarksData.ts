@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { getFilteredMarks, getFilteredSections } from "@/Api/dailyMarksApi";
+import { getFilteredMarks, getFilteredSections } from "@/Api/DailyMark/dailyMarksApi";
 import type { Section, Mark } from "../types/types";
 
 interface UseFilteredMarksDataReturn {

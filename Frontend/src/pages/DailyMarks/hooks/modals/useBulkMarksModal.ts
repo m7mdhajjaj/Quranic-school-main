@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { setMarksForSection } from '@/Api/dailyMarksApi';
+import { setMarksForSection } from '@/Api/DailyMark/dailyMarksApi';
 import { getStudentsByGroup } from '@/Api/studentApi';
 import { showSuccessToast, showErrorToast } from '@/utils/toastUtils';
 import type { Section, Student, Mark } from '../../types/types';

@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import type { Section, Mark, Student } from "../../../types/types";
-import { getSectionMarks } from "@/Api/dailyMarksApi";
+import { getSectionMarks } from "@/Api/DailyMark/dailyMarksApi";
 import { getStudentsByGroup } from "@/Api/studentApi";
 
 /**
