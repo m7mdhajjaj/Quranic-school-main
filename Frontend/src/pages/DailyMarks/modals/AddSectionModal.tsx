@@ -52,9 +52,25 @@ const AddSectionModalComponent = ({
   const today = new Date();
   const minDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
+  const handleFormSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      // Safety check
+      if (hasConsistencyErrors) return;
+
+      const finalData: any = {
+          ...newSection,
+          reviewMeta: localReviewMeta,
+          memorizationMeta: localMemorizationMeta,
+          reviewSection: '',
+          memorizationSection: ''
+      };
+
+      onSubmit(e, finalData);
+  };
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="إضافة مقطع جديد">
-      <form onSubmit={onSubmit} className="max-h-[85vh] overflow-y-auto px-2 pb-2">
+      <form onSubmit={handleFormSubmit} className="max-h-[85vh] overflow-y-auto px-2 pb-2">
         
         {/* Date Field Container */}
         <div className="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-100">

@@ -39,9 +39,19 @@ const EditSectionModalComponent = ({
     // Safety check just in case
     if (hasConsistencyErrors) return;
 
-    // Sync with parent before submit
-    syncWithParent(onChange);
-    onSubmit(e);
+    // Construct final data locally to ensure accuracy (e.g. empty arrays)
+    // This avoids "stale state" issues from parent
+    const finalData: any = {
+      ...localSection,
+      reviewMeta: localReviewMeta,
+      memorizationMeta: localMemorizationMeta,
+      // Ensure legacy strings are wiped if needed, or backend handles it
+      reviewSection: '',
+      memorizationSection: ''
+    };
+
+    // Pass data directly to onSubmit
+    onSubmit(e, finalData);
   };
 
   if (!isOpen || !editingSection || !localSection) return null;

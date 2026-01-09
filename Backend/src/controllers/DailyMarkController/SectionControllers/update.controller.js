@@ -30,13 +30,13 @@ exports.updateSection = async (req, res) => {
     
     if (targetGroup) {
          // Check Memorization
-         if (updateData.memorizationMeta) {
+         if (updateData.memorizationMeta !== undefined) {
              const memValidation = await sequenceService.validateSequence(
                  updateData.memorizationMeta,
                  targetGroup,
                  'memorization',
-                 updateData.date || section.date, // Pass date
-                 section._id // Exclude self
+                 updateData.date || section.date, 
+                 section._id 
              );
              
              if (!memValidation.isValid) {
@@ -45,14 +45,15 @@ exports.updateSection = async (req, res) => {
          }
 
          // Check Review
-         if (updateData.reviewMeta) {
+         if (updateData.reviewMeta !== undefined) {
              const revValidation = await sequenceService.validateSequence(
                  updateData.reviewMeta,
                  targetGroup,
                  'review',
-                 updateData.date || section.date, // Pass date
+                 updateData.date || section.date, 
                  section._id,
-                 updateData.memorizationMeta || section.memorizationMeta // Pass sibling memorization
+                 // Pass sibling memorization if available in this update, or fallback to existing
+                 updateData.memorizationMeta !== undefined ? updateData.memorizationMeta : section.memorizationMeta
              );
 
              if (!revValidation.isValid) {
@@ -61,9 +62,9 @@ exports.updateSection = async (req, res) => {
          }
 
          // Check Consistency (Internal Consistency)
-         // Use new data if provided, otherwise fallback to existing meta
-         const memMetaToCheck = updateData.memorizationMeta || section.memorizationMeta;
-         const revMetaToCheck = updateData.reviewMeta || section.reviewMeta;
+         // Use new data if provided, otherwise fallback to existing meta, but handle empty arrays correctly
+         const memMetaToCheck = updateData.memorizationMeta !== undefined ? updateData.memorizationMeta : section.memorizationMeta;
+         const revMetaToCheck = updateData.reviewMeta !== undefined ? updateData.reviewMeta : section.reviewMeta;
          
          const consistencyValidation = sequenceService.validateConsistency(
             memMetaToCheck,

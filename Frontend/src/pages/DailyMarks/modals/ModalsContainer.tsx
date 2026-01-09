@@ -169,10 +169,10 @@ const ModalsContainerComponent = ({
         newSection={state.newSection}
         isLoading={state.isAddingSectionLoading}
         onClose={() => state.setIsAddSectionModalOpen(false)}
-        onSubmit={(e) =>
+        onSubmit={(e, overrideData) =>
           handlers.handleAddSection(
             e,
-            state.newSection,
+            (overrideData as Omit<Section, "_id">) || state.newSection,
             state.setNewSection,
             state.setIsAddingSectionLoading
           )
@@ -181,6 +181,7 @@ const ModalsContainerComponent = ({
       />
 
       {/* Edit Section Modal */}
+      {/* EditSectionModal - Updated to use overridden data on submit */}
       <EditSectionModal
         isOpen={state.isEditSectionModalOpen}
         editingSection={state.editingSection}
@@ -189,10 +190,10 @@ const ModalsContainerComponent = ({
           state.setIsEditSectionModalOpen(false);
           state.setEditingSection(null);
         }}
-        onSubmit={(e) =>
+        onSubmit={(e, overrideData) =>
           handlers.handleEditSection(
             e,
-            state.editingSection,
+            (overrideData as Section) || state.editingSection,
             state.setIsEditingSectionLoading
           )
         }

@@ -122,8 +122,10 @@ export interface AddSectionModalProps {
   newSection: Omit<Section, "_id">;
   isLoading?: boolean;
   onClose: () => void;
-  onSubmit: (e: React.FormEvent) => void;
-  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  // Allows passing data directly
+  onSubmit: (e: React.FormEvent, data?: Omit<Section, "_id">) => void;
+  // Relaxed type for manual updates
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | { target: { name: string; value: any } }) => void;
 }
 
 // EditSectionModal Props
@@ -132,8 +134,9 @@ export interface EditSectionModalProps {
   editingSection: Section | null;
   isLoading?: boolean;
   onClose: () => void;
-  onSubmit: (e: React.FormEvent) => void;
-  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  // Allows passing data directly
+  onSubmit: (e: React.FormEvent, data?: Section) => void;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | { target: { name: string; value: any } }) => void;
 }
 
 // AddMarkModal Props
