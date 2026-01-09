@@ -246,4 +246,11 @@ export interface TeacherRankingsViewProps {
   realRankings: RankingStudent[];
   realBadgeRankings: RankingStudent[];
   onChangeType: (type: "points" | "badges") => void;
+  groups?: Array<{
+    _id: string;
+    name: string;
+    totalStudents: number;
+  }>;
+  selectedGroupId?: string;
+  onGroupChange?: (groupId: string) => void;
 }

@@ -20,6 +20,8 @@ module.exports = {
   // Rankings Controllers
   getPointsRankings: rankingsController.getPointsRankings,
   getBadgesRankings: rankingsController.getBadgesRankings,
+  getTeacherGroupsForPointsGame:
+    rankingsController.getTeacherGroupsForPointsGame,
 
   // Stats Controllers
   getStudentStats: statsController.getStudentStats,

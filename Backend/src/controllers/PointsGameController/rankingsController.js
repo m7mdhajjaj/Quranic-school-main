@@ -4,6 +4,7 @@
 
 const Student = require("../../schema/Student");
 const Teacher = require("../../schema/Teacher");
+const Group = require("../../schema/Group");
 const MonthlyPoints = require("../../schema/MonthlyPoints");
 const StudentBadge = require("../../schema/StudentBadge");
 const DailyPoints = require("../../schema/DailyPoints");
@@ -88,23 +89,68 @@ exports.getPointsRankings = async (req, res) => {
         }))
       );
     } else if (userRole === "teacher") {
-      // المعلم - جلب ترتيب جميع طلابه من كل حلقاته
+      // المعلم - جلب ترتيب طلاب حلقة معينة أو جميع حلقاته
+      const { groupId } = req.query;
       const teacher = await Teacher.findById(userId);
       if (!teacher) {
         return res.status(404).json({ message: "المعلم غير موجود" });
       }
 
-      const teacherName = `${teacher.firstName} ${teacher.lastName}`;
+      let allStudentsInGroups = [];
 
-      // جلب النقاط من جميع الحلقات التي يدرّسها المعلم
-      rankings = await MonthlyPoints.find({
+      if (groupId) {
+        // جلب طلاب الحلقة المحددة فقط
+        const group = await Group.findById(groupId);
+        if (!group) {
+          return res.status(404).json({ message: "الحلقة غير موجودة" });
+        }
+
+        allStudentsInGroups = await Student.find({
+          group: group.name,
+        }).select("_id firstName lastName group teacher");
+      } else {
+        // جلب جميع طلاب المعلم من كل حلقاته
+        const teacherName = `${teacher.firstName} ${teacher.lastName}`;
+        allStudentsInGroups = await Student.find({
+          teacher: teacherName,
+        }).select("_id firstName lastName group teacher");
+      }
+
+      // جلب MonthlyPoints لجميع الطلاب
+      const studentIdsInGroups = allStudentsInGroups.map((s) => s._id);
+
+      const monthlyPointsRecords = await MonthlyPoints.find({
         month,
         year,
-        teacher: teacherName,
-      })
-        .populate("studentId", "firstName lastName")
-        .sort({ totalPoints: -1 })
-        .lean();
+        studentId: { $in: studentIdsInGroups },
+      }).lean();
+
+      // إنشاء Map للوصول السريع إلى النقاط
+      const pointsMap = new Map(
+        monthlyPointsRecords.map((record) => [
+          record.studentId.toString(),
+          record,
+        ])
+      );
+
+      // بناء الترتيب من جميع الطلاب
+      rankings = allStudentsInGroups.map((student) => {
+        const pointsRecord = pointsMap.get(student._id.toString());
+        return {
+          studentId: {
+            _id: student._id,
+            firstName: student.firstName,
+            lastName: student.lastName,
+          },
+          totalPoints: pointsRecord?.totalPoints || 0,
+          activeDays: pointsRecord?.activeDays || 0,
+          group: student.group,
+          teacher: student.teacher,
+        };
+      });
+
+      // ترتيب حسب النقاط من الأعلى للأدنى
+      rankings.sort((a, b) => b.totalPoints - a.totalPoints);
     } else {
       return res.status(403).json({ message: "غير مصرح" });
     }
@@ -184,18 +230,30 @@ exports.getBadgesRankings = async (req, res) => {
         group: student.group,
       });
     } else if (userRole === "teacher") {
-      // المعلم - جلب جميع طلابه من كل حلقاته
+      // المعلم - جلب طلاب حلقة معينة أو جميع حلقاته
+      const { groupId } = req.query;
       const teacher = await Teacher.findById(userId);
       if (!teacher) {
         return res.status(404).json({ message: "المعلم غير موجود" });
       }
 
-      const teacherName = `${teacher.firstName} ${teacher.lastName}`;
+      if (groupId) {
+        // جلب طلاب الحلقة المحددة فقط
+        const group = await Group.findById(groupId);
+        if (!group) {
+          return res.status(404).json({ message: "الحلقة غير موجودة" });
+        }
 
-      // جلب جميع الطلاب الذين معلمهم هو هذا المعلم
-      studentsInGroup = await Student.find({
-        teacher: teacherName,
-      });
+        studentsInGroup = await Student.find({
+          group: group.name,
+        });
+      } else {
+        // جلب جميع طلاب المعلم
+        const teacherName = `${teacher.firstName} ${teacher.lastName}`;
+        studentsInGroup = await Student.find({
+          teacher: teacherName,
+        });
+      }
     } else {
       return res.status(403).json({ message: "غير مصرح" });
     }
@@ -277,6 +335,62 @@ exports.getBadgesRankings = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "حدث خطأ أثناء جلب ترتيب الشارات",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * @desc    جلب حلقات المعلم لصفحة لعبة النقاط
+ * @route   GET /api/points-game/teacher-groups
+ * @access  Private (Teacher only)
+ */
+exports.getTeacherGroupsForPointsGame = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const userRole = req.user.role;
+
+    if (userRole !== "teacher") {
+      return res.status(403).json({ message: "هذا الـ API خاص بالمعلمين فقط" });
+    }
+
+    const teacher = await Teacher.findById(userId);
+    if (!teacher) {
+      return res.status(404).json({ message: "المعلم غير موجود" });
+    }
+
+    // جلب جميع حلقات المعلم
+    const groups = await Group.find({
+      teacher: userId,
+      activeStatus: true,
+    })
+      .select("_id name")
+      .lean();
+
+    // جلب عدد الطلاب لكل حلقة
+    const groupsWithStudents = await Promise.all(
+      groups.map(async (group) => {
+        const studentCount = await Student.countDocuments({
+          group: group.name,
+        });
+
+        return {
+          _id: group._id,
+          name: group.name,
+          totalStudents: studentCount,
+        };
+      })
+    );
+
+    res.status(200).json({
+      success: true,
+      data: groupsWithStudents,
+    });
+  } catch (error) {
+    console.error("خطأ في جلب حلقات المعلم:", error);
+    res.status(500).json({
+      success: false,
+      message: "حدث خطأ أثناء جلب حلقات المعلم",
       error: error.message,
     });
   }
