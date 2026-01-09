@@ -350,7 +350,7 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
         <div className="w-1/2 sm:w-[100px] relative">
           <label className="block text-xs font-semibold text-gray-600 mb-1.5 flex justify-between items-center">
             <span>من آية <span className="text-red-500">*</span></span>
-            {expectedStart && segment.ayahStart !== expectedStart && (
+            {expectedStart && segment.ayahStart !== expectedStart && !(type === 'review' && reviewLimit && expectedStart > reviewLimit) && (
                 <span className="text-[9px] text-amber-600 font-bold bg-amber-50 px-1 rounded ml-1 animate-pulse">
                    {type === 'review' ? 'المراجعة التالية' : 'الحفظ التالي'}: {expectedStart}
                 </span>
@@ -359,18 +359,19 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
           <input
             type="number"
             min={1}
-            max={maxAyah}
-            disabled={!segment.surahNumber}
+            max={type === 'review' && reviewLimit ? reviewLimit : maxAyah}
+            disabled={!segment.surahNumber || (type === 'review' && reviewLimit !== null && expectedStart && expectedStart > reviewLimit && true)}
             className={`w-full rounded-xl border-2 text-sm py-2.5 px-3 text-center transition-all outline-none 
-                disabled:bg-gray-100 disabled:border-transparent disabled:text-gray-400
+                disabled:bg-gray-50 disabled:border-gray-100 disabled:text-gray-400
                 ${
+                     (type === 'review' && reviewLimit && expectedStart && expectedStart > reviewLimit) ? 'bg-emerald-50 border-emerald-200 text-emerald-700 cursor-not-allowed opacity-80' : // Completed
                      (type === 'review' && reviewLimit && segment.ayahStart && segment.ayahStart > reviewLimit) ? 'border-red-500 bg-red-50 text-red-900' :
                      (expectedStart && segment.ayahStart > expectedStart) ? 'border-amber-400 bg-amber-50 text-amber-900' : 
                      (!segment.ayahStart && segment.surahNumber) ? 'border-red-300 bg-red-50/30' : 
                      `border-gray-200 bg-white hover:border-gray-300 ${activeBorder} ${activeRing}`
             }`}
-            placeholder="1"
-            value={segment.ayahStart || ''}
+            placeholder={type === 'review' && reviewLimit && expectedStart && expectedStart > reviewLimit ? "✓" : "1"}
+            value={type === 'review' && reviewLimit && expectedStart && expectedStart > reviewLimit ? "" : (segment.ayahStart || '')}
             onChange={(e) => handleUpdate('ayahStart', e.target.value)}
           />
         </div>
@@ -383,17 +384,18 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
           <input
             type="number"
             min={segment.ayahStart || 1}
-            max={maxAyah}
-            disabled={!segment.surahNumber}
+            max={type === 'review' && reviewLimit ? reviewLimit : maxAyah}
+            disabled={!segment.surahNumber || (type === 'review' && reviewLimit !== null && expectedStart && expectedStart > reviewLimit && true)}
             className={`w-full rounded-xl border-2 text-sm py-2.5 px-3 text-center transition-all outline-none 
-                disabled:bg-gray-100 disabled:border-transparent disabled:text-gray-400
+                disabled:bg-gray-50 disabled:border-gray-100 disabled:text-gray-400
                 ${
+                (type === 'review' && reviewLimit && expectedStart && expectedStart > reviewLimit) ? 'bg-emerald-50 border-emerald-200 text-emerald-700 cursor-not-allowed opacity-80' : // Completed
                 (type === 'review' && reviewLimit && segment.ayahEnd && segment.ayahEnd > reviewLimit) ? 'border-red-500 bg-red-50 text-red-900' :
                 !segment.ayahEnd && segment.surahNumber ? 'border-red-300 bg-red-50/30' : 
                 `border-gray-200 bg-white hover:border-gray-300 ${activeBorder} ${activeRing}`
             }`}
-            placeholder={maxAyah.toString()}
-            value={segment.ayahEnd || ''}
+            placeholder={type === 'review' && reviewLimit && expectedStart && expectedStart > reviewLimit ? "✓" : maxAyah.toString()}
+            value={type === 'review' && reviewLimit && expectedStart && expectedStart > reviewLimit ? "" : (segment.ayahEnd || '')}
             onChange={(e) => handleUpdate('ayahEnd', e.target.value)}
           />
         </div>
