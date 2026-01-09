@@ -42,6 +42,7 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
   const [isFocused, setIsFocused] = useState(false);
   const [suggestions, setSuggestions] = useState<typeof quranSurahs>([]);
   const [expectedStart, setExpectedStart] = useState<number | null>(null);
+  const [reviewLimit, setReviewLimit] = useState<number | null>(null); // NEW: To track memorization limit
   
   // Ref to track if the update came from internal typing
   const isInternalUpdate = useRef(false);
@@ -63,14 +64,26 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
       // Enable suggestions for both memorization and review
       if (groupName && (type === 'memorization' || type === 'review') && segment.surahNumber) {
           getLastSegment(groupName, segment.surahNumber, type).then(suggestion => {
-             if (suggestion && suggestion.nextStart) {
-                 setExpectedStart(suggestion.nextStart);
+             if (suggestion) { // Updated to check object existence
+                 setExpectedStart(suggestion.nextStart || 1);
+                 
+                 // Capture review limit
+                 if (type === 'review' && (suggestion as any).maxMemorized) {
+                     setReviewLimit((suggestion as any).maxMemorized);
+                 } else {
+                     setReviewLimit(null);
+                 }
              } else {
-                 setExpectedStart(1); // Default to 1 if no history
+                 setExpectedStart(1);
+                 setReviewLimit(null);
              }
-          }).catch(() => setExpectedStart(null));
+          }).catch(() => {
+              setExpectedStart(null);
+              setReviewLimit(null);
+          });
       } else {
           setExpectedStart(null);
+          setReviewLimit(null);
       }
   }, [segment.surahNumber, groupName, type]);
 
@@ -100,26 +113,60 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
       };
 
       // 1. Immediate Update (Optimistic)
+      // Reset hints immediately to prevent stale "Next: X" from showing for the wrong surah
+      setExpectedStart(null);
+      setReviewLimit(null);
       onChange([newSegment]);
 
       // 2. Smart Suggestion (Async)
-      if (groupName && type) {
+      if (groupName && (type === 'memorization' || type === 'review')) {
           getLastSegment(groupName, numValue, type).then(suggestion => {
-             if (suggestion && suggestion.nextStart) {
-                 const nextStart = suggestion.nextStart;
-                 setExpectedStart(nextStart); // Update expected
-
-                 // Ensure valid range
-                 const maxAyah = fullSurahData?.ayahCount || 999;
+             if (suggestion) {
+                 const nextStart = suggestion.nextStart || 1;
+                 const maxMemorized = (suggestion as any).maxMemorized || 9999;
                  
-                 if (nextStart <= maxAyah) {
-                     const smartSegment = {
-                         ...newSegment,
-                         ayahStart: nextStart,
-                         ayahEnd: fullSurahData ? fullSurahData.ayahCount : undefined 
-                     };
-                     onChange([smartSegment]);
+                 setExpectedStart(nextStart);
+
+                 // Special validation for Review: Cannot exceed memorization
+                 if (type === 'review' && nextStart > maxMemorized) {
+                     // Warning: Caught up!
+                     // We can set a flag or pass a message, but for now let's just clear the range
+                     // to force user to see the issue, or set it to maxMemorized + 1 (which will be invalid)
                  }
+
+                 // Determine Suggested End
+                 // For Review: Suggest a chunk of 5 verses or up to maxMemorized
+                 // For Memorization: Default to full surah or chunk
+                 let suggestedEnd = fullSurahData ? fullSurahData.ayahCount : 999;
+
+                 if (type === 'review') {
+                     // Default chunk = 5 verses (user example 1-5, 6-10)
+                     const chunkSize = 5; 
+                     const potentialEnd = nextStart + chunkSize - 1;
+                     // Cap at max memorized
+                     suggestedEnd = Math.min(potentialEnd, maxMemorized);
+                     
+                     // If nextStart > maxMemorized, we have nothing to review
+                     if (nextStart > maxMemorized) {
+                         suggestedEnd = nextStart; // Or leave undefined
+                     }
+                 } else {
+                     // Memorization: Suggest next chunk? Or full remaining?
+                     // Usually full remaining is annoying if user only memorizes 5 ayahs.
+                     // Let's standardise to 5-10 verses for convenience?
+                     // User didn't specify for mem, so let's stick to old logic (full surah) 
+                     // OR maybe 10 verses? 
+                     // Old code was: ayahEnd: fullSurahData.ayahCount
+                     // Let's keep it full surah for memorization unless specified otherwise
+                 }
+
+                 // Apply Suggestion
+                 const smartSegment = {
+                     ...newSegment,
+                     ayahStart: nextStart,
+                     ayahEnd: suggestedEnd
+                 };
+                 onChange([smartSegment]);
              } else {
                  setExpectedStart(1);
              }
@@ -168,42 +215,32 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
       handleUpdate('surahNumber', s.number, { number: s.number, name: s.name });
   };
 
-  // Blur Handler: Auto-select if exact match or clear if invalid
   const handleBlur = () => {
-      setIsFocused(false);
-      // specific small delay to allow click on suggestion to fire first
-      setTimeout(() => {
-          if (!surahInput) {
-             if(segment.surahNumber) onChange([]);
-             return;
-          }
-          
-          // If we have a valid selection already and text matches it approximately, keep it
-          const currentSurah = quranSurahs.find(s => s.number === segment.surahNumber);
-          if (currentSurah && normalizeText(surahInput) === normalizeText(currentSurah.name)) {
-              setSurahInput(currentSurah.name); // Fix format
-              return;
-          }
-
-          // If text doesn't match current selection, try to find a match
-          // Logic: If one perfect match exists in suggestions, take it.
-          if (suggestions.length === 1) {
-              selectSurah(suggestions[0]);
-          } else {
-              // Invalid input, check strict match against all
-              const strictMatch = quranSurahs.find(s => normalizeText(s.name) === normalizeText(surahInput));
-              if (strictMatch) {
-                  selectSurah(strictMatch);
-              } else {
-                 // No match found -> Revert to previous valid or Clear?
-                 // User request: "If I type wrong it should show not found"
-                 // If we leave it, the input has text but no 'surahNumber'. This is invalid state.
-                 // We should visually indicate error or clear.
-                 // Let's clear for safety but maybe keep text red? Valid data requires surahNumber.
-                 if (segment.surahNumber) onChange([]); // Detach data
-              }
-          }
-      }, 200);
+    // Delay hiding the popup to allow click on suggestion to register
+    setTimeout(() => {
+        setIsFocused(false);
+        
+        if (!surahInput) {
+           if(segment.surahNumber) onChange([]);
+           return;
+        }
+        
+        // If we have a valid selection already and text matches it, keep it
+        const currentSurah = quranSurahs.find(s => s.number === segment.surahNumber);
+        if (currentSurah && normalizeText(surahInput) === normalizeText(currentSurah.name)) {
+            setSurahInput(currentSurah.name); // Fix format
+            return;
+        }
+        
+        // If exact match exists in suggestions but user clicked away
+        const fullMatch = quranSurahs.find(s => normalizeText(s.name) === normalizeText(surahInput));
+        if (fullMatch) {
+            selectSurah(fullMatch);
+        } else {
+             // Invalid Text - Clear
+             if (segment.surahNumber) onChange([]); // Detach data
+        }
+    }, 200);
   };
 
   const currentSurah = quranSurahs.find(s => s.number === segment.surahNumber);
@@ -293,7 +330,7 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
                       ))}
                   </div>
               )}
-               {isFocused && surahInput && suggestions.length === 0 && (
+               {isFocused && surahInput && suggestions.length === 0 && !quranSurahs.some(s => normalizeText(s.name) === normalizeText(surahInput)) && (
                   <div className="absolute top-full text-right left-0 w-full bg-white rounded-xl shadow-lg border border-gray-200 mt-2 p-4 text-center ">
                       <p className="text-gray-500 text-sm font-medium">عذراً، لا توجد نتائج</p>
                       <p className="text-xs text-gray-400 mt-1">تأكد من كتابة اسم السورة بشكل صحيح</p>
@@ -315,7 +352,7 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
             <span>من آية <span className="text-red-500">*</span></span>
             {expectedStart && segment.ayahStart !== expectedStart && (
                 <span className="text-[9px] text-amber-600 font-bold bg-amber-50 px-1 rounded ml-1 animate-pulse">
-                   التالي: {expectedStart}
+                   {type === 'review' ? 'المراجعة التالية' : 'الحفظ التالي'}: {expectedStart}
                 </span>
             )}
           </label>
@@ -327,7 +364,8 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
             className={`w-full rounded-xl border-2 text-sm py-2.5 px-3 text-center transition-all outline-none 
                 disabled:bg-gray-100 disabled:border-transparent disabled:text-gray-400
                 ${
-                     (expectedStart && segment.ayahStart > expectedStart) ? 'border-amber-400 bg-amber-50 text-amber-900' : // Gap Warning
+                     (type === 'review' && reviewLimit && segment.ayahStart && segment.ayahStart > reviewLimit) ? 'border-red-500 bg-red-50 text-red-900' :
+                     (expectedStart && segment.ayahStart > expectedStart) ? 'border-amber-400 bg-amber-50 text-amber-900' : 
                      (!segment.ayahStart && segment.surahNumber) ? 'border-red-300 bg-red-50/30' : 
                      `border-gray-200 bg-white hover:border-gray-300 ${activeBorder} ${activeRing}`
             }`}
@@ -350,6 +388,7 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
             className={`w-full rounded-xl border-2 text-sm py-2.5 px-3 text-center transition-all outline-none 
                 disabled:bg-gray-100 disabled:border-transparent disabled:text-gray-400
                 ${
+                (type === 'review' && reviewLimit && segment.ayahEnd && segment.ayahEnd > reviewLimit) ? 'border-red-500 bg-red-50 text-red-900' :
                 !segment.ayahEnd && segment.surahNumber ? 'border-red-300 bg-red-50/30' : 
                 `border-gray-200 bg-white hover:border-gray-300 ${activeBorder} ${activeRing}`
             }`}
@@ -358,8 +397,26 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
             onChange={(e) => handleUpdate('ayahEnd', e.target.value)}
           />
         </div>
-
       </div>
+      
+      {/* Review Limit Warning */}
+      {type === 'review' && reviewLimit !== null && (
+          <div className="mt-2 text-center">
+              {reviewLimit === 0 ? (
+                  <p className="text-xs font-bold text-red-500 bg-red-50 py-1 px-3 rounded-lg inline-block border border-red-100">
+                      ⚠️ لم يتم حفظ هذه السورة بعد! لا يمكنك إضافة مراجعة.
+                  </p>
+              ) : (segment.ayahStart && segment.ayahStart > reviewLimit) ? (
+                  <p className="text-xs font-bold text-emerald-600 bg-emerald-50 py-1 px-3 rounded-lg inline-block border border-emerald-100">
+                      🎉 ما شاء الله! لقد أتممت مراجعة كل ما تم حفظه من هذه السورة (حتى آية {reviewLimit}).
+                  </p>
+              ) : (
+                  <p className="text-[10px] text-gray-400">
+                      * أقصى حد للمراجعة هو آية {reviewLimit} (حسب الحفظ)
+                  </p>
+              )}
+          </div>
+      )}
       
       {!segment.surahNumber && (
         <p className="text-xs text-gray-400 mt-1 mr-1 flex items-center gap-1">

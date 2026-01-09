@@ -65,15 +65,28 @@ exports.getLastSegment = async (req, res) => {
     
     // استخدام الخدمة المركزية للبحث
     const result = await sequenceService.getLastProgress(group, surahNum, type);
+    
+    // إذا لم يوجد سجل سابق (مثلاً أول مراجعة)، نحاول جلب حد الحفظ فقط إذا كان الطلب للمراجعة
+    let maxMemorized = 0;
+    if (type === 'review') {
+        const memProgress = await sequenceService.getLastProgress(group, surahNum, 'memorization');
+        maxMemorized = memProgress ? memProgress.lastEnd : 0;
+    }
 
     if (!result) {
-      return sendSuccess(res, null, "No previous segment found");
+      // إذا لم يكن هناك سجل سابق للمراجعة، نعيد null مع حد الحفظ
+      // هذا يسمح للفرونت إند بمعرفة أن السجل فارغ لكن هناك حد للحفظ
+      return sendSuccess(res, {
+          nextStart: 1, // Start from 1 if no history
+          maxMemorized // Return memorization limit for first-time review
+      }, "No previous segment found (First time)");
     }
 
     sendSuccess(res, {
         lastSegment: { ayahEnd: result.lastEnd, status: result.lastStatus }, // Compatibility structure
         nextStart: result.nextStart,
-        lastDate: result.lastDate
+        lastDate: result.lastDate,
+        maxMemorized: result.maxMemorized || maxMemorized // Include limit in response
     }, "Last segment found");
     
   } catch (error) {

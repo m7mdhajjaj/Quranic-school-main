@@ -37,11 +37,21 @@ class SectionSequenceService {
     segments.sort((a, b) => b.ayahEnd - a.ayahEnd);
     const lastSegment = segments[0];
 
+    // إذا كنا نبحث عن مراجعة، دعنا نجلب أيضاً حد الحفظ لهذه السورة
+    let maxMemorized = null;
+    if (type === 'review') {
+        // نداء تكراري لنفس الدالة لكن بنوع 'memorization'
+        // ملاحظة: لن يدخل في حلقة لا نهائية لأن النوع تغير
+        const memProgress = await this.getLastProgress(groupId, surahNumber, 'memorization');
+        maxMemorized = memProgress ? memProgress.lastEnd : 0;
+    }
+
     return {
       lastEnd: lastSegment.ayahEnd,
       nextStart: lastSegment.ayahEnd + 1,
       lastDate: lastSection.date,
-      lastStatus: lastSegment.status
+      lastStatus: lastSegment.status,
+      maxMemorized // إضافة حد الحفظ
     };
   }
 
