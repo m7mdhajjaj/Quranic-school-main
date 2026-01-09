@@ -134,17 +134,16 @@ export const sectionValidationSchema = yup.object<SectionFormData>({
              });
           }
 
-          // Rule 2: Overlap check removed to allow flexible review in Frontend
-          /*
+          // Rule 2: Review must be strictly before memorization
+          // Ensure values exist
           if (rev.ayahEnd !== undefined && mem.ayahStart !== undefined) {
              if (rev.ayahEnd >= mem.ayahStart) {
                 return this.createError({
                   path: 'reviewMeta',
-                  message: `تداخل النطاق: مراجعة (${rev.ayahStart}-${rev.ayahEnd}) تتداخل مع الحفظ (${mem.ayahStart}-${mem.ayahEnd})...`
+                  message: `تداخل النطاق: المراجعة (${rev.ayahStart}-${rev.ayahEnd}) تتداخل مع الحفظ (${mem.ayahStart}-${mem.ayahEnd || '?'}). أقصى آية للمراجعة هي ${mem.ayahStart - 1}`
                 });
              }
           }
-          */
 
        }
     }

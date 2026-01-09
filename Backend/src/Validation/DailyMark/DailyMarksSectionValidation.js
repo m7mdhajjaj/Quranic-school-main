@@ -263,17 +263,14 @@ const validateDailyMarksSectionData = async (req, res, next) => {
        validatedData.reviewMeta.forEach(rev => {
           const matchingMems = validatedData.memorizationMeta.filter(m => m.surahNumber === rev.surahNumber);
           matchingMems.forEach(mem => {
-             // Rule 1: Cannot review if current memorization starts at 1 (New Surah)
+             // Rule 1
              if (mem.ayahStart === 1) {
-                errors.push(`لا يمكن المراجعة في سورة ${rev.surahNameCanonical || ''} لأنك بدأت حفظها للتو (من الآية 1)`);
+                errors.push(`لا يمكن المراجعة في سورة ${rev.surahNameCanonical || ''} لأن الحفظ يبدأ من الآية 1`);
              }
-             
-             // Rule 2: Overlap check removed to allow flexible review
-             /*
+             // Rule 2
              if (rev.ayahEnd >= mem.ayahStart) {
-                errors.push(`المراجعة في سورة ${rev.surahNameCanonical || ''} تتداخل مع الحفظ...`);
+                errors.push(`المراجعة في سورة ${rev.surahNameCanonical || ''} تتداخل مع الحفظ. يجب أن تنتهي قبل الآية ${mem.ayahStart}`);
              }
-             */
           });
        });
     }
