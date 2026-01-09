@@ -1,9 +1,9 @@
-import { memo, useMemo } from "react";
+import { memo } from "react";
 import type { MonthYearFilterProps } from "../types/types";
 import { FilterSelect, SearchInput } from "@/components/Filters";
 import { Calendar, Search, RotateCcw } from "lucide-react";
-import { MONTH_OPTIONS, generateYearOptions, generateDayOptions } from "../constants";
 import { DateRangePicker } from "@/components/UI/DateRangePicker";
+import { useMonthYearFilterLogic } from "../hooks/useMonthYearFilterLogic";
 
 /**
  * Month and Year filter component - Simplified Version
@@ -23,28 +23,23 @@ const MonthYearFilterComponent = ({
   onStartDateChange,
   onEndDateChange,
 }: MonthYearFilterProps) => {
-  const monthOptions = MONTH_OPTIONS;
-
-  // Generate years dynamically (current year ± 2 years)
-  const yearOptions = useMemo(() => generateYearOptions(2), []);
-
-  // Generate days based on selected month and year
-  const dayOptions = useMemo(() => {
-    if (!selectedMonth || !selectedYear) {
-      return [{ value: "", label: "كل الأيام" }];
-    }
-    return generateDayOptions(selectedMonth, selectedYear);
-  }, [selectedMonth, selectedYear]);
-
-  // Handle reset filter
-  const handleReset = () => {
-    onMonthChange(null);
-    onYearChange(null);
-    if (onDayChange) onDayChange(null);
-    if (onSearchChange) onSearchChange("");
-    if (onStartDateChange) onStartDateChange(null);
-    if (onEndDateChange) onEndDateChange(null);
-  };
+  // استخدم الهوك الجديد لفصل المنطق
+  const {
+    monthOptions,
+    yearOptions,
+    dayOptions,
+    handleReset,
+  } = useMonthYearFilterLogic({
+    selectedMonth,
+    selectedYear,
+    onMonthChange,
+    onYearChange,
+    onDayChange,
+    onSearchChange,
+    onStartDateChange,
+    onEndDateChange,
+    // باقي الخصائص إذا لزم
+  });
 
   return (
     <div className="mb-0">
@@ -96,8 +91,8 @@ const MonthYearFilterComponent = ({
               <span>الفترة الزمنية</span>
             </label>
             <DateRangePicker
-              startDate={startDate}
-              endDate={endDate}
+              startDate={startDate ?? null}
+              endDate={endDate ?? null}
               onChange={(start, end) => {
                 onStartDateChange(start);
                 onEndDateChange(end);

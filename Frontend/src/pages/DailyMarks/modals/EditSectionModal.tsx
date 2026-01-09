@@ -47,7 +47,7 @@ const EditSectionModalComponent = ({
   if (!isOpen || !editingSection || !localSection) return null;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="تعديل المقطع" size="3xl">
+    <Modal isOpen={isOpen} onClose={onClose} title="تعديل المقطع" size="2xl">
       <form onSubmit={handleFormSubmit}>
         {/* Date Field Container */}
         <div className="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-100">

@@ -41,25 +41,25 @@ interface ModalsContainerProps {
   state: {
     isAddSectionModalOpen: boolean;
     setIsAddSectionModalOpen: (open: boolean) => void;
-    newSection: Omit<Section, "_id">;
-    setNewSection: React.Dispatch<React.SetStateAction<Omit<Section, "_id">>>;
+    newSection: Omit<Section, '_id'>;
+    setNewSection: React.Dispatch<React.SetStateAction<Omit<Section, '_id'>>>;
     isAddingSectionLoading: boolean;
     setIsAddingSectionLoading: React.Dispatch<React.SetStateAction<boolean>>;
-    
+
     isEditSectionModalOpen: boolean;
     setIsEditSectionModalOpen: (open: boolean) => void;
     editingSection: Section | null;
     setEditingSection: (section: Section | null) => void;
     isEditingSectionLoading: boolean;
     setIsEditingSectionLoading: React.Dispatch<React.SetStateAction<boolean>>;
-    
+
     isAddMarkModalOpen: boolean;
     setIsAddMarkModalOpen: (open: boolean) => void;
     selectedSection: Section | null;
     newMark: { reviewMark: number; memorizationMark: number };
     isAddingMarkLoading: boolean;
     setIsAddingMarkLoading: React.Dispatch<React.SetStateAction<boolean>>;
-    
+
     isUpdateMarkModalOpen: boolean;
     setIsUpdateMarkModalOpen: (open: boolean) => void;
     editingMark: Mark | null;
@@ -68,15 +68,15 @@ interface ModalsContainerProps {
     setIsUpdatingMarkLoading: React.Dispatch<React.SetStateAction<boolean>>;
     selectedStudent: Student | null;
     setSelectedStudent: (student: Student | null) => void;
-    
+
     selectedSectionsForBulk: string[];
     setSelectedSectionsForBulk: (sections: string[]) => void;
-    
+
     isBulkDeleteModalOpen: boolean;
     setIsBulkDeleteModalOpen: (open: boolean) => void;
     isBulkDeleting: boolean;
     setIsBulkDeleting: React.Dispatch<React.SetStateAction<boolean>>;
-    
+
     isBulkMarksModalOpen: boolean;
     setIsBulkMarksModalOpen: (open: boolean) => void;
     bulkMarksSection: Section | null;
@@ -85,8 +85,8 @@ interface ModalsContainerProps {
   handlers: {
     handleAddSection: (
       e: React.FormEvent,
-      newSection: Omit<Section, "_id">,
-      setNewSection: React.Dispatch<React.SetStateAction<Omit<Section, "_id">>>,
+      newSection: Omit<Section, '_id'>,
+      setNewSection: React.Dispatch<React.SetStateAction<Omit<Section, '_id'>>>,
       setLoading: React.Dispatch<React.SetStateAction<boolean>>
     ) => void;
     handleEditSection: (
@@ -121,13 +121,21 @@ interface ModalsContainerProps {
     ) => void;
   };
   // Form input handlers
-  handleSectionInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-  handleEditSectionInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  handleSectionInputChange: (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => void;
+  handleEditSectionInputChange: (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => void;
   handleMarkInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   // Modal actions
   toggleSectionSelection: (sectionId: string) => void;
   openAddMarkModal: (section: Section, student?: Student) => void;
-  openUpdateMarkModal: (mark: Mark, section: Section, student?: Student) => void;
+  openUpdateMarkModal: (
+    mark: Mark,
+    section: Section,
+    student?: Student
+  ) => void;
   openEditSectionModal: (section: Section) => void;
   // Computed values
   getSelectedStudent: () => Student | null;
@@ -150,9 +158,7 @@ const ModalsContainerComponent = ({
   handleEditSectionInputChange,
   handleMarkInputChange,
   toggleSectionSelection,
-  openAddMarkModal,
-  openUpdateMarkModal,
-  openEditSectionModal,
+
   getSelectedStudent,
 }: ModalsContainerProps) => {
   // Don't render modals for students

@@ -1,16 +1,11 @@
-import { Card, Button } from "@/components/UI";
-import { 
-  Users, BookOpen, Calendar, ArrowLeft, RotateCcw, 
-  Plus, Trash2, Filter, Edit 
-} from "lucide-react";
-import { SearchInput } from "@/components/Filters";
-import { DateRangePicker } from "@/components/UI/DateRangePicker";
-import SectionStatusFilter from "../../../components/SectionStatusFilter";
-import type { MarkStatus } from "../../../components/SectionStatusBadge";
-import { DropdownMenu } from "@/components/UI/DropdownMenu";
-import { SectionCardSkeleton } from "../../../components/SectionCardSkeleton";
-import type { Section } from "../../../types/types";
-import { SectionItem } from "./SectionItem";
+import { Card, Button } from '@/components/UI';
+import { Users, BookOpen, ArrowLeft, Plus, Trash2, Filter } from 'lucide-react';
+import { SearchInput } from '@/components/Filters';
+import { DateRangePicker } from '@/components/UI/DateRangePicker';
+import SectionStatusFilter from '../../../components/SectionStatusFilter';
+import type { MarkStatus } from '../../../components/SectionStatusBadge';
+import type { Section } from '../../../types/types';
+import { SectionItem } from './SectionItem';
 
 interface SectionsGridViewProps {
   selectedGroup: string;
@@ -53,14 +48,10 @@ interface SectionsGridViewProps {
 export const SectionsGridView = ({
   selectedGroup,
   sections,
-  loadingMarks,
-  isFilterOpen,
   selectedStatus,
   statusCounts,
   filteredSectionsByStatus,
-  selectedMonth,
-  selectedYear,
-  selectedDay,
+
   searchQuery,
   onGroupSelect,
   onAddSection,
@@ -68,21 +59,15 @@ export const SectionsGridView = ({
   onEditSection,
   onDeleteSection,
   onSectionSelect,
-  onFilterToggle,
   onStatusChange,
-  onMonthChange,
-  onYearChange,
-  onDayChange,
+
   onSearchChange,
   startDate,
   endDate,
   onStartDateChange,
   onEndDateChange,
 }: SectionsGridViewProps) => {
-  const skeletonCount = Math.min(
-    9,
-    Math.max(3, (sections?.length || 0) > 0 ? sections.length : 9)
-  );
+  // skeletonCount removed as it was unused
 
   return (
     <div className="animate-fade-in">
@@ -106,7 +91,9 @@ export const SectionsGridView = ({
                 <Users className="text-white" size={24} />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-800">{selectedGroup}</h2>
+                <h2 className="text-2xl font-bold text-gray-800">
+                  {selectedGroup}
+                </h2>
                 <p className="text-sm text-gray-600 mt-1">حلقة الدراسة</p>
               </div>
             </div>
@@ -128,7 +115,7 @@ export const SectionsGridView = ({
 
               {/* Search Input */}
               <div className="w-full md:w-64">
-                <SearchInput 
+                <SearchInput
                   value={searchQuery}
                   onChange={onSearchChange}
                   placeholder="بحث..."
@@ -171,7 +158,7 @@ export const SectionsGridView = ({
               <Plus size={20} className="bg-white/20 rounded-full p-0.5" />
             </Button>
           )}
-          
+
           {/* حذف مقاطع */}
           {onBulkDelete && (
             <Button
@@ -193,21 +180,20 @@ export const SectionsGridView = ({
       </div>
 
       {/* Sections Cards */}
-      {loadingMarks ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: skeletonCount }).map((_, i) => (
-            <SectionCardSkeleton key={i} />
-          ))}
-        </div>
-      ) : sections.length === 0 ? (
+      {        
+       sections.length === 0 ? (
         <Card className="p-12 text-center">
           <BookOpen className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-          <p className="text-gray-600 font-medium">لا توجد مقاطع في هذه الحلقة</p>
+          <p className="text-gray-600 font-medium">
+            لا توجد مقاطع في هذه الحلقة
+          </p>
         </Card>
       ) : filteredSectionsByStatus.length === 0 ? (
         <Card className="p-12 text-center">
           <Filter className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-          <p className="text-gray-600 font-medium">لا توجد مقاطع بالحالة المحددة</p>
+          <p className="text-gray-600 font-medium">
+            لا توجد مقاطع بالحالة المحددة
+          </p>
           <button
             onClick={() => onStatusChange(null)}
             className="mt-4 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
