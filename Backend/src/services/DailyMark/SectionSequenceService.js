@@ -135,7 +135,7 @@ class SectionSequenceService {
           if (seg.ayahEnd > maxMemorized) {
                return {
                   isValid: false,
-                  message: `🚫 لا يمكن وراجعة ما لم يتم حفظه بعد! أقصى آية تم حفظها في سورة ${seg.surahNameCanonical} هي ${maxMemorized}.`
+                  message: `🚫 لا يمكن مراجعة ما لم يتم حفظه بعد! أقصى آية تم حفظها في سورة ${seg.surahNameCanonical} هي ${maxMemorized}.`
                };
           }
       }
