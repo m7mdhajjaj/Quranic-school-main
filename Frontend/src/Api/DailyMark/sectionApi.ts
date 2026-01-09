@@ -209,7 +209,7 @@ export const getLastSegment = async (
   group: string, 
   surah: number, 
   type: 'memorization' | 'review'
-): Promise<{ nextStart: number; lastSegment?: QuranSegment } | null> => {
+): Promise<{ nextStart: number; lastSegment?: QuranSegment; suggestedEnd?: number; maxMemorized?: number } | null> => {
   try {
     const response = await api.get('/daily-marks/sections/last-segment', {
       params: { group, surah, type }

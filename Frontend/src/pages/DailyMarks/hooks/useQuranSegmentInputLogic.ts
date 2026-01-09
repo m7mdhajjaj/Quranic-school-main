@@ -30,13 +30,20 @@ export function useQuranSegmentInputLogic({ segments = [], groupName, type, onCh
 
   useEffect(() => {
     if (groupName && (type === 'memorization' || type === 'review') && segment.surahNumber) {
+      
+      // Use the actual type to get specific suggestions (Strict Mode)
       getLastSegment(groupName, segment.surahNumber, type).then(suggestion => {
         if (suggestion) {
-          setExpectedStart(suggestion.nextStart || 1);
-          if (type === 'review' && suggestion.lastSegment && typeof suggestion.lastSegment.ayahEnd === 'number') {
-            setReviewLimit(suggestion.lastSegment.ayahEnd);
-          } else {
-            setReviewLimit(null);
+          const nextStart = suggestion.nextStart || 1;
+          
+          if (type === 'memorization') {
+              setExpectedStart(nextStart);
+              setReviewLimit(null);
+          } else if (type === 'review') {
+              // For review: nextStart is the start of the next review cycle
+              setExpectedStart(nextStart); 
+              // API now returns maxMemorized specifically for review context
+              setReviewLimit(suggestion.maxMemorized || null);
           }
         } else {
           setExpectedStart(1);
@@ -72,33 +79,45 @@ export function useQuranSegmentInputLogic({ segments = [], groupName, type, onCh
       setExpectedStart(null);
       setReviewLimit(null);
       onChange([newSegment]);
+      
       if (groupName && (type === 'memorization' || type === 'review')) {
+        
         getLastSegment(groupName, numValue, type).then(suggestion => {
           if (suggestion) {
             const nextStart = suggestion.nextStart || 1;
-            // استخدم lastSegment.ayahEnd كحد للمراجعة
-            const maxMemorized = suggestion.lastSegment && typeof suggestion.lastSegment.ayahEnd === 'number' ? suggestion.lastSegment.ayahEnd : 9999;
-            setExpectedStart(nextStart);
             
-            // Auto-fill logic
+             if (type === 'memorization') {
+                 setExpectedStart(nextStart);
+                 setReviewLimit(null);
+             } else {
+                 setExpectedStart(nextStart); // Suggest next review cycle start
+                 setReviewLimit(suggestion.maxMemorized || null);
+             }
+            
+            // Auto fill Logic
             let updated = false;
             let updatedSegment = { ...newSegment };
 
-            if (type === 'memorization' && suggestion.nextStart) {
+            // 1. Auto-fill Start
+            if (suggestion.nextStart) {
                 updatedSegment.ayahStart = suggestion.nextStart;
                 updated = true;
             }
             
-            if (type === 'review') {
-                setReviewLimit(maxMemorized);
-                 // If it's review, auto-set range 1 to maxMemorized (if available)
-                 if (maxMemorized < 9999) {
-                     updatedSegment.ayahEnd = maxMemorized;
-                     updated = true;
+            // 2. Auto-fill End (Strict Matching)
+            if (type === 'review' && suggestion.suggestedEnd) {
+                 updatedSegment.ayahEnd = suggestion.suggestedEnd;
+                 updated = true;
+            } else if (type === 'review' && !suggestion.suggestedEnd) {
+                 if (suggestion.maxMemorized && suggestion.maxMemorized < 9999) {
+                     // Fallback: If starting from 1, suggest max
+                     if (updatedSegment.ayahStart === 1) {
+                         updatedSegment.ayahEnd = suggestion.maxMemorized;
+                         updated = true;
+                     }
                  }
             }
             
-            // Apply updates if any
             if (updated) {
                  onChange([updatedSegment]);
             }
