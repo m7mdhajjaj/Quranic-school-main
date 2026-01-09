@@ -66,11 +66,11 @@ const sectionSchema = new mongoose.Schema(
     },
     reviewSection: {
       type: String,
-      required: [true, "مقطع المراجعة مطلوب"],
+      required: false, // [true, "مقطع المراجعة مطلوب"],
     },
     memorizationSection: {
       type: String,
-      required: [true, "مقطع الحفظ مطلوب"],
+      required: false, // [true, "مقطع الحفظ مطلوب"],
     },
 
     group: {

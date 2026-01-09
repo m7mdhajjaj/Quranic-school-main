@@ -13,6 +13,8 @@ export interface Section {
   reviewSection: string;
   group?: string;
   teacher?: string;
+  hasSchedule?: boolean;
+  scheduleStatus?: 'scheduled' | 'needs_schedule';
   createdAt?: string;
   updatedAt?: string;
 }

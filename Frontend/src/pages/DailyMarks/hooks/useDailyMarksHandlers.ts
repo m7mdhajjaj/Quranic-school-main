@@ -64,10 +64,11 @@ export const useDailyMarksHandlers = ({
       return;
     }
 
-    if (!newSection.reviewSection || !newSection.memorizationSection) {
-      showWarningMessage("الرجاء ملء جميع الحقول المطلوبة", "تنبيه");
+    if (!newSection.reviewSection && !newSection.memorizationSection) {
+      showWarningMessage("الرجاء إدخال مقطع الحفظ أو مقطع المراجعة على الأقل", "تنبيه");
       return;
     }
+
 
     // Validate date is not in the past
     const today = new Date();
@@ -121,9 +122,17 @@ export const useDailyMarksHandlers = ({
           );
 
           if (result.isConfirmed) {
+            // Determine session type based on filled fields
+            let sessionType = "both";
+            if (newSection.memorizationSection && !newSection.reviewSection) {
+              sessionType = "hifz";
+            } else if (!newSection.memorizationSection && newSection.reviewSection) {
+              sessionType = "murajaah";
+            }
+
             // Navigate to timetable with query params
             // Passes sectionId AND group name to pre-fill the form
-            navigate(`/timetable?addSession=true&sectionId=${createdSection._id}&groupName=${encodeURIComponent(selectedGroup)}`);
+            navigate(`/timetable?addSession=true&sectionId=${createdSection._id}&groupName=${encodeURIComponent(selectedGroup)}&sessionType=${sessionType}`);
           } else {
              showSuccessToast("✅ تم إضافة المقطع بنجاح!");
           }
@@ -188,7 +197,18 @@ export const useDailyMarksHandlers = ({
       );
 
       if (confirmResult.isConfirmed) {
-        navigate(`/timetable?editSession=true&sectionId=${editingSection._id}&groupName=${encodeURIComponent(selectedGroup)}`);
+        // Determine session type based on filled fields
+        let sessionType = "both";
+        const hasMem = editingSection.memorizationSection && editingSection.memorizationSection.trim() !== "";
+        const hasRev = editingSection.reviewSection && editingSection.reviewSection.trim() !== "";
+        
+        if (hasMem && !hasRev) {
+          sessionType = "hifz";
+        } else if (!hasMem && hasRev) {
+          sessionType = "murajaah";
+        }
+
+        navigate(`/timetable?editSession=true&sectionId=${editingSection._id}&groupName=${encodeURIComponent(selectedGroup)}&sessionType=${sessionType}`);
       }
 
       // 3. Wait for API and update with actual server data to ensure consistency

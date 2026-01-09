@@ -157,8 +157,16 @@ const validateDailyMarksSectionData = async (req, res, next) => {
       }
     }
 
-    // Validate reviewSection (required)
-    if (!isUpdate || data.reviewSection !== undefined) {
+    const hasReview = isRequired(data.reviewSection);
+    const hasMemorization = isRequired(data.memorizationSection);
+
+    // If CREATE: Require at least one of them
+    if (!isUpdate && !hasReview && !hasMemorization) {
+      errors.push("يجب إدخال مقطع الحفظ أو مقطع المراجعة على الأقل");
+    }
+
+    // Validate reviewSection (optional if memorization exists)
+    if (hasReview) {
       const reviewValidation = validateSectionName(
         data.reviewSection,
         "مقطع المراجعة"
@@ -168,10 +176,12 @@ const validateDailyMarksSectionData = async (req, res, next) => {
       } else {
         validatedData.reviewSection = reviewValidation.value;
       }
+    } else {
+        validatedData.reviewSection = ""; // Allow empty string if not provided
     }
 
-    // Validate memorizationSection (required)
-    if (!isUpdate || data.memorizationSection !== undefined) {
+    // Validate memorizationSection (optional if review exists)
+    if (hasMemorization) {
       const memorizationValidation = validateSectionName(
         data.memorizationSection,
         "مقطع الحفظ"
@@ -181,6 +191,8 @@ const validateDailyMarksSectionData = async (req, res, next) => {
       } else {
         validatedData.memorizationSection = memorizationValidation.value;
       }
+    } else {
+        validatedData.memorizationSection = ""; // Allow empty string if not provided
     }
 
     // Validate group (optional)

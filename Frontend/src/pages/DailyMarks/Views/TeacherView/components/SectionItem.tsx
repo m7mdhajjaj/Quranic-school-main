@@ -1,9 +1,10 @@
 import React, { memo } from "react";
 import { Card } from "@/components/UI";
 import { DropdownMenu } from "@/components/UI/DropdownMenu";
-import { Calendar, Edit, Trash2, Users, RotateCcw, BookOpen } from "lucide-react";
+import { Calendar, Edit, Trash2, Users, RotateCcw, BookOpen, Clock, AlertTriangle } from "lucide-react";
 import type { Section } from "../../../types/types";
 import type { MarkStatus } from "../../../components/SectionStatusBadge";
+import { useNavigate } from "react-router-dom";
 
 interface SectionItemProps {
   section: Section;
@@ -18,6 +19,7 @@ const SectionItemComponent = ({
   onEditSection,
   onDeleteSection,
 }: SectionItemProps) => {
+  const navigate = useNavigate();
   const marksStatus = section.marksStatus || "not_started";
   const marksProgress = section.marksProgress;
   const date = new Date(section.date);
@@ -34,6 +36,20 @@ const SectionItemComponent = ({
     month: "short",
     day: "numeric",
   }).format(date);
+
+  const handleAddSchedule = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    let sessionType = "both";
+    const hasMem = section.memorizationSection && section.memorizationSection.trim() !== "";
+    const hasRev = section.reviewSection && section.reviewSection.trim() !== "";
+    
+    if (hasMem && !hasRev) {
+      sessionType = "hifz";
+    } else if (!hasMem && hasRev) {
+      sessionType = "murajaah";
+    }
+    navigate(`/timetable?addSession=true&sectionId=${section._id}&groupName=${encodeURIComponent(section.group || "")}&sessionType=${sessionType}`);
+  };
 
   const statusConfig = {
     completed: {
@@ -163,6 +179,23 @@ const SectionItemComponent = ({
           </div>
         </div>
         
+        {/* Schedule Wrapper Warning */}
+        {section.hasSchedule === false && (
+           <div className="mb-4 mt-2 bg-rose-50 border border-rose-200 rounded-lg p-3 relative z-20" onClick={(e) => e.stopPropagation()}>
+             <div className="flex items-start gap-2 mb-2">
+               <AlertTriangle className="text-rose-500 shrink-0 mt-0.5" size={16} />
+               <p className="text-xs text-rose-700 font-medium leading-tight">لم يتم تحديد موعد لهذه الحلقة في الجدول</p>
+             </div>
+             <button
+               onClick={handleAddSchedule}
+               className="w-full py-1.5 px-3 bg-white border border-rose-200 text-rose-600 rounded-md text-xs font-bold hover:bg-rose-50 hover:text-rose-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
+             >
+               <Clock size={14} />
+               <span>إضافة موعد للحلقة</span>
+             </button>
+           </div>
+        )}
+
         {/* Action Hint */}
         <div className="flex items-center justify-center gap-2 text-sm text-emerald-600 pt-4 border-t border-emerald-200/60 font-semibold">
           <Users size={18} />

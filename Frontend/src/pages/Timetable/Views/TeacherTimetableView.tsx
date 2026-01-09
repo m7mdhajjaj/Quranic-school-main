@@ -51,12 +51,15 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
       if (editSession === 'true') {
         const sessionToEdit = sessions.find(s => s.sectionId === sectionId);
         if (sessionToEdit) {
+          // Check if sessionType is updated in URL
+          const urlSessionType = searchParams.get('sessionType');
+          if (urlSessionType) {
+              sessionToEdit.sessionType = urlSessionType as any;
+          }
           setEditingSession(sessionToEdit);
           setIsModalOpen(true);
         } else {
              // If no session found, do nothing (respecting "Only if there is a time")
-             // or check if user implicitly meant Add. 
-             // Given the request "If there is a time", we should probably NOT open Add mode automatically here.
         }
       } else if (addSession === 'true') {
         setEditingSession(null);
@@ -81,14 +84,38 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
   };
 
   const handleSubmit = async (formData: SessionFormData, sessionId?: string) => {
+    // Inject sectionId from URL if adding
+    if (!sessionId) {
+      const urlSectionId = searchParams.get('sectionId');
+      if (urlSectionId) {
+        formData.sectionId = urlSectionId;
+      }
+      
+      // Inject sessionType from URL if not set (or override?? Usually form data has priority, but initial state should be set correctly)
+      // Actually formData comes from the modal, which should be initialized with URL param.
+      // But let's fallback just in case:
+      // const urlSessionType = searchParams.get('sessionType');
+      // if (!formData.sessionType && urlSessionType) {
+      //   formData.sessionType = urlSessionType as any;
+      // }
+    }
+
     const success = sessionId 
       ? await onEditSession(sessionId, formData)
       : await onAddSession(formData);
     
     if (success) {
       handleCloseModal();
-      // Refetch removed to improve performance - local state is updated optimistically
-      // refetchSessions();
+      // Remove query params after successful add/edit to clean up URL
+      setSearchParams(prev => {
+        const newParams = new URLSearchParams(prev);
+        newParams.delete('addSession');
+        newParams.delete('editSession');
+        newParams.delete('sectionId');
+        newParams.delete('groupName');
+        newParams.delete('sessionType'); // Clear this too
+        return newParams;
+      });
     }
     return success;
   };

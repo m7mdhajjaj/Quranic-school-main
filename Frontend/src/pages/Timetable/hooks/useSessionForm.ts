@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import type { Session, SessionFormData, UserRole } from "../types/timetable.types";
 import { WEEK_DAYS, getCurrentUser } from "../utils";
 import { getAvailableHours, getAvailableHoursForTeacher } from "@/Api/TimeTable.Api";
+import { useSearchParams } from "react-router-dom";
 
 interface UseSessionFormProps {
   editingSession: Session | null;
@@ -16,17 +17,26 @@ interface UseSessionFormProps {
 }
 
 export const useSessionForm = ({ editingSession, role, teacherGroups = [], initialSectionId, initialGroupName }: UseSessionFormProps) => {
+  const [searchParams] = useSearchParams();
   // جلب كل الأوقات + الأوقات المحجوزة من الـ Backend
   const [hours, setHours] = useState<string[]>([]);
   const [bookedHours, setBookedHours] = useState<string[]>([]); // الأوقات المحجوزة (للتعطيل)
   const [loadingHours, setLoadingHours] = useState(true);
+  
+  // Logic to determine initial sessionType
+  const getInitialSessionType = () => {
+    if (editingSession?.sessionType) return editingSession.sessionType;
+    const urlSessionType = searchParams.get('sessionType');
+    return urlSessionType as any || undefined;
+  };
+
   const [formData, setFormData] = useState<SessionFormData>(() => ({
     day: WEEK_DAYS[0],
     startHour: "",
     endHour: "",
     note: initialGroupName || "",
     description: "",
-    sessionType: undefined,
+    sessionType: getInitialSessionType(),
     teacherId: "",
     sectionId: initialSectionId || "",
   }));

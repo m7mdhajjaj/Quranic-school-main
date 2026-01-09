@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { Section } from '../../types/types';
 
-const INPUT_DEBOUNCE = 300; // ms
+const INPUT_DEBOUNCE = 10; // ms
 
 export const useAddSectionModal = () => {
   const [localReviewSection, setLocalReviewSection] = useState('');
