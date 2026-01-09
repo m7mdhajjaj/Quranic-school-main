@@ -181,14 +181,14 @@ const SectionItemComponent = ({
         
         {/* Scheduled Time Info */}
         {section.timetableId && typeof section.timetableId !== 'string' && (
-          <div className="mb-4 mt-2 bg-blue-50 border border-blue-200 rounded-lg p-3 relative z-20" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center gap-2 text-blue-800">
-               <Clock size={16} className="text-blue-600" />
+          <div className="mb-4 mt-2 bg-cyan-50/50 border border-cyan-200 rounded-lg p-3 relative z-20 shadow-sm" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2 text-cyan-800">
+               <Clock size={16} className="text-cyan-600" />
                <span className="text-xs font-bold">موعد الحلقة:</span>
             </div>
-            <div className="flex items-center gap-2 mt-1 text-sm text-blue-700 font-medium mr-6">
+            <div className="flex items-center gap-2 mt-1 text-sm text-cyan-700 font-medium mr-6">
                 <span>{(section.timetableId as any).day}</span>
-                <span className="text-blue-300">|</span>
+                <span className="text-cyan-300">|</span>
                 <span dir="ltr" className="font-mono text-xs">{(section.timetableId as any).startHour} - {(section.timetableId as any).endHour}</span>
             </div>
           </div>
@@ -196,14 +196,14 @@ const SectionItemComponent = ({
 
         {/* Schedule Wrapper Warning - Show if NO timetableId (regardless of hasSchedule flag to be safe) */}
         {(!section.timetableId) && (
-           <div className="mb-4 mt-2 bg-rose-50 border border-rose-200 rounded-lg p-3 relative z-20" onClick={(e) => e.stopPropagation()}>
+           <div className="mb-4 mt-2 bg-amber-50/50 border border-amber-200 rounded-lg p-3 relative z-20 shadow-sm" onClick={(e) => e.stopPropagation()}>
              <div className="flex items-start gap-2 mb-2">
-               <AlertTriangle className="text-rose-500 shrink-0 mt-0.5" size={16} />
-               <p className="text-xs text-rose-700 font-medium leading-tight">لم يتم تحديد موعد لهذه الحلقة في الجدول</p>
+               <AlertTriangle className="text-amber-500 shrink-0 mt-0.5" size={16} />
+               <p className="text-xs text-amber-700 font-medium leading-tight">لم يتم تحديد موعد لهذه الحلقة في الجدول</p>
              </div>
              <button
                onClick={handleAddSchedule}
-               className="w-full py-1.5 px-3 bg-white border border-rose-200 text-rose-600 rounded-md text-xs font-bold hover:bg-rose-50 hover:text-rose-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
+               className="w-full py-1.5 px-3 bg-white border border-amber-200 text-amber-600 rounded-md text-xs font-bold hover:bg-amber-50 hover:text-amber-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
              >
                <Clock size={14} />
                <span>إضافة موعد للحلقة</span>
