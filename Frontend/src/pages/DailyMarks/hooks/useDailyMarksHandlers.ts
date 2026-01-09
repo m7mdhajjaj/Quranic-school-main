@@ -1,5 +1,7 @@
 import { createSection, updateSection, deleteSection } from "@/Api/DailyMark/sectionApi";
 import { createMark, deleteMark, updateMark } from "@/Api/DailyMark/dailyMarksApi";
+import { sectionValidationSchema } from "@/Validation/dailyMarksValidation"; // Import Schema
+import * as yup from "yup";
 import {
   showCenteredSwal,
   showWarningMessage,
@@ -29,8 +31,6 @@ interface UseHandlersProps {
   refetchMarks?: () => Promise<void>;
   refetchSections?: () => Promise<void>;
 }
-
-// ... imports ...
 
 export const useDailyMarksHandlers = ({
   selectedGroup,
@@ -64,10 +64,35 @@ export const useDailyMarksHandlers = ({
       return;
     }
 
-    if (!newSection.reviewSection && !newSection.memorizationSection) {
-      showWarningMessage("الرجاء إدخال مقطع الحفظ أو مقطع المراجعة على الأقل", "تنبيه");
-      return;
+    // --- Strict Validation using YUP Schema ---
+    try {
+      // Construct data object matching schema
+      const validationPayload = {
+        date: newSection.date,
+        reviewSection: newSection.reviewSection,
+        memorizationSection: newSection.memorizationSection,
+        memorizationMeta: newSection.memorizationMeta,
+        reviewMeta: newSection.reviewMeta,
+        group: selectedGroup,
+        teacher: currentUser
+          ? `${currentUser.firstName} ${currentUser.lastName}`
+          : "",
+      };
+
+      // Validate synchronously (or async)
+      await sectionValidationSchema.validate(validationPayload, { abortEarly: false });
+
+    } catch (error) {
+      if (error instanceof yup.ValidationError) {
+        // Show the first error message
+        showWarningMessage(error.errors[0], "خطأ في البيانات");
+        return;
+      } else {
+        console.error("Validation Error", error);
+        return;
+      }
     }
+    // ------------------------------------------
 
 
     // Validate date is not in the past
@@ -85,8 +110,13 @@ export const useDailyMarksHandlers = ({
     try {
       const sectionData = {
         date: newSection.date,
+        // Legacy Strings
         reviewSection: newSection.reviewSection,
         memorizationSection: newSection.memorizationSection,
+        // New Structured Data
+        memorizationMeta: newSection.memorizationMeta,
+        reviewMeta: newSection.reviewMeta,
+        
         group: selectedGroup,
         teacher: currentUser
           ? `${currentUser.firstName} ${currentUser.lastName}`
@@ -108,6 +138,8 @@ export const useDailyMarksHandlers = ({
           date: new Date().toISOString().split("T")[0],
           memorizationSection: "",
           reviewSection: "",
+          memorizationMeta: [],
+          reviewMeta: [],
         });
 
         // showSuccessToast("✅ تم إضافة المقطع بنجاح!");
@@ -142,12 +174,21 @@ export const useDailyMarksHandlers = ({
       }
     } catch (err: unknown) {
       console.error("Error adding section:", err);
-      const error = err as { response?: { data?: { message?: string } }; message?: string };
-      showErrorToast(
-        `❌ حدث خطأ أثناء إضافة المقطع: ${
-          error.response?.data?.message || error.message
-        }`
-      );
+      
+      const error = err as { response?: { status?: number; data?: { message?: string; errors?: string[] } }; message?: string };
+      const status = error.response?.status;
+      const serverMessage = error.response?.data?.message || error.message;
+
+      // Handle Validation Errors (Overlap, etc) nicely
+      if (status === 400) {
+           showErrorToast(serverMessage || "بيانات المقطع غير صحيحة");
+           // Show granular errors if available
+           if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
+               error.response.data.errors.forEach(e => showWarningMessage(e, "تنبيه"));
+           }
+      } else {
+          showErrorToast(`❌ حدث خطأ أثناء إضافة المقطع: ${serverMessage}`);
+      }
     } finally {
       setIsAddingSectionLoading(false);
     }
@@ -186,6 +227,8 @@ export const useDailyMarksHandlers = ({
         date: editingSection.date,
         memorizationSection: editingSection.memorizationSection,
         reviewSection: editingSection.reviewSection,
+        memorizationMeta: editingSection.memorizationMeta, // Added: Send structured data
+        reviewMeta: editingSection.reviewMeta,             // Added: Send structured data
       });
 
       // Show confirmation dialog immediately (without waiting for API)
@@ -221,12 +264,22 @@ export const useDailyMarksHandlers = ({
         );
       }
 
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Error updating section:", err);
-      showErrorToast("❌ حدث خطأ أثناء تحديث المقطع، سيتم استعادة البيانات...");
       
-      // 4. Rollback on error
-      if (refetchSections) await refetchSections();
+      const error = err as { response?: { status?: number; data?: { message?: string } }; message?: string };
+      const status = error.response?.status;
+      const serverMessage = error.response?.data?.message || error.message;
+
+      // Handle Validation Errors specifically (Overlap)
+      if (status === 400) {
+        showErrorToast(serverMessage || "بيانات غير صالحة");
+        // Rollback only if it was a validation error (since the server rejected it)
+        if (refetchSections) await refetchSections();
+      } else {
+        showErrorToast("❌ حدث خطأ أثناء تحديث المقطع، سيتم استعادة البيانات...");
+        if (refetchSections) await refetchSections();
+      }
     } finally {
       setIsEditingSectionLoading?.(false);
     }

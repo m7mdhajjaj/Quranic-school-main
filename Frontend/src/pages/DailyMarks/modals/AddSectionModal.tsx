@@ -1,13 +1,12 @@
 import { memo, useEffect } from 'react';
 import {
   Button,
-  Input,
   Modal,
   DatePicker,
 } from '@/components/UI';
-import { BookOpen, FileText } from 'lucide-react';
 import type { AddSectionModalProps } from '../types/types';
 import { useAddSectionModal } from '../hooks/modals';
+import QuranSegmentInput from '../components/QuranSegmentInput';
 
 /**
  * Modal for adding a new section
@@ -16,6 +15,7 @@ import { useAddSectionModal } from '../hooks/modals';
 const AddSectionModalComponent = ({
   isOpen,
   newSection,
+  selectedGroup,
   isLoading = false,
   onClose,
   onSubmit,
@@ -24,8 +24,11 @@ const AddSectionModalComponent = ({
   const {
     localReviewSection,
     localMemorizationSection,
+    localReviewMeta,
+    localMemorizationMeta,
     syncLocalState,
     handleInputChange,
+    handleMetaChange,
   } = useAddSectionModal();
 
   // Sync with parent state when modal opens
@@ -33,7 +36,7 @@ const AddSectionModalComponent = ({
     if (isOpen) {
       syncLocalState(newSection);
     }
-  }, [isOpen, newSection.reviewSection, newSection.memorizationSection]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -45,7 +48,7 @@ const AddSectionModalComponent = ({
     <Modal isOpen={isOpen} onClose={onClose} title="إضافة مقطع جديد">
       {/* Gradient Header */}
 
-      <form onSubmit={onSubmit}>
+      <form onSubmit={onSubmit} className="max-h-[80vh] overflow-y-auto px-1">
         {/* Date Field */}
         <div className="mb-6">
           <DatePicker
@@ -64,70 +67,54 @@ const AddSectionModalComponent = ({
           </p>
         </div>
 
-        {/* Review Section */}
+        {/* Memorization Section (First) */}
         <div className="mb-6">
-          <div className="flex items-center gap-2 mb-4 pb-2 border-b-2 border-emerald-200">
-            <BookOpen className="h-5 w-5 text-emerald-600" />
-            <h4 className="text-md font-bold text-emerald-700">
-              معلومات المراجعة
-            </h4>
-          </div>
-          <Input
-            type="text"
-            id="reviewSection"
-            name="reviewSection"
-            label="مقطع المراجعة"
-            placeholder="مثال: البقرة (1-10)"
-            value={localReviewSection}
-            onChange={(e) => handleInputChange(e.target.name, e.target.value, onChange)}
-            autoComplete="off"
-            spellCheck={false}
-            inputMode="text"
-            className="border-gray-200 focus:border-emerald-500 focus:ring-emerald-100"
-          />
+            <QuranSegmentInput 
+             label="معلومات الحفظ"
+             colorClass="amber"
+             segments={localMemorizationMeta}
+             onChange={(segments) => handleMetaChange('memorizationMeta', segments, onChange)}
+             groupName={newSection.group || selectedGroup}
+             type="memorization"
+           />
         </div>
 
-        {/* Memorization Section */}
+        {/* Review Section (Second) */}
         <div className="mb-6">
-          <div className="flex items-center gap-2 mb-4 pb-2 border-b-2 border-amber-200">
-            <FileText className="h-5 w-5 text-amber-600" />
-            <h4 className="text-md font-bold text-amber-600">معلومات الحفظ</h4>
-          </div>
-          <Input
-            type="text"
-            id="memorizationSection"
-            name="memorizationSection"
-            label="مقطع الحفظ"
-            placeholder="مثال: البقرة (11-15)"
-            value={localMemorizationSection}
-            onChange={(e) => handleInputChange(e.target.name, e.target.value, onChange)}
-            autoComplete="off"
-            spellCheck={false}
-            inputMode="text"
-            className="border-gray-200 focus:border-amber-500 focus:ring-amber-100"
-          />
+           <QuranSegmentInput 
+             label="معلومات المراجعة"
+             colorClass="emerald"
+             segments={localReviewMeta}
+             onChange={(segments) => handleMetaChange('reviewMeta', segments, onChange)}
+             groupName={newSection.group || selectedGroup}
+             type="review"
+           />
         </div>
 
-        {/* Action buttons */}
         <div className="flex gap-3 mt-8">
           <Button
             type="button"
             onClick={onClose}
             variant="secondary"
+            className="flex-1 py-3 px-6 rounded-xl"
             disabled={isLoading}
-            className="flex-1 py-3 px-6 rounded-xl min-h-[52px]"
           >
-            <span className="block">إلغاء</span>
+            إلغاء
           </Button>
           <Button
             type="submit"
             variant="primary"
+            className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 py-3 px-8 rounded-xl shadow-lg hover:shadow-xl min-h-[52px]"
             disabled={isLoading}
-            className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 py-3 px-8 rounded-xl shadow-lg hover:shadow-xl disabled:opacity-70 disabled:cursor-not-allowed min-h-[52px]"
           >
-            <span className="block">
-              {isLoading ? 'جاري الإضافة...' : 'إضافة المقطع'}
-            </span>
+            {isLoading ? (
+              <span className="flex items-center gap-2">
+                <span className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+                جاري الإضافة...
+              </span>
+            ) : (
+              'إضافة المقطع'
+            )}
           </Button>
         </div>
       </form>
@@ -135,6 +122,4 @@ const AddSectionModalComponent = ({
   );
 };
 
-// Remove custom comparison - let React handle it naturally
-// The modal should re-render when newSection changes (that's the point)
 export const AddSectionModal = memo(AddSectionModalComponent);

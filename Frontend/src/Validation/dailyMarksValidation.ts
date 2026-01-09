@@ -40,13 +40,38 @@ yup.setLocale({
 // SECTION VALIDATION
 // ============================================================================
 
+export interface QuranSegmentData {
+  surahNumber?: number;
+  surahNameCanonical?: string;
+  ayahStart?: number;
+  ayahEnd?: number;
+}
+
 export interface SectionFormData {
   date: string;
-  reviewSection: string;
-  memorizationSection: string;
+  
+  // Legacy Strings (Managed/Auto-filled by UI)
+  reviewSection?: string;
+  memorizationSection?: string;
+
+  // New Structured Data
+  memorizationMeta?: QuranSegmentData[];
+  reviewMeta?: QuranSegmentData[];
+
   group?: string;
   teacher?: string;
 }
+
+/**
+ * Validation for a single Quran Segment
+ */
+export const quranSegmentSchema = yup.object({
+  surahNumber: yup.number().required("رقم السورة مطلوب").min(1).max(114),
+  surahNameCanonical: yup.string().optional(),
+  ayahStart: yup.number().required("الآية من").min(1),
+  ayahEnd: yup.number().required("الآية إلى")
+     .min(yup.ref('ayahStart'), "نهاية المقطع يجب أن تكون بعد بدايته")
+});
 
 /**
  * Validation schema for creating/updating sections
@@ -60,17 +85,11 @@ export const sectionValidationSchema = yup.object<SectionFormData>({
       "صيغة التاريخ غير صحيحة (YYYY-MM-DD)"
     ),
   
-  reviewSection: yup
-    .string()
-    .required("مقطع المراجعة مطلوب")
-    .min(3, "مقطع المراجعة يجب أن يكون 3 أحرف على الأقل")
-    .max(100, "مقطع المراجعة يجب ألا يتجاوز 100 حرف"),
-  
-  memorizationSection: yup
-    .string()
-    .required("مقطع الحفظ مطلوب")
-    .min(3, "مقطع الحفظ يجب أن يكون 3 أحرف على الأقل")
-    .max(100, "مقطع الحفظ يجب ألا يتجاوز 100 حرف"),
+  memorizationMeta: yup.array().of(quranSegmentSchema).optional(),
+  reviewMeta: yup.array().of(quranSegmentSchema).optional(),
+
+  reviewSection: yup.string().optional(),
+  memorizationSection: yup.string().optional(),
   
   group: yup
     .string()
@@ -83,7 +102,15 @@ export const sectionValidationSchema = yup.object<SectionFormData>({
     .optional()
     .min(2, "اسم المعلم يجب أن يكون 2 أحرف على الأقل")
     .max(50, "اسم المعلم يجب ألا يتجاوز 50 حرف"),
-});
+}).test(
+  'at-least-one-section',
+  'يجب إدخال مقطع حفظ أو مقطع مراجعة على الأقل',
+  (value) => {
+    const hasMem = (value.memorizationSection && value.memorizationSection.trim() !== "") || (value.memorizationMeta && value.memorizationMeta.length > 0);
+    const hasRev = (value.reviewSection && value.reviewSection.trim() !== "") || (value.reviewMeta && value.reviewMeta.length > 0);
+    return hasMem || hasRev;
+  }
+);
 
 // ============================================================================
 // MARK VALIDATION
@@ -101,185 +128,25 @@ export interface MarkFormData {
  * Validation schema for creating/updating marks
  */
 export const markValidationSchema = yup.object<MarkFormData>({
-  studentId: yup
-    .string()
-    .required("الطالب مطلوب"),
-  
-  sectionId: yup
-    .string()
-    .required("المقطع مطلوب"),
+  studentId: yup.string().required("يجب اختيار الطالب"),
+  sectionId: yup.string().required("يجب تحديد المقطع"),
   
   reviewMark: yup
     .number()
     .nullable()
-    .optional()
-    .typeError("علامة المراجعة يجب أن تكون رقم")
-    .min(0, "علامة المراجعة يجب أن تكون 0 أو أكثر")
-    .max(10, "علامة المراجعة يجب ألا تتجاوز 10"),
-  
+    .transform((value, originalValue) => (String(originalValue).trim() === "" ? null : value))
+    .min(0, "العلامة يجب أن تكون 0 أو أكثر")
+    .max(100, "العلامة يجب أن تكون 100 أو أقل"),
+    
   memorizationMark: yup
     .number()
     .nullable()
-    .optional()
-    .typeError("علامة الحفظ يجب أن تكون رقم")
-    .min(0, "علامة الحفظ يجب أن تكون 0 أو أكثر")
-    .max(10, "علامة الحفظ يجب ألا تتجاوز 10"),
-  
+    .transform((value, originalValue) => (String(originalValue).trim() === "" ? null : value))
+    .min(0, "العلامة يجب أن تكون 0 أو أكثر")
+    .max(100, "العلامة يجب أن تكون 100 أو أقل"),
+    
   note: yup
     .string()
-    .optional()
-    .max(500, "الملاحظة يجب ألا تتجاوز 500 حرف"),
+    .nullable()
+    .max(200, "الملاحظة يجب ألا تتجاوز 200 حرف"),
 });
-
-/**
- * Simplified mark validation for slider input
- */
-export const markSliderValidationSchema = yup.object({
-  reviewMark: yup
-    .number()
-    .required("علامة المراجعة مطلوبة")
-    .min(0, "يجب أن تكون 0 أو أكثر")
-    .max(10, "يجب ألا تتجاوز 10"),
-  
-  memorizationMark: yup
-    .number()
-    .required("علامة الحفظ مطلوبة")
-    .min(0, "يجب أن تكون 0 أو أكثر")
-    .max(10, "يجب ألا تتجاوز 10"),
-});
-
-// ============================================================================
-// UTILITY VALIDATION FUNCTIONS
-// ============================================================================
-
-/**
- * Validate section data
- */
-export const validateSection = async (data: SectionFormData): Promise<{
-  valid: boolean;
-  errors: { [key: string]: string };
-}> => {
-  try {
-    await sectionValidationSchema.validate(data, { abortEarly: false });
-    return { valid: true, errors: {} };
-  } catch (error) {
-    const yupError = error as yup.ValidationError;
-    const errors: { [key: string]: string } = {};
-    yupError.inner.forEach((err) => {
-      if (err.path) {
-        errors[err.path] = err.message;
-      }
-    });
-    return { valid: false, errors };
-  }
-};
-
-/**
- * Validate mark data
- */
-export const validateMark = async (data: MarkFormData): Promise<{
-  valid: boolean;
-  errors: { [key: string]: string };
-}> => {
-  try {
-    await markValidationSchema.validate(data, { abortEarly: false });
-    return { valid: true, errors: {} };
-  } catch (error) {
-    const yupError = error as yup.ValidationError;
-    const errors: { [key: string]: string } = {};
-    yupError.inner.forEach((err) => {
-      if (err.path) {
-        errors[err.path] = err.message;
-      }
-    });
-    return { valid: false, errors };
-  }
-};
-
-/**
- * Validate marks (slider values)
- */
-export const validateMarksSliders = async (data: {
-  reviewMark: number;
-  memorizationMark: number;
-}): Promise<{ valid: boolean; errors: { [key: string]: string } }> => {
-  try {
-    await markSliderValidationSchema.validate(data, { abortEarly: false });
-    return { valid: true, errors: {} };
-  } catch (error) {
-    const yupError = error as yup.ValidationError;
-    const errors: { [key: string]: string } = {};
-    yupError.inner.forEach((err) => {
-      if (err.path) {
-        errors[err.path] = err.message;
-      }
-    });
-    return { valid: false, errors };
-  }
-};
-
-/**
- * Check if date is valid
- */
-export const isValidDate = (dateString: string): boolean => {
-  const regex = /^\d{4}-\d{2}-\d{2}$/;
-  if (!regex.test(dateString)) return false;
-  const date = new Date(dateString);
-  return date instanceof Date && !isNaN(date.getTime());
-};
-
-/**
- * Check if mark value is valid (0-10)
- */
-export const isValidMark = (mark: number | null): boolean => {
-  if (mark === null) return true; // null is allowed (no mark yet)
-  return typeof mark === "number" && mark >= 0 && mark <= 10;
-};
-
-// ============================================================================
-// ACTIVE GROUPS VALIDATION
-// ============================================================================
-
-/**
- * Validate active groups query parameters
- */
-export const validateActiveGroupsQuery = (
-  type?: "basic" | "detailed"
-): { isValid: boolean; errors?: string[] } => {
-  const errors: string[] = [];
-
-  if (type && !["basic", "detailed"].includes(type)) {
-    errors.push('نوع البيانات يجب أن يكون "basic" أو "detailed"');
-  }
-
-  return {
-    isValid: errors.length === 0,
-    errors: errors.length > 0 ? errors : undefined,
-  };
-};
-
-/**
- * Type guard for active groups query type
- */
-export const isValidActiveGroupsType = (
-  value: any
-): value is "basic" | "detailed" => {
-  return value === "basic" || value === "detailed";
-};
-
-// ============================================================================
-// EXPORT DEFAULT
-// ============================================================================
-
-export default {
-  sectionValidationSchema,
-  markValidationSchema,
-  markSliderValidationSchema,
-  validateSection,
-  validateMark,
-  validateMarksSliders,
-  isValidDate,
-  isValidMark,
-  validateActiveGroupsQuery,
-  isValidActiveGroupsType,
-};

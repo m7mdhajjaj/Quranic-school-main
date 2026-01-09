@@ -9,6 +9,9 @@ const dailyMarkController = require("../../../controllers/DailyMarkController");
 // Get all sections
 router.get("/", dailyMarkController.getSections);
 
+// Get last segment (for auto-increment) - MUST be before /:id
+router.get("/last-segment", dailyMarkController.getLastSegment);
+
 // Get a single section
 router.get("/:id", dailyMarkController.getSection);
 

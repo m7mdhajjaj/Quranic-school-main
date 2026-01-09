@@ -1,10 +1,12 @@
 const Section = require("../../../schema/DailyMark/Section");
 const TimeTable = require("../../../schema/TimeTable");
 const { notifySectionUpdated } = require("../../../Notifications");
+const sequenceService = require("../../../services/DailyMark/SectionSequenceService");
 const {
   sendSuccess,
   sendError,
   sendNotFound,
+  sendValidationError,
 } = require("../utils/responseHelpers");
 
 /**
@@ -19,6 +21,44 @@ exports.updateSection = async (req, res) => {
 
     // Use validated data from middleware
     const updateData = req.validatedData || req.body;
+
+    // ============================================
+    // 🛡️ Advanced Conflict Check (Update)
+    // ============================================
+    // Ensure we don't create overlap or gaps when updating
+    const targetGroup = updateData.group || section.group;
+    
+    if (targetGroup) {
+         // Check Memorization
+         if (updateData.memorizationMeta) {
+             const memValidation = await sequenceService.validateSequence(
+                 updateData.memorizationMeta,
+                 targetGroup,
+                 'memorization',
+                 updateData.date || section.date, // Pass date
+                 section._id // Exclude self
+             );
+             
+             if (!memValidation.isValid) {
+                 return sendValidationError(res, memValidation.message);
+             }
+         }
+
+         // Check Review
+         if (updateData.reviewMeta) {
+             const revValidation = await sequenceService.validateSequence(
+                 updateData.reviewMeta,
+                 targetGroup,
+                 'review',
+                 updateData.date || section.date, // Pass date
+                 section._id
+             );
+
+             if (!revValidation.isValid) {
+                 return sendValidationError(res, revValidation.message);
+             }
+         }
+    }
 
     // حفظ المقطع القديم للمقارنة
     const oldSection = { ...section.toObject() };

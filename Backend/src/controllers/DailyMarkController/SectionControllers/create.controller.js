@@ -1,11 +1,15 @@
 const Section = require("../../../schema/DailyMark/Section");
 const { notifySectionAdded } = require("../../../Notifications");
 const { updateSectionMarksStatus } = require("./sectionMarksStatus");
+const sequenceService = require("../../../services/DailyMark/SectionSequenceService"); // Import New Service
 const {
   sendCreated,
   sendError,
   sendValidationError,
 } = require("../utils/responseHelpers");
+
+// Legacy checker removed
+// const { checkSectionOverlaps, checkSequenceGap } = require("./utils/overlapChecker");
 
 /**
  * Create a new section
@@ -27,7 +31,41 @@ exports.createSection = async (req, res) => {
       memorizationSection: req.body.memorizationSection,
       group: req.body.group,
       teacher: req.body.teacher,
+      memorizationMeta: req.body.memorizationMeta,
+      reviewMeta: req.body.reviewMeta,
     };
+
+    // ============================================
+    // 🛡️ Advanced Conflict Check (Group Level) - Using Centralized Service
+    // ============================================
+    if (sectionData.group) {
+        
+        // 1. Check Memorization Sequence & Overlaps
+        // (Strict No-Overlap + Strict No-Gaps)
+        const memValidation = await sequenceService.validateSequence(
+            sectionData.memorizationMeta,
+            sectionData.group,
+            'memorization',
+            sectionData.date // NEW: Pass date for context
+        );
+        
+        if (!memValidation.isValid) {
+            return sendValidationError(res, memValidation.message);
+        }
+
+        // 2. Check Review Overlaps
+        // (Prevents Same-Day Duplicates)
+        const revValidation = await sequenceService.validateSequence(
+             sectionData.reviewMeta,
+             sectionData.group,
+             'review',
+             sectionData.date // NEW: Pass date for duplicate check
+        );
+
+        if (!revValidation.isValid) {
+             return sendValidationError(res, revValidation.message);
+        }
+    }
 
     const section = new Section(sectionData);
 

@@ -76,9 +76,9 @@ const isValidWorkingHour = (timeStr: string): boolean => {
       return false;
     }
   } else {
-    // ❄️ شتوي: 11:00 AM - 8:00 PM
+    // ❄️ شتوي: 11:00 AM - 9:00 PM
     if (period === 'pm') {
-      return hour === 12 || (hour >= 1 && hour <= 8);
+      return hour === 12 || (hour >= 1 && hour <= 9);
     } else if (period === 'am') {
       return hour === 11; // 11:00 AM و 11:30 AM فقط
     }

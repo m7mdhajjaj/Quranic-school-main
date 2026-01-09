@@ -163,19 +163,19 @@ const SectionItemComponent = ({
         
         {/* Sections Info */}
         <div className="space-y-3 mb-5">
-          <div className="bg-white/80 p-3.5 rounded-lg border border-emerald-200 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <RotateCcw size={16} className="text-emerald-600" />
-              <span className="text-xs font-semibold text-emerald-700">مقطع المراجعة</span>
-            </div>
-            <p className="text-sm font-medium text-gray-800 pr-1 line-clamp-2 leading-relaxed">{section.reviewSection || "لا يوجد"}</p>
-          </div>
           <div className="bg-white/80 p-3.5 rounded-lg border border-teal-200 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <BookOpen size={16} className="text-teal-600" />
               <span className="text-xs font-semibold text-teal-700">مقطع الحفظ</span>
             </div>
             <p className="text-sm font-medium text-gray-800 pr-1 line-clamp-2 leading-relaxed">{section.memorizationSection || "لا يوجد"}</p>
+          </div>
+          <div className="bg-white/80 p-3.5 rounded-lg border border-emerald-200 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <RotateCcw size={16} className="text-emerald-600" />
+              <span className="text-xs font-semibold text-emerald-700">مقطع المراجعة</span>
+            </div>
+            <p className="text-sm font-medium text-gray-800 pr-1 line-clamp-2 leading-relaxed">{section.reviewSection || "لا يوجد"}</p>
           </div>
         </div>
         

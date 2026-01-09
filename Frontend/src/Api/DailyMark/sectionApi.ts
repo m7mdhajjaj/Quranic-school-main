@@ -6,11 +6,55 @@ import api from "../api";
 // Base URL: /api/daily-marks/sections
 // ============================================================================
 
+// --- New Structured Types ---
+
+export interface QuranSegment {
+  _id?: string;
+  surahNumber: number;
+  surahNameCanonical: string;
+  surahNameInput?: string;
+  
+  ayahStart: number;
+  ayahEnd: number;
+  
+  canonicalKey?: string; // e.g. "114:1-6"
+  surahAyahCount?: number;
+
+  status: 'not_started' | 'in_progress' | 'completed';
+  completedAt?: string;
+  completedBy?: string;
+  
+  // Frontend helper (not in DB)
+  description?: string; 
+}
+
+export interface ProgressSummary {
+  memorization: {
+    totalSegments: number;
+    completedSegments: number;
+  };
+  review: {
+    totalSegments: number;
+    completedSegments: number;
+  };
+  lastUpdatedAt?: string;
+}
+
+// --- Main Interfaces ---
+
 export interface Section {
   _id: string;
   date: string;
+  
+  // Legacy Strings (Display)
   memorizationSection: string;
   reviewSection: string;
+
+  // New Structured Data (Source of Truth)
+  memorizationMeta?: QuranSegment[];
+  reviewMeta?: QuranSegment[];
+  progressSummary?: ProgressSummary;
+
   group?: string;
   teacher?: string;
   hasSchedule?: boolean;
@@ -21,16 +65,34 @@ export interface Section {
     endHour: string;
     sessionType: string;
   };
+  
+  marksStatus?: 'completed' | 'in_progress' | 'not_started';
+  marksProgress?: {
+      totalStudents: number;
+      studentsWithMarks: number;
+      percentage: number;
+  };
+
   createdAt?: string;
   updatedAt?: string;
 }
 
 export interface CreateSectionData {
   date: string;
-  memorizationSection: string;
-  reviewSection: string;
+  
+  // Legacy fields (optional if Meta is provided, but good for display)
+  memorizationSection?: string;
+  reviewSection?: string;
+  
+  // New Structured Input
+  memorizationMeta?: Partial<QuranSegment>[];
+  reviewMeta?: Partial<QuranSegment>[];
+
   group?: string;
   teacher?: string;
+  timetableId?: string;
+  hasSchedule?: boolean;
+  scheduleStatus?: 'scheduled' | 'needs_schedule';
 }
 
 export interface UpdateSectionData extends Partial<CreateSectionData> {
@@ -137,5 +199,27 @@ export const toggleSectionStatus = async (
   } catch (error) {
     console.error("Failed to toggle section status:", error);
     throw error;
+  }
+};
+
+/**
+ * Get the last recorded segment to suggest the next step
+ */
+export const getLastSegment = async (
+  group: string, 
+  surah: number, 
+  type: 'memorization' | 'review'
+): Promise<{ nextStart: number; lastSegment?: QuranSegment } | null> => {
+  try {
+    const response = await api.get('/daily-marks/sections/last-segment', {
+      params: { group, surah, type }
+    });
+    if (response.data.success) {
+      return response.data.data;
+    }
+    return null;
+  } catch (error) {
+    // console.error("Failed to fetch last segment", error);
+    return null;
   }
 };

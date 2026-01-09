@@ -1,20 +1,48 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { Section } from '../../types/types';
+import type { QuranSegmentData } from '@/Validation/dailyMarksValidation';
 
 const INPUT_DEBOUNCE = 10; // ms
 
 export const useAddSectionModal = () => {
   const [localReviewSection, setLocalReviewSection] = useState('');
   const [localMemorizationSection, setLocalMemorizationSection] = useState('');
+  
+  // New Structured State
+  const [localReviewMeta, setLocalReviewMeta] = useState<QuranSegmentData[]>([]);
+  const [localMemorizationMeta, setLocalMemorizationMeta] = useState<QuranSegmentData[]>([]);
+
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   // Sync local state with external section
-  const syncLocalState = useCallback((section: Omit<Section, '_id'>) => {
-    setLocalReviewSection(section.reviewSection);
-    setLocalMemorizationSection(section.memorizationSection);
+  const syncLocalState = useCallback((section: Partial<Section>) => {
+    setLocalReviewSection(section.reviewSection || '');
+    setLocalMemorizationSection(section.memorizationSection || '');
+    setLocalReviewMeta(section.reviewMeta || []);
+    setLocalMemorizationMeta(section.memorizationMeta || []);
   }, []);
 
-  // Debounced input change handler
+  // Handle Meta Changes (Structured Data)
+  const handleMetaChange = useCallback(
+    (
+      type: 'memorizationMeta' | 'reviewMeta', 
+      segments: QuranSegmentData[], 
+      onChange: (e: any) => void
+    ) => {
+      // 1. Update Local State
+      if (type === 'memorizationMeta') {
+        setLocalMemorizationMeta(segments);
+      } else {
+        setLocalReviewMeta(segments);
+      }
+
+      // 2. Trigger Parent Change
+      onChange({ target: { name: type, value: segments } });
+    }, 
+    []
+  );
+
+  // Debounced input change handler (Legacy Text)
   const handleInputChange = useCallback(
     (
       name: string,
@@ -54,7 +82,10 @@ export const useAddSectionModal = () => {
   return {
     localReviewSection,
     localMemorizationSection,
+    localReviewMeta,
+    localMemorizationMeta,
     syncLocalState,
     handleInputChange,
+    handleMetaChange,
   };
 };

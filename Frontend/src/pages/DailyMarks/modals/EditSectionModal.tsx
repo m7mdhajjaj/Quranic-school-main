@@ -1,7 +1,8 @@
-import { Modal, Button, Input, DatePicker } from '@/components/UI';
+import { Modal, Button, DatePicker } from '@/components/UI';
 import { memo } from 'react';
 import type { EditSectionModalProps } from '../types/types';
 import { useEditSectionModal } from '../hooks/modals';
+import QuranSegmentInput from '../components/QuranSegmentInput';
 
 /**
  * Modal for editing an existing section
@@ -14,8 +15,14 @@ const EditSectionModalComponent = ({
   onSubmit,
   onChange,
 }: EditSectionModalProps) => {
-  const { localSection, handleDateChange, handleInputChange, syncWithParent } =
-    useEditSectionModal(editingSection);
+  const { 
+    localSection,
+    localReviewMeta,
+    localMemorizationMeta, 
+    handleDateChange, 
+    handleMetaChange,
+    syncWithParent 
+  } = useEditSectionModal(editingSection);
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +39,7 @@ const EditSectionModalComponent = ({
     <Modal isOpen={isOpen} onClose={onClose} title="تعديل المقطع">
       
 
-      <form onSubmit={handleFormSubmit}>
+      <form onSubmit={handleFormSubmit} className="max-h-[80vh] overflow-y-auto px-1">
         <div className="mb-6">
           <DatePicker
             label="التاريخ"
@@ -42,30 +49,28 @@ const EditSectionModalComponent = ({
           />
         </div>
 
+        {/* Review Section - Upgraded to Structured Input */}
         <div className="mb-6">
-          <Input
-            type="text"
-            id="edit-reviewSection"
-            name="reviewSection"
-            label="مقطع المراجعة"
-            placeholder="مثال: البقرة (1-10)"
-            value={localSection.reviewSection}
-            onChange={handleInputChange}
-            className="border-gray-200 focus:border-emerald-500 focus:ring-emerald-100"
-          />
+           <QuranSegmentInput 
+             label="معلومات المراجعة"
+             colorClass="emerald"
+             segments={localReviewMeta}
+             onChange={(segments) => handleMetaChange('reviewMeta', segments, onChange)}
+             groupName={localSection.group}
+             type="review"
+           />
         </div>
 
+        {/* Memorization Section - Upgraded to Structured Input */}
         <div className="mb-6">
-          <Input
-            type="text"
-            id="edit-memorizationSection"
-            name="memorizationSection"
-            label="مقطع الحفظ"
-            placeholder="مثال: البقرة (11-15)"
-            value={localSection.memorizationSection}
-            onChange={handleInputChange}
-            className="border-gray-200 focus:border-amber-500 focus:ring-amber-100"
-          />
+            <QuranSegmentInput 
+             label="معلومات الحفظ"
+             colorClass="amber"
+             segments={localMemorizationMeta}
+             onChange={(segments) => handleMetaChange('memorizationMeta', segments, onChange)}
+             groupName={localSection.group}
+             type="memorization"
+           />
         </div>
 
         <div className="flex gap-3 mt-8">

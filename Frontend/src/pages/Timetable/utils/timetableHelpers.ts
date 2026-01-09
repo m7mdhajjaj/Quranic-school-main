@@ -199,8 +199,8 @@ export const isValidTime = (timeStr: string): boolean => {
       // صيفي: 12:00 PM - 9:00 PM
       return hour === 12 || (hour >= 1 && hour <= 9);
     } else {
-      // شتوي: 12:00 PM - 8:00 PM
-      return hour === 12 || (hour >= 1 && hour <= 8);
+      // شتوي: 12:00 PM - 9:00 PM
+      return hour === 12 || (hour >= 1 && hour <= 9);
     }
   }
   

@@ -132,9 +132,9 @@ const validateEndHour = (endHour) => {
         };
       }
     } else {
-      // ❄️ شتوي: 11:00 AM - 8:00 PM
+      // ❄️ شتوي: 11:00 AM - 9:00 PM (تمديد لتغطية نهاية الحلقات التي تبدأ 8:00 PM)
       if (isPM) {
-        isValidHour = hour === 12 || (hour >= 1 && hour <= 8);
+        isValidHour = hour === 12 || (hour >= 1 && hour <= 9);
       } else if (isAM) {
         isValidHour = hour === 11;
       }
@@ -143,7 +143,7 @@ const validateEndHour = (endHour) => {
     if (!isValidHour) {
       const seasonMsg = isSummer 
         ? '☀️ التوقيت الصيفي: 12:00 PM - 9:00 PM'
-        : '❄️ التوقيت الشتوي: 11:00 AM - 8:00 PM';
+        : '❄️ التوقيت الشتوي: 11:00 AM - 9:00 PM';
       return {
         isValid: false,
         message: `أوقات العمل الحالية: ${seasonMsg}`
