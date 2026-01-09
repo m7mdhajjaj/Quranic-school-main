@@ -111,43 +111,8 @@ export const SectionsGridView = ({
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-wrap items-center gap-3" dir="rtl">
-              {/* إضافة مقطع */}
-              {onAddSection && (
-                <Button
-                  onClick={onAddSection}
-                  variant="primary"
-                  className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-md hover:shadow-lg transition-all font-semibold w-[140px] h-[42px] flex items-center justify-between px-3"
-                  type="button"
-                  dir="rtl"
-                >
-                  <div className="flex flex-col items-start">
-                    <span className="text-sm leading-tight">إضافة</span>
-                    <span className="text-sm leading-tight">مقطع</span>
-                  </div>
-                  <Plus size={18} />
-                </Button>
-              )}
-              
-              {/* حذف مقاطع */}
-              {onBulkDelete && (
-                <Button
-                  onClick={onBulkDelete}
-                  variant="secondary"
-                  className="border-2 border-emerald-600 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-700 shadow-md hover:shadow-lg transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-emerald-50/30 disabled:hover:border-emerald-400 w-[140px] h-[42px] flex items-center justify-between px-3 bg-gradient-to-br from-emerald-50/80 via-emerald-50/60 to-emerald-50/40"
-                  type="button"
-                  disabled={sections.length === 0}
-                  dir="rtl"
-                >
-                  <div className="flex flex-col items-start">
-                    <span className="text-sm leading-tight">حذف</span>
-                    <span className="text-sm leading-tight">مقاطع</span>
-                  </div>
-                  <Trash2 size={18} className="text-emerald-700" />
-                </Button>
-              )}
-
+            {/* Date Range & Search */}
+            <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
               {/* Date Range Picker */}
               <div className="w-full md:w-auto">
                 <DateRangePicker
@@ -175,16 +140,57 @@ export const SectionsGridView = ({
         </div>
       </Card>
 
-      {/* Status Filter - Always Visible when sections exist */}
-      {sections.length > 0 && (
-        <div className="mb-6">
-          <SectionStatusFilter
-            selectedStatus={selectedStatus}
-            onStatusChange={onStatusChange}
-            counts={statusCounts}
-          />
+      {/* Status Filter & Action Buttons */}
+      <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {/* Filters (Right side in RTL) */}
+        <div>
+          {sections.length > 0 && (
+            <SectionStatusFilter
+              selectedStatus={selectedStatus}
+              onStatusChange={onStatusChange}
+              counts={statusCounts}
+            />
+          )}
         </div>
-      )}
+
+        {/* Action Buttons (Left side in RTL) */}
+        <div className="flex flex-wrap items-center gap-3" dir="rtl">
+          {/* إضافة مقطع */}
+          {onAddSection && (
+            <Button
+              onClick={onAddSection}
+              variant="primary"
+              className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-md hover:shadow-lg transition-all font-semibold w-[140px] h-[40px] flex items-center justify-between px-3"
+              type="button"
+              dir="rtl"
+            >
+              <div className="flex flex-col items-start leading-none gap-0.5">
+                <span className="text-xs opacity-90">إضافة</span>
+                <span className="text-sm font-bold">مقطع جديد</span>
+              </div>
+              <Plus size={20} className="bg-white/20 rounded-full p-0.5" />
+            </Button>
+          )}
+          
+          {/* حذف مقاطع */}
+          {onBulkDelete && (
+            <Button
+              onClick={onBulkDelete}
+              variant="secondary"
+              className="border border-red-200 bg-white text-red-600 hover:bg-red-50 hover:border-red-300 shadow-sm hover:shadow transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed w-[140px] h-[40px] flex items-center justify-between px-3"
+              type="button"
+              disabled={sections.length === 0}
+              dir="rtl"
+            >
+              <div className="flex flex-col items-start leading-none gap-0.5">
+                <span className="text-xs opacity-80">حذف</span>
+                <span className="text-sm font-bold">المقاطع</span>
+              </div>
+              <Trash2 size={18} />
+            </Button>
+          )}
+        </div>
+      </div>
 
       {/* Sections Cards */}
       {loadingMarks ? (
