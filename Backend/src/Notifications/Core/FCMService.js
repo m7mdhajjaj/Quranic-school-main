@@ -80,7 +80,10 @@ class FCMService {
         apns: options.apns,
         webpush: options.webpush,
       };
-      const response = await this.messaging.sendMulticast(message);
+      
+      // Use sendEachForMulticast instead of sendMulticast for newer Firebase Admin SDKs
+      // sendMulticast was deprecated/removed in v12+
+      const response = await this.messaging.sendEachForMulticast(message);
       return response;
     } catch (error) {
       console.error('❌ FCM sendToTokens error:', error.message || error);

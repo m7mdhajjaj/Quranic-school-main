@@ -14,9 +14,7 @@ const MonthlyChampionService = require('./services/ChampionService');
 const AttendanceService = require('./services/DashboardService/GetStudentAbsence');
 const WarningJob = require('./Notifications/Jobs/WarningJob');
 const TokenCleanupJob = require('./Notifications/Jobs/TokenCleanupJob');
-// Initialize FCM service (reads env FIREBASE_SERVICE_ACCOUNT_JSON or FIREBASE_SERVICE_ACCOUNT_PATH)
-// FCMService is now imported from ./Notifications above
-//dasasdsa
+
 // Connect to MongoDB
 connectDB();
 

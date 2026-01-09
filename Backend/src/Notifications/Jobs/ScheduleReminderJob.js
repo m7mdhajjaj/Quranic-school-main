@@ -2,6 +2,7 @@ const cron = require("node-cron");
 const mongoose = require("mongoose");
 const Section = require("../../schema/DailyMark/Section");
 const Teacher = require("../../schema/Teacher");
+const Notification = require("../../schema/Notification");
 
 /**
  * Schedule Reminder Job
@@ -62,33 +63,81 @@ class ScheduleReminderJob {
         if (!section.teacher) continue;
 
         let recipientId = section.teacher;
+        const teacherIdentifier = section.teacher.toString().trim();
 
-        // Ensure teacher is a valid ID since Notification requires ObjectId
-        if (!mongoose.Types.ObjectId.isValid(section.teacher)) {
-             // Try to resolve teacher by name (Legacy support)
-             // Assumes format "First Last"
-             const nameParts = section.teacher.trim().split(/\s+/);
-             if (nameParts.length >= 2) {
+        // 1. Check if it's a valid ObjectId (Direct Link)
+        if (mongoose.Types.ObjectId.isValid(teacherIdentifier)) {
+            recipientId = teacherIdentifier;
+        } 
+        // 2. Check if it's a Numeric ID (TeacherId)
+        else if (!isNaN(teacherIdentifier)) {
+             const teacherDoc = await Teacher.findOne({ teacherId: parseInt(teacherIdentifier) });
+             if (teacherDoc) {
+                 recipientId = teacherDoc._id;
+                 console.log(`✅ Resolved numeric teacher ID '${teacherIdentifier}' to ObjectID: ${recipientId}`);
+             } else {
+                 console.warn(`⚠️ Skipped section ${section._id}: Numeric Teacher ID '${teacherIdentifier}' not found.`);
+                 continue;
+             }
+        }
+        // 3. Try to resolve by Name (Legacy/Fallback)
+        else {
+             const nameParts = teacherIdentifier.split(/\s+/);
+             let teacherDoc = null;
+
+             if (nameParts.length >= 1) {
                  const firstName = nameParts[0];
-                 const lastName = nameParts[nameParts.length - 1]; // Fallback simple matching
+                 const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : "";
                  
-                 // Try to find teacher
-                 const teacherDoc = await Teacher.findOne({
-                     firstName: new RegExp(firstName, 'i'),
-                     lastName: new RegExp(lastName, 'i')
-                 });
+                 // Try to find teacher with flexible matching
+                 const query = {
+                    firstName: new RegExp(firstName, 'i')
+                 };
+                 
+                 if (lastName) {
+                    query.lastName = new RegExp(lastName, 'i');
+                 }
 
+                 teacherDoc = await Teacher.findOne(query);
+
+                 // If not found strictly, try simpler search for single names or broad match
+                 if (!teacherDoc && nameParts.length === 1) {
+                     teacherDoc = await Teacher.findOne({
+                         $or: [
+                             { firstName: new RegExp(firstName, 'i') },
+                             { lastName: new RegExp(firstName, 'i') } // Search as last name too
+                         ]
+                     });
+                 }
+                 
                  if (teacherDoc) {
                      recipientId = teacherDoc._id;
-                     console.log(`✅ Resolved teacher name '${section.teacher}' to ID: ${recipientId}`);
+                     console.log(`✅ Resolved teacher name '${teacherIdentifier}' to ID: ${recipientId}`);
                  } else {
-                     console.warn(`⚠️ Skipped section ${section._id}: Could not resolve Name '${section.teacher}' to a Teacher ID.`);
+                     console.warn(`⚠️ Skipped section ${section._id}: Could not resolve Name '${teacherIdentifier}' to a Teacher ID.`);
                      continue;
                  }
              } else {
-                 console.warn(`⚠️ Skipped section ${section._id}: Teacher '${section.teacher}' is not a valid ObjectId and name parsing failed.`);
+                 console.warn(`⚠️ Skipped section ${section._id}: Teacher '${teacherIdentifier}' is not a valid ObjectId/ID and name parsing failed.`);
                  continue;
              }
+        }
+
+        // Check if a reminder was already sent explicitly for this section TODAY to avoid spam
+        // We define "Today" as since the start of the current day (00:00)
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+
+        const existingNotification = await Notification.findOne({
+            recipient: recipientId,
+            relatedId: section._id,
+            type: "system",
+            createdAt: { $gte: startOfToday }
+        });
+
+        if (existingNotification) {
+            console.log(`ℹ️ Check skipped for section ${section._id}: Reminder already sent today.`);
+            continue;
         }
 
         // Create notification
