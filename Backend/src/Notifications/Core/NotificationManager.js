@@ -1,6 +1,7 @@
 const Notification = require("../../schema/Notification");
 const cron = require("node-cron");
 const PrayerJob = require("../Jobs/PrayerJob");
+const ScheduleReminderJob = require("../Jobs/ScheduleReminderJob");
 const { sendRealTimeNotification } = require("../Core/SocketSender");
 const { sendPushNotification, sendNotificationToDevices } = require("../Core/PushSender");
 const {
@@ -38,6 +39,10 @@ class NotificationManager {
     // Initialize prayer notifications
     this.prayerJob = new PrayerJob(io);
     this.prayerJob.setupPrayerNotifications();
+
+    // Initialize Schedule Reminder Job
+    this.scheduleReminderJob = new ScheduleReminderJob(this);
+    this.scheduleReminderJob.setupScheduleReminders();
     
     console.log("🔔 NotificationManager initialized with dynamic prayer times");
   }
