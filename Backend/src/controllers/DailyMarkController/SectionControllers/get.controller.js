@@ -21,7 +21,10 @@ exports.getSections = async (req, res) => {
       filter.teacher = teacher;
     }
 
-    const sections = await Section.find(filter).sort({ date: -1 });
+    const sections = await Section.find(filter)
+      .sort({ date: -1 })
+      .populate('timetableId', 'day startHour endHour sessionType');
+      
     sendSuccess(res, sections, "تم جلب المقاطع بنجاح");
   } catch (error) {
     sendError(res, error.message, 500, error);
@@ -33,7 +36,8 @@ exports.getSections = async (req, res) => {
  */
 exports.getSection = async (req, res) => {
   try {
-    const section = await Section.findById(req.params.id);
+    const section = await Section.findById(req.params.id)
+      .populate('timetableId', 'day startHour endHour sessionType');
     if (!section) {
       return sendNotFound(res, "المقطع");
     }

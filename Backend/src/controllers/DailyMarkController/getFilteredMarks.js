@@ -259,6 +259,7 @@ exports.getFilteredSections = async (req, res) => {
     // Find sections
     const sections = await Section.find(sectionFilter)
       .populate("teacher", "firstName lastName")
+      .populate("timetableId", "day startHour endHour sessionType")
       .sort({ date: -1 })
       .lean();
 
@@ -273,7 +274,9 @@ exports.getFilteredSections = async (req, res) => {
           try {
             await updateSectionMarksStatus(section._id.toString(), section.group || userGroup);
             // Fetch updated section
-            const updatedSection = await Section.findById(section._id).lean();
+            const updatedSection = await Section.findById(section._id)
+              .populate("timetableId", "day startHour endHour sessionType")
+              .lean();
             return {
               ...updatedSection,
               marksStatus: updatedSection.marksStatus || "not_started",

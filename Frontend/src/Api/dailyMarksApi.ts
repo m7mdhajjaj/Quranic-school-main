@@ -67,6 +67,13 @@ export interface Section {
   };
   createdAt?: string;
   updatedAt?: string;
+  hasSchedule?: boolean;
+  timetableId?: string | {
+    day: string;
+    startHour: string;
+    endHour: string;
+    sessionType: string;
+  };
 }
 
 export interface Mark {

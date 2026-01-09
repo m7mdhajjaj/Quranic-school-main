@@ -179,8 +179,23 @@ const SectionItemComponent = ({
           </div>
         </div>
         
-        {/* Schedule Wrapper Warning */}
-        {section.hasSchedule === false && (
+        {/* Scheduled Time Info */}
+        {section.timetableId && typeof section.timetableId !== 'string' && (
+          <div className="mb-4 mt-2 bg-blue-50 border border-blue-200 rounded-lg p-3 relative z-20" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2 text-blue-800">
+               <Clock size={16} className="text-blue-600" />
+               <span className="text-xs font-bold">موعد الحلقة:</span>
+            </div>
+            <div className="flex items-center gap-2 mt-1 text-sm text-blue-700 font-medium mr-6">
+                <span>{(section.timetableId as any).day}</span>
+                <span className="text-blue-300">|</span>
+                <span dir="ltr" className="font-mono text-xs">{(section.timetableId as any).startHour} - {(section.timetableId as any).endHour}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Schedule Wrapper Warning - Show if NO timetableId (regardless of hasSchedule flag to be safe) */}
+        {(!section.timetableId) && (
            <div className="mb-4 mt-2 bg-rose-50 border border-rose-200 rounded-lg p-3 relative z-20" onClick={(e) => e.stopPropagation()}>
              <div className="flex items-start gap-2 mb-2">
                <AlertTriangle className="text-rose-500 shrink-0 mt-0.5" size={16} />

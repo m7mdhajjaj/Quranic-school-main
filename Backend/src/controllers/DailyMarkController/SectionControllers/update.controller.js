@@ -27,7 +27,7 @@ exports.updateSection = async (req, res) => {
       req.params.id,
       updateData,
       { new: true }
-    );
+    ).populate('timetableId', 'day startHour endHour sessionType');
 
     // ✅ Sync date with TimeTable if linked
     // إذا تغير التاريخ وكان هناك موعد مرتبط، نحدّث تاريخ الموعد أيضاً ليظل متطابقاً

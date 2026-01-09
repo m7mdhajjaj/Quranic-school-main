@@ -15,6 +15,12 @@ export interface Section {
   teacher?: string;
   hasSchedule?: boolean;
   scheduleStatus?: 'scheduled' | 'needs_schedule';
+  timetableId?: {
+    day: string;
+    startHour: string;
+    endHour: string;
+    sessionType: string;
+  };
   createdAt?: string;
   updatedAt?: string;
 }
