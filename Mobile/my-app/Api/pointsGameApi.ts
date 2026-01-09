@@ -1,52 +1,43 @@
 // Api/pointsGameApi.ts
 import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL } from "../config/config";
+import type {
+  Badge,
+  BadgeProgress,
+  RankingStudent,
+  StudentStats,
+  PrayerStatus,
+  Nawafel,
+  Adhkar,
+  Halaqah,
+} from "@/types/pointsGame.types";
 
 const POINTS_GAME_URL = `${API_URL}/points-game`;
 
-// الحصول على التوكن من localStorage
-const getToken = () => {
-  return localStorage.getItem("token");
+// الحصول على التوكن من AsyncStorage
+const getToken = async () => {
+  return await AsyncStorage.getItem("token");
 };
 
 // إعداد headers مع التوكن
-const getHeaders = () => {
+const getHeaders = async () => {
+  const token = await getToken();
   return {
-    Authorization: `Bearer ${getToken()}`,
+    Authorization: `Bearer ${token}`,
     "Content-Type": "application/json",
   };
 };
 
-// Types
-export interface Prayers {
-  fajr: "mosque" | "home" | "late" | "missed";
-  dhuhr: "mosque" | "home" | "late" | "missed";
-  asr: "mosque" | "home" | "late" | "missed";
-  maghrib: "mosque" | "home" | "late" | "missed";
-  isha: "mosque" | "home" | "late" | "missed";
-}
-
-export interface Nawafel {
-  duha: boolean;
-  qiyamAlayl: boolean;
-  rawatib: boolean;
-  witr: boolean;
-}
-
-export interface Adhkar {
-  morning: boolean;
-  evening: boolean;
-  sleep: boolean;
-  afterPrayer: boolean;
-}
-
-export interface Halaqah {
-  memorizedMinutes: number;
-  reviewedMinutes: number;
-}
-
+// API Request/Response Types
 export interface DailyPointsData {
-  prayers: Prayers;
+  prayers: {
+    fajr: PrayerStatus;
+    dhuhr: PrayerStatus;
+    asr: PrayerStatus;
+    maghrib: PrayerStatus;
+    isha: PrayerStatus;
+  };
   nawafel: Nawafel;
   parentRespect: number;
   schoolAttendance: boolean;
@@ -56,46 +47,10 @@ export interface DailyPointsData {
   date?: string; // اختياري - بصيغة YYYY-MM-DD
 }
 
-export interface Badge {
-  badgeId: string;
-  name: string;
-  icon: string;
-  description: string;
-  requirement: string;
-  count: number;
-  firstEarnedAt: string;
-  lastEarnedAt: string;
-}
-
-export interface BadgeProgress {
-  mosquePrayerStreak: number;
-  adhkarStreak: number;
-  parentRespectPerfect: number;
-  schoolAttendanceStreak: number;
-  overallStreak: number;
-  sunanStreak: number;
-  mosqueTwoPrayersWeek: number;
-}
-
 export interface StudentBadges {
   badgeProgress: BadgeProgress;
   earnedBadges: Badge[];
   totalBadgeRepeats: number;
-}
-
-export interface RankingStudent {
-  studentId: string;
-  name: string;
-  points: number;
-  badgesCount: number;
-  totalBadgeRepeats: number;
-  rank: number;
-}
-
-export interface StudentStats {
-  weeklyPoints: number;
-  monthlyPoints: number;
-  currentRank: number;
 }
 
 // API Functions
@@ -105,8 +60,9 @@ export interface StudentStats {
  */
 export const saveDailyPoints = async (data: DailyPointsData): Promise<any> => {
   try {
+    const headers = await getHeaders();
     const response = await axios.post(`${POINTS_GAME_URL}/daily`, data, {
-      headers: getHeaders(),
+      headers,
     });
     return response.data;
   } catch (error: any) {
@@ -120,11 +76,12 @@ export const saveDailyPoints = async (data: DailyPointsData): Promise<any> => {
  */
 export const getDailyPoints = async (date?: string): Promise<any> => {
   try {
+    const headers = await getHeaders();
     const url = date
       ? `${POINTS_GAME_URL}/daily/${date}`
       : `${POINTS_GAME_URL}/daily`;
     const response = await axios.get(url, {
-      headers: getHeaders(),
+      headers,
     });
     return response.data;
   } catch (error: any) {
@@ -138,8 +95,9 @@ export const getDailyPoints = async (date?: string): Promise<any> => {
  */
 export const getStudentBadges = async (): Promise<StudentBadges> => {
   try {
+    const headers = await getHeaders();
     const response = await axios.get(`${POINTS_GAME_URL}/badges`, {
-      headers: getHeaders(),
+      headers,
     });
     return response.data.data;
   } catch (error: any) {
@@ -153,8 +111,9 @@ export const getStudentBadges = async (): Promise<StudentBadges> => {
  */
 export const getPointsRankings = async (): Promise<RankingStudent[]> => {
   try {
+    const headers = await getHeaders();
     const response = await axios.get(`${POINTS_GAME_URL}/rankings/points`, {
-      headers: getHeaders(),
+      headers,
     });
     return response.data.data;
   } catch (error: any) {
@@ -171,8 +130,9 @@ export const getPointsRankings = async (): Promise<RankingStudent[]> => {
  */
 export const getBadgesRankings = async (): Promise<RankingStudent[]> => {
   try {
+    const headers = await getHeaders();
     const response = await axios.get(`${POINTS_GAME_URL}/rankings/badges`, {
-      headers: getHeaders(),
+      headers,
     });
     return response.data.data;
   } catch (error: any) {
@@ -189,13 +149,81 @@ export const getBadgesRankings = async (): Promise<RankingStudent[]> => {
  */
 export const getStudentStats = async (): Promise<StudentStats> => {
   try {
+    const headers = await getHeaders();
     const response = await axios.get(`${POINTS_GAME_URL}/stats`, {
-      headers: getHeaders(),
+      headers,
     });
     return response.data.data;
   } catch (error: any) {
     console.error(
       "خطأ في جلب الإحصائيات:",
+      error.response?.data || error.message
+    );
+    throw error.response?.data || error;
+  }
+};
+
+/**
+ * جلب الحلقات الخاصة بالمعلم
+ */
+export const getTeacherGroups = async (): Promise<any[]> => {
+  try {
+    const headers = await getHeaders();
+    const response = await axios.get(`${POINTS_GAME_URL}/teacher-groups`, {
+      headers,
+    });
+    return response.data.data || [];
+  } catch (error: any) {
+    console.error(
+      "خطأ في جلب حلقات المعلم:",
+      error.response?.data || error.message
+    );
+    return [];
+  }
+};
+
+/**
+ * جلب ترتيب الطلاب حسب النقاط لحلقة معينة (للمعلمين)
+ */
+export const getPointsRankingsByGroup = async (
+  groupId: string
+): Promise<RankingStudent[]> => {
+  try {
+    const headers = await getHeaders();
+    const response = await axios.get(
+      `${POINTS_GAME_URL}/rankings/points?groupId=${groupId}`,
+      {
+        headers,
+      }
+    );
+    return response.data.data;
+  } catch (error: any) {
+    console.error(
+      "خطأ في جلب ترتيب النقاط للحلقة:",
+      error.response?.data || error.message
+    );
+    throw error.response?.data || error;
+  }
+};
+
+/**
+ * جلب ترتيب الطلاب حسب الشارات لحلقة معينة (للمعلمين)
+ */
+export const getBadgesRankingsByGroup = async (
+  groupId: string
+): Promise<RankingStudent[]> => {
+  try {
+    const headers = await getHeaders();
+    const response = await axios.get(
+      `${POINTS_GAME_URL}/rankings/badges?groupId=${groupId}`,
+      {
+        headers,
+      }
+    );
+    return response.data.data;
+  } catch (error: any) {
+    console.error(
+      "خطأ في جلب ترتيب الشارات للحلقة:",
       error.response?.data || error.message
     );
     throw error.response?.data || error;
@@ -209,4 +237,7 @@ export default {
   getPointsRankings,
   getBadgesRankings,
   getStudentStats,
+  getTeacherGroups,
+  getPointsRankingsByGroup,
+  getBadgesRankingsByGroup,
 };
