@@ -1,4 +1,4 @@
-const catchAsync = require('../../utils/catchAsync');
+// const catchAsync = require('../../utils/catchAsync');
 const OpenAI = require('openai');
 const axios = require('axios');
 
@@ -170,7 +170,7 @@ ${Object.entries(surahNames).map(([name, num]) => `${name}: ${num}`).join(', ')}
     }
 }
 
-exports.chat = catchAsync(async (req, res, next) => {
+exports.chat = async (req, res, next) => {
     const { message } = req.body;
 
     if (!message) {
@@ -312,4 +312,4 @@ ${retrievedContext}
             error: errorMessage 
         });
     }
-});
+};
