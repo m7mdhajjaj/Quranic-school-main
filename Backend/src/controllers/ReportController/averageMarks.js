@@ -9,13 +9,21 @@ const Group = require("../../schema/Group");
 // Get average marks for all students (monthly/yearly) - للمعلم
 exports.getAverageMarks = async (req, res) => {
   try {
-    const { month, year, groupName } = req.query;
+    const { month, year, groupName, groupId } = req.query;
     const userRole = req.user?.role;
     const userId = req.user?._id || req.user?.id;
 
     let targetGroupName = groupName;
 
-    // إذا كان معلم ولم يحدد groupName، جيب حلقته الخاصة
+    // إذا تم تمرير groupId، استخدمه للبحث عن اسم الحلقة
+    if (groupId && !targetGroupName) {
+      const group = await Group.findById(groupId);
+      if (group) {
+        targetGroupName = group.name;
+      }
+    }
+
+    // إذا كان معلم ولم يحدد groupName أو groupId، جيب أول حلقة له
     if (!targetGroupName && userRole === "teacher") {
       const teacher = await Teacher.findById(userId);
 

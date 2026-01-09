@@ -5,6 +5,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { getStudentMarks, getAverageMarks } from "@/Api/reportApi";
 import { getProfile } from "@/Api/profileApi";
+import { getTeacherGroupsForPointsGame } from "@/Api/pointsGameApi";
+
+interface Group {
+  _id: string;
+  name: string;
+  totalStudents: number;
+}
 
 interface ChartData {
   labels: string[];
@@ -21,6 +28,9 @@ interface UseReportDataReturn {
   setSelectedMonth: (month: number | null) => void;
   setSelectedYear: (year: number | null) => void;
   loadChartData: () => Promise<void>;
+  groups: Group[];
+  selectedGroupId: string;
+  setSelectedGroupId: (groupId: string) => void;
 }
 
 export const useReportData = (): UseReportDataReturn => {
@@ -33,6 +43,21 @@ export const useReportData = (): UseReportDataReturn => {
     data: [],
   });
   const [userId, setUserId] = useState<string>("");
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState<string>("");
+
+  // Load teacher groups
+  const loadTeacherGroups = useCallback(async () => {
+    try {
+      const groupsData = await getTeacherGroupsForPointsGame();
+      setGroups(groupsData || []);
+      if (groupsData && groupsData.length > 0) {
+        setSelectedGroupId(groupsData[0]._id);
+      }
+    } catch (error) {
+      console.error("خطأ في تحميل حلقات المعلم:", error);
+    }
+  }, []);
 
   // Load chart data based on filters
   const loadChartData = useCallback(
@@ -45,6 +70,8 @@ export const useReportData = (): UseReportDataReturn => {
           month: selectedMonth || undefined,
           year: selectedYear || undefined,
           ...(currentRole === "student" && { studentId: currentUserId }),
+          ...(currentRole === "teacher" &&
+            selectedGroupId && { groupId: selectedGroupId }),
         };
 
         const data =
@@ -56,7 +83,7 @@ export const useReportData = (): UseReportDataReturn => {
         console.error("خطأ في تحميل بيانات الرسم البياني:", error);
       }
     },
-    [selectedMonth, selectedYear, userRole, userId]
+    [selectedMonth, selectedYear, userRole, userId, selectedGroupId]
   );
 
   // Initialize component and load user data
@@ -67,6 +94,12 @@ export const useReportData = (): UseReportDataReturn => {
         const profile = await getProfile();
         setUserRole(profile.role || "teacher");
         setUserId(profile._id || "");
+
+        // Load teacher groups if teacher
+        if (profile.role === "teacher") {
+          await loadTeacherGroups();
+        }
+
         await loadChartData(profile.role, profile._id);
       } catch (error) {
         console.error("خطأ في تحميل بيانات المستخدم:", error);
@@ -79,12 +112,12 @@ export const useReportData = (): UseReportDataReturn => {
     initializeComponent();
   }, []);
 
-  // Reload data when filters change
+  // Reload data when filters or selectedGroupId change
   useEffect(() => {
     if (!loading && userId) {
       loadChartData();
     }
-  }, [selectedMonth, selectedYear, userRole, userId, loading, loadChartData]);
+  }, [selectedMonth, selectedYear, selectedGroupId]);
 
   return {
     loading,
@@ -96,5 +129,8 @@ export const useReportData = (): UseReportDataReturn => {
     setSelectedMonth,
     setSelectedYear,
     loadChartData,
+    groups,
+    selectedGroupId,
+    setSelectedGroupId,
   };
 };
