@@ -68,9 +68,17 @@ exports.getLastSegment = async (req, res) => {
     
     // إذا لم يوجد سجل سابق (مثلاً أول مراجعة)، نحاول جلب حد الحفظ فقط إذا كان الطلب للمراجعة
     let maxMemorized = 0;
+    
+    // NEW: Suggested End (Strict Range Matching)
+    let suggestedEnd = null;
+    const startPoint = result ? result.nextStart : 1;
+
     if (type === 'review') {
         const memProgress = await sequenceService.getLastProgress(group, surahNum, 'memorization');
         maxMemorized = memProgress ? memProgress.lastEnd : 0;
+
+        // Try to find the Exact Memorization Segment that starts at 'startPoint'
+        suggestedEnd = await sequenceService.getMatchingMemorizationEnd(group, surahNum, startPoint);
     }
 
     if (!result) {
@@ -78,7 +86,8 @@ exports.getLastSegment = async (req, res) => {
       // هذا يسمح للفرونت إند بمعرفة أن السجل فارغ لكن هناك حد للحفظ
       return sendSuccess(res, {
           nextStart: 1, // Start from 1 if no history
-          maxMemorized // Return memorization limit for first-time review
+          maxMemorized, // Return memorization limit for first-time review
+          suggestedEnd // Return strictly matched end if found
       }, "No previous segment found (First time)");
     }
 
@@ -86,7 +95,8 @@ exports.getLastSegment = async (req, res) => {
         lastSegment: { ayahEnd: result.lastEnd, status: result.lastStatus }, // Compatibility structure
         nextStart: result.nextStart,
         lastDate: result.lastDate,
-        maxMemorized: result.maxMemorized || maxMemorized // Include limit in response
+        maxMemorized: result.maxMemorized || maxMemorized, // Include limit in response
+        suggestedEnd // Return strictly matched end
     }, "Last segment found");
     
   } catch (error) {

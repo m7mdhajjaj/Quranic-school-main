@@ -124,7 +124,8 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
              if (suggestion) {
                  const nextStart = suggestion.nextStart || 1;
                  const maxMemorized = (suggestion as any).maxMemorized !== undefined ? (suggestion as any).maxMemorized : 9999;
-                 
+                 const serverSuggestedEnd = (suggestion as any).suggestedEnd; // NEW from Backend
+
                  setExpectedStart(nextStart);
 
                  // Special validation for Review: Cannot exceed memorization history
@@ -150,9 +151,9 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
                          // Case: Review caught up to Memorization
                          onChange([{
                              ...newSegment, 
-                             ayahStart: undefined,
+                             ayahStart: undefined, // Clear start to avoid confusion
                              ayahEnd: undefined,
-                             error: `تم مراجعة كل ما تم حفظه من سورة ${fullSurahData?.name} (الحد: ${maxMemorized})`
+                             error: `تم مراجعة كل ما تم حفظه من سورة ${fullSurahData?.name} (الحد: ${maxMemorized})، يمكنك البدء من جديد (من 1).`
                          }]);
                          return;
                      }
@@ -175,20 +176,19 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
                          suggestedEnd = nextStart; // Or leave undefined
                      }
                  } else {
-                     // Memorization: Suggest next chunk? Or full remaining?
-                     // Usually full remaining is annoying if user only memorizes 5 ayahs.
-                     // Let's standardise to 5-10 verses for convenience?
-                     // User didn't specify for mem, so let's stick to old logic (full surah) 
-                     // OR maybe 10 verses? 
-                     // Old code was: ayahEnd: fullSurahData.ayahCount
-                     // Let's keep it full surah for memorization unless specified otherwise
+                     // Memorization: Default to full surah
                  }
 
                  // Apply Suggestion
+                 // STRICT MODE REVISION 2.0:
+                 // Use the server-provided 'suggestedEnd' which matches the memorization history EXACTLY.
+                 
                  const smartSegment = {
                      ...newSegment,
                      ayahStart: nextStart,
-                     ayahEnd: suggestedEnd
+                     // Use strict suggestion from server for Review, or fallback to logic for Memorandum
+                     ayahEnd: (type === 'review' && serverSuggestedEnd) ? serverSuggestedEnd : 
+                              (type === 'memorization') ? suggestedEnd : undefined
                  };
                  onChange([smartSegment]);
              } else {

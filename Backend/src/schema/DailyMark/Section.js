@@ -29,7 +29,7 @@ const quranRangeSchema = new mongoose.Schema(
     
     // Validation Context
     surahAyahCount: { type: Number, min: 1 }, // Total ayahs in this Surah (for validation)
-    surahNameUthmani: { type: String, trim: true },
+    // surahNameUthmani removed as unused
 
     // Completion Tracking
     status: {

@@ -113,38 +113,46 @@ export const sectionValidationSchema = yup.object<SectionFormData>({
   }
 ).test(
   'consistency-check',
-  'خطأ في اتساق البيانات',
+  'خطأ في اتساق البيانات المنطقي',
   function(value: any) {
+    // ==========================================================
+    // Strict Consistency Check (Frontend Mirror of Backend Rules)
+    // ==========================================================
     if (!value?.memorizationMeta || !value?.reviewMeta) return true;
     
-    const mems = value.memorizationMeta as QuranSegmentData[];
-    const revs = value.reviewMeta as QuranSegmentData[];
+    // Explicitly casting to avoid TypeErrors
+    const mems = (value.memorizationMeta || []) as QuranSegmentData[];
+    const revs = (value.reviewMeta || []) as QuranSegmentData[];
+
+    if (mems.length === 0 || revs.length === 0) return true;
 
     for (const rev of revs) {
-       // Find matching memorization
+       // Find memorization for the SAME Surah in THIS request
+       // (This mimics the "Cross-Consistency" check in Backend)
        const matchingMems = mems.filter(m => m.surahNumber === rev.surahNumber);
        
        for (const mem of matchingMems) {
-
-          // Rule 1: Cannot review if memorization starts at 1
+          
+          // Rule 1: No Review if Memorization Starts at 1
+          // (Can't review a Surah you just started)
           if (mem.ayahStart === 1) {
              return this.createError({
                 path: 'reviewMeta',
-                message: `لا يمكن المراجعة في سورة ${rev.surahNameCanonical || ''} لأنك بدأت حفظها للتو (من الآية 1)`
+                message: `🚫 غير منطقي: لا يمكن مراجعة سورة ${rev.surahNameCanonical || ''} لأنك بدأت حفظها الآن (من الآية 1).`
              });
           }
 
-          // Rule 2: Review must be strictly before memorization
-          // Ensure values exist
+          // Rule 2: Strict Temporal Separation (Review must be strictly BEFORE New Memorization)
+          // Review is for the PAST. Memorization is for the FUTURE.
+          // They cannot overlap.
           if (rev.ayahEnd !== undefined && mem.ayahStart !== undefined) {
              if (rev.ayahEnd >= mem.ayahStart) {
                 return this.createError({
                   path: 'reviewMeta',
-                  message: `تداخل النطاق: المراجعة (${rev.ayahStart}-${rev.ayahEnd}) تتداخل مع الحفظ (${mem.ayahStart}-${mem.ayahEnd || '?'}). أقصى آية للمراجعة هي ${mem.ayahStart - 1}`
+                  message: `🚫 تداخل زمني: المراجعة (${rev.ayahStart}-${rev.ayahEnd}) تتداخل مع نطاق الحفظ الجديد (${mem.ayahStart}-${mem.ayahEnd}). المراجعة تكون للمحفوظات القديمة فقط. (حد المراجعة الأقصى: ${mem.ayahStart - 1})`
                 });
              }
           }
-
        }
     }
 
