@@ -102,6 +102,7 @@ export const getStudentMarks = async (params?: {
 export const getAverageMarks = async (params?: {
   month?: number;
   year?: number;
+  groupId?: string;
 }): Promise<{
   labels: string[];
   data: number[];
