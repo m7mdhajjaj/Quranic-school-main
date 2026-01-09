@@ -4,7 +4,7 @@
 
 const MonthlyPoints = require("../../schema/MonthlyPoints");
 const DailyPoints = require("../../schema/DailyPoints");
-const { getCurrentMonth, getMonthRange } = require("../../utils/helpers/dateHelpers");
+const { getCurrentMonth, getMonthRange } = require("../../utils/helpers/pointsGameDateUtils");
 
 /**
  * تحديث نقاط الشهر الحالي للطالب

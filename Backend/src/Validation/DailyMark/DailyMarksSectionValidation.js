@@ -1,6 +1,6 @@
 // Validation/DailyMarksSectionValidation.js
 
-const { parseSegment } = require("../../utils/Quran/SegmentParser");
+const { parseSegment } = require("../../utils/Quran/dailyMarkSegmentParser");
 
 /**
  * Daily Marks Section validation middleware

@@ -11,7 +11,7 @@ const DailyPoints = require("../../schema/DailyPoints");
 const {
   getCurrentMonth,
   getMonthName,
-} = require("../../utils/helpers/dateHelpers");
+} = require("../../utils/helpers/pointsGameDateUtils");
 
 /**
  * @desc    ترتيب الطلاب حسب النقاط (الشهر الحالي فقط)
