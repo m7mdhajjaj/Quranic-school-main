@@ -131,47 +131,57 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
                  if (type === 'review') {
                      setReviewLimit(maxMemorized);
 
-                     // CASE 1: Surah not memorized at all
                      if (maxMemorized === 0) {
-                        const errorSegment = {
+                         // Case: Surah never memorized
+                         // IMPORTANT: Pass a special "error" property that will be picked up by useSectionValidation
+                         // We are using API types, so we might need to cast or extended type
+                         // The parent needs to see this error.
+                         
+                         // Clear the start/end to force user to address it, and set error
+                         const errorSegment = {
                              ...newSegment,
+                             ayahStart: undefined, // Clear start to prevent invalid assumption
+                             ayahEnd: undefined,
+                             error: `لم يتم البدء بحفظ سورة ${fullSurahData?.name} من قبل، لا يمكن مراجعتها.`
+                         };
+                         onChange([errorSegment]);
+                         return; // Stop further suggestion logic
+                     } else if (nextStart > maxMemorized) {
+                         // Case: Review caught up to Memorization
+                         onChange([{
+                             ...newSegment, 
                              ayahStart: undefined,
                              ayahEnd: undefined,
-                             error: `لم يتم البدء بحفظ سورة ${fullSurahData?.name} من قبل، لذا لا يمكن مراجعتها.`
-                         };
-                         // Force update to clear inputs
-                         onChange([errorSegment]);
-                         return; 
-                     } 
-                     
-                     // CASE 2: No more verses to review (Review >= Memorization)
-                     /* 
-                        Relaxed logic: We allow overlap now, so "nextStart > maxMemorized" is less critical 
-                        unless strictly enforced. But normally, if we finished reviewing up to maxMemorized, 
-                        the next suggestion would naturally be > maxMemorized.
-                     */
-                     if (nextStart > maxMemorized) {
-                          // Suggest starting from 1 again? Or show "Done"?
-                          // For now, let's just default to start at 1 if they finished reviewing everything
-                          // This supports cyclical review
-                          const cyclicStart = 1;
-                          const cyclicEnd = Math.min(maxMemorized, 5); 
-                          onChange([{
-                              ...newSegment,
-                              ayahStart: cyclicStart,
-                              ayahEnd: cyclicEnd
-                          }]);
-                          return;
+                             error: `تم مراجعة كل ما تم حفظه من سورة ${fullSurahData?.name} (الحد: ${maxMemorized})`
+                         }]);
+                         return;
                      }
                  }
 
-                 // Determine Suggested End for REVIEW
+                 // Determine Suggested End
+                 // For Review: Suggest a chunk of 5 verses or up to maxMemorized
+                 // For Memorization: Default to full surah or chunk
                  let suggestedEnd = fullSurahData ? fullSurahData.ayahCount : 999;
+
                  if (type === 'review') {
-                     const chunkSize = 10; // Default chunk
+                     // Default chunk = 5 verses (user example 1-5, 6-10)
+                     const chunkSize = 5; 
                      const potentialEnd = nextStart + chunkSize - 1;
                      // Cap at max memorized
                      suggestedEnd = Math.min(potentialEnd, maxMemorized);
+                     
+                     // If nextStart > maxMemorized, we have nothing to review
+                     if (nextStart > maxMemorized) {
+                         suggestedEnd = nextStart; // Or leave undefined
+                     }
+                 } else {
+                     // Memorization: Suggest next chunk? Or full remaining?
+                     // Usually full remaining is annoying if user only memorizes 5 ayahs.
+                     // Let's standardise to 5-10 verses for convenience?
+                     // User didn't specify for mem, so let's stick to old logic (full surah) 
+                     // OR maybe 10 verses? 
+                     // Old code was: ayahEnd: fullSurahData.ayahCount
+                     // Let's keep it full surah for memorization unless specified otherwise
                  }
 
                  // Apply Suggestion
@@ -183,9 +193,6 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
                  onChange([smartSegment]);
              } else {
                  setExpectedStart(1);
-                 // If no history found, and it's review, assume Max=0?
-                 // No, if no history, maybe they memorized it long ago or offline.
-                 // We only enforce maxMemorized if the API explicitly returns it.
              }
           }).catch(err => console.log('Smart suggestion failed', err));
       }
@@ -416,20 +423,29 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
       
       {/* Review Limit Warning */}
       {type === 'review' && reviewLimit !== null && (
-          <div className="mt-2 text-center">
+          <div className="mt-2 text-center text-xs">
               {reviewLimit === 0 ? (
-                  <p className="text-xs font-bold text-red-500 bg-red-50 py-1 px-3 rounded-lg inline-block border border-red-100">
-                      ⚠️ لم يتم حفظ هذه السورة بعد! لا يمكنك إضافة مراجعة.
-                  </p>
+                  <span className="font-bold text-red-500 bg-red-50 py-1 px-3 rounded-lg inline-block border border-red-100">
+                      ⚠️ لم يتم حفظ هذه السورة بعد!
+                  </span>
               ) : (segment.ayahStart && segment.ayahStart > reviewLimit) ? (
-                  <p className="text-xs font-bold text-emerald-600 bg-emerald-50 py-1 px-3 rounded-lg inline-block border border-emerald-100">
-                      🎉 ما شاء الله! لقد أتممت مراجعة كل ما تم حفظه من هذه السورة (حتى آية {reviewLimit}).
-                  </p>
+                  <span className="font-bold text-emerald-600 bg-emerald-50 py-1 px-3 rounded-lg inline-block border border-emerald-100">
+                      🎉 تم مراجعة كل الحفظ (حتى آية {reviewLimit})
+                  </span>
               ) : (
-                  <p className="text-[10px] text-gray-400">
-                      * أقصى حد للمراجعة هو آية {reviewLimit} (حسب الحفظ)
-                  </p>
+                  <span className="text-gray-400">
+                      * أقصى حد للمراجعة هو آية {reviewLimit}
+                  </span>
               )}
+          </div>
+      )}
+
+      {/* Memorization Progress Hint */}
+      {type === 'memorization' && expectedStart && expectedStart > 1 && (
+          <div className="mt-2 text-center text-xs">
+              <span className="text-amber-600 bg-amber-50 py-1 px-3 rounded-lg inline-block border border-amber-100 font-medium">
+                 📍 آخر توقف كان عند الآية {expectedStart - 1}، ابدأ من {expectedStart}
+              </span>
           </div>
       )}
       

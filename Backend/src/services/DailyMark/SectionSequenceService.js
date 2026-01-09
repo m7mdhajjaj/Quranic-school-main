@@ -70,6 +70,33 @@ class SectionSequenceService {
   }
 
   /**
+   * البحث عن مقطع يسبق البداية المطلوبة مباشرة (لضمان الاتصال)
+   */
+  async getPredecessor(groupId, surahNumber, type, requiredEnd, beforeDate = null, excludeSectionId = null) {
+      const metaField = type === 'memorization' ? 'memorizationMeta' : 'reviewMeta';
+      const query = {
+          group: groupId,
+          [`${metaField}.surahNumber`]: surahNumber,
+          [`${metaField}`]: {
+              $elemMatch: {
+                  surahNumber: surahNumber,
+                  ayahEnd: requiredEnd
+              }
+          }
+      };
+
+      if (excludeSectionId) {
+          query._id = { $ne: excludeSectionId };
+      }
+      
+      if (beforeDate) {
+          query.date = { $lte: beforeDate };
+      }
+
+      return await Section.findOne(query).select('_id');
+  }
+
+  /**
    * التحقق من صحة التسلسل للمقاطع الجديدة
    * @param {Array} newSegments 
    * @param {string} groupId 
@@ -88,7 +115,7 @@ class SectionSequenceService {
     const newDateStr = newSectionDate ? new Date(newSectionDate).toLocaleDateString('en-CA') : null;
 
     for (const seg of newSegments) {
-      // ... (Overlap check remains same)
+      // 1. Overlap Check (Strict for Memorization, Same-Day for Review)
       const overlapQuery = {
         group: groupId,
         [`${metaField}.surahNumber`]: seg.surahNumber,
@@ -162,13 +189,13 @@ class SectionSequenceService {
       }
 
       // 2. Sequence Gap Check
-      // Pass excludeSectionId mostly for update scenarios
       const lastProgress = await this.getLastProgress(groupId, seg.surahNumber, type, newSectionDate, excludeSectionId);
       
       if (lastProgress) {
           if (seg.ayahStart !== lastProgress.nextStart) {
               const dateStr = new Date(lastProgress.lastDate).toLocaleDateString('ar-EG');
               
+              // Case 1: Gap detected (Starting after the known end)
               if (seg.ayahStart > lastProgress.nextStart) {
                    return {
                       isValid: false,
@@ -176,19 +203,40 @@ class SectionSequenceService {
                    };
               }
               
+              // Case 2: Overlap/Restart detected (Starting BEFORE the known end)
               if (seg.ayahStart < lastProgress.nextStart) {
-                   return {
-                      isValid: false,
-                      message: `🚫 تسلسل ${typeLabel} غير صحيح: يجب إكمال من الآية ${lastProgress.nextStart} (آخر توقف بتاريخ ${dateStr}).`
-                   };
+                   // --- NEW LOGIC: Check if this "Start" connects to ANY valid predecessor ---
+                   // Check database for a segment that specifically ends at (start - 1)
+                   const predecessor = await Section.findOne({
+                       group: groupId,
+                       [`${metaField}.surahNumber`]: seg.surahNumber,
+                       [`${metaField}.ayahEnd`]: seg.ayahStart - 1,
+                       _id: excludeSectionId ? { $ne: excludeSectionId } : { $exists: true }
+                   });
+
+                   const hasLocalPredecessor = newSegments.some(s => s.surahNumber === seg.surahNumber && s.ayahEnd === seg.ayahStart - 1);
+                   
+                   const isValidConnection = (seg.ayahStart === 1) || !!predecessor || hasLocalPredecessor;
+
+                   if (!isValidConnection) {
+                       return {
+                          isValid: false,
+                          message: `🚫 تسلسل ${typeLabel} غير صحيح: (الآية ${seg.ayahStart}) يجب أن تكون متصلة بآخر حفظ وصل عند (الآية ${seg.ayahStart - 1}). لم يتم العثور على المقطع السابق.`
+                       };
+                   }
+                   // If valid connection found, we ALLOW it
               }
           }
       } else {
+          // If no last progress, it MUST start at 1 OR connect to a local sibling
           if (seg.ayahStart !== 1) {
-             return {
-                 isValid: false,
-                 message: `🚫 بداية خاطئة: عند بدء سورة ${seg.surahNameCanonical} لأول مرة في ${typeLabel}، يجب البدء من الآية 1.`
-             };
+             const siblingPredecessor = newSegments.find(s => s !== seg && s.surahNumber === seg.surahNumber && s.ayahEnd === seg.ayahStart - 1);
+             if (!siblingPredecessor) {
+                return {
+                    isValid: false,
+                    message: `🚫 بداية خاطئة: عند بدء سورة ${seg.surahNameCanonical} لأول مرة في ${typeLabel}، يجب البدء من الآية 1.`
+                };
+             }
           }
       }
     }
