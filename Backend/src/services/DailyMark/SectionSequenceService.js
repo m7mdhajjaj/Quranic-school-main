@@ -11,16 +11,25 @@ class SectionSequenceService {
    * @param {string} groupId - معرف الحلقة
    * @param {number} surahNumber - رقم السورة
    * @param {string} type - 'memorization' | 'review'
+   * @param {Date} [beforeDate] - تاريخ مرجعي (لجلب ما قبله فقط)
    * @returns {Promise<{lastEnd: number, nextStart: number, lastDate: Date} | null>}
    */
-  async getLastProgress(groupId, surahNumber, type) {
+  async getLastProgress(groupId, surahNumber, type, beforeDate = null) {
     const metaField = type === 'memorization' ? 'memorizationMeta' : 'reviewMeta';
 
-    // البحث عن آخر مقطع يحتوي على هذه السورة
-    const lastSection = await Section.findOne({
+    // إعداد الاستعلام
+    const query = {
       group: groupId,
       [`${metaField}.surahNumber`]: surahNumber
-    })
+    };
+
+    // إذا تم تحديد تاريخ، ابحث عما قبله فقط (بدون inclusive)
+    if (beforeDate) {
+        query.date = { $lt: beforeDate };
+    }
+
+    // البحث عن آخر مقطع يحتوي على هذه السورة
+    const lastSection = await Section.findOne(query)
     .sort({ date: -1, createdAt: -1 })
     .select(`${metaField} date createdAt`);
 
@@ -41,8 +50,8 @@ class SectionSequenceService {
     let maxMemorized = null;
     if (type === 'review') {
         // نداء تكراري لنفس الدالة لكن بنوع 'memorization'
-        // ملاحظة: لن يدخل في حلقة لا نهائية لأن النوع تغير
-        const memProgress = await this.getLastProgress(groupId, surahNumber, 'memorization');
+        // نمرر نفس التاريخ المرجعي لضمان الاتساق
+        const memProgress = await this.getLastProgress(groupId, surahNumber, 'memorization', beforeDate);
         maxMemorized = memProgress ? memProgress.lastEnd : 0;
     }
 
@@ -127,8 +136,8 @@ class SectionSequenceService {
       // 1.5 التحقق من أن المراجعة لا تسبق الحفظ (Review <= Memorization Check)
       // ===================================
       if (type === 'review') {
-          // جلب آخر نقطة وصل إليها الحفظ لهذه السورة
-          const memProgress = await this.getLastProgress(groupId, seg.surahNumber, 'memorization');
+          // جلب آخر نقطة وصل إليها الحفظ لهذه السورة (نسبة لتاريخ المقطع)
+          const memProgress = await this.getLastProgress(groupId, seg.surahNumber, 'memorization', newSectionDate);
           
           const maxMemorized = memProgress ? memProgress.lastEnd : 0;
           
@@ -143,10 +152,9 @@ class SectionSequenceService {
       // ===================================
       // 2. التحقق من التسلسل (Sequence Gap Check)
       // ===================================
-      // نطبق هذا الفحص على الحفظ والمراجعة (بناءً على طلب المستخدم للصرامة)
-      // لكن بالنسبة للمراجعة، إذا انتهت السورة، قد نبدأ من 1 مجدداً؟ سنفترض تسلسلاً مستمراً.
       
-      const lastProgress = await this.getLastProgress(groupId, seg.surahNumber, type);
+      // نمرر التاريخ الجديد للتحقق مما قبله فقط
+      const lastProgress = await this.getLastProgress(groupId, seg.surahNumber, type, newSectionDate);
       
       if (lastProgress) {
           // يجب أن تكون بداية الجديد = نهاية القديم + 1
@@ -162,13 +170,7 @@ class SectionSequenceService {
               }
               
               // حالة التراجع/التداخل (Overlap/Regression)
-              // (للحفظ: مرفوض. للمراجعة: قد يكون مقبولاً لو كان تكراراً قديماً، لكن المستخدم طلب "نهاية الأول بداية الثاني")
-              // لذا سنرفضه للحفاظ على التسلسل الصارم المطلوب.
               if (seg.ayahStart < lastProgress.nextStart) {
-                   // إذا لم يمسكه فحص التداخل (لأنه قديم جداً وتم مسحه؟ مستبعد)، 
-                   // أو إذا كان مراجعة قديمة (مسموح بها نظرياً، لكننا نفرض التسلسل الآن).
-                   
-                   // إذا كان مراجعة، وطلب "إعادة"، قد يكون منطقياً. لكن سنلتزم بطلب "16 ثم 17".
                    return {
                       isValid: false,
                       message: `🚫 تسلسل ${typeLabel} غير صحيح: يجب إكمال من الآية ${lastProgress.nextStart} (آخر توقف بتاريخ ${dateStr}).`
@@ -177,9 +179,7 @@ class SectionSequenceService {
           }
       } else {
           // أول مرة يدخل السورة في هذا النوع
-          // هل نفرض البدء من 1 دائماً؟ نعم يفضل.
           if (seg.ayahStart !== 1) {
-             // تحذير أو منع؟ دعنا نجعله منعاً لضبط البدايات
              return {
                  isValid: false,
                  message: `🚫 بداية خاطئة: عند بدء سورة ${seg.surahNameCanonical} لأول مرة في ${typeLabel}، يجب البدء من الآية 1.`
@@ -188,6 +188,43 @@ class SectionSequenceService {
       }
     }
 
+    return { isValid: true };
+  }
+
+  /**
+   * التحقق من الاتساق بين الحفظ والمراجعة في نفس الطلب (Cross-Consistency)
+   * القاعدة: مقطع المراجعة يجب أن يكون "قبل" مقطع الحفظ في نفس السورة.
+   * @param {Array} memorizationMeta 
+   * @param {Array} reviewMeta 
+   */
+  validateConsistency(memorizationMeta, reviewMeta) {
+    if (!memorizationMeta || !reviewMeta || memorizationMeta.length === 0 || reviewMeta.length === 0) {
+        return { isValid: true };
+    }
+
+    // تحقق لكل مقطع مراجعة
+    for (const rev of reviewMeta) {
+        // هل يوجد مقطع حفظ لنفس السورة؟
+        const memSegments = memorizationMeta.filter(m => m.surahNumber === rev.surahNumber);
+        
+        for (const mem of memSegments) {
+            // حالة خاصة: إذا كان الحفظ يبدأ من الآية 1، لا يمكن وجود مراجعة لنفس السورة
+            if (mem.ayahStart === 1) {
+                 return {
+                     isValid: false,
+                     message: `🚫 لا يمكن إضافة مراجعة لسورة ${mem.surahNameCanonical} لأن حفظها يبدأ من الآية 1 في هذا المقطع.`
+                 };
+            }
+
+            // القاعدة: نهاية المراجعة يجب أن تكون أصغر من بداية الحفظ
+            if (rev.ayahEnd >= mem.ayahStart) {
+                 return {
+                     isValid: false,
+                     message: `🚫 ترتيب غير منطقي في سورة ${rev.surahNameCanonical}: المراجعة (${rev.ayahStart}-${rev.ayahEnd}) تتقاطع أو تسبق الحفظ (${mem.ayahStart}-${mem.ayahEnd}).\nالمراجعة يجب أن تكون للآيات السابقة للحفظ الحالي.`
+                 };
+            }
+        }
+    }
     return { isValid: true };
   }
 }

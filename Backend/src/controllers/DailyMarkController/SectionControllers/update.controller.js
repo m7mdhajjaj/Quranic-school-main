@@ -58,6 +58,21 @@ exports.updateSection = async (req, res) => {
                  return sendValidationError(res, revValidation.message);
              }
          }
+
+         // Check Consistency (Internal Consistency)
+         // Use new data if provided, otherwise fallback to existing meta
+         const memMetaToCheck = updateData.memorizationMeta || section.memorizationMeta;
+         const revMetaToCheck = updateData.reviewMeta || section.reviewMeta;
+         
+         const consistencyValidation = sequenceService.validateConsistency(
+            memMetaToCheck,
+            revMetaToCheck
+         );
+
+         if (!consistencyValidation.isValid) {
+            return sendValidationError(res, consistencyValidation.message);
+         }
+
     }
 
     // حفظ المقطع القديم للمقارنة

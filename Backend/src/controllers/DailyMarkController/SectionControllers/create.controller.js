@@ -65,6 +65,17 @@ exports.createSection = async (req, res) => {
         if (!revValidation.isValid) {
              return sendValidationError(res, revValidation.message);
         }
+
+        // 3. Check Consistency (Internal Consistency)
+        // (Review must be strictly BEFORE Memorization for same Surah)
+        const consistencyValidation = sequenceService.validateConsistency(
+            sectionData.memorizationMeta,
+            sectionData.reviewMeta
+        );
+
+        if (!consistencyValidation.isValid) {
+            return sendValidationError(res, consistencyValidation.message);
+        }
     }
 
     const section = new Section(sectionData);

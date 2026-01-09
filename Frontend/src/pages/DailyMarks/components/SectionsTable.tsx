@@ -86,23 +86,6 @@ const SectionsTableComponent = ({
       ),
     }]),
     {
-      key: "reviewSection",
-      header: "مقطع المراجعة",
-      width: isTeacher ? "18%" : "20%", // Adjusted for student row number column
-      render: (row) => (
-        <div className="text-emerald-700 font-medium text-sm bg-emerald-50/50 px-3 py-2 rounded-md">
-          {row.reviewSection}
-        </div>
-      ),
-    },
-    {
-      key: "reviewMark",
-      header: "علامة المراجعة",
-      width: isTeacher ? "12%" : "13%",
-      align: "center",
-      render: (row) => renderMarkCell(row.mark, "review"),
-    },
-    {
       key: "memorizationSection",
       header: "مقطع الحفظ",
       width: isTeacher ? "18%" : "20%",
@@ -118,6 +101,23 @@ const SectionsTableComponent = ({
       width: isTeacher ? "12%" : "13%",
       align: "center",
       render: (row) => renderMarkCell(row.mark, "memorization"),
+    },
+    {
+      key: "reviewSection",
+      header: "مقطع المراجعة",
+      width: isTeacher ? "18%" : "20%", // Adjusted for student row number column
+      render: (row) => (
+        <div className="text-emerald-700 font-medium text-sm bg-emerald-50/50 px-3 py-2 rounded-md">
+          {row.reviewSection}
+        </div>
+      ),
+    },
+    {
+      key: "reviewMark",
+      header: "علامة المراجعة",
+      width: isTeacher ? "12%" : "13%",
+      align: "center",
+      render: (row) => renderMarkCell(row.mark, "review"),
     },
     {
       key: "date",

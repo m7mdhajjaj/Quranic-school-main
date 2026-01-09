@@ -350,11 +350,7 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
         <div className="w-1/2 sm:w-[100px] relative">
           <label className="block text-xs font-semibold text-gray-600 mb-1.5 flex justify-between items-center">
             <span>من آية <span className="text-red-500">*</span></span>
-            {expectedStart && segment.ayahStart !== expectedStart && !(type === 'review' && reviewLimit && expectedStart > reviewLimit) && (
-                <span className="text-[9px] text-amber-600 font-bold bg-amber-50 px-1 rounded ml-1 animate-pulse">
-                   {type === 'review' ? 'المراجعة التالية' : 'الحفظ التالي'}: {expectedStart}
-                </span>
-            )}
+           
           </label>
           <input
             type="number"

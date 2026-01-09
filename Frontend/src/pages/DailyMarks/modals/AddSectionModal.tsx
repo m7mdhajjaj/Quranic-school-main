@@ -1,4 +1,4 @@
-import { memo, useEffect } from 'react';
+import { memo, useEffect, useMemo } from 'react';
 import {
   Button,
   Modal,
@@ -37,6 +37,37 @@ const AddSectionModalComponent = ({
       syncLocalState(newSection);
     }
   }, [isOpen]);
+
+  // ==========================================
+  // 🛡️ Frontend Validation (Real-time)
+  // ==========================================
+  const consistencyErrors = useMemo(() => {
+    const errors: string[] = [];
+    if (!localMemorizationMeta || !localReviewMeta) return errors;
+
+    localReviewMeta.forEach((rev) => {
+      const matchingMems = localMemorizationMeta.filter(
+        (m) => m.surahNumber === rev.surahNumber
+      );
+      matchingMems.forEach((mem) => {
+        // Rule 1: Memorization starting at 1 cannot have same-surah Review
+        if (mem.ayahStart === 1) {
+          errors.push(
+            `🚫 تنبيه في سورة ${rev.surahNameCanonical}: الحفظ يبدأ من الآية 1، لذا لا يمكن إضافة مراجعة لنفس السورة.`
+          );
+        }
+        // Rule 2: Review must be strictly before Memorization
+        else if (rev.ayahEnd >= mem.ayahStart) {
+          errors.push(
+            `🚫 خطأ في سورة ${rev.surahNameCanonical}: المراجعة (${rev.ayahStart}-${rev.ayahEnd}) تتداخل مع أو تسبق الحفظ (${mem.ayahStart}-${mem.ayahEnd}). يجب أن تكون المراجعة قبل الحفظ.`
+          );
+        }
+      });
+    });
+    return errors;
+  }, [localMemorizationMeta, localReviewMeta]);
+
+  const hasConsistencyErrors = consistencyErrors.length > 0;
 
   if (!isOpen) return null;
 
@@ -91,6 +122,18 @@ const AddSectionModalComponent = ({
            />
         </div>
 
+        {/* Validation Errors Area */}
+        {hasConsistencyErrors && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-3 animate-pulse">
+            {consistencyErrors.map((err, idx) => (
+              <p key={idx} className="text-sm text-red-600 font-bold mb-1 last:mb-0 flex items-start gap-2">
+                <span>⚠️</span>
+                {err}
+              </p>
+            ))}
+          </div>
+        )}
+
         <div className="flex gap-3 mt-8">
           <Button
             type="button"
@@ -104,8 +147,13 @@ const AddSectionModalComponent = ({
           <Button
             type="submit"
             variant="primary"
-            className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 py-3 px-8 rounded-xl shadow-lg hover:shadow-xl min-h-[52px]"
-            disabled={isLoading}
+            className={`flex-1 py-3 px-8 rounded-xl shadow-lg hover:shadow-xl min-h-[52px] transition-all
+              ${hasConsistencyErrors 
+                ? 'bg-gray-400 cursor-not-allowed hover:bg-gray-500' 
+                : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700'
+              }`}
+            disabled={isLoading || hasConsistencyErrors}
+            title={hasConsistencyErrors ? 'يرجى تصحيح الأخطاء أولاً' : 'إضافة المقطع'}
           >
             {isLoading ? (
               <span className="flex items-center gap-2">
