@@ -125,7 +125,7 @@ export const TeacherTimetableView: React.FC<TeacherTimetableViewProps> = ({
       className="min-h-screen bg-gradient-to-b from-slate-50 via-gray-50 to-slate-100 p-4 md:p-6 lg:p-8"
       dir="rtl"
       lang="ar">
-      <div className="max-w-7xl mx-auto">
+      <div className="w-full mx-auto">
         {/* رأس الصفحة */}
         <PageHeader
           title="جدول الحصص الأسبوعي"

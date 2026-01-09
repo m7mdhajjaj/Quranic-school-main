@@ -74,7 +74,7 @@ export const AdminTimetableView: React.FC<AdminTimetableViewProps> = ({
       className="min-h-screen p-4 md:p-6 lg:p-8"
       dir="rtl"
       lang="ar">
-      <div className="max-w-7xl mx-auto">
+      <div className="w-full mx-auto">
         {/* رأس الصفحة */}
         <PageHeader
           title="جدول الحصص الأسبوعي - لوحة الإدارة"
@@ -101,13 +101,6 @@ export const AdminTimetableView: React.FC<AdminTimetableViewProps> = ({
 
         {/* أزرار التحكم */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-          <Button
-            leftIcon={<Plus className="w-5 h-5" />}
-            onClick={handleAddClick}
-            size="lg">
-            إضافة موعد حلقة
-          </Button>
-
           {/* أزرار تبديل العرض */}
           <div className="flex gap-2 bg-white rounded-lg p-1 shadow-md">
             <button
@@ -134,6 +127,13 @@ export const AdminTimetableView: React.FC<AdminTimetableViewProps> = ({
               <span className="text-sm font-medium">بطاقات متقدمة</span>
             </button>
           </div>
+
+          <Button
+            leftIcon={<Plus className="w-5 h-5" />}
+            onClick={handleAddClick}
+            size="lg">
+            إضافة موعد حلقة
+          </Button>
         </div>
 
         {/* عرض الجدول */}

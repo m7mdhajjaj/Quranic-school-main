@@ -6,7 +6,7 @@ import React, { useMemo } from "react";
 import type { Session, UserRole } from "../types/timetable.types";
 import { WEEK_DAYS, generateHours, isSummerTime } from "../utils";
 import { Edit, Trash2, MoreVertical } from "lucide-react";
-import { DropdownMenu, type DropdownMenuItem } from "@/components/UI/DropdownMenu";
+import { DropdownMenu } from "@/components/UI/DropdownMenu";
 
 interface WeeklyGridViewProps {
   sessions: Session[];
@@ -78,7 +78,7 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
       const prevHour = hours[i];
       const sessionsInPrevSlot = sessionGrid[day]?.[prevHour] || [];
       
-      for (const { session, rowSpan } of sessionsInPrevSlot) {
+      for (const { session } of sessionsInPrevSlot) {
         const sessionStartIndex = hours.indexOf(session.startHour);
         const sessionEndIndex = hours.indexOf(session.endHour);
         
@@ -104,44 +104,63 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-emerald-100 overflow-hidden w-full" dir="rtl">
+    <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden w-full transition-all duration-300 hover:shadow-emerald-100/50" dir="rtl">
       {/* رأس الجدول */}
-      <div className="bg-gradient-to-l from-emerald-600 to-emerald-500 px-4 py-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-white flex-1 text-center">الجدول الأسبوعي</h3>
-          <div className="flex flex-col items-end gap-0.5 bg-white/20 px-3 py-1.5 rounded-lg">
-            <span className="text-xs font-bold text-white">
-              {currentIsSummer ? '☀️ صيفي' : '❄️ شتوي'}
-            </span>
-            <span className="text-[10px] text-white/90">
-              {currentIsSummer ? '12PM-9PM' : '11AM-8PM'}
+      <div className="bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600 px-6 py-4 shadow-md relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+        <div className="flex items-center justify-between relative z-10">
+          <div className="flex items-center gap-3">
+             <div className="bg-white/20 p-2 rounded-xl backdrop-blur-sm">
+                <span className="text-2xl">📅</span>
+             </div>
+             <div>
+                <h3 className="text-xl font-bold text-white tracking-wide">الجدول الأسبوعي</h3>
+                <p className="text-xs text-emerald-100 font-medium opacity-90">تنظيم وتنسيق المواعيد الدراسية</p>
+             </div>
+          </div>
+          
+          <div className="flex flex-col items-end gap-1 bg-white/10 px-4 py-2 rounded-xl backdrop-blur-md border border-white/20 shadow-lg transform hover:scale-105 transition-transform duration-300">
+            <div className="flex items-center gap-2">
+                <span className="text-lg animate-pulse">{currentIsSummer ? '☀️' : '❄️'}</span>
+                <span className="text-sm font-bold text-white tracking-wide">
+                {currentIsSummer ? 'التوقيت الصيفي' : 'التوقيت الشتوي'}
+                </span>
+            </div>
+            <span className="text-[10px] text-white/90 font-mono bg-black/20 px-2 py-0.5 rounded-full">
+              {currentIsSummer ? '12:00 PM - 09:00 PM' : '11:00 AM - 08:00 PM'}
             </span>
           </div>
         </div>
       </div>
 
       {/* الشبكة */}
-      <div className="overflow-hidden w-full">
-        <div className="overflow-x-auto">
+      <div className="overflow-hidden w-full bg-gray-50/50">
+        <div className="overflow-x-auto custom-scrollbar">
           <table className="w-full border-collapse">
             <thead>
               <tr>
-                <th className="sticky right-0 bg-gradient-to-br from-gray-50 to-gray-100 border-b-2 border-l-2 border-emerald-200 p-4 text-base font-bold text-gray-700 w-32 z-10 shadow-sm">
-                  الوقت
+                <th className="sticky right-0 bg-white border-b border-gray-200 p-4 text-sm font-bold text-gray-500 w-32 z-20 shadow-[4px_0_10px_-4px_rgba(0,0,0,0.05)] uppercase tracking-wider backdrop-blur-sm">
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-emerald-500">⏰</span>
+                    <span>الوقت</span>
+                  </div>
                 </th>
                 {WEEK_DAYS.map((day) => (
                   <th
                     key={day}
-                    className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-b-2 border-l border-emerald-200 p-3 text-sm font-bold text-emerald-900 shadow-sm min-w-[140px]">
-                    {day}
+                    className="bg-gray-50/80 border-b border-l border-gray-200 p-4 text-sm font-extrabold text-gray-700 shadow-sm min-w-[160px] group transition-colors hover:bg-emerald-50/30">
+                    <div className="flex items-center justify-center gap-2 transition-transform group-hover:-translate-y-0.5 duration-300">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 group-hover:scale-125 transition-transform"></span>
+                        {day}
+                    </div>
                   </th>
                 ))}
               </tr>
             </thead>
           <tbody>
             {hours.map((hour) => (
-              <tr key={hour} className="hover:bg-emerald-50/30 transition-colors">
-                <td className="sticky right-0 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-l-2 border-emerald-200 p-4 text-sm font-bold text-gray-700 text-center z-10 shadow-sm">
+              <tr key={hour} className="group/row transition-colors hover:bg-emerald-50/10">
+                <td className="sticky right-0 bg-white group-hover/row:bg-emerald-50/30 transition-colors border-b border-gray-100 border-l border-gray-200 p-4 text-xs font-bold text-gray-400 text-center z-10 shadow-[4px_0_10px_-4px_rgba(0,0,0,0.05)] font-mono">
                   {hour}
                 </td>
                 {WEEK_DAYS.map((day) => {
@@ -158,43 +177,52 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
                     return (
                       <td
                         key={`${day}-${hour}`}
-                        className="border-b border-l border-emerald-100 p-2 align-top relative bg-white hover:bg-emerald-50/20 transition-colors">
+                        className="border-b border-l border-gray-100 p-2 align-top relative bg-transparent hover:bg-gray-50/50 transition-colors">
                         <div className="space-y-2">
                           {daySessions.map(({ session }) => (
                             <div
                               key={session._id}
-                              className="bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50 rounded-lg p-3 border-2 border-yellow-300/60 hover:border-yellow-400 hover:shadow-lg transition-all duration-200 group cursor-pointer relative shadow-sm min-h-[80px]">
+                              className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm hover:shadow-md hover:border-emerald-300 hover:-translate-y-0.5 transition-all duration-300 group cursor-pointer relative overflow-hidden">
+                              <div className="absolute top-0 right-0 w-1 h-full bg-emerald-400 opacity-50"></div>
+                              
                               {/* اسم الحلقة */}
-                              <div className="font-bold text-sm text-yellow-900 mb-2 truncate" title={session.note}>
+                              <div className="font-bold text-base text-gray-800 mb-2 truncate pl-2" title={session.note}>
                                 {session.note || "حلقة"}
                               </div>
                               
                               {/* الوقت */}
-                              <div className="text-xs text-yellow-700 mb-1 font-medium flex items-center gap-1">
-                                <span>⏰</span>
+                              <div className="text-xs text-gray-500 mb-2 font-medium flex items-center gap-1 bg-gray-50 w-fit px-2 py-1 rounded-md">
+                                <span>🕒</span>
                                 <span>{session.startHour} - {session.endHour}</span>
                               </div>
 
                               {/* المعلم */}
                               {session.teacherId && typeof session.teacherId === 'object' && (
-                                <div className="text-xs text-yellow-600 truncate mb-1 flex items-center gap-1" title={`${session.teacherId.firstName} ${session.teacherId.lastName}`}>
-                                  <span>👤</span>
+                                <div className="text-xs text-emerald-600 truncate mb-2 flex items-center gap-1 font-medium" title={`${session.teacherId.firstName} ${session.teacherId.lastName}`}>
+                                  <span>👨‍🏫</span>
                                   <span>{session.teacherId.firstName} {session.teacherId.lastName}</span>
+                                </div>
+                              )}
+
+                              {/* الوصف */}
+                              {session.description && (
+                                <div className="text-[10px] text-gray-500 line-clamp-1 mb-2 px-1" title={session.description}>
+                                  <span className="font-bold text-gray-400 ml-1">الوصف:</span>
+                                  <span className="italic">{session.description}</span>
                                 </div>
                               )}
 
                               {/* نوع الحصة */}
                               {session.sessionType && (
-                                <div className="flex items-center gap-1 mt-2 bg-white/50 px-2 py-1 rounded-lg">
-                                  <span className="text-sm">
-                                    {session.sessionType === "hifz" && "📖"}
-                                    {session.sessionType === "murajaah" && "🔄"}
-                                    {session.sessionType === "both" && "📚"}
-                                  </span>
-                                  <span className="text-[10px] text-yellow-800 font-bold">
-                                    {session.sessionType === "hifz" && "حفظ"}
-                                    {session.sessionType === "murajaah" && "مراجعة"}
-                                    {session.sessionType === "both" && "كلاهما"}
+                                <div className="flex items-center gap-1 mt-2">
+                                  <span className={`text-xs px-2 py-1 rounded-full font-bold border ${
+                                     session.sessionType === "hifz" ? "bg-blue-50 text-blue-600 border-blue-100" :
+                                     session.sessionType === "murajaah" ? "bg-amber-50 text-amber-600 border-amber-100" :
+                                     "bg-purple-50 text-purple-600 border-purple-100"
+                                  }`}>
+                                    {session.sessionType === "hifz" && "📖 حفظ"}
+                                    {session.sessionType === "murajaah" && "🔄 مراجعة"}
+                                    {session.sessionType === "both" && "📚 شامل"}
                                   </span>
                                 </div>
                               )}
@@ -202,13 +230,16 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
                               {/* القائمة المنسدلة للإجراءات */}
                               {(role === "admin" || role === "teacher") && (
                                 <div 
-                                  className="absolute top-1 left-1 opacity-0 group-hover:opacity-100 transition-opacity z-20"
+                                  className="absolute top-1 left-1 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20"
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   <DropdownMenu
                                     trigger={
-                                      <button className="bg-white/90 hover:bg-white text-yellow-700 p-1.5 rounded-full shadow-sm border border-yellow-200 transition-colors">
-                                        <MoreVertical size={14} />
+                                      <button 
+                                        className="bg-white hover:bg-gray-50 text-gray-400 hover:text-gray-600 p-1.5 rounded-lg shadow-sm border border-gray-100 transition-all"
+                                        title="خيارات"
+                                      >
+                                        <MoreVertical size={16} />
                                       </button>
                                     }
                                     items={[
@@ -216,7 +247,7 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
                                         label: "تعديل",
                                         icon: <Edit size={14} />,
                                         onClick: () => onEdit?.(session),
-                                        className: "text-amber-700 hover:bg-amber-50",
+                                        className: "text-blue-600 hover:bg-blue-50",
                                       },
                                       {
                                         label: "حذف",
@@ -240,92 +271,123 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
                     <td
                       key={`${day}-${hour}`}
                       rowSpan={daySessions.length > 0 ? daySessions[0].rowSpan : 1}
-                      className="border-b border-l border-emerald-100 p-3 align-top min-h-[80px] relative bg-white hover:bg-emerald-50/20 transition-colors">
+                      className="border-b border-l border-gray-100 p-2 lg:p-3 align-top h-[180px] relative bg-transparent hover:bg-gray-50/50 transition-colors">
                       {daySessions.length > 0 ? (
                         <div className="h-full">
                           {daySessions.map(({ session }) => (
                             <div
                               key={session._id}
-                              className="bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50 rounded-xl p-5 border-2 border-yellow-300/60 hover:border-yellow-400 hover:shadow-xl transition-all duration-200 group cursor-pointer relative h-full flex flex-col shadow-md">
-                              {/* اسم الحلقة */}
-                              <div className="font-bold text-lg text-yellow-900 mb-3 truncate" title={session.note}>
-                                {session.note || "حلقة"}
-                              </div>
+                              className={`
+                                rounded-xl p-5 border shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group cursor-pointer relative h-full flex flex-col justify-between
+                                ${session.sessionType === 'hifz' ? 'bg-gradient-to-br from-blue-50 to-white border-blue-100' : 
+                                  session.sessionType === 'murajaah' ? 'bg-gradient-to-br from-amber-50 to-white border-amber-100' :
+                                  'bg-gradient-to-br from-purple-50 to-white border-purple-100'}
+                              `}>
                               
-                              {/* الوقت */}
-                              <div className="text-sm text-yellow-700 mb-2 font-medium flex items-center gap-2">
-                                <span className="text-base">⏰</span>
-                                <span>{session.startHour} - {session.endHour}</span>
+                              <div className="absolute top-0 right-0 w-full h-1 bg-gradient-to-r from-transparent via-current to-transparent opacity-20"></div>
+
+                              <div>
+                                  {/* اسم الحلقة */}
+                                  <div className="flex items-start justify-between mb-4">
+                                    <div className="font-bold text-lg text-gray-800 line-clamp-2 leading-tight" title={session.note}>
+                                        {session.note || "حلقة"}
+                                    </div>
+                                    <div className={`w-2 h-2 rounded-full mt-1.5 ${
+                                         session.sessionType === 'hifz' ? 'bg-blue-400' : 
+                                         session.sessionType === 'murajaah' ? 'bg-amber-400' :
+                                         'bg-purple-400'
+                                    }`}></div>
+                                  </div>
+                                  
+                                  {/* الوقت */}
+                                  <div className="text-sm text-gray-500 mb-4 font-medium flex items-center gap-2 bg-white/60 w-fit px-3 py-1.5 rounded-lg border border-gray-100/50">
+                                    <span className="text-gray-400">⏰</span>
+                                    <span className="font-mono">{session.startHour} - {session.endHour}</span>
+                                  </div>
+
+                                  {/* المعلم */}
+                                  {session.teacherId && typeof session.teacherId === 'object' && (
+                                    <div className="text-sm text-gray-600 truncate mb-4 flex items-center gap-2" title={`${session.teacherId.firstName} ${session.teacherId.lastName}`}>
+                                      <div className={`p-1 rounded-full ${
+                                         session.sessionType === 'hifz' ? 'bg-blue-100 text-blue-600' : 
+                                         session.sessionType === 'murajaah' ? 'bg-amber-100 text-amber-600' :
+                                         'bg-purple-100 text-purple-600'
+                                      }`}>
+                                        <MoreVertical size={0} className="hidden" /> {/* Dummy for imports if needed */}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                      </div>
+                                      <span className="font-medium">{session.teacherId.firstName} {session.teacherId.lastName}</span>
+                                    </div>
+                                  )}
+
+                                  {/* الوصف */}
+                                  {session.description && (
+                                    <div className="text-xs text-gray-500 mb-4 bg-gray-50/50 p-2.5 rounded-lg border border-gray-100" title={session.description}>
+                                      <div className="text-[10px] font-bold text-gray-400 mb-1">الوصف:</div>
+                                      <div className="italic line-clamp-2 leading-relaxed">
+                                        {session.description}
+                                      </div>
+                                    </div>
+                                  )}
                               </div>
 
-                              {/* المعلم */}
-                              {session.teacherId && typeof session.teacherId === 'object' && (
-                                <div className="text-sm text-yellow-600 truncate mb-2 flex items-center gap-2" title={`${session.teacherId.firstName} ${session.teacherId.lastName}`}>
-                                  <span className="text-base">👤</span>
-                                  <span>{session.teacherId.firstName} {session.teacherId.lastName}</span>
-                                </div>
-                              )}
+                              <div className="mt-auto pt-3 border-t border-gray-100/50 flex items-center justify-between">
+                                  {/* نوع الحصة */}
+                                  {session.sessionType && (
+                                    <div className="flex items-center">
+                                      <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold border flex items-center gap-1 ${
+                                         session.sessionType === "hifz" ? "bg-blue-50 text-blue-700 border-blue-200" :
+                                         session.sessionType === "murajaah" ? "bg-amber-50 text-amber-700 border-amber-200" :
+                                         "bg-purple-50 text-purple-700 border-purple-200"
+                                      }`}>
+                                        {session.sessionType === "hifz" && <span>📖 حفظ</span>}
+                                        {session.sessionType === "murajaah" && <span>🔄 مراجعة</span>}
+                                        {session.sessionType === "both" && <span>📚 شامل</span>}
+                                      </span>
+                                    </div>
+                                  )}
 
-                              {/* نوع الحصة */}
-                              {session.sessionType && (
-                                <div className="flex items-center gap-2 mt-3 bg-white/50 px-3 py-2 rounded-lg">
-                                  <span className="text-lg">
-                                    {session.sessionType === "hifz" && "📖"}
-                                    {session.sessionType === "murajaah" && "🔄"}
-                                    {session.sessionType === "both" && "📚"}
-                                  </span>
-                                  <span className="text-xs text-yellow-800 font-bold">
-                                    {session.sessionType === "hifz" && "حفظ"}
-                                    {session.sessionType === "murajaah" && "مراجعة"}
-                                    {session.sessionType === "both" && "حفظ ومراجعة"}
-                                  </span>
-                                </div>
-                              )}
-                              
-                              {/* الوصف/الملاحظات */}
-                              {session.description && (
-                                <div className="mt-2 text-xs text-yellow-700 bg-white/60 px-3 py-2 rounded-lg border border-yellow-200">
-                                  <span className="font-semibold">📝 </span>
-                                  <span className="line-clamp-2" title={session.description}>{session.description}</span>
-                                </div>
-                              )}
-
-                              {/* القائمة المنسدلة للإجراءات */}
-                              {(role === "admin" || role === "teacher") && (
-                                <div 
-                                  className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity z-20"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <DropdownMenu
-                                    trigger={
-                                      <button className="bg-white/90 hover:bg-white text-yellow-700 p-1.5 rounded-full shadow-sm border border-yellow-200 transition-colors">
-                                        <MoreVertical size={14} />
-                                      </button>
-                                    }
-                                    items={[
-                                      {
-                                        label: "تعديل",
-                                        icon: <Edit size={14} />,
-                                        onClick: () => onEdit?.(session),
-                                        className: "text-amber-700 hover:bg-amber-50",
-                                      },
-                                      {
-                                        label: "حذف",
-                                        icon: <Trash2 size={14} />,
-                                        onClick: () => onDelete?.(session),
-                                        variant: "danger",
-                                      },
-                                    ]}
-                                    position="bottom-left"
-                                  />
-                                </div>
-                              )}
+                                  {/* القائمة المنسدلة للإجراءات */}
+                                  {(role === "admin" || role === "teacher") && (
+                                    <div 
+                                      className="relative z-20 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <DropdownMenu
+                                        trigger={
+                                          <button 
+                                            className="bg-white hover:bg-gray-50 text-gray-400 hover:text-gray-600 p-1.5 rounded-lg shadow-sm border border-gray-200 transition-all flex items-center justify-center"
+                                            title="خيارات"
+                                          >
+                                            <MoreVertical size={16} />
+                                          </button>
+                                        }
+                                        items={[
+                                          {
+                                            label: "تعديل",
+                                            icon: <Edit size={14} />,
+                                            onClick: () => onEdit?.(session),
+                                            className: "text-blue-600 hover:bg-blue-50 font-medium",
+                                          },
+                                          {
+                                            label: "حذف",
+                                            icon: <Trash2 size={14} />,
+                                            onClick: () => onDelete?.(session),
+                                            variant: "danger",
+                                            className: "font-medium"
+                                          },
+                                        ]}
+                                        position="bottom-left"
+                                      />
+                                    </div>
+                                  )}
+                              </div>
                             </div>
                           ))}
                         </div>
                       ) : (
-                        <div className="h-full min-h-[70px] flex items-center justify-center text-gray-300">
-                          <span className="text-xs">•</span>
+                        <div className="h-full min-h-[180px] rounded-xl border border-dashed border-gray-200/50 flex items-center justify-center group-hover:bg-white/50 group-hover:border-emerald-200/50 transition-all">
+                          {/* <span className="text-xl text-gray-100 group-hover:text-emerald-100 transition-colors duration-500">+</span> */}
                         </div>
                       )}
                     </td>
@@ -339,22 +401,25 @@ export const WeeklyGridView: React.FC<WeeklyGridViewProps> = ({
       </div>
 
       {/* تعليمات */}
-      <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border-t-2 border-emerald-200 px-6 py-4">
-        <div className="flex items-center justify-center gap-8 text-sm text-gray-700">
-          <span className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-emerald-100">
-            <span className="text-lg">📖</span> 
-            <span className="font-medium">حفظ</span>
-          </span>
-          <span className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-emerald-100">
-            <span className="text-lg">🔄</span> 
-            <span className="font-medium">مراجعة</span>
-          </span>
-          <span className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg shadow-sm border border-emerald-100">
-            <span className="text-lg">📚</span> 
-            <span className="font-medium">حفظ ومراجعة</span>
-          </span>
+      <div className="bg-white border-t border-gray-100 px-6 py-4">
+        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 text-sm text-gray-600">
+          <div className="flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100">
+            <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+            <span className="font-bold text-blue-700">حفظ</span>
+          </div>
+          <div className="flex items-center gap-2 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-100">
+            <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+            <span className="font-bold text-amber-700">مراجعة</span>
+          </div>
+          <div className="flex items-center gap-2 bg-purple-50 px-3 py-1.5 rounded-full border border-purple-100">
+            <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+            <span className="font-bold text-purple-700">شامل</span>
+          </div>
           {role === "admin" && (
-            <span className="mr-4 text-gray-500 italic text-xs">• مرر فوق الموعد للتعديل أو الحذف</span>
+            <span className="text-xs text-gray-400 flex items-center gap-1 mr-auto bg-gray-50 px-2 py-1 rounded-md">
+              <span className="info-icon">💡</span>
+              مرر فوق البطاقة للخيارات
+            </span>
           )}
         </div>
       </div>
