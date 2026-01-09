@@ -6,12 +6,13 @@ import {
 } from '@/components/UI';
 import type { AddSectionModalProps } from '../types/types';
 import { useAddSectionModal } from '../hooks/modals';
-import { useSectionValidation } from '../hooks/useSectionValidation'; // New Hook
+import { useSectionValidation } from '../hooks/useSectionValidation'; 
 import QuranSegmentInput from '../components/QuranSegmentInput';
+import ErrorMessageList from '../components/ErrorMessageList';
 
 /**
  * Modal for adding a new section
- * Optimized with local state + debounced parent updates for 60+ fps typing
+ * Optimized with local state + debounced parent updates
  */
 const AddSectionModalComponent = ({
   isOpen,
@@ -23,12 +24,12 @@ const AddSectionModalComponent = ({
   onChange,
 }: AddSectionModalProps) => {
   const {
-    localReviewSection,
-    localMemorizationSection,
+    // localReviewSection, // Legacy unused
+    // localMemorizationSection, // Legacy unused
     localReviewMeta,
     localMemorizationMeta,
     syncLocalState,
-    handleInputChange,
+    // handleInputChange, // Legacy unused
     handleMetaChange,
   } = useAddSectionModal();
 
@@ -39,9 +40,7 @@ const AddSectionModalComponent = ({
     }
   }, [isOpen]);
 
-  // ==========================================
-  // 🛡️ Frontend Validation (Real-time) - DRY Hook
-  // ==========================================
+  // Frontend Validation
   const { consistencyErrors, hasConsistencyErrors } = useSectionValidation(
       localMemorizationMeta, 
       localReviewMeta
@@ -55,13 +54,12 @@ const AddSectionModalComponent = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="إضافة مقطع جديد">
-      {/* Gradient Header */}
-
-      <form onSubmit={onSubmit} className="max-h-[80vh] overflow-y-auto px-1">
-        {/* Date Field */}
-        <div className="mb-6">
+      <form onSubmit={onSubmit} className="max-h-[85vh] overflow-y-auto px-2 pb-2">
+        
+        {/* Date Field Container */}
+        <div className="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
           <DatePicker
-            label="التاريخ"
+            label="تاريخ التسميع"
             value={newSection.date}
             onChange={(date) =>
               onChange({
@@ -71,14 +69,14 @@ const AddSectionModalComponent = ({
             minDate={minDate}
             required
           />
-          <p className="mt-2 text-xs text-gray-500">
-            * يجب أن يكون التاريخ من اليوم أو في المستقبل
+          <p className="mt-2 text-xs text-slate-500 flex items-center gap-1">
+             📅 يجب أن يكون التاريخ من اليوم أو في المستقبل
           </p>
         </div>
 
-        {/* Memorization Section (First) */}
-        <div className="mb-6">
-            <QuranSegmentInput 
+        {/* Input Sections */}
+        <div className="space-y-6">
+          <QuranSegmentInput 
              label="معلومات الحفظ"
              colorClass="amber"
              segments={localMemorizationMeta}
@@ -86,10 +84,7 @@ const AddSectionModalComponent = ({
              groupName={newSection.group || selectedGroup}
              type="memorization"
            />
-        </div>
 
-        {/* Review Section (Second) */}
-        <div className="mb-6">
            <QuranSegmentInput 
              label="معلومات المراجعة"
              colorClass="emerald"
@@ -101,23 +96,17 @@ const AddSectionModalComponent = ({
         </div>
 
         {/* Validation Errors Area */}
-        {hasConsistencyErrors && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-3 animate-pulse">
-            {consistencyErrors.map((err, idx) => (
-              <p key={idx} className="text-sm text-red-600 font-bold mb-1 last:mb-0 flex items-start gap-2">
-                <span>⚠️</span>
-                {err}
-              </p>
-            ))}
-          </div>
-        )}
+        <div className="mt-6">
+          <ErrorMessageList errors={consistencyErrors} />
+        </div>
 
-        <div className="flex gap-3 mt-8">
+        {/* Action Buttons */}
+        <div className="flex gap-3 mt-8 pt-4 border-t border-gray-100">
           <Button
             type="button"
             onClick={onClose}
             variant="secondary"
-            className="flex-1 py-3 px-6 rounded-xl"
+            className="flex-1 py-3 px-6 rounded-xl hover:bg-gray-100 transition-colors"
             disabled={isLoading}
           >
             إلغاء
@@ -125,21 +114,21 @@ const AddSectionModalComponent = ({
           <Button
             type="submit"
             variant="primary"
-            className={`flex-1 py-3 px-8 rounded-xl shadow-lg hover:shadow-xl min-h-[52px] transition-all
+            className={`flex-[2] py-3 px-8 rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 min-h-[52px] transition-all font-bold text-lg
               ${hasConsistencyErrors 
-                ? 'bg-gray-400 cursor-not-allowed hover:bg-gray-500' 
+                ? 'bg-gray-400 cursor-not-allowed hover:bg-gray-400 hover:shadow-none hover:translate-y-0' 
                 : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700'
               }`}
             disabled={isLoading || hasConsistencyErrors}
             title={hasConsistencyErrors ? 'يرجى تصحيح الأخطاء أولاً' : 'إضافة المقطع'}
           >
             {isLoading ? (
-              <span className="flex items-center gap-2">
-                <span className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+              <span className="flex items-center justify-center gap-2">
+                <span className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-white"></span>
                 جاري الإضافة...
               </span>
             ) : (
-              'إضافة المقطع'
+              'حفظ وإضافة'
             )}
           </Button>
         </div>
