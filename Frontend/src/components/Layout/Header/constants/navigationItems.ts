@@ -112,6 +112,12 @@ export const getPrimaryNavItems = (rolePermissions: RolePermissions): Navigation
             icon: Award,
             color: "from-orange-500 to-red-500",
           },
+          {
+            to: "/exam-schedule",
+            label: "امتحانات رسمية",
+            icon: ClipboardList,
+            color: "from-violet-500 to-purple-500",
+          },
         ]
       },
       {
@@ -243,7 +249,7 @@ export const getPrimaryNavItems = (rolePermissions: RolePermissions): Navigation
         },
         {
           to: "/exam-schedule",
-          label: "جدول الامتحانات",
+          label: "امتحانات رسمية",
           icon: ClipboardList,
           color: "from-violet-500 to-purple-500",
         },
