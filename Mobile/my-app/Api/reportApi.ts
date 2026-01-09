@@ -65,17 +65,6 @@ export const getGroupReport = async (
   return response.data;
 };
 
-// Export report as PDF
-export const exportReportPDF = async (
-  type: "student" | "group",
-  id: string
-): Promise<Blob> => {
-  const response = await api.get(`/reports/${type}/${id}/export`, {
-    responseType: "blob",
-  });
-  return response.data;
-};
-
 // Get student marks by month/year
 export const getStudentMarks = async (params?: {
   month?: number;
@@ -102,6 +91,7 @@ export const getStudentMarks = async (params?: {
 export const getAverageMarks = async (params?: {
   month?: number;
   year?: number;
+  groupId?: string;
 }): Promise<{
   labels: string[];
   data: number[];
@@ -116,5 +106,16 @@ export const getAverageMarks = async (params?: {
       labels: ["4/2025", "5/2025", "6/2025", "7/2025", "8/2025", "9/2025"],
       data: [7.8, 8.2, 7.5, 8.0, 7.9, 8.1],
     };
+  }
+};
+
+// Get teacher groups
+export const getTeacherGroups = async (): Promise<any[]> => {
+  try {
+    const response = await api.get("/points-game/teacher-groups");
+    return response.data.data || [];
+  } catch (error) {
+    console.error("Error fetching teacher groups:", error);
+    return [];
   }
 };
