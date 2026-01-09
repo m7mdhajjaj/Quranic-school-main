@@ -239,6 +239,22 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
       handleUpdate('surahNumber', s.number, { number: s.number, name: s.name });
   };
 
+  // 🗑️ Robust Clear Handler (Fixes: "Empty state for deletion")
+  const handleClear = () => {
+    // 1. Reset IO
+    setSurahInput('');
+    setSuggestions([]);
+    setIsFocused(false);
+    
+    // 2. Reset Internal Logic
+    setExpectedStart(null);
+    setReviewLimit(null);
+    isInternalUpdate.current = true; // Prevent loop
+
+    // 3. Notify Parent (Empty array = No segment = Delete on save)
+    onChange([]);
+  };
+
   const handleBlur = () => {
     // Delay hiding the popup to allow click on suggestion to register
     setTimeout(() => {
@@ -281,25 +297,23 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
       {/* Header */}
       <div className={`flex items-center justify-between pb-2 border-b border-gray-100`}>
         <div className="flex items-center gap-2">
-            <div className={`p-1.5 rounded-lg ${bgSelected}`}>
+            <div className={`p-1.5 rounded-lg ${bgSelected} transition-colors`}>
                <BookOpen className={`h-4 w-4 ${textSelected}`} />
             </div>
             <h4 className={`text-base font-bold text-gray-800 flex items-center gap-2`}>
             {label}
-            {error && <span className="text-xs text-red-500 font-normal bg-red-50 px-2 py-0.5 rounded-full">({error})</span>}
+            {/* Show error only if compact style is needed, otherwise rely on ErrorMessageList in modal */}
+            {error && <span className="text-[10px] text-red-600 bg-red-50 border border-red-100 px-2 py-0.5 rounded-full animate-pulse">!</span>}
             </h4>
         </div>
-        {segment.surahNumber && (
+        {(segment.surahNumber || surahInput) && (
             <button 
                 type="button"
-                onClick={() => {
-                    setSurahInput('');
-                    onChange([]);
-                }}
-                className="text-gray-400 hover:text-red-500 transition-colors p-1 hover:bg-gray-100 rounded-full"
-                title="حذف هذا المقطع"
+                onClick={handleClear}
+                className="group p-1.5 rounded-full hover:bg-red-50 transition-all duration-200"
+                title="مسح البيانات (سيتم الحذف عند الحفظ)"
             >
-                <X className="h-4 w-4" />
+                <X className="h-4 w-4 text-gray-400 group-hover:text-red-500 transition-colors" />
             </button>
         )}
       </div>
@@ -371,17 +385,16 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
         </div>
 
         {/* Ayah Start */}
-        <div className="w-1/2 sm:w-[100px] relative">
-          <label className="block text-xs font-semibold text-gray-600 mb-1.5 flex justify-between items-center">
-            <span>من آية <span className="text-red-500">*</span></span>
-           
+        <div className="w-[85px] relative shrink-0">
+          <label className="block text-[11px] font-bold text-gray-500 mb-1.5 text-center">
+            من <span className="text-red-500">*</span>
           </label>
           <input
             type="number"
             min={1}
             max={type === 'review' && reviewLimit ? reviewLimit : maxAyah}
             disabled={!segment.surahNumber || (type === 'review' && reviewLimit !== null && expectedStart && expectedStart > reviewLimit && true)}
-            className={`w-full rounded-xl border-2 text-sm py-2.5 px-3 text-center transition-all outline-none 
+            className={`w-full rounded-lg border-2 text-sm font-bold py-2 px-1 text-center transition-all outline-none 
                 disabled:bg-gray-50 disabled:border-gray-100 disabled:text-gray-400
                 ${
                      (type === 'review' && reviewLimit && expectedStart && expectedStart > reviewLimit) ? 'bg-emerald-50 border-emerald-200 text-emerald-700 cursor-not-allowed opacity-80' : // Completed
@@ -397,16 +410,16 @@ const QuranSegmentInput: React.FC<QuranSegmentInputProps> = ({
         </div>
 
         {/* Ayah End */}
-        <div className="w-1/2 sm:w-[100px]">
-          <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-            إلى آية <span className="text-red-500">*</span>
+        <div className="w-[85px] shrink-0">
+          <label className="block text-[11px] font-bold text-gray-500 mb-1.5 text-center">
+            إلى <span className="text-red-500">*</span>
           </label>
           <input
             type="number"
             min={segment.ayahStart || 1}
             max={type === 'review' && reviewLimit ? reviewLimit : maxAyah}
             disabled={!segment.surahNumber || (type === 'review' && reviewLimit !== null && expectedStart && expectedStart > reviewLimit && true)}
-            className={`w-full rounded-xl border-2 text-sm py-2.5 px-3 text-center transition-all outline-none 
+            className={`w-full rounded-lg border-2 text-sm font-bold py-2 px-1 text-center transition-all outline-none 
                 disabled:bg-gray-50 disabled:border-gray-100 disabled:text-gray-400
                 ${
                 (type === 'review' && reviewLimit && expectedStart && expectedStart > reviewLimit) ? 'bg-emerald-50 border-emerald-200 text-emerald-700 cursor-not-allowed opacity-80' : // Completed

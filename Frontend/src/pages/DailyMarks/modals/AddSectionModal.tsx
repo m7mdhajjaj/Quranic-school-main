@@ -38,7 +38,7 @@ const AddSectionModalComponent = ({
     if (isOpen) {
       syncLocalState(newSection);
     }
-  }, [isOpen]);
+  }, [isOpen, newSection, syncLocalState]);
 
   // Frontend Validation
   const { consistencyErrors, hasConsistencyErrors } = useSectionValidation(
@@ -53,8 +53,8 @@ const AddSectionModalComponent = ({
   const minDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="إضافة مقطع جديد">
-      <form onSubmit={onSubmit} className="max-h-[85vh] overflow-y-auto px-2 pb-2">
+    <Modal isOpen={isOpen} onClose={onClose} title="إضافة مقطع جديد" size="2xl">
+      <form onSubmit={onSubmit}>
         
         {/* Date Field Container */}
         <div className="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
