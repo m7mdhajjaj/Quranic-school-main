@@ -153,9 +153,11 @@ export const getStudentBadges = async (): Promise<StudentBadges> => {
  */
 export const getPointsRankings = async (): Promise<RankingStudent[]> => {
   try {
+    console.log("📊 [API] Fetching points rankings...");
     const response = await axios.get(`${POINTS_GAME_URL}/rankings/points`, {
       headers: getHeaders(),
     });
+    console.log("📊 [API] Points rankings response:", response.data);
     return response.data.data;
   } catch (error: any) {
     console.error(
@@ -171,9 +173,11 @@ export const getPointsRankings = async (): Promise<RankingStudent[]> => {
  */
 export const getBadgesRankings = async (): Promise<RankingStudent[]> => {
   try {
+    console.log("🏆 [API] Fetching badges rankings...");
     const response = await axios.get(`${POINTS_GAME_URL}/rankings/badges`, {
       headers: getHeaders(),
     });
+    console.log("🏆 [API] Badges rankings response:", response.data);
     return response.data.data;
   } catch (error: any) {
     console.error(
