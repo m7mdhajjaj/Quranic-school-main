@@ -1,5 +1,6 @@
 import { Tabs } from "expo-router";
 import React from "react";
+import { View } from "react-native";
 
 import { HapticTab } from "@/components/haptic-tab";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -11,7 +12,7 @@ export default function TabLayout() {
   const colorScheme = useColorScheme();
 
   return (
-    <>
+    <View style={{ flex: 1 }}>
       <Header />
       <Tabs
         screenOptions={{
@@ -88,7 +89,31 @@ export default function TabLayout() {
             href: null, // Hide from tabs - accessible from drawer
           }}
         />
+        <Tabs.Screen
+          name="chat"
+          options={{
+            href: null, // Hide from tabs - accessible from drawer
+          }}
+        />
+        <Tabs.Screen
+          name="ranking"
+          options={{
+            href: null, // Hide from tabs - accessible from drawer
+          }}
+        />
+        <Tabs.Screen
+          name="reports"
+          options={{
+            href: null, // Hide from tabs - accessible from drawer
+          }}
+        />
+        <Tabs.Screen
+          name="points-game"
+          options={{
+            href: null, // Hide from tabs - accessible from drawer
+          }}
+        />
       </Tabs>
-    </>
+    </View>
   );
 }

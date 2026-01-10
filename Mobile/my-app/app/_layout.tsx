@@ -11,8 +11,7 @@ import "react-native-reanimated";
 import "./global.css";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { AuthProvider } from "@/Context/AuthContext";
-import { useAuth } from "@/hooks/useAuth";
+import { AuthProvider, useAuth } from "@/Context/AuthContext";
 
 // Force RTL layout for Arabic
 if (!I18nManager.isRTL) {
