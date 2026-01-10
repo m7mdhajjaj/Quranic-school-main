@@ -86,8 +86,8 @@ export const useChatWindow = ({ chatType, targetId, onNewMessage }: UseChatWindo
   }, []);
 
   // Handle scroll with pagination and scroll button
-  const handleScroll = useCallback(() => {
-    const container = messagesContainerRef.current;
+  const handleScroll = useCallback((e?: React.UIEvent<HTMLDivElement>) => {
+    const container = e?.currentTarget || messagesContainerRef.current;
     if (!container) return;
 
     // Show/hide scroll button
@@ -107,7 +107,7 @@ export const useChatWindow = ({ chatType, targetId, onNewMessage }: UseChatWindo
         }
       }
     }
-  }, [hasMore, loadingMore, messages, fetchMessages]);
+  }, [hasMore, loadingMore, messages, fetchMessages, setShowScrollButton]);
 
   // Auto-scroll on new messages
   useEffect(() => {

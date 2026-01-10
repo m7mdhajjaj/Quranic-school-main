@@ -2,7 +2,7 @@
 // useMessageInput.ts - Message Input State Hook
 // ============================================================================
 
-import { useState, useCallback, KeyboardEvent, ChangeEvent } from 'react';
+import { useState, useCallback, useRef, type KeyboardEvent } from 'react';
 
 interface UseMessageInputProps {
   onSend: (text: string) => Promise<void>;
@@ -25,11 +25,37 @@ export const useMessageInput = ({
   maxLength = 5000
 }: UseMessageInputProps): UseMessageInputReturn => {
   const [inputText, setInputText] = useState('');
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isTypingRef = useRef(false);
 
   const handleInputChange = useCallback((value: string) => {
     if (value.length <= maxLength) {
       setInputText(value);
-      onTyping(value.trim().length > 0);
+      
+      const hasContent = value.trim().length > 0;
+      
+      // Send typing start if content exists and not already typing
+      if (hasContent && !isTypingRef.current) {
+        onTyping(true);
+        isTypingRef.current = true;
+      }
+      
+      // Clear previous timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      
+      // Set new timeout to stop typing after 2 seconds of inactivity
+      if (hasContent) {
+        typingTimeoutRef.current = setTimeout(() => {
+          onTyping(false);
+          isTypingRef.current = false;
+        }, 2000);
+      } else {
+        // Stop typing immediately if input is empty
+        onTyping(false);
+        isTypingRef.current = false;
+      }
     }
   }, [maxLength, onTyping]);
 
@@ -37,10 +63,16 @@ export const useMessageInput = ({
     const trimmedText = inputText.trim();
     if (!trimmedText) return;
     
+    // Clear typing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
     try {
       await onSend(trimmedText);
       setInputText('');
       onTyping(false);
+      isTypingRef.current = false;
     } catch (error) {
       console.error('Error sending message:', error);
     }
@@ -56,6 +88,10 @@ export const useMessageInput = ({
   const clearInput = useCallback(() => {
     setInputText('');
     onTyping(false);
+    isTypingRef.current = false;
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
   }, [onTyping]);
 
   const canSend = inputText.trim().length > 0;

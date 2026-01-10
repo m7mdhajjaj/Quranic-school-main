@@ -130,21 +130,30 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
                 {targetName}
               </h2>
               
-              {chatType === 'DM' && (
+              {/* Online Status for DM */}
+              {chatType === 'DM' && !isTyping && (
                 <div className="flex items-center gap-1 text-xs text-gray-500">
                   {isOnline && <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />}
                   <LastSeenDisplay lastSeen={lastSeen} isOnline={isOnline} />
                 </div>
               )}
               
+              {/* Typing Indicator */}
               {isTyping && typingUsers.length > 0 && (
-                <div className="flex items-center gap-1 text-xs text-emerald-600 font-medium animate-pulse">
-                  <span>يكتب</span>
+                <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
                   <div className="flex gap-0.5">
-                    <span className="w-1 h-1 bg-emerald-600 rounded-full animate-bounce [animation-delay:0ms]" />
-                    <span className="w-1 h-1 bg-emerald-600 rounded-full animate-bounce [animation-delay:150ms]" />
-                    <span className="w-1 h-1 bg-emerald-600 rounded-full animate-bounce [animation-delay:300ms]" />
+                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce [animation-delay:0ms]" />
+                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce [animation-delay:150ms]" />
+                    <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-bounce [animation-delay:300ms]" />
                   </div>
+                  <span>
+                    {chatType === 'DM' 
+                      ? 'يكتب الآن...' 
+                      : typingUsers.length > 1 
+                        ? `${typingUsers.length} أشخاص يكتبون...`
+                        : 'أحدهم يكتب...'
+                    }
+                  </span>
                 </div>
               )}
             </div>
